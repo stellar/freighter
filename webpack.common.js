@@ -55,9 +55,9 @@ const commonConfig = {
       { from: path.resolve(__dirname, "./public/static"), to: BUILD_PATH },
     ]),
     new HtmlWebPackPlugin({
-      template: path.resolve(__dirname, "./public/index.html"),
+      template: path.resolve(__dirname, "./public/popup.html"),
       chunks: ["popup"],
-      filename: `${BUILD_PATH}/index.html`,
+      filename: `${BUILD_PATH}/popup.html`,
     }),
     new HtmlWebPackPlugin({
       template: path.resolve(__dirname, "./public/options.html"),

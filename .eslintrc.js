@@ -4,9 +4,15 @@ module.exports = {
     chrome: "readonly",
   },
   ignorePatterns: ["dist/", "node_modules/"],
+  overrides: [
+    {
+      files: ["webpack.*.js"],
+      rules: {
+        "import/no-extraneous-dependencies": [0, { devDependencies: false }],
+      },
+    },
+  ],
   rules: {
-    "import/no-unresolved": 0,
-    "import/no-extraneous-dependencies": [0, { devDependencies: false }],
     "react/jsx-filename-extension": [1, { extensions: [".tsx", ".jsx"] }],
   },
 };
