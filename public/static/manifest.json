@@ -3,7 +3,6 @@
   "version": "1.0",
   "description": "Build an Extension!",
   "permissions": ["activeTab", "declarativeContent", "storage"],
-  "options_page": "options.html",
   "background": {
     "scripts": ["background.min.js"],
     "persistent": false
@@ -14,8 +13,12 @@
       "js": ["contentScript.min.js"]
     }
   ],
+  "externally_connectable": {
+    "matches": ["*://*.stellar.org/*", "*://*.lyraclient.com/*"]
+  },
+  "web_accessible_resources": ["api.min.js"],
   "page_action": {
-    "default_popup": "popup.html",
+    "default_popup": "index.html",
     "default_icon": {
       "16": "images/get_started16.png",
       "32": "images/get_started32.png",
@@ -29,5 +32,6 @@
     "48": "images/get_started48.png",
     "128": "images/get_started128.png"
   },
+  "key": "ncjenbmichjdlnepfekhijpmfinfhgdm",
   "manifest_version": 2
 }

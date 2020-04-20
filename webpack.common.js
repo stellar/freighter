@@ -6,11 +6,15 @@ const path = require("path");
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = {
+  node: { global: true, fs: "empty" },
   entry: {
-    background: path.resolve(__dirname, "./public/background.js"),
+    background: [
+      "babel-polyfill",
+      path.resolve(__dirname, "./public/background.js"),
+    ],
+    index: ["babel-polyfill", path.resolve(__dirname, "./src/index.tsx")],
+    api: path.resolve(__dirname, "./src/api/index.js"),
     contentScript: path.resolve(__dirname, "./public/contentScript.js"),
-    popup: path.resolve(__dirname, "./src/Popup/index.tsx"),
-    options: path.resolve(__dirname, "./src/Options/index.tsx"),
   },
   output: {
     path: BUILD_PATH,
@@ -55,14 +59,9 @@ const commonConfig = {
       { from: path.resolve(__dirname, "./public/static"), to: BUILD_PATH },
     ]),
     new HtmlWebPackPlugin({
-      template: path.resolve(__dirname, "./public/popup.html"),
-      chunks: ["popup"],
-      filename: `${BUILD_PATH}/popup.html`,
-    }),
-    new HtmlWebPackPlugin({
-      template: path.resolve(__dirname, "./public/options.html"),
-      chunks: ["options"],
-      filename: `${BUILD_PATH}/options.html`,
+      template: path.resolve(__dirname, "./public/index.html"),
+      chunks: ["index"],
+      filename: `${BUILD_PATH}/index.html`,
     }),
   ],
 };

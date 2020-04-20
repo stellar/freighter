@@ -46,10 +46,10 @@ chrome.runtime.onMessageExternal.addListener(async function(
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
+  keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
+
   console.log(request.keyMetadata);
   if (request.type === SERVICE_TYPES.CREATE_ACCOUNT) {
-    keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
-
     let storeData;
 
     try {
@@ -70,8 +70,10 @@ chrome.runtime.onMessageExternal.addListener(async function(
       console.error(e);
     }
 
-    sendResponse(key);
+    const {
+      key: { publicKey },
+    } = key;
+
+    sendResponse({ publicKey });
   }
-  // if (sender.url == blocklistedWebsite) return; // don't allow this web page access
-  // if (request.openUrlInEditor) openUrl(request.openUrlInEditor);
 });

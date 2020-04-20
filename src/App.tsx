@@ -1,14 +1,17 @@
+import { createHashHistory } from "history";
 import React from "react";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import { HashRouter as Router, Switch, Route } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import { createGlobalStyle } from "styled-components";
 
-import { About } from "components/About";
-import { Home } from "components/Home";
+import CreatePassword from "views/CreatePassword";
+import MnemonicPhrase from "views/MnemonicPhrase";
+import Welcome from "views/Welcome";
 
 import { reducer as counter } from "ducks/counter";
+import { reducer as auth } from "ducks/authServices";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -19,8 +22,11 @@ const GlobalStyle = createGlobalStyle`
 const store = configureStore({
   reducer: combineReducers({
     counter,
+    auth,
   }),
 });
+
+export const history = createHashHistory();
 
 export function App() {
   return (
@@ -28,25 +34,18 @@ export function App() {
       <Router>
         <div>
           <GlobalStyle />
-          <nav>
-            <ul>
-              <li>
-                <Link to="/">Home</Link>
-              </li>
-              <li>
-                <Link to="/about">About</Link>
-              </li>
-            </ul>
-          </nav>
 
           {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
           <Switch>
-            <Route path="/about">
-              <About />
+            <Route path="/mnemonic-phrase">
+              <MnemonicPhrase />
+            </Route>
+            <Route path="/create-password">
+              <CreatePassword />
             </Route>
             <Route path="/">
-              <Home />
+              <Welcome />
             </Route>
           </Switch>
         </div>
