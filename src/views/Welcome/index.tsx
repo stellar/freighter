@@ -9,7 +9,7 @@ const Welcome = () => {
           <Link to="/create-password">I'm new!</Link>
         </li>
         <li>
-          <Link to="/about">I've done this before</Link>
+          <Link to="/recover-account">I've done this before</Link>
         </li>
       </ul>
     </nav>

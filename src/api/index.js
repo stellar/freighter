@@ -6,8 +6,6 @@ import { EXTENSION_ID, SERVER_URL } from "../statics";
 
 const server = new StellarSdk.Server(SERVER_URL);
 
-
-
 // const buildTransaction = async ({ destinationId, assetType, amount, memo }) => {
 //   try {
 //     await server.loadAccount(destinationId);
@@ -69,7 +67,6 @@ const injectApi = () => {
     mnemonic,
     seed,
     pair,
-    genUser,
   };
 };
 

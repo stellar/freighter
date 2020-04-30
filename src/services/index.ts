@@ -1,42 +1,27 @@
 import { EXTENSION_ID, SERVICE_TYPES } from "statics";
-import { KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
-import StellarSdk from "stellar-sdk";
 
 export const createAccount = async (
   password: string,
 ): Promise<{ publicKey: string }> => {
-  const pair = StellarSdk.Keypair.random();
+  let publicKey = "";
 
   try {
-    await fetch(
-      `https://friendbot.stellar.org?addr=${encodeURIComponent(
-        pair.publicKey(),
-      )}`,
-    );
+    ({ publicKey } = await sendMessageAndAwaitResponse({
+      password,
+      type: SERVICE_TYPES.CREATE_ACCOUNT,
+    }));
   } catch (e) {
-    console.error("ERROR!", e);
+    console.error(e);
   }
-
-  const publicKey = pair.publicKey() || "";
-
-  const keyMetadata = {
-    key: {
-      type: KeyType.plaintextKey,
-      publicKey,
-      privateKey: pair.secret(),
-    },
-
-    password,
-    encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
-  };
-
-  sendMessage({ keyMetadata, type: SERVICE_TYPES.CREATE_ACCOUNT });
 
   return { publicKey };
 };
 
-export const loadAccount = async (): Promise<{ publicKey: string }> => {
-  let response = { publicKey: "" };
+export const loadAccount = async (): Promise<{
+  publicKey: string;
+  applicationState: string;
+}> => {
+  let response = { publicKey: "", applicationState: "" };
 
   try {
     response = await sendMessageAndAwaitResponse({
@@ -45,16 +30,77 @@ export const loadAccount = async (): Promise<{ publicKey: string }> => {
   } catch (e) {
     console.error(e);
   }
-
   return response;
+};
+
+export const getMnemonicPhrase = async (): Promise<{
+  mnemonicPhrase: string;
+}> => {
+  let response = { mnemonicPhrase: "" };
+
+  try {
+    response = await sendMessageAndAwaitResponse({
+      type: SERVICE_TYPES.GET_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
+export const confirmMnemonicPhrase = async (
+  mnemonicPhraseToConfirm: string,
+): Promise<{
+  isCorrectPhrase: boolean;
+}> => {
+  let response = { isCorrectPhrase: false };
+
+  try {
+    response = await sendMessageAndAwaitResponse({
+      mnemonicPhraseToConfirm,
+      type: SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  console.log(response);
+  return response;
+};
+
+export const recoverAccount = async (
+  password: string,
+  recoverMnemonic: string,
+): Promise<{ publicKey: string }> => {
+  let publicKey = "";
+
+  try {
+    ({ publicKey } = await sendMessageAndAwaitResponse({
+      password,
+      recoverMnemonic,
+      type: SERVICE_TYPES.RECOVER_ACCOUNT,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { publicKey };
 };
 
 export const sendMessage = (msg: {}) => {
   chrome.runtime.sendMessage(EXTENSION_ID, msg);
 };
 
-export const sendMessageAndAwaitResponse = (msg: {}) => {
-  return new Promise<{ publicKey: string }>((resolve) => {
-    chrome.runtime.sendMessage(EXTENSION_ID, msg, (res) => resolve(res));
+interface Response {
+  applicationState: string;
+  publicKey: string;
+  mnemonicPhrase: string;
+  isCorrectPhrase: boolean;
+}
+
+export const sendMessageAndAwaitResponse = (msg: {}): Promise<Response> => {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(EXTENSION_ID, msg, (res: Response) =>
+      resolve(res),
+    );
   });
 };

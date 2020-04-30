@@ -1,14 +1,24 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+} from "@reduxjs/toolkit";
+import { APPLICATION_STATE } from "statics";
 import { history } from "App";
-import { createAccount, loadAccount } from "services";
+import {
+  confirmMnemonicPhrase as confirmMnemonicPhraseService,
+  createAccount as createAccountService,
+  recoverAccount as recoverAccountService,
+  loadAccount as loadAccountService,
+} from "services";
 
-export const authenticate = createAsyncThunk(
+export const createAccount = createAsyncThunk(
   "auth/createAccount",
   async (password: string) => {
     let res;
 
     try {
-      res = await createAccount(password);
+      res = await createAccountService(password);
     } catch (e) {
       console.error(e);
     }
@@ -17,11 +27,51 @@ export const authenticate = createAsyncThunk(
   },
 );
 
-export const getAccount = createAsyncThunk("auth/getAccount", async () => {
+export const recoverAccount = createAsyncThunk(
+  "auth/recoverAccount",
+  async ({
+    password,
+    mnemonicPhrase,
+  }: {
+    password: string;
+    mnemonicPhrase: string;
+  }) => {
+    let res;
+
+    try {
+      res = await recoverAccountService(password, mnemonicPhrase);
+    } catch (e) {
+      console.error(e);
+    }
+    return res;
+  },
+);
+
+export const confirmMnemonicPhrase = createAsyncThunk(
+  "auth/confirmMnemonicPhrase",
+  async (phrase: string) => {
+    let res = { isCorrectPhrase: false };
+    try {
+      res = await confirmMnemonicPhraseService(phrase);
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (res.isCorrectPhrase) {
+      history.push("/mnemonic-phrase-confirm");
+    } else {
+      throw new Error("The phrase you entered is incorrect");
+    }
+
+    return res;
+  },
+);
+
+export const loadAccount = createAsyncThunk("auth/getAccount", async () => {
   let res;
 
   try {
-    res = await loadAccount();
+    res = await loadAccountService();
   } catch (e) {
     console.error(e);
   }
@@ -29,26 +79,57 @@ export const getAccount = createAsyncThunk("auth/getAccount", async () => {
 });
 const authSlice = createSlice({
   name: "auth",
-  initialState: { authenticated: false, keyStoreId: null, publicKey: "" },
+  initialState: { applicationState: "", publicKey: "" },
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(authenticate.fulfilled, (state, action) => {
+    builder.addCase(createAccount.fulfilled, (state, action) => {
       const { publicKey } = action.payload || { publicKey: "" };
 
-      state.publicKey = publicKey;
+      return {
+        ...state,
+        applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+        publicKey,
+      };
     });
-    builder.addCase(getAccount.fulfilled, (state, action) => {
+
+    builder.addCase(recoverAccount.fulfilled, (state, action) => {
       const { publicKey } = action.payload || { publicKey: "" };
 
-      state.publicKey = publicKey;
+      return {
+        ...state,
+        applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+        publicKey,
+      };
+    });
+
+    builder.addCase(confirmMnemonicPhrase.rejected, (state) => {
+      return {
+        ...state,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_FAILED,
+      };
+    });
+    builder.addCase(confirmMnemonicPhrase.fulfilled, (state) => {
+      return {
+        ...state,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      };
+    });
+    builder.addCase(loadAccount.fulfilled, (state, action) => {
+      const { publicKey, applicationState } = action.payload || {
+        publicKey: "",
+        applicationState: "",
+      };
+      return { ...state, applicationState, publicKey };
     });
   },
 });
 
 const { reducer } = authSlice;
-// const authSelector = (state: { auth: boolean }) => state.auth;
-// const publicKeySelector = createSelector(authSelector, (auth) =>
-//   getPublicKeyFromId(auth.publicKey),
-// );
+const authSelector = (state: { auth: { applicationState: string } }) =>
+  state.auth;
+export const applicationStateSelector = createSelector(
+  authSelector,
+  (auth) => auth.applicationState,
+);
 
 export { reducer };

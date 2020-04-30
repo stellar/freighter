@@ -5,7 +5,7 @@
   "permissions": ["activeTab", "declarativeContent", "storage"],
   "background": {
     "scripts": ["background.min.js"],
-    "persistent": false
+    "persistent": true
   },
   "content_scripts": [
     {

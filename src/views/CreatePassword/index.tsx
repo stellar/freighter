@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
-import { authenticate } from "ducks/authServices";
+import { createAccount } from "ducks/authServices";
 
 const CreatePassword = () => {
   const firstRender = useRef(true);
@@ -12,7 +12,7 @@ const CreatePassword = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(authenticate(password));
+    dispatch(createAccount(password));
   };
 
   const formValidation = () => {

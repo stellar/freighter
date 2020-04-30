@@ -1,10 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
+import ConfirmMnemonicPhrase from "components/mnemonicPhrase/ConfirmMnemonicPhrase";
+import useMnemonicPhrase from "hooks/useMnemonicPhrase";
+import DisplayMnemonicPhrase from "components/mnemonicPhrase/DisplayMnemonicPhrase";
 
 const MnemonicPhrase = () => {
+  const [readyToConfirm, setReadyToConfirm] = useState(false);
+
+  const mnemonicPhrase = useMnemonicPhrase();
+
   return (
     <>
-      <h1>Secret backup Phrase</h1>
-      <ul></ul>
+      {readyToConfirm ? (
+        <ConfirmMnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
+      ) : (
+        <DisplayMnemonicPhrase
+          mnemonicPhrase={mnemonicPhrase}
+          setReadyToConfirm={setReadyToConfirm}
+        />
+      )}
     </>
   );
 };
