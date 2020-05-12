@@ -1,58 +1,69 @@
-# Stellar React Starter
+# Lyra Chrome Extension
 
-## Available Scripts
+## Get Started
 
-In the project directory, you can run:
+This project builds a Chrome extension that handles authentication as well as a
+"playground" to test out the public facing API that Lyra provides. This
+playground calls the Lyra API exactly how a client site like
+accountviewer.stellar.org would call it
 
-### `yarn start`
+### Prerequesites
 
-Runs the app in the development mode.<br /> Open
-[http://localhost:3000](http://localhost:3000) to view it in the browser.
+This project requires nodeJS https://nodejs.org/en/download/
 
-The page will reload if you make edits.<br /> You will also see any lint errors
-in the console.
+After that, we will need Yarn to install our dependencies.
 
-### `yarn test`
+In Terminal, run
 
-Launches the test runner in the interactive watch mode.<br /> See the section
-about
-[running tests](https://facebook.github.io/create-react-app/docs/running-tests)
-for more information.
+```
+brew install yarn
+```
 
-### `yarn build`
+### Install project dependencies
 
-Builds the app for production to the `build` folder.<br /> It correctly bundles
-React in production mode and optimizes the build for the best performance.
+Navigate to this project folder in Terminal and run
 
-The build is minified and the filenames include the hashes.<br /> Your app is
-ready to be deployed!
+```
+yarn
+```
 
-See the section about
-[deployment](https://facebook.github.io/create-react-app/docs/deployment) for
-more information.
+### Build the extension and install it on your machine
 
-### `yarn eject`
+We will compile the code for the extension and that load this local instance
+into your browser.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+1. Run
 
-If you aren’t satisfied with the build tool and configuration choices, you can
-`eject` at any time. This command will remove the single build dependency from
-your project.
+```
+yarn build
+```
 
-Instead, it will copy all the configuration files and the transitive
-dependencies (webpack, Babel, ESLint, etc) right into your project so you have
-full control over them. All of the commands except `eject` will still work, but
-they will point to the copied scripts so you can tweak them. At this point
-you’re on your own.
+2. Now, in Chrome, navigate to `chrome://extensions/`. You will see a button in
+   the top left titled `Load Unpacked`
 
-You don’t have to ever use `eject`. The curated feature set is suitable for
-small and middle deployments, and you shouldn’t feel obligated to use this
-feature. However we understand that this tool wouldn’t be useful if you couldn’t
-customize it when you are ready for it.
+3. Click `Load Unpacked` and it will open your file system. Navigate to this
+   folder and click the `build` folder. Hit `Select`. You should now see an icon
+   for Lyra in Chrome.
 
-## Learn More
+### Create a dev environment for the Playground to run in
 
-You can learn more in the
-[Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+We need to not only create a local dev server, but also alias it with a proper
+url (in this case, `lyraClient.com`). This is necessary because for security
+purposes, the extension whitelists communication from specific urls. Domains
+that we do not whitelist are not able to communicate with Lyra and retrieve data
+from it.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Update your hosts file by running
+
+```
+yarn run addClient
+```
+
+2. Start a local dev server
+
+```
+yarn start
+```
+
+Done! You should be able to access the Playground by going to
+`http://lyraclient.com:9000/playground.html` in your browser
