@@ -38,10 +38,13 @@ into your browser.
 yarn build
 ```
 
-2. Now, in Chrome, navigate to `chrome://extensions/`. You will see a button in
-   the top left titled `Load Unpacked`
+2. Now, in Chrome, navigate to `chrome://extensions/`.
 
-3. Click `Load Unpacked` and it will open your file system. Navigate to this
+3. Toggle `Developer mode` to the ON position in the top right corner
+
+4. You will now see a button in the top left titled `Load Unpacked`
+
+5. Click `Load Unpacked` and it will open your file system. Navigate to this
    folder and click the `build` folder. Hit `Select`. You should now see an icon
    for Lyra in Chrome.
 
