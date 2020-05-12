@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
-import { recoverAccount } from "ducks/authServices";
+import { useDispatch, useSelector } from "react-redux";
+import { history } from "App";
+import { publicKeySelector, recoverAccount } from "ducks/authServices";
 
 const RecoverAccount = () => {
   const firstRender = useRef(true);
+  const publicKey = useSelector(publicKeySelector);
   const [password, setPassword] = useState("");
   const [confirmPassword, setconfirmPassword] = useState("");
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
@@ -32,6 +34,12 @@ const RecoverAccount = () => {
     }
     formValidation();
   });
+
+  useEffect(() => {
+    if (publicKey) {
+      history.push("/account");
+    }
+  }, [publicKey]);
 
   return (
     <form onSubmit={handleSubmit}>

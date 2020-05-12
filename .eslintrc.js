@@ -2,6 +2,7 @@ module.exports = {
   extends: ["@stellar/eslint-config"],
   globals: {
     chrome: "readonly",
+    DEVELOPMENT: "readonly",
   },
   ignorePatterns: ["dist/", "node_modules/"],
   overrides: [

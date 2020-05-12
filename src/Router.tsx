@@ -1,33 +1,49 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { HashRouter, Switch, Redirect, Route } from "react-router-dom";
 import { APPLICATION_STATE } from "statics";
+import {
+  applicationStateSelector,
+  loadAccount,
+  publicKeySelector,
+} from "ducks/authServices";
+import { useSelector } from "react-redux";
+
+import Account from "views/Account";
 import CreatePassword from "views/CreatePassword";
+import GrantAccess from "views/GrantAccess";
 import MnemonicPhrase from "views/MnemonicPhrase";
-import MnemonicPhraseConfirmed from "views/MnemonicPhraseConfirmed";
+import MnemonicPhraseConfirmed from "views/MnemonicPhrase/Confirmed";
 import RecoverAccount from "views/RecoverAccount";
+import SignTransaction from "views/SignTransaction";
+import UnlockAccount from "views/UnlockAccount";
 import Welcome from "views/Welcome";
 
-const AuthenticatedRoute = ({ applicationState, children, ...rest }) => {
+const UnlockedRoute = ({
+  applicationState,
+  publicKey,
+  children,
+  path,
+  ...rest
+}: {
+  publicKey: string;
+  applicationState: APPLICATION_STATE;
+  children: JSX.Element;
+  path: string;
+}) => {
+  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
+    return <p>loading...</p>;
+  }
   return (
     <Route
+      path={path}
       {...rest}
       render={({ location }) => {
-        if (!applicationState) {
+        if (!publicKey) {
           return (
             <Redirect
               to={{
-                pathname: "/create-password",
-                state: { from: location },
-              }}
-            />
-          );
-        }
-
-        if (applicationState === APPLICATION_STATE.PASSWORD_CREATED) {
-          return (
-            <Redirect
-              to={{
-                pathname: "/mnemonic-phrase-confirm",
+                pathname: "/recover-account",
+                search: location.search,
                 state: { from: location },
               }}
             />
@@ -40,29 +56,79 @@ const AuthenticatedRoute = ({ applicationState, children, ...rest }) => {
   );
 };
 
-const Routes = ({ applicationState }: { applicationState: string }) => {
+const HomeRoute = ({
+  publicKey,
+  applicationState,
+}: {
+  publicKey: string;
+  applicationState: APPLICATION_STATE;
+}) => {
+  if (!publicKey) {
+    if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
+      return <UnlockAccount />;
+    }
+    return <Welcome />;
+  }
+
+  if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
+    return <Account />;
+  }
+
+  return <UnlockAccount />;
+};
+
+const Routes = ({ store }: { store: any }) => {
+  const applicationState = useSelector(applicationStateSelector);
+  const publicKey = useSelector(publicKeySelector);
+  useEffect(() => {
+    store.dispatch(loadAccount());
+  }, [store]);
+
   return (
     <HashRouter>
       <Switch>
+        <UnlockedRoute
+          applicationState={applicationState}
+          publicKey={publicKey}
+          path="/account"
+        >
+          <Account />
+        </UnlockedRoute>
+        <Route path="/unlock">
+          <UnlockAccount />
+        </Route>
+        <UnlockedRoute
+          path="/sign-transaction"
+          publicKey={publicKey}
+          applicationState={applicationState}
+        >
+          <SignTransaction />
+        </UnlockedRoute>
+        <UnlockedRoute
+          path="/grant-access"
+          publicKey={publicKey}
+          applicationState={applicationState}
+        >
+          <GrantAccess />
+        </UnlockedRoute>
         <Route path="/mnemonic-phrase">
           <MnemonicPhrase />
         </Route>
 
-        <Route
-          applicationState={applicationState}
-          path="/mnemonic-phrase-confirmed"
-        >
+        <Route path="/mnemonic-phrase-confirmed">
           <MnemonicPhraseConfirmed />
         </Route>
         <Route path="/create-password">
           <CreatePassword />
         </Route>
         <Route path="/recover-account">
-          <RecoverAccount />
+          {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
+            <UnlockAccount />
+          ) : (
+            <RecoverAccount />
+          )}
         </Route>
-        <Route applicationState={applicationState} path="/">
-          <Welcome />
-        </Route>
+        <HomeRoute publicKey={publicKey} applicationState={applicationState} />
       </Switch>
     </HashRouter>
   );

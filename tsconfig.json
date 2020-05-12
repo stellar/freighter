@@ -10,5 +10,5 @@
     "allowSyntheticDefaultImports": true,
     "types": ["@types/chrome", "@types/jest"]
   },
-  "include": ["src"]
+  "include": ["src", "public"]
 }

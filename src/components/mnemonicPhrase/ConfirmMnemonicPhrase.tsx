@@ -9,12 +9,12 @@ import {
 import { APPLICATION_STATE } from "statics";
 import CheckButton from "./primitives/CheckButton";
 
-const ConfirmInput = styled.input`
+const ConfirmInput = styled.textarea`
   background: #d3d3d3;
   border: 0;
   border-radius: 5px;
   color: purple;
-  font-size: 18px;
+  font-size: 14px;
   padding: 20px 30px;
   width: 60%;
   margin-bottom: 20px;
@@ -29,8 +29,6 @@ const ConfirmMnemonicPhrase = ({
   const words = useRef(shuffle(mnemonicPhrase.split(" ")));
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const applicationState = useSelector(applicationStateSelector);
-
-  console.log(applicationState);
 
   const updatePhrase = (target: HTMLInputElement) => {
     if (target.checked) {
@@ -57,12 +55,12 @@ const ConfirmMnemonicPhrase = ({
     e.preventDefault();
     dispatch(confirmMnemonicPhrase(selectedWords.join(" ")));
   };
-
+  console.log(applicationState);
   return (
     <>
       <form onSubmit={handleSubmit}>
         <div>
-          <ConfirmInput readOnly type="text" value={selectedWords.join(" ")} />
+          <ConfirmInput readOnly value={selectedWords.join(" ")} />
           {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED ? (
             <p>"The secret phrase you entered is incorrect"</p>
           ) : null}

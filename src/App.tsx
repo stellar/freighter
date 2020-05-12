@@ -5,12 +5,14 @@ import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import styled, { createGlobalStyle } from "styled-components";
 
-import { reducer as auth, loadAccount } from "ducks/authServices";
+import { reducer as auth } from "ducks/authServices";
 import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
   body {
     font-family: sans-serif;
+    width: 357px;
+    height: 600px;
   }
 `;
 
@@ -24,12 +26,6 @@ const store = configureStore({
   }),
 });
 
-store.dispatch(loadAccount());
-
-const {
-  auth: { applicationState },
-} = store.getState();
-
 export const history = createHashHistory();
 
 export function App() {
@@ -37,7 +33,7 @@ export function App() {
     <Provider store={store}>
       <Wrapper>
         <GlobalStyle />
-        <Router applicationState={applicationState} />
+        <Router store={store} />
       </Wrapper>
     </Provider>
   );
