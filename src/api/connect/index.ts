@@ -1,4 +1,3 @@
-// import { EXTENSION_ID } from "statics";
 import { requestAccess } from "services/external";
 
 const connect = async () => {

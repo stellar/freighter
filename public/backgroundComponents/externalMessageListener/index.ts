@@ -18,7 +18,7 @@ export const externalMessageListener = (
     const whitelist = whitelistStr.split(",");
 
     const { tab } = sender;
-    const tabUrl = tab && tab.url ? tab.url : "";
+    const tabUrl = tab?.url ? tab.url : "";
 
     if (whitelist.includes(tabUrl)) {
       if (uiData.publicKey) {

@@ -2,20 +2,6 @@ import { EXTERNAL_SERVICE_TYPES } from "statics";
 import { sendMessageAndAwaitResponseExternal } from "services/utils";
 import { ExternalRequest } from "services/types";
 
-// export const getPublicKey = async (): Promise<{ publicKey: string }> => {
-//   let publicKey = "";
-
-//   try {
-//     ({ publicKey } = await sendMessageAndAwaitResponseExternal({
-//       type: SERVICE_TYPES.LOAD_ACCOUNT,
-//     }));
-//   } catch (e) {
-//     console.error(e);
-//   }
-
-//   return { publicKey };
-// };
-
 export const requestAccess = async (): Promise<{
   publicKey: string;
   error: string;
@@ -28,7 +14,6 @@ export const requestAccess = async (): Promise<{
   } catch (e) {
     console.error(e);
   }
-  console.log(response);
   return response;
 };
 

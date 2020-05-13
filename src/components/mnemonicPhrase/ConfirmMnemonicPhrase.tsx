@@ -55,7 +55,6 @@ const ConfirmMnemonicPhrase = ({
     e.preventDefault();
     dispatch(confirmMnemonicPhrase(selectedWords.join(" ")));
   };
-  console.log(applicationState);
   return (
     <>
       <form onSubmit={handleSubmit}>

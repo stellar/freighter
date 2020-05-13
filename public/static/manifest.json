@@ -14,12 +14,7 @@
     }
   ],
   "externally_connectable": {
-    "matches": [
-      "*://*.stellar.org/*",
-      "*://*.lyraclient.com/*",
-      "*://*.lyraclient.com/playground.html",
-      "*://localhost/"
-    ]
+    "matches": ["*://*.stellar.org/*", "*://*.lyraclient.com/*"]
   },
   "web_accessible_resources": ["api.min.js"],
   "page_action": {

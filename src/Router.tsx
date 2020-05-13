@@ -18,7 +18,7 @@ import SignTransaction from "views/SignTransaction";
 import UnlockAccount from "views/UnlockAccount";
 import Welcome from "views/Welcome";
 
-const UnlockedRoute = ({
+const ProtectedRoute = ({
   applicationState,
   publicKey,
   children,
@@ -87,30 +87,30 @@ const Routes = ({ store }: { store: any }) => {
   return (
     <HashRouter>
       <Switch>
-        <UnlockedRoute
+        <ProtectedRoute
           applicationState={applicationState}
           publicKey={publicKey}
           path="/account"
         >
           <Account />
-        </UnlockedRoute>
+        </ProtectedRoute>
         <Route path="/unlock">
           <UnlockAccount />
         </Route>
-        <UnlockedRoute
+        <ProtectedRoute
           path="/sign-transaction"
           publicKey={publicKey}
           applicationState={applicationState}
         >
           <SignTransaction />
-        </UnlockedRoute>
-        <UnlockedRoute
+        </ProtectedRoute>
+        <ProtectedRoute
           path="/grant-access"
           publicKey={publicKey}
           applicationState={applicationState}
         >
           <GrantAccess />
-        </UnlockedRoute>
+        </ProtectedRoute>
         <Route path="/mnemonic-phrase">
           <MnemonicPhrase />
         </Route>

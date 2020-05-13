@@ -1,4 +1,3 @@
-// import { getPublicKey } from "services/external";
 import connect from "./connect";
 import submitTransaction from "./submitTransaction";
 
@@ -8,5 +7,11 @@ const injectApi = () => {
     submitTransaction,
   };
 };
+
+declare global {
+  interface Window {
+    lyra: any;
+  }
+}
 
 window.lyra = injectApi();
