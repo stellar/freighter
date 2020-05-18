@@ -142,7 +142,7 @@ export const signOut = createAsyncThunk<
 
   if (res?.publicKey) {
     return thunkApi.rejectWithValue({
-      errorMessage: "The password you entered is incorrect",
+      errorMessage: "Unable to sign out",
     });
   }
 

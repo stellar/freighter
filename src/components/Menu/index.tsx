@@ -27,6 +27,7 @@ const SlideOutCloseButton = styled.button`
 const SlideoutNavItem = styled.a`
   color: white;
   display: block;
+  margin: 10px 0;
 `;
 
 const Menu = () => {
