@@ -190,6 +190,19 @@ export const signTransaction = async ({
   }
 };
 
+export const signOut = async (): Promise<{ publicKey: string }> => {
+  let publicKey = "";
+  try {
+    ({ publicKey } = await sendMessageAndAwaitResponse({
+      type: SERVICE_TYPES.SIGN_OUT,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { publicKey };
+};
+
 export const sendMessageAndAwaitResponse = (msg: {}): Promise<Response> => {
   return new Promise((resolve) => {
     if (DEVELOPMENT) {

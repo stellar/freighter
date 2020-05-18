@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import styled, { createGlobalStyle } from "styled-components";
 
 import { reducer as auth } from "ducks/authServices";
+import Menu from "components/Menu";
 import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
@@ -13,6 +14,7 @@ const GlobalStyle = createGlobalStyle`
     font-family: sans-serif;
     width: 357px;
     height: 600px;
+    margin: 0;
   }
 `;
 
@@ -33,6 +35,7 @@ export function App() {
     <Provider store={store}>
       <Wrapper>
         <GlobalStyle />
+        <Menu />
         <Router store={store} />
       </Wrapper>
     </Provider>

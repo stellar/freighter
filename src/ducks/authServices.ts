@@ -11,6 +11,7 @@ import {
   recoverAccount as recoverAccountService,
   loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
+  signOut as signOutService,
 } from "services";
 
 interface ErrorMessage {
@@ -127,19 +128,42 @@ export const loadAccount = createAsyncThunk("auth/loadAccount", async () => {
   return res;
 });
 
+export const signOut = createAsyncThunk<
+  boolean,
+  void,
+  { rejectValue: ErrorMessage }
+>("auth/signOut", async (_arg, thunkApi) => {
+  let res;
+  try {
+    res = await signOutService();
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (res?.publicKey) {
+    return thunkApi.rejectWithValue({
+      errorMessage: "The password you entered is incorrect",
+    });
+  }
+
+  return true;
+});
+
 interface InitialState {
   applicationState: APPLICATION_STATE;
   publicKey: string;
   error: string;
 }
 
+const initialState: InitialState = {
+  applicationState: APPLICATION_STATE.APPLICATION_LOADING,
+  publicKey: "",
+  error: "",
+};
+
 const authSlice = createSlice({
   name: "auth",
-  initialState: {
-    applicationState: APPLICATION_STATE.APPLICATION_LOADING,
-    publicKey: "",
-    error: "",
-  } as InitialState,
+  initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(createAccount.fulfilled, (state, action) => {
@@ -218,6 +242,12 @@ const authSlice = createSlice({
         applicationState:
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
+      };
+    });
+    builder.addCase(signOut.fulfilled, () => {
+      return {
+        ...initialState,
+        applicationState: APPLICATION_STATE.APPLICATION_STARTED,
       };
     });
   },

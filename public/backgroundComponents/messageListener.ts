@@ -13,7 +13,14 @@ import { Sender, SendResponseInterface } from "./types";
 
 const server = new StellarSdk.Server(SERVER_URL);
 
-export const uiData = {
+interface UiData {
+  publicKey: string;
+  mnemonicPhrase: string;
+  applicationState: string;
+  [key: string]: string;
+}
+
+export const uiData: UiData = {
   publicKey: "",
   mnemonicPhrase: "",
   applicationState: "",
@@ -254,6 +261,14 @@ const initMessageListener = () => {
       }
     };
 
+    const signOut = () => {
+      Object.keys(uiData).forEach((key) => {
+        uiData[key] = "";
+      });
+
+      sendResponse({ publicKey: uiData.publicKey });
+    };
+
     const messageResponder = {
       [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
       [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
@@ -265,6 +280,7 @@ const initMessageListener = () => {
       [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
       [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
       [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
+      [SERVICE_TYPES.SIGN_OUT]: signOut,
     };
 
     if (messageResponder[request.type]) {
