@@ -16,14 +16,12 @@ const server = new StellarSdk.Server(SERVER_URL);
 interface UiData {
   publicKey: string;
   mnemonicPhrase: string;
-  applicationState: string;
   [key: string]: string;
 }
 
 export const uiData: UiData = {
   publicKey: "",
   mnemonicPhrase: "",
-  applicationState: "",
 };
 
 const KEY_ID = "keyId";
@@ -109,8 +107,7 @@ const initMessageListener = () => {
         wallet,
         mnemonicPhrase: uiData.mnemonicPhrase,
       });
-      uiData.applicationState = APPLICATION_STATE.PASSWORD_CREATED;
-      localStorage.setItem(APPLICATION_ID, uiData.applicationState);
+      localStorage.setItem(APPLICATION_ID, APPLICATION_STATE.PASSWORD_CREATED);
 
       sendResponse({ publicKey: uiData.publicKey });
     };
@@ -130,15 +127,15 @@ const initMessageListener = () => {
       const isCorrectPhrase =
         uiData.mnemonicPhrase === request.mnemonicPhraseToConfirm;
 
-      uiData.applicationState = isCorrectPhrase
+      const applicationState = isCorrectPhrase
         ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
         : APPLICATION_STATE.MNEMONIC_PHRASE_FAILED;
 
-      localStorage.setItem(APPLICATION_ID, uiData.applicationState);
+      localStorage.setItem(APPLICATION_ID, applicationState);
 
       sendResponse({
         isCorrectPhrase,
-        applicationState: uiData.applicationState,
+        applicationState: localStorage.getItem(APPLICATION_ID) || "",
       });
     };
 
@@ -153,13 +150,15 @@ const initMessageListener = () => {
 
       if (wallet) {
         _storeAccount({ mnemonicPhrase: recoverMnemonic, password, wallet });
-        uiData.applicationState = APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
-        localStorage.setItem(APPLICATION_ID, uiData.applicationState);
+        localStorage.setItem(
+          APPLICATION_ID,
+          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        );
       }
 
       sendResponse({
         publicKey: uiData.publicKey,
-        applicationState: uiData.applicationState,
+        applicationState: localStorage.getItem(APPLICATION_ID) || "",
       });
     };
 
@@ -178,13 +177,15 @@ const initMessageListener = () => {
       if (keyStore) {
         ({ publicKey } = keyStore);
         uiData.publicKey = publicKey;
-        uiData.applicationState = APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
-        localStorage.setItem(APPLICATION_ID, uiData.applicationState);
+        localStorage.setItem(
+          APPLICATION_ID,
+          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        );
       }
 
       sendResponse({
         publicKey: uiData.publicKey,
-        applicationState: uiData.applicationState,
+        applicationState: localStorage.getItem(APPLICATION_ID) || "",
       });
     };
 
@@ -266,7 +267,10 @@ const initMessageListener = () => {
         uiData[key] = "";
       });
 
-      sendResponse({ publicKey: uiData.publicKey });
+      sendResponse({
+        publicKey: uiData.publicKey,
+        applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      });
     };
 
     const messageResponder = {

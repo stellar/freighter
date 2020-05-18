@@ -190,17 +190,23 @@ export const signTransaction = async ({
   }
 };
 
-export const signOut = async (): Promise<{ publicKey: string }> => {
-  let publicKey = "";
+export const signOut = async (): Promise<{
+  publicKey: string;
+  applicationState: APPLICATION_STATE;
+}> => {
+  let response = {
+    publicKey: "",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+  };
   try {
-    ({ publicKey } = await sendMessageAndAwaitResponse({
+    response = await sendMessageAndAwaitResponse({
       type: SERVICE_TYPES.SIGN_OUT,
-    }));
+    });
   } catch (e) {
     console.error(e);
   }
 
-  return { publicKey };
+  return response;
 };
 
 export const sendMessageAndAwaitResponse = (msg: {}): Promise<Response> => {

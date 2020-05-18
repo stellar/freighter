@@ -129,11 +129,14 @@ export const loadAccount = createAsyncThunk("auth/loadAccount", async () => {
 });
 
 export const signOut = createAsyncThunk<
-  boolean,
+  APPLICATION_STATE,
   void,
   { rejectValue: ErrorMessage }
 >("auth/signOut", async (_arg, thunkApi) => {
-  let res;
+  let res = {
+    publicKey: "",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+  };
   try {
     res = await signOutService();
   } catch (e) {
@@ -146,7 +149,7 @@ export const signOut = createAsyncThunk<
     });
   }
 
-  return true;
+  return res?.applicationState;
 });
 
 interface InitialState {
@@ -244,10 +247,14 @@ const authSlice = createSlice({
         publicKey,
       };
     });
-    builder.addCase(signOut.fulfilled, () => {
+    builder.addCase(signOut.fulfilled, (_state, action) => {
+      const applicationState = action.payload || {
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      };
       return {
         ...initialState,
-        applicationState: APPLICATION_STATE.APPLICATION_STARTED,
+        applicationState:
+          applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
       };
     });
   },
