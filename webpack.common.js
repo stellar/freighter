@@ -41,7 +41,7 @@ const commonConfig = {
       },
       {
         test: /\.(ts|tsx)$/,
-        use: "ts-loader",
+        use: ["ts-loader", "eslint-loader"],
         exclude: /node-modules/,
       },
       {

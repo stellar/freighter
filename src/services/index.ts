@@ -209,8 +209,8 @@ export const signOut = async (): Promise<{
   return response;
 };
 
-export const sendMessageAndAwaitResponse = (msg: {}): Promise<Response> => {
-  return new Promise((resolve) => {
+export const sendMessageAndAwaitResponse = (msg: {}): Promise<Response> =>
+  new Promise((resolve) => {
     if (DEVELOPMENT) {
       chrome.runtime.sendMessage(EXTENSION_ID, msg, (res: Response) =>
         resolve(res),
@@ -219,12 +219,10 @@ export const sendMessageAndAwaitResponse = (msg: {}): Promise<Response> => {
       chrome.runtime.sendMessage(msg, (res: Response) => resolve(res));
     }
   });
-};
 
-export const sendMessageAndAwaitResponsePublic = (msg: {}): Promise<Response> => {
-  return new Promise((resolve) => {
+export const sendMessageAndAwaitResponsePublic = (msg: {}): Promise<Response> =>
+  new Promise((resolve) => {
     chrome.runtime.sendMessage(EXTENSION_ID, msg, (res: Response) =>
       resolve(res),
     );
   });
-};

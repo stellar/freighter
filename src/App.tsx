@@ -11,6 +11,7 @@ import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
   body {
+    overscroll-behavior: none;
     font-family: sans-serif;
     width: 357px;
     height: 600px;
@@ -36,7 +37,7 @@ export function App() {
       <Wrapper>
         <GlobalStyle />
         <Menu />
-        <Router store={store} />
+        <Router />
       </Wrapper>
     </Provider>
   );

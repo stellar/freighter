@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { history } from "App";
@@ -20,13 +20,13 @@ const RecoverAccount = () => {
     dispatch(recoverAccount({ password, mnemonicPhrase }));
   };
 
-  const formValidation = () => {
+  const formValidation = useCallback(() => {
     if (password === confirmPassword && termsChecked) {
       setFormErrors(false);
     } else {
       setFormErrors(true);
     }
-  };
+  }, [setFormErrors, password, confirmPassword, termsChecked]);
 
   useEffect(() => {
     if (firstRender.current) {
@@ -34,7 +34,7 @@ const RecoverAccount = () => {
       return;
     }
     formValidation();
-  });
+  }, [formValidation]);
 
   useEffect(() => {
     if (publicKey) {

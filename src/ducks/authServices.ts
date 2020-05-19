@@ -212,12 +212,10 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
-    builder.addCase(confirmMnemonicPhrase.fulfilled, (state, action) => {
-      return {
-        ...state,
-        applicationState: action.payload.applicationState,
-      };
-    });
+    builder.addCase(confirmMnemonicPhrase.fulfilled, (state, action) => ({
+      ...state,
+      applicationState: action.payload.applicationState,
+    }));
     builder.addCase(loadAccount.fulfilled, (state, action) => {
       const { publicKey, applicationState } = action.payload || {
         publicKey: "",

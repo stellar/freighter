@@ -23,19 +23,17 @@ const CheckBox = styled.input`
   }
 `;
 
-const CheckButton = ({ onChange, word }: CheckButtonProps) => {
-  return (
-    <>
-      <CheckBox
-        id={`id-${word}`}
-        type="checkbox"
-        onChange={onChange}
-        key={`key-${word}`}
-        value={word}
-      />
-      <ButtonLabel htmlFor={`id-${word}`}>{word}</ButtonLabel>
-    </>
-  );
-};
+const CheckButton = ({ onChange, word }: CheckButtonProps) => (
+  <>
+    <CheckBox
+      id={`id-${word}`}
+      type="checkbox"
+      onChange={onChange}
+      key={`key-${word}`}
+      value={word}
+    />
+    <ButtonLabel htmlFor={`id-${word}`}>{word}</ButtonLabel>
+  </>
+);
 
 export default CheckButton;
