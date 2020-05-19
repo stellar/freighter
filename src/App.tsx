@@ -36,7 +36,7 @@ export function App() {
       <Wrapper>
         <GlobalStyle />
         <Menu />
-        <Router store={store} />
+        <Router />
       </Wrapper>
     </Provider>
   );
