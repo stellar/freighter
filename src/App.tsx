@@ -11,6 +11,7 @@ import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
   body {
+    overscroll-behavior: none;
     font-family: sans-serif;
     width: 357px;
     height: 600px;
