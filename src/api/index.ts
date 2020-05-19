@@ -1,12 +1,10 @@
 import connect from "./connect";
 import submitTransaction from "./submitTransaction";
 
-const injectApi = () => {
-  return {
-    connect,
-    submitTransaction,
-  };
-};
+const injectApi = () => ({
+  connect,
+  submitTransaction,
+});
 
 declare global {
   interface Window {

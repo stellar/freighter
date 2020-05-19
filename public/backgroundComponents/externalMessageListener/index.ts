@@ -48,7 +48,7 @@ export const externalMessageListener = (
     responseQueue.push(response);
   };
 
-  const submitTransaction = async () => {
+  const submitTransaction = () => {
     const { transactionXdr } = request;
 
     const transaction = StellarSdk.TransactionBuilder.fromXDR(

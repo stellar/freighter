@@ -20,13 +20,13 @@ const RecoverAccount = () => {
     dispatch(recoverAccount({ password, mnemonicPhrase }));
   };
 
-  const formValidation = () => {
+  const formValidation = React.useCallback(() => {
     if (password === confirmPassword && termsChecked) {
       setFormErrors(false);
     } else {
       setFormErrors(true);
     }
-  };
+  }, [setFormErrors, password, confirmPassword, termsChecked]);
 
   useEffect(() => {
     if (firstRender.current) {
@@ -34,7 +34,7 @@ const RecoverAccount = () => {
       return;
     }
     formValidation();
-  });
+  }, [formValidation]);
 
   useEffect(() => {
     if (publicKey) {

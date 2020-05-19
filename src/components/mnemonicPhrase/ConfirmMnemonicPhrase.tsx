@@ -49,7 +49,7 @@ const ConfirmMnemonicPhrase = ({
       />
     ));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(confirmMnemonicPhrase(selectedWords.join(" ")));
   };
