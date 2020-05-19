@@ -176,6 +176,7 @@ const authSlice = createSlice({
 
       return {
         ...state,
+        authenticated: true,
         applicationState: APPLICATION_STATE.PASSWORD_CREATED,
         publicKey,
       };

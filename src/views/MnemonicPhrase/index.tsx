@@ -11,7 +11,10 @@ const MnemonicPhrase = () => {
   return (
     <>
       {readyToConfirm ? (
-        <ConfirmMnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
+        <ConfirmMnemonicPhrase
+          mnemonicPhrase={mnemonicPhrase}
+          setReadyToConfirm={setReadyToConfirm}
+        />
       ) : (
         <DisplayMnemonicPhrase
           mnemonicPhrase={mnemonicPhrase}

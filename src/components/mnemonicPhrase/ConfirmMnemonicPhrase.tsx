@@ -18,8 +18,10 @@ const ConfirmInput = styled.textarea`
 
 const ConfirmMnemonicPhrase = ({
   mnemonicPhrase,
+  setReadyToConfirm,
 }: {
   mnemonicPhrase: string;
+  setReadyToConfirm: (readyToConfirm: boolean) => void;
 }) => {
   const dispatch = useDispatch();
   const words = useRef(shuffle(mnemonicPhrase.split(" ")));
@@ -63,6 +65,9 @@ const ConfirmMnemonicPhrase = ({
         {wordBubbles()}
         <div>
           <button type="submit">Confirm</button>
+        </div>
+        <div>
+          <button onClick={() => setReadyToConfirm(false)}>Go back</button>
         </div>
       </form>
     </>

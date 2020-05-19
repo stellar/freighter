@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { history } from "App";
 import { publicKeySelector, recoverAccount } from "ducks/authServices";
 
@@ -88,6 +89,9 @@ const RecoverAccount = () => {
       <button type="submit" disabled={formErrors}>
         Recover
       </button>
+      <div>
+        <Link to="/">Go back</Link>
+      </div>
     </form>
   );
 };
