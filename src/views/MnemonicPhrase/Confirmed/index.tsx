@@ -9,7 +9,13 @@ const MnemonicPhraseConfirmed = () => {
         responsibility.
       </p>
       <p>Note: Lyra cannot recover your seedphrase.</p>
-      <a href="/#/account">Continue</a>
+      <button
+        onClick={() => {
+          window.close();
+        }}
+      >
+        Close
+      </button>
     </>
   );
 };

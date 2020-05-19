@@ -177,10 +177,6 @@ const initMessageListener = () => {
       if (keyStore) {
         ({ publicKey } = keyStore);
         uiData.publicKey = publicKey;
-        localStorage.setItem(
-          APPLICATION_ID,
-          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-        );
       }
 
       sendResponse({

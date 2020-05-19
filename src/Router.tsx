@@ -3,6 +3,7 @@ import { HashRouter, Switch, Redirect, Route } from "react-router-dom";
 import { APPLICATION_STATE } from "statics";
 import {
   applicationStateSelector,
+  authenticatedSelector,
   loadAccount,
   publicKeySelector,
 } from "ducks/authServices";
@@ -20,6 +21,7 @@ import Welcome from "views/Welcome";
 
 const ProtectedRoute = ({
   applicationState,
+  authenticated,
   publicKey,
   children,
   path,
@@ -27,6 +29,7 @@ const ProtectedRoute = ({
 }: {
   publicKey: string;
   applicationState: APPLICATION_STATE;
+  authenticated: boolean;
   children: JSX.Element;
   path: string;
 }) => {
@@ -38,7 +41,7 @@ const ProtectedRoute = ({
       path={path}
       {...rest}
       render={({ location }) => {
-        if (!publicKey) {
+        if (!publicKey || !authenticated) {
           return (
             <Redirect
               to={{
@@ -74,11 +77,12 @@ const HomeRoute = ({
     return <Account />;
   }
 
-  return <UnlockAccount />;
+  return <Welcome />;
 };
 
 const Routes = ({ store }: { store: any }) => {
   const applicationState = useSelector(applicationStateSelector);
+  const authenticated = useSelector(authenticatedSelector);
   const publicKey = useSelector(publicKeySelector);
   useEffect(() => {
     store.dispatch(loadAccount());
@@ -88,6 +92,7 @@ const Routes = ({ store }: { store: any }) => {
     <HashRouter>
       <Switch>
         <ProtectedRoute
+          authenticated={authenticated}
           applicationState={applicationState}
           publicKey={publicKey}
           path="/account"
@@ -101,6 +106,7 @@ const Routes = ({ store }: { store: any }) => {
           path="/sign-transaction"
           publicKey={publicKey}
           applicationState={applicationState}
+          authenticated={authenticated}
         >
           <SignTransaction />
         </ProtectedRoute>
@@ -108,12 +114,18 @@ const Routes = ({ store }: { store: any }) => {
           path="/grant-access"
           publicKey={publicKey}
           applicationState={applicationState}
+          authenticated={authenticated}
         >
           <GrantAccess />
         </ProtectedRoute>
-        <Route path="/mnemonic-phrase">
+        <ProtectedRoute
+          path="/mnemonic-phrase"
+          publicKey={publicKey}
+          applicationState={applicationState}
+          authenticated={authenticated}
+        >
           <MnemonicPhrase />
-        </Route>
+        </ProtectedRoute>
 
         <Route path="/mnemonic-phrase-confirmed">
           <MnemonicPhraseConfirmed />
@@ -122,7 +134,7 @@ const Routes = ({ store }: { store: any }) => {
           <CreatePassword />
         </Route>
         <Route path="/recover-account">
-          {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
+          {applicationState !== APPLICATION_STATE.APPLICATION_STARTED ? (
             <UnlockAccount />
           ) : (
             <RecoverAccount />

@@ -2,11 +2,7 @@ import React, { useRef, useState } from "react";
 import styled from "styled-components";
 import { shuffle } from "lodash";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  confirmMnemonicPhrase,
-  applicationStateSelector,
-} from "ducks/authServices";
-import { APPLICATION_STATE } from "statics";
+import { confirmMnemonicPhrase, authErrorSelector } from "ducks/authServices";
 import CheckButton from "./primitives/CheckButton";
 
 const ConfirmInput = styled.textarea`
@@ -28,7 +24,7 @@ const ConfirmMnemonicPhrase = ({
   const dispatch = useDispatch();
   const words = useRef(shuffle(mnemonicPhrase.split(" ")));
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
-  const applicationState = useSelector(applicationStateSelector);
+  const authError = useSelector(authErrorSelector);
 
   const updatePhrase = (target: HTMLInputElement) => {
     if (target.checked) {
@@ -60,7 +56,7 @@ const ConfirmMnemonicPhrase = ({
       <form onSubmit={handleSubmit}>
         <div>
           <ConfirmInput readOnly value={selectedWords.join(" ")} />
-          {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED ? (
+          {authError ? (
             <p>"The secret phrase you entered is incorrect"</p>
           ) : null}
         </div>

@@ -154,6 +154,7 @@ export const signOut = createAsyncThunk<
 
 interface InitialState {
   applicationState: APPLICATION_STATE;
+  authenticated: boolean;
   publicKey: string;
   error: string;
 }
@@ -162,6 +163,7 @@ const initialState: InitialState = {
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   publicKey: "",
   error: "",
+  authenticated: false,
 };
 
 const authSlice = createSlice({
@@ -222,6 +224,8 @@ const authSlice = createSlice({
       };
       return {
         ...state,
+        authenticated:
+          applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         applicationState:
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
@@ -242,6 +246,7 @@ const authSlice = createSlice({
       };
       return {
         ...state,
+        authenticated: !!publicKey,
         applicationState:
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
@@ -262,6 +267,10 @@ const authSlice = createSlice({
 
 const { reducer } = authSlice;
 const authSelector = (state: { auth: InitialState }) => state.auth;
+export const authenticatedSelector = createSelector(
+  authSelector,
+  (auth) => auth.authenticated,
+);
 export const applicationStateSelector = createSelector(
   authSelector,
   (auth) => auth.applicationState,
