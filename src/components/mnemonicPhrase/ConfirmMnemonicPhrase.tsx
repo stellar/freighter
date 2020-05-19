@@ -58,9 +58,7 @@ const ConfirmMnemonicPhrase = ({
       <form onSubmit={handleSubmit}>
         <div>
           <ConfirmInput readOnly value={selectedWords.join(" ")} />
-          {authError ? (
-            <p>"The secret phrase you entered is incorrect"</p>
-          ) : null}
+          {authError ? <p>{authError}</p> : null}
         </div>
         {wordBubbles()}
         <div>
