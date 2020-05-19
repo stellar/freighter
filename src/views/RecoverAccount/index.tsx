@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { history } from "App";
@@ -20,7 +20,7 @@ const RecoverAccount = () => {
     dispatch(recoverAccount({ password, mnemonicPhrase }));
   };
 
-  const formValidation = React.useCallback(() => {
+  const formValidation = useCallback(() => {
     if (password === confirmPassword && termsChecked) {
       setFormErrors(false);
     } else {

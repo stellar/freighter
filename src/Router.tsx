@@ -77,19 +77,27 @@ const Routes = () => {
   return (
     <HashRouter>
       <Switch>
-        <ProtectedRoute path="/account" component={Account} />
+        <ProtectedRoute path="/account">
+          <Account />
+        </ProtectedRoute>
+        <ProtectedRoute path="/sign-transaction">
+          <SignTransaction />
+        </ProtectedRoute>
+        <ProtectedRoute path="/grant-access">
+          <GrantAccess />
+        </ProtectedRoute>
+        <ProtectedRoute path="/mnemonic-phrase">
+          <MnemonicPhrase />
+        </ProtectedRoute>
         <Route path="/unlock">
           <UnlockAccount />
         </Route>
-        <ProtectedRoute path="/sign-transaction" component={SignTransaction} />
-        <ProtectedRoute path="/grant-access" component={GrantAccess} />
-        <ProtectedRoute path="/mnemonic-phrase" component={MnemonicPhrase} />
-
-        <Route
-          path="/mnemonic-phrase-confirmed"
-          component={MnemonicPhraseConfirmed}
-        />
-        <Route path="/create-password" component={CreatePassword} />
+        <Route path="/mnemonic-phrase-confirmed">
+          <MnemonicPhraseConfirmed />
+        </Route>
+        <Route path="/create-password">
+          <CreatePassword />
+        </Route>
         <Route path="/recover-account">
           {applicationState !== APPLICATION_STATE.APPLICATION_STARTED ? (
             <UnlockAccount />
