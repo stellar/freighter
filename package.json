@@ -1,5 +1,6 @@
 {
-  "name": "stellar-react-starter",
+  "name": "lyra",
+  "license": "Apache-2.0",
   "prettier": "@stellar/prettier-config",
   "version": "0.1.0",
   "husky": {
