@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 
 import { publicKeySelector } from "ducks/authServices";
 
-import { rejectAccess, signTransaction } from "services";
+import { rejectAccess, signTransaction } from "api";
 
 const SignTransaction = () => {
   const [password, setPassword] = useState("");

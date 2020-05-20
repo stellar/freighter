@@ -39,7 +39,7 @@ const ProtectedRoute = (props: RouteProps) => {
     return (
       <Redirect
         to={{
-          pathname: "/recover-account",
+          pathname: "/unlock-account",
           search: location.search,
           state: { from: location },
         }}
@@ -88,7 +88,7 @@ const Routes = () => {
         <ProtectedRoute path="/mnemonic-phrase">
           <MnemonicPhrase />
         </ProtectedRoute>
-        <Route path="/unlock">
+        <Route path="/unlock-account">
           <UnlockAccount />
         </Route>
         <Route path="/mnemonic-phrase-confirmed">

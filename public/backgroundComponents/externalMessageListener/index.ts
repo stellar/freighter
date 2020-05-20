@@ -1,11 +1,12 @@
 import StellarSdk from "stellar-sdk";
 
-import { ExternalRequest as Request } from "../../../src/services/types";
+import { ExternalRequest as Request } from "../../../src/api/types";
 import { Sender, SendResponseInterface } from "../types";
 import { EXTERNAL_SERVICE_TYPES } from "../../../src/statics";
 import { responseQueue, uiData, transactionQueue } from "../messageListener";
 
 const WHITELIST_ID = "whitelist";
+const WINDOW_DIMENSIONS = "height=600,width=357";
 
 export const externalMessageListener = (
   request: Request,
@@ -33,6 +34,8 @@ export const externalMessageListener = (
 
     window.open(
       chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
+      "Lyra: Connect",
+      WINDOW_DIMENSIONS,
     );
 
     const response = (url?: string) => {
@@ -71,6 +74,8 @@ export const externalMessageListener = (
       chrome.runtime.getURL(
         `/index.html#/sign-transaction?${encodetransactionInfo}`,
       ),
+      "Lyra: Sign Transaction",
+      WINDOW_DIMENSIONS,
     );
 
     const response = (transactionStatus: string) => {

@@ -13,7 +13,7 @@ const commonConfig = {
       path.resolve(__dirname, "./public/background.js"),
     ],
     index: ["babel-polyfill", path.resolve(__dirname, "./src/index.tsx")],
-    api: path.resolve(__dirname, "./src/api/index.ts"),
+    lyraApi: path.resolve(__dirname, "./src/lyraApi/index.ts"),
     contentScript: path.resolve(__dirname, "./public/contentScript.js"),
   },
   output: {

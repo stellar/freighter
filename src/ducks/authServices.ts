@@ -12,7 +12,7 @@ import {
   loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
-} from "services";
+} from "api";
 
 interface ErrorMessage {
   errorMessage: string;
@@ -186,7 +186,9 @@ const authSlice = createSlice({
       const { publicKey } = action.payload || { publicKey: "" };
       return {
         ...state,
-        applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+        authenticated: true,
+        authError: "",
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
       };
     });

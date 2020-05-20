@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { rejectAccess, grantAccess } from "services";
+import { rejectAccess, grantAccess } from "api";
 
 const GrantAccess = () => {
   const location = useLocation();

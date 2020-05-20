@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMnemonicPhrase } from "services";
+import { getMnemonicPhrase } from "api";
 
 const useMnemonicPhrase = () => {
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");

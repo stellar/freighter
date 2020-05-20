@@ -3,7 +3,8 @@ import styled from "styled-components";
 import { shuffle } from "lodash";
 import { useDispatch, useSelector } from "react-redux";
 import { confirmMnemonicPhrase, authErrorSelector } from "ducks/authServices";
-import CheckButton from "./primitives/CheckButton";
+import { ErrorMessage } from "components/form";
+import CheckButton from "./basics/CheckButton";
 
 const ConfirmInput = styled.textarea`
   background: #d3d3d3;
@@ -58,7 +59,7 @@ const ConfirmMnemonicPhrase = ({
       <form onSubmit={handleSubmit}>
         <div>
           <ConfirmInput readOnly value={selectedWords.join(" ")} />
-          {authError ? <p>{authError}</p> : null}
+          <ErrorMessage authError={authError}></ErrorMessage>
         </div>
         {wordBubbles()}
         <div>

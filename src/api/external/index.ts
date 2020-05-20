@@ -1,6 +1,6 @@
 import { EXTERNAL_SERVICE_TYPES } from "statics";
-import { sendMessageAndAwaitResponseExternal } from "services/utils";
-import { ExternalRequest } from "services/types";
+import { sendMessageAndAwaitResponseExternal } from "api/helpers";
+import { ExternalRequest } from "api/types";
 
 export const requestAccess = async (): Promise<{
   publicKey: string;

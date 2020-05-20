@@ -1,5 +1,5 @@
-import { submitTransaction as submitTransactionService } from "services/external";
-import { ExternalRequest } from "services/types";
+import { submitTransaction as submitTransactionService } from "api/external";
+import { ExternalRequest } from "api/types";
 
 const submitTransaction = async (params: ExternalRequest) => {
   let response = { transactionStatus: "", error: "" };
