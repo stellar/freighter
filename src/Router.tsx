@@ -68,7 +68,6 @@ const HomeRoute = () => {
 };
 
 const Routes = () => {
-  const applicationState = useSelector(applicationStateSelector);
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(loadAccount());
@@ -99,13 +98,9 @@ const Routes = () => {
           <CreatePassword />
         </Route>
         <Route path="/recover-account">
-          {applicationState !== APPLICATION_STATE.APPLICATION_STARTED ? (
-            <UnlockAccount />
-          ) : (
-            <RecoverAccount />
-          )}
-          <HomeRoute />
+          <RecoverAccount />
         </Route>
+        <HomeRoute />
       </Switch>
     </HashRouter>
   );
