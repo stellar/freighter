@@ -2,13 +2,9 @@ import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import StellarSdk from "stellar-sdk";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
+import { SERVICE_TYPES, APPLICATION_STATE, SERVER_URL } from "statics";
+import { Response as Request } from "api/types";
 import { externalMessageListener } from "./externalMessageListener";
-import {
-  SERVICE_TYPES,
-  APPLICATION_STATE,
-  SERVER_URL,
-} from "../../src/statics";
-import { Response as Request } from "../../src/api/types";
 import { Sender, SendResponseInterface } from "./types";
 
 const server = new StellarSdk.Server(SERVER_URL);
@@ -236,16 +232,14 @@ const initMessageListener = () => {
             transactionToSign.sign(sourceKeys);
             response = await server.submitTransaction(transactionToSign);
           } catch (e) {
+            response = e;
             console.error(e);
-            sendResponse({ error: e });
           }
         }
 
         const transactionResponse = responseQueue.pop();
         if (typeof transactionResponse === "function") {
           transactionResponse(response);
-        } else {
-          sendResponse({ error: "Access was denied" });
         }
       }
     };
