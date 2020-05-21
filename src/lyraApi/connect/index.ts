@@ -1,4 +1,4 @@
-import { requestAccess } from "services/external";
+import { requestAccess } from "api/external";
 
 const connect = async () => {
   let response = { publicKey: "", error: "" };

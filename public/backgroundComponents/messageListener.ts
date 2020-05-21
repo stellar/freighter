@@ -8,7 +8,7 @@ import {
   APPLICATION_STATE,
   SERVER_URL,
 } from "../../src/statics";
-import { Response as Request } from "../../src/services/types";
+import { Response as Request } from "../../src/api/types";
 import { Sender, SendResponseInterface } from "./types";
 
 const server = new StellarSdk.Server(SERVER_URL);

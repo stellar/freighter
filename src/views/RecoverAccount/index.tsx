@@ -2,11 +2,17 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { history } from "App";
-import { publicKeySelector, recoverAccount } from "ducks/authServices";
+import {
+  authErrorSelector,
+  publicKeySelector,
+  recoverAccount,
+} from "ducks/authServices";
+import { ErrorMessage } from "components/form";
 
 const RecoverAccount = () => {
   const firstRender = useRef(true);
   const publicKey = useSelector(publicKeySelector);
+  const authError = useSelector(authErrorSelector);
   const [password, setPassword] = useState("");
   const [confirmPassword, setconfirmPassword] = useState("");
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
@@ -92,6 +98,7 @@ const RecoverAccount = () => {
       <div>
         <Link to="/">Go back</Link>
       </div>
+      <ErrorMessage authError={authError}></ErrorMessage>
     </form>
   );
 };
