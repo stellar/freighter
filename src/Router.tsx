@@ -15,6 +15,7 @@ import {
   publicKeySelector,
 } from "ducks/authServices";
 import { useSelector, useDispatch } from "react-redux";
+import { newTabHref } from "helpers";
 
 import Account from "views/Account";
 import CreatePassword from "views/CreatePassword";
@@ -50,6 +51,7 @@ const ProtectedRoute = (props: RouteProps) => {
 };
 
 const HomeRoute = () => {
+  const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
 
@@ -57,12 +59,22 @@ const HomeRoute = () => {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
       return <UnlockAccount />;
     }
+
+    /* 
+    We want to launch the extension in a new tab for a user still in the onboarding process.
+    In this particular case, open the tab with a query param that stops subsequent redirects.
+    */
+    if (location.search !== "?sameTab=true") {
+      window.open(newTabHref("/?sameTab=true"));
+    }
     return <Welcome />;
   }
 
   if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
     return <Account />;
   }
+
+  window.open(newTabHref("/mnemonic-phrase"));
 
   return <Welcome />;
 };
