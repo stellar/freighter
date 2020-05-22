@@ -15,7 +15,11 @@
     }
   ],
   "externally_connectable": {
-    "matches": ["*://*.stellar.org/*", "*://*.lyraclient.com/*"]
+    "matches": [
+      "*://*.stellar.org/*",
+      "*://*.lyraclient.com/*",
+      "*://*.stellar-ops.com/*"
+    ]
   },
   "web_accessible_resources": ["lyraApi.min.js"],
   "page_action": {
