@@ -28,6 +28,22 @@ export enum APPLICATION_STATE {
   MNEMONIC_PHRASE_FAILED = "MNEMONIC_PHRASE_FAILED",
 }
 
+export enum operationTypes {
+  accountMerge = "Account Merge",
+  allowTrust = "Allow Trust",
+  bumpSequence = "Bump Sequence",
+  changeTrust = "Change Trust",
+  createAccount = "Create Account",
+  createPassiveSellOffer = "Create Passive Sell Offer",
+  manageBuyOffer = "Manage Buy Offer",
+  manageData = "Manage Data",
+  manageSellOffer = "Manage Sell Offer",
+  pathPaymentStrictReceive = "Path Payment Strict Receive",
+  pathPaymentStrictSend = "Path Payment Strict Send",
+  payment = "Payment",
+  setOptions = "Set Options",
+}
+
 declare const DEVELOPMENT: string;
 const _DEVELOPMENT = DEVELOPMENT;
 export { _DEVELOPMENT as DEVELOPMENT };

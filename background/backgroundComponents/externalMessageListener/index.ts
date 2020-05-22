@@ -1,8 +1,8 @@
 import StellarSdk from "stellar-sdk";
 
-import { ExternalRequest as Request } from "../../../src/api/types";
+import { ExternalRequest as Request } from "api/types";
+import { EXTERNAL_SERVICE_TYPES } from "statics";
 import { Sender, SendResponseInterface } from "../types";
-import { EXTERNAL_SERVICE_TYPES } from "../../../src/statics";
 import { responseQueue, uiData, transactionQueue } from "../messageListener";
 
 const WHITELIST_ID = "whitelist";
