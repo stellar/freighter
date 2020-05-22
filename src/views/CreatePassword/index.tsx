@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 import { createAccount } from "ducks/authServices";
 
 const CreatePassword = () => {
@@ -70,6 +71,9 @@ const CreatePassword = () => {
         <button type="submit" disabled={formErrors}>
           Sign Up
         </button>
+        <div>
+          <Link to="/?redirect=true">Go back</Link>
+        </div>
       </form>
     </>
   );

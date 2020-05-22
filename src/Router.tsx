@@ -15,6 +15,8 @@ import {
   publicKeySelector,
 } from "ducks/authServices";
 import { useSelector, useDispatch } from "react-redux";
+import { newTabHref } from "helpers";
+import { history } from "App";
 
 import Account from "views/Account";
 import CreatePassword from "views/CreatePassword";
@@ -50,6 +52,7 @@ const ProtectedRoute = (props: RouteProps) => {
 };
 
 const HomeRoute = () => {
+  const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
 
@@ -57,12 +60,17 @@ const HomeRoute = () => {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
       return <UnlockAccount />;
     }
+    if (location.search !== "?redirect=true") {
+      window.open(newTabHref("/?redirect=true"));
+    }
     return <Welcome />;
   }
 
   if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
     return <Account />;
   }
+
+  window.open(newTabHref("/mnemonic-phrase"));
 
   return <Welcome />;
 };
