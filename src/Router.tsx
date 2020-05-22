@@ -60,6 +60,10 @@ const HomeRoute = () => {
       return <UnlockAccount />;
     }
 
+    /* 
+    We want to launch the extension in a new tab for a user still in the onboarding process.
+    In this particular case, open the tab with a query param that stops subsequent redirects.
+    */
     if (location.search !== "?sameTab=true") {
       window.open(newTabHref("/?sameTab=true"));
     }
