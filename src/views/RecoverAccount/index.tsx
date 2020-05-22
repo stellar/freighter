@@ -96,7 +96,7 @@ const RecoverAccount = () => {
         Recover
       </button>
       <div>
-        <Link to="/">Go back</Link>
+        <Link to="/?sameTab=true">Go back</Link>
       </div>
       <ErrorMessage authError={authError}></ErrorMessage>
     </form>
