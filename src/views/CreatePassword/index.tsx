@@ -72,7 +72,7 @@ const CreatePassword = () => {
           Sign Up
         </button>
         <div>
-          <Link to="/?redirect=true">Go back</Link>
+          <Link to="/?sameTab=true">Go back</Link>
         </div>
       </form>
     </>

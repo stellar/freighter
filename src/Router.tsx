@@ -16,7 +16,6 @@ import {
 } from "ducks/authServices";
 import { useSelector, useDispatch } from "react-redux";
 import { newTabHref } from "helpers";
-import { history } from "App";
 
 import Account from "views/Account";
 import CreatePassword from "views/CreatePassword";
@@ -60,8 +59,9 @@ const HomeRoute = () => {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
       return <UnlockAccount />;
     }
-    if (location.search !== "?redirect=true") {
-      window.open(newTabHref("/?redirect=true"));
+
+    if (location.search !== "?sameTab=true") {
+      window.open(newTabHref("/?sameTab=true"));
     }
     return <Welcome />;
   }
