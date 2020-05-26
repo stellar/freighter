@@ -32,7 +32,6 @@ export const externalMessageListener = (
 
     // otherwise, we need to confirm either url or password. Maybe both
     const encodeOrigin = btoa(JSON.stringify(tab));
-    debugger;
     window.open(
       chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
       "Lyra: Connect",
