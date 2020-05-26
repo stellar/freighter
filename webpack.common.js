@@ -45,6 +45,14 @@ const commonConfig = {
         exclude: /node-modules/,
       },
       {
+        test: /\.png$/,
+        use: [
+          {
+            loader: "file-loader",
+          },
+        ],
+      },
+      {
         test: /\.svg$/,
         use: [
           {
