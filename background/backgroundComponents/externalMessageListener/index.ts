@@ -2,6 +2,7 @@ import StellarSdk from "stellar-sdk";
 
 import { ExternalRequest as Request } from "api/types";
 import { EXTERNAL_SERVICE_TYPES } from "statics";
+import { removeQueryParam } from "helpers";
 import { Sender, SendResponseInterface } from "../types";
 import { responseQueue, uiData, transactionQueue } from "../messageListener";
 
@@ -21,7 +22,7 @@ export const externalMessageListener = (
     const { tab } = sender;
     const tabUrl = tab?.url ? tab.url : "";
 
-    if (whitelist.includes(tabUrl)) {
+    if (whitelist.includes(removeQueryParam(tabUrl))) {
       if (uiData.publicKey) {
         // okay, the requester checks out and we have public key, send it
         sendResponse({ publicKey: uiData.publicKey });
@@ -31,7 +32,7 @@ export const externalMessageListener = (
 
     // otherwise, we need to confirm either url or password. Maybe both
     const encodeOrigin = btoa(JSON.stringify(tab));
-
+    debugger;
     window.open(
       chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
       "Lyra: Connect",

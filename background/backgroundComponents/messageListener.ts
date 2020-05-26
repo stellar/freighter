@@ -4,6 +4,7 @@ import StellarSdk from "stellar-sdk";
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 import { SERVICE_TYPES, APPLICATION_STATE, SERVER_URL } from "statics";
 import { Response as Request } from "api/types";
+import { removeQueryParam } from "helpers";
 import { externalMessageListener } from "./externalMessageListener";
 import { Sender, SendResponseInterface } from "./types";
 
@@ -183,18 +184,20 @@ const initMessageListener = () => {
 
     const grantAccess = () => {
       const { url = "" } = request;
+      const sanitizedUrl = removeQueryParam(url);
 
       // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
       // Maybe we need to search through responses to find a matching reponse :thinking_face
       const response = responseQueue.pop();
       const whitelistStr = localStorage.getItem(WHITELIST_ID) || "";
       const whitelist = whitelistStr.split(",");
-      whitelist.push(url);
+      whitelist.push(sanitizedUrl);
 
       localStorage.setItem(WHITELIST_ID, whitelist.join());
 
       if (typeof response === "function") {
         response(url);
+        sendResponse({});
       } else {
         sendResponse({ error: "Access was denied" });
       }
@@ -240,6 +243,7 @@ const initMessageListener = () => {
         const transactionResponse = responseQueue.pop();
         if (typeof transactionResponse === "function") {
           transactionResponse(response);
+          sendResponse({});
         }
       }
     };

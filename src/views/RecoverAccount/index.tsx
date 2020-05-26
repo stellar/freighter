@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { history } from "App";
 import {
   authErrorSelector,
   publicKeySelector,
@@ -44,7 +43,7 @@ const RecoverAccount = () => {
 
   useEffect(() => {
     if (publicKey) {
-      history.push("/account");
+      window.close();
     }
   }, [publicKey]);
 
