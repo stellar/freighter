@@ -12,7 +12,7 @@ const commonConfig = {
       "babel-polyfill",
       path.resolve(__dirname, "./public/background.js"),
     ],
-    index: ["babel-polyfill", path.resolve(__dirname, "./src/index.tsx")],
+    index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
     lyraApi: path.resolve(__dirname, "./src/lyraApi/index.ts"),
     contentScript: path.resolve(__dirname, "./public/contentScript.js"),
   },
@@ -21,7 +21,6 @@ const commonConfig = {
     filename: "[name].min.js",
   },
   resolve: {
-    // Add `.ts` and `.tsx` as a resolvable extension.
     extensions: [".ts", ".tsx", ".js"],
     plugins: [
       new TsconfigPathsPlugin({

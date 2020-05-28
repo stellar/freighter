@@ -1,4 +1,4 @@
-import initMessageListener from "../background/backgroundComponents/messageListener";
+import initMessageListener from "../src/background";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {

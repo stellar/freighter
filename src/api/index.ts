@@ -172,15 +172,12 @@ export const grantAccess = async (url: string): Promise<void> => {
 };
 
 export const signTransaction = async ({
-  password,
   transaction,
 }: {
-  password: string;
   transaction: {};
 }): Promise<void> => {
   try {
     await sendMessageAndAwaitResponse({
-      password,
       transaction,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
