@@ -24,7 +24,6 @@ const SignerBox = styled.div`
 `;
 
 const SignTransaction = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const location = useLocation();
   const decodedTransactionInfo = atob(location.search.replace("?", ""));
   const transactionInfo = decodedTransactionInfo
@@ -43,13 +42,11 @@ const SignTransaction = () => {
   const publicKey = useSelector(publicKeySelector);
 
   const rejectAndClose = async () => {
-    setIsLoading(true);
     await rejectAccess();
     window.close();
   };
 
   const signAndClose = async () => {
-    setIsLoading(true);
     await signTransaction({ transaction });
     window.close();
   };
@@ -104,7 +101,6 @@ const SignTransaction = () => {
       </div>
       <button onClick={() => rejectAndClose()}>Reject</button>
       <button onClick={() => signAndClose()}>Confirm</button>
-      {isLoading ? <h1>PROCESSING...</h1> : null}
     </>
   );
 };
