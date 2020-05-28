@@ -88,7 +88,6 @@ const DisplayMnemonicPhrase = ({
       <p>
         <Warning>WARNING:</Warning> Never disclose your backup phase.
       </p>
-
       <MnemonicDisplay isBlurred={isBlurred}>
         {isBlurred ? (
           <DisplayTooltip onClick={() => setIsBlurred(false)}>

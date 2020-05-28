@@ -44,20 +44,18 @@ const Fullscreen = ({
   header: string;
   icon: [string, string];
   children: JSX.Element;
-}) => {
-  return (
-    <>
-      <Header />
-      {back ? <BackButton onClick={back}>&lt; Back</BackButton> : null}
-      <Screen>
-        <HalfScreen>
-          <img src={src} alt={alt} />
-          <H1>{header}</H1>
-        </HalfScreen>
-        <HalfScreen>{children}</HalfScreen>
-      </Screen>
-    </>
-  );
-};
+}) => (
+  <>
+    <Header />
+    {back ? <BackButton onClick={back}>&lt; Back</BackButton> : null}
+    <Screen>
+      <HalfScreen>
+        <img src={src} alt={alt} />
+        <H1>{header}</H1>
+      </HalfScreen>
+      <HalfScreen>{children}</HalfScreen>
+    </Screen>
+  </>
+);
 
 export default Fullscreen;

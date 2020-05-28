@@ -41,12 +41,13 @@ const ConfirmMnemonicPhrase = ({
   const dispatch = useDispatch();
   const words = shuffle(mnemonicPhrase.split(" "));
   const wordState = useRef(
-    words.reduce((obj, current, i) => {
-      return {
+    words.reduce(
+      (obj, current, i) => ({
         ...obj,
         [`${current}-${i}`]: false,
-      };
-    }, {}),
+      }),
+      {},
+    ),
   );
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const authError = useSelector(authErrorSelector);
