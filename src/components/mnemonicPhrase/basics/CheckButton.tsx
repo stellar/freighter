@@ -1,38 +1,44 @@
 import React from "react";
 import styled from "styled-components";
+import { COLOR_PALETTE } from "styles";
 
 type CheckButtonProps = {
+  wordKey: string;
   onChange: (e: any) => void;
   word: string;
+  value: boolean;
 };
 const ButtonLabel = styled.label`
-  border: 1px solid purple;
-  border-radius: 5px;
-  color: purple;
+  border: 1px solid ${COLOR_PALETTE.primary};
+  border-radius: 1rem;
+  color: ${COLOR_PALETTE.primary};
+  cursor: pointer;
   display: inline-block;
-  margin: 10px 20px;
-  padding: 5px 10px;
+  font-weight: 800;
+  margin: 10px 5px;
+  padding: 0.75rem 1.7rem;
 `;
 
 const CheckBox = styled.input`
   display: none;
 
   &:checked + ${ButtonLabel} {
-    background: purple;
+    background: ${COLOR_PALETTE.primary};
     color: white;
   }
 `;
 
-const CheckButton = ({ onChange, word }: CheckButtonProps) => (
+const CheckButton = ({ wordKey, onChange, word, value }: CheckButtonProps) => (
   <>
     <CheckBox
-      id={`id-${word}`}
+      checked={value}
+      id={wordKey}
       type="checkbox"
       onChange={onChange}
-      key={`key-${word}`}
+      key={wordKey}
       value={word}
     />
-    <ButtonLabel htmlFor={`id-${word}`}>{word}</ButtonLabel>
+    <ButtonLabel htmlFor={wordKey}>{word}</ButtonLabel>
   </>
 );
 

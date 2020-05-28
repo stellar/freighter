@@ -3,29 +3,52 @@ import styled from "styled-components";
 import { shuffle } from "lodash";
 import { useDispatch, useSelector } from "react-redux";
 import { confirmMnemonicPhrase, authErrorSelector } from "ducks/authServices";
-import { ErrorMessage } from "components/form";
+import { ErrorMessage, FormButton } from "components/form";
+import { COLOR_PALETTE } from "styles";
+import { Button } from "styles/Basics";
 import CheckButton from "./basics/CheckButton";
 
-const ConfirmInput = styled.textarea`
-  background: #d3d3d3;
+const ConfirmInput = styled.div`
+  background: #d2d8e5;
   border: 0;
-  border-radius: 5px;
-  color: purple;
-  font-size: 14px;
-  padding: 20px 30px;
-  width: 60%;
+  border-radius: 30px;
+  box-sizing: border-box;
+  color: ${COLOR_PALETTE.primary};
+  font-size: 1.125rem;
+  height: 160px;
+  padding: 2.3rem;
+  resize: none;
+  width: 100%;
   margin-bottom: 20px;
+  text-align: center;
+`;
+
+const ClearButton = styled(Button)`
+  background: ${COLOR_PALETTE.primaryGradient};
+  border-radius: 7px;
+  color: #fff;
+  font-weight: 800;
+  height: 24px;
+  margin-left: 7px;
+  width: 24px;
 `;
 
 const ConfirmMnemonicPhrase = ({
   mnemonicPhrase,
-  setReadyToConfirm,
 }: {
   mnemonicPhrase: string;
-  setReadyToConfirm: (readyToConfirm: boolean) => void;
 }) => {
   const dispatch = useDispatch();
-  const words = useRef(shuffle(mnemonicPhrase.split(" ")));
+  const words = shuffle(mnemonicPhrase.split(" "));
+  const wordState = useRef(
+    words.reduce(
+      (obj, current, i) => ({
+        ...obj,
+        [`${current}-${i}`]: false,
+      }),
+      {},
+    ),
+  );
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const authError = useSelector(authErrorSelector);
 
@@ -40,15 +63,30 @@ const ConfirmMnemonicPhrase = ({
     });
   };
 
+  const initialWordState = wordState.current;
+
+  const [checkboxState, setCheckboxState] = useState(initialWordState);
+
+  const wordStateArr: [string, boolean][] = Object.entries(checkboxState);
+
   const wordBubbles = () =>
-    words.current.map((word) => (
+    wordStateArr.map(([wordKey, value]) => (
       <CheckButton
         onChange={(e) => {
+          setCheckboxState((prev) => ({ ...prev, [wordKey]: !value }));
           updatePhrase(e.target);
         }}
-        word={word}
+        key={wordKey}
+        wordKey={wordKey}
+        value={value}
+        word={wordKey.replace(/-.*/, "")}
       />
     ));
+
+  const clearFields = () => {
+    setSelectedWords([]);
+    setCheckboxState(initialWordState);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,16 +96,18 @@ const ConfirmMnemonicPhrase = ({
     <>
       <form onSubmit={handleSubmit}>
         <div>
-          <ConfirmInput readOnly value={selectedWords.join(" ")} />
+          <ConfirmInput>
+            {selectedWords.join(" ")}
+            {selectedWords.length ? (
+              <ClearButton type="button" onClick={clearFields}>
+                X
+              </ClearButton>
+            ) : null}
+          </ConfirmInput>
           <ErrorMessage authError={authError}></ErrorMessage>
         </div>
         {wordBubbles()}
-        <div>
-          <button type="submit">Confirm</button>
-        </div>
-        <div>
-          <button onClick={() => setReadyToConfirm(false)}>Go back</button>
-        </div>
+        <FormButton type="submit">Confirm</FormButton>
       </form>
     </>
   );

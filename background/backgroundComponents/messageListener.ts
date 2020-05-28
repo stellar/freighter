@@ -139,6 +139,7 @@ const initMessageListener = () => {
     const recoverAccount = () => {
       const { password, recoverMnemonic } = request;
       let wallet;
+      let applicationState;
       try {
         wallet = fromMnemonic(recoverMnemonic);
       } catch (e) {
@@ -147,10 +148,13 @@ const initMessageListener = () => {
 
       if (wallet) {
         _storeAccount({ mnemonicPhrase: recoverMnemonic, password, wallet });
-        localStorage.setItem(
-          APPLICATION_ID,
-          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-        );
+
+        // if we don't have an application state, assign them one
+        applicationState =
+          localStorage.getItem(APPLICATION_ID) ||
+          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+
+        localStorage.setItem(APPLICATION_ID, applicationState);
       }
 
       sendResponse({

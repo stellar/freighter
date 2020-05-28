@@ -11,19 +11,25 @@ const MnemonicPhrase = () => {
 
   const mnemonicPhrase = useMnemonicPhrase();
 
-  return (
-    <Fullscreen header="Secret backup phrase" icon={[spy, "Spy"]}>
-      {readyToConfirm ? (
-        <ConfirmMnemonicPhrase
-          mnemonicPhrase={mnemonicPhrase}
-          setReadyToConfirm={setReadyToConfirm}
-        />
-      ) : (
-        <DisplayMnemonicPhrase
-          mnemonicPhrase={mnemonicPhrase}
-          setReadyToConfirm={setReadyToConfirm}
-        />
-      )}
+  const icon = {
+    src: spy,
+    alt: "Spy",
+  };
+
+  return readyToConfirm ? (
+    <Fullscreen
+      header="Confirm your secret phrase"
+      icon={icon}
+      goBack={() => setReadyToConfirm(false)}
+    >
+      <ConfirmMnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
+    </Fullscreen>
+  ) : (
+    <Fullscreen header="Secret backup phrase" icon={icon}>
+      <DisplayMnemonicPhrase
+        mnemonicPhrase={mnemonicPhrase}
+        setReadyToConfirm={setReadyToConfirm}
+      />
     </Fullscreen>
   );
 };

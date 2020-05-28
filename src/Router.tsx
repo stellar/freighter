@@ -27,6 +27,8 @@ import SignTransaction from "views/SignTransaction";
 import UnlockAccount from "views/UnlockAccount";
 import Welcome from "views/Welcome";
 
+const Loading = () => <p> Loading...</p>;
+
 const ProtectedRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
@@ -34,9 +36,18 @@ const ProtectedRoute = (props: RouteProps) => {
   const publicKey = useSelector(publicKeySelector);
 
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return <p>loading...</p>;
+    return <Loading />;
   }
   if (!publicKey || !authenticated) {
+    if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
+      return (
+        <Redirect
+          to={{
+            pathname: "/",
+          }}
+        />
+      );
+    }
     return (
       <Redirect
         to={{
@@ -54,7 +65,9 @@ const HomeRoute = () => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
-
+  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
+    return <Loading />;
+  }
   if (!publicKey) {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
       return <UnlockAccount />;
