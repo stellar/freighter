@@ -4,7 +4,7 @@ import Header from "components/Layout/Header";
 import { COLOR_PALETTE } from "styles";
 import { FormButton } from "components/form";
 
-const H1 = styled.h1`
+const HeaderEl = styled.h1`
   font-weight: 200;
   font-size: 2.6rem;
   line-height: 2.75rem;
@@ -34,7 +34,7 @@ const MnemonicPhraseConfirmed = () => (
     <Header />
 
     <Wrapper>
-      <H1>Woo, you're in!</H1>
+      <HeaderEl>Woo, you’re in!</HeaderEl>
       <Celebration>
         <span role="img" aria-label="Celebration face">
           🥳

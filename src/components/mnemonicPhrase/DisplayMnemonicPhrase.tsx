@@ -60,16 +60,16 @@ const DisplayMnemonicPhrase = ({
   mnemonicPhrase: string;
   setReadyToConfirm: (readyState: boolean) => void;
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const [isBlurred, setIsBlurred] = useState(true);
 
   useEffect(() => {
-    if (copied) {
+    if (isCopied) {
       setTimeout(() => {
-        setCopied(false);
+        setIsCopied(false);
       }, 2000);
     }
-  }, [copied]);
+  }, [isCopied]);
 
   const downloadPhrase = () => {
     const el = document.createElement("a");
@@ -102,13 +102,13 @@ const DisplayMnemonicPhrase = ({
           Download
           <img src={Download} alt="Download button" />
         </ActionButton>
-        <CopyToClipboard text={mnemonicPhrase} onCopy={() => setCopied(true)}>
+        <CopyToClipboard text={mnemonicPhrase} onCopy={() => setIsCopied(true)}>
           <ActionButton>
             Copy
             <img src={Copy} alt="copy button" />
           </ActionButton>
         </CopyToClipboard>
-        {copied ? <CopiedNotification>Copied!</CopiedNotification> : null}
+        {isCopied ? <CopiedNotification>Copied!</CopiedNotification> : null}
       </DisplayButtons>
       <FormButton
         onClick={() => {

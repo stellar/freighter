@@ -9,17 +9,18 @@ import spy from "assets/spy.png";
 const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
 
-  const mnemonicPhrase =
-    useMnemonicPhrase() ||
-    "decade legal kiss trial type ankle margin polar chief spare anger hip";
+  const mnemonicPhrase = useMnemonicPhrase();
 
-  const icon: [string, string] = [spy, "Spy"];
+  const icon = {
+    src: spy,
+    alt: "Spy",
+  };
 
   return readyToConfirm ? (
     <Fullscreen
       header="Confirm your secret phrase"
       icon={icon}
-      back={() => setReadyToConfirm(false)}
+      goBack={() => setReadyToConfirm(false)}
     >
       <ConfirmMnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
     </Fullscreen>

@@ -4,7 +4,7 @@ import { COLOR_PALETTE } from "styles";
 import { Button } from "styles/Basics";
 import Header from "./Header";
 
-const H1 = styled.h1`
+const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary};
   font-weight: 200;
   font-size: 2.5rem;
@@ -22,36 +22,36 @@ const Screen = styled.div`
 `;
 
 const HalfScreen = styled.div`
-  padding: 0 25px;
-  width: 415px;
+  padding: 0 1.6rem;
+  width: 30rem;
 
   :nth-child(1) {
-    margin-top: -130px;
+    margin-top: -8.125rem;
   }
 `;
 
 const BackButton = styled(Button)`
-  margin: 16px 0 0 44px;
+  margin: 1rem 0 0 2.75rem;
 `;
 
 const Fullscreen = ({
-  back,
+  goBack,
   header,
-  icon: [src, alt],
+  icon: { src, alt },
   children,
 }: {
-  back?: () => void;
+  goBack?: () => void;
   header: string;
-  icon: [string, string];
+  icon: { src: string; alt: string };
   children: JSX.Element;
 }) => (
   <>
     <Header />
-    {back ? <BackButton onClick={back}>&lt; Back</BackButton> : null}
+    {goBack ? <BackButton onClick={goBack}>&lt; Back</BackButton> : null}
     <Screen>
       <HalfScreen>
         <img src={src} alt={alt} />
-        <H1>{header}</H1>
+        <HeaderEl>{header}</HeaderEl>
       </HalfScreen>
       <HalfScreen>{children}</HalfScreen>
     </Screen>
