@@ -1,5 +1,6 @@
 import getPublicKey from "./getPublicKey";
 import requestSignature from "./requestSignature";
+import status from "./status";
 
 const injectApi = () => ({
   getPublicKey,
