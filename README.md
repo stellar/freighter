@@ -65,8 +65,10 @@ This app has 3 main components that are named using Chrome extension
 nomenclature. All of these are located in the `src/` folder:
 
 1. The UI that appears when you click on the Chrome extension in your browser.
-   This is simply a normal UI app, in this case using React. In Chrome parlance,
-   this is called the `popup` and is therefore located in `src/popup`
+   This code also controls the fullscreen authentiction flow and any popups
+   triggered by the extension. This is all controlled by one React app. In
+   Chrome parlance, this is called the `popup` and is therefore located in
+   `src/popup`
 
 2. The API that is exposed to client websites. This API is automatically
    injected into ANY website a user visits while they have Lyra installed. For
