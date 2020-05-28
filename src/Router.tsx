@@ -37,6 +37,15 @@ const ProtectedRoute = (props: RouteProps) => {
     return <p>loading...</p>;
   }
   if (!publicKey || !authenticated) {
+    if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
+      return (
+        <Redirect
+          to={{
+            pathname: "/",
+          }}
+        />
+      );
+    }
     return (
       <Redirect
         to={{
@@ -54,7 +63,9 @@ const HomeRoute = () => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
-
+  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
+    return <p>loading...</p>;
+  }
   if (!publicKey) {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
       return <UnlockAccount />;

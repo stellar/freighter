@@ -5,6 +5,7 @@ import { COLOR_PALETTE } from "styles";
 import Download from "assets/download.png";
 import Copy from "assets/copy.png";
 import { FormButton } from "components/form";
+import { Button } from "styles/Basics";
 import ActionButton from "./basics/ActionButton";
 
 const Warning = styled.strong`
@@ -14,21 +15,42 @@ const Warning = styled.strong`
 const MnemonicDisplay = styled.div`
   background: ${COLOR_PALETTE.primaryGradient};
   border-radius: 30px;
-  color: #fff;
-  font-size: 1.125 rem;
+  color: ${({ isBlurred }: { isBlurred: boolean }) =>
+    isBlurred ? "transparent" : "#fff"};
+  font-size: 1.125rem;
   line-height: 1.8rem;
   margin: 3.5rem 0 1rem;
   padding: 27px 37px;
+  position: relative;
   text-align: center;
+  text-shadow: ${({ isBlurred }: { isBlurred: boolean }) =>
+    isBlurred ? "0 0 5px rgba(0, 0, 0, 0.5)" : "none"};
+`;
+
+const DisplayTooltip = styled(Button)`
+  color: #fff;
+  font-size: 1rem;
+  position: absolute;
+  text-shadow: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 `;
 
 const DisplayButtons = styled.div`
   margin-right: 1rem;
+  position: relative;
   text-align: right;
 
   img {
     margin-left: 0.5rem;
   }
+`;
+
+const CopiedNotification = styled.span`
+  position: absolute;
+  right: 1rem;
+  top: -1rem;
 `;
 
 const DisplayMnemonicPhrase = ({
@@ -39,12 +61,13 @@ const DisplayMnemonicPhrase = ({
   setReadyToConfirm: (readyState: boolean) => void;
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isBlurred, setIsBlurred] = useState(true);
 
   useEffect(() => {
     if (copied) {
       setTimeout(() => {
         setCopied(false);
-      }, 5000);
+      }, 2000);
     }
   }, [copied]);
 
@@ -56,7 +79,6 @@ const DisplayMnemonicPhrase = ({
     document.body.appendChild(el);
     el.click();
   };
-
   return (
     <>
       <p>
@@ -66,7 +88,16 @@ const DisplayMnemonicPhrase = ({
       <p>
         <Warning>WARNING:</Warning> Never disclose your backup phase.
       </p>
-      <MnemonicDisplay>{mnemonicPhrase}</MnemonicDisplay>
+
+      <MnemonicDisplay isBlurred={isBlurred}>
+        {isBlurred ? (
+          <DisplayTooltip onClick={() => setIsBlurred(false)}>
+            Show backup phrase
+          </DisplayTooltip>
+        ) : null}
+
+        {mnemonicPhrase}
+      </MnemonicDisplay>
       <DisplayButtons>
         <ActionButton onClick={downloadPhrase}>
           Download
@@ -78,7 +109,7 @@ const DisplayMnemonicPhrase = ({
             <img src={Copy} alt="copy button" />
           </ActionButton>
         </CopyToClipboard>
-        {copied ? <span>Copied!</span> : null}
+        {copied ? <CopiedNotification>Copied!</CopiedNotification> : null}
       </DisplayButtons>
       <FormButton
         onClick={() => {

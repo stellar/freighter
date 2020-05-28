@@ -9,21 +9,26 @@ import spy from "assets/spy.png";
 const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
 
-  const mnemonicPhrase = useMnemonicPhrase();
+  const mnemonicPhrase =
+    useMnemonicPhrase() ||
+    "decade legal kiss trial type ankle margin polar chief spare anger hip";
 
-  return (
-    <Fullscreen header="Secret backup phrase" icon={[spy, "Spy"]}>
-      {readyToConfirm ? (
-        <ConfirmMnemonicPhrase
-          mnemonicPhrase={mnemonicPhrase}
-          setReadyToConfirm={setReadyToConfirm}
-        />
-      ) : (
-        <DisplayMnemonicPhrase
-          mnemonicPhrase={mnemonicPhrase}
-          setReadyToConfirm={setReadyToConfirm}
-        />
-      )}
+  const icon: [string, string] = [spy, "Spy"];
+
+  return readyToConfirm ? (
+    <Fullscreen
+      header="Confirm your secret phrase"
+      icon={icon}
+      back={() => setReadyToConfirm(false)}
+    >
+      <ConfirmMnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
+    </Fullscreen>
+  ) : (
+    <Fullscreen header="Secret backup phrase" icon={icon}>
+      <DisplayMnemonicPhrase
+        mnemonicPhrase={mnemonicPhrase}
+        setReadyToConfirm={setReadyToConfirm}
+      />
     </Fullscreen>
   );
 };
