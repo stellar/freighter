@@ -98,7 +98,9 @@ going to `chrome://extensions/` and clicking `inspect views: background page`
 ## Other parts of the codebase
 
 All helpers, statics, etc. that are shared by the 3 components are located in
-the top level of `src`.
+the top level of `src`. This includes the `api` folder, which sends messages to
+the `background`. Both `popup` and `content script` can send to and receive from
+`background`.
 
 The `public` folder contains all extension specific instantiation and assets. It
 also contains the code for the aforementioned `Playground`.
