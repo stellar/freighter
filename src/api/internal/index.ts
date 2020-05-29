@@ -7,7 +7,7 @@ import {
   DEVELOPMENT,
   APPLICATION_STATE,
 } from "statics";
-import { Response } from "./types";
+import { Response } from "../types";
 
 const server = new StellarSdk.Server(SERVER_URL);
 
