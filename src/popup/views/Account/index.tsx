@@ -3,7 +3,7 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import { publicKeySelector } from "popup/ducks/authServices";
 import { useSelector } from "react-redux";
-import { getAccountBalance } from "api";
+import { getAccountBalance } from "api/internal";
 import Tooltip from "popup/components/Tooltip";
 
 const StyledTooltip = styled(Tooltip)``;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import buffer from "buffer";
 import { useLocation } from "react-router-dom";
 import { get } from "lodash";
@@ -8,7 +8,7 @@ import styled from "styled-components";
 import { publicKeySelector } from "popup/ducks/authServices";
 import { operationTypes } from "statics";
 
-import { rejectAccess, signTransaction } from "api";
+import { rejectAccess, signTransaction } from "api/internal";
 
 const OperationBox = styled.div`
   background: #efefef;

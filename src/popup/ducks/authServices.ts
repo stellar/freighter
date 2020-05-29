@@ -12,7 +12,7 @@ import {
   loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
-} from "api";
+} from "api/internal";
 
 interface ErrorMessage {
   errorMessage: string;

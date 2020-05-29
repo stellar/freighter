@@ -76,7 +76,7 @@ nomenclature. All of these are located in the `src/` folder:
    called API methods. Example: `laboratory.stellar.org` wants to interact with
    Lyra, perhaps to request a user's public key from the extension. A dev for
    `laboratory.stellar.org` would call this API to get that data from Lyra. In
-   Chrome parlance, this is known as a `content script`. It is instaniated on a
+   Chrome parlance, this is known as a `content script`. It is instantiated on a
    client website by `public/contentScript.js`. For clarity, and ease of sharing
    code, the API methods are defined in `src/lyraApi`.
 
