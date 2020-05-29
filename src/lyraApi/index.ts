@@ -1,9 +1,11 @@
-import connect from "./connect";
-import submitTransaction from "./submitTransaction";
+import getPublicKey from "./getPublicKey";
+import requestSignature from "./requestSignature";
+import status from "./status";
 
 const injectApi = () => ({
-  connect,
-  submitTransaction,
+  getPublicKey,
+  requestSignature,
+  status,
 });
 
 declare global {

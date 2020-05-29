@@ -2,7 +2,7 @@ document.querySelector("#lyra-connect").addEventListener("click", async () => {
   let response = "";
 
   try {
-    response = await window.lyra.connect();
+    response = await window.lyra.getPublicKey();
   } catch (e) {
     console.error(e);
   }
@@ -21,7 +21,7 @@ document
     let transactionStatus = "";
 
     try {
-      transactionStatus = await window.lyra.submitTransaction({
+      transactionStatus = await window.lyra.requestSignature({
         transactionXdr,
       });
     } catch (e) {

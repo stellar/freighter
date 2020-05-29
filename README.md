@@ -7,18 +7,6 @@ This project builds a Chrome extension that handles authentication as well as a
 playground calls the Lyra API exactly how a client site like
 accountviewer.stellar.org would call it
 
-### Prerequesites
-
-This project requires nodeJS https://nodejs.org/en/download/
-
-After that, we will need Yarn to install our dependencies.
-
-In Terminal, run
-
-```
-brew install yarn
-```
-
 ### Install project dependencies
 
 Navigate to this project folder in Terminal and run
@@ -70,3 +58,49 @@ yarn start
 
 Done! You should be able to access the Playground by going to
 `http://lyraclient.com:9000/playground.html` in your browser
+
+### Project Setup
+
+This app has 3 main components that are named using Chrome extension
+nomenclature. All of these are located in the `src/` folder:
+
+1. The UI that appears when you click on the Chrome extension in your browser.
+   This code also controls the fullscreen authentiction flow and any popups
+   triggered by the extension. This is all controlled by one React app. In
+   Chrome parlance, this is called the `popup` and is therefore located in
+   `src/popup`
+
+2. The API that is exposed to client websites. This API is automatically
+   injected into ANY website a user visits while they have Lyra installed. For
+   security purposes, we whitelist specific domains that can _successfully_
+   called API methods. Example: `laboratory.stellar.org` wants to interact with
+   Lyra, perhaps to request a user's public key from the extension. A dev for
+   `laboratory.stellar.org` would call this API to get that data from Lyra. In
+   Chrome parlance, this is known as a `content script`. It is instantiated on a
+   client website by `public/contentScript.js`. For clarity, and ease of sharing
+   code, the API methods are defined in `src/lyraApi`.
+
+3. The "backend" service. We want to do things like account creation and store
+   sensitive data, like public keys, in a secure place away from the `popup` and
+   away from the `content script`. We want this service to be a standalone
+   entity that these other 2 can make requests to and receive only what the
+   backend sees fit. In Chrome terms, this is known as the `background` script
+   and is instantiated by `public/background`. The code is located in
+   `src/background`.
+
+This script is run by the Chrome extension on browser starts and continues
+running, storing data and listening/responding to messages from the other
+`popup` and `content script`, and only terminates on browser close (or extension
+uninstall/reload). It is run in a headless browser, so it has access to all Web
+APIs and Chrome APIs. It also has accessible dev tools, which can be reached by
+going to `chrome://extensions/` and clicking `inspect views: background page`
+
+## Other parts of the codebase
+
+All helpers, statics, etc. that are shared by the 3 components are located in
+the top level of `src`. This includes the `api` folder, which sends messages to
+the `background`. Both `popup` and `content script` can send to and receive from
+`background`.
+
+The `public` folder contains all extension specific instantiation and assets. It
+also contains the code for the aforementioned `Playground`.
