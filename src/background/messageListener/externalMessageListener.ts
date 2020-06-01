@@ -4,11 +4,8 @@ import { ExternalRequest as Request } from "api/types";
 import { EXTERNAL_SERVICE_TYPES } from "statics";
 import { removeQueryParam } from "helpers";
 import { Sender, SendResponseInterface } from "../types";
-import {
-  responseQueue,
-  uiData,
-  transactionQueue,
-} from "./internalMessageListener";
+import { responseQueue, transactionQueue } from "./internalMessageListener";
+import { uiData } from "../helpers/session";
 
 const WHITELIST_ID = "whitelist";
 const WINDOW_DIMENSIONS = "height=600,width=357";

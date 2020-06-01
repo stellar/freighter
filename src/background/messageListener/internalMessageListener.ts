@@ -6,21 +6,14 @@ import { SERVICE_TYPES, APPLICATION_STATE, SERVER_URL } from "statics";
 import { Response as Request } from "api/types";
 import { removeQueryParam } from "helpers";
 import { Sender, SendResponseInterface } from "../types";
+import {
+  KEY_STORE,
+  uiData,
+  endSession,
+  SessionTimer,
+} from "../helpers/session";
 
 const server = new StellarSdk.Server(SERVER_URL);
-
-let KEY_STORE: { privateKey: string } | null = null;
-
-interface UiData {
-  publicKey: string;
-  mnemonicPhrase: string;
-  [key: string]: string;
-}
-
-export const uiData: UiData = {
-  publicKey: "",
-  mnemonicPhrase: "",
-};
 
 const KEY_ID = "keyId";
 const WHITELIST_ID = "whitelist";
@@ -28,6 +21,8 @@ const APPLICATION_ID = "applicationState";
 
 export const responseQueue: Array<(message?: any) => void> = [];
 export const transactionQueue: Array<{ sign: (sourceKeys: {}) => void }> = [];
+
+const sessionTimer = new SessionTimer();
 
 interface StellarHdWallet {
   getPublicKey: (number: Number) => string;
@@ -174,11 +169,8 @@ const internalMessageListener = (
     } catch (e) {
       console.error(e);
     }
-    let publicKey = "";
     if (keyStore) {
-      ({ publicKey } = keyStore);
-      uiData.publicKey = publicKey;
-      KEY_STORE = keyStore;
+      sessionTimer.startTimer(keyStore);
     }
 
     sendResponse({
@@ -216,29 +208,31 @@ const internalMessageListener = (
   };
 
   const signTransaction = async () => {
-    if (KEY_STORE) {
-      const { privateKey } = KEY_STORE;
-      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+    if (!KEY_STORE.privateKey) {
+      sendResponse({ error: "No key store found" });
+      return;
+    }
+    const { privateKey } = KEY_STORE;
+    const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
 
-      let response;
+    let response;
 
-      const transactionToSign = transactionQueue.pop();
+    const transactionToSign = transactionQueue.pop();
 
-      if (transactionToSign) {
-        try {
-          transactionToSign.sign(sourceKeys);
-          response = await server.submitTransaction(transactionToSign);
-        } catch (e) {
-          response = e;
-          console.error(e);
-        }
+    if (transactionToSign) {
+      try {
+        transactionToSign.sign(sourceKeys);
+        response = await server.submitTransaction(transactionToSign);
+      } catch (e) {
+        response = e;
+        console.error(e);
       }
+    }
 
-      const transactionResponse = responseQueue.pop();
-      if (typeof transactionResponse === "function") {
-        transactionResponse(response);
-        sendResponse({});
-      }
+    const transactionResponse = responseQueue.pop();
+    if (typeof transactionResponse === "function") {
+      transactionResponse(response);
+      sendResponse({});
     }
   };
 
@@ -251,9 +245,7 @@ const internalMessageListener = (
   };
 
   const signOut = () => {
-    Object.keys(uiData).forEach((key) => {
-      uiData[key] = "";
-    });
+    endSession();
 
     sendResponse({
       publicKey: uiData.publicKey,
