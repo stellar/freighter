@@ -1,38 +1,32 @@
-import { Key } from "@stellar/wallet-sdk/dist/types";
-
 const SESSION_LENGTH = 5;
+
+interface KeyStore {
+  publicKey: string;
+  privateKey: string;
+  extra: { mnemonicPhrase: string };
+}
 
 export const KEY_STORE: {
   publicKey: string;
   privateKey: string;
+  mnemonicPhrase: string;
   [key: string]: string;
 } = {
   publicKey: "",
   privateKey: "",
-};
-
-interface UiData {
-  publicKey: string;
-  mnemonicPhrase: string;
-}
-
-export const uiData: UiData = {
-  publicKey: KEY_STORE.publicKey || "",
   mnemonicPhrase: "",
 };
 
-export const startSession = (keyStore: Key) => {
+export const startSession = (keyStore: KeyStore) => {
   KEY_STORE.publicKey = keyStore.publicKey;
   KEY_STORE.privateKey = keyStore.privateKey;
-
-  uiData.publicKey = KEY_STORE.publicKey || "";
+  KEY_STORE.mnemonicPhrase = keyStore.extra?.mnemonicPhrase;
 };
 
 export const endSession = () => {
   Object.keys(KEY_STORE).forEach((key) => {
     KEY_STORE[key] = "";
   });
-  uiData.publicKey = "";
 };
 
 export class SessionTimer {
@@ -41,7 +35,7 @@ export class SessionTimer {
     this.DURATION = duration || this.DURATION;
   }
 
-  startTimer(keyStore: Key) {
+  startTimer(keyStore: KeyStore) {
     startSession(keyStore);
     setTimeout(endSession, this.DURATION);
   }

@@ -5,7 +5,7 @@ import { EXTERNAL_SERVICE_TYPES } from "statics";
 import { removeQueryParam } from "helpers";
 import { Sender, SendResponseInterface } from "../types";
 import { responseQueue, transactionQueue } from "./internalMessageListener";
-import { uiData } from "../helpers/session";
+import { KEY_STORE } from "../helpers/session";
 
 const WHITELIST_ID = "whitelist";
 const WINDOW_DIMENSIONS = "height=600,width=357";
@@ -24,9 +24,9 @@ const externalMessageListener = (
     const tabUrl = tab?.url ? tab.url : "";
 
     if (whitelist.includes(removeQueryParam(tabUrl))) {
-      if (uiData.publicKey) {
+      if (KEY_STORE.publicKey) {
         // okay, the requester checks out and we have public key, send it
-        sendResponse({ publicKey: uiData.publicKey });
+        sendResponse({ publicKey: KEY_STORE.publicKey });
         return;
       }
     }
@@ -43,7 +43,7 @@ const externalMessageListener = (
       // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
       // if we're good, of course
       if (url === tabUrl) {
-        sendResponse({ publicKey: uiData.publicKey });
+        sendResponse({ publicKey: KEY_STORE.publicKey });
       } else {
         sendResponse({ error: "User declined access" });
       }

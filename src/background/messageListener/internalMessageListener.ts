@@ -6,12 +6,7 @@ import { SERVICE_TYPES, APPLICATION_STATE, SERVER_URL } from "statics";
 import { Response as Request } from "api/types";
 import { removeQueryParam } from "helpers";
 import { Sender, SendResponseInterface } from "../types";
-import {
-  KEY_STORE,
-  uiData,
-  endSession,
-  SessionTimer,
-} from "../helpers/session";
+import { KEY_STORE, endSession, SessionTimer } from "../helpers/session";
 
 const server = new StellarSdk.Server(SERVER_URL);
 
@@ -50,14 +45,17 @@ const internalMessageListener = (
     password: string;
     wallet: StellarHdWallet;
   }) => {
-    uiData.publicKey = wallet.getPublicKey(0);
+    const userData = {
+      publicKey: wallet.getPublicKey(0),
+      privateKey: wallet.getSecret(0),
+      extra: { mnemonicPhrase },
+    };
+    sessionTimer.startTimer(userData);
 
     const keyMetadata = {
       key: {
-        extra: { mnemonicPhrase },
+        ...userData,
         type: KeyType.plaintextKey,
-        publicKey: uiData.publicKey,
-        privateKey: wallet.getSecret(0),
       },
 
       password,
@@ -78,8 +76,8 @@ const internalMessageListener = (
   const createAccount = async () => {
     const { password } = request;
 
-    uiData.mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
-    const wallet = fromMnemonic(uiData.mnemonicPhrase);
+    KEY_STORE.mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
+    const wallet = fromMnemonic(KEY_STORE.mnemonicPhrase);
 
     try {
       const response = await fetch(
@@ -97,27 +95,27 @@ const internalMessageListener = (
     _storeAccount({
       password,
       wallet,
-      mnemonicPhrase: uiData.mnemonicPhrase,
+      mnemonicPhrase: KEY_STORE.mnemonicPhrase,
     });
     localStorage.setItem(APPLICATION_ID, APPLICATION_STATE.PASSWORD_CREATED);
 
-    sendResponse({ publicKey: uiData.publicKey });
+    sendResponse({ publicKey: KEY_STORE.publicKey });
   };
 
   const loadAccount = () => {
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: KEY_STORE.publicKey,
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
 
   const getMnemonicPhrase = () => {
-    sendResponse({ mnemonicPhrase: uiData.mnemonicPhrase });
+    sendResponse({ mnemonicPhrase: KEY_STORE.mnemonicPhrase });
   };
 
   const confirmMnemonicPhrase = () => {
     const isCorrectPhrase =
-      uiData.mnemonicPhrase === request.mnemonicPhraseToConfirm;
+      KEY_STORE.mnemonicPhrase === request.mnemonicPhraseToConfirm;
 
     const applicationState = isCorrectPhrase
       ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
@@ -153,7 +151,7 @@ const internalMessageListener = (
     }
 
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: KEY_STORE.publicKey,
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
@@ -170,11 +168,16 @@ const internalMessageListener = (
       console.error(e);
     }
     if (keyStore) {
-      sessionTimer.startTimer(keyStore);
+      const { publicKey, privateKey, extra } = keyStore;
+      sessionTimer.startTimer({
+        publicKey,
+        privateKey,
+        extra,
+      });
     }
 
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: KEY_STORE.publicKey,
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
@@ -248,7 +251,7 @@ const internalMessageListener = (
     endSession();
 
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: KEY_STORE.publicKey,
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
