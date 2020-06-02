@@ -56,7 +56,7 @@ const internalMessageListener = (
   }) => {
     const publicKey = wallet.getPublicKey(0);
     const privateKey = wallet.getSecret(0);
-    debugger;
+
     store.dispatch(logIn({ publicKey, mnemonicPhrase }));
 
     const keyMetadata = {
