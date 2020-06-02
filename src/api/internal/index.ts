@@ -105,9 +105,14 @@ export const recoverAccount = async (
 
 export const confirmPassword = async (
   password: string,
-): Promise<{ publicKey: string; applicationState: APPLICATION_STATE }> => {
+): Promise<{
+  publicKey: string;
+  hasPrivateKey: boolean;
+  applicationState: APPLICATION_STATE;
+}> => {
   let response = {
     publicKey: "",
+    hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
   };
   try {

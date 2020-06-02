@@ -6,25 +6,24 @@ import { SERVICE_TYPES, APPLICATION_STATE, SERVER_URL } from "statics";
 import { Response as Request } from "api/types";
 import { removeQueryParam } from "helpers";
 import { Sender, SendResponseInterface } from "../types";
+import {
+  hasPrivateKeySelector,
+  privateKeySelector,
+  store,
+  logIn,
+  logOut,
+  mnemonicPhraseSelector,
+  publicKeySelector,
+} from "../ducks/session";
+import { SessionTimer } from "../helpers/session";
 
 const server = new StellarSdk.Server(SERVER_URL);
-
-let KEY_STORE: { privateKey: string } | null = null;
-
-interface UiData {
-  publicKey: string;
-  mnemonicPhrase: string;
-  [key: string]: string;
-}
-
-export const uiData: UiData = {
-  publicKey: "",
-  mnemonicPhrase: "",
-};
 
 const KEY_ID = "keyId";
 const WHITELIST_ID = "whitelist";
 const APPLICATION_ID = "applicationState";
+
+const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
 export const transactionQueue: Array<{ sign: (sourceKeys: {}) => void }> = [];
@@ -55,14 +54,17 @@ const internalMessageListener = (
     password: string;
     wallet: StellarHdWallet;
   }) => {
-    uiData.publicKey = wallet.getPublicKey(0);
+    const publicKey = wallet.getPublicKey(0);
+    const privateKey = wallet.getSecret(0);
+    debugger;
+    store.dispatch(logIn({ publicKey, mnemonicPhrase }));
 
     const keyMetadata = {
       key: {
         extra: { mnemonicPhrase },
         type: KeyType.plaintextKey,
-        publicKey: uiData.publicKey,
-        privateKey: wallet.getSecret(0),
+        publicKey,
+        privateKey,
       },
 
       password,
@@ -83,8 +85,8 @@ const internalMessageListener = (
   const createAccount = async () => {
     const { password } = request;
 
-    uiData.mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
-    const wallet = fromMnemonic(uiData.mnemonicPhrase);
+    const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
+    const wallet = fromMnemonic(mnemonicPhrase);
 
     try {
       const response = await fetch(
@@ -99,30 +101,34 @@ const internalMessageListener = (
       throw new Error("Error creating account");
     }
 
-    _storeAccount({
+    await _storeAccount({
       password,
       wallet,
-      mnemonicPhrase: uiData.mnemonicPhrase,
+      mnemonicPhrase,
     });
     localStorage.setItem(APPLICATION_ID, APPLICATION_STATE.PASSWORD_CREATED);
 
-    sendResponse({ publicKey: uiData.publicKey });
+    sendResponse({ publicKey: publicKeySelector(store.getState()) });
   };
 
   const loadAccount = () => {
+    const state = store.getState();
+
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: publicKeySelector(state),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
 
   const getMnemonicPhrase = () => {
-    sendResponse({ mnemonicPhrase: uiData.mnemonicPhrase });
+    const state = store.getState();
+    sendResponse({ mnemonicPhrase: mnemonicPhraseSelector(state) });
   };
 
   const confirmMnemonicPhrase = () => {
     const isCorrectPhrase =
-      uiData.mnemonicPhrase === request.mnemonicPhraseToConfirm;
+      mnemonicPhraseSelector(store.getState()) ===
+      request.mnemonicPhraseToConfirm;
 
     const applicationState = isCorrectPhrase
       ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
@@ -158,13 +164,14 @@ const internalMessageListener = (
     }
 
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
 
   const confirmPassword = async () => {
     const { password } = request;
+    const state = store.getState();
     let keyStore;
     try {
       keyStore = await keyManager.loadKey(
@@ -175,14 +182,16 @@ const internalMessageListener = (
       console.error(e);
     }
     let publicKey = "";
+    let privateKey = "";
     if (keyStore) {
-      ({ publicKey } = keyStore);
-      uiData.publicKey = publicKey;
-      KEY_STORE = keyStore;
+      ({ privateKey, publicKey } = keyStore);
+      store.dispatch(logIn({ publicKey }));
+      sessionTimer.startSession({ privateKey });
     }
 
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: publicKeySelector(state),
+      hasPrivateKey: hasPrivateKeySelector(state),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
@@ -216,8 +225,9 @@ const internalMessageListener = (
   };
 
   const signTransaction = async () => {
-    if (KEY_STORE) {
-      const { privateKey } = KEY_STORE;
+    const state = store.getState();
+    const privateKey = privateKeySelector(state);
+    if (privateKey.length) {
       const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
 
       let response;
@@ -239,6 +249,8 @@ const internalMessageListener = (
         transactionResponse(response);
         sendResponse({});
       }
+    } else {
+      sendResponse({ error: "Session timed out" });
     }
   };
 
@@ -251,12 +263,10 @@ const internalMessageListener = (
   };
 
   const signOut = () => {
-    Object.keys(uiData).forEach((key) => {
-      uiData[key] = "";
-    });
+    store.dispatch(logOut());
 
     sendResponse({
-      publicKey: uiData.publicKey,
+      publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };

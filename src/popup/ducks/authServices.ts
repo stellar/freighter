@@ -29,8 +29,6 @@ export const createAccount = createAsyncThunk(
       console.error(e);
     }
 
-    // TODO: move this redirect into UI
-    history.push("/mnemonic-phrase");
     return res;
   },
 );
@@ -94,6 +92,7 @@ export const confirmMnemonicPhrase = createAsyncThunk<
 export const confirmPassword = createAsyncThunk<
   {
     publicKey: string;
+    hasPrivateKey: boolean;
     applicationState: APPLICATION_STATE;
   },
   string,
@@ -101,6 +100,7 @@ export const confirmPassword = createAsyncThunk<
 >("auth/confirmPassword", async (phrase: string, thunkApi) => {
   let res = {
     publicKey: "",
+    hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
   };
   try {
@@ -154,7 +154,7 @@ export const signOut = createAsyncThunk<
 
 interface InitialState {
   applicationState: APPLICATION_STATE;
-  authenticated: boolean;
+  hasPrivateKey: boolean;
   publicKey: string;
   error: string;
 }
@@ -163,7 +163,7 @@ const initialState: InitialState = {
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   publicKey: "",
   error: "",
-  authenticated: false,
+  hasPrivateKey: false,
 };
 
 const authSlice = createSlice({
@@ -176,7 +176,6 @@ const authSlice = createSlice({
 
       return {
         ...state,
-        authenticated: true,
         applicationState: APPLICATION_STATE.PASSWORD_CREATED,
         publicKey,
       };
@@ -186,7 +185,6 @@ const authSlice = createSlice({
       const { publicKey } = action.payload || { publicKey: "" };
       return {
         ...state,
-        authenticated: true,
         authError: "",
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
@@ -225,8 +223,6 @@ const authSlice = createSlice({
       };
       return {
         ...state,
-        authenticated:
-          applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         applicationState:
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
@@ -241,13 +237,14 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(confirmPassword.fulfilled, (state, action) => {
-      const { publicKey, applicationState } = action.payload || {
+      const { publicKey, applicationState, hasPrivateKey } = action.payload || {
         publicKey: "",
+        hasPrivateKey: false,
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
       };
       return {
         ...state,
-        authenticated: !!publicKey,
+        hasPrivateKey,
         applicationState:
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
@@ -268,9 +265,9 @@ const authSlice = createSlice({
 
 const { reducer } = authSlice;
 const authSelector = (state: { auth: InitialState }) => state.auth;
-export const authenticatedSelector = createSelector(
+export const hasPrivateKeySelector = createSelector(
   authSelector,
-  (auth) => auth.authenticated,
+  (auth) => auth.hasPrivateKey,
 );
 export const applicationStateSelector = createSelector(
   authSelector,
