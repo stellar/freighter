@@ -112,17 +112,14 @@ const internalMessageListener = (
   };
 
   const loadAccount = () => {
-    const state = store.getState();
-
     sendResponse({
-      publicKey: publicKeySelector(state),
+      publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
 
   const getMnemonicPhrase = () => {
-    const state = store.getState();
-    sendResponse({ mnemonicPhrase: mnemonicPhraseSelector(state) });
+    sendResponse({ mnemonicPhrase: mnemonicPhraseSelector(store.getState()) });
   };
 
   const confirmMnemonicPhrase = () => {
@@ -225,8 +222,7 @@ const internalMessageListener = (
   };
 
   const signTransaction = async () => {
-    const state = store.getState();
-    const privateKey = privateKeySelector(state);
+    const privateKey = privateKeySelector(store.getState());
     if (privateKey.length) {
       const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
 
