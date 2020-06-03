@@ -13,7 +13,7 @@ const HeaderEl = styled.h1`
   max-width: 21rem;
 `;
 
-const Screen = styled.div`
+export const Screen = styled.div`
   align-content: center;
   align-items: center;
   display: flex;
