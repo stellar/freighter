@@ -10,13 +10,11 @@ import { reducer as auth } from "popup/ducks/authServices";
 import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
-html, body, #root {
-  height: 100%;
-}
   body {
     background: ${COLOR_PALETTE.background};
     overscroll-behavior: none;
     font-family: 'Muli', sans-serif;
+    font-size: 100%;
     margin: 0;
   }
 `;
