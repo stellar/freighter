@@ -7,6 +7,7 @@ import {
 export interface Response {
   applicationState: APPLICATION_STATE;
   publicKey: string;
+  hasPrivateKey: boolean;
   mnemonicPhrase: string;
   isCorrectPhrase: boolean;
   confirmedPassword: boolean;
