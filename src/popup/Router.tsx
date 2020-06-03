@@ -10,7 +10,7 @@ import {
 import { APPLICATION_STATE } from "statics";
 import {
   applicationStateSelector,
-  authenticatedSelector,
+  hasPrivateKeySelector,
   loadAccount,
   publicKeySelector,
 } from "popup/ducks/authServices";
@@ -29,25 +29,46 @@ import Welcome from "popup/views/Welcome";
 
 const Loading = () => <p> Loading...</p>;
 
-const ProtectedRoute = (props: RouteProps) => {
+const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
-  const authenticated = useSelector(authenticatedSelector);
   const publicKey = useSelector(publicKeySelector);
 
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
     return <Loading />;
   }
-  if (!publicKey || !authenticated) {
-    if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
-      return (
-        <Redirect
-          to={{
-            pathname: "/",
-          }}
-        />
-      );
-    }
+  if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
+    return (
+      <Redirect
+        to={{
+          pathname: "/",
+        }}
+      />
+    );
+  }
+  if (!publicKey) {
+    return (
+      <Redirect
+        to={{
+          pathname: "/unlock-account",
+          search: location.search,
+          state: { from: location },
+        }}
+      />
+    );
+  }
+  return <Route {...props} />;
+};
+
+const PrivateKeyRoute = (props: RouteProps) => {
+  const location = useLocation();
+  const applicationState = useSelector(applicationStateSelector);
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
+    return <Loading />;
+  }
+  if (!hasPrivateKey) {
     return (
       <Redirect
         to={{
@@ -83,13 +104,16 @@ const HomeRoute = () => {
     return <Welcome />;
   }
 
-  if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
-    return <Account />;
+  switch (applicationState) {
+    case APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED:
+      return <Account />;
+    case APPLICATION_STATE.PASSWORD_CREATED ||
+      APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
+      window.open(newTabHref("/mnemonic-phrase"));
+      return <Loading />;
+    default:
+      return <Welcome />;
   }
-
-  window.open(newTabHref("/mnemonic-phrase"));
-
-  return <Welcome />;
 };
 
 const Routes = () => {
@@ -101,18 +125,18 @@ const Routes = () => {
   return (
     <HashRouter>
       <Switch>
-        <ProtectedRoute path="/account">
+        <PublicKeyRoute path="/account">
           <Account />
-        </ProtectedRoute>
-        <ProtectedRoute path="/sign-transaction">
+        </PublicKeyRoute>
+        <PrivateKeyRoute path="/sign-transaction">
           <SignTransaction />
-        </ProtectedRoute>
-        <ProtectedRoute path="/grant-access">
+        </PrivateKeyRoute>
+        <PublicKeyRoute path="/grant-access">
           <GrantAccess />
-        </ProtectedRoute>
-        <ProtectedRoute path="/mnemonic-phrase">
+        </PublicKeyRoute>
+        <PublicKeyRoute path="/mnemonic-phrase">
           <MnemonicPhrase />
-        </ProtectedRoute>
+        </PublicKeyRoute>
         <Route path="/unlock-account">
           <UnlockAccount />
         </Route>

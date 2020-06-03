@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { createAccount } from "popup/ducks/authServices";
+import { createAccount, publicKeySelector } from "popup/ducks/authServices";
+import { history } from "popup/App";
 
 const CreatePassword = () => {
   const firstRender = useRef(true);
@@ -9,6 +10,7 @@ const CreatePassword = () => {
   const [confirmPassword, setconfirmPassword] = useState("");
   const [termsChecked, setTermsChecked] = useState(false);
   const [formErrors, setFormErrors] = useState(true);
+  const publicKey = useSelector(publicKeySelector);
   const dispatch = useDispatch();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,6 +33,12 @@ const CreatePassword = () => {
     }
     formValidation();
   });
+
+  useEffect(() => {
+    if (publicKey) {
+      history.push("/mnemonic-phrase");
+    }
+  }, [publicKey]);
 
   return (
     <>
