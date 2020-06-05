@@ -44,7 +44,7 @@ const externalMessageListener = (
       // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
       // if we're good, of course
       if (url === tabUrl) {
-        sendResponse({ publicKey });
+        sendResponse({ publicKey: publicKeySelector(store.getState()) });
       } else {
         sendResponse({ error: "User declined access" });
       }

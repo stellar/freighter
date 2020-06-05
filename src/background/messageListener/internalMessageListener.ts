@@ -168,7 +168,6 @@ const internalMessageListener = (
 
   const confirmPassword = async () => {
     const { password } = request;
-    const state = store.getState();
     let keyStore;
     try {
       keyStore = await keyManager.loadKey(
@@ -187,8 +186,8 @@ const internalMessageListener = (
     }
 
     sendResponse({
-      publicKey: publicKeySelector(state),
-      hasPrivateKey: hasPrivateKeySelector(state),
+      publicKey: publicKeySelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });
   };
