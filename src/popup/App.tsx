@@ -7,6 +7,8 @@ import { createGlobalStyle } from "styled-components";
 
 import { COLOR_PALETTE } from "popup/styles";
 import { reducer as auth } from "popup/ducks/authServices";
+import Header from "popup/components/Layout/Header";
+import Menu from "popup/components/Menu";
 import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
@@ -31,6 +33,9 @@ export function App() {
   return (
     <Provider store={store}>
       <GlobalStyle />
+      <Header />
+
+      <Menu />
       <Router />
     </Provider>
   );

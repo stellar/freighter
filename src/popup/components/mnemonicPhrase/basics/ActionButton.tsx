@@ -1,8 +1,9 @@
 import styled from "styled-components";
 import { Button } from "popup/styles/Basics";
+import { COLOR_PALETTE } from "popup/styles";
 
 const ActionButton = styled(Button)`
-  color: #748098;
+  color: ${COLOR_PALETTE.secondaryText};
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.7rem;

@@ -141,7 +141,10 @@ export const getAccountBalance = async (
   } catch (e) {
     console.error(e);
   }
-  return response.balances[0];
+  return response.balances.filter(
+    // eslint-disable-next-line camelcase
+    (balance: { asset_code?: string }) => !balance.asset_code,
+  )[0];
 };
 
 export const getPublicKey = async (): Promise<{ publicKey: string }> => {
