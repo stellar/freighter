@@ -113,6 +113,7 @@ const internalMessageListener = (
 
   const loadAccount = () => {
     sendResponse({
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
       publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     });

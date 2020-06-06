@@ -29,10 +29,12 @@ export const createAccount = async (
 };
 
 export const loadAccount = async (): Promise<{
+  hasPrivateKey: boolean;
   publicKey: string;
   applicationState: APPLICATION_STATE;
 }> => {
   let response = {
+    hasPrivateKey: false,
     publicKey: "",
     applicationState: APPLICATION_STATE.APPLICATION_STARTED,
   };

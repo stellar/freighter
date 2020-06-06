@@ -217,12 +217,14 @@ const authSlice = createSlice({
       applicationState: action.payload.applicationState,
     }));
     builder.addCase(loadAccount.fulfilled, (state, action) => {
-      const { publicKey, applicationState } = action.payload || {
+      const { hasPrivateKey, publicKey, applicationState } = action.payload || {
+        hasPrivateKey: false,
         publicKey: "",
         applicationState: APPLICATION_STATE.APPLICATION_STARTED,
       };
       return {
         ...state,
+        hasPrivateKey,
         applicationState:
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
