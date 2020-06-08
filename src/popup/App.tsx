@@ -43,7 +43,6 @@ export function App() {
     <Provider store={store}>
       <GlobalStyle />
       <Header />
-
       <Menu />
       <Router />
     </Provider>
