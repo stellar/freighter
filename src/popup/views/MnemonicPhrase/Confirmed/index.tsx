@@ -1,6 +1,5 @@
 import React from "react";
 import styled from "styled-components";
-import Header from "popup/components/Layout/Header";
 import { COLOR_PALETTE } from "popup/styles";
 import { FormButton } from "popup/components/form";
 
@@ -31,8 +30,6 @@ const Celebration = styled.h1`
 
 const MnemonicPhraseConfirmed = () => (
   <>
-    <Header />
-
     <Wrapper>
       <HeaderEl>Woo, you’re in!</HeaderEl>
       <Celebration>
