@@ -6,8 +6,10 @@ import { useSelector } from "react-redux";
 import { getAccountBalance } from "api/internal";
 import { COLOR_PALETTE } from "popup/styles";
 import { Button } from "popup/styles/Basics";
+import Toast from "popup/components/Toast";
 import CopyColor from "popup/assets/copy-color.png";
 import StellarLogo from "popup/assets/stellar-logo.png";
+import Footer from "./basics/Footer";
 
 const PublicKeyDisplay = styled.div`
   display: inline-block;
@@ -15,6 +17,7 @@ const PublicKeyDisplay = styled.div`
   font-size: 0.81rem;
   line-height: 1rem;
   margin: 0.75rem 2.4rem 0 0;
+  position: relative;
   text-align: right;
 `;
 
@@ -36,7 +39,7 @@ const AccountDetails = styled.section`
   align-content: center;
   align-items: center;
   display: flex;
-  margin-top: 3.75rem;
+  margin: 3.75rem 0 9rem;
   justify-content: center;
 `;
 
@@ -53,13 +56,16 @@ const LumenBalance = styled.h2`
   font-weight: 300;
 `;
 
-// const DollarBalance = styled.h3``;
+const CopiedToastWrapper = styled.div`
+  margin: 0.3rem 0 0 -5rem;
+`;
 
 const truncatedPublicKey = (publicKey: string) =>
   `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
 
 const Account = () => {
   const [accountBalance, setaccountBalance] = useState("");
+  const [isShowing, setIsShowing] = useState(false);
   const publicKey = useSelector(publicKeySelector);
 
   useEffect(() => {
@@ -80,17 +86,24 @@ const Account = () => {
       <PublicKeyDisplay>
         <p>Your public key</p>
         <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
-        <CopyToClipboard text={publicKey}>
+        <CopyToClipboard text={publicKey} onCopy={() => setIsShowing(true)}>
           <CopyButton />
         </CopyToClipboard>
+        <CopiedToastWrapper>
+          <Toast
+            message="Copied to your clipboard 👌"
+            isShowing={isShowing}
+            setIsShowing={setIsShowing}
+          />
+        </CopiedToastWrapper>
       </PublicKeyDisplay>
       <AccountDetails>
         <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
         <AccountBalance>
           <LumenBalance>{accountBalance} XLM</LumenBalance>
-          <p>{accountBalance}</p>
         </AccountBalance>
       </AccountDetails>
+      <Footer />
     </>
   );
 };

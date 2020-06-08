@@ -1,7 +1,6 @@
 import React from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import Header from "popup/components/Layout/Header";
 import { Screen } from "popup/components/Layout/Fullscreen";
 import { COLOR_PALETTE } from "popup/styles";
 
@@ -79,7 +78,6 @@ const ImportButton = styled(LinkButton)`
 
 const Welcome = () => (
   <>
-    <Header />
     <Screen>
       <HalfScreen>
         <BoxHeader>

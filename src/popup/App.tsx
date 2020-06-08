@@ -19,6 +19,15 @@ const GlobalStyle = createGlobalStyle`
     font-size: 100%;
     margin: 0;
   }
+
+  body, html, #root {
+    height: 100vh;
+  }
+
+  a {
+    color: ${COLOR_PALETTE.primary};
+    text-decoration: none;
+  }
 `;
 
 const store = configureStore({
