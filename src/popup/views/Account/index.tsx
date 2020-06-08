@@ -63,7 +63,7 @@ const truncatedPublicKey = (publicKey: string) =>
 
 const Account = () => {
   const [accountBalance, setaccountBalance] = useState("");
-  const [isShowing, setIsShowing] = useState(false);
+  const [isCopiedShowing, setIsCopiedShowing] = useState(false);
   const publicKey = useSelector(publicKeySelector);
 
   useEffect(() => {
@@ -84,14 +84,17 @@ const Account = () => {
       <PublicKeyDisplay>
         <p>Your public key</p>
         <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
-        <CopyToClipboard text={publicKey} onCopy={() => setIsShowing(true)}>
+        <CopyToClipboard
+          text={publicKey}
+          onCopy={() => setIsCopiedShowing(true)}
+        >
           <CopyButton />
         </CopyToClipboard>
         <CopiedToastWrapper>
           <Toast
             message="Copied to your clipboard 👌"
-            isShowing={isShowing}
-            setIsShowing={setIsShowing}
+            isShowing={isCopiedShowing}
+            setIsShowing={setIsCopiedShowing}
           />
         </CopiedToastWrapper>
       </PublicKeyDisplay>
