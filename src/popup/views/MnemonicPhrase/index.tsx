@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import ConfirmMnemonicPhrase from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
 import useMnemonicPhrase from "popup/hooks/useMnemonicPhrase";
 import DisplayMnemonicPhrase from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
-import Fullscreen from "popup/components/Layout/Fullscreen";
-import spy from "popup/assets/spy.png";
+import Onboarding from "popup/components/Layout/Fullscreen/Onboarding";
 
 const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
@@ -11,25 +10,25 @@ const MnemonicPhrase = () => {
   const mnemonicPhrase = useMnemonicPhrase();
 
   const icon = {
-    src: spy,
+    emoji: "🕵️‍♂️",
     alt: "Spy",
   };
 
   return readyToConfirm ? (
-    <Fullscreen
+    <Onboarding
       header="Confirm your secret phrase"
       icon={icon}
       goBack={() => setReadyToConfirm(false)}
     >
       <ConfirmMnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
-    </Fullscreen>
+    </Onboarding>
   ) : (
-    <Fullscreen header="Secret backup phrase" icon={icon}>
+    <Onboarding header="Secret backup phrase" icon={icon}>
       <DisplayMnemonicPhrase
         mnemonicPhrase={mnemonicPhrase}
         setReadyToConfirm={setReadyToConfirm}
       />
-    </Fullscreen>
+    </Onboarding>
   );
 };
 

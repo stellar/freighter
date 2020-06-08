@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import Header from "popup/components/Layout/Header";
 import { COLOR_PALETTE } from "popup/styles";
-import { FormButton } from "popup/components/form";
+import { FormButton } from "popup/components/Form/basics";
 
 const HeaderEl = styled.h1`
   font-weight: 200;

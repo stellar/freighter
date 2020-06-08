@@ -9,4 +9,8 @@ export const Button = styled.button`
   :focus {
     outline: none;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
 `;

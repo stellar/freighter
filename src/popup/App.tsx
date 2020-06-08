@@ -7,6 +7,7 @@ import { createGlobalStyle } from "styled-components";
 
 import { COLOR_PALETTE } from "popup/styles";
 import { reducer as auth } from "popup/ducks/authServices";
+import { POPUP_WIDTH } from "popup/statics";
 import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
@@ -16,6 +17,15 @@ const GlobalStyle = createGlobalStyle`
     font-family: 'Muli', sans-serif;
     font-size: 100%;
     margin: 0;
+  }
+
+  body, html {
+    width: ${POPUP_WIDTH}px;
+  }
+
+  a {
+    color: ${COLOR_PALETTE.primary};
+    text-decoration: none;
   }
 `;
 

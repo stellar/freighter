@@ -6,7 +6,7 @@ import {
   confirmMnemonicPhrase,
   authErrorSelector,
 } from "popup/ducks/authServices";
-import { ErrorMessage, FormButton } from "popup/components/form";
+import { ErrorMessage1, FormButton } from "popup/components/Form/basics";
 import { COLOR_PALETTE } from "popup/styles";
 import { Button } from "popup/styles/Basics";
 import CheckButton from "./basics/CheckButton";
@@ -107,7 +107,7 @@ const ConfirmMnemonicPhrase = ({
               </ClearButton>
             ) : null}
           </ConfirmInput>
-          <ErrorMessage authError={authError}></ErrorMessage>
+          <ErrorMessage1 authError={authError}></ErrorMessage1>
         </div>
         {wordBubbles()}
         <FormButton type="submit">Confirm</FormButton>
