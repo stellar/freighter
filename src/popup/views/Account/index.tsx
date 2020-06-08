@@ -49,8 +49,6 @@ const StellarLogoEl = styled.img`
   width: 7.3rem;
 `;
 
-const AccountBalance = styled.div``;
-
 const LumenBalance = styled.h2`
   font-size: 1.43rem;
   font-weight: 300;
@@ -99,9 +97,9 @@ const Account = () => {
       </PublicKeyDisplay>
       <AccountDetails>
         <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
-        <AccountBalance>
+        <div>
           <LumenBalance>{accountBalance} XLM</LumenBalance>
-        </AccountBalance>
+        </div>
       </AccountDetails>
       <Footer />
     </>
