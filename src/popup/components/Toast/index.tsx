@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 
-const TOAST_LENGTH = 2000;
+const TOAST_LENGTH = 1000;
 
 interface ToastWrapperProps {
   isShowing: boolean;
