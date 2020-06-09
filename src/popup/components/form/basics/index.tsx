@@ -4,11 +4,6 @@ import { ErrorMessage, Field } from "formik";
 import { COLOR_PALETTE } from "popup/styles";
 import { Button } from "popup/styles/Basics";
 
-const ErrorEl = styled.p`
-  color: red;
-  font-weight: bold;
-`;
-
 interface ErrorMessageProps {
   error: string;
 }
@@ -56,7 +51,7 @@ const FormCheckboxFieldEl = styled(Field)`
 `;
 
 export const ApiErrorMessage = ({ error }: ErrorMessageProps) => (
-  <>{error ? <ErrorEl>{error}</ErrorEl> : null}</>
+  <>{error ? <FormErrorEl>{error}</FormErrorEl> : null}</>
 );
 
 export const FormButton = styled(Button)`
