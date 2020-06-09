@@ -10,7 +10,7 @@ const ErrorEl = styled.p`
 `;
 
 interface ErrorMessageProps {
-  authError: string;
+  error: string;
 }
 
 const FormErrorEl = styled.div`
@@ -55,8 +55,8 @@ const FormCheckboxFieldEl = styled(Field)`
   }
 `;
 
-export const ErrorMessage1 = ({ authError }: ErrorMessageProps) => (
-  <>{authError ? <ErrorEl>{authError}</ErrorEl> : null}</>
+export const ApiErrorMessage = ({ error }: ErrorMessageProps) => (
+  <>{error ? <ErrorEl>{error}</ErrorEl> : null}</>
 );
 
 export const FormButton = styled(Button)`

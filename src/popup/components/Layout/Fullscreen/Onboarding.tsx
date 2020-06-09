@@ -29,7 +29,7 @@ export const Screen = styled.section`
 
 const HalfScreen = styled.section`
   padding: 0 1.6rem;
-  width: 19rem;
+  width: 21rem;
 
   :nth-child(1) {
     margin-top: 4.125rem;
