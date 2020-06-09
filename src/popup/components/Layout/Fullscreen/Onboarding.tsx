@@ -2,7 +2,6 @@ import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import { Button } from "popup/styles/Basics";
-import Header from "../Header";
 import FullscreenStyle from "./basics/FullscreenStyle";
 
 const HeaderEl = styled.h1`
@@ -21,14 +20,14 @@ const SubheaderEl = styled.h2`
   max-width: 21rem;
 `;
 
-export const Screen = styled.div`
+export const Screen = styled.section`
   align-content: center;
   display: flex;
   justify-content: center;
   padding: 100px 170px;
 `;
 
-const HalfScreen = styled.div`
+const HalfScreen = styled.section`
   padding: 0 1.6rem;
   width: 19rem;
 
@@ -60,7 +59,6 @@ const Onboarding = ({
 }) => (
   <>
     <FullscreenStyle />
-    <Header />
     {goBack ? <BackButton onClick={goBack}>&lt; Back</BackButton> : null}
     <Screen>
       <HalfScreen>

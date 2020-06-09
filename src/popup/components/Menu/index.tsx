@@ -4,6 +4,8 @@ import { history } from "popup/App";
 import { applicationStateSelector, signOut } from "popup/ducks/authServices";
 import styled from "styled-components";
 import { APPLICATION_STATE } from "statics";
+import { Button } from "popup/styles/Basics";
+import MenuIcon from "popup/assets/menu.png";
 
 const SlideoutNav = styled.nav`
   background: purple;
@@ -17,8 +19,13 @@ const SlideoutNav = styled.nav`
   width: 100%;
 `;
 
-const MenuOpenButton = styled.button`
-  dislay: block;
+const MenuOpenButton = styled(Button)`
+  display: inline-block;
+  background: url(${MenuIcon});
+  background-size: cover;
+  margin: 1.625rem 0 0 2.4rem;
+  height: 1.625rem;
+  width: 1.625rem;
 `;
 
 const SlideOutCloseButton = styled.button`
@@ -46,7 +53,7 @@ const Menu = () => {
     <>
       {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
         <>
-          <MenuOpenButton onClick={() => setIsOpen(true)}>&lt;</MenuOpenButton>
+          <MenuOpenButton onClick={() => setIsOpen(true)} />
           <SlideoutNav isOpen={isOpen}>
             <SlideOutCloseButton onClick={() => setIsOpen(false)}>
               X

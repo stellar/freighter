@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
@@ -6,6 +6,7 @@ import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
 import { FormButton } from "popup/components/Form/basics";
 import { Button } from "popup/styles/Basics";
+import Toast from "popup/components/Toast";
 import ActionButton from "./basics/ActionButton";
 
 const Warning = styled.strong`
@@ -46,11 +47,9 @@ const DisplayButtons = styled.div`
     margin-left: 0.5rem;
   }
 `;
-
-const CopiedNotification = styled.span`
+const CopiedToastWrapper = styled.div`
+  right: 15.625rem;
   position: absolute;
-  right: 1rem;
-  top: -1rem;
 `;
 
 const DisplayMnemonicPhrase = ({
@@ -62,14 +61,6 @@ const DisplayMnemonicPhrase = ({
 }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isBlurred, setIsBlurred] = useState(true);
-
-  useEffect(() => {
-    if (isCopied) {
-      setTimeout(() => {
-        setIsCopied(false);
-      }, 2000);
-    }
-  }, [isCopied]);
 
   const downloadPhrase = () => {
     const el = document.createElement("a");
@@ -108,7 +99,13 @@ const DisplayMnemonicPhrase = ({
             <img src={Copy} alt="copy button" />
           </ActionButton>
         </CopyToClipboard>
-        {isCopied ? <CopiedNotification>Copied!</CopiedNotification> : null}
+        <CopiedToastWrapper>
+          <Toast
+            message="Copied to your clipboard 👌"
+            isShowing={isCopied}
+            setIsShowing={setIsCopied}
+          />
+        </CopiedToastWrapper>
       </DisplayButtons>
       <FormButton
         onClick={() => {

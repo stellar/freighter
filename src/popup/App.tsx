@@ -8,6 +8,8 @@ import { createGlobalStyle } from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import { reducer as auth } from "popup/ducks/authServices";
 import { POPUP_WIDTH } from "popup/statics";
+import Header from "popup/components/Layout/Header";
+import Menu from "popup/components/Menu";
 import Router from "./Router";
 
 const GlobalStyle = createGlobalStyle`
@@ -21,6 +23,8 @@ const GlobalStyle = createGlobalStyle`
 
   body, html {
     width: ${POPUP_WIDTH}px;
+  body, html, #root {
+    height: 100vh;
   }
 
   a {
@@ -41,6 +45,8 @@ export function App() {
   return (
     <Provider store={store}>
       <GlobalStyle />
+      <Header />
+      <Menu />
       <Router />
     </Provider>
   );
