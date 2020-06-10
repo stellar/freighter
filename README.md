@@ -59,7 +59,7 @@ yarn start
 Done! You should be able to access the Playground by going to
 `http://lyraclient.com:9000/playground.html` in your browser
 
-### Project Setup
+## Project Setup
 
 This app has 3 main components that are named using Chrome extension
 nomenclature. All of these are located in the `src/` folder:
@@ -95,7 +95,7 @@ uninstall/reload). It is run in a headless browser, so it has access to all Web
 APIs and Chrome APIs. It also has accessible dev tools, which can be reached by
 going to `chrome://extensions/` and clicking `inspect views: background page`
 
-## Other parts of the codebase
+### Other parts of the codebase
 
 All helpers, statics, etc. that are shared by the 3 components are located in
 the top level of `src`. This includes the `api` folder, which sends messages to
@@ -104,3 +104,22 @@ the `background`. Both `popup` and `content script` can send to and receive from
 
 The `public` folder contains all extension specific instantiation and assets. It
 also contains the code for the aforementioned `Playground`.
+
+## Create a dev environment for the Popup
+
+So far, we've created a production build of the extension. But we need to create
+a dev environment so we don't need to reload the extension every time we make a
+change.
+
+Earlier, we created a dev enviornment for the Playground using `yarn start`.
+This command also creates a dev environment for the `popup`. Visiting
+`http://lyraclient.com:9000/` will open the `popup` in your browser. This is
+setup using `webpack-dev-server`, so hot reloading, etc. are availble.
+
+This dev environment will be able to make calls to the installed version of the
+extension, so it has all the capabilites of the `popup` inside the extension.
+
+_NOTE: This dev environment only works for the `popup`_
+
+Changes to `background` and `content script` will still require a production
+build using `yarn build`, followed by reloading the extension in Chrome.
