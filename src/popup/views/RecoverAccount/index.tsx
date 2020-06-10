@@ -6,7 +6,7 @@ import {
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/authServices";
-import { ApiErrorMessage } from "popup/components/Form/basics";
+import { ApiErrorMessage } from "popup/basics";
 
 const RecoverAccount = () => {
   const firstRender = useRef(true);

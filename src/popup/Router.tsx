@@ -16,7 +16,7 @@ import {
 } from "popup/ducks/authServices";
 import { useSelector, useDispatch } from "react-redux";
 import { newTabHref } from "helpers";
-import { POPUP_WIDTH } from "popup/statics";
+import { POPUP_WIDTH } from "popup/constants";
 
 import Account from "popup/views/Account";
 import CreatePassword from "popup/views/CreatePassword";

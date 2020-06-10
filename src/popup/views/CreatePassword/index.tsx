@@ -16,7 +16,7 @@ import {
   FormCheckboxField,
   FormCheckboxLabel,
   FormTextField,
-} from "popup/components/Form/basics";
+} from "popup/basics";
 import { history } from "popup/App";
 
 const CreatePassword = () => {

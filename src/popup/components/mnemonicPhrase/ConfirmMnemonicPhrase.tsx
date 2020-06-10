@@ -7,9 +7,8 @@ import {
   authErrorSelector,
 } from "popup/ducks/authServices";
 import Form from "popup/components/Form";
-import { ApiErrorMessage } from "popup/components/Form/basics";
 import { COLOR_PALETTE } from "popup/styles";
-import { Button } from "popup/styles/Basics";
+import { ApiErrorMessage, Button } from "popup/basics";
 import CheckButton from "./basics/CheckButton";
 
 const ConfirmInput = styled.div`

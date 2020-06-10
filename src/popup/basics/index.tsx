@@ -2,11 +2,25 @@ import React from "react";
 import styled from "styled-components";
 import { ErrorMessage, Field } from "formik";
 import { COLOR_PALETTE } from "popup/styles";
-import { Button } from "popup/styles/Basics";
 
 interface ErrorMessageProps {
   error: string;
 }
+
+export const Button = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+
+  :focus {
+    outline: none;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+`;
 
 const FormErrorEl = styled.div`
   color: ${COLOR_PALETTE.error};

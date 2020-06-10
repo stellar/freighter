@@ -1,6 +1,6 @@
 import React from "react";
 import { Form as FormikForm } from "formik";
-import { FormButton } from "./basics";
+import { FormButton } from "popup/basics";
 
 interface FormProps {
   children: JSX.Element;

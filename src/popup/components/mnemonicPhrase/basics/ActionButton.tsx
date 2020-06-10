@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { Button } from "popup/styles/Basics";
+import { Button } from "popup/basics";
 import { COLOR_PALETTE } from "popup/styles";
 
 const ActionButton = styled(Button)`
