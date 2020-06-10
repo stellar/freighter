@@ -5,7 +5,7 @@ import { publicKeySelector } from "popup/ducks/authServices";
 import { useSelector } from "react-redux";
 import { getAccountBalance } from "api/internal";
 import { COLOR_PALETTE } from "popup/styles";
-import { Button } from "popup/styles/Basics";
+import { Button } from "popup/basics";
 import Toast from "popup/components/Toast";
 import CopyColor from "popup/assets/copy-color.png";
 import StellarLogo from "popup/assets/stellar-logo.png";

@@ -4,8 +4,7 @@ import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
-import { FormButton } from "popup/components/form";
-import { Button } from "popup/styles/Basics";
+import { Button, FormButton } from "popup/basics";
 import Toast from "popup/components/Toast";
 import ActionButton from "./basics/ActionButton";
 

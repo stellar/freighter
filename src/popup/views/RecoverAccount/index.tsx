@@ -6,7 +6,7 @@ import {
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/authServices";
-import { ErrorMessage } from "popup/components/form";
+import { ApiErrorMessage } from "popup/basics";
 
 const RecoverAccount = () => {
   const firstRender = useRef(true);
@@ -97,7 +97,7 @@ const RecoverAccount = () => {
       <div>
         <Link to="/?sameTab=true">Go back</Link>
       </div>
-      <ErrorMessage authError={authError}></ErrorMessage>
+      <ApiErrorMessage error={authError}></ApiErrorMessage>
     </form>
   );
 };

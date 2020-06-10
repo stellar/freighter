@@ -4,7 +4,7 @@ import { history } from "popup/App";
 import { applicationStateSelector, signOut } from "popup/ducks/authServices";
 import styled from "styled-components";
 import { APPLICATION_STATE } from "statics";
-import { Button } from "popup/styles/Basics";
+import { Button } from "popup/basics";
 import MenuIcon from "popup/assets/menu.png";
 
 const SlideoutNav = styled.nav`

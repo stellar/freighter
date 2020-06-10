@@ -7,6 +7,7 @@ import { createGlobalStyle } from "styled-components";
 
 import { COLOR_PALETTE } from "popup/styles";
 import { reducer as auth } from "popup/ducks/authServices";
+import { POPUP_WIDTH } from "popup/constants";
 import Header from "popup/components/Layout/Header";
 import Menu from "popup/components/Menu";
 import Router from "./Router";
@@ -20,6 +21,8 @@ const GlobalStyle = createGlobalStyle`
     margin: 0;
   }
 
+  body, html {
+    width: ${POPUP_WIDTH}px;
   body, html, #root {
     height: 100vh;
   }

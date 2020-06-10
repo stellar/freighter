@@ -1,12 +1,12 @@
 import React from "react";
 import styled from "styled-components";
+import { Field } from "formik";
 import { COLOR_PALETTE } from "popup/styles";
 
 type CheckButtonProps = {
-  wordKey: string;
   onChange: (e: any) => void;
+  wordKey: string;
   word: string;
-  value: boolean;
 };
 const ButtonLabel = styled.label`
   border: 1px solid ${COLOR_PALETTE.primary};
@@ -19,7 +19,7 @@ const ButtonLabel = styled.label`
   padding: 0.75rem 1.7rem;
 `;
 
-const CheckBox = styled.input`
+const CheckBox = styled(Field)`
   display: none;
 
   &:checked + ${ButtonLabel} {
@@ -28,15 +28,15 @@ const CheckBox = styled.input`
   }
 `;
 
-const CheckButton = ({ wordKey, onChange, word, value }: CheckButtonProps) => (
+const CheckButton = ({ onChange, wordKey, word }: CheckButtonProps) => (
   <>
     <CheckBox
-      checked={value}
       id={wordKey}
+      onChange={(e: React.FormEvent) => onChange(e)}
       type="checkbox"
-      onChange={onChange}
+      name={wordKey}
       key={wordKey}
-      value={word}
+      text={word}
     />
     <ButtonLabel htmlFor={wordKey}>{word}</ButtonLabel>
   </>

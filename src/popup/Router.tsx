@@ -16,6 +16,7 @@ import {
 } from "popup/ducks/authServices";
 import { useSelector, useDispatch } from "react-redux";
 import { newTabHref } from "helpers";
+import { POPUP_WIDTH } from "popup/constants";
 
 import Account from "popup/views/Account";
 import CreatePassword from "popup/views/CreatePassword";
@@ -83,7 +84,6 @@ const PrivateKeyRoute = (props: RouteProps) => {
 };
 
 const HomeRoute = () => {
-  const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
@@ -96,10 +96,10 @@ const HomeRoute = () => {
 
     /* 
     We want to launch the extension in a new tab for a user still in the onboarding process.
-    In this particular case, open the tab with a query param that stops subsequent redirects.
+    In this particular case, open the tab if we are in the "popup" view.
     */
-    if (location.search !== "?sameTab=true") {
-      window.open(newTabHref("/?sameTab=true"));
+    if (window.innerWidth === POPUP_WIDTH) {
+      window.open(newTabHref("/"));
     }
     return <Welcome />;
   }
