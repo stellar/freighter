@@ -4,7 +4,13 @@ export const COLOR_PALETTE = {
   secondaryText: "#748098",
   primary: "#391EDA",
   primaryGradient: "linear-gradient(90deg, #391EDA 100%, #5339ED 0%)",
+  menuGradient: "linear-gradient(180deg, #564df0 0%,#2d18b5 100%)",
   secondary: "#654CF7",
   error: "#F42703",
   inputBackground: "rgba(210, 216, 229, 0.4)",
+};
+
+export const Z_INDEXES = {
+  body: 0,
+  nav: 10,
 };
