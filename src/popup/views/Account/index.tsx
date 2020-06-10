@@ -91,7 +91,7 @@ const Account = () => {
           <Toast
             message="Copied to your clipboard 👌"
             isShowing={isCopied}
-            setIsShowing={isCopied}
+            setIsShowing={setIsCopied}
           />
         </CopiedToastWrapper>
       </PublicKeyDisplay>
