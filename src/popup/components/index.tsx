@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
-import { Button } from "popup/basics";
+import { BasicButtonEl } from "popup/basics";
 
 const ErrorEl = styled.p`
   color: red;
@@ -16,7 +16,7 @@ export const ErrorMessage = ({ authError }: ErrorMessageProps) => (
   <>{authError ? <ErrorEl>{authError}</ErrorEl> : null}</>
 );
 
-export const FormButton = styled(Button)`
+export const FormButton = styled(BasicButtonEl)`
   background: ${COLOR_PALETTE.primaryGradient};
   border-radius: 1.5rem;
   color: #fff;

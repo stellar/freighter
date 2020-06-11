@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { APPLICATION_STATE } from "statics";
 
-import { Button } from "popup/basics";
+import { BasicButtonEl } from "popup/basics";
 import { Z_INDEXES, COLOR_PALETTE } from "popup/styles";
 import { POPUP_WIDTH } from "popup/constants";
 
@@ -33,7 +33,7 @@ const MenuHeader = styled(Header)`
 const MenuEl = styled.div`
   padding: 0.675rem 3.375rem;
 `;
-const MenuOpenButton = styled(Button)`
+const MenuOpenButton = styled(BasicButtonEl)`
   display: inline-block;
   background: url(${MenuIcon});
   background-size: cover;
