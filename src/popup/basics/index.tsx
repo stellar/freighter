@@ -76,13 +76,29 @@ export const FormButton = styled(Button)`
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.3rem;
-  margin: 1rem auto;
+  margin: 1.5rem auto;
   padding: 1.6rem 6rem;
 
   &:disabled {
     color: ${COLOR_PALETTE.secondaryText};
   }
 `;
+
+interface SubmitButtonProps {
+  buttonCTA: string;
+  isSubmitting: boolean;
+  isValid: boolean;
+}
+
+export const FormSubmitButton = ({
+  buttonCTA,
+  isSubmitting,
+  isValid,
+}: SubmitButtonProps) => (
+  <FormButton type="submit" disabled={isSubmitting || !isValid}>
+    {isSubmitting ? "Loading..." : buttonCTA}
+  </FormButton>
+);
 
 export const FormRow = styled.div`
   padding: 0.2rem 0;

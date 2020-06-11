@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import { FormButton } from "popup/basics";
+import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics/FullscreenStyle";
 
 const HeaderEl = styled.h1`
   font-weight: 200;
@@ -30,6 +31,7 @@ const Celebration = styled.h1`
 
 const MnemonicPhraseConfirmed = () => (
   <>
+    <FullscreenStyle />
     <Wrapper>
       <HeaderEl>Woo, you’re in!</HeaderEl>
       <Celebration>

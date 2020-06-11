@@ -7,14 +7,20 @@ import {
   authErrorSelector,
 } from "popup/ducks/authServices";
 import Form from "popup/components/Form";
+import { RightColumn } from "popup/components/Layout/Fullscreen/Onboarding";
 import { COLOR_PALETTE } from "popup/styles";
-import { ApiErrorMessage, Button } from "popup/basics";
+import {
+  ApiErrorMessage,
+  Button,
+  FormRow,
+  FormSubmitButton,
+} from "popup/basics";
 import CheckButton from "./basics/CheckButton";
 
 const ConfirmInput = styled.div`
   background: #d2d8e5;
   border: 0;
-  border-radius: 30px;
+  border-radius: 1.875rem;
   box-sizing: border-box;
   color: ${COLOR_PALETTE.primary};
   font-size: 1.125rem;
@@ -22,18 +28,23 @@ const ConfirmInput = styled.div`
   padding: 2.3rem;
   resize: none;
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
   text-align: center;
 `;
 
 const ClearButton = styled(Button)`
   background: ${COLOR_PALETTE.primaryGradient};
-  border-radius: 7px;
+  border-radius: 0.5rem;
   color: #fff;
   font-weight: 800;
-  height: 24px;
-  margin-left: 7px;
-  width: 24px;
+  height: 1.5rem;
+  margin-left: 0.5rem;
+  width: 1.5rem;
+`;
+
+const WordBubbleWrapper = styled(RightColumn)`
+  display: flex;
+  flex-flow: wrap;
 `;
 
 const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
@@ -102,13 +113,9 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
     <>
       <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
         {({ setValues, values, isSubmitting, handleChange }) => (
-          <Form
-            formCTA="Confirm"
-            isSubmitting={isSubmitting}
-            isValid={!!displaySelectedWords().length}
-          >
+          <Form>
             <>
-              <div>
+              <RightColumn>
                 <ConfirmInput>
                   {displaySelectedWords()}
                   {selectedWords.length ? (
@@ -121,8 +128,15 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
                   ) : null}
                 </ConfirmInput>
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
-              </div>
-              {wordBubbles(handleChange)}
+              </RightColumn>
+              <WordBubbleWrapper>{wordBubbles(handleChange)}</WordBubbleWrapper>
+              <FormRow>
+                <FormSubmitButton
+                  buttonCTA="Confirm"
+                  isSubmitting={isSubmitting}
+                  isValid={!!displaySelectedWords().length}
+                />
+              </FormRow>
             </>
           </Form>
         )}
