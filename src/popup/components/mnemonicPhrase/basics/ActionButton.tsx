@@ -1,8 +1,8 @@
 import styled from "styled-components";
-import { BasicButtonEl } from "popup/basics";
+import { BasicButton } from "popup/basics";
 import { COLOR_PALETTE } from "popup/styles";
 
-const ActionButton = styled(BasicButtonEl)`
+const ActionButton = styled(BasicButton)`
   color: ${COLOR_PALETTE.secondaryText};
   font-size: 0.875rem;
   font-weight: 500;

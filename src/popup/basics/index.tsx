@@ -5,7 +5,7 @@ import { ErrorMessage, Field } from "formik";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
 
 /* Button */
-export const BasicButtonEl = styled.button`
+export const BasicButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
@@ -98,7 +98,7 @@ export const ApiErrorMessage = ({ error }: ErrorMessageProps) => (
   <>{error ? <FormErrorEl>{error}</FormErrorEl> : null}</>
 );
 
-export const FormButton = styled(BasicButtonEl)`
+export const FormButton = styled(BasicButton)`
   background: ${COLOR_PALETTE.primaryGradient};
   border-radius: 1.5rem;
   color: ${COLOR_PALETTE.white};

@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
-import { BasicButtonEl } from "popup/basics";
+import { BasicButton } from "popup/basics";
 import FullscreenStyle from "./basics/FullscreenStyle";
 
 const HeaderEl = styled.h1`
@@ -40,7 +40,7 @@ const EmojiSpan = styled.span`
   font-size: 3.625rem;
 `;
 
-const BackButton = styled(BasicButtonEl)`
+const BackButton = styled(BasicButton)`
   margin: 1rem 0 0 2.75rem;
 `;
 
