@@ -10,12 +10,12 @@ import { Button } from "popup/basics";
 const GrantAccessEl = styled.div`
   padding: 2.25rem 2.5rem;
 `;
-const H1 = styled.h1`
+const Header = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
   margin: 1rem 0 0.75rem;
 `;
-const H3 = styled.h3`
+const Subheader = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
   font-size: 0.95rem;
   letter-spacing: 0.1px;
@@ -55,8 +55,8 @@ export const GrantAccess = () => {
 
   return (
     <GrantAccessEl>
-      <H1>Connection request</H1>
-      <H3>{title} wants to know your public key</H3>
+      <Header>Connection request</Header>
+      <Subheader>{title} wants to know your public key</Subheader>
       <Text>
         This site is asking for access to the public key associated with this
         Lyra wallet. Only share your information with websites you trust.{" "}
