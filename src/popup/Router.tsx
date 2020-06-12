@@ -20,7 +20,7 @@ import { POPUP_WIDTH } from "popup/constants";
 
 import Account from "popup/views/Account";
 import CreatePassword from "popup/views/CreatePassword";
-import GrantAccess from "popup/views/GrantAccess";
+import { GrantAccess } from "popup/views/GrantAccess";
 import MnemonicPhrase from "popup/views/MnemonicPhrase";
 import MnemonicPhraseConfirmed from "popup/views/MnemonicPhrase/Confirmed";
 import RecoverAccount from "popup/views/RecoverAccount";
