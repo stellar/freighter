@@ -1,13 +1,11 @@
 import React from "react";
 import styled from "styled-components";
 import { ErrorMessage, Field } from "formik";
-import { COLOR_PALETTE } from "popup/styles";
 
-interface ErrorMessageProps {
-  error: string;
-}
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
 
-export const Button = styled.button`
+/* Button */
+export const BasicButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
@@ -21,6 +19,38 @@ export const Button = styled.button`
     cursor: not-allowed;
   }
 `;
+
+interface ButtonProps {
+  size?: string;
+  onClick(): any;
+  children: React.ReactNode;
+}
+
+export const ButtonEl = styled.button<ButtonProps>`
+  width: ${(props) => (props.size === "small" ? "8.75rem" : "12.375rem")};
+  display: ${(props) => (props.size === "small" ? "inline-block" : "block")};
+  margin: 0 auto;
+  font-size: 0.8rem;
+  font-weight: ${FONT_WEIGHT.bold};
+  padding: 1.45rem;
+  border-radius: 20px;
+  background: ${COLOR_PALETTE.primaryGradient};
+  color: ${COLOR_PALETTE.white};
+  border: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+`;
+
+export const Button = ({ size, children, onClick, ...props }: ButtonProps) => (
+  <ButtonEl size={size} onClick={onClick} {...props}>
+    {children}
+  </ButtonEl>
+);
+
+/* Form */
+interface ErrorMessageProps {
+  error: string;
+}
 
 const FormErrorEl = styled.div`
   color: ${COLOR_PALETTE.error};
@@ -68,10 +98,10 @@ export const ApiErrorMessage = ({ error }: ErrorMessageProps) => (
   <>{error ? <FormErrorEl>{error}</FormErrorEl> : null}</>
 );
 
-export const FormButton = styled(Button)`
+export const FormButton = styled(BasicButton)`
   background: ${COLOR_PALETTE.primaryGradient};
   border-radius: 1.5rem;
-  color: #fff;
+  color: ${COLOR_PALETTE.white};
   display: block;
   font-size: 1.1rem;
   font-weight: 600;

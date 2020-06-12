@@ -8,7 +8,7 @@ import {
 } from "popup/ducks/authServices";
 import Form from "popup/components/Form";
 import { COLOR_PALETTE } from "popup/styles";
-import { ApiErrorMessage, Button } from "popup/basics";
+import { ApiErrorMessage, BasicButton } from "popup/basics";
 import CheckButton from "./basics/CheckButton";
 
 const ConfirmInput = styled.div`
@@ -26,7 +26,7 @@ const ConfirmInput = styled.div`
   text-align: center;
 `;
 
-const ClearButton = styled(Button)`
+const ClearButton = styled(BasicButton)`
   background: ${COLOR_PALETTE.primaryGradient};
   border-radius: 7px;
   color: #fff;

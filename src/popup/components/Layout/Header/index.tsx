@@ -8,7 +8,8 @@ const HeaderEl = styled.header`
   font-family: "Muli";
   display: flex;
   justify-content: space-between;
-  padding: 2.375rem 3.375rem;
+  align-items: center;
+  padding: 2.25rem 2rem;
   text-align: left;
 `;
 
@@ -32,8 +33,8 @@ type HeaderProps = {
   className?: string;
 };
 
-export const Header = ({ className }: HeaderProps) => (
-  <HeaderEl className={className}>
+export const Header = ({ className, ...props }: HeaderProps) => (
+  <HeaderEl className={className} {...props}>
     <HeaderH1>Lyra</HeaderH1>
     <NetworkEl>Test net</NetworkEl>
   </HeaderEl>

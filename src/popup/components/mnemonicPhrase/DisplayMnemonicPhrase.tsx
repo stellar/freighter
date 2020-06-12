@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
-import { Button, FormButton } from "popup/basics";
+import { BasicButton, FormButton } from "popup/basics";
 import Toast from "popup/components/Toast";
 import ActionButton from "./basics/ActionButton";
 
@@ -27,7 +27,7 @@ const MnemonicDisplay = styled.div`
     isBlurred ? "0 0 5px rgba(0, 0, 0, 0.5)" : "none"};
 `;
 
-const DisplayTooltip = styled(Button)`
+const DisplayTooltip = styled(BasicButton)`
   color: #fff;
   font-size: 1rem;
   position: absolute;
