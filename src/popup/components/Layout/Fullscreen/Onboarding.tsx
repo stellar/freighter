@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import { BasicButton } from "popup/basics";
-import FullscreenStyle from "./basics/FullscreenStyle";
+import { FullscreenStyle } from "./basics/FullscreenStyle";
 
 const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary};
@@ -23,17 +23,15 @@ const SubheaderEl = styled.h2`
 export const Screen = styled.section`
   align-content: center;
   display: flex;
+  flex-flow: column wrap;
   justify-content: center;
   padding: 100px 170px;
+  height: 28rem;
 `;
 
-const HalfScreen = styled.section`
+export const RightColumn = styled.section`
   padding: 0 1.6rem;
   width: 21rem;
-
-  :nth-child(1) {
-    margin-top: 4.125rem;
-  }
 `;
 
 const EmojiSpan = styled.span`
@@ -42,9 +40,10 @@ const EmojiSpan = styled.span`
 
 const BackButton = styled(BasicButton)`
   margin: 1rem 0 0 2.75rem;
+  text-align: left;
 `;
 
-const Onboarding = ({
+export const Onboarding = ({
   goBack,
   header,
   subheader,
@@ -55,22 +54,18 @@ const Onboarding = ({
   header: string;
   subheader?: string;
   icon: { emoji: string; alt: string };
-  children: JSX.Element;
+  children: React.ReactNode;
 }) => (
   <>
     <FullscreenStyle />
     {goBack ? <BackButton onClick={goBack}>&lt; Back</BackButton> : null}
     <Screen>
-      <HalfScreen>
-        <EmojiSpan role="img" aria-label={alt}>
-          {emoji}
-        </EmojiSpan>
-        <HeaderEl>{header}</HeaderEl>
-        {subheader ? <SubheaderEl>{subheader}</SubheaderEl> : null}
-      </HalfScreen>
-      <HalfScreen>{children}</HalfScreen>
+      <EmojiSpan role="img" aria-label={alt}>
+        {emoji}
+      </EmojiSpan>
+      <HeaderEl>{header}</HeaderEl>
+      {subheader ? <SubheaderEl>{subheader}</SubheaderEl> : null}
+      {children}
     </Screen>
   </>
 );
-
-export default Onboarding;

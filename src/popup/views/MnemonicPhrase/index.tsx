@@ -3,7 +3,7 @@ import { shuffle } from "lodash";
 import ConfirmMnemonicPhrase from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
 import useMnemonicPhrase from "popup/hooks/useMnemonicPhrase";
 import DisplayMnemonicPhrase from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
-import Onboarding from "popup/components/Layout/Fullscreen/Onboarding";
+import { Onboarding } from "popup/components/Layout/Fullscreen/Onboarding";
 
 const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
