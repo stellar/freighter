@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Form as FormikForm } from "formik";
 
 interface FormProps {
-  children: JSX.Element;
+  children: React.ReactNode;
 }
 
 const StyledForm = styled(FormikForm)`

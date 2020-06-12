@@ -11,7 +11,7 @@ import { RightColumn } from "popup/components/Layout/Fullscreen/Onboarding";
 import { COLOR_PALETTE } from "popup/styles";
 import {
   ApiErrorMessage,
-  BasicButton,
+  ButtonEl,
   FormRow,
   FormSubmitButton,
 } from "popup/basics";
@@ -32,13 +32,12 @@ const ConfirmInput = styled.div`
   text-align: center;
 `;
 
-const ClearButton = styled(BasicButton)`
-  background: ${COLOR_PALETTE.primaryGradient};
+const ClearButton = styled(ButtonEl)`
   border-radius: 0.5rem;
-  color: #fff;
-  font-weight: 800;
+  display: inline-block;
   height: 1.5rem;
-  margin-left: 0.5rem;
+  margin: 0 0 0 0.5rem;
+  padding: 0;
   width: 1.5rem;
 `;
 

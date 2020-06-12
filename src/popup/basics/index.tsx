@@ -124,8 +124,9 @@ export const FormSubmitButton = ({
   buttonCTA,
   isSubmitting,
   isValid,
+  ...props
 }: SubmitButtonProps) => (
-  <FormButton type="submit" disabled={isSubmitting || !isValid}>
+  <FormButton type="submit" disabled={isSubmitting || !isValid} {...props}>
     {isSubmitting ? "Loading..." : buttonCTA}
   </FormButton>
 );

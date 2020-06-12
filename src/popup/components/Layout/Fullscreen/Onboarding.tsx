@@ -54,7 +54,7 @@ export const Onboarding = ({
   header: string;
   subheader?: string;
   icon: { emoji: string; alt: string };
-  children: JSX.Element;
+  children: React.ReactNode;
 }) => (
   <>
     <FullscreenStyle />
