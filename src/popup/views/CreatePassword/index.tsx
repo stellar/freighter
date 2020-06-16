@@ -18,6 +18,7 @@ import {
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/components/Form/validators";
+import { EMOJI } from "popup/constants";
 import { history } from "popup/App";
 
 const CreatePassword = () => {
@@ -52,16 +53,11 @@ const CreatePassword = () => {
     }
   }, [publicKey]);
 
-  const icon = {
-    emoji: "🙈",
-    alt: "See No Evil",
-  };
-
   return (
     <Onboarding
       header="Create a password"
       subheader="Min 10 characters"
-      icon={icon}
+      icon={EMOJI.see_no_evil}
       goBack={() => window.location.replace("/")}
     >
       <Formik
@@ -81,7 +77,6 @@ const CreatePassword = () => {
                 />
                 <FormError name="password" />
               </FormRow>
-
               <FormRow>
                 <FormTextField
                   autoComplete="off"
