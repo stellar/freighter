@@ -76,7 +76,7 @@ const RecoverAccount = () => {
       onSubmit={handleSubmit}
       validationSchema={RecoverAccountSchema}
     >
-      {({ isSubmitting, isValid }) => (
+      {({ handleChange, isSubmitting, isValid }) => (
         <Form>
           <Onboarding
             header="Recover wallet from backup phrase"
@@ -85,7 +85,12 @@ const RecoverAccount = () => {
           >
             <>
               <FormRow>
-                <FormTextField as="textarea" name="mnemonicPhrase" />
+                <FormTextField
+                  as="textarea"
+                  name="mnemonicPhrase"
+                  onChange={handleChange}
+                />
+                <FormError name="mnemonicPhrase" />
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
               </FormRow>
               <RightColumn>
