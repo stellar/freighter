@@ -114,7 +114,7 @@ export const UnlockAccount = () => {
                 type="password"
                 name="password"
                 placeholder="Enter password"
-                hasError={authError && "1px solid red"}
+                hasError={authError}
               />
               {authError ? (
                 <ErrorEmojiEl>
