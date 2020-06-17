@@ -22,7 +22,7 @@ export const BasicButton = styled.button`
 
 interface ButtonProps {
   size?: string;
-  onClick(): any;
+  onClick?: () => void;
   children: React.ReactNode;
 }
 
@@ -33,7 +33,7 @@ export const ButtonEl = styled.button<ButtonProps>`
   font-size: 0.8rem;
   font-weight: ${FONT_WEIGHT.bold};
   padding: 1.45rem;
-  border-radius: 20px;
+  border-radius: 1.25rem;
   background: ${COLOR_PALETTE.primaryGradient};
   color: ${COLOR_PALETTE.white};
   border: none;
@@ -42,7 +42,7 @@ export const ButtonEl = styled.button<ButtonProps>`
 `;
 
 export const Button = ({ size, children, onClick, ...props }: ButtonProps) => (
-  <ButtonEl size={size} onClick={onClick} {...props}>
+  <ButtonEl size={size} onClick={() => onClick && onClick()} {...props}>
     {children}
   </ButtonEl>
 );
@@ -52,7 +52,7 @@ interface ErrorMessageProps {
   error: string;
 }
 
-const FormErrorEl = styled.div`
+export const FormErrorEl = styled.div`
   color: ${COLOR_PALETTE.error};
   font-size: 0.8125rem;
   height: 1rem;
@@ -98,17 +98,7 @@ export const ApiErrorMessage = ({ error }: ErrorMessageProps) => (
   <>{error ? <FormErrorEl>{error}</FormErrorEl> : null}</>
 );
 
-export const FormButton = styled(BasicButton)`
-  background: ${COLOR_PALETTE.primaryGradient};
-  border-radius: 1.5rem;
-  color: ${COLOR_PALETTE.white};
-  display: block;
-  font-size: 1.1rem;
-  font-weight: 600;
-  line-height: 1.3rem;
-  margin: 1.5rem auto;
-  padding: 1.6rem 6rem;
-
+export const FormButton = styled(ButtonEl)`
   &:disabled {
     color: ${COLOR_PALETTE.secondaryText};
   }
@@ -132,8 +122,10 @@ export const FormSubmitButton = ({
 );
 
 export const FormRow = styled.div`
+  position: relative;
   padding: 0.2rem 0;
-  width: 24.5rem;
+  max-width: 24.5rem;
+  width: 100%;
 `;
 
 export const FormError = ({ name }: { name: string }) => (
@@ -143,12 +135,13 @@ export const FormError = ({ name }: { name: string }) => (
 );
 
 export const FormTextField = styled(Field)`
-  border-radius: 1.875rem;
-  border: 0;
+  border-radius: 1.25rem;
+  border: ${(props) =>
+    props.hasError ? `1px solid ${COLOR_PALETTE.error}` : 0};
   box-sizing: border-box;
   background: ${COLOR_PALETTE.inputBackground};
-  font-size: 1.125rem;
-  padding: 1.875rem 3rem;
+  font-size: 1rem;
+  padding: 1.875rem 2.25rem;
   width: 100%;
 `;
 

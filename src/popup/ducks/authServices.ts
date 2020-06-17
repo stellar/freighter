@@ -110,7 +110,7 @@ export const confirmPassword = createAsyncThunk<
   }
   if (!res.publicKey) {
     return thunkApi.rejectWithValue({
-      errorMessage: "The password you entered is incorrect",
+      errorMessage: "Incorrect Password",
     });
   }
 

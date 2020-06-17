@@ -1,31 +1,31 @@
 import React, { useState } from "react";
 import { shuffle } from "lodash";
-import ConfirmMnemonicPhrase from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
+
+import { EMOJI } from "popup/constants";
+
 import useMnemonicPhrase from "popup/hooks/useMnemonicPhrase";
-import DisplayMnemonicPhrase from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
+
 import { Onboarding } from "popup/components/Layout/Fullscreen/Onboarding";
+
+import ConfirmMnemonicPhrase from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
+import DisplayMnemonicPhrase from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
 
 const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
 
   const mnemonicPhrase = useMnemonicPhrase();
 
-  const icon = {
-    emoji: "🕵️‍♂️",
-    alt: "Spy",
-  };
-
   if (mnemonicPhrase) {
     return readyToConfirm ? (
       <Onboarding
         header="Confirm your secret phrase"
-        icon={icon}
+        icon={EMOJI.spy}
         goBack={() => setReadyToConfirm(false)}
       >
         <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />
       </Onboarding>
     ) : (
-      <Onboarding header="Secret backup phrase" icon={icon}>
+      <Onboarding header="Secret backup phrase" icon={EMOJI.spy}>
         <DisplayMnemonicPhrase
           mnemonicPhrase={mnemonicPhrase}
           setReadyToConfirm={setReadyToConfirm}
