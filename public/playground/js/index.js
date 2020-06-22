@@ -8,7 +8,7 @@ document.querySelector("#lyra-connect").addEventListener("click", async () => {
   }
   const { publicKey, error } = response;
 
-  let output = publicKey || error;
+  const output = publicKey || error;
 
   document.querySelector("#publicKey").value = output;
 });
@@ -18,17 +18,20 @@ document
   .addEventListener("click", async () => {
     const transactionXdr = document.querySelector("#transaction-xdr").value;
 
-    let transactionStatus = "";
+    let response = "";
 
     try {
-      transactionStatus = await window.lyra.requestSignature({
+      response = await window.lyra.requestSignature({
         transactionXdr,
       });
     } catch (e) {
       console.error(e);
     }
 
+    const { transactionStatus, error } = response;
+
+    const output = transactionStatus || error;
     document.querySelector("#transaction-status").value = JSON.stringify(
-      transactionStatus,
+      output,
     );
   });

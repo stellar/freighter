@@ -1,5 +1,5 @@
 import { EXTERNAL_SERVICE_TYPES } from "statics";
-import { sendMessageAndAwaitResponseExternal } from "api/helpers";
+import { sendMessageToContentScript } from "api/helpers";
 import { ExternalRequest } from "api/types";
 
 export const requestAccess = async (): Promise<{
@@ -8,7 +8,7 @@ export const requestAccess = async (): Promise<{
 }> => {
   let response = { publicKey: "", error: "" };
   try {
-    response = await sendMessageAndAwaitResponseExternal({
+    response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS,
     });
   } catch (e) {
@@ -25,7 +25,7 @@ export const submitTransaction = async ({
 }> => {
   let response = { transactionStatus: "", error: "" };
   try {
-    response = await sendMessageAndAwaitResponseExternal({
+    response = await sendMessageToContentScript({
       transactionXdr,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION,
     });

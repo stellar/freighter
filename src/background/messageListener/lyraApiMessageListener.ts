@@ -4,13 +4,13 @@ import { ExternalRequest as Request } from "api/types";
 import { EXTERNAL_SERVICE_TYPES } from "statics";
 import { removeQueryParam } from "helpers";
 import { Sender, SendResponseInterface } from "../types";
-import { responseQueue, transactionQueue } from "./internalMessageListener";
+import { responseQueue, transactionQueue } from "./popupMessageListener";
 import { store, publicKeySelector } from "../ducks/session";
 
 const WHITELIST_ID = "whitelist";
 const WINDOW_DIMENSIONS = "height=600,width=357";
 
-const externalMessageListener = (
+export const lyraApiMessageListener = (
   request: Request,
   sender: Sender,
   sendResponse: (response: SendResponseInterface) => void,
@@ -100,5 +100,3 @@ const externalMessageListener = (
     messageResponder[request.type]();
   }
 };
-
-export default externalMessageListener;

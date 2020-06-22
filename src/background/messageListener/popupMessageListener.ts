@@ -33,7 +33,7 @@ interface StellarHdWallet {
   getSecret: (number: Number) => string;
 }
 
-const internalMessageListener = (
+export const popupMessageListener = (
   request: Request,
   _: Sender,
   sendResponse: (response: SendResponseInterface) => void,
@@ -285,5 +285,3 @@ const internalMessageListener = (
     messageResponder[request.type]();
   }
 };
-
-export default internalMessageListener;
