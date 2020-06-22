@@ -22,7 +22,12 @@ export const redirectMessagesToBackground = () => {
       if (!event.data.source || event.data.source !== EXTERNAL_MSG_REQUEST)
         return;
       // Forward the message on to Background
-      const res = await sendMessageToBackground(event.data);
+      let res = { error: "Unable to send message to extension" };
+      try {
+        res = await sendMessageToBackground(event.data);
+      } catch (e) {
+        console.error(e);
+      }
       // Send the response back to Lyra API
       window.postMessage(
         { source: EXTERNAL_MSG_RESPONSE, ...res },

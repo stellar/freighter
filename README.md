@@ -45,17 +45,27 @@ nomenclature. All of these are located in the `src/` folder:
    This code also controls the fullscreen authentiction flow and any popups
    triggered by the extension. This is all controlled by one React app. In
    Chrome parlance, this is called the `popup` and is therefore located in
-   `src/popup`
+   `src/popup`.
 
-2. The API that is exposed to client websites. This API is automatically
-   injected into ANY website a user visits while they have Lyra installed. For
-   security purposes, we whitelist specific domains that can _successfully_
-   called API methods. Example: `laboratory.stellar.org` wants to interact with
-   Lyra, perhaps to request a user's public key from the extension. A dev for
-   `laboratory.stellar.org` would call this API to get that data from Lyra. In
-   Chrome parlance, this is known as a `content script`. It is instantiated on a
-   client website by `public/contentScript.js`. For clarity, and ease of sharing
-   code, the API methods are defined in `src/contentScript/lyraApi`.
+2. The API that is exposed to client websites. This API is a channel to the
+   extension. A developer for `laboratory.stellar.org`, for example, would call
+   this API to get data from Lyra. This gateway is managed by the
+   `content script` and it has 2 functions.
+
+   First, the `content script` automatically embeds a script into _EVERY_ page a
+   user opens while they have Lyra installed. This script adds a property to the
+   page's `window` called `lyra` that contains the API. When a method from
+   `window.lyra` is called, it will send a message back to the `content script`.
+
+   The second function is to listen to messages from the API and forward them on
+   to the extension. It will subsequently listen to the response from the
+   extension and send that back to the API on the client page.
+
+   In essence, `content script` controls data flow between the client page and
+   the extension.
+
+Lyra API and `content script` share the same window, so we post a message to
+that shared window for both components to have access to it.
 
 3. The "backend" service. We want to do things like account creation and store
    sensitive data, like public keys, in a secure place away from the `popup` and
@@ -66,8 +76,8 @@ nomenclature. All of these are located in the `src/` folder:
    `src/background`.
 
 This script is run by the Chrome extension on browser starts and continues
-running, storing data and listening/responding to messages from the other
-`popup` and `content script`, and only terminates on browser close (or extension
+running, storing data and listening/responding to messages from `popup` and
+`content script`, and only terminates on browser close (or extension
 uninstall/reload). It is run in a headless browser, so it has access to all Web
 APIs and Chrome APIs. It also has accessible dev tools, which can be reached by
 going to `chrome://extensions/` and clicking `inspect views: background page`
