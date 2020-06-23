@@ -5,6 +5,7 @@ import {
 } from "statics";
 
 export interface Response {
+  error: string;
   applicationState: APPLICATION_STATE;
   publicKey: string;
   hasPrivateKey: boolean;
@@ -17,6 +18,8 @@ export interface Response {
   transaction: {
     sign: (sourceKeys: {}) => void;
   };
+  transactionStatus: string;
+  source: string;
   type: SERVICE_TYPES;
   url: string;
 }

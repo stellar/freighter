@@ -1,13 +1,7 @@
 import StellarSdk from "stellar-sdk";
 
-import {
-  EXTENSION_ID,
-  SERVER_URL,
-  SERVICE_TYPES,
-  DEVELOPMENT,
-  APPLICATION_STATE,
-} from "statics";
-import { Response } from "../types";
+import { SERVER_URL, SERVICE_TYPES, APPLICATION_STATE } from "statics";
+import { sendMessageToBackground } from "../helpers";
 
 const server = new StellarSdk.Server(SERVER_URL);
 
@@ -17,7 +11,7 @@ export const createAccount = async (
   let publicKey = "";
 
   try {
-    ({ publicKey } = await sendMessageAndAwaitResponse({
+    ({ publicKey } = await sendMessageToBackground({
       password,
       type: SERVICE_TYPES.CREATE_ACCOUNT,
     }));
@@ -40,7 +34,7 @@ export const loadAccount = async (): Promise<{
   };
 
   try {
-    response = await sendMessageAndAwaitResponse({
+    response = await sendMessageToBackground({
       type: SERVICE_TYPES.LOAD_ACCOUNT,
     });
   } catch (e) {
@@ -55,7 +49,7 @@ export const getMnemonicPhrase = async (): Promise<{
   let response = { mnemonicPhrase: "" };
 
   try {
-    response = await sendMessageAndAwaitResponse({
+    response = await sendMessageToBackground({
       type: SERVICE_TYPES.GET_MNEMONIC_PHRASE,
     });
   } catch (e) {
@@ -76,7 +70,7 @@ export const confirmMnemonicPhrase = async (
   };
 
   try {
-    response = await sendMessageAndAwaitResponse({
+    response = await sendMessageToBackground({
       mnemonicPhraseToConfirm,
       type: SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE,
     });
@@ -93,7 +87,7 @@ export const recoverAccount = async (
   let publicKey = "";
 
   try {
-    ({ publicKey } = await sendMessageAndAwaitResponse({
+    ({ publicKey } = await sendMessageToBackground({
       password,
       recoverMnemonic,
       type: SERVICE_TYPES.RECOVER_ACCOUNT,
@@ -118,7 +112,7 @@ export const confirmPassword = async (
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
   };
   try {
-    response = await sendMessageAndAwaitResponse({
+    response = await sendMessageToBackground({
       password,
       type: SERVICE_TYPES.CONFIRM_PASSWORD,
     });
@@ -147,22 +141,9 @@ export const getAccountBalance = async (
   )[0];
 };
 
-export const getPublicKey = async (): Promise<{ publicKey: string }> => {
-  let publicKey = "";
-
-  try {
-    ({ publicKey } = await sendMessageAndAwaitResponsePublic({
-      type: SERVICE_TYPES.LOAD_ACCOUNT,
-    }));
-  } catch (e) {
-    console.error(e);
-  }
-  return { publicKey };
-};
-
 export const rejectAccess = async (): Promise<void> => {
   try {
-    await sendMessageAndAwaitResponse({
+    await sendMessageToBackground({
       type: SERVICE_TYPES.REJECT_ACCESS,
     });
   } catch (e) {
@@ -172,7 +153,7 @@ export const rejectAccess = async (): Promise<void> => {
 
 export const grantAccess = async (url: string): Promise<void> => {
   try {
-    await sendMessageAndAwaitResponse({
+    await sendMessageToBackground({
       url,
       type: SERVICE_TYPES.GRANT_ACCESS,
     });
@@ -187,7 +168,7 @@ export const signTransaction = async ({
   transaction: {};
 }): Promise<void> => {
   try {
-    await sendMessageAndAwaitResponse({
+    await sendMessageToBackground({
       transaction,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
@@ -205,7 +186,7 @@ export const signOut = async (): Promise<{
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
   };
   try {
-    response = await sendMessageAndAwaitResponse({
+    response = await sendMessageToBackground({
       type: SERVICE_TYPES.SIGN_OUT,
     });
   } catch (e) {
@@ -214,21 +195,3 @@ export const signOut = async (): Promise<{
 
   return response;
 };
-
-export const sendMessageAndAwaitResponse = (msg: {}): Promise<Response> =>
-  new Promise((resolve) => {
-    if (DEVELOPMENT) {
-      chrome.runtime.sendMessage(EXTENSION_ID, msg, (res: Response) =>
-        resolve(res),
-      );
-    } else {
-      chrome.runtime.sendMessage(msg, (res: Response) => resolve(res));
-    }
-  });
-
-export const sendMessageAndAwaitResponsePublic = (msg: {}): Promise<Response> =>
-  new Promise((resolve) => {
-    chrome.runtime.sendMessage(EXTENSION_ID, msg, (res: Response) =>
-      resolve(res),
-    );
-  });

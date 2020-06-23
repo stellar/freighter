@@ -14,13 +14,6 @@
       "run_at": "document_start"
     }
   ],
-  "externally_connectable": {
-    "matches": [
-      "*://*.stellar.org/*",
-      "*://*.lyraclient.com/*",
-      "*://*.stellar-ops.com/*"
-    ]
-  },
   "web_accessible_resources": ["lyraApi.min.js"],
   "page_action": {
     "default_popup": "index.html",
