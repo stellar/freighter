@@ -23,6 +23,7 @@ const GlobalStyle = createGlobalStyle`
 
   body, html {
     width: ${POPUP_WIDTH}px;
+  }
   body, html, #root {
     height: 100vh;
   }

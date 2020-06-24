@@ -1,44 +1,96 @@
 import React from "react";
-import buffer from "buffer";
 import { useLocation } from "react-router-dom";
-import { get } from "lodash";
 import { useSelector } from "react-redux";
+import BigNumber from "bignumber.js";
 import styled from "styled-components";
 
-import { publicKeySelector } from "popup/ducks/authServices";
 import { operationTypes } from "statics";
 
 import { rejectAccess, signTransaction } from "api/internal";
 
+import { truncatedPublicKey } from "helpers";
+
+import { publicKeySelector } from "popup/ducks/authServices";
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
+import { Button } from "popup/basics";
+
+const El = styled.div`
+  padding: 2.25rem 2.5rem;
+  box-sizing: border-box;
+`;
+const Header = styled.h1`
+  color: ${COLOR_PALETTE.primary}};
+  font-weight: ${FONT_WEIGHT.light};
+  margin: 1rem 0 0.75rem;
+`;
+const Subheader = styled.h3`
+  font-weight: ${FONT_WEIGHT.bold};
+  font-size: 0.95rem;
+  letter-spacing: 0.1px;
+  color: ${COLOR_PALETTE.primary}};
+`;
+const OperationBoxHeader = styled.h4`
+  color: ${COLOR_PALETTE.primary}};
+  font-size: 1.4rem;
+  font-weight: ${FONT_WEIGHT.light};
+  margin: 0;
+  margin-top: 2.5rem;
+
+  strong {
+    font-weight: ${FONT_WEIGHT.bold};
+  }
+`;
 const OperationBox = styled.div`
-  background: #efefef;
-  border: 1px solid #000;
-  padding: 0.5em;
   text-align: left;
 `;
+const ListEl = styled.ul`
+  max-width: 300px;
+  font-size: 0.95rem;
+  letter-spacing: 0.1px;
+  list-style-type: none;
+  padding: 0;
+  padding-left: 1.5rem;
+  margin: 0;
+  margin-top: 2rem;
+  margin-bottom: 1.33em;
 
-const SignerBox = styled.div`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  li {
+    display: flex;
+    justify-content: space-between;
+    margin: 1.35rem 0;
+    color: ${COLOR_PALETTE.secondaryText}};
+
+    div {
+      width: 50%;
+    }
+  }
+
+  strong {
+    font-weight: ${FONT_WEIGHT.bold};
+    color: ${COLOR_PALETTE.text}};
+  }
+`;
+const ButtonContainerEl = styled.div`
+  display: flex;
+  justify-content: space-around;
+  padding: 3rem 1.25rem;
+`;
+const RejectButton = styled(Button)`
+  background: ${COLOR_PALETTE.text};
 `;
 
-const SignTransaction = () => {
+export const SignTransaction = () => {
   const location = useLocation();
   const decodedTransactionInfo = atob(location.search.replace("?", ""));
   const transactionInfo = decodedTransactionInfo
     ? JSON.parse(decodedTransactionInfo)
     : {};
   const {
-    tab: { url, title },
+    tab: { title },
     transaction,
   } = transactionInfo;
 
-  const { fee, _operations, _memo } = transaction;
-  const memo = buffer.Buffer.from(get(_memo, "_value.data", [])).toString(
-    "utf-8",
-  );
-
+  const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
 
   const rejectAndClose = async () => {
@@ -59,50 +111,138 @@ const SignTransaction = () => {
         asset,
         signer,
         type,
+        buying,
+        selling,
+        buyAmount,
+        price,
       }: {
         amount: string;
         destination: string;
         asset: { code: string };
         signer: { ed25519PublicKey: string; weight: number };
         type: keyof typeof operationTypes;
-      }) => (
-        <OperationBox>
-          <h4>{operationTypes[type]}</h4>
-          {amount ? (
-            <p>
-              Amount: {amount} {asset.code}
-            </p>
-          ) : null}
-          {destination ? <p>Destination: {destination}</p> : null}
-          {signer ? (
-            <>
-              <SignerBox>Signer: {signer.ed25519PublicKey}</SignerBox>
+        buying: { code: string };
+        selling: { code: string };
+        buyAmount: string;
+        price: string;
+      }) => {
+        const formattedAmount = new BigNumber(amount).toFormat(2);
+        const formattedBuyAmount = new BigNumber(buyAmount).toFormat(2);
 
-              <SignerBox>Weight: {signer.weight}</SignerBox>
-            </>
-          ) : null}
-        </OperationBox>
-      ),
+        return (
+          <OperationBox>
+            <OperationBoxHeader>
+              Operation <strong>{operationTypes[type]}</strong>
+            </OperationBoxHeader>
+            <ListEl>
+              {amount ? (
+                <li>
+                  <div>
+                    <strong>Amount</strong>
+                  </div>
+                  <div>
+                    {formattedAmount} {asset.code}
+                  </div>
+                </li>
+              ) : null}
+
+              {destination ? (
+                <li>
+                  <div>
+                    <strong>Destination</strong>
+                  </div>
+                  <div>{truncatedPublicKey(destination)}</div>
+                </li>
+              ) : null}
+
+              {signer ? (
+                <>
+                  <li>
+                    <div>
+                      <strong>Signer</strong>
+                    </div>
+                    <div>{truncatedPublicKey(signer.ed25519PublicKey)}</div>
+                  </li>
+                  <li>
+                    <div>
+                      <strong>Weight</strong>
+                    </div>
+                    <div>{signer.weight}</div>
+                  </li>
+                </>
+              ) : null}
+
+              {buying ? (
+                <li>
+                  <div>
+                    <strong>Buying</strong>
+                  </div>
+                  <div> {buying.code}</div>
+                </li>
+              ) : null}
+
+              {selling ? (
+                <li>
+                  <div>
+                    <strong>Selling</strong>
+                  </div>
+                  <div>{selling.code}</div>
+                </li>
+              ) : null}
+
+              {buyAmount ? (
+                <li>
+                  <div>
+                    <strong>Amount</strong>
+                  </div>
+                  <div>{formattedBuyAmount}</div>
+                </li>
+              ) : null}
+
+              {price ? (
+                <li>
+                  <div>
+                    <strong>Price</strong>
+                  </div>
+                  <div> {price}</div>
+                </li>
+              ) : null}
+            </ListEl>
+          </OperationBox>
+        );
+      },
     );
 
   return (
-    <>
-      <h1>Confirm Transaction</h1>
-      <img alt="favicon of site" src={`${url}/favico.png`} />
-
-      <h3>{title} is requesting a transaction signature</h3>
-      <h3>Transaction details</h3>
-      <p>Source Account Key: {publicKey}</p>
-      {fee ? <p>Base fee: {fee}</p> : null}
-      <h3>{_operations.length} Operations:</h3>
+    <El>
+      <Header>Confirm Transaction</Header>
+      <Subheader>{title} is requesting a transaction</Subheader>
+      {/* <Subheader>Transaction details</Subheader> */}
+      <ListEl>
+        <li>
+          <div>
+            <strong>Source Acc Key</strong>
+          </div>
+          <div>{truncatedPublicKey(publicKey)}</div>
+        </li>
+        {_fee ? (
+          <li>
+            <div>
+              <strong>Base fee</strong>
+            </div>
+            <div> {_fee}</div>
+          </li>
+        ) : null}
+      </ListEl>
       <Operations />
-      <div>
-        <p>memo: {memo}</p>
-      </div>
-      <button onClick={() => rejectAndClose()}>Reject</button>
-      <button onClick={() => signAndClose()}>Confirm</button>
-    </>
+      <ButtonContainerEl>
+        <RejectButton size="small" onClick={() => rejectAndClose()}>
+          Reject
+        </RejectButton>
+        <Button size="small" onClick={() => signAndClose()}>
+          Confirm
+        </Button>
+      </ButtonContainerEl>
+    </El>
   );
 };
-
-export default SignTransaction;
