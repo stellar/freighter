@@ -12,7 +12,7 @@ import { truncatedPublicKey } from "helpers";
 
 import { publicKeySelector } from "popup/ducks/authServices";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
-import { Button } from "popup/basics";
+import { Button, BackButton } from "popup/basics";
 
 const El = styled.div`
   padding: 2.25rem 2.5rem;
@@ -215,6 +215,7 @@ export const SignTransaction = () => {
 
   return (
     <El>
+      <BackButton onClick={() => window.location.replace("/")} />
       <Header>Confirm Transaction</Header>
       <Subheader>{title} is requesting a transaction</Subheader>
       {/* <Subheader>Transaction details</Subheader> */}

@@ -4,6 +4,8 @@ import { ErrorMessage, Field } from "formik";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
 
+import ChevronIcon from "popup/assets/icon-chevron.svg";
+
 /* Button */
 export const BasicButton = styled.button`
   background: none;
@@ -45,6 +47,34 @@ export const Button = ({ size, children, onClick, ...props }: ButtonProps) => (
   <ButtonEl size={size} onClick={() => onClick && onClick()} {...props}>
     {children}
   </ButtonEl>
+);
+
+/* Back Button */
+interface BackButtonProps {
+  onClick: () => void;
+}
+
+const BackButtonEl = styled.button`
+  display: flex;
+  align-items: center;
+  background: ${COLOR_PALETTE.inputBackground};
+  border: none;
+  border-radius: 0.625rem;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+
+  img {
+    transform: rotate(180deg);
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+`;
+
+export const BackButton = ({ onClick, ...props }: BackButtonProps) => (
+  <BackButtonEl onClick={() => onClick && onClick()} {...props}>
+    <img src={ChevronIcon} alt="chevron icon" />
+  </BackButtonEl>
 );
 
 /* Form */
