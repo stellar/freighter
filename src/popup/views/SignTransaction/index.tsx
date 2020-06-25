@@ -103,36 +103,45 @@ export const SignTransaction = () => {
     window.close();
   };
 
+  interface TransactionInfoResponse {
+    amount: string;
+    destination: string;
+    asset: { code: string };
+    signer: {
+      ed25519PublicKey: string;
+      weight: number;
+    };
+    type: keyof typeof operationTypes;
+    buying: { code: string };
+    selling: { code: string };
+    buyAmount: string;
+    price: string;
+  }
+
   const Operations = () =>
     _operations.map(
-      ({
-        amount,
-        destination,
-        asset,
-        signer,
-        type,
-        buying,
-        selling,
-        buyAmount,
-        price,
-      }: {
-        amount: string;
-        destination: string;
-        asset: { code: string };
-        signer: { ed25519PublicKey: string; weight: number };
-        type: keyof typeof operationTypes;
-        buying: { code: string };
-        selling: { code: string };
-        buyAmount: string;
-        price: string;
-      }) => {
+      (
+        {
+          amount,
+          destination,
+          asset,
+          signer,
+          type,
+          buying,
+          selling,
+          buyAmount,
+          price,
+        }: TransactionInfoResponse,
+        i: number,
+      ) => {
         const formattedAmount = new BigNumber(amount).toFormat(2);
         const formattedBuyAmount = new BigNumber(buyAmount).toFormat(2);
+        const operationIndex = i + 1;
 
         return (
           <OperationBox>
             <OperationBoxHeader>
-              Operation <strong>{operationTypes[type]}</strong>
+              Operation {operationIndex} <strong>{operationTypes[type]}</strong>
             </OperationBoxHeader>
             <ListEl>
               {amount ? (
@@ -218,7 +227,6 @@ export const SignTransaction = () => {
       <BackButton onClick={() => window.location.replace("/")} />
       <Header>Confirm Transaction</Header>
       <Subheader>{title} is requesting a transaction</Subheader>
-      {/* <Subheader>Transaction details</Subheader> */}
       <ListEl>
         <li>
           <div>

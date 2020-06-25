@@ -55,6 +55,7 @@ interface BackButtonProps {
 }
 
 const BackButtonEl = styled.button`
+  cursor: pointer;
   display: flex;
   align-items: center;
   background: ${COLOR_PALETTE.inputBackground};
