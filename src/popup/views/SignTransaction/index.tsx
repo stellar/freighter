@@ -118,6 +118,21 @@ export const SignTransaction = () => {
     price: string;
   }
 
+  const KeyValueList = ({
+    TransactionInfoKey,
+    TransactionInfoValue,
+  }: {
+    TransactionInfoKey: string;
+    TransactionInfoValue: string | number;
+  }) => (
+    <li>
+      <div>
+        <strong>{TransactionInfoKey}</strong>
+      </div>
+      <div>{TransactionInfoValue}</div>
+    </li>
+  );
+
   const Operations = () =>
     _operations.map(
       (
@@ -145,76 +160,60 @@ export const SignTransaction = () => {
             </OperationBoxHeader>
             <ListEl>
               {amount ? (
-                <li>
-                  <div>
-                    <strong>Amount</strong>
-                  </div>
-                  <div>
-                    {formattedAmount} {asset.code}
-                  </div>
-                </li>
+                <KeyValueList
+                  TransactionInfoKey="Amount"
+                  TransactionInfoValue={`${formattedAmount} ${asset.code}`}
+                />
               ) : null}
 
               {destination ? (
-                <li>
-                  <div>
-                    <strong>Destination</strong>
-                  </div>
-                  <div>{truncatedPublicKey(destination)}</div>
-                </li>
+                <KeyValueList
+                  TransactionInfoKey="Destination"
+                  TransactionInfoValue={truncatedPublicKey(destination)}
+                />
               ) : null}
 
               {signer ? (
                 <>
-                  <li>
-                    <div>
-                      <strong>Signer</strong>
-                    </div>
-                    <div>{truncatedPublicKey(signer.ed25519PublicKey)}</div>
-                  </li>
-                  <li>
-                    <div>
-                      <strong>Weight</strong>
-                    </div>
-                    <div>{signer.weight}</div>
-                  </li>
+                  <KeyValueList
+                    TransactionInfoKey="Signer"
+                    TransactionInfoValue={truncatedPublicKey(
+                      signer.ed25519PublicKey,
+                    )}
+                  />
+                  <KeyValueList
+                    TransactionInfoKey="Weight"
+                    TransactionInfoValue={signer.weight}
+                  />
                 </>
               ) : null}
 
               {buying ? (
-                <li>
-                  <div>
-                    <strong>Buying</strong>
-                  </div>
-                  <div> {buying.code}</div>
-                </li>
+                <KeyValueList
+                  TransactionInfoKey="Buying"
+                  TransactionInfoValue={buying.code}
+                />
               ) : null}
 
               {selling ? (
-                <li>
-                  <div>
-                    <strong>Selling</strong>
-                  </div>
-                  <div>{selling.code}</div>
-                </li>
+                <KeyValueList
+                  TransactionInfoKey="Selling"
+                  TransactionInfoValue={selling.code}
+                />
               ) : null}
 
               {buyAmount ? (
-                <li>
-                  <div>
-                    <strong>Amount</strong>
-                  </div>
-                  <div>{formattedBuyAmount}</div>
-                </li>
+                <KeyValueList
+                  TransactionInfoKey="Amount"
+                  TransactionInfoValue={formattedBuyAmount}
+                />
               ) : null}
 
               {price ? (
-                <li>
-                  <div>
-                    <strong>Price</strong>
-                  </div>
-                  <div> {price}</div>
-                </li>
+                <KeyValueList
+                  TransactionInfoKey="Price"
+                  TransactionInfoValue={price}
+                />
               ) : null}
             </ListEl>
           </OperationBox>

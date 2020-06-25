@@ -28,7 +28,7 @@ interface ButtonProps {
   children: React.ReactNode;
 }
 
-export const ButtonEl = styled.button<ButtonProps>`
+export const ButtonEl = styled(BasicButton)<ButtonProps>`
   width: ${(props) => (props.size === "small" ? "8.75rem" : "12.375rem")};
   display: ${(props) => (props.size === "small" ? "inline-block" : "block")};
   margin: 0 auto;
@@ -39,7 +39,6 @@ export const ButtonEl = styled.button<ButtonProps>`
   background: ${COLOR_PALETTE.primaryGradient};
   color: ${COLOR_PALETTE.white};
   border: none;
-  cursor: pointer;
   -webkit-appearance: none;
 `;
 
@@ -54,12 +53,10 @@ interface BackButtonProps {
   onClick: () => void;
 }
 
-const BackButtonEl = styled.button`
-  cursor: pointer;
+const BackButtonEl = styled(BasicButton)`
   display: flex;
   align-items: center;
   background: ${COLOR_PALETTE.inputBackground};
-  border: none;
   border-radius: 0.625rem;
   justify-content: center;
   width: 2.5rem;
