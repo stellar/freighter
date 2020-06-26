@@ -24,7 +24,7 @@ import { GrantAccess } from "popup/views/GrantAccess";
 import MnemonicPhrase from "popup/views/MnemonicPhrase";
 import MnemonicPhraseConfirmed from "popup/views/MnemonicPhrase/Confirmed";
 import RecoverAccount from "popup/views/RecoverAccount";
-import SignTransaction from "popup/views/SignTransaction";
+import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import Welcome from "popup/views/Welcome";
 
