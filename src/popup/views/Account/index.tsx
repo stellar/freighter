@@ -7,24 +7,36 @@ import { getAccountBalance } from "api/internal";
 
 import { truncatedPublicKey } from "helpers";
 import { publicKeySelector } from "popup/ducks/authServices";
+
+import { POPUP_WIDTH } from "popup/constants";
 import { COLOR_PALETTE } from "popup/styles";
 import { BasicButton } from "popup/basics";
 
 import Toast from "popup/components/Toast";
+import Menu from "popup/components/Menu";
 
 import CopyColor from "popup/assets/copy-color.png";
 import StellarLogo from "popup/assets/stellar-logo.png";
-
 import Footer from "./basics/Footer";
 
+const AccountEl = styled.div`
+  width: 100%;
+  max-width: ${POPUP_WIDTH}px;
+  box-sizing: border-box;
+  padding: 1.25rem 2rem;
+`;
+
 const PublicKeyDisplay = styled.div`
-  display: inline-block;
-  float: right;
-  font-size: 0.81rem;
-  line-height: 1rem;
-  margin: 0.75rem 2.4rem 0 0;
   position: relative;
+  display: inline-block;
+  padding-right: 0.45rem;
+  font-size: 0.81rem;
   text-align: right;
+
+  p {
+    margin: 0;
+    line-height: 2;
+  }
 `;
 
 const PublicKeyEl = styled.span`
@@ -45,13 +57,12 @@ const AccountDetails = styled.section`
   align-content: center;
   align-items: center;
   display: flex;
-  margin: 3.75rem 0 9rem;
-  justify-content: center;
+  padding: 2.25rem 0 8.5rem;
+  justify-content: space-evenly;
 `;
 
 const StellarLogoEl = styled.img`
   height: 6.1rem;
-  margin-right: 2.75rem;
   width: 7.3rem;
 `;
 
@@ -64,7 +75,12 @@ const CopiedToastWrapper = styled.div`
   margin: 0.3rem 0 0 -5rem;
 `;
 
-const Account = () => {
+const RowEl = styled.div`
+  display: flex;
+  justify-content: space-between;
+`;
+
+export const Account = () => {
   const [accountBalance, setaccountBalance] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const publicKey = useSelector(publicKeySelector);
@@ -84,29 +100,32 @@ const Account = () => {
   }, [publicKey]);
   return (
     <>
-      <PublicKeyDisplay>
-        <p>Your public key</p>
-        <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
-        <CopyToClipboard text={publicKey} onCopy={() => setIsCopied(true)}>
-          <CopyButton />
-        </CopyToClipboard>
-        <CopiedToastWrapper>
-          <Toast
-            message="Copied to your clipboard 👌"
-            isShowing={isCopied}
-            setIsShowing={setIsCopied}
-          />
-        </CopiedToastWrapper>
-      </PublicKeyDisplay>
-      <AccountDetails>
-        <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
-        <div>
-          <LumenBalance>{accountBalance} XLM</LumenBalance>
-        </div>
-      </AccountDetails>
+      <AccountEl>
+        <RowEl>
+          <Menu />
+          <PublicKeyDisplay>
+            <p>Your public key</p>
+            <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
+            <CopyToClipboard text={publicKey} onCopy={() => setIsCopied(true)}>
+              <CopyButton />
+            </CopyToClipboard>
+            <CopiedToastWrapper>
+              <Toast
+                message="Copied to your clipboard 👌"
+                isShowing={isCopied}
+                setIsShowing={setIsCopied}
+              />
+            </CopiedToastWrapper>
+          </PublicKeyDisplay>
+        </RowEl>
+        <AccountDetails>
+          <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
+          <div>
+            <LumenBalance>{accountBalance} XLM</LumenBalance>
+          </div>
+        </AccountDetails>
+      </AccountEl>
       <Footer />
     </>
   );
 };
-
-export default Account;
