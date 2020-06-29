@@ -12,7 +12,7 @@ import { applicationStateSelector, signOut } from "popup/ducks/authServices";
 import { Header } from "popup/components/Layout/Header";
 
 import CloseIcon from "popup/assets/icon-close.svg";
-import MenuIcon from "popup/assets/menu.png";
+import MenuIcon from "popup/assets/icon-menu.svg";
 
 const SlideoutNav = styled.nav`
   background: ${COLOR_PALETTE.menuGradient};
@@ -25,6 +25,7 @@ const SlideoutNav = styled.nav`
     props.isOpen ? "0" : "-100%"};
   position: absolute;
   top: 0;
+  left: 0;
   z-index: ${Z_INDEXES.nav};
 `;
 const MenuHeader = styled(Header)`
@@ -34,14 +35,15 @@ const MenuEl = styled.div`
   padding: 0.675rem 3.375rem;
 `;
 const MenuOpenButton = styled(BasicButton)`
-  display: inline-block;
-  background: url(${MenuIcon});
-  background-size: cover;
-  margin: 1.625rem 0 0 2.4rem;
-  height: 1.625rem;
-  width: 1.625rem;
+  display: flex;
+  padding: 5px;
+
+  img {
+    width: 1.625rem;
+    height: 1.625rem;
+  }
 `;
-const SlideOutCloseButton = styled.button`
+const SlideOutCloseButton = styled(BasicButton)`
   display: block;
   background: none;
   border: none;
@@ -57,6 +59,7 @@ const SlideoutNavList = styled.ul`
   padding: 1.25rem 2rem;
 `;
 const SlideoutNavListItem = styled.li`
+  cursor: pointer;
   display: block;
   padding: 2rem 0;
   font-size: 1.5rem;
@@ -84,7 +87,9 @@ const Menu = () => {
     <>
       {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
         <>
-          <MenuOpenButton onClick={() => setIsOpen(true)} />
+          <MenuOpenButton onClick={() => setIsOpen(true)}>
+            <img src={MenuIcon} alt="menu icon" />
+          </MenuOpenButton>
           <SlideoutNav isOpen={isOpen}>
             <MenuHeader />
             <MenuEl>

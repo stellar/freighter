@@ -3,8 +3,9 @@ import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 
 const FooterEl = styled.footer`
-  background: #fff;
-  height: 100%;
+  box-sizing: border-box;
+  background: ${COLOR_PALETTE.white};
+  height: 8.5rem;
   padding: 1.4375rem 2rem;
   text-align: center;
 `;
@@ -12,12 +13,12 @@ const FooterEl = styled.footer`
 const FooterHeader = styled.h1`
   color: ${COLOR_PALETTE.secondaryText};
   font-size: 0.9rem;
-  line-height: 1.1875rem;
+  margin: 0;
 `;
 
 const FooterList = styled.ul`
   list-style-type: none;
-  padding: 0;
+  padding: 1rem 0;
 `;
 
 const FooterListItem = styled.li`
