@@ -8,7 +8,7 @@ import { responseQueue, transactionQueue } from "./popupMessageListener";
 import { store, publicKeySelector } from "../ducks/session";
 
 const WHITELIST_ID = "whitelist";
-const WINDOW_DIMENSIONS = "height=600,width=357";
+const WINDOW_DIMENSIONS = "width=456,height=667";
 
 export const lyraApiMessageListener = (
   request: Request,
