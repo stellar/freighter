@@ -1,5 +1,10 @@
 import React from "react";
 import styled from "styled-components";
+import { useSelector } from "react-redux";
+
+import { APPLICATION_STATE } from "statics";
+
+import { applicationStateSelector } from "popup/ducks/authServices";
 
 import { COLOR_PALETTE } from "popup/styles";
 
@@ -33,9 +38,17 @@ type HeaderProps = {
   className?: string;
 };
 
-export const Header = ({ className, ...props }: HeaderProps) => (
-  <HeaderEl className={className} {...props}>
-    <HeaderH1>Lyra</HeaderH1>
-    <NetworkEl>Test net</NetworkEl>
-  </HeaderEl>
-);
+export const Header = ({ className, ...props }: HeaderProps) => {
+  const applicationState = useSelector(applicationStateSelector);
+
+  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
+    return null;
+  }
+
+  return (
+    <HeaderEl className={className} {...props}>
+      <HeaderH1>Lyra</HeaderH1>
+      <NetworkEl>Test net</NetworkEl>
+    </HeaderEl>
+  );
+};
