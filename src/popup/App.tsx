@@ -19,6 +19,7 @@ const GlobalStyle = createGlobalStyle`
     font-family: 'Muli', sans-serif;
     font-size: 100%;
     margin: 0;
+    padding:0;
   }
 
   body, html {
@@ -26,6 +27,10 @@ const GlobalStyle = createGlobalStyle`
   }
   body, html, #root {
     height: 100vh;
+  }
+
+  body * {
+    box-sizing: border-box;
   }
 
   a {
