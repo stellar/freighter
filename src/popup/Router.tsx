@@ -27,8 +27,7 @@ import RecoverAccount from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import Welcome from "popup/views/Welcome";
-
-const Loading = () => <p> Loading...</p>;
+import { Loading } from "popup/views/Loading";
 
 const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
