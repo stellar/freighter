@@ -144,7 +144,7 @@ export const UnlockAccount = () => {
         <ListItemEl>
           <ImportButton
             onClick={() => {
-              window.open(newTabHref("/mnemonic-phrase"));
+              window.open(newTabHref("/recover-account"));
             }}
           >
             Import using account see phrase
