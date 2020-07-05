@@ -1,17 +1,16 @@
 import React from "react";
 import { get } from "lodash";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { Formik } from "formik";
-
+import { newTabHref } from "helpers";
 import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 import { history } from "popup/App";
-
 import { POPUP_WIDTH, EMOJI } from "popup/constants";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
-
 import {
+  BasicButton,
   FormSubmitButton,
   FormRow,
   FormErrorEl,
@@ -39,7 +38,7 @@ const HeaderEl = styled.h1`
   margin: 0;
   margin-left: 1rem;
 `;
-const StyledLinkEl = styled(Link)`
+const ImportButton = styled(BasicButton)`
   color: ${COLOR_PALETTE.primary};
 `;
 const UnorderedListEl = styled.ul`
@@ -143,9 +142,13 @@ export const UnlockAccount = () => {
       <UnorderedListEl>
         <ListItemEl>Want to add another account?</ListItemEl>
         <ListItemEl>
-          <StyledLinkEl to="/recover-account">
+          <ImportButton
+            onClick={() => {
+              window.open(newTabHref("/mnemonic-phrase"));
+            }}
+          >
             Import using account see phrase
-          </StyledLinkEl>
+          </ImportButton>
         </ListItemEl>
       </UnorderedListEl>
     </UnlockAccountEl>

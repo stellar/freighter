@@ -24,7 +24,7 @@ import {
 } from "popup/basics";
 import {
   Onboarding,
-  RightColumn,
+  HalfScreen,
 } from "popup/components/Layout/Fullscreen/Onboarding";
 
 const RecoverAccount = () => {
@@ -93,7 +93,7 @@ const RecoverAccount = () => {
                 <FormError name="mnemonicPhrase" />
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
               </FormRow>
-              <RightColumn>
+              <HalfScreen>
                 <FormRow>
                   <FormTextField
                     autoComplete="off"
@@ -126,7 +126,7 @@ const RecoverAccount = () => {
                     isValid={isValid}
                   />
                 </FormRow>
-              </RightColumn>
+              </HalfScreen>
             </>
           </Onboarding>
         </Form>

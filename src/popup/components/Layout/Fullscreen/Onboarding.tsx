@@ -26,12 +26,12 @@ export const Screen = styled.section`
   flex-flow: column wrap;
   justify-content: center;
   padding: 100px 170px;
-  height: 28rem;
+  height: 40rem;
 `;
 
-export const RightColumn = styled.section`
+export const HalfScreen = styled.section`
   padding: 0 1.6rem;
-  width: 21rem;
+  width: 27rem;
 `;
 
 const EmojiSpan = styled.span`
