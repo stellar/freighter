@@ -7,7 +7,7 @@ import {
   authErrorSelector,
 } from "popup/ducks/authServices";
 import Form from "popup/components/Form";
-import { RightColumn } from "popup/components/Layout/Fullscreen/Onboarding";
+import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
 import { COLOR_PALETTE } from "popup/styles";
 import {
   ApiErrorMessage,
@@ -41,7 +41,7 @@ const ClearButton = styled(ButtonEl)`
   width: 1.5rem;
 `;
 
-const WordBubbleWrapper = styled(RightColumn)`
+const WordBubbleWrapper = styled(HalfScreen)`
   display: flex;
   flex-flow: wrap;
 `;
@@ -114,7 +114,7 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
         {({ setValues, values, isSubmitting, handleChange }) => (
           <Form>
             <>
-              <RightColumn>
+              <HalfScreen>
                 <ConfirmInput>
                   {displaySelectedWords()}
                   {selectedWords.length ? (
@@ -127,7 +127,7 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
                   ) : null}
                 </ConfirmInput>
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
-              </RightColumn>
+              </HalfScreen>
               <WordBubbleWrapper>{wordBubbles(handleChange)}</WordBubbleWrapper>
               <FormRow>
                 <FormSubmitButton

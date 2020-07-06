@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
-import { RightColumn } from "popup/components/Layout/Fullscreen/Onboarding";
+import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
 import { BasicButton, FormButton } from "popup/basics";
@@ -71,7 +71,7 @@ const DisplayMnemonicPhrase = ({
     el.click();
   };
   return (
-    <RightColumn>
+    <HalfScreen>
       <p>
         Your secret backup phrase makes it easy to back up and restore your
         account.
@@ -114,7 +114,7 @@ const DisplayMnemonicPhrase = ({
       >
         Next
       </FormButton>
-    </RightColumn>
+    </HalfScreen>
   );
 };
 

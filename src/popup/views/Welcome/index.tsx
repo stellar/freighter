@@ -1,14 +1,12 @@
 import React from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { Screen } from "popup/components/Layout/Fullscreen/Onboarding";
+import {
+  HalfScreen,
+  Screen,
+} from "popup/components/Layout/Fullscreen/Onboarding";
 import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
 import { COLOR_PALETTE } from "popup/styles";
-
-const HalfScreen = styled.div`
-  padding: 0 1.6rem;
-  width: 23rem;
-`;
 
 const Box = styled.div`
   border-radius: 1.875rem;
