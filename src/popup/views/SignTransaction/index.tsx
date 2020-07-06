@@ -149,8 +149,6 @@ export const SignTransaction = () => {
         }: TransactionInfoResponse,
         i: number,
       ) => {
-        const formattedAmount = new BigNumber(amount).toFormat(2);
-        const formattedBuyAmount = new BigNumber(buyAmount).toFormat(2);
         const operationIndex = i + 1;
 
         return (
@@ -162,7 +160,9 @@ export const SignTransaction = () => {
               {amount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={`${formattedAmount} ${asset.code}`}
+                  TransactionInfoValue={`${new BigNumber(amount).toFormat(2)} ${
+                    asset.code
+                  }`}
                 />
               ) : null}
 
@@ -205,7 +205,7 @@ export const SignTransaction = () => {
               {buyAmount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={formattedBuyAmount}
+                  TransactionInfoValue={new BigNumber(buyAmount).toFormat(2)}
                 />
               ) : null}
 
