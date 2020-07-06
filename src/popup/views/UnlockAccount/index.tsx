@@ -38,7 +38,7 @@ const HeaderEl = styled.h1`
   margin: 0;
   margin-left: 1rem;
 `;
-const ImportButton = styled(BasicButton)`
+const ImportButtonEl = styled(BasicButton)`
   color: ${COLOR_PALETTE.primary};
 `;
 const UnorderedListEl = styled.ul`
@@ -142,13 +142,13 @@ export const UnlockAccount = () => {
       <UnorderedListEl>
         <ListItemEl>Want to add another account?</ListItemEl>
         <ListItemEl>
-          <ImportButton
+          <ImportButtonEl
             onClick={() => {
               window.open(newTabHref("/recover-account"));
             }}
           >
             Import using account see phrase
-          </ImportButton>
+          </ImportButtonEl>
         </ListItemEl>
       </UnorderedListEl>
     </UnlockAccountEl>
