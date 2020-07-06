@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
+import { history } from "popup/App";
 import { createAccount, publicKeySelector } from "popup/ducks/authServices";
 import { Onboarding } from "popup/components/Layout/Fullscreen/Onboarding";
 import Form from "popup/components/Form";
@@ -19,7 +20,6 @@ import {
   termsOfUse as termsofUseValidator,
 } from "popup/components/Form/validators";
 import { EMOJI } from "popup/constants";
-import { history } from "popup/App";
 
 const CreatePassword = () => {
   const publicKey = useSelector(publicKeySelector);
@@ -58,7 +58,7 @@ const CreatePassword = () => {
       header="Create a password"
       subheader="Min 10 characters"
       icon={EMOJI.see_no_evil}
-      goBack={() => window.location.replace("/")}
+      goBack={() => history.push({ pathname: "/" })}
     >
       <Formik
         initialValues={initialValues}
