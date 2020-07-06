@@ -3,12 +3,13 @@ import StellarSdk from "stellar-sdk";
 import { ExternalRequest as Request } from "api/types";
 import { EXTERNAL_SERVICE_TYPES } from "statics";
 import { removeQueryParam } from "helpers";
+import { POPUP_WIDTH } from "popup/constants";
 import { Sender, SendResponseInterface } from "../types";
 import { responseQueue, transactionQueue } from "./popupMessageListener";
 import { store, publicKeySelector } from "../ducks/session";
 
 const WHITELIST_ID = "whitelist";
-const WINDOW_DIMENSIONS = "width=456,height=667";
+const WINDOW_DIMENSIONS = `width=${POPUP_WIDTH},height=667`;
 
 export const lyraApiMessageListener = (
   request: Request,

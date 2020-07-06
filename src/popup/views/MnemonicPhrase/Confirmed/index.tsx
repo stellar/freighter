@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import { FormButton } from "popup/basics";
-import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics/FullscreenStyle";
+import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
 
 const HeaderEl = styled.h1`
   font-weight: 200;

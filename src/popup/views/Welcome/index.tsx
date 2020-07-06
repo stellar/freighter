@@ -5,7 +5,7 @@ import {
   HalfScreen,
   Screen,
 } from "popup/components/Layout/Fullscreen/Onboarding";
-import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics/FullscreenStyle";
+import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
 import { COLOR_PALETTE } from "popup/styles";
 
 const Box = styled.div`

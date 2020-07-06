@@ -54,9 +54,9 @@ const RecoverAccount = () => {
 
   const dispatch = useDispatch();
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = async (values: FormValues) => {
     const { password, mnemonicPhrase } = values;
-    dispatch(recoverAccount({ password, mnemonicPhrase }));
+    await dispatch(recoverAccount({ password, mnemonicPhrase }));
   };
 
   useEffect(() => {
