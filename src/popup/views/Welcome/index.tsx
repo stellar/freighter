@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { Screen } from "popup/components/Layout/Fullscreen/Onboarding";
-import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics/FullscreenStyle";
+import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
 import { COLOR_PALETTE } from "popup/styles";
 
 const HalfScreen = styled.div`

@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import { BackButton } from "popup/basics";
-import { FullscreenStyle } from "./basics/FullscreenStyle";
+import { FullscreenStyle } from "./basics";
 
 const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary};
