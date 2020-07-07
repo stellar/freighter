@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
@@ -12,7 +12,7 @@ import { truncatedPublicKey } from "helpers";
 
 import { publicKeySelector } from "popup/ducks/authServices";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
-import { Button, BackButton } from "popup/basics";
+import { Button, BackButton, FormSubmitButton } from "popup/basics";
 
 const El = styled.div`
   padding: 2.25rem 2.5rem;
@@ -92,6 +92,7 @@ export const SignTransaction = () => {
 
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const rejectAndClose = async () => {
     await rejectAccess();
@@ -99,6 +100,7 @@ export const SignTransaction = () => {
   };
 
   const signAndClose = async () => {
+    setIsConfirming(true);
     await signTransaction({ transaction });
     window.close();
   };
@@ -247,9 +249,12 @@ export const SignTransaction = () => {
         <RejectButton size="small" onClick={() => rejectAndClose()}>
           Reject
         </RejectButton>
-        <Button size="small" onClick={() => signAndClose()}>
-          Confirm
-        </Button>
+        <FormSubmitButton
+          buttonCTA="Confirm"
+          isSubmitting={isConfirming}
+          size="small"
+          onClick={() => signAndClose()}
+        />
       </ButtonContainerEl>
     </El>
   );

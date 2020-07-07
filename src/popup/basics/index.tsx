@@ -135,16 +135,26 @@ export const FormButton = styled(ButtonEl)`
 interface SubmitButtonProps {
   buttonCTA: string;
   isSubmitting: boolean;
-  isValid: boolean;
+  isValid?: boolean;
+  size?: string;
+  onClick?: () => void;
 }
 
 export const FormSubmitButton = ({
   buttonCTA,
   isSubmitting,
-  isValid,
+  isValid = true,
+  onClick,
+  size,
   ...props
 }: SubmitButtonProps) => (
-  <FormButton type="submit" disabled={isSubmitting || !isValid} {...props}>
+  <FormButton
+    onClick={onClick}
+    size={size}
+    type="submit"
+    disabled={isSubmitting || !isValid}
+    {...props}
+  >
     {isSubmitting ? "Loading..." : buttonCTA}
   </FormButton>
 );
