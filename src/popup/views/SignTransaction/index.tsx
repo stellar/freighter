@@ -95,7 +95,7 @@ export const SignTransaction = () => {
   const [isConfirming, setIsConfirming] = useState(false);
 
   const rejectAndClose = async () => {
-    await rejectAccess();
+    rejectAccess();
     window.close();
   };
 
