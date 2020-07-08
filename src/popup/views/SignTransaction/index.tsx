@@ -94,7 +94,7 @@ export const SignTransaction = () => {
   const publicKey = useSelector(publicKeySelector);
   const [isConfirming, setIsConfirming] = useState(false);
 
-  const rejectAndClose = async () => {
+  const rejectAndClose = () => {
     rejectAccess();
     window.close();
   };
