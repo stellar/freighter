@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 
 import { rejectAccess, grantAccess } from "api/internal";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
-import { Button } from "popup/basics";
+import { Button, FormSubmitButton } from "popup/basics";
 
 const GrantAccessEl = styled.div`
   padding: 2.25rem 2.5rem;
@@ -42,13 +42,15 @@ export const GrantAccess = () => {
   const decodedTab = atob(location.search.replace("?", ""));
   const tabToUnlock = decodedTab ? JSON.parse(decodedTab) : {};
   const { url, title } = tabToUnlock;
+  const [isGranting, setIsGranting] = useState(false);
 
-  const rejectAndClose = async () => {
-    await rejectAccess();
+  const rejectAndClose = () => {
+    rejectAccess();
     window.close();
   };
 
   const grantAndClose = async () => {
+    setIsGranting(true);
     await grantAccess(url);
     window.close();
   };
@@ -65,9 +67,12 @@ export const GrantAccess = () => {
         <RejectButton size="small" onClick={() => rejectAndClose()}>
           Reject
         </RejectButton>
-        <Button size="small" onClick={() => grantAndClose()}>
-          Connect
-        </Button>
+        <FormSubmitButton
+          buttonCTA="Confirm"
+          isSubmitting={isGranting}
+          size="small"
+          onClick={() => grantAndClose()}
+        />
       </ButtonContainerEl>
     </GrantAccessEl>
   );
