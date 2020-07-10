@@ -1,23 +1,23 @@
 import React from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import {
-  HalfScreen,
-  Screen,
-} from "popup/components/Layout/Fullscreen/Onboarding";
+
+import { HEADER_HEIGHT } from "popup/constants";
+
 import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
 import { COLOR_PALETTE } from "popup/styles";
 
 const Box = styled.div`
-  border-radius: 1.875rem;
-  color: #fff;
-  padding: 2.6rem 2.3rem;
   position: relative;
+  width: 22.75rem;
+  padding: 2.2rem 2.3rem;
+  border-radius: 1.875rem;
+  color: ${COLOR_PALETTE.white};
 `;
 
 const CreateBox = styled(Box)`
   background: ${COLOR_PALETTE.primaryGradient};
-  color: #fff;
+  color: ${COLOR_PALETTE.white};
 `;
 
 const ImportBox = styled(Box)`
@@ -29,9 +29,8 @@ const BoxHeader = styled.div`
   color: ${COLOR_PALETTE.text};
   font-size: 2.4rem;
   font-weight: 200;
-  height: 7.5rem;
-  line-height: 3.75rem;
-  margin-bottom: 2.9rem;
+  line-height: 1.5;
+  margin-bottom: 2.5rem;
 
   strong {
     color: ${COLOR_PALETTE.primary};
@@ -58,7 +57,7 @@ const LinkButtonWrapper = styled.div`
 
 const LinkButton = styled(Link)`
   border-radius: 1rem;
-  color: #fff;
+  color: ${COLOR_PALETTE.white};
   display: inline-block;
   font-weight: 800;
   margin: 3.4rem auto 0;
@@ -75,45 +74,69 @@ const ImportButton = styled(LinkButton)`
   background: ${COLOR_PALETTE.primaryGradient};
 `;
 
-const Welcome = () => (
+const ColumnScreen = styled.section`
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+  max-width: 49rem;
+  height: calc(100vh - ${HEADER_HEIGHT}px);
+  width: 100%;
+  margin: auto;
+`;
+
+const RowScreen = styled.div`
+  display: flex;
+  justify-content: space-between;
+`;
+const HalfScreen = styled.section`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
+`;
+
+export const Welcome = () => (
   <>
     <FullscreenStyle />
-    <Screen>
-      <HalfScreen>
+    <ColumnScreen>
+      <RowScreen>
         <BoxHeader>
           Welcome, <br />
           are you new to <strong>Lyra?</strong>
         </BoxHeader>
-        <CreateBox>
-          <BoxIcon>
-            <span role="img" aria-label="Waving hand">
-              👋
-            </span>
-          </BoxIcon>
-          <BoxHeaderEl>I’m new!</BoxHeaderEl>
-          <p>I’m going to need a seed phrase</p>
-          <LinkButtonWrapper>
-            <CreateButton to="/create-password">Create wallet</CreateButton>
-          </LinkButtonWrapper>
-        </CreateBox>
-      </HalfScreen>
-      <HalfScreen>
-        <BoxHeader />
-        <ImportBox>
-          <BoxIcon>
-            <span role="img" aria-label="Seedling">
-              🌱
-            </span>
-          </BoxIcon>
-          <BoxHeaderEl>I’ve done this before</BoxHeaderEl>
-          <p>I have my 12 word seed phrase</p>
-          <LinkButtonWrapper>
-            <ImportButton to="/recover-account">Import wallet</ImportButton>
-          </LinkButtonWrapper>
-        </ImportBox>
-      </HalfScreen>
-    </Screen>
+      </RowScreen>
+      <RowScreen>
+        <HalfScreen>
+          <CreateBox>
+            <BoxIcon>
+              <span role="img" aria-label="Waving hand">
+                👋
+              </span>
+            </BoxIcon>
+            <BoxHeaderEl>I’m new!</BoxHeaderEl>
+            <p>I’m going to need a seed phrase</p>
+            <LinkButtonWrapper>
+              <CreateButton to="/create-password">Create wallet</CreateButton>
+            </LinkButtonWrapper>
+          </CreateBox>
+        </HalfScreen>
+        <HalfScreen>
+          <ImportBox>
+            <BoxIcon>
+              <span role="img" aria-label="Seedling">
+                🌱
+              </span>
+            </BoxIcon>
+            <BoxHeaderEl>I’ve done this before</BoxHeaderEl>
+            <p>I have my 12 word seed phrase</p>
+            <LinkButtonWrapper>
+              <ImportButton to="/recover-account">Import wallet</ImportButton>
+            </LinkButtonWrapper>
+          </ImportBox>
+        </HalfScreen>
+      </RowScreen>
+    </ColumnScreen>
   </>
 );
-
-export default Welcome;

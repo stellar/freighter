@@ -19,9 +19,8 @@ const MnemonicDisplay = styled.div`
   color: ${({ isBlurred }: { isBlurred: boolean }) =>
     isBlurred ? "transparent" : "#fff"};
   font-size: 1.125rem;
-  line-height: 1.8rem;
-  margin: 3.5rem 0 1rem;
-  padding: 27px 37px;
+  margin: 2rem 0 1rem;
+  padding: 1.68rem 2.31rem;
   position: relative;
   text-align: center;
   text-shadow: ${({ isBlurred }: { isBlurred: boolean }) =>
@@ -29,7 +28,7 @@ const MnemonicDisplay = styled.div`
 `;
 
 const DisplayTooltip = styled(BasicButton)`
-  color: #fff;
+  color: ${COLOR_PALETTE.white};
   font-size: 1rem;
   position: absolute;
   text-shadow: none;
@@ -39,6 +38,7 @@ const DisplayTooltip = styled(BasicButton)`
 `;
 
 const DisplayButtons = styled.div`
+  margin-bottom: 2.5rem;
   margin-right: 1rem;
   position: relative;
   text-align: right;
@@ -85,7 +85,6 @@ const DisplayMnemonicPhrase = ({
             Show backup phrase
           </DisplayTooltip>
         ) : null}
-
         {mnemonicPhrase}
       </MnemonicDisplay>
       <DisplayButtons>

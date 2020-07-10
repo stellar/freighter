@@ -6,6 +6,7 @@ import { APPLICATION_STATE } from "statics";
 
 import { applicationStateSelector } from "popup/ducks/authServices";
 
+import { HEADER_HEIGHT } from "popup/constants";
 import { COLOR_PALETTE } from "popup/styles";
 
 const HeaderEl = styled.header`
@@ -16,6 +17,7 @@ const HeaderEl = styled.header`
   align-items: center;
   padding: 2.25rem 2rem;
   text-align: left;
+  height: ${HEADER_HEIGHT}px;
 `;
 
 const HeaderH1 = styled.h1`

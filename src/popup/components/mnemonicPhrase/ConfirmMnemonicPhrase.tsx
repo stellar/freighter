@@ -15,10 +15,13 @@ import {
   FormRow,
   FormSubmitButton,
 } from "popup/basics";
-import CheckButton from "./basics/CheckButton";
+
+import CloseIcon from "popup/assets/icon-close.svg";
+
+import { CheckButton } from "./basics/CheckButton";
 
 const ConfirmInput = styled.div`
-  background: #d2d8e5;
+  background: ${COLOR_PALETTE.inputBackground};
   border: 0;
   border-radius: 1.875rem;
   box-sizing: border-box;
@@ -39,11 +42,23 @@ const ClearButton = styled(ButtonEl)`
   margin: 0 0 0 0.5rem;
   padding: 0;
   width: 1.5rem;
+
+  img {
+    width: 0.5rem;
+  }
 `;
 
-const WordBubbleWrapper = styled(HalfScreen)`
+const WordBubbleWrapper = styled.div`
   display: flex;
   flex-flow: wrap;
+  justify-content: flex-start;
+  padding-bottom: 3rem;
+`;
+
+const ModifiedHalfScreen = styled(HalfScreen)`
+  padding: 0;
+  padding-left: 5rem;
+  width: 31rem;
 `;
 
 const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
@@ -113,21 +128,19 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
       <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
         {({ setValues, values, isSubmitting, handleChange }) => (
           <Form>
-            <>
-              <HalfScreen>
-                <ConfirmInput>
-                  {displaySelectedWords()}
-                  {selectedWords.length ? (
-                    <ClearButton
-                      type="button"
-                      onClick={() => removeLastWord(values, setValues)}
-                    >
-                      X
-                    </ClearButton>
-                  ) : null}
-                </ConfirmInput>
-                <ApiErrorMessage error={authError}></ApiErrorMessage>
-              </HalfScreen>
+            <ModifiedHalfScreen>
+              <ConfirmInput>
+                {displaySelectedWords()}
+                {selectedWords.length ? (
+                  <ClearButton
+                    type="button"
+                    onClick={() => removeLastWord(values, setValues)}
+                  >
+                    <img src={CloseIcon} alt="clear icon" />
+                  </ClearButton>
+                ) : null}
+              </ConfirmInput>
+              <ApiErrorMessage error={authError}></ApiErrorMessage>
               <WordBubbleWrapper>{wordBubbles(handleChange)}</WordBubbleWrapper>
               <FormRow>
                 <FormSubmitButton
@@ -136,7 +149,7 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
                   isValid={!!displaySelectedWords().length}
                 />
               </FormRow>
-            </>
+            </ModifiedHalfScreen>
           </Form>
         )}
       </Formik>

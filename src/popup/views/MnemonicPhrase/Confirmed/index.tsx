@@ -1,6 +1,9 @@
 import React from "react";
 import styled from "styled-components";
+
 import { COLOR_PALETTE } from "popup/styles";
+import { HEADER_HEIGHT } from "popup/constants";
+
 import { FormButton } from "popup/basics";
 import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
 
@@ -13,15 +16,25 @@ const HeaderEl = styled.h1`
 
 const Wrapper = styled.div`
   background: ${COLOR_PALETTE.primary};
-  color: #fff;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - ${HEADER_HEIGHT}px);
+`;
+
+const ContentWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 2rem 0;
   text-align: center;
+  margin: auto;
+  color: ${COLOR_PALETTE.white};
+  max-width: 24.375rem;
+  height: calc(100vh - ${HEADER_HEIGHT}px);
 `;
 
 const FinishButton = styled(FormButton)`
-  background: #654cf7;
+  background: ${COLOR_PALETTE.secondary};
   margin: 2.5rem auto 0;
 `;
 
@@ -29,10 +42,10 @@ const Celebration = styled.h1`
   font-size: 5rem;
 `;
 
-const MnemonicPhraseConfirmed = () => (
-  <>
+export const MnemonicPhraseConfirmed = () => (
+  <Wrapper>
     <FullscreenStyle />
-    <Wrapper>
+    <ContentWrapper>
       <HeaderEl>Woo, you’re in!</HeaderEl>
       <Celebration>
         <span role="img" aria-label="Celebration face">
@@ -53,8 +66,6 @@ const MnemonicPhraseConfirmed = () => (
       >
         All done
       </FinishButton>
-    </Wrapper>
-  </>
+    </ContentWrapper>
+  </Wrapper>
 );
-
-export default MnemonicPhraseConfirmed;

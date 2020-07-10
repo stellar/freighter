@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
+import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
-import { history } from "popup/App";
+
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
@@ -13,7 +14,9 @@ import {
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/authServices";
-import Form from "popup/components/Form";
+
+import { HEADER_HEIGHT } from "popup/constants";
+
 import {
   ApiErrorMessage,
   FormError,
@@ -23,12 +26,23 @@ import {
   FormSubmitButton,
   FormTextField,
 } from "popup/basics";
+import Form from "popup/components/Form";
 import {
   Onboarding,
   HalfScreen,
 } from "popup/components/Layout/Fullscreen/Onboarding";
 
-const RecoverAccount = () => {
+const FullHeightForm = styled(Form)`
+  height: calc(100vh - ${HEADER_HEIGHT}px);
+
+  section {
+    & > * {
+      flex: 0 1 6.25rem;
+    }
+  }
+`;
+
+export const RecoverAccount = () => {
   const publicKey = useSelector(publicKeySelector);
   const authError = useSelector(authErrorSelector);
 
@@ -78,20 +92,21 @@ const RecoverAccount = () => {
       validationSchema={RecoverAccountSchema}
     >
       {({ handleChange, isSubmitting, isValid }) => (
-        <Form>
+        <FullHeightForm>
           <Onboarding
             header="Recover wallet from backup phrase"
             icon={icon}
-            goBack={() => history.push({ pathname: "/" })}
+            isMaxHeaderLength
           >
             <>
               <FormRow>
                 <FormTextField
                   as="textarea"
                   name="mnemonicPhrase"
+                  placeholder="Enter your 12 word phrase to restore your wallet"
                   onChange={handleChange}
                 />
-                <FormError name="mnemonicPhrase" />
+                {/* <FormError name="mnemonicPhrase" /> */}
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
               </FormRow>
               <HalfScreen>
@@ -130,10 +145,8 @@ const RecoverAccount = () => {
               </HalfScreen>
             </>
           </Onboarding>
-        </Form>
+        </FullHeightForm>
       )}
     </Formik>
   );
 };
-
-export default RecoverAccount;

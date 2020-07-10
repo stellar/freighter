@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { ErrorMessage, Field } from "formik";
 
+import { HEADER_HEIGHT } from "popup/constants";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
 
 import ChevronIcon from "popup/assets/icon-chevron.svg";
@@ -54,6 +55,9 @@ interface BackButtonProps {
 }
 
 const BackButtonEl = styled(BasicButton)`
+  position: absolute;
+  top: calc(${HEADER_HEIGHT}px + 1rem);
+  left: 1rem;
   display: flex;
   align-items: center;
   background: ${COLOR_PALETTE.inputBackground};
@@ -86,6 +90,7 @@ export const FormErrorEl = styled.div`
   height: 1rem;
   padding: 0.25rem 0 0.75rem;
   text-align: center;
+  line-height: 1;
 `;
 
 const FormCheckBoxWrapper = styled.div`
@@ -181,6 +186,23 @@ export const FormTextField = styled(Field)`
   font-size: 1rem;
   padding: 1.875rem 2.25rem;
   width: 100%;
+  resize: none;
+
+  &::-webkit-input-placeholder {
+    font-family: "Muli", sans-serif;
+  }
+
+  &:-ms-input-placeholder {
+    font-family: "Muli", sans-serif;
+  }
+
+  &:-moz-placeholder {
+    font-family: "Muli", sans-serif;
+  }
+
+  &::-moz-placeholder {
+    font-family: "Muli", sans-serif;
+  }
 `;
 
 export const FormCheckboxField = ({ name }: { name: string }) => (

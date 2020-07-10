@@ -4,6 +4,7 @@ import { Form as FormikForm } from "formik";
 
 interface FormProps {
   children: React.ReactNode;
+  className?: string;
 }
 
 const StyledForm = styled(FormikForm)`
@@ -11,6 +12,8 @@ const StyledForm = styled(FormikForm)`
   flex-flow: column wrap;
 `;
 
-const Form = ({ children }: FormProps) => <StyledForm>{children}</StyledForm>;
+const Form = ({ children, className }: FormProps) => (
+  <StyledForm className={className}>{children}</StyledForm>
+);
 
 export default Form;
