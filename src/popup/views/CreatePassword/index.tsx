@@ -68,6 +68,7 @@ export const CreatePassword = () => {
       header="Create a password"
       subheader="Min 10 characters"
       icon={EMOJI.see_no_evil}
+      goBack={() => history.push({ pathname: "/" })}
     >
       <Formik
         initialValues={initialValues}

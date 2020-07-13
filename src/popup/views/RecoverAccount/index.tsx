@@ -97,6 +97,7 @@ export const RecoverAccount = () => {
             header="Recover wallet from backup phrase"
             icon={icon}
             isMaxHeaderLength
+            goBack={() => history.push({ pathname: "/" })}
           >
             <>
               <FormRow>
