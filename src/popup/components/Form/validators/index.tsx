@@ -12,3 +12,5 @@ export const confirmPassword = YupString()
   .required("Password confirmation is required");
 
 export const termsOfUse = YupBool().oneOf([true], "Terms of Use are required");
+
+export const mnemonicPhrase = YupString().required("Backup phrase is required");
