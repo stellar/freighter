@@ -2,13 +2,14 @@ import React, { useEffect } from "react";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
-import { object as YupObject, string as YupString } from "yup";
+import { object as YupObject } from "yup";
 
 import { history } from "popup/App";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
+  mnemonicPhrase as mnemonicPhraseValidator,
 } from "popup/components/Form/validators";
 import {
   authErrorSelector,
@@ -62,7 +63,7 @@ export const RecoverAccount = () => {
   };
 
   const RecoverAccountSchema = YupObject().shape({
-    mnemonicPhrase: YupString().required(),
+    mnemonicPhrase: mnemonicPhraseValidator,
     password: passwordValidator,
     confirmPassword: confirmPasswordValidator,
     termsOfUse: termsofUseValidator,
@@ -92,7 +93,7 @@ export const RecoverAccount = () => {
       onSubmit={handleSubmit}
       validationSchema={RecoverAccountSchema}
     >
-      {({ handleChange, isSubmitting, isValid }) => (
+      {({ isSubmitting, isValid }) => (
         <FullHeightForm>
           <Onboarding
             header="Recover wallet from backup phrase"
@@ -103,10 +104,9 @@ export const RecoverAccount = () => {
             <>
               <FormRow>
                 <FormTextField
-                  as="textarea"
+                  component="textarea"
                   name="mnemonicPhrase"
                   placeholder="Enter your 12 word phrase to restore your wallet"
-                  onChange={handleChange}
                 />
                 <FormError name="mnemonicPhrase" />
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
