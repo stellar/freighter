@@ -107,7 +107,7 @@ export const RecoverAccount = () => {
                   placeholder="Enter your 12 word phrase to restore your wallet"
                   onChange={handleChange}
                 />
-                {/* <FormError name="mnemonicPhrase" /> */}
+                <FormError name="mnemonicPhrase" />
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
               </FormRow>
               <HalfScreen>
