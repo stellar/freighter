@@ -10,7 +10,7 @@ import { Onboarding } from "popup/components/Layout/Fullscreen/Onboarding";
 import ConfirmMnemonicPhrase from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
 import DisplayMnemonicPhrase from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
 
-const MnemonicPhrase = () => {
+export const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
 
   const mnemonicPhrase = useMnemonicPhrase();
@@ -36,5 +36,3 @@ const MnemonicPhrase = () => {
 
   return null;
 };
-
-export default MnemonicPhrase;

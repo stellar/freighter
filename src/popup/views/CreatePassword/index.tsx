@@ -1,10 +1,16 @@
 import React, { useEffect } from "react";
+import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
+
 import { history } from "popup/App";
 import { createAccount, publicKeySelector } from "popup/ducks/authServices";
-import { Onboarding } from "popup/components/Layout/Fullscreen/Onboarding";
+
+import {
+  Onboarding,
+  HalfScreen,
+} from "popup/components/Layout/Fullscreen/Onboarding";
 import Form from "popup/components/Form";
 import {
   FormError,
@@ -21,7 +27,11 @@ import {
 } from "popup/components/Form/validators";
 import { EMOJI } from "popup/constants";
 
-const CreatePassword = () => {
+const ModifiedHalfScreen = styled(HalfScreen)`
+  padding-left: 1.55rem;
+`;
+
+export const CreatePassword = () => {
   const publicKey = useSelector(publicKeySelector);
   const dispatch = useDispatch();
 
@@ -67,7 +77,7 @@ const CreatePassword = () => {
       >
         {({ isSubmitting, isValid }) => (
           <Form>
-            <>
+            <ModifiedHalfScreen>
               <FormRow>
                 <FormTextField
                   autoComplete="off"
@@ -100,12 +110,10 @@ const CreatePassword = () => {
                   isValid={isValid}
                 />
               </FormRow>
-            </>
+            </ModifiedHalfScreen>
           </Form>
         )}
       </Formik>
     </Onboarding>
   );
 };
-
-export default CreatePassword;

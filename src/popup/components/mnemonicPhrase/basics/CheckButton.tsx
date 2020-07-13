@@ -15,8 +15,9 @@ const ButtonLabel = styled.label`
   cursor: pointer;
   display: inline-block;
   font-weight: 800;
-  margin: 10px 5px;
-  padding: 0.75rem 1.7rem;
+  font-size: 0.75rem;
+  margin: 3px;
+  padding: 0.7rem 1.75rem;
 `;
 
 const CheckBox = styled(Field)`
@@ -28,7 +29,7 @@ const CheckBox = styled(Field)`
   }
 `;
 
-const CheckButton = ({ onChange, wordKey, word }: CheckButtonProps) => (
+export const CheckButton = ({ onChange, wordKey, word }: CheckButtonProps) => (
   <>
     <CheckBox
       id={wordKey}
@@ -41,5 +42,3 @@ const CheckButton = ({ onChange, wordKey, word }: CheckButtonProps) => (
     <ButtonLabel htmlFor={wordKey}>{word}</ButtonLabel>
   </>
 );
-
-export default CheckButton;

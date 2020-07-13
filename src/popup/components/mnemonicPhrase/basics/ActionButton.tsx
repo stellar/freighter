@@ -6,7 +6,7 @@ const ActionButton = styled(BasicButton)`
   color: ${COLOR_PALETTE.secondaryText};
   font-size: 0.875rem;
   font-weight: 500;
-  line-height: 1.7rem;
+  line-height: 2;
   opacity: 0.6;
 `;
 

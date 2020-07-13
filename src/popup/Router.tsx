@@ -19,14 +19,14 @@ import { newTabHref } from "helpers";
 import { POPUP_WIDTH } from "popup/constants";
 
 import { Account } from "popup/views/Account";
-import CreatePassword from "popup/views/CreatePassword";
+import { CreatePassword } from "popup/views/CreatePassword";
 import { GrantAccess } from "popup/views/GrantAccess";
-import MnemonicPhrase from "popup/views/MnemonicPhrase";
-import MnemonicPhraseConfirmed from "popup/views/MnemonicPhrase/Confirmed";
-import RecoverAccount from "popup/views/RecoverAccount";
+import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
+import { MnemonicPhraseConfirmed } from "popup/views/MnemonicPhrase/Confirmed";
+import { RecoverAccount } from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
-import Welcome from "popup/views/Welcome";
+import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
 
 const PublicKeyRoute = (props: RouteProps) => {
