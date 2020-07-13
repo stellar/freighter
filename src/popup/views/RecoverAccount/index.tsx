@@ -92,7 +92,7 @@ export const RecoverAccount = () => {
       onSubmit={handleSubmit}
       validationSchema={RecoverAccountSchema}
     >
-      {({ handleChange, isSubmitting, isValid }) => (
+      {({ isSubmitting, isValid }) => (
         <FullHeightForm>
           <Onboarding
             header="Recover wallet from backup phrase"
@@ -103,7 +103,6 @@ export const RecoverAccount = () => {
             <>
               <FormRow>
                 <FormTextField
-                  onChange={handleChange}
                   component="textarea"
                   name="mnemonicPhrase"
                   placeholder="Enter your 12 word phrase to restore your wallet"
