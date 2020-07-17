@@ -8,7 +8,7 @@ import { getAccountBalance } from "api/internal";
 import { truncatedPublicKey } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/authServices";
 
-import { POPUP_WIDTH } from "popup/constants/dimensions";
+import { POPUP_WIDTH } from "constants/dimensions";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { BasicButton } from "popup/basics/Buttons";
 

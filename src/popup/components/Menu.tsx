@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 
-import { BasicButton } from "popup/basics/Buttons";
 import { APPLICATION_STATE } from "constants/applicationState";
 import { Z_INDEXES, COLOR_PALETTE } from "popup/constants/styles";
-import { POPUP_WIDTH } from "popup/constants/dimensions";
+import { POPUP_WIDTH } from "constants/dimensions";
+
+import { BasicButton } from "popup/basics/Buttons";
 
 import { history } from "popup/App";
 import { applicationStateSelector, signOut } from "popup/ducks/authServices";
@@ -83,34 +84,30 @@ export const Menu = () => {
     history.push("/");
   };
 
-  return (
+  return applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
     <>
-      {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
-        <>
-          <MenuOpenButtonEl onClick={() => setIsOpen(true)}>
-            <img src={MenuIcon} alt="menu icon" />
-          </MenuOpenButtonEl>
-          <SlideoutNavEl isOpen={isOpen}>
-            <MenuHeaderEl />
-            <MenuEl>
-              <SlideOutCloseButtonEl onClick={() => setIsOpen(false)}>
-                <img src={CloseIcon} alt="close icon" />
-              </SlideOutCloseButtonEl>
-              <SlideoutNavListEl>
-                <SlideoutNavListItemEl>
-                  <a href="/">Show backup phrase</a>
-                </SlideoutNavListItemEl>
-                <SlideoutNavListItemEl>
-                  <a href="/">Help</a>
-                </SlideoutNavListItemEl>
-                <SlideoutNavListItemEl onClick={(e) => signOutAndClose(e)}>
-                  Sign out
-                </SlideoutNavListItemEl>
-              </SlideoutNavListEl>
-            </MenuEl>
-          </SlideoutNavEl>
-        </>
-      ) : null}
+      <MenuOpenButtonEl onClick={() => setIsOpen(true)}>
+        <img src={MenuIcon} alt="menu icon" />
+      </MenuOpenButtonEl>
+      <SlideoutNavEl isOpen={isOpen}>
+        <MenuHeaderEl />
+        <MenuEl>
+          <SlideOutCloseButtonEl onClick={() => setIsOpen(false)}>
+            <img src={CloseIcon} alt="close icon" />
+          </SlideOutCloseButtonEl>
+          <SlideoutNavListEl>
+            <SlideoutNavListItemEl>
+              <a href="/">Show backup phrase</a>
+            </SlideoutNavListItemEl>
+            <SlideoutNavListItemEl>
+              <a href="/">Help</a>
+            </SlideoutNavListItemEl>
+            <SlideoutNavListItemEl onClick={(e) => signOutAndClose(e)}>
+              Sign out
+            </SlideoutNavListItemEl>
+          </SlideoutNavListEl>
+        </MenuEl>
+      </SlideoutNavEl>
     </>
-  );
+  ) : null;
 };

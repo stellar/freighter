@@ -17,7 +17,7 @@ import {
   recoverAccount,
 } from "popup/ducks/authServices";
 
-import { HEADER_HEIGHT } from "popup/constants/dimensions";
+import { HEADER_HEIGHT } from "constants/dimensions";
 
 import {
   ApiErrorMessage,

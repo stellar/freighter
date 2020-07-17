@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
-import { HEADER_HEIGHT } from "popup/constants/dimensions";
+import { HEADER_HEIGHT } from "constants/dimensions";
 import { COLOR_PALETTE } from "popup/constants/styles";
 
 import { BackButton } from "popup/basics/Buttons";

@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 
-import { HEADER_HEIGHT } from "popup/constants/dimensions";
+import { HEADER_HEIGHT } from "constants/dimensions";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { COLOR_PALETTE } from "popup/constants/styles";

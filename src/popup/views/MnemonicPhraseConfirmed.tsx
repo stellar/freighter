@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
-import { HEADER_HEIGHT } from "popup/constants/dimensions";
+import { HEADER_HEIGHT } from "constants/dimensions";
 
 import { SubmitButton } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";

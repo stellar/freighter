@@ -7,7 +7,7 @@ import { createGlobalStyle } from "styled-components";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
-import { POPUP_WIDTH } from "popup/constants/dimensions";
+import { POPUP_WIDTH } from "constants/dimensions";
 import { Header } from "popup/components/Header";
 
 import Router from "./Router";

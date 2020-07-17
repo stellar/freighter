@@ -4,8 +4,9 @@ import { ExternalRequest as Request } from "api/types";
 import { Sender, SendResponseInterface } from "background/types";
 
 import { EXTERNAL_SERVICE_TYPES } from "constants/services";
+import { POPUP_WIDTH } from "constants/dimensions";
+
 import { removeQueryParam } from "helpers/urls";
-import { POPUP_WIDTH } from "popup/constants/dimensions";
 
 import { store } from "background/store";
 import { publicKeySelector } from "background/ducks/session";
