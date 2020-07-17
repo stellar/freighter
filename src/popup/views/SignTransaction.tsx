@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import styled from "styled-components";
 
-import { operationTypes } from "statics";
+import { OPERATION_TYPES } from "constants/operationTypes";
 
 import { rejectAccess, signTransaction } from "api/internal";
 
@@ -114,7 +114,7 @@ export const SignTransaction = () => {
       ed25519PublicKey: string;
       weight: number;
     };
-    type: keyof typeof operationTypes;
+    type: keyof typeof OPERATION_TYPES;
     buying: { code: string };
     selling: { code: string };
     buyAmount: string;
@@ -157,7 +157,8 @@ export const SignTransaction = () => {
         return (
           <OperationBoxEl>
             <OperationBoxHeaderEl>
-              Operation {operationIndex} <strong>{operationTypes[type]}</strong>
+              Operation {operationIndex}{" "}
+              <strong>{OPERATION_TYPES[type]}</strong>
             </OperationBoxHeaderEl>
             <ListEl>
               {amount ? (

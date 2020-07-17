@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
-import { APPLICATION_STATE } from "statics";
 
 import { BasicButton } from "popup/basics/Buttons";
+import { APPLICATION_STATE } from "constants/applicationState";
 import { Z_INDEXES, COLOR_PALETTE } from "popup/constants/styles";
 import { POPUP_WIDTH } from "popup/constants/dimensions";
 

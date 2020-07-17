@@ -7,7 +7,7 @@ import {
   useLocation,
   RouteProps,
 } from "react-router-dom";
-import { APPLICATION_STATE } from "statics";
+import { APPLICATION_STATE } from "constants/applicationState";
 import {
   applicationStateSelector,
   hasPrivateKeySelector,

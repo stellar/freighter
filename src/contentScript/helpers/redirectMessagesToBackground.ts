@@ -1,5 +1,8 @@
 import { sendMessageToBackground } from "api/helpers";
-import { EXTERNAL_MSG_REQUEST, EXTERNAL_MSG_RESPONSE } from "statics";
+import {
+  EXTERNAL_MSG_REQUEST,
+  EXTERNAL_MSG_RESPONSE,
+} from "constants/services";
 
 export const redirectMessagesToBackground = () => {
   window.addEventListener(

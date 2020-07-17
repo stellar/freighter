@@ -1,4 +1,4 @@
-import { EXTERNAL_SERVICE_TYPES } from "statics";
+import { EXTERNAL_SERVICE_TYPES } from "constants/services";
 import { sendMessageToContentScript } from "api/helpers";
 import { ExternalRequest } from "api/types";
 
