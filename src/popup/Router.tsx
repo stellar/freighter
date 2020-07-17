@@ -115,7 +115,7 @@ const HomeRoute = () => {
   }
 };
 
-const Routes = () => {
+export const Router = () => {
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(loadAccount());
@@ -153,5 +153,3 @@ const Routes = () => {
     </HashRouter>
   );
 };
-
-export default Routes;

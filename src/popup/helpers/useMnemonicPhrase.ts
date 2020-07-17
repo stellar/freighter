@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getMnemonicPhrase } from "api/internal";
 
-const useMnemonicPhrase = () => {
+export const useMnemonicPhrase = () => {
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   useEffect(() => {
@@ -23,5 +23,3 @@ const useMnemonicPhrase = () => {
 
   return mnemonicPhrase;
 };
-
-export default useMnemonicPhrase;

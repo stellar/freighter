@@ -1,7 +1,7 @@
 import { submitTransaction as submitTransactionService } from "api/external";
 import { ExternalRequest } from "api/types";
 
-const requestSignature = async (params: ExternalRequest) => {
+export const requestSignature = async (params: ExternalRequest) => {
   let response = { transactionStatus: "", error: "" };
 
   try {
@@ -12,5 +12,3 @@ const requestSignature = async (params: ExternalRequest) => {
 
   return response;
 };
-
-export default requestSignature;

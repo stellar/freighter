@@ -10,7 +10,7 @@ import { reducer as auth } from "popup/ducks/authServices";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { Header } from "popup/components/Header";
 
-import Router from "./Router";
+import { Router } from "./Router";
 
 const GlobalStyle = createGlobalStyle`
   body {

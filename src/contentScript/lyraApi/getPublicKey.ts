@@ -1,6 +1,6 @@
 import { requestAccess } from "api/external";
 
-const getPublicKey = async () => {
+export const getPublicKey = async () => {
   let response = { publicKey: "", error: "" };
 
   try {
@@ -11,5 +11,3 @@ const getPublicKey = async () => {
 
   return response;
 };
-
-export default getPublicKey;
