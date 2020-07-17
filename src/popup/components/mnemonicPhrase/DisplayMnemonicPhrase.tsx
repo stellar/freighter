@@ -5,8 +5,8 @@ import { COLOR_PALETTE } from "popup/styles";
 import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
-import { FormButton } from "popup/basics";
 import { BasicButton } from "popup/basics/Buttons";
+import { SubmitButton } from "popup/basics/Forms";
 import Toast from "popup/components/Toast";
 import ActionButton from "./basics/ActionButton";
 
@@ -107,13 +107,13 @@ const DisplayMnemonicPhrase = ({
           />
         </CopiedToastWrapper>
       </DisplayButtons>
-      <FormButton
+      <SubmitButton
         onClick={() => {
           setReadyToConfirm(true);
         }}
       >
         Next
-      </FormButton>
+      </SubmitButton>
     </HalfScreen>
   );
 };

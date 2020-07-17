@@ -11,20 +11,20 @@ import {
   Onboarding,
   HalfScreen,
 } from "popup/components/Layout/Fullscreen/Onboarding";
-import Form from "popup/components/Form";
 import {
-  FormError,
+  Form,
+  SubmitButton,
+  Error,
   FormRow,
-  FormCheckboxField,
-  FormCheckboxLabel,
-  FormSubmitButton,
-  FormTextField,
-} from "popup/basics";
+  CheckboxField,
+  Label,
+  TextField,
+} from "popup/basics/Forms";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
-} from "popup/components/Form/validators";
+} from "popup/helpers/validators";
 import { EMOJI } from "popup/constants";
 
 const ModifiedHalfScreen = styled(HalfScreen)`
@@ -79,36 +79,34 @@ export const CreatePassword = () => {
           <Form>
             <ModifiedHalfScreen>
               <FormRow>
-                <FormTextField
+                <TextField
                   autoComplete="off"
                   name="password"
                   placeholder="New password"
                   type="password"
                 />
-                <FormError name="password" />
+                <Error name="password" />
               </FormRow>
               <FormRow>
-                <FormTextField
+                <TextField
                   autoComplete="off"
                   name="confirmPassword"
                   placeholder="Confirm password"
                   type="password"
                 />
-                <FormError name="confirmPassword" />
+                <Error name="confirmPassword" />
               </FormRow>
               <FormRow>
-                <FormCheckboxField name="termsOfUse" />
-                <FormCheckboxLabel htmlFor="termsOfUse">
+                <CheckboxField name="termsOfUse" />
+                <Label htmlFor="termsOfUse">
                   I have read and agree to <a href="/ac">Terms of Use</a>
-                </FormCheckboxLabel>
-                <FormError name="termsOfUse" />
+                </Label>
+                <Error name="termsOfUse" />
               </FormRow>
               <FormRow>
-                <FormSubmitButton
-                  buttonCTA="Log In"
-                  isSubmitting={isSubmitting}
-                  isValid={isValid}
-                />
+                <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
+                  Log In
+                </SubmitButton>
               </FormRow>
             </ModifiedHalfScreen>
           </Form>

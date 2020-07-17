@@ -1,19 +1,63 @@
-import React from "react";
+import React, { ButtonHTMLAttributes } from "react";
 import styled from "styled-components";
-import { ErrorMessage, Field } from "formik";
+import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
 import { COLOR_PALETTE } from "popup/styles";
-
 import { Button } from "popup/basics/Buttons";
 
-/* Button */
+interface FormProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const StyledForm = styled(FormikForm)`
+  display: flex;
+  flex-flow: column wrap;
+`;
+
+export const Form = ({ children, className }: FormProps) => (
+  <StyledForm className={className}>{children}</StyledForm>
+);
+
+const FormButtonEl = styled(Button)`
+  &:disabled {
+    color: ${COLOR_PALETTE.secondaryText};
+  }
+`;
+
+interface SubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+  isSubmitting?: boolean;
+  isValid?: boolean;
+  size?: string;
+  onClick?: () => void;
+}
+
+export const SubmitButton = ({
+  children,
+  isSubmitting = false,
+  isValid = true,
+  onClick = () => {},
+  size,
+  ...props
+}: SubmitButtonProps) => (
+  <FormButtonEl
+    {...props}
+    onClick={onClick}
+    size={size}
+    type="submit"
+    disabled={isSubmitting || !isValid}
+  >
+    {isSubmitting ? "Loading..." : children}
+  </FormButtonEl>
+);
 
 /* Form */
 interface ErrorMessageProps {
-  error: string;
+  error: React.ReactNode;
 }
 
-export const FormErrorEl = styled.div`
+const FormErrorEl = styled.div`
   color: ${COLOR_PALETTE.error};
   font-size: 0.8125rem;
   height: 1rem;
@@ -27,42 +71,8 @@ const FormCheckBoxWrapper = styled.div`
   margin-right: 0.625rem;
 `;
 
-export const ApiErrorMessage = ({ error }: ErrorMessageProps) => (
-  <>{error ? <FormErrorEl>{error}</FormErrorEl> : null}</>
-);
-
-export const FormButton = styled(Button)`
-  &:disabled {
-    color: ${COLOR_PALETTE.secondaryText};
-  }
-`;
-
-interface SubmitButtonProps {
-  buttonCTA: string;
-  isSubmitting: boolean;
-  isValid?: boolean;
-  size?: string;
-  onClick?: () => void;
-}
-
-export const FormSubmitButton = ({
-  buttonCTA,
-  isSubmitting,
-  isValid = true,
-  onClick = () => {},
-  size,
-  ...props
-}: SubmitButtonProps) => (
-  <FormButton
-    onClick={onClick}
-    size={size}
-    type="submit"
-    disabled={isSubmitting || !isValid}
-    {...props}
-  >
-    {isSubmitting ? "Loading..." : buttonCTA}
-  </FormButton>
-);
+export const ApiErrorMessage = ({ error }: ErrorMessageProps) =>
+  error ? <FormErrorEl>{error}</FormErrorEl> : null;
 
 export const FormRow = styled.div`
   position: relative;
@@ -71,13 +81,13 @@ export const FormRow = styled.div`
   width: 100%;
 `;
 
-export const FormError = ({ name }: { name: string }) => (
+export const Error = ({ name }: { name: string }) => (
   <FormErrorEl>
     <ErrorMessage name={name} component="span" />
   </FormErrorEl>
 );
 
-export const FormTextField = styled(Field)`
+export const TextField = styled(Field)`
   border-radius: 1.25rem;
   border: ${(props) =>
     props.hasError ? `1px solid ${COLOR_PALETTE.error}` : 0};
@@ -130,7 +140,7 @@ const FormCheckboxFieldEl = styled(Field)`
   }
 `;
 
-export const FormCheckboxField = ({ name }: { name: string }) => (
+export const CheckboxField = ({ name }: { name: string }) => (
   <FormCheckBoxWrapper>
     <FormCheckboxFieldEl id={name} name={name} type="checkbox" />
     <FormCheckboxFieldLabelEl htmlFor={name}>
@@ -139,7 +149,7 @@ export const FormCheckboxField = ({ name }: { name: string }) => (
   </FormCheckBoxWrapper>
 );
 
-export const FormCheckboxLabel = styled.label`
+export const Label = styled.label`
   color: ${COLOR_PALETTE.secondaryText};
   font-size: 0.8125rem;
 `;

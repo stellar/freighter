@@ -6,11 +6,15 @@ import {
   confirmMnemonicPhrase,
   authErrorSelector,
 } from "popup/ducks/authServices";
-import Form from "popup/components/Form";
 import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
 import { COLOR_PALETTE } from "popup/styles";
 import { Button } from "popup/basics/Buttons";
-import { ApiErrorMessage, FormRow, FormSubmitButton } from "popup/basics";
+import {
+  Form,
+  SubmitButton,
+  ApiErrorMessage,
+  FormRow,
+} from "popup/basics/Forms";
 
 import CloseIcon from "popup/assets/icon-close.svg";
 
@@ -139,11 +143,12 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
               <ApiErrorMessage error={authError}></ApiErrorMessage>
               <WordBubbleWrapper>{wordBubbles(handleChange)}</WordBubbleWrapper>
               <FormRow>
-                <FormSubmitButton
-                  buttonCTA="Confirm"
+                <SubmitButton
                   isSubmitting={isSubmitting}
                   isValid={!!displaySelectedWords().length}
-                />
+                >
+                  Confirm
+                </SubmitButton>
               </FormRow>
             </ModifiedHalfScreen>
           </Form>

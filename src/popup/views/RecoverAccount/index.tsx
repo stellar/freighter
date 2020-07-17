@@ -10,7 +10,7 @@ import {
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
   mnemonicPhrase as mnemonicPhraseValidator,
-} from "popup/components/Form/validators";
+} from "popup/helpers/validators";
 import {
   authErrorSelector,
   publicKeySelector,
@@ -21,14 +21,14 @@ import { HEADER_HEIGHT } from "popup/constants";
 
 import {
   ApiErrorMessage,
-  FormError,
+  Error,
   FormRow,
-  FormCheckboxField,
-  FormCheckboxLabel,
-  FormSubmitButton,
-  FormTextField,
-} from "popup/basics";
-import Form from "popup/components/Form";
+  CheckboxField,
+  Label,
+  TextField,
+  SubmitButton,
+  Form,
+} from "popup/basics/Forms";
 import {
   Onboarding,
   HalfScreen,
@@ -103,46 +103,44 @@ export const RecoverAccount = () => {
           >
             <>
               <FormRow>
-                <FormTextField
+                <TextField
                   component="textarea"
                   name="mnemonicPhrase"
                   placeholder="Enter your 12 word phrase to restore your wallet"
                 />
-                <FormError name="mnemonicPhrase" />
+                <Error name="mnemonicPhrase" />
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
               </FormRow>
               <HalfScreen>
                 <FormRow>
-                  <FormTextField
+                  <TextField
                     autoComplete="off"
                     name="password"
                     placeholder="Define new password"
                     type="password"
                   />
-                  <FormError name="password" />
+                  <Error name="password" />
                 </FormRow>
                 <FormRow>
-                  <FormTextField
+                  <TextField
                     autoComplete="off"
                     name="confirmPassword"
                     placeholder="Confirm password"
                     type="password"
                   />
-                  <FormError name="confirmPassword" />
+                  <Error name="confirmPassword" />
                 </FormRow>
                 <FormRow>
-                  <FormCheckboxField name="termsOfUse" />
-                  <FormCheckboxLabel htmlFor="termsOfUse">
+                  <CheckboxField name="termsOfUse" />
+                  <Label htmlFor="termsOfUse">
                     I have read and agree to <a href="/ac">Terms of Use</a>
-                  </FormCheckboxLabel>
-                  <FormError name="termsOfUse" />
+                  </Label>
+                  <Error name="termsOfUse" />
                 </FormRow>
                 <FormRow>
-                  <FormSubmitButton
-                    buttonCTA="Recover"
-                    isSubmitting={isSubmitting}
-                    isValid={isValid}
-                  />
+                  <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
+                    Recover
+                  </SubmitButton>
                 </FormRow>
               </HalfScreen>
             </>

@@ -6,7 +6,7 @@ import { rejectAccess, grantAccess } from "api/internal";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
 import { Button } from "popup/basics/Buttons";
-import { FormSubmitButton } from "popup/basics";
+import { SubmitButton } from "popup/basics/Forms";
 
 const GrantAccessEl = styled.div`
   padding: 2.25rem 2.5rem;
@@ -68,12 +68,13 @@ export const GrantAccess = () => {
         <RejectButton size="small" onClick={rejectAndClose}>
           Reject
         </RejectButton>
-        <FormSubmitButton
-          buttonCTA="Confirm"
+        <SubmitButton
           isSubmitting={isGranting}
           size="small"
           onClick={() => grantAndClose()}
-        />
+        >
+          Confirm
+        </SubmitButton>
       </ButtonContainerEl>
     </GrantAccessEl>
   );

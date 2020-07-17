@@ -13,7 +13,7 @@ import { truncatedPublicKey } from "helpers";
 import { publicKeySelector } from "popup/ducks/authServices";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
 import { Button, BackButton } from "popup/basics/Buttons";
-import { FormSubmitButton } from "popup/basics";
+import { SubmitButton } from "popup/basics/Forms";
 
 const El = styled.div`
   padding: 2.25rem 2.5rem;
@@ -250,12 +250,13 @@ export const SignTransaction = () => {
         <RejectButton size="small" onClick={() => rejectAndClose()}>
           Reject
         </RejectButton>
-        <FormSubmitButton
-          buttonCTA="Confirm"
+        <SubmitButton
           isSubmitting={isConfirming}
           size="small"
           onClick={() => signAndClose()}
-        />
+        >
+          Confirm
+        </SubmitButton>
       </ButtonContainerEl>
     </El>
   );

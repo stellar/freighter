@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
 import { HEADER_HEIGHT } from "popup/constants";
 
-import { FormButton } from "popup/basics";
+import { SubmitButton } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
 
 const HeaderEl = styled.h1`
@@ -33,12 +33,12 @@ const ContentWrapper = styled.div`
   height: calc(100vh - ${HEADER_HEIGHT}px);
 `;
 
-const FinishButton = styled(FormButton)`
+const FinishButtonEl = styled(SubmitButton)`
   background: ${COLOR_PALETTE.secondary};
   margin: 2.5rem auto 0;
 `;
 
-const Celebration = styled.h1`
+const CelebrationEl = styled.h1`
   font-size: 5rem;
 `;
 
@@ -47,11 +47,11 @@ export const MnemonicPhraseConfirmed = () => (
     <FullscreenStyle />
     <ContentWrapper>
       <HeaderEl>Woo, you’re in!</HeaderEl>
-      <Celebration>
+      <CelebrationEl>
         <span role="img" aria-label="Celebration face">
           🥳
         </span>
-      </Celebration>
+      </CelebrationEl>
       <p>
         Awesome, you passed the test. Keep your seedphrase safe, it’s your
         responsibility.
@@ -59,13 +59,13 @@ export const MnemonicPhraseConfirmed = () => (
       <p>
         <strong>Note: Lyra cannot recover your seedphrase.</strong>
       </p>
-      <FinishButton
+      <FinishButtonEl
         onClick={() => {
           window.close();
         }}
       >
         All done
-      </FinishButton>
+      </FinishButtonEl>
     </ContentWrapper>
   </Wrapper>
 );

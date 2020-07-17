@@ -11,13 +11,12 @@ import { POPUP_WIDTH, EMOJI } from "popup/constants";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
 import { BasicButton } from "popup/basics/Buttons";
 import {
-  FormSubmitButton,
+  Form,
+  SubmitButton,
   FormRow,
-  FormErrorEl,
-  FormTextField,
-} from "popup/basics";
-
-import Form from "popup/components/Form";
+  ApiErrorMessage,
+  TextField,
+} from "popup/basics/Forms";
 
 const UnlockAccountEl = styled.div`
   width: 100%;
@@ -49,7 +48,7 @@ const UnorderedListEl = styled.ul`
   padding: 0;
   padding-top: 0.25rem;
 `;
-const CustomFormTextField = styled(FormTextField)`
+const CustomFormTextField = styled(TextField)`
   padding-right: ${(props) => (props.hasError ? "6rem" : "2.2rem")};
 `;
 const ListItemEl = styled.li`
@@ -126,15 +125,11 @@ export const UnlockAccount = () => {
                 </ErrorEmojiEl>
               ) : null}
             </FormRow>
-            <FormErrorEl>
-              {authError ? <label>{authError}</label> : null}
-            </FormErrorEl>
+            <ApiErrorMessage error={authError} />
             <ButtonRow>
-              <FormSubmitButton
-                buttonCTA="Log In"
-                isSubmitting={isSubmitting}
-                isValid={isValid}
-              />
+              <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
+                Log In
+              </SubmitButton>
             </ButtonRow>
           </Form>
         )}
