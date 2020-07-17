@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { HEADER_HEIGHT } from "popup/constants";
 import { COLOR_PALETTE } from "popup/styles";
 
-import { BackButton } from "popup/basics";
+import { BackButton } from "popup/basics/Buttons";
 import { FullscreenStyle } from "./basics";
 
 interface HeaderProps {

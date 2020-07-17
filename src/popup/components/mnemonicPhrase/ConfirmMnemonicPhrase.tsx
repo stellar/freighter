@@ -9,12 +9,8 @@ import {
 import Form from "popup/components/Form";
 import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
 import { COLOR_PALETTE } from "popup/styles";
-import {
-  ApiErrorMessage,
-  ButtonEl,
-  FormRow,
-  FormSubmitButton,
-} from "popup/basics";
+import { Button } from "popup/basics/Buttons";
+import { ApiErrorMessage, FormRow, FormSubmitButton } from "popup/basics";
 
 import CloseIcon from "popup/assets/icon-close.svg";
 
@@ -35,7 +31,7 @@ const ConfirmInput = styled.div`
   text-align: center;
 `;
 
-const ClearButton = styled(ButtonEl)`
+const ClearButton = styled(Button)`
   border-radius: 0.5rem;
   display: inline-block;
   height: 1.5rem;

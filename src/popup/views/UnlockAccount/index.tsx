@@ -9,8 +9,8 @@ import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 import { history } from "popup/App";
 import { POPUP_WIDTH, EMOJI } from "popup/constants";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
+import { BasicButton } from "popup/basics/Buttons";
 import {
-  BasicButton,
   FormSubmitButton,
   FormRow,
   FormErrorEl,

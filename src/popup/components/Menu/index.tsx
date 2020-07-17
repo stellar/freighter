@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { APPLICATION_STATE } from "statics";
 
-import { BasicButton } from "popup/basics";
+import { BasicButton } from "popup/basics/Buttons";
 import { Z_INDEXES, COLOR_PALETTE } from "popup/styles";
 import { POPUP_WIDTH } from "popup/constants";
 

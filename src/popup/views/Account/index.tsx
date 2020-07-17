@@ -10,7 +10,7 @@ import { publicKeySelector } from "popup/ducks/authServices";
 
 import { POPUP_WIDTH } from "popup/constants";
 import { COLOR_PALETTE } from "popup/styles";
-import { BasicButton } from "popup/basics";
+import { BasicButton } from "popup/basics/Buttons";
 
 import Toast from "popup/components/Toast";
 import Menu from "popup/components/Menu";

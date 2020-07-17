@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { COLOR_PALETTE } from "popup/styles";
-import { BasicButton } from "popup/basics";
+import { BasicButton } from "popup/basics/Buttons";
 
 const ErrorEl = styled.p`
   color: red;

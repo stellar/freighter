@@ -5,7 +5,8 @@ import { COLOR_PALETTE } from "popup/styles";
 import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
-import { BasicButton, FormButton } from "popup/basics";
+import { FormButton } from "popup/basics";
+import { BasicButton } from "popup/basics/Buttons";
 import Toast from "popup/components/Toast";
 import ActionButton from "./basics/ActionButton";
 

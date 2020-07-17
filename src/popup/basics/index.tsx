@@ -2,82 +2,11 @@ import React from "react";
 import styled from "styled-components";
 import { ErrorMessage, Field } from "formik";
 
-import { HEADER_HEIGHT } from "popup/constants";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
+import { COLOR_PALETTE } from "popup/styles";
 
-import ChevronIcon from "popup/assets/icon-chevron.svg";
+import { Button } from "popup/basics/Buttons";
 
 /* Button */
-export const BasicButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  -webkit-appearance: none;
-
-  :focus {
-    outline: none;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-  }
-`;
-
-interface ButtonProps {
-  size?: string;
-  onClick?: () => void;
-  children: React.ReactNode;
-}
-
-export const ButtonEl = styled(BasicButton)<ButtonProps>`
-  width: ${(props) => (props.size === "small" ? "8.75rem" : "12.375rem")};
-  display: ${(props) => (props.size === "small" ? "inline-block" : "block")};
-  margin: 0 auto;
-  font-size: 0.8rem;
-  font-weight: ${FONT_WEIGHT.bold};
-  padding: 1.45rem;
-  border-radius: 1.25rem;
-  background: ${COLOR_PALETTE.primaryGradient};
-  color: ${COLOR_PALETTE.white};
-  border: none;
-  -webkit-appearance: none;
-`;
-
-export const Button = ({ size, children, onClick, ...props }: ButtonProps) => (
-  <ButtonEl size={size} onClick={() => onClick && onClick()} {...props}>
-    {children}
-  </ButtonEl>
-);
-
-/* Back Button */
-interface BackButtonProps {
-  onClick: () => void;
-}
-
-const BackButtonEl = styled(BasicButton)`
-  position: absolute;
-  top: calc(${HEADER_HEIGHT}px + 1rem);
-  left: 1rem;
-  display: flex;
-  align-items: center;
-  background: ${COLOR_PALETTE.inputBackground};
-  border-radius: 0.625rem;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-
-  img {
-    transform: rotate(180deg);
-    width: 0.8rem;
-    height: 0.8rem;
-  }
-`;
-
-export const BackButton = ({ onClick, ...props }: BackButtonProps) => (
-  <BackButtonEl onClick={() => onClick && onClick()} {...props}>
-    <img src={ChevronIcon} alt="chevron icon" />
-  </BackButtonEl>
-);
 
 /* Form */
 interface ErrorMessageProps {
@@ -98,40 +27,11 @@ const FormCheckBoxWrapper = styled.div`
   margin-right: 0.625rem;
 `;
 
-const FormCheckboxFieldLabel = styled.label`
-  align-items: center;
-  background: ${COLOR_PALETTE.inputBackground};
-  border: 0.125rem solid ${COLOR_PALETTE.inputBackground};
-  border-radius: 0.625rem;
-  color: ${COLOR_PALETTE.primary};
-  cursor: pointer;
-  display: flex;
-  height: 2rem;
-  justify-content: space-evenly;
-  width: 2rem;
-
-  div {
-    border-radius: 2rem;
-    height: 1rem;
-    width: 1rem;
-  }
-`;
-
-const FormCheckboxFieldEl = styled(Field)`
-  display: none;
-
-  &:checked + ${FormCheckboxFieldLabel} {
-    div {
-      background: ${COLOR_PALETTE.primary};
-    }
-  }
-`;
-
 export const ApiErrorMessage = ({ error }: ErrorMessageProps) => (
   <>{error ? <FormErrorEl>{error}</FormErrorEl> : null}</>
 );
 
-export const FormButton = styled(ButtonEl)`
+export const FormButton = styled(Button)`
   &:disabled {
     color: ${COLOR_PALETTE.secondaryText};
   }
@@ -149,7 +49,7 @@ export const FormSubmitButton = ({
   buttonCTA,
   isSubmitting,
   isValid = true,
-  onClick,
+  onClick = () => {},
   size,
   ...props
 }: SubmitButtonProps) => (
@@ -205,12 +105,37 @@ export const FormTextField = styled(Field)`
   }
 `;
 
+const FormCheckboxFieldLabelEl = styled.label`
+  div {
+    border-radius: 2rem;
+    height: 1rem;
+    width: 1rem;
+  }
+`;
+
+const FormCheckboxFieldEl = styled(Field)`
+  align-items: center;
+  background: ${COLOR_PALETTE.inputBackground};
+  border: 0.125rem solid ${COLOR_PALETTE.inputBackground};
+  border-radius: 0.625rem;
+  color: ${COLOR_PALETTE.primary};
+  cursor: pointer;
+  display: flex;
+  height: 2rem;
+  justify-content: space-evenly;
+  width: 2rem;
+
+  &:checked {
+    background: ${COLOR_PALETTE.primary};
+  }
+`;
+
 export const FormCheckboxField = ({ name }: { name: string }) => (
   <FormCheckBoxWrapper>
     <FormCheckboxFieldEl id={name} name={name} type="checkbox" />
-    <FormCheckboxFieldLabel htmlFor={name}>
+    <FormCheckboxFieldLabelEl htmlFor={name}>
       <div />
-    </FormCheckboxFieldLabel>
+    </FormCheckboxFieldLabelEl>
   </FormCheckBoxWrapper>
 );
 

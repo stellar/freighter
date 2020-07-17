@@ -12,7 +12,8 @@ import { truncatedPublicKey } from "helpers";
 
 import { publicKeySelector } from "popup/ducks/authServices";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
-import { Button, BackButton, FormSubmitButton } from "popup/basics";
+import { Button, BackButton } from "popup/basics/Buttons";
+import { FormSubmitButton } from "popup/basics";
 
 const El = styled.div`
   padding: 2.25rem 2.5rem;

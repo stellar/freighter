@@ -5,7 +5,8 @@ import { useLocation } from "react-router-dom";
 import { rejectAccess, grantAccess } from "api/internal";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
-import { Button, FormSubmitButton } from "popup/basics";
+import { Button } from "popup/basics/Buttons";
+import { FormSubmitButton } from "popup/basics";
 
 const GrantAccessEl = styled.div`
   padding: 2.25rem 2.5rem;
@@ -64,7 +65,7 @@ export const GrantAccess = () => {
         Lyra wallet. Only share your information with websites you trust.{" "}
       </Text>
       <ButtonContainerEl>
-        <RejectButton size="small" onClick={() => rejectAndClose()}>
+        <RejectButton size="small" onClick={rejectAndClose}>
           Reject
         </RejectButton>
         <FormSubmitButton
