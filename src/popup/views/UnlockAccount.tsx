@@ -49,7 +49,7 @@ const UnorderedListEl = styled.ul`
   padding: 0;
   padding-top: 0.25rem;
 `;
-const CustomFormTextField = styled(TextField)`
+const CustomFormTextFieldEl = styled(TextField)`
   padding-right: ${(props) => (props.hasError ? "6rem" : "2.2rem")};
 `;
 const ListItemEl = styled.li`
@@ -57,10 +57,10 @@ const ListItemEl = styled.li`
   padding: 0.5rem 0;
   line-height: 1;
 `;
-const ButtonRow = styled.div`
+const ButtonRowEl = styled.div`
   padding: 1.5rem 0;
 `;
-const EmojiSpan = styled.span`
+const EmojiSpanEl = styled.span`
   font-size: 3rem;
 `;
 const ErrorEmojiEl = styled.div`
@@ -69,7 +69,7 @@ const ErrorEmojiEl = styled.div`
   top: 50%;
   transform: translateY(-50%);
 
-  ${EmojiSpan} {
+  ${EmojiSpanEl} {
     font-size: 1.75rem;
   }
 `;
@@ -102,13 +102,13 @@ export const UnlockAccount = () => {
         {({ isSubmitting, isValid }) => (
           <Form>
             <HeaderContainerEl>
-              <EmojiSpan role="img" aria-label={EMOJI.wave.alt}>
+              <EmojiSpanEl role="img" aria-label={EMOJI.wave.alt}>
                 {EMOJI.wave.emoji}
-              </EmojiSpan>
+              </EmojiSpanEl>
               <HeaderEl>Welcome back!</HeaderEl>
             </HeaderContainerEl>
             <FormRow>
-              <CustomFormTextField
+              <CustomFormTextFieldEl
                 autoComplete="off"
                 type="password"
                 name="password"
@@ -117,21 +117,21 @@ export const UnlockAccount = () => {
               />
               {authError ? (
                 <ErrorEmojiEl>
-                  <EmojiSpan role="img" aria-label={EMOJI.vomit.alt}>
+                  <EmojiSpanEl role="img" aria-label={EMOJI.vomit.alt}>
                     {EMOJI.vomit.emoji}
-                  </EmojiSpan>
-                  <EmojiSpan role="img" aria-label={EMOJI.poop.alt}>
+                  </EmojiSpanEl>
+                  <EmojiSpanEl role="img" aria-label={EMOJI.poop.alt}>
                     {EMOJI.poop.emoji}
-                  </EmojiSpan>
+                  </EmojiSpanEl>
                 </ErrorEmojiEl>
               ) : null}
             </FormRow>
             <ApiErrorMessage error={authError} />
-            <ButtonRow>
+            <ButtonRowEl>
               <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
                 Log In
               </SubmitButton>
-            </ButtonRow>
+            </ButtonRowEl>
           </Form>
         )}
       </Formik>

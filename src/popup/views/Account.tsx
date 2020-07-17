@@ -13,11 +13,11 @@ import { COLOR_PALETTE } from "popup/constants/styles";
 import { BasicButton } from "popup/basics/Buttons";
 
 import { Toast } from "popup/components/Toast";
-import Menu from "popup/components/Menu";
+import { Menu } from "popup/components/Menu";
 
 import CopyColor from "popup/assets/copy-color.png";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import Footer from "popup/components/Footer";
+import { Footer } from "popup/components/Footer";
 
 const AccountEl = styled.div`
   width: 100%;
@@ -26,7 +26,7 @@ const AccountEl = styled.div`
   padding: 1.25rem 2rem;
 `;
 
-const PublicKeyDisplay = styled.div`
+const PublicKeyDisplayEl = styled.div`
   position: relative;
   display: inline-block;
   padding-right: 0.45rem;
@@ -46,14 +46,14 @@ const PublicKeyEl = styled.span`
   opacity: 0.7;
 `;
 
-const CopyButton = styled(BasicButton)`
+const CopyButtonEl = styled(BasicButton)`
   background: url(${CopyColor});
   background-size: cover;
   width: 1rem;
   height: 1rem;
 `;
 
-const AccountDetails = styled.section`
+const AccountDetailsEl = styled.section`
   align-content: center;
   align-items: center;
   display: flex;
@@ -66,12 +66,12 @@ const StellarLogoEl = styled.img`
   width: 7.3rem;
 `;
 
-const LumenBalance = styled.h2`
+const LumenBalanceEl = styled.h2`
   font-size: 1.43rem;
   font-weight: 300;
 `;
 
-const CopiedToastWrapper = styled.div`
+const CopiedToastWrapperEl = styled.div`
   margin: 0.3rem 0 0 -5rem;
 `;
 
@@ -103,27 +103,27 @@ export const Account = () => {
       <AccountEl>
         <RowEl>
           <Menu />
-          <PublicKeyDisplay>
+          <PublicKeyDisplayEl>
             <p>Your public key</p>
             <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
             <CopyToClipboard text={publicKey} onCopy={() => setIsCopied(true)}>
-              <CopyButton />
+              <CopyButtonEl />
             </CopyToClipboard>
-            <CopiedToastWrapper>
+            <CopiedToastWrapperEl>
               <Toast
                 message="Copied to your clipboard 👌"
                 isShowing={isCopied}
                 setIsShowing={setIsCopied}
               />
-            </CopiedToastWrapper>
-          </PublicKeyDisplay>
+            </CopiedToastWrapperEl>
+          </PublicKeyDisplayEl>
         </RowEl>
-        <AccountDetails>
+        <AccountDetailsEl>
           <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
           <div>
-            <LumenBalance>{accountBalance} XLM</LumenBalance>
+            <LumenBalanceEl>{accountBalance} XLM</LumenBalanceEl>
           </div>
-        </AccountDetails>
+        </AccountDetailsEl>
       </AccountEl>
       <Footer />
     </>

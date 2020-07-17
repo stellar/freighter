@@ -8,7 +8,7 @@ interface ToastWrapperProps {
   isShowing: boolean;
 }
 
-const ToastWrapper = styled.div`
+const ToastWrapperEl = styled.div`
   background: #fff;
   border-radius: 0.9rem;
   color: ${COLOR_PALETTE.primary};
@@ -45,8 +45,8 @@ export const Toast = ({
     }
   }, [isShowing, setIsShowing]);
   return (
-    <ToastWrapper isShowing={isShowing} className={className}>
+    <ToastWrapperEl isShowing={isShowing} className={className}>
       {message}
-    </ToastWrapper>
+    </ToastWrapperEl>
   );
 };

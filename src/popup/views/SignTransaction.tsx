@@ -19,18 +19,18 @@ const El = styled.div`
   padding: 2.25rem 2.5rem;
   box-sizing: border-box;
 `;
-const Header = styled.h1`
+const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
   margin: 1rem 0 0.75rem;
 `;
-const Subheader = styled.h3`
+const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
   font-size: 0.95rem;
   letter-spacing: 0.1px;
   color: ${COLOR_PALETTE.primary}};
 `;
-const OperationBoxHeader = styled.h4`
+const OperationBoxHeaderEl = styled.h4`
   color: ${COLOR_PALETTE.primary}};
   font-size: 1.4rem;
   font-weight: ${FONT_WEIGHT.light};
@@ -41,7 +41,7 @@ const OperationBoxHeader = styled.h4`
     font-weight: ${FONT_WEIGHT.bold};
   }
 `;
-const OperationBox = styled.div`
+const OperationBoxEl = styled.div`
   text-align: left;
 `;
 const ListEl = styled.ul`
@@ -76,7 +76,7 @@ const ButtonContainerEl = styled.div`
   justify-content: space-around;
   padding: 3rem 1.25rem;
 `;
-const RejectButton = styled(Button)`
+const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
 `;
 
@@ -155,10 +155,10 @@ export const SignTransaction = () => {
         const operationIndex = i + 1;
 
         return (
-          <OperationBox>
-            <OperationBoxHeader>
+          <OperationBoxEl>
+            <OperationBoxHeaderEl>
               Operation {operationIndex} <strong>{operationTypes[type]}</strong>
-            </OperationBoxHeader>
+            </OperationBoxHeaderEl>
             <ListEl>
               {amount ? (
                 <KeyValueList
@@ -219,7 +219,7 @@ export const SignTransaction = () => {
                 />
               ) : null}
             </ListEl>
-          </OperationBox>
+          </OperationBoxEl>
         );
       },
     );
@@ -227,8 +227,8 @@ export const SignTransaction = () => {
   return (
     <El>
       <BackButton onClick={() => window.location.replace("/")} />
-      <Header>Confirm Transaction</Header>
-      <Subheader>{title} is requesting a transaction</Subheader>
+      <HeaderEl>Confirm Transaction</HeaderEl>
+      <SubheaderEl>{title} is requesting a transaction</SubheaderEl>
       <ListEl>
         <li>
           <div>
@@ -247,9 +247,9 @@ export const SignTransaction = () => {
       </ListEl>
       <Operations />
       <ButtonContainerEl>
-        <RejectButton size="small" onClick={() => rejectAndClose()}>
+        <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
           Reject
-        </RejectButton>
+        </RejectButtonEl>
         <SubmitButton
           isSubmitting={isConfirming}
           size="small"

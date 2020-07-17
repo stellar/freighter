@@ -31,7 +31,7 @@ import {
 } from "popup/basics/Forms";
 import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 
-const FullHeightForm = styled(Form)`
+const FullHeightFormEl = styled(Form)`
   height: calc(100vh - ${HEADER_HEIGHT}px);
 
   section {
@@ -91,7 +91,7 @@ export const RecoverAccount = () => {
       validationSchema={RecoverAccountSchema}
     >
       {({ isSubmitting, isValid }) => (
-        <FullHeightForm>
+        <FullHeightFormEl>
           <Onboarding
             header="Recover wallet from backup phrase"
             icon={icon}
@@ -142,7 +142,7 @@ export const RecoverAccount = () => {
               </HalfScreen>
             </>
           </Onboarding>
-        </FullHeightForm>
+        </FullHeightFormEl>
       )}
     </Formik>
   );

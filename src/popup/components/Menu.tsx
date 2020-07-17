@@ -14,7 +14,7 @@ import { Header } from "popup/components/Header";
 import CloseIcon from "popup/assets/icon-close.svg";
 import MenuIcon from "popup/assets/icon-menu.svg";
 
-const SlideoutNav = styled.nav`
+const SlideoutNavEl = styled.nav`
   background: ${COLOR_PALETTE.menuGradient};
   height: 100%;
   width: 100%;
@@ -28,13 +28,13 @@ const SlideoutNav = styled.nav`
   left: 0;
   z-index: ${Z_INDEXES.nav};
 `;
-const MenuHeader = styled(Header)`
+const MenuHeaderEl = styled(Header)`
   background: none;
 `;
 const MenuEl = styled.div`
   padding: 0.675rem 3.375rem;
 `;
-const MenuOpenButton = styled(BasicButton)`
+const MenuOpenButtonEl = styled(BasicButton)`
   display: flex;
   padding: 5px;
 
@@ -43,7 +43,7 @@ const MenuOpenButton = styled(BasicButton)`
     height: 1.625rem;
   }
 `;
-const SlideOutCloseButton = styled(BasicButton)`
+const SlideOutCloseButtonEl = styled(BasicButton)`
   display: block;
   background: none;
   border: none;
@@ -54,11 +54,11 @@ const SlideOutCloseButton = styled(BasicButton)`
     height: 1.25rem;
   }
 `;
-const SlideoutNavList = styled.ul`
+const SlideoutNavListEl = styled.ul`
   list-style-type: none;
   padding: 1.25rem 2rem;
 `;
-const SlideoutNavListItem = styled.li`
+const SlideoutNavListItemEl = styled.li`
   cursor: pointer;
   display: block;
   padding: 2rem 0;
@@ -71,7 +71,7 @@ const SlideoutNavListItem = styled.li`
   }
 `;
 
-const Menu = () => {
+export const Menu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dispatch = useDispatch();
   const applicationState = useSelector(applicationStateSelector);
@@ -87,32 +87,30 @@ const Menu = () => {
     <>
       {applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
         <>
-          <MenuOpenButton onClick={() => setIsOpen(true)}>
+          <MenuOpenButtonEl onClick={() => setIsOpen(true)}>
             <img src={MenuIcon} alt="menu icon" />
-          </MenuOpenButton>
-          <SlideoutNav isOpen={isOpen}>
-            <MenuHeader />
+          </MenuOpenButtonEl>
+          <SlideoutNavEl isOpen={isOpen}>
+            <MenuHeaderEl />
             <MenuEl>
-              <SlideOutCloseButton onClick={() => setIsOpen(false)}>
+              <SlideOutCloseButtonEl onClick={() => setIsOpen(false)}>
                 <img src={CloseIcon} alt="close icon" />
-              </SlideOutCloseButton>
-              <SlideoutNavList>
-                <SlideoutNavListItem>
+              </SlideOutCloseButtonEl>
+              <SlideoutNavListEl>
+                <SlideoutNavListItemEl>
                   <a href="/">Show backup phrase</a>
-                </SlideoutNavListItem>
-                <SlideoutNavListItem>
+                </SlideoutNavListItemEl>
+                <SlideoutNavListItemEl>
                   <a href="/">Help</a>
-                </SlideoutNavListItem>
-                <SlideoutNavListItem onClick={(e) => signOutAndClose(e)}>
+                </SlideoutNavListItemEl>
+                <SlideoutNavListItemEl onClick={(e) => signOutAndClose(e)}>
                   Sign out
-                </SlideoutNavListItem>
-              </SlideoutNavList>
+                </SlideoutNavListItemEl>
+              </SlideoutNavListEl>
             </MenuEl>
-          </SlideoutNav>
+          </SlideoutNavEl>
         </>
       ) : null}
     </>
   );
 };
-
-export default Menu;

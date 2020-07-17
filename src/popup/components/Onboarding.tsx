@@ -64,7 +64,7 @@ export const HalfScreen = styled.section`
   width: 27rem;
 `;
 
-const EmojiSpan = styled.span`
+const EmojiSpanEl = styled.span`
   font-size: 3.625rem;
 `;
 
@@ -90,9 +90,9 @@ export const Onboarding = ({
     {goBack ? <BackButton onClick={goBack} /> : null}
     <Screen>
       <HeadingEl>
-        <EmojiSpan role="img" aria-label={alt}>
+        <EmojiSpanEl role="img" aria-label={alt}>
           {emoji}
-        </EmojiSpan>
+        </EmojiSpanEl>
         <HeaderEl isMaxHeaderLength={isMaxHeaderLength}>{header}</HeaderEl>
         {subheader ? <SubheaderEl>{subheader}</SubheaderEl> : null}
       </HeadingEl>

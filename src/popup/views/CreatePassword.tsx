@@ -24,7 +24,7 @@ import {
 } from "popup/helpers/validators";
 import { EMOJI } from "popup/constants/emoji";
 
-const ModifiedHalfScreen = styled(HalfScreen)`
+const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding-left: 1.55rem;
 `;
 
@@ -74,7 +74,7 @@ export const CreatePassword = () => {
       >
         {({ isSubmitting, isValid }) => (
           <Form>
-            <ModifiedHalfScreen>
+            <ModifiedHalfScreenEl>
               <FormRow>
                 <TextField
                   autoComplete="off"
@@ -105,7 +105,7 @@ export const CreatePassword = () => {
                   Log In
                 </SubmitButton>
               </FormRow>
-            </ModifiedHalfScreen>
+            </ModifiedHalfScreenEl>
           </Form>
         )}
       </Formik>

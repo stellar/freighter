@@ -10,13 +10,13 @@ interface FormProps {
   className?: string;
 }
 
-const StyledForm = styled(FormikForm)`
+const StyledFormEl = styled(FormikForm)`
   display: flex;
   flex-flow: column wrap;
 `;
 
 export const Form = ({ children, className }: FormProps) => (
-  <StyledForm className={className}>{children}</StyledForm>
+  <StyledFormEl className={className}>{children}</StyledFormEl>
 );
 
 const FormButtonEl = styled(Button)`
@@ -66,7 +66,7 @@ const FormErrorEl = styled.div`
   line-height: 1;
 `;
 
-const FormCheckBoxWrapper = styled.div`
+const FormCheckBoxWrapperEl = styled.div`
   display: inline-block;
   margin-right: 0.625rem;
 `;
@@ -141,12 +141,12 @@ const FormCheckboxFieldEl = styled(Field)`
 `;
 
 export const CheckboxField = ({ name }: { name: string }) => (
-  <FormCheckBoxWrapper>
+  <FormCheckBoxWrapperEl>
     <FormCheckboxFieldEl id={name} name={name} type="checkbox" />
     <FormCheckboxFieldLabelEl htmlFor={name}>
       <div />
     </FormCheckboxFieldLabelEl>
-  </FormCheckBoxWrapper>
+  </FormCheckBoxWrapperEl>
 );
 
 export const Label = styled.label`

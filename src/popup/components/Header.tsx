@@ -20,7 +20,7 @@ const HeaderEl = styled.header`
   height: ${HEADER_HEIGHT}px;
 `;
 
-const HeaderH1 = styled.h1`
+const H1El = styled.h1`
   color: #fff;
   font-size: 2rem;
   font-weight: 200;
@@ -49,7 +49,7 @@ export const Header = ({ className, ...props }: HeaderProps) => {
 
   return (
     <HeaderEl className={className} {...props}>
-      <HeaderH1>Lyra</HeaderH1>
+      <H1El>Lyra</H1El>
       <NetworkEl>Test net</NetworkEl>
     </HeaderEl>
   );

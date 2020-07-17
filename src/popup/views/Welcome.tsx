@@ -7,7 +7,7 @@ import { HEADER_HEIGHT } from "popup/constants/dimensions";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { COLOR_PALETTE } from "popup/constants/styles";
 
-const Box = styled.div`
+const BoxEl = styled.div`
   position: relative;
   width: 22.75rem;
   padding: 2.2rem 2.3rem;
@@ -15,17 +15,17 @@ const Box = styled.div`
   color: ${COLOR_PALETTE.white};
 `;
 
-const CreateBox = styled(Box)`
+const CreateBoxEl = styled(BoxEl)`
   background: ${COLOR_PALETTE.primaryGradient};
   color: ${COLOR_PALETTE.white};
 `;
 
-const ImportBox = styled(Box)`
+const ImportBoxEl = styled(BoxEl)`
   border: 1px solid ${COLOR_PALETTE.primary};
   color: ${COLOR_PALETTE.primary};
 `;
 
-const BoxHeader = styled.div`
+const LargeHeadingEl = styled.div`
   color: ${COLOR_PALETTE.text};
   font-size: 2.4rem;
   font-weight: 200;
@@ -37,25 +37,25 @@ const BoxHeader = styled.div`
   }
 `;
 
-const BoxHeaderEl = styled.h3`
+const HeadingEl = styled.h3`
   font-size: 1.6rem;
   font-weight: 400;
   line-height: 2rem;
   margin: 0.75rem 0;
 `;
 
-const BoxIcon = styled.div`
+const BoxIconEl = styled.div`
   font-size: 2.8rem;
   position: absolute;
   top: 1.5rem;
   right: 1.6rem;
 `;
 
-const LinkButtonWrapper = styled.div`
+const LinkButtonWrapperEl = styled.div`
   text-align: center;
 `;
 
-const LinkButton = styled(Link)`
+const LinkButtonEl = styled(Link)`
   border-radius: 1rem;
   color: ${COLOR_PALETTE.white};
   display: inline-block;
@@ -66,15 +66,15 @@ const LinkButton = styled(Link)`
   text-decoration: none;
 `;
 
-const CreateButton = styled(LinkButton)`
+const CreateButtonEl = styled(LinkButtonEl)`
   background: ${COLOR_PALETTE.secondary};
 `;
 
-const ImportButton = styled(LinkButton)`
+const ImportButtonEl = styled(LinkButtonEl)`
   background: ${COLOR_PALETTE.primaryGradient};
 `;
 
-const ColumnScreen = styled.section`
+const ColumnScreenEl = styled.section`
   display: flex;
   flex-direction: column;
   align-content: center;
@@ -85,11 +85,11 @@ const ColumnScreen = styled.section`
   margin: auto;
 `;
 
-const RowScreen = styled.div`
+const RowScreenEl = styled.div`
   display: flex;
   justify-content: space-between;
 `;
-const HalfScreen = styled.section`
+const HalfScreenEl = styled.section`
   position: relative;
   display: flex;
   flex-direction: column;
@@ -100,43 +100,47 @@ const HalfScreen = styled.section`
 export const Welcome = () => (
   <>
     <FullscreenStyle />
-    <ColumnScreen>
-      <RowScreen>
-        <BoxHeader>
+    <ColumnScreenEl>
+      <RowScreenEl>
+        <LargeHeadingEl>
           Welcome, <br />
           are you new to <strong>Lyra?</strong>
-        </BoxHeader>
-      </RowScreen>
-      <RowScreen>
-        <HalfScreen>
-          <CreateBox>
-            <BoxIcon>
+        </LargeHeadingEl>
+      </RowScreenEl>
+      <RowScreenEl>
+        <HalfScreenEl>
+          <CreateBoxEl>
+            <BoxIconEl>
               <span role="img" aria-label="Waving hand">
                 👋
               </span>
-            </BoxIcon>
-            <BoxHeaderEl>I’m new!</BoxHeaderEl>
+            </BoxIconEl>
+            <HeadingEl>I’m new!</HeadingEl>
             <p>I’m going to need a seed phrase</p>
-            <LinkButtonWrapper>
-              <CreateButton to="/create-password">Create wallet</CreateButton>
-            </LinkButtonWrapper>
-          </CreateBox>
-        </HalfScreen>
-        <HalfScreen>
-          <ImportBox>
-            <BoxIcon>
+            <LinkButtonWrapperEl>
+              <CreateButtonEl to="/create-password">
+                Create wallet
+              </CreateButtonEl>
+            </LinkButtonWrapperEl>
+          </CreateBoxEl>
+        </HalfScreenEl>
+        <HalfScreenEl>
+          <ImportBoxEl>
+            <BoxIconEl>
               <span role="img" aria-label="Seedling">
                 🌱
               </span>
-            </BoxIcon>
-            <BoxHeaderEl>I’ve done this before</BoxHeaderEl>
+            </BoxIconEl>
+            <HeadingEl>I’ve done this before</HeadingEl>
             <p>I have my 12 word seed phrase</p>
-            <LinkButtonWrapper>
-              <ImportButton to="/recover-account">Import wallet</ImportButton>
-            </LinkButtonWrapper>
-          </ImportBox>
-        </HalfScreen>
-      </RowScreen>
-    </ColumnScreen>
+            <LinkButtonWrapperEl>
+              <ImportButtonEl to="/recover-account">
+                Import wallet
+              </ImportButtonEl>
+            </LinkButtonWrapperEl>
+          </ImportBoxEl>
+        </HalfScreenEl>
+      </RowScreenEl>
+    </ColumnScreenEl>
   </>
 );

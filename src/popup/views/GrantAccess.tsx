@@ -11,18 +11,18 @@ import { SubmitButton } from "popup/basics/Forms";
 const GrantAccessEl = styled.div`
   padding: 2.25rem 2.5rem;
 `;
-const Header = styled.h1`
+const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
   margin: 1rem 0 0.75rem;
 `;
-const Subheader = styled.h3`
+const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
   font-size: 0.95rem;
   letter-spacing: 0.1px;
   color: ${COLOR_PALETTE.primary}};
 `;
-const Text = styled.p`
+const TextEl = styled.p`
   font-size: 1.15rem;
   text-align: center;
   line-height: 1.9;
@@ -34,7 +34,7 @@ const ButtonContainerEl = styled.div`
   justify-content: space-around;
   padding: 3rem 1.25rem;
 `;
-const RejectButton = styled(Button)`
+const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
 `;
 
@@ -58,16 +58,16 @@ export const GrantAccess = () => {
 
   return (
     <GrantAccessEl>
-      <Header>Connection request</Header>
-      <Subheader>{title} wants to know your public key</Subheader>
-      <Text>
+      <HeaderEl>Connection request</HeaderEl>
+      <SubheaderEl>{title} wants to know your public key</SubheaderEl>
+      <TextEl>
         This site is asking for access to the public key associated with this
         Lyra wallet. Only share your information with websites you trust.{" "}
-      </Text>
+      </TextEl>
       <ButtonContainerEl>
-        <RejectButton size="small" onClick={rejectAndClose}>
+        <RejectButtonEl size="small" onClick={rejectAndClose}>
           Reject
-        </RejectButton>
+        </RejectButtonEl>
         <SubmitButton
           isSubmitting={isGranting}
           size="small"

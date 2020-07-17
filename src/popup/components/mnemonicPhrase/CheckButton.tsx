@@ -8,7 +8,7 @@ type CheckButtonProps = {
   wordKey: string;
   word: string;
 };
-const ButtonLabel = styled.label`
+const ButtonLabelEl = styled.label`
   border: 1px solid ${COLOR_PALETTE.primary};
   border-radius: 1rem;
   color: ${COLOR_PALETTE.primary};
@@ -20,10 +20,10 @@ const ButtonLabel = styled.label`
   padding: 0.7rem 1.75rem;
 `;
 
-const CheckBox = styled(Field)`
+const CheckBoxEl = styled(Field)`
   display: none;
 
-  &:checked + ${ButtonLabel} {
+  &:checked + ${ButtonLabelEl} {
     background: ${COLOR_PALETTE.primary};
     color: white;
   }
@@ -31,7 +31,7 @@ const CheckBox = styled(Field)`
 
 export const CheckButton = ({ onChange, wordKey, word }: CheckButtonProps) => (
   <>
-    <CheckBox
+    <CheckBoxEl
       id={wordKey}
       onChange={(e: React.FormEvent) => onChange(e)}
       type="checkbox"
@@ -39,6 +39,6 @@ export const CheckButton = ({ onChange, wordKey, word }: CheckButtonProps) => (
       key={wordKey}
       text={word}
     />
-    <ButtonLabel htmlFor={wordKey}>{word}</ButtonLabel>
+    <ButtonLabelEl htmlFor={wordKey}>{word}</ButtonLabelEl>
   </>
 );

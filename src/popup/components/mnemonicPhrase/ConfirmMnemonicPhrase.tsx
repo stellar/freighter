@@ -20,7 +20,7 @@ import CloseIcon from "popup/assets/icon-close.svg";
 
 import { CheckButton } from "./CheckButton";
 
-const ConfirmInput = styled.div`
+const ConfirmInputEl = styled.div`
   background: ${COLOR_PALETTE.inputBackground};
   border: 0;
   border-radius: 1.875rem;
@@ -35,7 +35,7 @@ const ConfirmInput = styled.div`
   text-align: center;
 `;
 
-const ClearButton = styled(Button)`
+const ClearButtonEl = styled(Button)`
   border-radius: 0.5rem;
   display: inline-block;
   height: 1.5rem;
@@ -48,14 +48,14 @@ const ClearButton = styled(Button)`
   }
 `;
 
-const WordBubbleWrapper = styled.div`
+const WordBubbleWrapperEl = styled.div`
   display: flex;
   flex-flow: wrap;
   justify-content: flex-start;
   padding-bottom: 3rem;
 `;
 
-const ModifiedHalfScreen = styled(HalfScreen)`
+const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding: 0;
   padding-left: 5rem;
   width: 31rem;
@@ -63,7 +63,11 @@ const ModifiedHalfScreen = styled(HalfScreen)`
 
 const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
 
-const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
+export const ConfirmMnemonicPhrase = ({
+  words = [""],
+}: {
+  words: string[];
+}) => {
   const dispatch = useDispatch();
 
   const initialWordState = words.reduce(
@@ -128,20 +132,22 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
       <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
         {({ setValues, values, isSubmitting, handleChange }) => (
           <Form>
-            <ModifiedHalfScreen>
-              <ConfirmInput>
+            <ModifiedHalfScreenEl>
+              <ConfirmInputEl>
                 {displaySelectedWords()}
                 {selectedWords.length ? (
-                  <ClearButton
+                  <ClearButtonEl
                     type="button"
                     onClick={() => removeLastWord(values, setValues)}
                   >
                     <img src={CloseIcon} alt="clear icon" />
-                  </ClearButton>
+                  </ClearButtonEl>
                 ) : null}
-              </ConfirmInput>
+              </ConfirmInputEl>
               <ApiErrorMessage error={authError}></ApiErrorMessage>
-              <WordBubbleWrapper>{wordBubbles(handleChange)}</WordBubbleWrapper>
+              <WordBubbleWrapperEl>
+                {wordBubbles(handleChange)}
+              </WordBubbleWrapperEl>
               <FormRow>
                 <SubmitButton
                   isSubmitting={isSubmitting}
@@ -150,12 +156,10 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
                   Confirm
                 </SubmitButton>
               </FormRow>
-            </ModifiedHalfScreen>
+            </ModifiedHalfScreenEl>
           </Form>
         )}
       </Formik>
     </>
   );
 };
-
-export default ConfirmMnemonicPhrase;

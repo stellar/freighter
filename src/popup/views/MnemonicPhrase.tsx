@@ -7,8 +7,8 @@ import useMnemonicPhrase from "popup/helpers/useMnemonicPhrase";
 
 import { Onboarding } from "popup/components/Onboarding";
 
-import ConfirmMnemonicPhrase from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
-import DisplayMnemonicPhrase from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
+import { ConfirmMnemonicPhrase } from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
+import { DisplayMnemonicPhrase } from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
 
 export const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
