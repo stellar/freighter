@@ -223,6 +223,7 @@ export const popupMessageListener = (
 
   const signTransaction = async () => {
     const privateKey = privateKeySelector(store.getState());
+
     if (privateKey.length) {
       const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
 
@@ -235,12 +236,13 @@ export const popupMessageListener = (
           transactionToSign.sign(sourceKeys);
           response = await server.submitTransaction(transactionToSign);
         } catch (e) {
-          response = e;
-          console.error(e);
+          response = e.response ? e.response.data : e;
+          console.error(response);
         }
       }
 
       const transactionResponse = responseQueue.pop();
+
       if (typeof transactionResponse === "function") {
         transactionResponse(response);
         sendResponse({});
