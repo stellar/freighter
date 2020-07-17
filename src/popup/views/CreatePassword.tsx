@@ -7,10 +7,7 @@ import { object as YupObject } from "yup";
 import { history } from "popup/App";
 import { createAccount, publicKeySelector } from "popup/ducks/authServices";
 
-import {
-  Onboarding,
-  HalfScreen,
-} from "popup/components/Layout/Fullscreen/Onboarding";
+import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 import {
   Form,
   SubmitButton,
@@ -25,7 +22,7 @@ import {
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import { EMOJI } from "popup/constants";
+import { EMOJI } from "popup/constants/emoji";
 
 const ModifiedHalfScreen = styled(HalfScreen)`
   padding-left: 1.55rem;

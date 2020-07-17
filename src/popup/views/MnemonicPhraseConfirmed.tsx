@@ -1,11 +1,11 @@
 import React from "react";
 import styled from "styled-components";
 
-import { COLOR_PALETTE } from "popup/styles";
-import { HEADER_HEIGHT } from "popup/constants";
+import { COLOR_PALETTE } from "popup/constants/styles";
+import { HEADER_HEIGHT } from "popup/constants/dimensions";
 
 import { SubmitButton } from "popup/basics/Forms";
-import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
 const HeaderEl = styled.h1`
   font-weight: 200;
@@ -14,14 +14,14 @@ const HeaderEl = styled.h1`
   margin: 1rem 0;
 `;
 
-const Wrapper = styled.div`
+const WrapperEl = styled.div`
   background: ${COLOR_PALETTE.primary};
   display: flex;
   flex-direction: column;
   height: calc(100vh - ${HEADER_HEIGHT}px);
 `;
 
-const ContentWrapper = styled.div`
+const ContentWrapperEl = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -43,9 +43,9 @@ const CelebrationEl = styled.h1`
 `;
 
 export const MnemonicPhraseConfirmed = () => (
-  <Wrapper>
+  <WrapperEl>
     <FullscreenStyle />
-    <ContentWrapper>
+    <ContentWrapperEl>
       <HeaderEl>Woo, you’re in!</HeaderEl>
       <CelebrationEl>
         <span role="img" aria-label="Celebration face">
@@ -66,6 +66,6 @@ export const MnemonicPhraseConfirmed = () => (
       >
         All done
       </FinishButtonEl>
-    </ContentWrapper>
-  </Wrapper>
+    </ContentWrapperEl>
+  </WrapperEl>
 );

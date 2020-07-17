@@ -5,19 +5,19 @@ import { useSelector } from "react-redux";
 
 import { getAccountBalance } from "api/internal";
 
-import { truncatedPublicKey } from "helpers";
+import { truncatedPublicKey } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/authServices";
 
-import { POPUP_WIDTH } from "popup/constants";
-import { COLOR_PALETTE } from "popup/styles";
+import { POPUP_WIDTH } from "popup/constants/dimensions";
+import { COLOR_PALETTE } from "popup/constants/styles";
 import { BasicButton } from "popup/basics/Buttons";
 
-import Toast from "popup/components/Toast";
+import { Toast } from "popup/components/Toast";
 import Menu from "popup/components/Menu";
 
 import CopyColor from "popup/assets/copy-color.png";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import Footer from "./basics/Footer";
+import Footer from "popup/components/Footer";
 
 const AccountEl = styled.div`
   width: 100%;

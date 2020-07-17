@@ -8,10 +8,10 @@ import { operationTypes } from "statics";
 
 import { rejectAccess, signTransaction } from "api/internal";
 
-import { truncatedPublicKey } from "helpers";
+import { truncatedPublicKey } from "helpers/stellar";
 
 import { publicKeySelector } from "popup/ducks/authServices";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button, BackButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 

@@ -2,10 +2,10 @@ import React from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 
-import { HEADER_HEIGHT } from "popup/constants";
+import { HEADER_HEIGHT } from "popup/constants/dimensions";
 
-import { FullscreenStyle } from "popup/components/Layout/Fullscreen/basics";
-import { COLOR_PALETTE } from "popup/styles";
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
 const Box = styled.div`
   position: relative;

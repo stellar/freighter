@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { shuffle } from "lodash";
 
-import { EMOJI } from "popup/constants";
+import { EMOJI } from "popup/constants/emoji";
 
-import useMnemonicPhrase from "popup/hooks/useMnemonicPhrase";
+import useMnemonicPhrase from "popup/helpers/useMnemonicPhrase";
 
-import { Onboarding } from "popup/components/Layout/Fullscreen/Onboarding";
+import { Onboarding } from "popup/components/Onboarding";
 
 import ConfirmMnemonicPhrase from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
 import DisplayMnemonicPhrase from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";

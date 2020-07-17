@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 
 import { rejectAccess, grantAccess } from "api/internal";
 
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 

@@ -4,11 +4,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { Formik } from "formik";
-import { newTabHref } from "helpers";
+import { newTabHref } from "helpers/urls";
 import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 import { history } from "popup/App";
-import { POPUP_WIDTH, EMOJI } from "popup/constants";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
+import { POPUP_WIDTH } from "popup/constants/dimensions";
+import { EMOJI } from "popup/constants/emoji";
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { BasicButton } from "popup/basics/Buttons";
 import {
   Form,

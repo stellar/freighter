@@ -17,7 +17,7 @@ import {
   recoverAccount,
 } from "popup/ducks/authServices";
 
-import { HEADER_HEIGHT } from "popup/constants";
+import { HEADER_HEIGHT } from "popup/constants/dimensions";
 
 import {
   ApiErrorMessage,
@@ -29,10 +29,7 @@ import {
   SubmitButton,
   Form,
 } from "popup/basics/Forms";
-import {
-  Onboarding,
-  HalfScreen,
-} from "popup/components/Layout/Fullscreen/Onboarding";
+import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 
 const FullHeightForm = styled(Form)`
   height: calc(100vh - ${HEADER_HEIGHT}px);
