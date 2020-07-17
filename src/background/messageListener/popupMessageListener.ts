@@ -11,17 +11,16 @@ import { Response as Request } from "api/types";
 import { Sender, SendResponseInterface } from "background/types";
 
 import { removeQueryParam } from "helpers/urls";
-import { Sender, SendResponseInterface } from "../types";
+import { SessionTimer } from "background/helpers/session";
+import { store } from "background/store";
 import {
   hasPrivateKeySelector,
   privateKeySelector,
-  store,
   logIn,
   logOut,
   mnemonicPhraseSelector,
   publicKeySelector,
-} from "../ducks/session";
-import { SessionTimer } from "../helpers/session";
+} from "background/ducks/session";
 
 const server = new StellarSdk.Server(SERVER_URL);
 

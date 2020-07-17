@@ -1,5 +1,4 @@
-import { combineReducers } from "redux";
-import { configureStore, createSelector, createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   publicKey: "",
@@ -16,7 +15,7 @@ interface AppData {
   privateKey: string;
 }
 
-const sessionSlice = createSlice({
+export const sessionSlice = createSlice({
   name: "session",
   initialState,
   reducers: {
@@ -42,17 +41,13 @@ const sessionSlice = createSlice({
   },
 });
 
-export const store = configureStore({
-  reducer: combineReducers({
-    session: sessionSlice.reducer,
-  }),
-});
+export const sessionSelector = (state: { session: UiData & AppData }) =>
+  state.session;
 
 export const {
   actions: { logIn, logOut, grantAccountAccess, timeoutAccountAccess },
 } = sessionSlice;
 
-const sessionSelector = (state: { session: UiData & AppData }) => state.session;
 export const publicKeySelector = createSelector(
   sessionSelector,
   (session) => session.publicKey,

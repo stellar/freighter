@@ -1,12 +1,16 @@
 import StellarSdk from "stellar-sdk";
 
 import { ExternalRequest as Request } from "api/types";
+import { Sender, SendResponseInterface } from "background/types";
+
 import { EXTERNAL_SERVICE_TYPES } from "constants/services";
 import { removeQueryParam } from "helpers/urls";
 import { POPUP_WIDTH } from "popup/constants/dimensions";
-import { Sender, SendResponseInterface } from "../types";
+
+import { store } from "background/store";
+import { publicKeySelector } from "background/ducks/session";
+
 import { responseQueue, transactionQueue } from "./popupMessageListener";
-import { store, publicKeySelector } from "../ducks/session";
 
 const WHITELIST_ID = "whitelist";
 const WINDOW_DIMENSIONS = `width=${POPUP_WIDTH},height=667`;
