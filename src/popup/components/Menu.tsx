@@ -4,12 +4,12 @@ import styled from "styled-components";
 import { APPLICATION_STATE } from "statics";
 
 import { BasicButton } from "popup/basics/Buttons";
-import { Z_INDEXES, COLOR_PALETTE } from "popup/styles";
-import { POPUP_WIDTH } from "popup/constants";
+import { Z_INDEXES, COLOR_PALETTE } from "popup/constants/styles";
+import { POPUP_WIDTH } from "popup/constants/dimensions";
 
 import { history } from "popup/App";
 import { applicationStateSelector, signOut } from "popup/ducks/authServices";
-import { Header } from "popup/components/Layout/Header";
+import { Header } from "popup/components/Header";
 
 import CloseIcon from "popup/assets/icon-close.svg";
 import MenuIcon from "popup/assets/icon-menu.svg";

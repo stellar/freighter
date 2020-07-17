@@ -5,10 +5,10 @@ import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import { createGlobalStyle } from "styled-components";
 
-import { COLOR_PALETTE } from "popup/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
-import { POPUP_WIDTH } from "popup/constants";
-import { Header } from "popup/components/Layout/Header";
+import { POPUP_WIDTH } from "popup/constants/dimensions";
+import { Header } from "popup/components/Header";
 
 import Router from "./Router";
 

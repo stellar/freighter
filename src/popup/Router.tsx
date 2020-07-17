@@ -15,14 +15,14 @@ import {
   publicKeySelector,
 } from "popup/ducks/authServices";
 import { useSelector, useDispatch } from "react-redux";
-import { newTabHref } from "helpers";
-import { POPUP_WIDTH } from "popup/constants";
+import { newTabHref } from "helpers/urls";
+import { POPUP_WIDTH } from "popup/constants/dimensions";
 
 import { Account } from "popup/views/Account";
 import { CreatePassword } from "popup/views/CreatePassword";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
-import { MnemonicPhraseConfirmed } from "popup/views/MnemonicPhrase/Confirmed";
+import { MnemonicPhraseConfirmed } from "popup/views/MnemonicPhraseConfirmed";
 import { RecoverAccount } from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
@@ -93,7 +93,7 @@ const HomeRoute = () => {
       return <UnlockAccount />;
     }
 
-    /* 
+    /*
     We want to launch the extension in a new tab for a user still in the onboarding process.
     In this particular case, open the tab if we are in the "popup" view.
     */

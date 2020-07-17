@@ -6,8 +6,8 @@ import {
   confirmMnemonicPhrase,
   authErrorSelector,
 } from "popup/ducks/authServices";
-import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
-import { COLOR_PALETTE } from "popup/styles";
+import { HalfScreen } from "popup/components/Onboarding";
+import { COLOR_PALETTE } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 import {
   Form,
@@ -18,7 +18,7 @@ import {
 
 import CloseIcon from "popup/assets/icon-close.svg";
 
-import { CheckButton } from "./basics/CheckButton";
+import { CheckButton } from "./CheckButton";
 
 const ConfirmInput = styled.div`
   background: ${COLOR_PALETTE.inputBackground};

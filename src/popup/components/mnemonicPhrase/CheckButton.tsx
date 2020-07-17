@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { Field } from "formik";
-import { COLOR_PALETTE } from "popup/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
 type CheckButtonProps = {
   onChange: (e: any) => void;

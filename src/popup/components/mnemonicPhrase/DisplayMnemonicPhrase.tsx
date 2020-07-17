@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
-import { COLOR_PALETTE } from "popup/styles";
-import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
+
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
+import { COLOR_PALETTE } from "popup/constants/styles";
+
 import { BasicButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
-import Toast from "popup/components/Toast";
-import ActionButton from "./basics/ActionButton";
+
+import { HalfScreen } from "popup/components/Onboarding";
+import { Toast } from "popup/components/Toast";
+import { ActionButton } from "./ActionButton";
 
 const Warning = styled.strong`
   color: ${COLOR_PALETTE.primary};

@@ -1,11 +1,11 @@
 import React from "react";
 import styled from "styled-components";
 
-import { HEADER_HEIGHT } from "popup/constants";
-import { COLOR_PALETTE } from "popup/styles";
+import { HEADER_HEIGHT } from "popup/constants/dimensions";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
 import { BackButton } from "popup/basics/Buttons";
-import { FullscreenStyle } from "./basics";
+import { FullscreenStyle } from "./FullscreenStyle";
 
 interface HeaderProps {
   isMaxHeaderLength?: boolean;

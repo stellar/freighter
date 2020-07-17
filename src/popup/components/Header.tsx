@@ -6,8 +6,8 @@ import { APPLICATION_STATE } from "statics";
 
 import { applicationStateSelector } from "popup/ducks/authServices";
 
-import { HEADER_HEIGHT } from "popup/constants";
-import { COLOR_PALETTE } from "popup/styles";
+import { HEADER_HEIGHT } from "popup/constants/dimensions";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
 const HeaderEl = styled.header`
   background: ${COLOR_PALETTE.primaryGradient};

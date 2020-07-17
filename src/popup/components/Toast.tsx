@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
-import { COLOR_PALETTE } from "popup/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
 const TOAST_LENGTH = 1000;
 
@@ -31,7 +31,12 @@ interface ToastProps {
   setIsShowing: (isShowing: boolean) => void;
 }
 
-const Toast = ({ className, message, isShowing, setIsShowing }: ToastProps) => {
+export const Toast = ({
+  className,
+  message,
+  isShowing,
+  setIsShowing,
+}: ToastProps) => {
   useEffect(() => {
     if (isShowing) {
       setTimeout(() => {
@@ -45,5 +50,3 @@ const Toast = ({ className, message, isShowing, setIsShowing }: ToastProps) => {
     </ToastWrapper>
   );
 };
-
-export default Toast;

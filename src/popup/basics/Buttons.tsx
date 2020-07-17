@@ -1,8 +1,8 @@
 import React, { ButtonHTMLAttributes } from "react";
 import styled from "styled-components";
 
-import { HEADER_HEIGHT } from "popup/constants";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/styles";
+import { HEADER_HEIGHT } from "popup/constants/dimensions";
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import ChevronIcon from "popup/assets/icon-chevron.svg";
 

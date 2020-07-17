@@ -2,7 +2,7 @@ import React, { ButtonHTMLAttributes } from "react";
 import styled from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
-import { COLOR_PALETTE } from "popup/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 
 interface FormProps {
