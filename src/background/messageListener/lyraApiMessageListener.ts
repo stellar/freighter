@@ -2,8 +2,8 @@ import StellarSdk from "stellar-sdk";
 
 import { ExternalRequest as Request } from "api/types";
 import { EXTERNAL_SERVICE_TYPES } from "statics";
-import { removeQueryParam } from "helpers";
-import { POPUP_WIDTH } from "popup/constants";
+import { removeQueryParam } from "helpers/urls";
+import { POPUP_WIDTH } from "popup/constants/dimensions";
 import { Sender, SendResponseInterface } from "../types";
 import { responseQueue, transactionQueue } from "./popupMessageListener";
 import { store, publicKeySelector } from "../ducks/session";

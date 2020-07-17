@@ -1,17 +1,6 @@
 import { sendMessageToBackground } from "api/helpers";
 import { EXTERNAL_MSG_REQUEST, EXTERNAL_MSG_RESPONSE } from "statics";
 
-export const embedLyraApi = () => {
-  const url = chrome.extension.getURL("lyraApi.min.js");
-  const script = document.createElement("script");
-  script.src = url;
-  const parentNode = document.head || document.documentElement;
-  parentNode.prepend(script);
-  script.onload = () => {
-    parentNode.removeChild(script);
-  };
-};
-
 export const redirectMessagesToBackground = () => {
   window.addEventListener(
     "message",

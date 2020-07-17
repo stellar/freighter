@@ -1,4 +1,5 @@
 import isArray from "lodash/isArray";
+import isEqual from "lodash/isEqual";
 import pick from "lodash/pick";
 import { useSelector } from "react-redux";
 
@@ -40,6 +41,6 @@ export function useRedux<T = {}>(
       }
 
       return pick(state, [propsOrFirstProp, ...otherProps]);
-    }),
+    }, isEqual),
   );
 }

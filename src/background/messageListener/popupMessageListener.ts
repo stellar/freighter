@@ -4,7 +4,7 @@ import StellarSdk from "stellar-sdk";
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 import { SERVICE_TYPES, APPLICATION_STATE, SERVER_URL } from "statics";
 import { Response as Request } from "api/types";
-import { removeQueryParam } from "helpers";
+import { removeQueryParam } from "helpers/urls";
 import { Sender, SendResponseInterface } from "../types";
 import {
   hasPrivateKeySelector,
