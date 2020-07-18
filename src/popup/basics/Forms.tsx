@@ -116,14 +116,6 @@ export const TextField = styled(Field)`
 `;
 
 const FormCheckboxFieldLabelEl = styled.label`
-  div {
-    border-radius: 2rem;
-    height: 1rem;
-    width: 1rem;
-  }
-`;
-
-const FormCheckboxFieldEl = styled(Field)`
   align-items: center;
   background: ${COLOR_PALETTE.inputBackground};
   border: 0.125rem solid ${COLOR_PALETTE.inputBackground};
@@ -135,8 +127,19 @@ const FormCheckboxFieldEl = styled(Field)`
   justify-content: space-evenly;
   width: 2rem;
 
-  &:checked {
-    background: ${COLOR_PALETTE.primary};
+  div {
+    border-radius: 2rem;
+    height: 1rem;
+    width: 1rem;
+  }
+`;
+
+const FormCheckboxFieldEl = styled(Field)`
+  display: none;
+  &:checked + ${FormCheckboxFieldLabelEl} {
+    div {
+      background: ${COLOR_PALETTE.primary};
+    }
   }
 `;
 
