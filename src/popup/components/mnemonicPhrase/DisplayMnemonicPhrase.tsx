@@ -1,19 +1,23 @@
 import React, { useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
-import { COLOR_PALETTE } from "popup/styles";
-import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
+
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
-import { BasicButton, FormButton } from "popup/basics";
-import Toast from "popup/components/Toast";
-import ActionButton from "./basics/ActionButton";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
-const Warning = styled.strong`
+import { BasicButton } from "popup/basics/Buttons";
+import { SubmitButton } from "popup/basics/Forms";
+
+import { HalfScreen } from "popup/components/Onboarding";
+import { Toast } from "popup/components/Toast";
+import { ActionButton } from "./ActionButton";
+
+const WarningEl = styled.strong`
   color: ${COLOR_PALETTE.primary};
 `;
 
-const MnemonicDisplay = styled.div`
+const MnemonicDisplayEl = styled.div`
   background: ${COLOR_PALETTE.primaryGradient};
   border-radius: 30px;
   color: ${({ isBlurred }: { isBlurred: boolean }) =>
@@ -27,7 +31,7 @@ const MnemonicDisplay = styled.div`
     isBlurred ? "0 0 5px rgba(0, 0, 0, 0.5)" : "none"};
 `;
 
-const DisplayTooltip = styled(BasicButton)`
+const DisplayTooltipEl = styled(BasicButton)`
   color: ${COLOR_PALETTE.white};
   font-size: 1rem;
   position: absolute;
@@ -37,7 +41,7 @@ const DisplayTooltip = styled(BasicButton)`
   transform: translate(-50%, -50%);
 `;
 
-const DisplayButtons = styled.div`
+const DisplayButtonsEl = styled.div`
   margin-bottom: 2.5rem;
   margin-right: 1rem;
   position: relative;
@@ -47,12 +51,12 @@ const DisplayButtons = styled.div`
     margin-left: 0.5rem;
   }
 `;
-const CopiedToastWrapper = styled.div`
+const CopiedToastWrapperEl = styled.div`
   right: 15.625rem;
   position: absolute;
 `;
 
-const DisplayMnemonicPhrase = ({
+export const DisplayMnemonicPhrase = ({
   mnemonicPhrase,
   setReadyToConfirm,
 }: {
@@ -77,17 +81,17 @@ const DisplayMnemonicPhrase = ({
         account.
       </p>
       <p>
-        <Warning>WARNING:</Warning> Never disclose your backup phase.
+        <WarningEl>WARNING:</WarningEl> Never disclose your backup phase.
       </p>
-      <MnemonicDisplay isBlurred={isBlurred}>
+      <MnemonicDisplayEl isBlurred={isBlurred}>
         {isBlurred ? (
-          <DisplayTooltip onClick={() => setIsBlurred(false)}>
+          <DisplayTooltipEl onClick={() => setIsBlurred(false)}>
             Show backup phrase
-          </DisplayTooltip>
+          </DisplayTooltipEl>
         ) : null}
         {mnemonicPhrase}
-      </MnemonicDisplay>
-      <DisplayButtons>
+      </MnemonicDisplayEl>
+      <DisplayButtonsEl>
         <ActionButton onClick={downloadPhrase}>
           Download
           <img src={Download} alt="Download button" />
@@ -98,23 +102,21 @@ const DisplayMnemonicPhrase = ({
             <img src={Copy} alt="copy button" />
           </ActionButton>
         </CopyToClipboard>
-        <CopiedToastWrapper>
+        <CopiedToastWrapperEl>
           <Toast
             message="Copied to your clipboard 👌"
             isShowing={isCopied}
             setIsShowing={setIsCopied}
           />
-        </CopiedToastWrapper>
-      </DisplayButtons>
-      <FormButton
+        </CopiedToastWrapperEl>
+      </DisplayButtonsEl>
+      <SubmitButton
         onClick={() => {
           setReadyToConfirm(true);
         }}
       >
         Next
-      </FormButton>
+      </SubmitButton>
     </HalfScreen>
   );
 };
-
-export default DisplayMnemonicPhrase;

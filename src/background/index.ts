@@ -1,7 +1,7 @@
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { lyraApiMessageListener } from "./messageListener/lyraApiMessageListener";
 
-const initMessageListener = () => {
+export const initMessageListener = () => {
   // returning true is very important in these message listeners. It tells the listener that the callback
   // could possibly be async, so keep the channel open til we send a reponse.
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -11,5 +11,3 @@ const initMessageListener = () => {
     return true;
   });
 };
-
-export default initMessageListener;

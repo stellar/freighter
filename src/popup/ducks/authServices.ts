@@ -3,7 +3,7 @@ import {
   createSelector,
   createSlice,
 } from "@reduxjs/toolkit";
-import { APPLICATION_STATE } from "statics";
+import { APPLICATION_STATE } from "constants/applicationState";
 import { history } from "popup/App";
 import {
   confirmMnemonicPhrase as confirmMnemonicPhraseService,

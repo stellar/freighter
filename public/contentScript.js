@@ -1,7 +1,5 @@
-import {
-  embedLyraApi,
-  redirectMessagesToBackground,
-} from "contentScript/helpers";
+import { embedLyraApi } from "contentScript/helpers/embedLyraApi";
+import { redirectMessagesToBackground } from "contentScript/helpers/redirectMessagesToBackground";
 
 embedLyraApi();
 

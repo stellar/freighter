@@ -2,20 +2,25 @@ import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import StellarSdk from "stellar-sdk";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
-import { SERVICE_TYPES, APPLICATION_STATE, SERVER_URL } from "statics";
+
+import { SERVER_URL } from "constants/stellar";
+import { SERVICE_TYPES } from "constants/services";
+import { APPLICATION_STATE } from "constants/applicationState";
+
 import { Response as Request } from "api/types";
-import { removeQueryParam } from "helpers";
-import { Sender, SendResponseInterface } from "../types";
+import { Sender, SendResponseInterface } from "background/types";
+
+import { removeQueryParam } from "helpers/urls";
+import { SessionTimer } from "background/helpers/session";
+import { store } from "background/store";
 import {
   hasPrivateKeySelector,
   privateKeySelector,
-  store,
   logIn,
   logOut,
   mnemonicPhraseSelector,
   publicKeySelector,
-} from "../ducks/session";
-import { SessionTimer } from "../helpers/session";
+} from "background/ducks/session";
 
 const server = new StellarSdk.Server(SERVER_URL);
 

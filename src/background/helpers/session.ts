@@ -1,8 +1,8 @@
+import { store } from "background/store";
 import {
   grantAccountAccess,
-  store,
   timeoutAccountAccess,
-} from "../ducks/session";
+} from "background/ducks/session";
 
 const SESSION_LENGTH = 5;
 

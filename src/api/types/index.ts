@@ -1,8 +1,5 @@
-import {
-  SERVICE_TYPES,
-  EXTERNAL_SERVICE_TYPES,
-  APPLICATION_STATE,
-} from "statics";
+import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "constants/services";
+import { APPLICATION_STATE } from "constants/applicationState";
 
 export interface Response {
   error: string;

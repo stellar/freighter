@@ -6,21 +6,21 @@ import {
   confirmMnemonicPhrase,
   authErrorSelector,
 } from "popup/ducks/authServices";
-import Form from "popup/components/Form";
-import { HalfScreen } from "popup/components/Layout/Fullscreen/Onboarding";
-import { COLOR_PALETTE } from "popup/styles";
+import { HalfScreen } from "popup/components/Onboarding";
+import { COLOR_PALETTE } from "popup/constants/styles";
+import { Button } from "popup/basics/Buttons";
 import {
+  Form,
+  SubmitButton,
   ApiErrorMessage,
-  ButtonEl,
   FormRow,
-  FormSubmitButton,
-} from "popup/basics";
+} from "popup/basics/Forms";
 
 import CloseIcon from "popup/assets/icon-close.svg";
 
-import { CheckButton } from "./basics/CheckButton";
+import { CheckButton } from "./CheckButton";
 
-const ConfirmInput = styled.div`
+const ConfirmInputEl = styled.div`
   background: ${COLOR_PALETTE.inputBackground};
   border: 0;
   border-radius: 1.875rem;
@@ -35,7 +35,7 @@ const ConfirmInput = styled.div`
   text-align: center;
 `;
 
-const ClearButton = styled(ButtonEl)`
+const ClearButtonEl = styled(Button)`
   border-radius: 0.5rem;
   display: inline-block;
   height: 1.5rem;
@@ -48,14 +48,14 @@ const ClearButton = styled(ButtonEl)`
   }
 `;
 
-const WordBubbleWrapper = styled.div`
+const WordBubbleWrapperEl = styled.div`
   display: flex;
   flex-flow: wrap;
   justify-content: flex-start;
   padding-bottom: 3rem;
 `;
 
-const ModifiedHalfScreen = styled(HalfScreen)`
+const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding: 0;
   padding-left: 5rem;
   width: 31rem;
@@ -63,7 +63,11 @@ const ModifiedHalfScreen = styled(HalfScreen)`
 
 const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
 
-const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
+export const ConfirmMnemonicPhrase = ({
+  words = [""],
+}: {
+  words: string[];
+}) => {
   const dispatch = useDispatch();
 
   const initialWordState = words.reduce(
@@ -128,33 +132,34 @@ const ConfirmMnemonicPhrase = ({ words = [""] }: { words: string[] }) => {
       <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
         {({ setValues, values, isSubmitting, handleChange }) => (
           <Form>
-            <ModifiedHalfScreen>
-              <ConfirmInput>
+            <ModifiedHalfScreenEl>
+              <ConfirmInputEl>
                 {displaySelectedWords()}
                 {selectedWords.length ? (
-                  <ClearButton
+                  <ClearButtonEl
                     type="button"
                     onClick={() => removeLastWord(values, setValues)}
                   >
                     <img src={CloseIcon} alt="clear icon" />
-                  </ClearButton>
+                  </ClearButtonEl>
                 ) : null}
-              </ConfirmInput>
+              </ConfirmInputEl>
               <ApiErrorMessage error={authError}></ApiErrorMessage>
-              <WordBubbleWrapper>{wordBubbles(handleChange)}</WordBubbleWrapper>
+              <WordBubbleWrapperEl>
+                {wordBubbles(handleChange)}
+              </WordBubbleWrapperEl>
               <FormRow>
-                <FormSubmitButton
-                  buttonCTA="Confirm"
+                <SubmitButton
                   isSubmitting={isSubmitting}
                   isValid={!!displaySelectedWords().length}
-                />
+                >
+                  Confirm
+                </SubmitButton>
               </FormRow>
-            </ModifiedHalfScreen>
+            </ModifiedHalfScreenEl>
           </Form>
         )}
       </Formik>
     </>
   );
 };
-
-export default ConfirmMnemonicPhrase;
