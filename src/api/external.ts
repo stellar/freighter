@@ -2,14 +2,14 @@ import { EXTERNAL_SERVICE_TYPES } from "constants/services";
 import { sendMessageToContentScript } from "api/helpers";
 import { ExternalRequest } from "api/types";
 
-export const requestAccess = async (): Promise<{
+export const requestPublicKey = async (): Promise<{
   publicKey: string;
   error: string;
 }> => {
   let response = { publicKey: "", error: "" };
   try {
     response = await sendMessageToContentScript({
-      type: EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS,
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY,
     });
   } catch (e) {
     console.error(e);

@@ -1,7 +1,6 @@
-export const embedLyraApi = () => {
-  const url = chrome.extension.getURL("lyraApi.min.js");
+export const setIsConnected = () => {
   const script = document.createElement("script");
-  script.src = url;
+  script.textContent = "window.lyra = true;";
   const parentNode = document.head || document.documentElement;
   parentNode.prepend(script);
   script.onload = () => {

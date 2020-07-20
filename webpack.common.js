@@ -10,11 +10,11 @@ const commonConfig = {
   entry: {
     background: [
       "babel-polyfill",
-      path.resolve(__dirname, "./public/background.js"),
+      path.resolve(__dirname, "./public/background.ts"),
     ],
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
     lyraApi: path.resolve(__dirname, "./src/contentScript/lyraApi/index.ts"),
-    contentScript: path.resolve(__dirname, "./public/contentScript.js"),
+    contentScript: path.resolve(__dirname, "./public/contentScript.ts"),
   },
   output: {
     path: BUILD_PATH,

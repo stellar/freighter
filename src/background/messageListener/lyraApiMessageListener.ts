@@ -21,7 +21,7 @@ export const lyraApiMessageListener = (
   sender: Sender,
   sendResponse: (response: SendResponseInterface) => void,
 ) => {
-  const requestAccess = () => {
+  const requestPublicKey = () => {
     // TODO: add check to make sure this origin is on whitelist
     const whitelistStr = localStorage.getItem(WHITELIST_ID) || "";
     const whitelist = whitelistStr.split(",");
@@ -98,7 +98,7 @@ export const lyraApiMessageListener = (
   };
 
   const messageResponder = {
-    [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY]: requestPublicKey,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
   };
 
