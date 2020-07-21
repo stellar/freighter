@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { useHistory } from "react-router-dom";
 
 import { HEADER_HEIGHT } from "constants/dimensions";
 import { COLOR_PALETTE } from "popup/constants/styles";
@@ -84,19 +85,24 @@ export const Onboarding = ({
   isMaxHeaderLength?: boolean;
   icon: { emoji: string; alt: string };
   children: React.ReactNode;
-}) => (
-  <>
-    <FullscreenStyle />
-    {goBack ? <BackButton onClick={goBack} /> : null}
-    <Screen>
-      <HeadingEl>
-        <EmojiSpanEl role="img" aria-label={alt}>
-          {emoji}
-        </EmojiSpanEl>
-        <HeaderEl isMaxHeaderLength={isMaxHeaderLength}>{header}</HeaderEl>
-        {subheader ? <SubheaderEl>{subheader}</SubheaderEl> : null}
-      </HeadingEl>
-      {children}
-    </Screen>
-  </>
-);
+}) => {
+  const history = useHistory();
+  const isNewTabSession = history.length === 1;
+
+  return (
+    <>
+      <FullscreenStyle />
+      {goBack && !isNewTabSession ? <BackButton onClick={goBack} /> : null}
+      <Screen>
+        <HeadingEl>
+          <EmojiSpanEl role="img" aria-label={alt}>
+            {emoji}
+          </EmojiSpanEl>
+          <HeaderEl isMaxHeaderLength={isMaxHeaderLength}>{header}</HeaderEl>
+          {subheader ? <SubheaderEl>{subheader}</SubheaderEl> : null}
+        </HeadingEl>
+        {children}
+      </Screen>
+    </>
+  );
+};
