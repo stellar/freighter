@@ -89,8 +89,7 @@ export const Error = ({ name }: { name: string }) => (
 
 export const TextField = styled(Field)`
   border-radius: 1.25rem;
-  border: ${(props) =>
-    props.hasError ? `1px solid ${COLOR_PALETTE.error}` : 0};
+  border: ${(props) => (props.error ? `1px solid ${COLOR_PALETTE.error}` : 0)};
   box-sizing: border-box;
   background: ${COLOR_PALETTE.inputBackground};
   font-size: 1rem;
