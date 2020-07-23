@@ -50,7 +50,7 @@ export const Header = ({ className, ...props }: HeaderProps) => {
   return (
     <HeaderEl className={className} {...props}>
       <H1El>Lyra</H1El>
-      <NetworkEl>Test net</NetworkEl>
+      <NetworkEl>Testnet</NetworkEl>
     </HeaderEl>
   );
 };

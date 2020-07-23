@@ -147,7 +147,7 @@ export const UnlockAccount = () => {
               window.open(newTabHref("/recover-account"));
             }}
           >
-            Import using account see phrase
+            Import using backup phrase
           </ImportButtonEl>
         </ListItemEl>
       </UnorderedListEl>
