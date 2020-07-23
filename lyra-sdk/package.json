@@ -1,0 +1,19 @@
+{
+  "name": "@stellar/lyra-sdk",
+  "version": "1.0.0-alpha",
+  "description": "Utility functions to interact with Lyra extension",
+  "main": "index.ts",
+  "repository": {
+    "url": "git@github.com:stellar/lyra.git",
+    "type": "git"
+  },
+  "author": "Stellar Development Foundation <hello@stellar.org>",
+  "license": "MIT",
+  "dependencies": {
+    "tslib": "^2.0.0",
+    "typescript": "~3.7.2"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "@stellar/tsconfig",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true,
+    "types": ["@types/chrome", "@types/jest"]
+  }
+}
