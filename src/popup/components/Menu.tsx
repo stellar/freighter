@@ -40,8 +40,7 @@ const MenuEl = styled.div`
   padding: 0.675rem 3.375rem;
 `;
 const MenuOpenButtonEl = styled(BasicButton)`
-  display: flex;
-  padding: 10px;
+  padding: 10px 12px;
   border-radius: 0.25rem;
   transition: background ${ANIMATION_TIMES.fast} ease-out;
 
@@ -50,7 +49,7 @@ const MenuOpenButtonEl = styled(BasicButton)`
   }
 
   img {
-    display: inline-block;
+    display: block;
     width: 1.625rem;
     height: 1.625rem;
   }
@@ -81,7 +80,7 @@ const SlideoutNavListItemEl = styled.li`
   a {
     color: white;
     position: relative;
-    padding: 0.1rem 0.5rem;
+    padding: 0.2rem 0.5rem;
 
     &::before {
       content: "";
