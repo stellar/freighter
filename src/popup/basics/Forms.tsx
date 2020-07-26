@@ -2,7 +2,7 @@ import React, { ButtonHTMLAttributes } from "react";
 import styled from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
-import { COLOR_PALETTE } from "popup/constants/styles";
+import { COLOR_PALETTE, ANIMATION_TIMES } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 
 interface FormProps {
@@ -18,12 +18,6 @@ const StyledFormEl = styled(FormikForm)`
 export const Form = ({ children, className }: FormProps) => (
   <StyledFormEl className={className}>{children}</StyledFormEl>
 );
-
-const FormButtonEl = styled(Button)`
-  &:disabled {
-    color: ${COLOR_PALETTE.secondaryText};
-  }
-`;
 
 interface SubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
@@ -41,7 +35,7 @@ export const SubmitButton = ({
   size,
   ...props
 }: SubmitButtonProps) => (
-  <FormButtonEl
+  <Button
     {...props}
     onClick={onClick}
     size={size}
@@ -49,7 +43,7 @@ export const SubmitButton = ({
     disabled={isSubmitting || !isValid}
   >
     {isSubmitting ? "Loading..." : children}
-  </FormButtonEl>
+  </Button>
 );
 
 /* Form */
@@ -96,8 +90,18 @@ export const TextField = styled(Field)`
   padding: 1.875rem 2.25rem;
   width: 100%;
   resize: none;
+  transition: all ${ANIMATION_TIMES.fast} ease-in-out;
 
-  &::-webkit-input-placeholder {
+  :focus {
+    outline: none;
+    box-shadow: 0 0 0 3px
+      ${(props) =>
+        props.error
+          ? `${COLOR_PALETTE.errorFaded}`
+          : `${COLOR_PALETTE.primaryFaded}`};
+  }
+
+  :focus &::-webkit-input-placeholder {
     font-family: "Muli", sans-serif;
   }
 

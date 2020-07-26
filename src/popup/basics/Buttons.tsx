@@ -2,7 +2,11 @@ import React, { ButtonHTMLAttributes } from "react";
 import styled from "styled-components";
 
 import { HEADER_HEIGHT } from "constants/dimensions";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import {
+  COLOR_PALETTE,
+  FONT_WEIGHT,
+  ANIMATION_TIMES,
+} from "popup/constants/styles";
 
 import ChevronIcon from "popup/assets/icon-chevron.svg";
 
@@ -39,6 +43,21 @@ const ButtonEl = styled(BasicButton)<ButtonProps>`
   color: ${COLOR_PALETTE.white};
   border: none;
   -webkit-appearance: none;
+  transition: all ${ANIMATION_TIMES.fast} ease-in-out;
+
+  &:hover {
+    background: ${COLOR_PALETTE.darkPrimaryGradient};
+  }
+
+  :focus {
+    box-shadow: 0 0 0 3px ${COLOR_PALETTE.primaryFaded};
+  }
+
+  :disabled {
+    backgorund: ${COLOR_PALETTE.primaryMuted};
+    color: rgba(255, 255, 255, 0.5);
+    opacity: 0.6;
+  }
 `;
 
 export const Button = ({ size, children, onClick, ...props }: ButtonProps) => (
