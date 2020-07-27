@@ -24,7 +24,6 @@ import {
   Error,
   FormRow,
   CheckboxField,
-  Label,
   TextField,
   SubmitButton,
   Form,
@@ -128,10 +127,14 @@ export const RecoverAccount = () => {
                   <Error name="confirmPassword" />
                 </FormRow>
                 <FormRow>
-                  <CheckboxField name="termsOfUse" />
-                  <Label htmlFor="termsOfUse">
-                    I have read and agree to <a href="/ac">Terms of Use</a>
-                  </Label>
+                  <CheckboxField
+                    label={
+                      <span>
+                        I have read and agree to <a href="/ac">Terms of Use</a>
+                      </span>
+                    }
+                    name="termsOfUse"
+                  />
                   <Error name="termsOfUse" />
                 </FormRow>
                 <FormRow>

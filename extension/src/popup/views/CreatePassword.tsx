@@ -14,7 +14,6 @@ import {
   Error,
   FormRow,
   CheckboxField,
-  Label,
   TextField,
 } from "popup/basics/Forms";
 import {
@@ -94,10 +93,14 @@ export const CreatePassword = () => {
                 <Error name="confirmPassword" />
               </FormRow>
               <FormRow>
-                <CheckboxField name="termsOfUse" />
-                <Label htmlFor="termsOfUse">
-                  I have read and agree to <a href="/ac">Terms of Use</a>
-                </Label>
+                <CheckboxField
+                  name="termsOfUse"
+                  label={
+                    <span>
+                      I have read and agree to <a href="/ac">Terms of Use</a>
+                    </span>
+                  }
+                />
                 <Error name="termsOfUse" />
               </FormRow>
               <FormRow>

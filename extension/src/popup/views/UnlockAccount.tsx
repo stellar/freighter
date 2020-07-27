@@ -54,7 +54,7 @@ const UnorderedListEl = styled.ul`
   padding-top: 0.25rem;
 `;
 const CustomFormTextFieldEl = styled(TextField)`
-  padding-right: ${(props) => (props.hasError ? "6rem" : "2.2rem")};
+  padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
 `;
 const ListItemEl = styled.li`
   color: ${COLOR_PALETTE.secondaryText};
@@ -117,7 +117,7 @@ export const UnlockAccount = () => {
                 type="password"
                 name="password"
                 placeholder="Enter password"
-                hasError={authError}
+                error={authError}
               />
               {authError ? (
                 <ErrorEmojiEl>
@@ -147,7 +147,7 @@ export const UnlockAccount = () => {
               window.open(newTabHref("/recover-account"));
             }}
           >
-            Import using account see phrase
+            Import using backup phrase
           </ImportButtonEl>
         </ListItemEl>
       </UnorderedListEl>
