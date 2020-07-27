@@ -1,5 +1,6 @@
 {
   "name": "@stellar/lyra-api",
+  "prettier": "@stellar/prettier-config",
   "version": "1.0.0-alpha",
   "description": "Utility functions to interact with Lyra extension",
   "repository": {

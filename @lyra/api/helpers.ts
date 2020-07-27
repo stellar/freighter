@@ -8,7 +8,7 @@ import { Response } from "./types";
 export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
   window.postMessage(
     { source: EXTERNAL_MSG_REQUEST, ...msg },
-    window.location.origin
+    window.location.origin,
   );
   return new Promise((resolve) => {
     const messageListener = (event: { source: any; data: Response }) => {

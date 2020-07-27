@@ -8,7 +8,7 @@ import { sendMessageToBackground } from "./helpers";
 const server = new StellarSdk.Server(SERVER_URL);
 
 export const createAccount = async (
-  password: string
+  password: string,
 ): Promise<{ publicKey: string }> => {
   let publicKey = "";
 
@@ -61,7 +61,7 @@ export const getMnemonicPhrase = async (): Promise<{
 };
 
 export const confirmMnemonicPhrase = async (
-  mnemonicPhraseToConfirm: string
+  mnemonicPhraseToConfirm: string,
 ): Promise<{
   isCorrectPhrase: boolean;
   applicationState: APPLICATION_STATE;
@@ -84,7 +84,7 @@ export const confirmMnemonicPhrase = async (
 
 export const recoverAccount = async (
   password: string,
-  recoverMnemonic: string
+  recoverMnemonic: string,
 ): Promise<{ publicKey: string }> => {
   let publicKey = "";
 
@@ -102,7 +102,7 @@ export const recoverAccount = async (
 };
 
 export const confirmPassword = async (
-  password: string
+  password: string,
 ): Promise<{
   publicKey: string;
   hasPrivateKey: boolean;
@@ -126,7 +126,7 @@ export const confirmPassword = async (
 };
 
 export const getAccountBalance = async (
-  publicKey: string
+  publicKey: string,
 ): Promise<{
   balance: string;
 }> => {
@@ -139,7 +139,7 @@ export const getAccountBalance = async (
   }
   return response.balances.filter(
     // eslint-disable-next-line camelcase
-    (balance: { asset_code?: string }) => !balance.asset_code
+    (balance: { asset_code?: string }) => !balance.asset_code,
   )[0];
 };
 

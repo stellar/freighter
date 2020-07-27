@@ -1,4 +1,11 @@
 {
   "name": "@lyra/constants",
-  "version": "1.0.0"
+  "prettier": "@stellar/prettier-config",
+  "version": "1.0.0",
+  "dependencies": {
+    "typescript": "~3.7.2"
+  },
+  "devDependencies": {
+    "@stellar/prettier-config": "^1.0.1"
+  }
 }
