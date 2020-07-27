@@ -1,8 +1,8 @@
-import { sendMessageToBackground } from "lyra-core/api/helpers";
+import { sendMessageToBackground } from "@lyra/api/helpers";
 import {
   EXTERNAL_MSG_REQUEST,
   EXTERNAL_MSG_RESPONSE,
-} from "lyra-core/constants/services";
+} from "@lyra/constants/services";
 
 export const redirectMessagesToBackground = () => {
   window.addEventListener(

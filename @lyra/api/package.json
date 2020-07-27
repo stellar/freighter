@@ -1,0 +1,8 @@
+{
+  "name": "@lyra/api",
+  "version": "1.0.0",
+  "dependencies": {
+    "@lyra/constants": "1.0.0",
+    "stellar-sdk": "5.0.1"
+  }
+}

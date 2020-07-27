@@ -3,7 +3,7 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
 
-import { getAccountBalance } from "lyra-core/api/internal";
+import { getAccountBalance } from "@lyra/api/internal";
 
 import { truncatedPublicKey } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/authServices";

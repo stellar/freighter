@@ -1,0 +1,65 @@
+{
+  "name": "@stellar/lyra-sdk",
+  "version": "1.0.0-alpha",
+  "description": "Utility functions to interact with Lyra extension",
+  "repository": {
+    "url": "git@github.com:stellar/lyra.git",
+    "type": "git"
+  },
+  "author": "Stellar Development Foundation <hello@stellar.org>",
+  "browserslist": {
+    "production": [
+      "last 3 chrome version",
+      "last 3 firefox version"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version"
+    ]
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@lyra/api": "1.0.0",
+    "tslib": "^2.0.0",
+    "typescript": "~3.7.2"
+  },
+  "lint-staged": {
+    "src/**/*.ts?(x)": [
+      "eslint --fix --max-warnings 0"
+    ]
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.10.5",
+    "@babel/polyfill": "^7.10.4",
+    "@babel/preset-env": "^7.10.4",
+    "@babel/preset-typescript": "^7.10.4",
+    "@stellar/eslint-config": "^1.0.3",
+    "@stellar/prettier-config": "^1.0.1",
+    "@stellar/tsconfig": "^1.0.2",
+    "babel-loader": "^8.1.0",
+    "babel-polyfill": "6.26.0",
+    "concurrently": "^5.1.0",
+    "copy-webpack-plugin": "^5.1.1",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-config-react": "^1.1.7",
+    "eslint-import-resolver-typescript": "^2.0.0",
+    "html-loader": "^1.0.0",
+    "html-webpack-plugin": "^4.0.1",
+    "husky": "^4.2.3",
+    "lint-staged": "^10.0.7",
+    "prettier": "^1.19.1",
+    "pretty-quick": "^2.0.1",
+    "svg-url-loader": "^5.0.0",
+    "ts-loader": "^6.2.2",
+    "tsconfig-paths-webpack-plugin": "^3.2.0",
+    "webpack": "4.41.5",
+    "webpack-cli": "3.3.10",
+    "webpack-dev-server": "3.10.3",
+    "webpack-merge": "4.2.2"
+  },
+  "scripts": {
+    "build": "../../node_modules/webpack/bin/webpack.js --config webpack.config.js"
+  }
+}

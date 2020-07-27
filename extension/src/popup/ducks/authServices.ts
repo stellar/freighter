@@ -3,7 +3,7 @@ import {
   createSelector,
   createSlice,
 } from "@reduxjs/toolkit";
-import { APPLICATION_STATE } from "lyra-core/constants/applicationState";
+import { APPLICATION_STATE } from "@lyra/constants/applicationState";
 import { history } from "popup/App";
 import {
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
@@ -12,7 +12,7 @@ import {
   loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
-} from "lyra-core/api/internal";
+} from "@lyra/api/internal";
 
 interface ErrorMessage {
   errorMessage: string;

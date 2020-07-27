@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 
-import { APPLICATION_STATE } from "lyra-core/constants/applicationState";
+import { APPLICATION_STATE } from "@lyra/constants/applicationState";
 import { Z_INDEXES, COLOR_PALETTE } from "popup/constants/styles";
 import { POPUP_WIDTH } from "constants/dimensions";
 

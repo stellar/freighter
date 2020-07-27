@@ -1,13 +1,7 @@
 {
-  "extends": "@stellar/tsconfig",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "baseUrl": "src/",
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "esnext",
-    "moduleResolution": "node",
-    "jsx": "react",
-    "allowSyntheticDefaultImports": true,
     "types": ["@types/chrome", "@types/jest"]
   },
   "include": ["src", "public"]

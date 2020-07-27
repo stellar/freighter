@@ -3,11 +3,11 @@ import StellarSdk from "stellar-sdk";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
-import { SERVER_URL } from "lyra-core/constants/stellar";
-import { SERVICE_TYPES } from "lyra-core/constants/services";
-import { APPLICATION_STATE } from "lyra-core/constants/applicationState";
+import { SERVER_URL } from "@lyra/constants/stellar";
+import { SERVICE_TYPES } from "@lyra/constants/services";
+import { APPLICATION_STATE } from "@lyra/constants/applicationState";
 
-import { Response as Request } from "lyra-core/api/types";
+import { Response as Request } from "@lyra/api/types";
 import {
   MessageResponder,
   Sender,

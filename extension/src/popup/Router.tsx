@@ -7,7 +7,7 @@ import {
   useLocation,
   RouteProps,
 } from "react-router-dom";
-import { APPLICATION_STATE } from "lyra-core/constants/applicationState";
+import { APPLICATION_STATE } from "@lyra/constants/applicationState";
 import {
   applicationStateSelector,
   hasPrivateKeySelector,

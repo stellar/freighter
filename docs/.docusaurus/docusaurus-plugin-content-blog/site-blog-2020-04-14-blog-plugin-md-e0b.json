@@ -1,0 +1,24 @@
+{
+  "permalink": "/blog/2020/04/14/blog-plugin",
+  "editUrl": "https://github.com/facebook/docusaurus/edit/master/website/blog/blog/2020-04-14-blog-plugin.md",
+  "source": "@site/blog/2020-04-14-blog-plugin.md",
+  "description": "You can use our blog plugin to do your posts",
+  "date": "2020-04-14T00:00:00.000Z",
+  "tags": [
+    {
+      "label": "blog",
+      "permalink": "/blog/tags/blog"
+    },
+    {
+      "label": "docusaurus",
+      "permalink": "/blog/tags/docusaurus"
+    }
+  ],
+  "title": "Blog Plugin",
+  "readingTime": 0.145,
+  "truncated": true,
+  "nextItem": {
+    "title": "A large blog post",
+    "permalink": "/blog/2020/04/14/large-blog-post"
+  }
+}

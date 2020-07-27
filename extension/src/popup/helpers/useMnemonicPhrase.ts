@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMnemonicPhrase } from "lyra-core/api/internal";
+import { getMnemonicPhrase } from "@lyra/api/internal";
 
 export const useMnemonicPhrase = () => {
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
