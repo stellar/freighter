@@ -1,4 +1,4 @@
-import React, { ButtonHTMLAttributes } from "react";
+import React from "react";
 import styled from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
@@ -19,7 +19,8 @@ export const Form = ({ children, className }: FormProps) => (
   <StyledFormEl className={className}>{children}</StyledFormEl>
 );
 
-interface SubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface SubmitButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   isSubmitting?: boolean;
   isValid?: boolean;
@@ -60,11 +61,6 @@ const FormErrorEl = styled.div`
   line-height: 1;
 `;
 
-const FormCheckBoxWrapperEl = styled.div`
-  display: inline-block;
-  margin-right: 0.625rem;
-`;
-
 export const ApiErrorMessage = ({ error }: ErrorMessageProps) =>
   error ? <FormErrorEl>{error}</FormErrorEl> : null;
 
@@ -80,6 +76,11 @@ export const Error = ({ name }: { name: string }) => (
     <ErrorMessage name={name} component="span" />
   </FormErrorEl>
 );
+
+export const Label = styled.label`
+  color: ${COLOR_PALETTE.secondaryText};
+  font-size: 0.8125rem;
+`;
 
 export const TextField = styled(Field)`
   border-radius: 1.25rem;
@@ -118,44 +119,50 @@ export const TextField = styled(Field)`
   }
 `;
 
-const FormCheckboxFieldLabelEl = styled.label`
+const CheckBoxWrapperEl = styled(Label)`
+  display: flex;
+  align-items: center;
+`;
+
+const CheckboxFieldEl = styled(Field).attrs(() => ({ type: "checkbox" }))`
+  position: relative;
+  margin-right: 0.625rem;
+  appearance: unset;
   align-items: center;
   background: ${COLOR_PALETTE.inputBackground};
   border: 0.125rem solid ${COLOR_PALETTE.inputBackground};
   border-radius: 0.625rem;
   color: ${COLOR_PALETTE.primary};
   cursor: pointer;
-  display: flex;
   height: 2rem;
-  justify-content: space-evenly;
   width: 2rem;
 
-  div {
+  &:checked:after {
+    content: "";
+    background: ${COLOR_PALETTE.primary};
     border-radius: 2rem;
+    position: absolute;
+    top: 0;
+    left: 0;
     height: 1rem;
     width: 1rem;
+    margin: 0.375rem;
   }
 `;
 
-const FormCheckboxFieldEl = styled(Field)`
-  display: none;
-  &:checked + ${FormCheckboxFieldLabelEl} {
-    div {
-      background: ${COLOR_PALETTE.primary};
-    }
-  }
-`;
+interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: React.ReactNode;
+}
 
-export const CheckboxField = ({ name }: { name: string }) => (
-  <FormCheckBoxWrapperEl>
-    <FormCheckboxFieldEl id={name} name={name} type="checkbox" />
-    <FormCheckboxFieldLabelEl htmlFor={name}>
-      <div />
-    </FormCheckboxFieldLabelEl>
-  </FormCheckBoxWrapperEl>
+export const CheckboxField = ({
+  name,
+  label,
+  children,
+  className,
+  ...props
+}: CheckboxProps) => (
+  <CheckBoxWrapperEl className={className}>
+    <CheckboxFieldEl {...props} id={name} name={name} />
+    {label}
+  </CheckBoxWrapperEl>
 );
-
-export const Label = styled.label`
-  color: ${COLOR_PALETTE.secondaryText};
-  font-size: 0.8125rem;
-`;
