@@ -5,6 +5,6 @@
     "extension",
     "@lyra/api",
     "docs",
-    "@stellar/lyra-sdk"
+    "@stellar/lyra-api"
   ]
 }

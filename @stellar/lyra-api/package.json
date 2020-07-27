@@ -1,5 +1,5 @@
 {
-  "name": "@stellar/lyra-sdk",
+  "name": "@stellar/lyra-api",
   "version": "1.0.0-alpha",
   "description": "Utility functions to interact with Lyra extension",
   "repository": {
