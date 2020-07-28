@@ -1,8 +1,24 @@
+import { getPublicKey, signTransaction, isConnected } from "@stellar/lyra-api";
+
+document
+  .querySelector("#lyra-isConnected")
+  .addEventListener("click", async () => {
+    let response = false;
+
+    try {
+      response = await isConnected();
+    } catch (e) {
+      console.error(e);
+    }
+
+    document.querySelector("#isConnected").value = response;
+  });
+
 document.querySelector("#lyra-connect").addEventListener("click", async () => {
   let response = "";
 
   try {
-    response = await window.lyra.getPublicKey();
+    response = await getPublicKey();
   } catch (e) {
     console.error(e);
   }
@@ -21,7 +37,7 @@ document
     let response = "";
 
     try {
-      response = await window.lyra.requestSignature({
+      response = await signTransaction({
         transactionXdr,
       });
     } catch (e) {
