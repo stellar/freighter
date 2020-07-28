@@ -2,14 +2,14 @@ import { EXTERNAL_SERVICE_TYPES } from "@lyra/constants/services";
 import { sendMessageToContentScript } from "./helpers";
 import { ExternalRequest } from "./types";
 
-export const requestPublicKey = async (): Promise<{
+export const requestAccess = async (): Promise<{
   publicKey: string;
   error: string;
 }> => {
   let response = { publicKey: "", error: "" };
   try {
     response = await sendMessageToContentScript({
-      type: EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY,
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS,
     });
   } catch (e) {
     console.error(e);
