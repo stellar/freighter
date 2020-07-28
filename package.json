@@ -3,8 +3,6 @@
   "workspaces": [
     "@lyra/constants",
     "extension",
-    "@lyra/api",
-    "docs",
-    "@stellar/lyra-api"
+    "@lyra/api"
   ]
 }
