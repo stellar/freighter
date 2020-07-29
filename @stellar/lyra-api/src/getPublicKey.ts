@@ -1,10 +1,10 @@
-import { requestAccess } from "@lyra/api/external";
+import { requestPublicKey } from "@lyra/api/external";
 
 export const getPublicKey = async () => {
   let response = { publicKey: "", error: "" };
 
   try {
-    response = await requestAccess();
+    response = await requestPublicKey();
   } catch (e) {
     console.error(e);
   }

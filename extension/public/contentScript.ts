@@ -1,5 +1,5 @@
-import { embedLyraApi } from "contentScript/helpers/embedLyraApi";
+import { setIsConnected } from "contentScript/helpers/setIsConnected";
 import { redirectMessagesToBackground } from "contentScript/helpers/redirectMessagesToBackground";
 
-embedLyraApi();
+setIsConnected();
 redirectMessagesToBackground();
