@@ -39,10 +39,12 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+const rootReducer = combineReducers({
+  auth,
+});
+export type AppState = ReturnType<typeof rootReducer>;
 const store = configureStore({
-  reducer: combineReducers({
-    auth,
-  }),
+  reducer: rootReducer,
 });
 
 export const history = createHashHistory();
