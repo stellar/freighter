@@ -3,4 +3,4 @@
 ## Installation
 
 Before this can be imported in another project in this monorepo, run
-`yarn build` to create the built package.
+`yarn build` in this directory to create the built package.
