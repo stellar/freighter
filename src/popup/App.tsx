@@ -5,6 +5,7 @@ import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import { createGlobalStyle } from "styled-components";
 
+import { metricsMiddleware } from "helpers/metrics";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
 import { POPUP_WIDTH } from "constants/dimensions";
@@ -45,6 +46,7 @@ const rootReducer = combineReducers({
 export type AppState = ReturnType<typeof rootReducer>;
 const store = configureStore({
   reducer: rootReducer,
+  middleware: [metricsMiddleware<AppState>()],
 });
 
 export const history = createHashHistory();
