@@ -3,7 +3,6 @@ import StellarSdk from "stellar-sdk";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
-import { SERVER_URL } from "@lyra/constants/stellar";
 import { SERVICE_TYPES } from "@lyra/constants/services";
 import { APPLICATION_STATE } from "@lyra/constants/applicationState";
 
@@ -26,8 +25,6 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 
-const server = new StellarSdk.Server(SERVER_URL);
-
 const KEY_ID = "keyId";
 const WHITELIST_ID = "whitelist";
 const APPLICATION_ID = "applicationState";
@@ -35,7 +32,10 @@ const APPLICATION_ID = "applicationState";
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Array<{ sign: (sourceKeys: {}) => void }> = [];
+export const transactionQueue: Array<{
+  sign: (sourceKeys: {}) => void;
+  toXDR: () => void;
+}> = [];
 
 interface StellarHdWallet {
   getPublicKey: (number: Number) => string;
@@ -230,7 +230,7 @@ export const popupMessageListener = (
     }
   };
 
-  const signTransaction = async () => {
+  const signTransaction = () => {
     const privateKey = privateKeySelector(store.getState());
 
     if (privateKey.length) {
@@ -241,13 +241,8 @@ export const popupMessageListener = (
       const transactionToSign = transactionQueue.pop();
 
       if (transactionToSign) {
-        try {
-          transactionToSign.sign(sourceKeys);
-          response = await server.submitTransaction(transactionToSign);
-        } catch (e) {
-          response = e.response ? e.response.data : e;
-          console.error(response);
-        }
+        transactionToSign.sign(sourceKeys);
+        response = transactionToSign.toXDR();
       }
 
       const transactionResponse = responseQueue.pop();
