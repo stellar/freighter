@@ -1,4 +1,8 @@
-import { getPublicKey, signTransaction, isConnected } from "@stellar/lyra-api";
+import {
+  getPublicKey,
+  signTransaction,
+  isConnected,
+} from "@stellar/lyra-connect";
 
 document
   .querySelector("#lyra-isConnected")

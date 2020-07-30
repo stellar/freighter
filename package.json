@@ -4,6 +4,6 @@
     "@lyra/api",
     "@lyra/constants",
     "extension",
-    "@stellar/lyra-api"
+    "@stellar/lyra-connect"
   ]
 }

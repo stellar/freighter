@@ -1,7 +1,7 @@
 {
-  "name": "@stellar/lyra-api",
+  "name": "@stellar/lyra-connect",
   "main": "build/index.min.js",
-  "types": "build/@stellar/lyra-sdk/src/index.d.ts",
+  "types": "build/@stellar/lyra-connect/src/index.d.ts",
   "prettier": "@stellar/prettier-config",
   "version": "1.0.0-alpha",
   "description": "Utility functions to interact with Lyra extension",
