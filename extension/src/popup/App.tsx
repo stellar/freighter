@@ -1,6 +1,6 @@
 import { createHashHistory } from "history";
 import React from "react";
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import { createGlobalStyle } from "styled-components";
@@ -46,7 +46,7 @@ const rootReducer = combineReducers({
 export type AppState = ReturnType<typeof rootReducer>;
 const store = configureStore({
   reducer: rootReducer,
-  middleware: [metricsMiddleware<AppState>()],
+  middleware: [metricsMiddleware<AppState>(), ...getDefaultMiddleware()],
 });
 
 export const history = createHashHistory();

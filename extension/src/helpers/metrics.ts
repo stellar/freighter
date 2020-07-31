@@ -18,7 +18,7 @@ export function metricsMiddleware<State>(): Middleware<{}, State> {
     // grumpy
     // eslint-disable-next-line no-unused-expressions
     handlersLookup[action.type]?.forEach((handler) => handler(state, action));
-    next(action);
+    return next(action);
   };
 }
 
