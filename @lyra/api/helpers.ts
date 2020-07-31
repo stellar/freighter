@@ -2,7 +2,7 @@ import {
   DEVELOPMENT,
   EXTERNAL_MSG_REQUEST,
   EXTERNAL_MSG_RESPONSE,
-} from "@lyra/constants/services";
+} from "../constants/services";
 import { Response } from "./types";
 
 export const sendMessageToContentScript = (msg: {}): Promise<Response> => {

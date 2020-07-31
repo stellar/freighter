@@ -5,7 +5,10 @@
     "baseUrl": "./src",
     "declaration": true,
     "declarationDir": "build/",
-    "outDir": "build/"
+    "outDir": "build/",
+    "paths": {
+      "@lyraAlias/*": ["../../../@lyra/*"]
+    }
   },
   "include": ["src"],
   "exclude": ["build", "node_modules"]

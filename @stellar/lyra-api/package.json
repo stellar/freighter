@@ -21,9 +21,6 @@
     ]
   },
   "license": "MIT",
-  "dependencies": {
-    "@lyra/api": "1.0.0"
-  },
   "lint-staged": {
     "src/**/*.ts?(x)": [
       "eslint --fix --max-warnings 0"

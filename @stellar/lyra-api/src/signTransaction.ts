@@ -1,5 +1,5 @@
-import { submitTransaction } from "@lyra/api/external";
-import { ExternalRequest } from "@lyra/api/types";
+import { submitTransaction } from "@lyraAlias/api/external";
+import { ExternalRequest } from "@lyraAlias/api/types";
 
 export const signTransaction = async (params: ExternalRequest) => {
   let response = { transactionStatus: "", error: "" };

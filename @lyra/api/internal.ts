@@ -1,8 +1,8 @@
 import StellarSdk from "stellar-sdk";
 
-import { SERVER_URL } from "@lyra/constants/stellar";
-import { SERVICE_TYPES } from "@lyra/constants/services";
-import { APPLICATION_STATE } from "@lyra/constants/applicationState";
+import { SERVER_URL } from "../constants/stellar";
+import { SERVICE_TYPES } from "../constants/services";
+import { APPLICATION_STATE } from "../constants/applicationState";
 import { sendMessageToBackground } from "./helpers";
 
 const server = new StellarSdk.Server(SERVER_URL);
