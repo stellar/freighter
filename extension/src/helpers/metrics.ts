@@ -42,7 +42,7 @@ type ActionType =
  */
 export function registerHandler<State>(
   actionType: ActionType,
-  handler: (state: State) => void,
+  handler: (state: State, action: AnyAction) => void,
 ) {
   const type = typeof actionType === "string" ? actionType : actionType.type;
   if (handlersLookup[type]) {
