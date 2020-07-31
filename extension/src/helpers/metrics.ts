@@ -57,7 +57,7 @@ interface event {
   event_type: string;
   event_properties: { [key: string]: any };
   user_id: string;
-  device_id: "00000";
+  device_id: string;
   /* eslint-enable camelcase */
 }
 
@@ -84,6 +84,19 @@ const uploadMetrics = throttle(() => {
   });
 }, 500);
 
+const getUserId = () => {
+  const storedId = localStorage.getItem("metrics_user_id");
+  if (!storedId) {
+    // Create a random ID by taking the decimal portion of a random number
+    const newId = Math.random()
+      .toString()
+      .split(".")[1];
+    localStorage.setItem("metrics_user_id", newId);
+    return newId;
+  }
+  return storedId;
+};
+
 /**
  *
  * @param {string} name The name (in plain language, thoughtfully considered) of
@@ -97,11 +110,8 @@ export const emitMetric = (name: string, body?: any) => {
     /* eslint-disable camelcase */
     event_type: name,
     event_properties: body,
-    // TODO: will probably want some basic user tracking. Random number plopped into localstorage?
-    // user_id is required
-    user_id: "00000",
-    // device_id is required
-    device_id: "00000",
+    user_id: getUserId(),
+    device_id: window.navigator.userAgent,
     /* eslint-enable camelcase */
   });
   uploadMetrics();
