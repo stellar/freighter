@@ -21,11 +21,9 @@ export const SignTransactionTest = () => {
     let res = { transactionStatus: "", error: "" };
     try {
       res = await signTransaction({ transactionXdr });
-      console.log(res);
     } catch (e) {
       res = e;
     }
-    console.log(res);
     const { transactionStatus, error } = res;
     setTransactionResult(transactionStatus || error);
   };
