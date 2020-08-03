@@ -1,8 +1,9 @@
 {
   "private": true,
   "workspaces": [
+    "@lyra/api",
     "@lyra/constants",
     "extension",
-    "@lyra/api"
+    "@stellar/lyra-api"
   ]
 }

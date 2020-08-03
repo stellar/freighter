@@ -1,8 +1,8 @@
-import { EXTERNAL_SERVICE_TYPES } from "@lyra/constants/services";
+import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { sendMessageToContentScript } from "./helpers";
 import { ExternalRequest } from "./types";
 
-export const requestAccess = async (): Promise<{
+export const requestPublicKey = async (): Promise<{
   publicKey: string;
   error: string;
 }> => {
