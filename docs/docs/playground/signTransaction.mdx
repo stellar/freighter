@@ -1,0 +1,49 @@
+---
+id: signTransaction
+title: signTransaction
+---
+
+#### `signTransaction({ transactionXdr: string })`
+
+<strong>Test Lyra's `signTransaction` method:</strong>
+
+import { useState } from "react";
+import { signTransaction } from "@stellar/lyra-api";
+import { PlaygroundTextarea } from "./basics";
+
+export const SignTransactionTest = () => {
+  let [transactionXdr, setTransactionXdr] = useState("");
+  let [transactionResult, setTransactionResult] = useState("");
+  const inputOnChangeHandler = (e) => {
+    setTransactionXdr(e.target.value);
+  };
+  const btnHandler = async () => {
+    let res = { transactionStatus: "", error: "" };
+    try {
+      res = await signTransaction({ transactionXdr });
+      console.log(res);
+    } catch (e) {
+      res = e;
+    }
+    console.log(res);
+    const { transactionStatus, error } = res;
+    setTransactionResult(transactionStatus || error);
+  };
+  return (
+    <div>
+      <div>
+        Enter transaction XDR:
+        <PlaygroundTextarea onChange={inputOnChangeHandler} />
+      </div>
+      <div>
+        Result:
+        <PlaygroundTextarea readOnly value={transactionResult} />
+      </div>
+      <button type="button" onClick={btnHandler}>
+        Sign Transaction XDR
+      </button>
+    </div>
+  );
+};
+
+<SignTransactionTest />

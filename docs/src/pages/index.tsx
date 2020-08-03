@@ -4,6 +4,6 @@ import React from "react";
 // eslint-disable-next-line import/no-unresolved
 import { Redirect } from "@docusaurus/router";
 
-const Homepage = () => <Redirect to="/docs/introduction" />;
+const Homepage = () => <Redirect to="/docs/guide/introduction" />;
 
 export default Homepage;

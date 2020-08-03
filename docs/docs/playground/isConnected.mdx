@@ -1,0 +1,32 @@
+---
+id: isConnected
+title: isConnected
+---
+
+#### `isConnected()`
+
+<strong>Test Lyra's `isConnected` method:</strong>
+
+import { useState } from "react";
+import { isConnected } from "@stellar/lyra-api";
+import { PlaygroundInput } from "./basics";
+
+export const IsConnectedTest = () => {
+  let [isConnectedState, setIsConnectedState] = useState(" ");
+  const btnHandler = () => {
+    setIsConnectedState(isConnected().toString());
+  };
+  return (
+    <div>
+      <div>
+        Is Lyra currently connected to your browser?
+        <PlaygroundInput readOnly value={isConnectedState} />
+      </div>
+      <button type="button" onClick={btnHandler}>
+        Check Connection
+      </button>
+    </div>
+  );
+};
+
+<IsConnectedTest />
