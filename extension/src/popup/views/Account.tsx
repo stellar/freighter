@@ -19,6 +19,8 @@ import CopyColor from "popup/assets/copy-color.png";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { Footer } from "popup/components/Footer";
 
+import "popup/metrics/authServices";
+
 const AccountEl = styled.div`
   width: 100%;
   max-width: ${POPUP_WIDTH}px;
