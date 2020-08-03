@@ -14,10 +14,9 @@ const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
 export function metricsMiddleware<State>(): Middleware<{}, State> {
   return ({ getState }) => (next) => (action: AnyAction) => {
     const state = getState();
-    // If the `?.` fails, this ends up as `null` which appears to make eslint
-    // grumpy
-    // eslint-disable-next-line no-unused-expressions
-    handlersLookup[action.type]?.forEach((handler) => handler(state, action));
+    (handlersLookup[action.type] || []).forEach((handler) =>
+      handler(state, action),
+    );
     return next(action);
   };
 }
