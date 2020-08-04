@@ -8,22 +8,16 @@ module.exports = {
   projectName: "lyraDocs", // Usually your repo name.
   themeConfig: {
     navbar: {
-      title: "My Site",
+      title: "Lyra Documentation",
       logo: {
-        alt: "My Site Logo",
+        alt: "Lyra Logo",
         src: "img/logo.svg",
       },
       items: [
         {
-          to: "docs/introduction",
-          activeBasePath: "docs",
-          label: "Docs",
-          position: "left",
-        },
-        {
-          href: "https://github.com/@stellar/lyra",
+          href: "https://github.com/@stellar/lyra/docs",
           label: "GitHub",
-          position: "right",
+          position: "left",
         },
       ],
     },
