@@ -1,7 +1,6 @@
 module.exports = {
-  title: "My Site",
-  tagline: "The tagline of my site",
-  url: "https://your-docusaurus-test-site.com",
+  title: "Lyra Documentation",
+  url: "https://lyradocs.netlify.com",
   baseUrl: "/",
   onBrokenLinks: "throw",
   favicon: "img/favicon.ico",
@@ -38,8 +37,7 @@ module.exports = {
           homePageId: "docs/gettingStarted",
           sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
-          editUrl:
-            "https://github.com/facebook/docusaurus/edit/master/website/",
+          editUrl: "https://github.com/stellar/lyra/docs/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
