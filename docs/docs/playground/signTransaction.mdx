@@ -9,7 +9,7 @@ title: signTransaction
 
 import { useState } from "react";
 import { signTransaction } from "@stellar/lyra-api";
-import { PlaygroundTextarea } from "./basics";
+import { PlaygroundTextarea } from "./basics/inputs";
 
 export const SignTransactionTest = () => {
   let [transactionXdr, setTransactionXdr] = useState("");
