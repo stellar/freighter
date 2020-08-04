@@ -11,7 +11,7 @@ module.exports = {
       title: "Lyra Documentation",
       logo: {
         alt: "Lyra Logo",
-        src: "img/logo.svg",
+        src: "images/logo.png",
       },
       items: [
         {
