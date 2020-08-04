@@ -4,6 +4,10 @@ This website is built using [Docusaurus 2](https://v2.docusaurus.io/), a modern 
 
 ### Local Development
 
+First build `@stellar/lyra-api` (a dependency of this project) by cd'ing to `@stellar/lyra-api` and running `yarn build`.
+
+Then, come back to this directory and run:
+
 ```
 $ yarn start
 ```
