@@ -1,6 +1,6 @@
 module.exports = {
   title: "Lyra Documentation",
-  url: "https://lyradocs.netlify.com",
+  url: "https://lyra-docs.netlify.app",
   baseUrl: "/",
   onBrokenLinks: "throw",
   favicon: "img/favicon.ico",
