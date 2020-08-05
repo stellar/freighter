@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 
-import { rejectAccess, grantAccess } from "@lyra/api/internal";
+import { rejectAccess, grantAccess } from "@shared/api/internal";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
