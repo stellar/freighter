@@ -3,9 +3,10 @@
   "version": "1.0.0-alpha",
   "private": true,
   "scripts": {
+    "buildDependencies": "yarn workspace @stellar/lyra-api build",
     "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
+    "start": "yarn buildDependencies && docusaurus start",
+    "build": "yarn buildDependencies && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "serve": "docusaurus serve"
