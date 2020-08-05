@@ -15,7 +15,7 @@ module.exports = {
       },
       items: [
         {
-          href: "https://github.com/stellar/lyra/tree/master/docs",
+          href: "https://github.com/@stellar/lyra/docs",
           label: "GitHub",
           position: "left",
         },
@@ -31,7 +31,7 @@ module.exports = {
           homePageId: "docs/gettingStarted",
           sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
-          editUrl: "https://github.com/stellar/lyra/tree/master/docs/",
+          editUrl: "https://github.com/stellar/lyra/docs/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
