@@ -1,6 +1,6 @@
 module.exports = {
   title: "Lyra Documentation",
-  url: "https://lyradocs.netlify.com",
+  url: "https://lyra-docs.netlify.app",
   baseUrl: "/",
   onBrokenLinks: "throw",
   favicon: "./images/logo.png",
@@ -15,7 +15,7 @@ module.exports = {
       },
       items: [
         {
-          href: "https://github.com/@stellar/lyra/docs",
+          href: "https://github.com/stellar/lyra/tree/master/docs",
           label: "GitHub",
           position: "left",
         },
@@ -31,7 +31,7 @@ module.exports = {
           homePageId: "docs/gettingStarted",
           sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
-          editUrl: "https://github.com/stellar/lyra/docs/",
+          editUrl: "https://github.com/stellar/lyra/tree/master/docs/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
