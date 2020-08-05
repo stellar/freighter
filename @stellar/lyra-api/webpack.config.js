@@ -10,6 +10,7 @@ const config = {
     index: path.resolve(__dirname, "./src/index.ts"),
   },
   output: {
+    globalObject: "this",
     library: "lyra-api",
     libraryTarget: "umd",
     path: BUILD_PATH,

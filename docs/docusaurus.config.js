@@ -3,7 +3,7 @@ module.exports = {
   url: "https://lyradocs.netlify.com",
   baseUrl: "/",
   onBrokenLinks: "throw",
-  favicon: "img/favicon.ico",
+  favicon: "./images/logo.png",
   organizationName: "@stellar", // Usually your GitHub org/user name.
   projectName: "lyraDocs", // Usually your repo name.
   themeConfig: {
@@ -11,7 +11,7 @@ module.exports = {
       title: "Lyra Documentation",
       logo: {
         alt: "Lyra Logo",
-        src: "images/logo.png",
+        src: "./images/logo.png",
       },
       items: [
         {
