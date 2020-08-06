@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 
-import { rejectAccess, grantAccess } from "@lyra/api/internal";
-
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
@@ -40,19 +40,20 @@ const RejectButtonEl = styled(Button)`
 
 export const GrantAccess = () => {
   const location = useLocation();
+  const dispatch = useDispatch();
   const decodedTab = atob(location.search.replace("?", ""));
   const tabToUnlock = decodedTab ? JSON.parse(decodedTab) : {};
   const { url, title } = tabToUnlock;
   const [isGranting, setIsGranting] = useState(false);
 
   const rejectAndClose = () => {
-    rejectAccess();
+    dispatch(rejectAccess());
     window.close();
   };
 
   const grantAndClose = async () => {
     setIsGranting(true);
-    await grantAccess(url);
+    await dispatch(grantAccess(url));
     window.close();
   };
 
