@@ -8,6 +8,8 @@ import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
+import "popup/metrics/access";
+
 const GrantAccessEl = styled.div`
   padding: 2.25rem 2.5rem;
 `;
