@@ -1,6 +1,6 @@
 import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { sendMessageToContentScript } from "./helpers";
-import { ExternalRequest } from "./types";
+import { LyraApiRequest } from "./types";
 
 export const requestPublicKey = async (): Promise<{
   publicKey: string;
@@ -19,7 +19,7 @@ export const requestPublicKey = async (): Promise<{
 
 export const submitTransaction = async ({
   transactionXdr,
-}: ExternalRequest): Promise<{
+}: LyraApiRequest): Promise<{
   transactionStatus: string;
   error: string;
 }> => {

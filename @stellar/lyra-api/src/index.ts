@@ -3,3 +3,4 @@ import { signTransaction } from "./signTransaction";
 import { isConnected } from "./isConnected";
 
 export { getPublicKey, signTransaction, isConnected };
+export default { getPublicKey, signTransaction, isConnected };

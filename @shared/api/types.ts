@@ -21,7 +21,10 @@ export interface Response {
   url: string;
 }
 
-export interface ExternalRequest {
+export interface LyraApiRequest {
   transactionXdr: string;
+}
+
+export interface ExternalRequest extends LyraApiRequest {
   type: EXTERNAL_SERVICE_TYPES;
 }

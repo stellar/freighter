@@ -1,7 +1,7 @@
 import { submitTransaction } from "@sharedAlias/api/external";
-import { ExternalRequest } from "@sharedAlias/api/types";
+import { LyraApiRequest } from "@sharedAlias/api/types";
 
-export const signTransaction = async (params: ExternalRequest) => {
+export const signTransaction = async (params: LyraApiRequest) => {
   let response = { transactionStatus: "", error: "" };
 
   try {
