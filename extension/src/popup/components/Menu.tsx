@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 
-import { APPLICATION_STATE } from "@lyra/constants/applicationState";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   Z_INDEXES,
   COLOR_PALETTE,

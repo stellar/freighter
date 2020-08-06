@@ -1,4 +1,4 @@
-import { requestPublicKey } from "@lyraAlias/api/external";
+import { requestPublicKey } from "@sharedAlias/api/external";
 
 export const getPublicKey = async () => {
   let response = { publicKey: "", error: "" };

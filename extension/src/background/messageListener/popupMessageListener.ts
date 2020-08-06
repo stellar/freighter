@@ -3,10 +3,10 @@ import StellarSdk from "stellar-sdk";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
-import { SERVICE_TYPES } from "@lyra/constants/services";
-import { APPLICATION_STATE } from "@lyra/constants/applicationState";
+import { SERVICE_TYPES } from "@shared/constants/services";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-import { Response as Request } from "@lyra/api/types";
+import { Response as Request } from "@shared/api/types";
 import {
   MessageResponder,
   Sender,
