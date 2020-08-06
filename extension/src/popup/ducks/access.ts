@@ -4,7 +4,7 @@ import {
   rejectAccess as internalRejectAccess,
   grantAccess as internalGrantAccess,
   signTransaction as internalSignTransaction,
-} from "@lyra/api/internal";
+} from "@shared/api/internal";
 
 export const grantAccess = createAsyncThunk("grantAccess", internalGrantAccess);
 
