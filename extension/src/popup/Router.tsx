@@ -56,7 +56,7 @@ const PublicKeyRoute = (props: RouteProps) => {
     return (
       <Redirect
         to={{
-          pathname: "/unlock-account",
+          pathname: ROUTES.unlockAccount,
           search: location.search,
           state: { from: location },
         }}
@@ -78,7 +78,7 @@ const PrivateKeyRoute = (props: RouteProps) => {
     return (
       <Redirect
         to={{
-          pathname: "/unlock-account",
+          pathname: ROUTES.unlockAccount,
           search: location.search,
           state: { from: location },
         }}
@@ -104,7 +104,7 @@ const HomeRoute = () => {
     In this particular case, open the tab if we are in the "popup" view.
     */
     if (window.innerWidth === POPUP_WIDTH) {
-      window.open(newTabHref("/"));
+      window.open(newTabHref(ROUTES.home));
     }
     return <Welcome />;
   }
@@ -114,7 +114,7 @@ const HomeRoute = () => {
       return <Account />;
     case APPLICATION_STATE.PASSWORD_CREATED ||
       APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
-      window.open(newTabHref("/mnemonic-phrase"));
+      window.open(newTabHref(ROUTES.mnemonicPhrase));
       return <Loading />;
     default:
       return <Welcome />;
@@ -142,29 +142,30 @@ export const Router = () => {
 
   return (
     <HashRouter>
+      <RouteListener />
       <Switch>
-        <PublicKeyRoute path="/account">
+        <PublicKeyRoute path={ROUTES.account}>
           <Account />
         </PublicKeyRoute>
-        <PrivateKeyRoute path="/sign-transaction">
+        <PrivateKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
         </PrivateKeyRoute>
-        <PublicKeyRoute path="/grant-access">
+        <PublicKeyRoute path={ROUTES.grantAccess}>
           <GrantAccess />
         </PublicKeyRoute>
-        <PublicKeyRoute path="/mnemonic-phrase">
+        <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
           <MnemonicPhrase />
         </PublicKeyRoute>
-        <Route path="/unlock-account">
+        <Route path={ROUTES.unlockAccount}>
           <UnlockAccount />
         </Route>
-        <Route path="/mnemonic-phrase-confirmed">
+        <Route path={ROUTES.mnemonicPhraseConfirmed}>
           <MnemonicPhraseConfirmed />
         </Route>
-        <Route path="/create-password">
+        <Route path={ROUTES.createPassword}>
           <CreatePassword />
         </Route>
-        <Route path="/recover-account">
+        <Route path={ROUTES.recoverAccount}>
           <RecoverAccount />
         </Route>
         <HomeRoute />
