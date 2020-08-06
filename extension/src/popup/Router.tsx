@@ -7,16 +7,20 @@ import {
   useLocation,
   RouteProps,
 } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { POPUP_WIDTH } from "constants/dimensions";
+import { newTabHref } from "helpers/urls";
+
+import { ROUTES } from "popup/constants/routes";
 import {
   applicationStateSelector,
   hasPrivateKeySelector,
   loadAccount,
   publicKeySelector,
 } from "popup/ducks/authServices";
-import { useSelector, useDispatch } from "react-redux";
-import { newTabHref } from "helpers/urls";
-import { POPUP_WIDTH } from "constants/dimensions";
+import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
 import { CreatePassword } from "popup/views/CreatePassword";
@@ -28,6 +32,8 @@ import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
+
+import "popup/metrics/views";
 
 const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -113,6 +119,19 @@ const HomeRoute = () => {
     default:
       return <Welcome />;
   }
+};
+
+// Broadcast to Redux when the route changes. We don't store location state, but
+// we do use the actions for metrics.
+const RouteListener = () => {
+  const dispatch = useDispatch();
+  const location = useLocation();
+
+  useEffect(() => {
+    dispatch(navigate(location));
+  }, [dispatch, location]);
+
+  return null;
 };
 
 export const Router = () => {
