@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import BigNumber from "bignumber.js";
 import styled from "styled-components";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
 
-import { rejectAccess, signTransaction } from "@shared/api/internal";
-
 import { truncatedPublicKey } from "helpers/stellar";
 
 import { publicKeySelector } from "popup/ducks/authServices";
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button, BackButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
@@ -82,6 +81,7 @@ const RejectButtonEl = styled(Button)`
 
 export const SignTransaction = () => {
   const location = useLocation();
+  const dispatch = useDispatch();
   const decodedTransactionInfo = atob(location.search.replace("?", ""));
   const transactionInfo = decodedTransactionInfo
     ? JSON.parse(decodedTransactionInfo)
@@ -96,13 +96,13 @@ export const SignTransaction = () => {
   const [isConfirming, setIsConfirming] = useState(false);
 
   const rejectAndClose = () => {
-    rejectAccess();
+    dispatch(rejectTransaction());
     window.close();
   };
 
   const signAndClose = async () => {
     setIsConfirming(true);
-    await signTransaction({ transaction });
+    await dispatch(signTransaction({ transaction }));
     window.close();
   };
 
