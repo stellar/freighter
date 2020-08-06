@@ -1,8 +1,9 @@
 {
-  "name": "@lyra/constants",
+  "name": "@shared/api",
   "prettier": "@stellar/prettier-config",
   "version": "1.0.0",
   "dependencies": {
+    "stellar-sdk": "5.0.1",
     "typescript": "~3.7.2"
   },
   "devDependencies": {

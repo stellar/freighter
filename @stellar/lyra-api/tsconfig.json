@@ -7,7 +7,7 @@
     "declarationDir": "build/",
     "outDir": "build/",
     "paths": {
-      "@lyraAlias/*": ["../../../@lyra/*"]
+      "@sharedAlias/*": ["../../../@shared/*"]
     }
   },
   "include": ["src"],

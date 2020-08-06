@@ -1,13 +1,13 @@
 import StellarSdk from "stellar-sdk";
 
-import { ExternalRequest as Request } from "@lyra/api/types";
+import { ExternalRequest as Request } from "@shared/api/types";
 import {
   MessageResponder,
   Sender,
   SendResponseInterface,
 } from "background/types";
 
-import { EXTERNAL_SERVICE_TYPES } from "@lyra/constants/services";
+import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
 import { POPUP_WIDTH } from "constants/dimensions";
 
 import { removeQueryParam } from "helpers/urls";

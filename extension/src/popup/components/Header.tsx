@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
 
-import { APPLICATION_STATE } from "@lyra/constants/applicationState";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 import { applicationStateSelector } from "popup/ducks/authServices";
 

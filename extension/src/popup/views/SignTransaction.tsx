@@ -6,7 +6,7 @@ import styled from "styled-components";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
 
-import { rejectAccess, signTransaction } from "@lyra/api/internal";
+import { rejectAccess, signTransaction } from "@shared/api/internal";
 
 import { truncatedPublicKey } from "helpers/stellar";
 
