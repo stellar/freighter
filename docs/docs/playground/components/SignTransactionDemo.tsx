@@ -9,14 +9,14 @@ export const SignTransactionDemo = () => {
     setTransactionXdr(e.currentTarget.value);
   };
   const btnHandler = async () => {
-    let res = { transactionStatus: "", error: "" };
+    let res = { signedTransaction: "", error: "" };
     try {
       res = await signTransaction({ transactionXdr });
     } catch (e) {
       res = e;
     }
-    const { transactionStatus, error } = res;
-    setTransactionResult(transactionStatus || error);
+    const { signedTransaction, error } = res;
+    setTransactionResult(signedTransaction || error);
   };
   return (
     <section>

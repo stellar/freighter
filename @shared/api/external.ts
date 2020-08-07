@@ -20,10 +20,10 @@ export const requestPublicKey = async (): Promise<{
 export const submitTransaction = async ({
   transactionXdr,
 }: LyraApiRequest): Promise<{
-  transactionStatus: string;
+  signedTransaction: string;
   error: string;
 }> => {
-  let response = { transactionStatus: "", error: "" };
+  let response = { signedTransaction: "", error: "" };
   try {
     response = await sendMessageToContentScript({
       transactionXdr,

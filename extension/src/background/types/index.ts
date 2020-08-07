@@ -8,7 +8,7 @@ export interface SendResponseInterface {
   applicationState?: string;
   mnemonicPhrase?: string;
   isCorrectPhrase?: boolean;
-  transactionStatus?: string;
+  signedTransaction?: string;
   error?: string;
 }
 

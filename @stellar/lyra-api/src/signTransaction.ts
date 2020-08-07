@@ -2,7 +2,7 @@ import { submitTransaction } from "@sharedAlias/api/external";
 import { LyraApiRequest } from "@sharedAlias/api/types";
 
 export const signTransaction = async (params: LyraApiRequest) => {
-  let response = { transactionStatus: "", error: "" };
+  let response = { signedTransaction: "", error: "" };
 
   try {
     response = await submitTransaction(params);

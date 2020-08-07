@@ -15,7 +15,7 @@ export interface Response {
   transaction: {
     sign: (sourceKeys: {}) => void;
   };
-  transactionStatus: string;
+  signedTransaction: string;
   source: string;
   type: SERVICE_TYPES;
   url: string;
