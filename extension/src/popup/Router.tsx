@@ -7,16 +7,20 @@ import {
   useLocation,
   RouteProps,
 } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { POPUP_WIDTH } from "constants/dimensions";
+import { newTabHref } from "helpers/urls";
+
+import { ROUTES } from "popup/constants/routes";
 import {
   applicationStateSelector,
   hasPrivateKeySelector,
   loadAccount,
   publicKeySelector,
 } from "popup/ducks/authServices";
-import { useSelector, useDispatch } from "react-redux";
-import { newTabHref } from "helpers/urls";
-import { POPUP_WIDTH } from "constants/dimensions";
+import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
 import { CreatePassword } from "popup/views/CreatePassword";
@@ -28,6 +32,8 @@ import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
+
+import "popup/metrics/views";
 
 const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -50,7 +56,7 @@ const PublicKeyRoute = (props: RouteProps) => {
     return (
       <Redirect
         to={{
-          pathname: "/unlock-account",
+          pathname: ROUTES.unlockAccount,
           search: location.search,
           state: { from: location },
         }}
@@ -72,7 +78,7 @@ const PrivateKeyRoute = (props: RouteProps) => {
     return (
       <Redirect
         to={{
-          pathname: "/unlock-account",
+          pathname: ROUTES.unlockAccount,
           search: location.search,
           state: { from: location },
         }}
@@ -98,7 +104,7 @@ const HomeRoute = () => {
     In this particular case, open the tab if we are in the "popup" view.
     */
     if (window.innerWidth === POPUP_WIDTH) {
-      window.open(newTabHref("/"));
+      window.open(newTabHref(ROUTES.home));
     }
     return <Welcome />;
   }
@@ -108,11 +114,24 @@ const HomeRoute = () => {
       return <Account />;
     case APPLICATION_STATE.PASSWORD_CREATED ||
       APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
-      window.open(newTabHref("/mnemonic-phrase"));
+      window.open(newTabHref(ROUTES.mnemonicPhrase));
       return <Loading />;
     default:
       return <Welcome />;
   }
+};
+
+// Broadcast to Redux when the route changes. We don't store location state, but
+// we do use the actions for metrics.
+const RouteListener = () => {
+  const dispatch = useDispatch();
+  const location = useLocation();
+
+  useEffect(() => {
+    dispatch(navigate(location));
+  }, [dispatch, location]);
+
+  return null;
 };
 
 export const Router = () => {
@@ -123,29 +142,30 @@ export const Router = () => {
 
   return (
     <HashRouter>
+      <RouteListener />
       <Switch>
-        <PublicKeyRoute path="/account">
+        <PublicKeyRoute path={ROUTES.account}>
           <Account />
         </PublicKeyRoute>
-        <PrivateKeyRoute path="/sign-transaction">
+        <PrivateKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
         </PrivateKeyRoute>
-        <PublicKeyRoute path="/grant-access">
+        <PublicKeyRoute path={ROUTES.grantAccess}>
           <GrantAccess />
         </PublicKeyRoute>
-        <PublicKeyRoute path="/mnemonic-phrase">
+        <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
           <MnemonicPhrase />
         </PublicKeyRoute>
-        <Route path="/unlock-account">
+        <Route path={ROUTES.unlockAccount}>
           <UnlockAccount />
         </Route>
-        <Route path="/mnemonic-phrase-confirmed">
+        <Route path={ROUTES.mnemonicPhraseConfirmed}>
           <MnemonicPhraseConfirmed />
         </Route>
-        <Route path="/create-password">
+        <Route path={ROUTES.createPassword}>
           <CreatePassword />
         </Route>
-        <Route path="/recover-account">
+        <Route path={ROUTES.recoverAccount}>
           <RecoverAccount />
         </Route>
         <HomeRoute />

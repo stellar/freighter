@@ -1,6 +1,6 @@
 import throttle from "lodash/throttle";
 import { Middleware, AnyAction } from "redux";
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createAction } from "@reduxjs/toolkit";
 
 type metricHandler<AppState> = (state: AppState, action: AnyAction) => void;
 const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
@@ -24,11 +24,12 @@ export function metricsMiddleware<State>(): Middleware<{}, State> {
 // I can't figure out how to get the properties off a thunk for the ActionType
 // without creating an intermediate value
 const dummyThunk = createAsyncThunk<any, any>("dummy", () => {});
+const dummyAction = createAction<any>("also dummy");
 type ActionType =
   | typeof dummyThunk.fulfilled
   | typeof dummyThunk.rejected
   | typeof dummyThunk.pending
-  | string;
+  | typeof dummyAction;
 
 /**
  * registerHandler registers a new function to be called any time the specified
