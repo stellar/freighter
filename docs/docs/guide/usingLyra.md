@@ -67,7 +67,7 @@ const { publicKey, error } = retrievePublicKey();
 
 ### signTransaction
 
-#### `signTransaction({ transactionXdr: string }) -> <Promise<{ transactionStatus: string; error?: string;}>>`
+#### `signTransaction({ transactionXdr: string }) -> <Promise<{ signedTransaction: string; error?: string;}>>`
 
 This function accepts an object containing an transaction XDR string, which it will decode, sign as the user, and then return the signed transaction to your application.
 
@@ -95,7 +95,7 @@ const retrievePublicKey = async () => {
 };
 
 const userSignTransaction = async (xdr: String) => {
-  let res = { transactionStatus: "", error: "" };
+  let res = { signedTransaction: "", error: "" };
 
   try {
     res = await signTransaction({ transactionXdr: xdr });

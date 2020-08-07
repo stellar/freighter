@@ -3,7 +3,7 @@
   "main": "build/index.min.js",
   "types": "build/@stellar/lyra-api/src/index.d.ts",
   "prettier": "@stellar/prettier-config",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Utility functions to interact with Lyra extension",
   "repository": {
     "url": "git@github.com:stellar/lyra.git",

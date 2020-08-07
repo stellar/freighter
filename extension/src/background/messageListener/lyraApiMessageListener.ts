@@ -90,9 +90,9 @@ export const lyraApiMessageListener = (
       WINDOW_DIMENSIONS,
     );
 
-    const response = (transactionStatus: string) => {
-      if (transactionStatus) {
-        sendResponse({ transactionStatus });
+    const response = (signedTransaction: string) => {
+      if (signedTransaction) {
+        sendResponse({ signedTransaction });
       } else {
         sendResponse({ error: "User declined access" });
       }
