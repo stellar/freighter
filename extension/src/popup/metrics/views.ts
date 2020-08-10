@@ -7,7 +7,7 @@ import { AppState } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 
 const routeToEventName = {
-  [ROUTES.home]: METRIC_NAMES.viewHome,
+  [ROUTES.welcome]: METRIC_NAMES.viewWelcome,
   [ROUTES.account]: METRIC_NAMES.viewAccount,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
