@@ -1,8 +1,9 @@
 {
   "name": "Lyra",
-  "version": "1.0",
-  "description": "Build an Extension!",
-  "permissions": ["activeTab", "declarativeContent", "storage"],
+  "version": "1.0.0",
+  "version_name": "alpha.6",
+  "description": "Browser extension to create a Stellar wallet and share wallet information with web applications",
+  "permissions": ["storage"],
   "background": {
     "scripts": ["background.min.js"],
     "persistent": true
@@ -30,6 +31,5 @@
     "48": "images/get_started48.png",
     "128": "images/get_started128.png"
   },
-  "key": "ncjenbmichjdlnepfekhijpmfinfhgdm",
   "manifest_version": 2
 }
