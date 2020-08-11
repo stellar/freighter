@@ -3,6 +3,12 @@
   "license": "Apache-2.0",
   "prettier": "@stellar/prettier-config",
   "version": "1.0.0-alpha.6",
+  "scripts": {
+    "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
+    "build": "../node_modules/webpack/bin/webpack.js --config webpack.prod.js",
+    "start": "webpack-dev-server --config webpack.dev.js",
+    "test": "jest"
+  },
   "husky": {
     "hooks": {
       "pre-commit": "concurrently 'pretty-quick --staged' 'lint-staged'",
@@ -12,6 +18,16 @@
   "lint-staged": {
     "src/**/*.ts?(x)": [
       "eslint --fix --max-warnings 0"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      "last 3 chrome version",
+      "last 3 firefox version"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version"
     ]
   },
   "dependencies": {
@@ -79,22 +95,5 @@
     "webpack-dev-server": "3.10.3",
     "webpack-merge": "4.2.2",
     "yup": "^0.29.1"
-  },
-  "scripts": {
-    "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
-    "build": "../node_modules/webpack/bin/webpack.js --config webpack.prod.js",
-    "start": "webpack-dev-server --config webpack.dev.js",
-    "test": "jest",
-    "eject": "react-scripts eject"
-  },
-  "browserslist": {
-    "production": [
-      "last 3 chrome version",
-      "last 3 firefox version"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version"
-    ]
   }
 }
