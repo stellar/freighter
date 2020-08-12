@@ -96,7 +96,7 @@ const HomeRoute = () => {
   }
   if (!publicKey) {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
-      return <UnlockAccount />;
+      return <Redirect to={ROUTES.unlockAccount} />;
     }
 
     /*
@@ -104,14 +104,14 @@ const HomeRoute = () => {
     In this particular case, open the tab if we are in the "popup" view.
     */
     if (window.innerWidth === POPUP_WIDTH) {
-      window.open(newTabHref(ROUTES.home));
+      window.open(newTabHref(ROUTES.welcome));
     }
     return <Welcome />;
   }
 
   switch (applicationState) {
     case APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED:
-      return <Account />;
+      return <Redirect to={ROUTES.account} />;
     case APPLICATION_STATE.PASSWORD_CREATED ||
       APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
       window.open(newTabHref(ROUTES.mnemonicPhrase));

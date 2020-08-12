@@ -1,5 +1,5 @@
 export const METRIC_NAMES = {
-  viewHome: "loaded page: home",
+  viewWelcome: "loaded page: welcome",
   viewAccount: "loaded page: account",
   viewCreatePassword: "loaded page: create password",
   viewGrantAccess: "loaded page: grant access",
@@ -9,7 +9,6 @@ export const METRIC_NAMES = {
   viewRecoverAccount: "loaded page: recover account",
   viewSignTransaction: "loaded page: sign transaction",
   viewUnlockAccount: "loaded page: unlock account",
-  viewWelcome: "loaded page: welcome",
 
   newWallet: "new wallet: create password: success",
   confirmPassword: "re-auth: success",
