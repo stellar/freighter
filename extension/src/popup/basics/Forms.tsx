@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import styled from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
@@ -166,3 +167,9 @@ export const CheckboxField = ({
     {label}
   </CheckBoxWrapperEl>
 );
+CheckboxField.propTypes = {
+  name: PropTypes.string.isRequired,
+  label: PropTypes.node.isRequired,
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string.isRequired,
+};
