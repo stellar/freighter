@@ -5,7 +5,7 @@
   "version": "1.0.0-alpha.6",
   "scripts": {
     "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
-    "build": "../node_modules/webpack/bin/webpack.js --config webpack.prod.js",
+    "build": "webpack --config webpack.prod.js",
     "start": "webpack-dev-server --config webpack.dev.js",
     "test": "jest"
   },
