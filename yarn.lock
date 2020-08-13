@@ -1927,19 +1927,20 @@
   resolved "https://registry.yarnpkg.com/@stellar/tsconfig/-/tsconfig-1.0.2.tgz#18e9b1a1d6076e116bb405d11fc034401155292d"
   integrity sha512-lC51QSlYRM8K3oGe0/WGPq+p9+u+yPzwZXSKrZXKOe4sq79vzfiqFbQyp5enOffFzXlahcDyTgY67mBOkJytfw==
 
-"@stellar/wallet-sdk@^0.0.9-rc.7":
-  version "0.0.9-rc.9"
-  resolved "https://registry.yarnpkg.com/@stellar/wallet-sdk/-/wallet-sdk-0.0.9-rc.9.tgz#7047dc25540e65eb0343d4cd0d78d45abd52d209"
-  integrity sha512-cXbhSFKk2g4RQiLq1hMa7uu94drZWCK4d40AsO8nDtJUFu9xZAa8HFNnbx5sqrYaJD4YCzzkSj8EHzUzWumwZg==
+"@stellar/wallet-sdk@^0.1.0-rc.10":
+  version "0.1.0-rc.10"
+  resolved "https://registry.yarnpkg.com/@stellar/wallet-sdk/-/wallet-sdk-0.1.0-rc.10.tgz#3389c0749deb10991f3537b13c4b67fcad8ca958"
+  integrity sha512-a7hCtTrT+t4Z4ngETjrNdL1mykiFdGPHIzQSlhjQ4wF2nUVAQeskLPY5KOox9AHekbPiclu+UbAo/Okrk+ATjw==
   dependencies:
     "@ledgerhq/hw-app-str" "^4.48.0"
     "@ledgerhq/hw-transport-u2f" "^4.48.0"
+    "@stellar/lyra-api" "^1.0.0-alpha.2"
     "@types/jest" "^24.0.11"
-    "@types/stellar-base" "^0.10.2"
     change-case "^3.1.0"
     lodash "^4.17.14"
     query-string "^6.4.2"
     scrypt-async "^2.0.1"
+    trezor-connect "^8.1.9"
     tweetnacl "^1.0.1"
     tweetnacl-util "^0.15.0"
 
@@ -2404,13 +2405,6 @@
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
-
-"@types/stellar-base@^0.10.2":
-  version "0.10.2"
-  resolved "https://registry.yarnpkg.com/@types/stellar-base/-/stellar-base-0.10.2.tgz#8a6bbaabde140971ccab4cf202151de84740fa29"
-  integrity sha512-MOilZXnnLqxCa3f2Xr7phqI8mbfz5j1BhWs6XrGwHfNTL9XQPOyLBN9tBWIsDIRZ1VyUZQ2YQLTjSppsB8/iUQ==
-  dependencies:
-    "@types/node" "*"
 
 "@types/styled-components@^4.4.3":
   version "4.4.3"
@@ -13179,6 +13173,15 @@ tree-kill@^1.2.2:
   resolved "https://registry.yarnpkg.com/tree-kill/-/tree-kill-1.2.2.tgz#4ca09a9092c88b73a7cdc5e8a01b507b0790a0cc"
   integrity sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==
 
+trezor-connect@^8.1.9:
+  version "8.1.11"
+  resolved "https://registry.yarnpkg.com/trezor-connect/-/trezor-connect-8.1.11.tgz#b1a6d492307b83751968515b4480b8510172415b"
+  integrity sha512-15m+jZ0No96tUlsnMRoFykreMkpsVpwN+9i2j28OvKn0+frLAEzzeLpl1ndyykzRVD84mQV5c6GFhneo9ivNmA==
+  dependencies:
+    "@babel/runtime" "^7.11.0"
+    events "^3.2.0"
+    whatwg-fetch "^3.3.1"
+
 trim-lines@^1.0.0:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/trim-lines/-/trim-lines-1.1.3.tgz#839514be82428fd9e7ec89e35081afe8f6f93115"
@@ -14080,6 +14083,11 @@ whatwg-encoding@^1.0.5:
   integrity sha512-b5lim54JOPN9HtzvK9HFXvBma/rnfFeqsic0hSpjtDbVxR3dJKLc+KB4V6GgiGOvl7CY/KNh8rxSo9DKQrnUEw==
   dependencies:
     iconv-lite "0.4.24"
+
+whatwg-fetch@^3.3.1:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.4.0.tgz#e11de14f4878f773fbebcde8871b2c0699af8b30"
+  integrity sha512-rsum2ulz2iuZH08mJkT0Yi6JnKhwdw4oeyMjokgxd+mmqYSd9cPpOQf01TIWgjxG/U4+QR+AwKq6lSbXVxkyoQ==
 
 whatwg-mimetype@^2.3.0:
   version "2.3.0"
