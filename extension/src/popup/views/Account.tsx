@@ -6,10 +6,12 @@ import { useSelector } from "react-redux";
 import { getAccountBalance } from "@shared/api/internal";
 
 import { truncatedPublicKey } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
 import { publicKeySelector } from "popup/ducks/authServices";
 
 import { POPUP_WIDTH } from "constants/dimensions";
 import { COLOR_PALETTE } from "popup/constants/styles";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { BasicButton } from "popup/basics/Buttons";
 
 import { Toast } from "popup/components/Toast";
@@ -100,6 +102,7 @@ export const Account = () => {
     };
     fetchAccountBalance();
   }, [publicKey]);
+
   return (
     <>
       <AccountEl>
@@ -108,7 +111,13 @@ export const Account = () => {
           <PublicKeyDisplayEl>
             <p>Your public key</p>
             <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
-            <CopyToClipboard text={publicKey} onCopy={() => setIsCopied(true)}>
+            <CopyToClipboard
+              text={publicKey}
+              onCopy={() => {
+                setIsCopied(true);
+                emitMetric(METRIC_NAMES.copyPublickKey);
+              }}
+            >
               <CopyButtonEl />
             </CopyToClipboard>
             <CopiedToastWrapperEl>

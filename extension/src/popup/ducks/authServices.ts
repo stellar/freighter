@@ -18,20 +18,24 @@ interface ErrorMessage {
   errorMessage: string;
 }
 
-export const createAccount = createAsyncThunk(
-  "auth/createAccount",
-  async (password: string) => {
-    let res;
+export const createAccount = createAsyncThunk<
+  { publicKey: string },
+  string,
+  { rejectValue: ErrorMessage }
+>("auth/createAccount", async (password, thunkApi) => {
+  let res = { publicKey: "" };
 
-    try {
-      res = await createAccountService(password);
-    } catch (e) {
-      console.error(e);
-    }
+  try {
+    res = await createAccountService(password);
+  } catch (e) {
+    console.error(e);
+    return thunkApi.rejectWithValue({
+      errorMessage: e,
+    });
+  }
 
-    return res;
-  },
-);
+  return res;
+});
 
 export const recoverAccount = createAsyncThunk<
   { publicKey: string },
@@ -47,6 +51,9 @@ export const recoverAccount = createAsyncThunk<
     res = await recoverAccountService(password, mnemonicPhrase);
   } catch (e) {
     console.error(e);
+    return thunkApi.rejectWithValue({
+      errorMessage: e,
+    });
   }
 
   if (!res.publicKey) {
@@ -74,6 +81,10 @@ export const confirmMnemonicPhrase = createAsyncThunk<
       res = await confirmMnemonicPhraseService(phrase);
     } catch (e) {
       console.error(e);
+      return thunkApi.rejectWithValue({
+        applicationState: res.applicationState,
+        errorMessage: e,
+      });
     }
 
     if (res.isCorrectPhrase) {
@@ -180,17 +191,24 @@ const authSlice = createSlice({
         publicKey,
       };
     });
+    builder.addCase(createAccount.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
 
-    builder.addCase(recoverAccount.fulfilled, (state, action) => {
-      const { publicKey } = action.payload || { publicKey: "" };
       return {
         ...state,
-        authError: "",
+        error: errorMessage,
+      };
+    });
+    builder.addCase(recoverAccount.fulfilled, (state, action) => {
+      const { publicKey } = action.payload || { publicKey: "" };
+
+      return {
+        ...state,
+        error: "",
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
       };
     });
-
     builder.addCase(recoverAccount.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
 
@@ -199,7 +217,6 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
-
     builder.addCase(confirmMnemonicPhrase.rejected, (state, action) => {
       const { applicationState, errorMessage } = action.payload || {
         errorMessage: "",

@@ -1,17 +1,35 @@
 export const METRIC_NAMES = {
-  viewWelcome: "loaded page: welcome",
-  viewAccount: "loaded page: account",
-  viewCreatePassword: "loaded page: create password",
-  viewGrantAccess: "loaded page: grant access",
-  viewLoading: "loaded page: loading",
-  viewMnemonicPhrase: "loaded page: mnemonic phrase",
-  viewMnemonicPhraseConfirmed: "loaded page: mnemonic phrase confirmed",
-  viewRecoverAccount: "loaded page: recover account",
-  viewSignTransaction: "loaded page: sign transaction",
-  viewUnlockAccount: "loaded page: unlock account",
+  viewWelcome: "loaded screen: welcome",
+  viewAccount: "loaded screen: account",
+  viewNewWallet: "loaded screen: new wallet",
+  viewGrantAccess: "loaded screen: grant access",
+  viewLoading: "loaded screen: loading",
+  viewMnemonicPhrase: "loaded screen: mnemonic phrase",
+  viewMnemonicPhraseConfirmed: "loaded screen: new wallet finished",
+  viewRecoverAccount: "loaded screen: recover account",
+  viewSignTransaction: "loaded screen: sign transaction",
+  viewUnlockAccount: "loaded screen: unlock account",
 
-  newWallet: "new wallet: create password: success",
+  newWalletSuccess: "new wallet: create password: success",
+  newWalletReject: "new wallet: create password: error",
+
+  newWalletMnemonicViewPhrase: "new wallet: viewed phrase",
+  newWalletMnemonicDownloadPhrase: "new wallet: downloaded phrase",
+  newWalletMnemonicCopyPhrase: "new wallet: copied phrase",
+
+  newWalletMnemonicConfirmAdd: "new wallet: confirm phrase: added a word",
+  newWalletMnemonicConfirmRemove: "new wallet: confirm phrase: removed a word",
+  newWalletMnemonicConfirmPhrase:
+    "new wallet: confirm phrase: confirmed phrase ",
+  newWalletConfirmMnemonicFail: "new wallet: confirm phrase: error confirming ",
+  newWalletConfirmMnemonicBack: "new wallet: confirm phrase: back to phrase",
+
   confirmPassword: "re-auth: success",
+
+  copyPublickKey: "account screen: copied public key",
+
+  recoverAccountSuccess: "recover account: success",
+  recoverAccountFail: "recover account: error",
 
   sharePublicKey: "share public key: granted",
   rejectPublicKey: "share public key: rejected",

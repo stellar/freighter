@@ -14,7 +14,7 @@ const routeToEventName = {
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
   [ROUTES.unlockAccount]: METRIC_NAMES.viewUnlockAccount,
   [ROUTES.mnemonicPhraseConfirmed]: METRIC_NAMES.viewMnemonicPhraseConfirmed,
-  [ROUTES.createPassword]: METRIC_NAMES.viewCreatePassword,
+  [ROUTES.createPassword]: METRIC_NAMES.viewNewWallet,
   [ROUTES.recoverAccount]: METRIC_NAMES.viewRecoverAccount,
 };
 

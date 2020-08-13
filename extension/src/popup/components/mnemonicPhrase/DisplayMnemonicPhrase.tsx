@@ -6,6 +6,9 @@ import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
 import { COLOR_PALETTE } from "popup/constants/styles";
 
+import { emitMetric } from "helpers/metrics";
+
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { BasicButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
@@ -85,18 +88,34 @@ export const DisplayMnemonicPhrase = ({
       </p>
       <MnemonicDisplayEl isBlurred={isBlurred}>
         {isBlurred ? (
-          <DisplayTooltipEl onClick={() => setIsBlurred(false)}>
+          <DisplayTooltipEl
+            onClick={() => {
+              setIsBlurred(false);
+              emitMetric(METRIC_NAMES.newWalletMnemonicViewPhrase);
+            }}
+          >
             Show backup phrase
           </DisplayTooltipEl>
         ) : null}
         {mnemonicPhrase}
       </MnemonicDisplayEl>
       <DisplayButtonsEl>
-        <ActionButton onClick={downloadPhrase}>
+        <ActionButton
+          onClick={() => {
+            downloadPhrase();
+            emitMetric(METRIC_NAMES.newWalletMnemonicDownloadPhrase);
+          }}
+        >
           Download
           <img src={Download} alt="Download button" />
         </ActionButton>
-        <CopyToClipboard text={mnemonicPhrase} onCopy={() => setIsCopied(true)}>
+        <CopyToClipboard
+          text={mnemonicPhrase}
+          onCopy={() => {
+            setIsCopied(true);
+            emitMetric(METRIC_NAMES.newWalletMnemonicCopyPhrase);
+          }}
+        >
           <ActionButton>
             Copy
             <img src={Copy} alt="copy button" />
