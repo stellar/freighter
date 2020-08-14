@@ -1,15 +1,20 @@
 {
   "name": "@stellar/lyra-api",
-  "main": "build/index.min.js",
-  "types": "build/@stellar/lyra-api/src/index.d.ts",
-  "prettier": "@stellar/prettier-config",
   "version": "1.0.0-alpha.2",
+  "license": "Apache-2.0",
+  "author": "Stellar Development Foundation <hello@stellar.org>",
   "description": "Utility functions to interact with Lyra extension",
   "repository": {
     "url": "git@github.com:stellar/lyra.git",
     "type": "git"
   },
-  "author": "Stellar Development Foundation <hello@stellar.org>",
+  "main": "build/index.min.js",
+  "scripts": {
+    "prepare": "yarn build",
+    "build": "webpack --config webpack.config.js"
+  },
+  "types": "build/@stellar/lyra-api/src/index.d.ts",
+  "prettier": "@stellar/prettier-config",
   "browserslist": {
     "production": [
       "last 3 chrome version",
@@ -20,7 +25,6 @@
       "last 1 firefox version"
     ]
   },
-  "license": "MIT",
   "lint-staged": {
     "src/**/*.ts?(x)": [
       "eslint --fix --max-warnings 0"
@@ -41,9 +45,5 @@
     "typescript": "~3.7.2",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
-  },
-  "scripts": {
-    "prepare": "yarn build",
-    "build": "webpack --config webpack.config.js"
   }
 }

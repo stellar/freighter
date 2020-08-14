@@ -11,17 +11,6 @@
     "deploy": "docusaurus deploy",
     "serve": "docusaurus serve"
   },
-  "dependencies": {
-    "@docusaurus/core": "^2.0.0-alpha.61",
-    "@docusaurus/preset-classic": "^2.0.0-alpha.60",
-    "@mdx-js/react": "^1.5.8",
-    "@stellar/lyra-api": "1.0.0-alpha.2",
-    "clsx": "^1.1.1",
-    "react": "^16.8.4",
-    "react-dom": "^16.8.4",
-    "react-is": "^16.13.1",
-    "styled-components": "^5.0.1"
-  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -33,5 +22,16 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "dependencies": {
+    "@docusaurus/core": "^2.0.0-alpha.61",
+    "@docusaurus/preset-classic": "^2.0.0-alpha.60",
+    "@mdx-js/react": "^1.5.8",
+    "@stellar/lyra-api": "1.0.0-alpha.2",
+    "clsx": "^1.1.1",
+    "react": "^16.8.4",
+    "react-dom": "^16.8.4",
+    "react-is": "^16.13.1",
+    "styled-components": "^5.0.1"
   }
 }

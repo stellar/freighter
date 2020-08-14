@@ -1,8 +1,8 @@
 {
   "name": "extension",
+  "version": "1.0.0-alpha.6",
   "license": "Apache-2.0",
   "prettier": "@stellar/prettier-config",
-  "version": "1.0.0-alpha.6",
   "scripts": {
     "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
     "build": "webpack --config webpack.prod.js",
