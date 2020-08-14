@@ -70,6 +70,37 @@ const commonConfig = {
       filename: `${BUILD_PATH}/index.html`,
     }),
   ],
+  stats: {
+    // minimal
+    // can use `preset: "minimal"` once webpack 5 lands
+    all: false,
+    modules: true,
+    maxModules: 0,
+    errors: true,
+    warnings: true,
+    // our additional options
+    moduleTrace: true,
+    errorDetails: true,
+    hash: true,
+    timings: true,
+  },
+  devServer: {
+    stats: {
+      // minimal
+      // can use `preset: "minimal"` once webpack 5 lands
+      all: false,
+      modules: true,
+      maxModules: 0,
+      errors: true,
+      warnings: true,
+      // our additional options
+      moduleTrace: true,
+      errorDetails: true,
+      assets: true,
+      hash: true,
+      timings: true,
+    },
+  },
 };
 
 module.exports.commonConfig = commonConfig;

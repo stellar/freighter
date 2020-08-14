@@ -12,6 +12,9 @@ const prodConfig = {
       DEVELOPMENT: false,
     }),
   ],
+  performance: {
+    hints: false,
+  },
 };
 
 module.exports = merge(prodConfig, commonConfig);
