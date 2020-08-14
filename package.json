@@ -13,10 +13,11 @@
     "build:lyra-api": "yarn workspace @stellar/lyra-api build",
     "build:docs": "yarn workspace docs build",
     "build:extension": "yarn workspace extension build",
-    "start": "run-p --print-label start:lyra-api start:docs start:extension",
+    "start": "run-p --print-label start:lyra-api start:docs start:extension start:unpacked",
     "start:lyra-api": "yarn workspace @stellar/lyra-api start",
     "start:docs": "yarn workspace docs start",
-    "start:extension": "yarn workspace extension start"
+    "start:extension": "yarn workspace extension start",
+    "start:unpacked": "yarn workspace extension start:unpacked-extension"
   },
   "dependencies": {
     "npm-run-all": "^4.1.5"
