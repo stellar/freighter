@@ -31,21 +31,17 @@ export const loadAccount = async (): Promise<{
   error: string;
 }> => {
   let response = {
-    hasPrivateKey: true,
-    publicKey: "222",
+    hasPrivateKey: false,
+    publicKey: "",
     applicationState: APPLICATION_STATE.APPLICATION_STARTED,
-    error: "",
   };
 
   try {
     response = await sendMessageToBackground({
       type: SERVICE_TYPES.LOAD_ACCOUNT,
     });
-    // throw new Error(response);
   } catch (e) {
-    console.error("console.error: ", e);
-    console.error("console.error detail: ", e.detail);
-    response.error = e.detail;
+    console.error(e);
   }
   return response;
 };
