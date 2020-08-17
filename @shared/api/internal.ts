@@ -28,7 +28,6 @@ export const loadAccount = async (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
   applicationState: APPLICATION_STATE;
-  error: string;
 }> => {
   let response = {
     hasPrivateKey: false,
@@ -137,7 +136,6 @@ export const getAccountBalance = async (
     response = await server.loadAccount(publicKey);
   } catch (e) {
     console.error(e);
-    return e;
   }
   return response.balances.filter(
     // eslint-disable-next-line camelcase
