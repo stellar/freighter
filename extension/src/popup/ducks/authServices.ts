@@ -28,12 +28,11 @@ export const createAccount = createAsyncThunk<
   try {
     res = await createAccountService(password);
   } catch (e) {
-    console.error(e);
+    console.error("Failed when creating an account: ", e.message);
     return thunkApi.rejectWithValue({
-      errorMessage: e,
+      errorMessage: e.message,
     });
   }
-
   return res;
 });
 
@@ -50,9 +49,9 @@ export const recoverAccount = createAsyncThunk<
   try {
     res = await recoverAccountService(password, mnemonicPhrase);
   } catch (e) {
-    console.error(e);
+    console.error("Failed when recovering an account: ", e.message);
     return thunkApi.rejectWithValue({
-      errorMessage: e,
+      errorMessage: e.message,
     });
   }
 
@@ -80,10 +79,10 @@ export const confirmMnemonicPhrase = createAsyncThunk<
     try {
       res = await confirmMnemonicPhraseService(phrase);
     } catch (e) {
-      console.error(e);
+      console.error("Failed when confirming Mnemonic Phrase: ", e.message);
       return thunkApi.rejectWithValue({
         applicationState: res.applicationState,
-        errorMessage: e,
+        errorMessage: e.message,
       });
     }
 
@@ -117,7 +116,10 @@ export const confirmPassword = createAsyncThunk<
   try {
     res = await confirmPasswordService(phrase);
   } catch (e) {
-    console.error(e);
+    console.error("Failed when confirming a password: ", e.message);
+    return thunkApi.rejectWithValue({
+      errorMessage: e.message,
+    });
   }
   if (!res.publicKey) {
     return thunkApi.rejectWithValue({

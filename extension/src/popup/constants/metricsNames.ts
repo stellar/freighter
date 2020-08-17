@@ -24,7 +24,10 @@ export const METRIC_NAMES = {
   newWalletConfirmMnemonicFail: "new wallet: confirm phrase: error confirming ",
   newWalletConfirmMnemonicBack: "new wallet: confirm phrase: back to phrase",
 
-  confirmPassword: "re-auth: success",
+  newWalletFinished: "new wallet finished: closed new wallet flow",
+
+  confirmPasswordSuccess: "re-auth: success",
+  confirmPasswordFail: "re-auth: error",
 
   copyPublickKey: "account screen: copied public key",
 

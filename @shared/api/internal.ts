@@ -28,19 +28,24 @@ export const loadAccount = async (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
   applicationState: APPLICATION_STATE;
+  error: string;
 }> => {
   let response = {
-    hasPrivateKey: false,
-    publicKey: "",
+    hasPrivateKey: true,
+    publicKey: "222",
     applicationState: APPLICATION_STATE.APPLICATION_STARTED,
+    error: "",
   };
 
   try {
     response = await sendMessageToBackground({
       type: SERVICE_TYPES.LOAD_ACCOUNT,
     });
+    // throw new Error(response);
   } catch (e) {
-    console.error(e);
+    console.error("console.error: ", e);
+    console.error("console.error detail: ", e.detail);
+    response.error = e.detail;
   }
   return response;
 };
@@ -136,6 +141,7 @@ export const getAccountBalance = async (
     response = await server.loadAccount(publicKey);
   } catch (e) {
     console.error(e);
+    return e;
   }
   return response.balances.filter(
     // eslint-disable-next-line camelcase
