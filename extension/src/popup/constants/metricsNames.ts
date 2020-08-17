@@ -34,9 +34,9 @@ export const METRIC_NAMES = {
   recoverAccountSuccess: "recover account: success",
   recoverAccountFail: "recover account: error",
 
-  sharePublicKey: "share public key: granted",
-  rejectPublicKey: "share public key: rejected",
+  grantAccessSuccess: "grant access: granted",
+  grantAccessFail: "grant access: rejected",
 
-  signTransaction: "sign transaction: granted",
+  signTransaction: "sign transaction: confirmed",
   rejectTransaction: "sign transaction: rejected",
 };
