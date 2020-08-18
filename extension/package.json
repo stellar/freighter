@@ -92,6 +92,7 @@
     "@stellar/prettier-config": "^1.0.1",
     "@stellar/tsconfig": "^1.0.2",
     "@stellar/wallet-sdk": "^0.1.0-rc.10",
+    "@testing-library/dom": "^7.22.2",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^10.4.8",
     "@testing-library/user-event": "^7.1.2",
