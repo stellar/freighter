@@ -3,24 +3,9 @@ const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
 
-const BUILD_PATH = path.resolve(__dirname, "./build");
+const { DEFAULT_STATS } = require("../@shared/constants/config");
 
-// Fine tune output to reduce noise. The project-wide start command is noisy
-// already, so this aggressively tunes output to only what's necessary.
-const statsSettings = {
-  // minimal
-  // can use `preset: "minimal"` once webpack 5 lands
-  all: false,
-  modules: true,
-  maxModules: 0,
-  errors: true,
-  warnings: true,
-  // our additional options
-  moduleTrace: true,
-  errorDetails: true,
-  hash: true,
-  timings: true,
-};
+const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = {
   node: { global: true, fs: "empty" },
@@ -87,12 +72,9 @@ const commonConfig = {
       filename: `${BUILD_PATH}/index.html`,
     }),
   ],
-  stats: statsSettings,
+  stats: DEFAULT_STATS,
   devServer: {
-    stats: {
-      ...statsSettings,
-      assets: true,
-    },
+    stats: DEFAULT_STATS,
   },
 };
 
