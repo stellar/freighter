@@ -6,7 +6,8 @@ const DEFAULT_STATS = {
   maxModules: 0,
   errors: true,
   warnings: true,
-  // our additional options
+  // We want to keep output narrowly focused when possible because there's a lot
+  // of different watchers started at once.
   moduleTrace: true,
   errorDetails: true,
   assets: true,

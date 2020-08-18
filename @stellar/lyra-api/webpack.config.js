@@ -40,8 +40,6 @@ const config = {
       DEVELOPMENT: false,
     }),
   ],
-  // This module is super simple, so we don't need much information about what
-  // build. Turn most of it off to keep output focused.
   stats: DEFAULT_STATS,
 };
 
