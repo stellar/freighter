@@ -4,82 +4,15 @@
   "license": "Apache-2.0",
   "prettier": "@stellar/prettier-config",
   "scripts": {
-    "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
     "build": "webpack --config webpack.prod.js",
     "start": "webpack-dev-server --config webpack.dev.js",
     "start:unpacked-extension": "yarn build --watch",
     "test": "jest"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "concurrently 'pretty-quick --staged' 'lint-staged'",
-      "post-merge": "yarn install-if-package-changed",
-      "post-checkout": "yarn install-if-package-changed"
-    }
-  },
-  "lint-staged": {
-    "src/**/*.ts?(x)": [
-      "eslint --fix --max-warnings 0"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      "last 3 chrome version",
-      "last 3 firefox version"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version"
-    ]
-  },
   "babel": {
-    "presets": [
-      "@babel/preset-typescript",
-      "@babel/preset-react",
-      [
-        "@babel/preset-env",
-        {
-          "targets": {
-            "node": "current"
-          }
-        }
-      ]
-    ]
-  },
-  "jest": {
-    "collectCoverageFrom": [
-      "src/**/*.{js,jsx,mjs}"
-    ],
-    "setupFiles": [
-      "<rootDir>/config/jest/setupTests.ts"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>/config/jest/extendJest.ts"
-    ],
-    "testEnvironment": "node",
-    "testURL": "http://localhost",
-    "transform": {
-      "^.+\\.(js|jsx|ts|tsx|mjs)$": [
-        "babel-jest"
-      ]
-    },
-    "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
-      "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
-    },
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "json",
-      "node",
-      "mjs",
-      "ts",
-      "tsx"
-    ],
-    "moduleDirectories": [
-      "node_modules",
-      "<rootDir>/src",
-      "<rootDir>/.."
+    "babelRcRoots": [
+      ".",
+      ".."
     ]
   },
   "dependencies": {
@@ -138,13 +71,11 @@
     "history": "^4",
     "html-loader": "^1.0.0",
     "html-webpack-plugin": "^4.0.1",
-    "husky": "^4.2.3",
     "isomorphic-unfetch": "^3.0.0",
     "jest": "^26.3.0",
     "jest-localstorage-mock": "^2.4.3",
     "jsdom": "^16.4.0",
     "jsdom-global": "^3.0.2",
-    "lint-staged": "^10.0.7",
     "lodash": "^4.17.15",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
