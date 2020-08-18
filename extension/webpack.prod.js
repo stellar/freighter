@@ -12,6 +12,8 @@ const prodConfig = {
       DEVELOPMENT: false,
     }),
   ],
+  // This if to fine tune logged output. Since this is an extension, not a
+  // webapp, we don't really care how large the bundle is.
   performance: {
     hints: false,
   },

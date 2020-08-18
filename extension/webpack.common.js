@@ -5,6 +5,23 @@ const path = require("path");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
+// Fine tune output to reduce noise. The project-wide start command is noisy
+// already, so this aggressively tunes output to only what's necessary.
+const statsSettings = {
+  // minimal
+  // can use `preset: "minimal"` once webpack 5 lands
+  all: false,
+  modules: true,
+  maxModules: 0,
+  errors: true,
+  warnings: true,
+  // our additional options
+  moduleTrace: true,
+  errorDetails: true,
+  hash: true,
+  timings: true,
+};
+
 const commonConfig = {
   node: { global: true, fs: "empty" },
   entry: {
@@ -70,35 +87,11 @@ const commonConfig = {
       filename: `${BUILD_PATH}/index.html`,
     }),
   ],
-  stats: {
-    // minimal
-    // can use `preset: "minimal"` once webpack 5 lands
-    all: false,
-    modules: true,
-    maxModules: 0,
-    errors: true,
-    warnings: true,
-    // our additional options
-    moduleTrace: true,
-    errorDetails: true,
-    hash: true,
-    timings: true,
-  },
+  stats: statsSettings,
   devServer: {
     stats: {
-      // minimal
-      // can use `preset: "minimal"` once webpack 5 lands
-      all: false,
-      modules: true,
-      maxModules: 0,
-      errors: true,
-      warnings: true,
-      // our additional options
-      moduleTrace: true,
-      errorDetails: true,
+      ...statsSettings,
       assets: true,
-      hash: true,
-      timings: true,
     },
   },
 };
