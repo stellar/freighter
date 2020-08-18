@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack --config webpack.prod.js",
     "start": "webpack-dev-server --config webpack.dev.js",
-    "start:unpacked-extension": "yarn build --watch",
+    "start:unpacked-extension": "yarn build --watch --info-verbosity verbose",
     "test": "jest"
   },
   "babel": {
