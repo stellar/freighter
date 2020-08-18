@@ -11,8 +11,8 @@
   "main": "build/index.min.js",
   "scripts": {
     "prepare": "yarn build",
-    "build": "webpack --config webpack.config.js",
-    "start": "webpack --config webpack.config.js --watch"
+    "build": "webpack --config webpack.config.js --mode production",
+    "start": "webpack --config webpack.config.js --watch --mode development"
   },
   "types": "build/@stellar/lyra-api/src/index.d.ts",
   "prettier": "@stellar/prettier-config",

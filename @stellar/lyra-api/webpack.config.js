@@ -6,7 +6,6 @@ const { DEFAULT_STATS } = require("../../@shared/constants/config");
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const config = {
-  mode: "production",
   entry: {
     index: path.resolve(__dirname, "./src/index.ts"),
   },
