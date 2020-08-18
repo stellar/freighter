@@ -38,10 +38,12 @@
     "lint-staged": "^10.0.7",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
-    "typescript": "~3.7.2"
+    "typescript": "~3.7.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
   },
   "scripts": {
     "prepare": "yarn build",
-    "build": "../../node_modules/webpack/bin/webpack.js --config webpack.config.js"
+    "build": "webpack --config webpack.config.js"
   }
 }

@@ -6,7 +6,7 @@
     "buildDependencies": "yarn workspace @stellar/lyra-api build",
     "docusaurus": "docusaurus",
     "start": "yarn buildDependencies && docusaurus start",
-    "build": "yarn buildDependencies && docusaurus build",
+    "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "serve": "docusaurus serve"
@@ -19,6 +19,7 @@
     "clsx": "^1.1.1",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
+    "react-is": "^16.13.1",
     "styled-components": "^5.0.1"
   },
   "browserslist": {
