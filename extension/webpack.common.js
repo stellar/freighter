@@ -17,6 +17,9 @@ const commonConfig = {
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
     contentScript: path.resolve(__dirname, "./public/contentScript.ts"),
   },
+  watchOptions: {
+    ignored: ["node_modules/**/*", "build/**/*"],
+  },
   output: {
     path: BUILD_PATH,
     filename: "[name].min.js",
