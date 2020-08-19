@@ -12,7 +12,7 @@ import { POPUP_WIDTH } from "constants/dimensions";
 
 import { BasicButton } from "popup/basics/Buttons";
 
-import { history } from "popup/App";
+import { history } from "popup/constants/history";
 import { applicationStateSelector, signOut } from "popup/ducks/authServices";
 import { Header } from "popup/components/Header";
 

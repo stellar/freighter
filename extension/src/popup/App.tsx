@@ -1,4 +1,3 @@
-import { createHashHistory } from "history";
 import React from "react";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
@@ -48,8 +47,6 @@ const store = configureStore({
   reducer: rootReducer,
   middleware: [metricsMiddleware<AppState>(), ...getDefaultMiddleware()],
 });
-
-export const history = createHashHistory();
 
 export function App() {
   return (

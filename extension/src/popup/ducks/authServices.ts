@@ -4,7 +4,7 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { history } from "popup/App";
+import { history } from "popup/constants/history";
 import {
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   createAccount as createAccountService,

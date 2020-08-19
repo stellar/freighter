@@ -20,7 +20,7 @@ import {
   TextField,
 } from "popup/basics/Forms";
 
-import { history } from "popup/App";
+import { history } from "popup/constants/history";
 import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 
 const UnlockAccountEl = styled.div`
