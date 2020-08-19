@@ -6,6 +6,6 @@ export const ROUTES = {
   mnemonicPhrase: "/mnemonic-phrase",
   unlockAccount: "/unlock-account",
   mnemonicPhraseConfirmed: "/mnemonic-phrase-confirmed",
-  createPassword: "/create-password",
+  accountCreator: "/account-creator",
   recoverAccount: "/recover-account",
 };

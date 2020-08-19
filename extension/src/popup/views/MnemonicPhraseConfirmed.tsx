@@ -64,7 +64,7 @@ export const MnemonicPhraseConfirmed = () => (
       </p>
       <FinishButtonEl
         onClick={() => {
-          emitMetric(METRIC_NAMES.newWalletFinished);
+          emitMetric(METRIC_NAMES.accountCreatorFinished);
           window.close();
         }}
       >

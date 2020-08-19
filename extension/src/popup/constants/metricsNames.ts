@@ -1,30 +1,31 @@
 export const METRIC_NAMES = {
   viewWelcome: "loaded screen: welcome",
   viewAccount: "loaded screen: account",
-  viewNewWallet: "loaded screen: new wallet",
+  viewAccountCreator: "loaded screen: account creator",
   viewGrantAccess: "loaded screen: grant access",
   viewLoading: "loaded screen: loading",
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
-  viewMnemonicPhraseConfirmed: "loaded screen: new wallet finished",
+  viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
   viewRecoverAccount: "loaded screen: recover account",
   viewSignTransaction: "loaded screen: sign transaction",
   viewUnlockAccount: "loaded screen: unlock account",
 
-  newWalletSuccess: "new wallet: create password: success",
-  newWalletReject: "new wallet: create password: error",
+  accountCreatorSuccess: "account creator: create password: success",
+  accountCreatorReject: "account creator: create password: error",
 
-  newWalletMnemonicViewPhrase: "new wallet: viewed phrase",
-  newWalletMnemonicDownloadPhrase: "new wallet: downloaded phrase",
-  newWalletMnemonicCopyPhrase: "new wallet: copied phrase",
+  accountCreatorMnemonicViewPhrase: "account creator: viewed phrase",
+  accountCreatorMnemonicDownloadPhrase: "account creator: downloaded phrase",
+  accountCreatorMnemonicCopyPhrase: "account creator: copied phrase",
 
-  newWalletMnemonicConfirmAdd: "new wallet: confirm phrase: added a word",
-  newWalletMnemonicConfirmRemove: "new wallet: confirm phrase: removed a word",
-  newWalletMnemonicConfirmPhrase:
-    "new wallet: confirm phrase: confirmed phrase ",
-  newWalletConfirmMnemonicFail: "new wallet: confirm phrase: error confirming ",
-  newWalletConfirmMnemonicBack: "new wallet: confirm phrase: back to phrase",
+  accountCreatorMnemonicConfirmPhrase:
+    "account creator: confirm phrase: confirmed phrase",
+  accountCreatorConfirmMnemonicFail:
+    "account creator: confirm phrase: error confirming",
+  accountCreatorConfirmMnemonicBack:
+    "account creator: confirm phrase: back to phrase",
 
-  newWalletFinished: "new wallet finished: closed new wallet flow",
+  accountCreatorFinished:
+    "account creator finished: closed account creator flow",
 
   confirmPasswordSuccess: "re-auth: success",
   confirmPasswordFail: "re-auth: error",

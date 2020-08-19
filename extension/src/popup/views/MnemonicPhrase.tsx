@@ -23,7 +23,7 @@ export const MnemonicPhrase = () => {
         icon={EMOJI.spy}
         goBack={() => {
           setReadyToConfirm(false);
-          emitMetric(METRIC_NAMES.newWalletConfirmMnemonicBack);
+          emitMetric(METRIC_NAMES.accountCreatorConfirmMnemonicBack);
         }}
       >
         <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />

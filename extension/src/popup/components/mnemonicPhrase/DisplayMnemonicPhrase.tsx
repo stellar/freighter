@@ -91,7 +91,7 @@ export const DisplayMnemonicPhrase = ({
           <DisplayTooltipEl
             onClick={() => {
               setIsBlurred(false);
-              emitMetric(METRIC_NAMES.newWalletMnemonicViewPhrase);
+              emitMetric(METRIC_NAMES.accountCreatorMnemonicViewPhrase);
             }}
           >
             Show backup phrase
@@ -103,7 +103,7 @@ export const DisplayMnemonicPhrase = ({
         <ActionButton
           onClick={() => {
             downloadPhrase();
-            emitMetric(METRIC_NAMES.newWalletMnemonicDownloadPhrase);
+            emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
           }}
         >
           Download
@@ -113,7 +113,7 @@ export const DisplayMnemonicPhrase = ({
           text={mnemonicPhrase}
           onCopy={() => {
             setIsCopied(true);
-            emitMetric(METRIC_NAMES.newWalletMnemonicCopyPhrase);
+            emitMetric(METRIC_NAMES.accountCreatorMnemonicCopyPhrase);
           }}
         >
           <ActionButton>

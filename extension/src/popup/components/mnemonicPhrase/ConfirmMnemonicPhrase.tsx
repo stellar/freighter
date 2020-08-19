@@ -10,9 +10,6 @@ import {
 
 import CloseIcon from "popup/assets/icon-close.svg";
 
-import { emitMetric } from "helpers/metrics";
-
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 import {
@@ -106,7 +103,6 @@ export const ConfirmMnemonicPhrase = ({
         onChange={(e) => {
           handleChange(e);
           updatePhrase(e.target);
-          emitMetric(METRIC_NAMES.newWalletMnemonicConfirmAdd);
         }}
         wordKey={wordKey}
         word={convertToWord(wordKey)}
@@ -144,10 +140,7 @@ export const ConfirmMnemonicPhrase = ({
                 {selectedWords.length ? (
                   <ClearButtonEl
                     type="button"
-                    onClick={() => {
-                      removeLastWord(values, setValues);
-                      emitMetric(METRIC_NAMES.newWalletMnemonicConfirmRemove);
-                    }}
+                    onClick={() => removeLastWord(values, setValues)}
                   >
                     <img src={CloseIcon} alt="clear icon" />
                   </ClearButtonEl>

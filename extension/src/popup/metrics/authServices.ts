@@ -11,12 +11,12 @@ import {
 import { AppState } from "popup/App";
 
 registerHandler<AppState>(createAccount.fulfilled, () => {
-  emitMetric(METRIC_NAMES.newWalletSuccess);
+  emitMetric(METRIC_NAMES.accountCreatorSuccess);
 });
 registerHandler<AppState>(createAccount.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
-  emitMetric(METRIC_NAMES.newWalletReject, {
+  emitMetric(METRIC_NAMES.accountCreatorReject, {
     error_type: errorMessage,
   });
 });
@@ -33,12 +33,12 @@ registerHandler<AppState>(confirmPassword.rejected, (_state, action) => {
 });
 
 registerHandler<AppState>(confirmMnemonicPhrase.fulfilled, () => {
-  emitMetric(METRIC_NAMES.newWalletMnemonicConfirmPhrase);
+  emitMetric(METRIC_NAMES.accountCreatorMnemonicConfirmPhrase);
 });
 registerHandler<AppState>(confirmMnemonicPhrase.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
-  emitMetric(METRIC_NAMES.newWalletConfirmMnemonicFail, {
+  emitMetric(METRIC_NAMES.accountCreatorConfirmMnemonicFail, {
     error_type: errorMessage,
   });
 });
