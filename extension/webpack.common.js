@@ -77,7 +77,7 @@ const commonConfig = {
   ],
   stats: DEFAULT_STATS,
   devServer: {
-    stats: DEFAULT_STATS,
+    stats: "minimal",
   },
 };
 
