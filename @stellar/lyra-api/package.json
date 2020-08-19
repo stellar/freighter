@@ -12,8 +12,7 @@
   "scripts": {
     "prepare": "yarn build",
     "build": "webpack --config webpack.config.js --mode production",
-    "start": "webpack --config webpack.config.js --watch --mode development",
-    "test": "jest `pwd`/src"
+    "start": "webpack --config webpack.config.js --watch --mode development"
   },
   "types": "build/@stellar/lyra-api/src/index.d.ts",
   "devDependencies": {
@@ -32,7 +31,5 @@
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
   },
-  "dependencies": {
-    "jest": "^26.4.0"
-  }
+  "dependencies": {}
 }
