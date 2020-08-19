@@ -12,25 +12,10 @@
   "scripts": {
     "prepare": "yarn build",
     "build": "webpack --config webpack.config.js --mode production",
-    "start": "webpack --config webpack.config.js --watch --mode development"
+    "start": "webpack --config webpack.config.js --watch --mode development",
+    "test": "jest `pwd`/src"
   },
   "types": "build/@stellar/lyra-api/src/index.d.ts",
-  "prettier": "@stellar/prettier-config",
-  "browserslist": {
-    "production": [
-      "last 3 chrome version",
-      "last 3 firefox version"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version"
-    ]
-  },
-  "lint-staged": {
-    "src/**/*.ts?(x)": [
-      "eslint --fix --max-warnings 0"
-    ]
-  },
   "devDependencies": {
     "@stellar/eslint-config": "^1.0.3",
     "@stellar/prettier-config": "^1.0.1",
@@ -46,5 +31,8 @@
     "typescript": "~3.7.2",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
+  },
+  "dependencies": {
+    "jest": "^26.4.0"
   }
 }
