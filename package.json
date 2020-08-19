@@ -20,9 +20,12 @@
     "start:extension": "yarn workspace extension start",
     "start:unpacked": "yarn workspace extension start:unpacked-extension",
     "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
-    "test": "run-p test:lyra-api test:extension",
-    "test:lyra-api": "yarn workspace @stellar/lyra-api test",
-    "test:extension": "yarn workspace extension test"
+    "test:ci": "run-p test:ci:lyra-api test:ci:extension",
+    "test:ci:lyra-api": "yarn workspace @stellar/lyra-api test -ci",
+    "test:ci:extension": "yarn workspace extension test -ci",
+    "test": "run-p --print-label test:lyra-api test:extension",
+    "test:lyra-api": "yarn workspace @stellar/lyra-api test -o --watch",
+    "test:extension": "yarn workspace extension test -o --watch"
   },
   "husky": {
     "hooks": {
