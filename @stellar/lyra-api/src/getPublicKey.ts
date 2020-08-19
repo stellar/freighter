@@ -1,4 +1,4 @@
-import { requestPublicKey } from "@sharedAlias/api/external";
+import { requestPublicKey } from "@shared/api/external";
 
 export const getPublicKey = async () => {
   let response = { publicKey: "", error: "" };

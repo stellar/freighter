@@ -7,7 +7,7 @@
     "declarationDir": "build/",
     "outDir": "build/",
     "paths": {
-      "@sharedAlias/*": ["../../../@shared/*"]
+      "@shared/*": ["../../../@shared/*"]
     }
   },
   "include": ["src"],
