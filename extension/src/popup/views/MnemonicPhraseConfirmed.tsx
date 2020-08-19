@@ -1,6 +1,9 @@
 import React from "react";
 import styled from "styled-components";
 
+import { emitMetric } from "helpers/metrics";
+
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { HEADER_HEIGHT } from "constants/dimensions";
 
@@ -61,6 +64,7 @@ export const MnemonicPhraseConfirmed = () => (
       </p>
       <FinishButtonEl
         onClick={() => {
+          emitMetric(METRIC_NAMES.accountCreatorFinished);
           window.close();
         }}
       >

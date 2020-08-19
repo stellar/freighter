@@ -27,7 +27,7 @@ const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding-left: 1.55rem;
 `;
 
-export const CreatePassword = () => {
+export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
   const dispatch = useDispatch();
 
@@ -47,7 +47,7 @@ export const CreatePassword = () => {
     await dispatch(createAccount(values.password));
   };
 
-  const CreatePasswordSchema = YupObject().shape({
+  const AccountCreatorSchema = YupObject().shape({
     password: passwordValidator,
     confirmPassword: confirmPasswordValidator,
     termsOfUse: termsofUseValidator,
@@ -69,7 +69,7 @@ export const CreatePassword = () => {
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
-        validationSchema={CreatePasswordSchema}
+        validationSchema={AccountCreatorSchema}
       >
         {({ isSubmitting, isValid }) => (
           <Form>

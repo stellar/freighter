@@ -1,21 +1,43 @@
 export const METRIC_NAMES = {
-  viewWelcome: "loaded page: welcome",
-  viewAccount: "loaded page: account",
-  viewCreatePassword: "loaded page: create password",
-  viewGrantAccess: "loaded page: grant access",
-  viewLoading: "loaded page: loading",
-  viewMnemonicPhrase: "loaded page: mnemonic phrase",
-  viewMnemonicPhraseConfirmed: "loaded page: mnemonic phrase confirmed",
-  viewRecoverAccount: "loaded page: recover account",
-  viewSignTransaction: "loaded page: sign transaction",
-  viewUnlockAccount: "loaded page: unlock account",
+  viewWelcome: "loaded screen: welcome",
+  viewAccount: "loaded screen: account",
+  viewAccountCreator: "loaded screen: account creator",
+  viewGrantAccess: "loaded screen: grant access",
+  viewLoading: "loaded screen: loading",
+  viewMnemonicPhrase: "loaded screen: mnemonic phrase",
+  viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
+  viewRecoverAccount: "loaded screen: recover account",
+  viewSignTransaction: "loaded screen: sign transaction",
+  viewUnlockAccount: "loaded screen: unlock account",
 
-  newWallet: "new wallet: create password: success",
-  confirmPassword: "re-auth: success",
+  accountCreatorSuccess: "account creator: create password: success",
+  accountCreatorReject: "account creator: create password: error",
 
-  sharePublicKey: "share public key: granted",
-  rejectPublicKey: "share public key: rejected",
+  accountCreatorMnemonicViewPhrase: "account creator: viewed phrase",
+  accountCreatorMnemonicDownloadPhrase: "account creator: downloaded phrase",
+  accountCreatorMnemonicCopyPhrase: "account creator: copied phrase",
 
-  signTransaction: "sign transaction: granted",
+  accountCreatorMnemonicConfirmPhrase:
+    "account creator: confirm phrase: confirmed phrase",
+  accountCreatorConfirmMnemonicFail:
+    "account creator: confirm phrase: error confirming",
+  accountCreatorConfirmMnemonicBack:
+    "account creator: confirm phrase: back to phrase",
+
+  accountCreatorFinished:
+    "account creator finished: closed account creator flow",
+
+  confirmPasswordSuccess: "re-auth: success",
+  confirmPasswordFail: "re-auth: error",
+
+  copyPublickKey: "account screen: copied public key",
+
+  recoverAccountSuccess: "recover account: success",
+  recoverAccountFail: "recover account: error",
+
+  grantAccessSuccess: "grant access: granted",
+  grantAccessFail: "grant access: rejected",
+
+  signTransaction: "sign transaction: confirmed",
   rejectTransaction: "sign transaction: rejected",
 };

@@ -11,10 +11,10 @@ import {
 import { AppState } from "popup/App";
 
 registerHandler<AppState>(grantAccess.fulfilled, () => {
-  emitMetric(METRIC_NAMES.sharePublicKey);
+  emitMetric(METRIC_NAMES.grantAccessSuccess);
 });
 registerHandler<AppState>(rejectAccess.fulfilled, () => {
-  emitMetric(METRIC_NAMES.rejectPublicKey);
+  emitMetric(METRIC_NAMES.grantAccessFail);
 });
 registerHandler<AppState>(signTransaction.fulfilled, () => {
   emitMetric(METRIC_NAMES.signTransaction);
