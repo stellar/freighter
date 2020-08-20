@@ -23,6 +23,4 @@ jobs:
         with:
           args: zip -qq -r ./extension/build/build.zip ./extension/build
       - name: Report build URL
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+        run: echo ${{ github.head_ref }}
