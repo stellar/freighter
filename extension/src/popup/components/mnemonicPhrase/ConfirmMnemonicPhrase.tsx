@@ -158,6 +158,7 @@ export const ConfirmMnemonicPhrase = ({
               </WordBubbleWrapperEl>
               <FormRow>
                 <SubmitButton
+                  data-testid="confirm"
                   isSubmitting={isSubmitting}
                   isValid={!!displaySelectedWords().length}
                 >

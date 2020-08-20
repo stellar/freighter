@@ -78,7 +78,7 @@ export const DisplayMnemonicPhrase = ({
     el.click();
   };
   return (
-    <HalfScreen>
+    <HalfScreen data-testid="display-mnemonic-phrase">
       <p>
         Your secret backup phrase makes it easy to back up and restore your
         account.
@@ -89,6 +89,7 @@ export const DisplayMnemonicPhrase = ({
       <MnemonicDisplayEl isBlurred={isBlurred}>
         {isBlurred ? (
           <DisplayTooltipEl
+            data-testid="show"
             onClick={() => {
               setIsBlurred(false);
               emitMetric(METRIC_NAMES.accountCreatorMnemonicViewPhrase);
@@ -101,6 +102,7 @@ export const DisplayMnemonicPhrase = ({
       </MnemonicDisplayEl>
       <DisplayButtonsEl>
         <ActionButton
+          data-testid="download"
           onClick={() => {
             downloadPhrase();
             emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
@@ -110,6 +112,7 @@ export const DisplayMnemonicPhrase = ({
           <img src={Download} alt="Download button" />
         </ActionButton>
         <CopyToClipboard
+          data-testid="copy"
           text={mnemonicPhrase}
           onCopy={() => {
             setIsCopied(true);
@@ -130,6 +133,7 @@ export const DisplayMnemonicPhrase = ({
         </CopiedToastWrapperEl>
       </DisplayButtonsEl>
       <SubmitButton
+        data-testid="confirm"
         onClick={() => {
           setReadyToConfirm(true);
         }}
