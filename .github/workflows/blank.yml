@@ -26,12 +26,12 @@ jobs:
       - name: Build extension
         runs-on: ubuntu-latest
         steps:
-          - uses: borales/actions-yarn@v2.0.0
+          - uses: actions/checkout@v2
+          - uses: actions/setup-node@v1
             with:
-              cmd: install # will run `yarn install` command
-          - uses: borales/actions-yarn@v2.0.0
-            with:
-              cmd: workspace extension build # will run `yarn workspace extension build` command
+              node-version: "12"
+          - run: yarn install
+          - run: yarn workspace extension build
       - name: Zip extension build
         runs-on: ubuntu-latest
         steps:
@@ -39,5 +39,6 @@ jobs:
             with:
               args: zip -qq -r ./extension/build/build.zip ./extension/build
       - name: Report build URL
-              run: |
-                echo ${{ github.head_ref }}extension/build/build.zip
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
