@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: "12"
-        run: yarn install && yarn build:extension
+      - run: yarn install && yarn build:extension
       # - name: Zip extension build
       #   runs-on: ubuntu-latest
       #   uses: montudor/action-zip@v0.1.0
