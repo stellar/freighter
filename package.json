@@ -1,4 +1,5 @@
 {
+  "license": "Apache-2.0",
   "private": true,
   "workspaces": [
     "@shared/api",
@@ -6,5 +7,61 @@
     "docs",
     "extension",
     "@stellar/lyra-api"
-  ]
+  ],
+  "scripts": {
+    "build": "run-p --print-label build:lyra-api build:docs build:extension",
+    "build:netlify": "run-s build:lyra-api build:docs",
+    "build:lyra-api": "yarn workspace @stellar/lyra-api build",
+    "build:docs": "yarn workspace docs build",
+    "build:extension": "yarn workspace extension build",
+    "start": "run-p --print-label start:lyra-api start:docs start:extension start:unpacked",
+    "start:lyra-api": "yarn workspace @stellar/lyra-api start",
+    "start:docs": "yarn workspace docs start",
+    "start:extension": "yarn workspace extension start",
+    "start:unpacked": "yarn workspace extension start:unpacked-extension",
+    "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
+    "test:ci": "jest --ci",
+    "test": "jest -o --watch"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "concurrently 'pretty-quick --staged' 'lint-staged'",
+      "post-merge": "yarn install-if-package-changed",
+      "post-checkout": "yarn install-if-package-changed"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.ts?(x)": [
+      "eslint --fix --max-warnings 0"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      "last 3 chrome version",
+      "last 3 firefox version"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version"
+    ]
+  },
+  "dependencies": {
+    "@babel/core": "^7.11.1",
+    "@babel/preset-env": "^7.11.0",
+    "@babel/preset-react": "^7.10.4",
+    "@babel/preset-typescript": "^7.10.4",
+    "@testing-library/dom": "^7.22.2",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@types/jest": "^24.0.0",
+    "babel-jest": "^26.3.0",
+    "babel-plugin-dynamic-import-node": "^2.3.3",
+    "husky": "^4.2.5",
+    "isomorphic-unfetch": "^3.0.0",
+    "jest": "^26.3.0",
+    "jest-localstorage-mock": "^2.4.3",
+    "jsdom": "^16.4.0",
+    "jsdom-global": "^3.0.2",
+    "lint-staged": "^10.2.11",
+    "npm-run-all": "^4.1.5"
+  }
 }

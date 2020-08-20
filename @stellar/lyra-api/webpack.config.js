@@ -1,11 +1,11 @@
 const webpack = require("webpack");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
+const { DEFAULT_STATS } = require("../../@shared/constants/config");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const config = {
-  mode: "production",
   entry: {
     index: path.resolve(__dirname, "./src/index.ts"),
   },
@@ -40,6 +40,7 @@ const config = {
       DEVELOPMENT: false,
     }),
   ],
+  stats: DEFAULT_STATS,
 };
 
 module.exports = config;
