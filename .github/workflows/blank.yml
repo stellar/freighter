@@ -23,4 +23,4 @@ jobs:
       #   with:
       #     args: zip -qq -r ./extension/build/build.zip ./extension/build
       - name: Report build URL
-        run: echo ${{ github.repository }} ${{ github.sha }}
+        run: echo ${{ github.repository }} ${{ GITHUB_SHA }}
