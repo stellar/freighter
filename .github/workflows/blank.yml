@@ -13,14 +13,14 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - name: Build extension
-        uses: actions/setup-node@v1
-        with:
-          node-version: "12"
-      - run: yarn install && yarn build:extension
-      - name: Zip extension build
-        uses: montudor/action-zip@v0.1.0
-        with:
-          args: zip -qq -r ./extension/build/build.zip ./extension/build
+      # - name: Build extension
+      #   uses: actions/setup-node@v1
+      #   with:
+      #     node-version: "12"
+      # - run: yarn install && yarn build:extension
+      # - name: Zip extension build
+      #   uses: montudor/action-zip@v0.1.0
+      #   with:
+      #     args: zip -qq -r ./extension/build/build.zip ./extension/build
       - name: Report build URL
-        run: echo ${{ github.head_ref }}
+        run: echo ${{ github }}
