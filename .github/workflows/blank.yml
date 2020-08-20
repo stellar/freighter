@@ -38,6 +38,6 @@ jobs:
           - uses: montudor/action-zip@v0.1.0
             with:
               args: zip -qq -r ./extension/build/build.zip ./extension/build
-      -name: Report build URL
+      - name: Report build URL
               run: |
                 echo ${{ github.head_ref }}extension/build/build.zip
