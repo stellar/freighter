@@ -1,4 +1,5 @@
 module.exports = {
+  plugins: ["dynamic-import-node"],
   presets: [
     "@babel/preset-typescript",
     "@babel/preset-react",
@@ -6,9 +7,9 @@ module.exports = {
       "@babel/preset-env",
       {
         targets: {
-          node: "current"
-        }
-      }
-    ]
-  ]
+          node: "current",
+        },
+      },
+    ],
+  ],
 };
