@@ -13,8 +13,7 @@ import { reducer as auth } from "popup/ducks/authServices";
 import { ROUTES } from "popup/constants/routes";
 
 import { MnemonicPhrase } from "../MnemonicPhrase";
-
-jest.mock("popup/metrics/authServices");
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 const MNEMONIC = "dummy mnemonic";
 
 const rootReducer = combineReducers({
@@ -32,6 +31,9 @@ const Wrapper: React.FunctionComponent<any> = ({ children, state }) => (
     <Provider store={makeDummyStore(state)}>{children}</Provider>
   </MemoryRouter>
 );
+
+jest.mock("popup/helpers/download");
+jest.mock("helpers/metrics");
 jest.mock("popup/helpers/useMnemonicPhrase", () => ({
   useMnemonicPhrase: () => "dummy mnemonic",
 }));
@@ -73,9 +75,28 @@ describe("MnemonicPhrase", () => {
           <MnemonicPhrase />
         </Wrapper>,
       );
+
+      const { emitMetric } = jest.requireMock("helpers/metrics");
+
       // Reveal mnemonic
       fireEvent.click(screen.getByTestId("show"));
+      expect(emitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.accountCreatorMnemonicViewPhrase,
+      );
       await waitFor(() => screen.getByText(MNEMONIC));
+
+      // Copy
+      fireEvent.click(screen.getByTestId("copy"));
+      expect(emitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.accountCreatorMnemonicCopyPhrase,
+      );
+      // Download
+      fireEvent.click(screen.getByTestId("download"));
+      expect(emitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.accountCreatorMnemonicDownloadPhrase,
+      );
+
+      // Confirm mnemonic
       await act(async () => {
         fireEvent.click(screen.getByTestId("confirm"));
         await waitFor(() => screen.getByText(MNEMONIC));
