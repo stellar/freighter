@@ -1,15 +1,19 @@
 import React, { useState } from "react";
+import { Redirect } from "react-router-dom";
 import styled from "styled-components";
 import { Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   confirmMnemonicPhrase,
   authErrorSelector,
+  applicationStateSelector,
 } from "popup/ducks/authServices";
 
 import CloseIcon from "popup/assets/icon-close.svg";
 
+import { ROUTES } from "popup/constants/routes";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 import {
@@ -82,6 +86,7 @@ export const ConfirmMnemonicPhrase = ({
   );
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const authError = useSelector(authErrorSelector);
+  const applicationState = useSelector(applicationStateSelector);
 
   const updatePhrase = (target: HTMLInputElement) => {
     if (target.checked) {
@@ -95,19 +100,6 @@ export const ConfirmMnemonicPhrase = ({
   };
 
   const wordStateArr: [string, boolean][] = Object.entries(initialWordState);
-
-  const wordBubbles = (handleChange: (e: React.FormEvent) => void) =>
-    wordStateArr.map(([wordKey]) => (
-      <CheckButton
-        key={wordKey}
-        onChange={(e) => {
-          handleChange(e);
-          updatePhrase(e.target);
-        }}
-        wordKey={wordKey}
-        word={convertToWord(wordKey)}
-      />
-    ));
 
   interface Values {
     [x: string]: boolean;
@@ -129,6 +121,10 @@ export const ConfirmMnemonicPhrase = ({
   const displaySelectedWords = () =>
     selectedWords.map((word) => convertToWord(word)).join(" ");
 
+  if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
+    return <Redirect to={ROUTES.mnemonicPhraseConfirmed} />;
+  }
+
   return (
     <>
       <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
@@ -148,7 +144,17 @@ export const ConfirmMnemonicPhrase = ({
               </ConfirmInputEl>
               <ApiErrorMessage error={authError}></ApiErrorMessage>
               <WordBubbleWrapperEl>
-                {wordBubbles(handleChange)}
+                {wordStateArr.map(([wordKey]) => (
+                  <CheckButton
+                    key={wordKey}
+                    onChange={(e) => {
+                      handleChange(e);
+                      updatePhrase(e.target);
+                    }}
+                    wordKey={wordKey}
+                    word={convertToWord(wordKey)}
+                  />
+                ))}
               </WordBubbleWrapperEl>
               <FormRow>
                 <SubmitButton

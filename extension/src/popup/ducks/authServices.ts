@@ -4,7 +4,6 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { history } from "popup/constants/history";
 import {
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   createAccount as createAccountService,
@@ -87,7 +86,10 @@ export const confirmMnemonicPhrase = createAsyncThunk<
     }
 
     if (res.isCorrectPhrase) {
-      history.push("/mnemonic-phrase-confirmed");
+      res = {
+        isCorrectPhrase: true,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      };
     } else {
       return thunkApi.rejectWithValue({
         applicationState: res.applicationState,
