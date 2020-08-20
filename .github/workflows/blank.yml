@@ -18,11 +18,11 @@ jobs:
         with:
           node-version: "12"
         run: yarn install && yarn build:extension
-      - name: Zip extension build
-        runs-on: ubuntu-latest
-        uses: montudor/action-zip@v0.1.0
-        with:
-          args: zip -qq -r ./extension/build/build.zip ./extension/build
+      # - name: Zip extension build
+      #   runs-on: ubuntu-latest
+      #   uses: montudor/action-zip@v0.1.0
+      #   with:
+      #     args: zip -qq -r ./extension/build/build.zip ./extension/build
       # - name: Report build URL
       #   run: |
       #     echo Add other actions to build,
