@@ -10,12 +10,12 @@ from npm and then integrate with Lyra using dev-friendly methods like
 Before this can be imported in another project in this monorepo, run
 `yarn build` in this directory to create the built package.
 
-## `@sharedAlis` import
+## `@shared` import
 
 Because this package needs to be packaged and published, it cannot have any
-dependencides that are not on the npm registry. Therefore, instead of using Yarn
+dependencies that are not on the npm registry. Therefore, instead of using Yarn
 to import the `@shared` workspace via symlinked dependency like in other repos,
-all references to `@shared` must be relative paths.
+`@shared` files are loaded as local files
 
-tsconfig.json rewrites `@sharedAlis` to a relative path to `@shared` folders to
+tsconfig.json rewrites `@shared` to a relative path to `@shared` folders to
 prevent devs from manually having to write out a relative path.

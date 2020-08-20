@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import shuffle from "lodash/shuffle";
 
-import { EMOJI } from "popup/constants/emoji";
-
+import { emitMetric } from "helpers/metrics";
 import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
+
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { EMOJI } from "popup/constants/emoji";
 
 import { Onboarding } from "popup/components/Onboarding";
 import { ConfirmMnemonicPhrase } from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
@@ -19,7 +21,10 @@ export const MnemonicPhrase = () => {
       <Onboarding
         header="Confirm your secret phrase"
         icon={EMOJI.spy}
-        goBack={() => setReadyToConfirm(false)}
+        goBack={() => {
+          setReadyToConfirm(false);
+          emitMetric(METRIC_NAMES.accountCreatorConfirmMnemonicBack);
+        }}
       >
         <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />
       </Onboarding>

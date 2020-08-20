@@ -23,7 +23,7 @@ import {
 import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
-import { CreatePassword } from "popup/views/CreatePassword";
+import { AccountCreator } from "popup/views/AccountCreator";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { MnemonicPhraseConfirmed } from "popup/views/MnemonicPhraseConfirmed";
@@ -162,8 +162,8 @@ export const Router = () => {
         <Route path={ROUTES.mnemonicPhraseConfirmed}>
           <MnemonicPhraseConfirmed />
         </Route>
-        <Route path={ROUTES.createPassword}>
-          <CreatePassword />
+        <Route path={ROUTES.accountCreator}>
+          <AccountCreator />
         </Route>
         <Route path={ROUTES.recoverAccount}>
           <RecoverAccount />

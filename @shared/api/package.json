@@ -2,6 +2,7 @@
   "name": "@shared/api",
   "prettier": "@stellar/prettier-config",
   "version": "1.0.0",
+  "private": true,
   "dependencies": {
     "prettier": "^2.0.5",
     "stellar-sdk": "5.0.1",

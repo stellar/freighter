@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
+
 import {
   confirmMnemonicPhrase,
   authErrorSelector,
 } from "popup/ducks/authServices";
-import { HalfScreen } from "popup/components/Onboarding";
+
+import CloseIcon from "popup/assets/icon-close.svg";
+
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 import {
@@ -16,8 +19,7 @@ import {
   FormRow,
 } from "popup/basics/Forms";
 
-import CloseIcon from "popup/assets/icon-close.svg";
-
+import { HalfScreen } from "popup/components/Onboarding";
 import { CheckButton } from "./CheckButton";
 
 const ConfirmInputEl = styled.div`

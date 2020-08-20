@@ -1,31 +1,20 @@
 {
   "name": "@stellar/lyra-api",
-  "main": "build/index.min.js",
-  "types": "build/@stellar/lyra-api/src/index.d.ts",
-  "prettier": "@stellar/prettier-config",
   "version": "1.0.0-alpha.2",
+  "license": "Apache-2.0",
+  "author": "Stellar Development Foundation <hello@stellar.org>",
   "description": "Utility functions to interact with Lyra extension",
   "repository": {
     "url": "git@github.com:stellar/lyra.git",
     "type": "git"
   },
-  "author": "Stellar Development Foundation <hello@stellar.org>",
-  "browserslist": {
-    "production": [
-      "last 3 chrome version",
-      "last 3 firefox version"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version"
-    ]
+  "main": "build/index.min.js",
+  "scripts": {
+    "prepare": "yarn build",
+    "build": "webpack --config webpack.config.js --mode production",
+    "start": "webpack --config webpack.config.js --watch --mode development"
   },
-  "license": "MIT",
-  "lint-staged": {
-    "src/**/*.ts?(x)": [
-      "eslint --fix --max-warnings 0"
-    ]
-  },
+  "types": "build/@stellar/lyra-api/src/index.d.ts",
   "devDependencies": {
     "@stellar/eslint-config": "^1.0.3",
     "@stellar/prettier-config": "^1.0.1",
@@ -36,14 +25,11 @@
     "eslint-import-resolver-typescript": "^2.0.0",
     "husky": "^4.2.3",
     "lint-staged": "^10.0.7",
-    "prettier": "^1.19.1",
+    "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
     "typescript": "~3.7.2",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
   },
-  "scripts": {
-    "prepare": "yarn build",
-    "build": "webpack --config webpack.config.js"
-  }
+  "dependencies": {}
 }

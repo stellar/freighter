@@ -3,6 +3,8 @@ const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
 
+const { DEFAULT_STATS } = require("../@shared/constants/config");
+
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = {
@@ -14,6 +16,9 @@ const commonConfig = {
     ],
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
     contentScript: path.resolve(__dirname, "./public/contentScript.ts"),
+  },
+  watchOptions: {
+    ignored: ["node_modules/**/*", "build/**/*"],
   },
   output: {
     path: BUILD_PATH,
@@ -70,6 +75,10 @@ const commonConfig = {
       filename: `${BUILD_PATH}/index.html`,
     }),
   ],
+  stats: DEFAULT_STATS,
+  devServer: {
+    stats: "minimal",
+  },
 };
 
 module.exports.commonConfig = commonConfig;
