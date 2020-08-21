@@ -9,6 +9,7 @@ const config = {
   entry: {
     index: path.resolve(__dirname, "./src/index.ts"),
   },
+  devtool: "source-map",
   output: {
     globalObject: "this",
     library: "lyra-api",
