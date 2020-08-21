@@ -82,13 +82,19 @@ export const lyraApiMessageListener = (
 
     const encodetransactionInfo = btoa(JSON.stringify(transactionInfo));
 
-    window.open(
+    const popup = window.open(
       chrome.runtime.getURL(
         `/index.html#/sign-transaction?${encodetransactionInfo}`,
       ),
       "Lyra: Sign Transaction",
       WINDOW_DIMENSIONS,
     );
+    if (!popup) {
+      responseQueue.push(() => {
+        sendResponse({ error: "Couldn't open access prompt" });
+      });
+      return;
+    }
 
     const response = (signedTransaction: string) => {
       if (signedTransaction) {
@@ -98,6 +104,9 @@ export const lyraApiMessageListener = (
       }
     };
 
+    popup.addEventListener("beforeunload", () => {
+      sendResponse({ error: "User declined access" });
+    });
     responseQueue.push(response);
   };
 
