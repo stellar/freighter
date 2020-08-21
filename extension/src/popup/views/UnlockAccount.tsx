@@ -83,7 +83,7 @@ export const UnlockAccount = () => {
   const location = useLocation();
   const from = get(location, "state.from.pathname", "");
   const queryParams = get(location, "search", "");
-  const destination = from ? `${from}${queryParams}` : "/account";
+  const destination = from ? `${from}${queryParams}` : ROUTES.account;
 
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);

@@ -12,8 +12,9 @@ import { Provider } from "react-redux";
 import { reducer as auth } from "popup/ducks/authServices";
 import { ROUTES } from "popup/constants/routes";
 
-import { MnemonicPhrase } from "../MnemonicPhrase";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { MnemonicPhrase } from "../MnemonicPhrase";
+
 const MNEMONIC = "dummy mnemonic";
 
 const rootReducer = combineReducers({

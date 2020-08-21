@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
+import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
 import {
   password as passwordValidator,
@@ -75,6 +76,7 @@ export const RecoverAccount = () => {
         mnemonicPhrase: mnemonicPhrase.trim(),
       }),
     );
+    history.push(ROUTES.recoverAccountSuccess);
   };
 
   useEffect(() => {

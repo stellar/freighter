@@ -8,4 +8,5 @@ export const ROUTES = {
   mnemonicPhraseConfirmed: "/mnemonic-phrase-confirmed",
   accountCreator: "/account-creator",
   recoverAccount: "/recover-account",
+  recoverAccountSuccess: "/recover-account-success",
 };
