@@ -9,6 +9,7 @@ import { COLOR_PALETTE } from "popup/constants/styles";
 import { emitMetric } from "helpers/metrics";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { download } from "popup/helpers/download";
 import { BasicButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
@@ -69,16 +70,8 @@ export const DisplayMnemonicPhrase = ({
   const [isCopied, setIsCopied] = useState(false);
   const [isBlurred, setIsBlurred] = useState(true);
 
-  const downloadPhrase = () => {
-    const el = document.createElement("a");
-    const file = new Blob([mnemonicPhrase], { type: "text/plain" });
-    el.href = URL.createObjectURL(file);
-    el.download = "lyraMnemonicPhrase.txt";
-    document.body.appendChild(el);
-    el.click();
-  };
   return (
-    <HalfScreen>
+    <HalfScreen data-testid="display-mnemonic-phrase">
       <p>
         Your secret backup phrase makes it easy to back up and restore your
         account.
@@ -89,6 +82,7 @@ export const DisplayMnemonicPhrase = ({
       <MnemonicDisplayEl isBlurred={isBlurred}>
         {isBlurred ? (
           <DisplayTooltipEl
+            data-testid="show"
             onClick={() => {
               setIsBlurred(false);
               emitMetric(METRIC_NAMES.accountCreatorMnemonicViewPhrase);
@@ -101,8 +95,12 @@ export const DisplayMnemonicPhrase = ({
       </MnemonicDisplayEl>
       <DisplayButtonsEl>
         <ActionButton
+          data-testid="download"
           onClick={() => {
-            downloadPhrase();
+            download({
+              filename: "lyraMnemonicPhrase.txt",
+              content: mnemonicPhrase,
+            });
             emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
           }}
         >
@@ -110,6 +108,7 @@ export const DisplayMnemonicPhrase = ({
           <img src={Download} alt="Download button" />
         </ActionButton>
         <CopyToClipboard
+          data-testid="copy"
           text={mnemonicPhrase}
           onCopy={() => {
             setIsCopied(true);
@@ -130,6 +129,7 @@ export const DisplayMnemonicPhrase = ({
         </CopiedToastWrapperEl>
       </DisplayButtonsEl>
       <SubmitButton
+        data-testid="confirm"
         onClick={() => {
           setReadyToConfirm(true);
         }}

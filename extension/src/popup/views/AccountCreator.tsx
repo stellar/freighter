@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
-import { history } from "popup/App";
+import { history } from "popup/constants/history";
 import { createAccount, publicKeySelector } from "popup/ducks/authServices";
 
 import { Onboarding, HalfScreen } from "popup/components/Onboarding";

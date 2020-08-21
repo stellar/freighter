@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
-import { history } from "popup/App";
+import { history } from "popup/constants/history";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
