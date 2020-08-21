@@ -158,7 +158,6 @@ interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const CheckboxField = ({
   name,
   label,
-  children,
   className,
   ...props
 }: CheckboxProps) => (
@@ -170,6 +169,5 @@ export const CheckboxField = ({
 CheckboxField.propTypes = {
   name: PropTypes.string.isRequired,
   label: PropTypes.node.isRequired,
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string.isRequired,
+  className: PropTypes.string,
 };

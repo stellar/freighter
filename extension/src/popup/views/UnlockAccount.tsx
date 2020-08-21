@@ -5,11 +5,13 @@ import { useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { Formik } from "formik";
 
+import { newTabHref } from "helpers/urls";
+
+import { ROUTES } from "popup/constants/routes";
+import { history } from "popup/constants/history";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { EMOJI } from "popup/constants/emoji";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
-
-import { newTabHref } from "helpers/urls";
 
 import { BasicButton } from "popup/basics/Buttons";
 import {
@@ -20,7 +22,6 @@ import {
   TextField,
 } from "popup/basics/Forms";
 
-import { history } from "popup/constants/history";
 import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 
 const UnlockAccountEl = styled.div`
@@ -144,7 +145,7 @@ export const UnlockAccount = () => {
         <ListItemEl>
           <ImportButtonEl
             onClick={() => {
-              window.open(newTabHref("/recover-account"));
+              window.open(newTabHref(ROUTES.recoverAccount));
             }}
           >
             Import using backup phrase
