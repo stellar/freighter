@@ -118,7 +118,7 @@ export const Welcome = () => (
             <HeadingEl>I’m new!</HeadingEl>
             <p>I’m going to need a seed phrase</p>
             <LinkButtonWrapperEl>
-              <CreateButtonEl to="/create-password">
+              <CreateButtonEl to="/account-creator">
                 Create wallet
               </CreateButtonEl>
             </LinkButtonWrapperEl>
