@@ -31,8 +31,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.number }}
-          release_name: Release ${{ github.ref }}
+          tag_name: pr-release-${{ github.event.number }}
+          release_name: PR Preview ${{ github.event.number }}
           draft: false
           prerelease: true
       - name: Upload Release Asset
@@ -49,5 +49,5 @@ jobs:
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@master
         with:
-          message: Preview build at https://github.com/${{ github.repository }}/releases/download/${{ github.event.number }}/build-pr-preview-${{ github.event.number }}.zip
+          message: Preview build at https://github.com/${{ github.repository }}/releases/download/pr-release-${{ github.event.number }}/build-pr-preview-${{ github.event.number }}.zip
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
