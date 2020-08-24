@@ -49,5 +49,5 @@ jobs:
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@master
         with:
-          message: Preview build at https://github.com/${{ github.repository }}/releases/tags/${{ github.event.number }}
+          message: Preview build at https://github.com/${{ github.repository }}/releases/tag/${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
