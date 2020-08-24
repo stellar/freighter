@@ -13,14 +13,32 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      # - name: Build extension
-      #   uses: actions/setup-node@v1
-      #   with:
-      #     node-version: "12"
-      # - run: yarn install && yarn build:extension
-      # - name: Zip extension build
-      #   uses: montudor/action-zip@v0.1.0
-      #   with:
-      #     args: zip -qq -r ./extension/build/build.zip ./extension/build
-      - name: Report build URL
-        run: echo ${{ github.repository }} ${{ steps.vars.outputs.sha_short }}
+      - name: Build extension
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12"
+      - run: yarn install && yarn build:extension
+      - name: Zip extension build
+        uses: montudor/action-zip@v0.1.0
+        with:
+          args: zip -qq -r ./extension/build/build.zip ./extension/build
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: true
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./extension/build/build.zip
+          asset_name: build.zip
+          asset_content_type: application/zip
