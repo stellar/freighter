@@ -4,10 +4,11 @@ import { useLocation } from "react-router-dom";
 
 import { emitMetric } from "helpers/metrics";
 
+import { HEADER_HEIGHT } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { COLOR_PALETTE } from "popup/constants/styles";
-import { HEADER_HEIGHT } from "constants/dimensions";
+import { EMOJI } from "popup/constants/emoji";
 
 import { SubmitButton } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
@@ -86,8 +87,8 @@ export const FullscreenSuccessMessage = () => {
       <ContentWrapperEl>
         <HeaderEl>Woo, you’re in!</HeaderEl>
         <CelebrationEl>
-          <span role="img" aria-label="Celebration face">
-            🥳
+          <span role="img" aria-label={EMOJI.celebrate.emoji}>
+            {EMOJI.celebrate.emoji}
           </span>
         </CelebrationEl>
         {IS_MNEMONIC_PHRASE_STATE ? (
