@@ -1,4 +1,4 @@
-name: Cleanup extension PR preview on merge
+name: Cleanup extension PR preview on close
 
 on:
   pull_request:
