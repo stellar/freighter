@@ -22,6 +22,13 @@ jobs:
         uses: montudor/action-zip@v0.1.0
         with:
           args: zip -qq -r ./extension/build/build.zip ./extension/build
+      - name: Delete Release # if it exists
+        uses: dev-drprasad/delete-tag-and-release@v0.1.2
+        with:
+          delete_release: true
+          tag_name: ${{ github.event.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -42,13 +49,7 @@ jobs:
           asset_path: ./extension/build/build.zip
           asset_name: build.zip
           asset_content_type: application/zip
-      # - name: Delete Release
-      #   uses: dev-drprasad/delete-tag-and-release@v0.1.2
-      #   with:
-      #     delete_release: true
-      #     tag_name: format(${{ github.ref }}, '-')
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@master
         with:
