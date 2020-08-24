@@ -1,20 +1,3 @@
-name: Delete PR Preview
-
-on: [push]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Delete Release # if it exists
-        uses: dev-drprasad/delete-tag-and-release@v0.1.2
-        with:
-          delete_release: true
-          tag_name: ${{ github.event.number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 name: Compile extension PR preview
 
 on: [pull_request]
