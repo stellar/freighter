@@ -28,7 +28,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: format(${{ github.ref }}, '-')
+          tag_name: ${{ github.event.number }}
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: true
@@ -52,5 +52,5 @@ jobs:
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@master
         with:
-          message: format('Preview build at https://${{ github.repository }}/releases/tags/${{ github.ref }}', '-')
+          message: Preview build at https://${{ github.repository }}/releases/tags/${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
