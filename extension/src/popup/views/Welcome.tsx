@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 
 import { HEADER_HEIGHT } from "constants/dimensions";
+import { ROUTES } from "popup/constants/routes";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { COLOR_PALETTE } from "popup/constants/styles";
@@ -118,7 +119,7 @@ export const Welcome = () => (
             <HeadingEl>I’m new!</HeadingEl>
             <p>I’m going to need a seed phrase</p>
             <LinkButtonWrapperEl>
-              <CreateButtonEl to="/account-creator">
+              <CreateButtonEl to={ROUTES.accountCreator}>
                 Create wallet
               </CreateButtonEl>
             </LinkButtonWrapperEl>
@@ -134,7 +135,7 @@ export const Welcome = () => (
             <HeadingEl>I’ve done this before</HeadingEl>
             <p>I have my 12 word seed phrase</p>
             <LinkButtonWrapperEl>
-              <ImportButtonEl to="/recover-account">
+              <ImportButtonEl to={ROUTES.recoverAccount}>
                 Import wallet
               </ImportButtonEl>
             </LinkButtonWrapperEl>

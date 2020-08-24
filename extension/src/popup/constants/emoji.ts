@@ -16,4 +16,8 @@ export const EMOJI = {
     emoji: "🤮",
     alt: "vomit",
   },
+  celebrate: {
+    emoji: "🥳",
+    alt: "celebrate",
+  },
 };

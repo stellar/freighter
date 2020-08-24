@@ -26,7 +26,7 @@ import { Account } from "popup/views/Account";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
-import { MnemonicPhraseConfirmed } from "popup/views/MnemonicPhraseConfirmed";
+import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
 import { RecoverAccount } from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
@@ -160,13 +160,16 @@ export const Router = () => {
           <UnlockAccount />
         </Route>
         <Route path={ROUTES.mnemonicPhraseConfirmed}>
-          <MnemonicPhraseConfirmed />
+          <FullscreenSuccessMessage />
         </Route>
         <Route path={ROUTES.accountCreator}>
           <AccountCreator />
         </Route>
         <Route path={ROUTES.recoverAccount}>
           <RecoverAccount />
+        </Route>
+        <Route path={ROUTES.recoverAccountSuccess}>
+          <FullscreenSuccessMessage />
         </Route>
         <HomeRoute />
       </Switch>

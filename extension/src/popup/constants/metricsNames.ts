@@ -7,6 +7,7 @@ export const METRIC_NAMES = {
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
   viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
   viewRecoverAccount: "loaded screen: recover account",
+  viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
   viewUnlockAccount: "loaded screen: unlock account",
 
@@ -34,6 +35,8 @@ export const METRIC_NAMES = {
 
   recoverAccountSuccess: "recover account: success",
   recoverAccountFail: "recover account: error",
+  recoverAccountFinished:
+    "recover account finished: closed recover account flow",
 
   grantAccessSuccess: "grant access: granted",
   grantAccessFail: "grant access: rejected",
