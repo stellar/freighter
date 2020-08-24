@@ -11,6 +11,7 @@
   "scripts": {
     "build": "run-p --print-label build:lyra-api build:docs build:extension",
     "build:netlify": "run-s build:lyra-api build:docs",
+    "build:extension-preview": "run-s build:lyra-api build:extension",
     "build:lyra-api": "yarn workspace @stellar/lyra-api build",
     "build:docs": "yarn workspace docs build",
     "build:extension": "yarn workspace extension build",
