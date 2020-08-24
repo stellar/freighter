@@ -43,11 +43,11 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
           asset_path: ./extension/build/build.zip
-          asset_name: build.zip
+          asset_name: build-pr-preview-${{ github.event.number }}.zip
           asset_content_type: application/zip
 
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@master
         with:
-          message: Preview build at https://github.com/${{ github.repository }}/releases/tag/${{ github.event.number }}/build.zip
+          message: Preview build at https://github.com/${{ github.repository }}/releases/tag/${{ github.event.number }}/build-pr-preview-${{ github.event.number }}.zip
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
