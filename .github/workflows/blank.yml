@@ -42,10 +42,15 @@ jobs:
           asset_path: ./extension/build/build.zip
           asset_name: build.zip
           asset_content_type: application/zip
-      - name: Delete Release
-        uses: dev-drprasad/delete-tag-and-release@v0.1.2
+      # - name: Delete Release
+      #   uses: dev-drprasad/delete-tag-and-release@v0.1.2
+      #   with:
+      #     delete_release: true
+      #     tag_name: ${{ github.ref }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@master
         with:
-          delete_release: true
-          tag_name: ${{ github.ref }}
-        env:
+          message: Preview build at https://${{ github.repository }}/releases/tags/${{ github.ref }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
