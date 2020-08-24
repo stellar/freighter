@@ -1,6 +1,9 @@
 name: Compile extension PR preview
 
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - "./extension/**"
 
 jobs:
   build:
