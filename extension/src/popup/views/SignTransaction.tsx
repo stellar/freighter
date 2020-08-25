@@ -1,15 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import BigNumber from "bignumber.js";
 import styled from "styled-components";
 
-import { OPERATION_TYPES } from "constants/operationTypes";
-
 import { truncatedPublicKey } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
+
+import { OPERATION_TYPES } from "constants/operationTypes";
 
 import { publicKeySelector } from "popup/ducks/authServices";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button, BackButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
@@ -87,13 +90,26 @@ export const SignTransaction = () => {
     ? JSON.parse(decodedTransactionInfo)
     : {};
   const {
-    tab: { title },
+    tab: { title, url },
     transaction,
   } = transactionInfo;
 
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
   const [isConfirming, setIsConfirming] = useState(false);
+  const operationTypes = _operations.map(
+    (operation: { type: string }) => operation.type,
+  );
+
+  const METRIC_OPTIONS = {
+    domain: url,
+    number_of_operations: _operations.length,
+    operationTypes,
+  };
+
+  useEffect(() => {
+    emitMetric(METRIC_NAMES.viewSignTransaction, METRIC_OPTIONS);
+  }, [METRIC_OPTIONS]);
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
@@ -229,7 +245,9 @@ export const SignTransaction = () => {
     <El>
       <BackButton onClick={() => window.location.replace("/")} />
       <HeaderEl>Confirm Transaction</HeaderEl>
-      <SubheaderEl>{title} is requesting a transaction</SubheaderEl>
+      <SubheaderEl>
+        {title} from {url} is requesting a transaction
+      </SubheaderEl>
       <ListEl>
         <li>
           <div>
