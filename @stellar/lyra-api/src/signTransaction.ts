@@ -10,5 +10,11 @@ export const signTransaction = async (params: LyraApiRequest) => {
     console.error(e);
   }
 
-  return response;
+  const { error } = response;
+
+  if (error) {
+    throw error;
+  }
+
+  return response.signedTransaction;
 };

@@ -9,5 +9,11 @@ export const getPublicKey = async () => {
     console.error(e);
   }
 
-  return response;
+  const { error } = response;
+
+  if (error) {
+    throw error;
+  }
+
+  return response.publicKey;
 };
