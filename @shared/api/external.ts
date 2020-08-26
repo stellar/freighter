@@ -2,10 +2,7 @@ import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { sendMessageToContentScript } from "./helpers";
 import { LyraApiRequest } from "./types";
 
-export const requestPublicKey = async (): Promise<{
-  publicKey: string;
-  error: string;
-}> => {
+export const requestPublicKey = async (): Promise<string> => {
   let response = { publicKey: "", error: "" };
   try {
     response = await sendMessageToContentScript({
@@ -14,15 +11,18 @@ export const requestPublicKey = async (): Promise<{
   } catch (e) {
     console.error(e);
   }
-  return response;
+
+  const { publicKey, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return publicKey;
 };
 
 export const submitTransaction = async ({
   transactionXdr,
-}: LyraApiRequest): Promise<{
-  signedTransaction: string;
-  error: string;
-}> => {
+}: LyraApiRequest): Promise<string> => {
   let response = { signedTransaction: "", error: "" };
   try {
     response = await sendMessageToContentScript({
@@ -32,5 +32,10 @@ export const submitTransaction = async ({
   } catch (e) {
     console.error(e);
   }
-  return response;
+  const { signedTransaction, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return signedTransaction;
 };
