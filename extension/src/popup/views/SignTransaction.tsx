@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import BigNumber from "bignumber.js";
 import styled from "styled-components";
+import BigNumber from "bignumber.js";
+import punycode from "punycode";
+
+import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
 
-import { truncatedPublicKey } from "helpers/stellar";
-
 import { publicKeySelector } from "popup/ducks/authServices";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button, BackButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
@@ -22,6 +24,7 @@ const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
   margin: 1rem 0 0.75rem;
+  padding-top: 1.5rem;
 `;
 const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
@@ -82,14 +85,8 @@ const RejectButtonEl = styled(Button)`
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const decodedTransactionInfo = atob(location.search.replace("?", ""));
-  const transactionInfo = decodedTransactionInfo
-    ? JSON.parse(decodedTransactionInfo)
-    : {};
-  const {
-    tab: { title },
-    transaction,
-  } = transactionInfo;
+  const { transaction, domain } = getTransactionInfo(location.search);
+  const punycodedDomain = punycode.toASCII(domain);
 
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
@@ -229,7 +226,7 @@ export const SignTransaction = () => {
     <El>
       <BackButton onClick={() => window.location.replace("/")} />
       <HeaderEl>Confirm Transaction</HeaderEl>
-      <SubheaderEl>{title} is requesting a transaction</SubheaderEl>
+      <SubheaderEl>{punycodedDomain} is requesting a transaction</SubheaderEl>
       <ListEl>
         <li>
           <div>
