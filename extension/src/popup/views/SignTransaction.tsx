@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import BigNumber from "bignumber.js";
 import styled from "styled-components";
+import BigNumber from "bignumber.js";
+import punycode from "punycode";
 
 import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
@@ -85,6 +86,7 @@ export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { transaction, domain } = getTransactionInfo(location.search);
+  const punycodedDomain = punycode.toASCII(domain);
 
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
@@ -224,7 +226,7 @@ export const SignTransaction = () => {
     <El>
       <BackButton onClick={() => window.location.replace("/")} />
       <HeaderEl>Confirm Transaction</HeaderEl>
-      <SubheaderEl>{domain} is requesting a transaction</SubheaderEl>
+      <SubheaderEl>{punycodedDomain} is requesting a transaction</SubheaderEl>
       <ListEl>
         <li>
           <div>
