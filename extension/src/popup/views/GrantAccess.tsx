@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
+import punycode from "punycode";
+
+import { parsedSearchParam } from "helpers/urls";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
@@ -43,9 +46,9 @@ const RejectButtonEl = styled(Button)`
 export const GrantAccess = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const decodedTab = atob(location.search.replace("?", ""));
-  const tabToUnlock = decodedTab ? JSON.parse(decodedTab) : {};
-  const { url, title } = tabToUnlock;
+  const { url } = parsedSearchParam(location.search);
+  const u = new URL(url);
+  const punycodedDomain = punycode.toASCII(u.hostname);
   const [isGranting, setIsGranting] = useState(false);
 
   const rejectAndClose = () => {
@@ -62,7 +65,7 @@ export const GrantAccess = () => {
   return (
     <GrantAccessEl>
       <HeaderEl>Connection request</HeaderEl>
-      <SubheaderEl>{title} wants to know your public key</SubheaderEl>
+      <SubheaderEl>{punycodedDomain} wants to know your public key</SubheaderEl>
       <TextEl>
         This site is asking for access to the public key associated with this
         Lyra wallet. Only share your information with websites you trust.{" "}

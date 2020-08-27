@@ -1,11 +1,10 @@
+import { parsedSearchParam } from "./urls";
+
 export const truncatedPublicKey = (publicKey: string) =>
   `${publicKey.slice(0, 4)}…${publicKey.slice(-4)}`;
 
 export const getTransactionInfo = (search: string) => {
-  const decodedTransactionInfo = atob(search.replace("?", ""));
-  const transactionInfo = decodedTransactionInfo
-    ? JSON.parse(decodedTransactionInfo)
-    : {};
+  const transactionInfo = parsedSearchParam(search);
 
   const {
     tab: { url },
