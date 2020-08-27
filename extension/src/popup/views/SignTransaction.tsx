@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import BigNumber from "bignumber.js";
 import styled from "styled-components";
 
-import { truncatedPublicKey } from "helpers/stellar";
-import { emitMetric } from "helpers/metrics";
+import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
 
 import { publicKeySelector } from "popup/ducks/authServices";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button, BackButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
@@ -85,31 +83,11 @@ const RejectButtonEl = styled(Button)`
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const decodedTransactionInfo = atob(location.search.replace("?", ""));
-  const transactionInfo = decodedTransactionInfo
-    ? JSON.parse(decodedTransactionInfo)
-    : {};
-  const {
-    tab: { title, url },
-    transaction,
-  } = transactionInfo;
+  const { title, transaction, domain } = getTransactionInfo(location.search);
 
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
   const [isConfirming, setIsConfirming] = useState(false);
-  const operationTypes = _operations.map(
-    (operation: { type: string }) => operation.type,
-  );
-
-  const METRIC_OPTIONS = {
-    domain: url,
-    number_of_operations: _operations.length,
-    operationTypes,
-  };
-
-  useEffect(() => {
-    emitMetric(METRIC_NAMES.viewSignTransaction, METRIC_OPTIONS);
-  }, [METRIC_OPTIONS]);
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
@@ -246,7 +224,7 @@ export const SignTransaction = () => {
       <BackButton onClick={() => window.location.replace("/")} />
       <HeaderEl>Confirm Transaction</HeaderEl>
       <SubheaderEl>
-        {title} from {url} is requesting a transaction
+        {title} from {domain} is requesting a transaction
       </SubheaderEl>
       <ListEl>
         <li>
