@@ -51,18 +51,23 @@ if (isConnected()) {
 }
 
 const retrievePublicKey = async () => {
-  let res = { publicKey: "", error: "" };
+  let publicKey = "";
+  let error = "";
 
   try {
-    res = await getPublicKey();
+    publicKey = await getPublicKey();
   } catch (e) {
-    res = e;
+    error = e;
   }
 
-  return res;
+  if (error) {
+    return error;
+  }
+
+  return publicKey;
 };
 
-const { publicKey, error } = retrievePublicKey();
+const result = retrievePublicKey();
 ```
 
 ### signTransaction
@@ -83,26 +88,40 @@ if (isConnected()) {
 }
 
 const retrievePublicKey = async () => {
-  let res = { publicKey: "", error: "" };
+  let publicKey = "";
+  let error = "";
 
   try {
-    res = await getPublicKey();
+    publicKey = await getPublicKey();
   } catch (e) {
-    res = e;
+    error = e;
   }
 
-  return res;
+  if (error) {
+    return error;
+  }
+
+  return publicKey;
 };
 
+const retrievedPublicKey = retrievePublicKey();
+
 const userSignTransaction = async (xdr: String) => {
-  let res = { signedTransaction: "", error: "" };
+  let signedTransaction = "";
+  let error = "";
 
   try {
     res = await signTransaction({ transactionXdr: xdr });
   } catch (e) {
-    res = e;
+    error = e;
   }
 
-  return res;
+  if (error) {
+    return error;
+  }
+
+  return signedTransaction;
 };
+
+const userSignedTransaction = userSignTransaction();
 ```
