@@ -33,7 +33,7 @@ registerHandler<AppState>(navigate, (_, a) => {
 
   // "/sign-transaction" and "/grant-access" require additionak metrics on loaded page
   if (search) {
-    const { transaction, domain } = getTransactionInfo(search);
+    const { domain } = getTransactionInfo(search);
     const METRIC_OPTION_DOMAIN = {
       domain,
     };
@@ -43,14 +43,10 @@ registerHandler<AppState>(navigate, (_, a) => {
     }
 
     if (pathname === ROUTES.signTransaction) {
-      const { _operations } = transaction;
-      const operationTypes = transaction._operations.map(
-        (operation: { type: string }) => operation.type,
-      );
-
+      const { operations, operationTypes } = getTransactionInfo(search);
       const METRIC_OPTIONS = {
         ...METRIC_OPTION_DOMAIN,
-        number_of_operations: _operations.length,
+        number_of_operations: operations.length,
         operationTypes,
       };
 
