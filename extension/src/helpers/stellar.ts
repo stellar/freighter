@@ -8,15 +8,14 @@ export const getTransactionInfo = (search: string) => {
     : {};
 
   const {
-    tab: { title, url },
+    tab: { url },
     transaction,
   } = transactionInfo;
 
   const u = new URL(url);
 
   return {
-    title,
     transaction,
-    domain: u.origin,
+    domain: u.hostname,
   };
 };

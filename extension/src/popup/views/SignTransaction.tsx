@@ -23,6 +23,7 @@ const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
   margin: 1rem 0 0.75rem;
+  padding-top: 1.5rem;
 `;
 const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
@@ -83,7 +84,7 @@ const RejectButtonEl = styled(Button)`
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const { title, transaction, domain } = getTransactionInfo(location.search);
+  const { transaction, domain } = getTransactionInfo(location.search);
 
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
@@ -223,9 +224,7 @@ export const SignTransaction = () => {
     <El>
       <BackButton onClick={() => window.location.replace("/")} />
       <HeaderEl>Confirm Transaction</HeaderEl>
-      <SubheaderEl>
-        {title} from {domain} is requesting a transaction
-      </SubheaderEl>
+      <SubheaderEl>{domain} is requesting a transaction</SubheaderEl>
       <ListEl>
         <li>
           <div>
