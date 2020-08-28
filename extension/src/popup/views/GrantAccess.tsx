@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 import punycode from "punycode";
 
-import { parsedSearchParam } from "helpers/urls";
+import { parsedSearchParam, getUrlHostname } from "helpers/urls";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
@@ -47,8 +47,8 @@ export const GrantAccess = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { url } = parsedSearchParam(location.search);
-  const u = new URL(url);
-  const punycodedDomain = punycode.toASCII(u.hostname);
+  const hostname = getUrlHostname(url);
+  const punycodedDomain = punycode.toASCII(hostname);
   const [isGranting, setIsGranting] = useState(false);
 
   const rejectAndClose = () => {

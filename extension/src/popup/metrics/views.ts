@@ -2,7 +2,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { registerHandler, emitMetric } from "helpers/metrics";
 import { getTransactionInfo } from "helpers/stellar";
-import { parsedSearchParam } from "helpers/urls";
+import { parsedSearchParam, getUrlHostname } from "helpers/urls";
 
 import { navigate } from "popup/ducks/views";
 import { AppState } from "popup/App";
@@ -35,9 +35,9 @@ registerHandler<AppState>(navigate, (_, a) => {
   // "/sign-transaction" and "/grant-access" require additionak metrics on loaded page
   if (pathname === ROUTES.grantAccess) {
     const { url } = parsedSearchParam(search);
-    const u = new URL(url);
+    const hostname = getUrlHostname(url);
     const METRIC_OPTION_DOMAIN = {
-      domain: u.hostname,
+      domain: hostname,
     };
 
     emitMetric(eventName, METRIC_OPTION_DOMAIN);
