@@ -105,6 +105,7 @@ const HomeRoute = () => {
     */
     if (window.innerWidth === POPUP_WIDTH) {
       window.open(newTabHref(ROUTES.welcome));
+      window.close();
     }
     return <Welcome />;
   }
