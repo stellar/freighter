@@ -37,7 +37,7 @@ if (isConnected()) {
 
 ### getPublicKey
 
-#### `getPublicKey() -> <Promise<{ publicKey: string; error?: string; }>>`
+#### `getPublicKey() -> <Promise<string>>`
 
 If a user has never interacted with your app before, this function will prompt the user to provide your app privileges to receive the user's public key. If and when the user accepts, this function will resolve with an object containing the public key. Otherwise, it will provide an error.
 
@@ -72,7 +72,7 @@ const result = retrievePublicKey();
 
 ### signTransaction
 
-#### `signTransaction({ transactionXdr: string }) -> <Promise<{ signedTransaction: string; error?: string;}>>`
+#### `signTransaction(string) -> <Promise<string>>`
 
 This function accepts an object containing an transaction XDR string, which it will decode, sign as the user, and then return the signed transaction to your application.
 
@@ -111,7 +111,7 @@ const userSignTransaction = async (xdr: String) => {
   let error = "";
 
   try {
-    res = await signTransaction({ transactionXdr: xdr });
+    res = await signTransaction(xdr);
   } catch (e) {
     error = e;
   }
