@@ -92,7 +92,6 @@ const BackButtonEl = styled(BasicButton)`
 
 export const BackButton = ({ onClick, ...props }: BackButtonProps) => (
   <BackButtonEl onClick={onClick} {...props}>
-    <p>test change</p>
     <img src={ChevronIcon} alt="chevron icon" />
   </BackButtonEl>
 );
