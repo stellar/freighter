@@ -8,7 +8,7 @@ import { metricsMiddleware } from "helpers/metrics";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
-import { POPUP_WIDTH } from "constants/dimensions";
+import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 import { Header } from "popup/components/Header";
 
 import { Router } from "./Router";
@@ -27,7 +27,7 @@ const GlobalStyle = createGlobalStyle`
     width: ${POPUP_WIDTH}px;
   }
   body, html, #root {
-    height: 100vh;
+    height: ${POPUP_HEIGHT}px;
   }
 
   body * {
