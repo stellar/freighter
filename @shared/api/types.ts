@@ -22,5 +22,6 @@ export interface Response {
 }
 
 export interface ExternalRequest {
+  transactionXdr: string;
   type: EXTERNAL_SERVICE_TYPES;
 }

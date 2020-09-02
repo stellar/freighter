@@ -64,7 +64,7 @@ export const lyraApiMessageListener = (
   };
 
   const submitTransaction = () => {
-    const transactionXdr = request;
+    const { transactionXdr } = request;
 
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
