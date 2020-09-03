@@ -26,6 +26,13 @@ into your browser.
 yarn build
 ```
 
+You may also choose to enable some experimental features by alternatively
+running
+
+```
+yarn build:experimental
+```
+
 2. Now, in Chrome, navigate to `chrome://extensions/`.
 
 3. Toggle `Developer mode` to the ON position in the top right corner
@@ -104,14 +111,18 @@ _NOTE: This dev environment only works for the `popup`_
 Changes to `background` and `content script` will still require a production
 build using `yarn build`, followed by reloading the extension in Chrome.
 
-We'll also create a route where you can access the Playground, a demo site where
-you can try out your client facing Lyra API.
-
 1. Start a local dev server by running
 
 ```
 yarn start
 ```
 
-You should be able to access the Popup by going to `localhost:9000/` and the
-playground by going to `localhost:9000/playground.html` in your browser
+You should be able to access the Popup by going to `localhost:9000/`
+
+You can also set the `experimental` flag to true by running
+
+```
+yarn start:experimental
+```
+
+This will enable some experimental features that are still under development.

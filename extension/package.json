@@ -5,7 +5,9 @@
   "prettier": "@stellar/prettier-config",
   "scripts": {
     "build": "webpack --config webpack.prod.js",
+    "build:experimental": "yarn build --env.EXPERIMENTAL=true",
     "start": "webpack-dev-server --config webpack.dev.js",
+    "start:experimental": "yarn start --env.EXPERIMENTAL=true",
     "start:unpacked-extension": "yarn build --watch --info-verbosity verbose"
   },
   "dependencies": {
