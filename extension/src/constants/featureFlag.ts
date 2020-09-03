@@ -1,3 +1,3 @@
-declare const EXPERIMENTAL: string;
+declare const EXPERIMENTAL: boolean;
 const _EXPERIMENTAL = EXPERIMENTAL;
 export { _EXPERIMENTAL as EXPERIMENTAL };
