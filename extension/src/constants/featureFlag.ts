@@ -1,0 +1,3 @@
+declare const EXPERIMENTAL: string;
+const _EXPERIMENTAL = EXPERIMENTAL;
+export { _EXPERIMENTAL as EXPERIMENTAL };

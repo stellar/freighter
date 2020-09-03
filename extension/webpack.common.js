@@ -2,12 +2,13 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
+const webpack = require("webpack");
 
 const { DEFAULT_STATS } = require("../@shared/constants/config");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
-const commonConfig = {
+const commonConfig = (env = { EXPERIMENTAL: false }) => ({
   node: { global: true, fs: "empty" },
   entry: {
     background: [
@@ -74,12 +75,15 @@ const commonConfig = {
       chunks: ["index"],
       filename: `${BUILD_PATH}/index.html`,
     }),
+    new webpack.DefinePlugin({
+      EXPERIMENTAL: env.EXPERIMENTAL,
+    }),
   ],
   stats: DEFAULT_STATS,
   devServer: {
     stats: "minimal",
   },
-};
+});
 
 module.exports.commonConfig = commonConfig;
 module.exports.BUILD_PATH = BUILD_PATH;
