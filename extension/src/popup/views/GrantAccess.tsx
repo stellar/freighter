@@ -110,7 +110,7 @@ export const GrantAccess = () => {
           </p>
           <p>
             Make sure the domain name above reads as it should, if you suspect
-            of something, don't give ir permission. If you interacted with this
+            of something, don't give it permission. If you‘ve interacted with this
             domain before in this browser, this might indicate a scam.
           </p>
         </WarningMessageEl>
