@@ -104,7 +104,7 @@ export const GrantAccess = () => {
         <WarningMessageEl>
           <p>
             <strong>
-              This is the first time you interact with this domain in this
+              This is the first time you‘ve interacted with this domain on this
               computer.
             </strong>
           </p>
