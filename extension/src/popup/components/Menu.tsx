@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
+import { POPUP_WIDTH } from "constants/dimensions";
+
 import {
   Z_INDEXES,
   COLOR_PALETTE,
   ANIMATION_TIMES,
 } from "popup/constants/styles";
-import { POPUP_WIDTH } from "constants/dimensions";
 
 import { BasicButton } from "popup/basics/Buttons";
 
@@ -129,7 +132,7 @@ export const Menu = () => {
           </SlideOutCloseButtonEl>
           <SlideoutNavListEl>
             <SlideoutNavListItemEl>
-              <a href="/">Show backup phrase</a>
+              <Link to={ROUTES.unlockBackupPhrase}>Show backup phrase</Link>
             </SlideoutNavListItemEl>
             <SlideoutNavListItemEl>
               <a href="/">Help</a>
