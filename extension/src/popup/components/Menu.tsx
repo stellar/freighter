@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { POPUP_WIDTH } from "constants/dimensions";
@@ -131,7 +132,7 @@ export const Menu = () => {
           </SlideOutCloseButtonEl>
           <SlideoutNavListEl>
             <SlideoutNavListItemEl>
-              <a href="/">Show backup phrase</a>
+              <Link to={ROUTES.unlockBackupPhrase}>Show backup phrase</Link>
             </SlideoutNavListItemEl>
             <SlideoutNavListItemEl>
               <a href="/">Help</a>

@@ -176,6 +176,17 @@ export const popupMessageListener = (
     });
   };
 
+  const showBackupPhrase = async () => {
+    const { password } = request;
+
+    try {
+      await keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+      sendResponse({});
+    } catch (e) {
+      sendResponse({ error: "Incorrect Password" });
+    }
+  };
+
   const confirmPassword = async () => {
     const { password } = request;
     let keyStore;
@@ -187,11 +198,14 @@ export const popupMessageListener = (
     } catch (e) {
       console.error(e);
     }
+    let extra = { mnemonicPhrase: "" };
     let publicKey = "";
     let privateKey = "";
+
     if (keyStore) {
-      ({ privateKey, publicKey } = keyStore);
-      store.dispatch(logIn({ publicKey }));
+      ({ privateKey, publicKey, extra } = keyStore);
+      const { mnemonicPhrase } = extra;
+      store.dispatch(logIn({ publicKey, mnemonicPhrase }));
       sessionTimer.startSession({ privateKey });
     }
 
@@ -285,6 +299,7 @@ export const popupMessageListener = (
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
+    [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
   };
 
   if (messageResponder[request.type]) {
