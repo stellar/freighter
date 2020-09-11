@@ -9,4 +9,6 @@ export const ROUTES = {
   accountCreator: "/account-creator",
   recoverAccount: "/recover-account",
   recoverAccountSuccess: "/recover-account-success",
+  unlockBackupPhrase: "/unlock-backup-phrase",
+  displayBackupPhrase: "/display-backup-phrase",
 };

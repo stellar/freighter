@@ -10,6 +10,8 @@ export const METRIC_NAMES = {
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
   viewUnlockAccount: "loaded screen: unlock account",
+  viewUnlockBackupPhrase: "loaded screen: unlock backup phrase",
+  viewDisplayBackupPhrase: "loaded screen: display backup phrase",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
@@ -43,4 +45,11 @@ export const METRIC_NAMES = {
 
   signTransaction: "sign transaction: confirmed",
   rejectTransaction: "sign transaction: rejected",
+
+  backupPhraseSuccess: "backup phrase: success",
+  backupPhraseFail: "backup phrase: error",
+
+  backupPhraseViewed: "backup phrase: viewed phrase",
+  backupPhraseDownload: "backup phrase: downloaded phrase",
+  backupPhraseCopy: "backup phrase: copied phrase",
 };
