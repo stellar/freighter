@@ -103,7 +103,7 @@ export const RecoverAccount = () => {
             header="Recover wallet from backup phrase"
             icon={icon}
             isMaxHeaderLength
-            goBack={() => navigateTo("/")}
+            goBack={() => navigateTo(ROUTES.welcome)}
           >
             <>
               <FormRow>

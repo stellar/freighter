@@ -3,12 +3,13 @@ import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { POPUP_WIDTH } from "constants/dimensions";
 import {
   Z_INDEXES,
   COLOR_PALETTE,
   ANIMATION_TIMES,
 } from "popup/constants/styles";
-import { POPUP_WIDTH } from "constants/dimensions";
+import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigateTo";
 
@@ -114,7 +115,7 @@ export const Menu = () => {
     e.preventDefault();
     await dispatch(signOut());
     setIsOpen(false);
-    navigateTo("/");
+    navigateTo(ROUTES.welcome);
   };
 
   return applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (

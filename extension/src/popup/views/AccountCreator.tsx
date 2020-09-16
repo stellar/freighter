@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
+import { ROUTES } from "popup/constants/routes";
+
 import { navigateTo } from "popup/helpers/navigateTo";
 import { createAccount, publicKeySelector } from "popup/ducks/authServices";
 
@@ -55,7 +57,7 @@ export const AccountCreator = () => {
 
   useEffect(() => {
     if (publicKey) {
-      navigateTo("/mnemonic-phrase");
+      navigateTo(ROUTES.mnemonicPhrase);
     }
   }, [publicKey]);
 
@@ -64,7 +66,7 @@ export const AccountCreator = () => {
       header="Create a password"
       subheader="Min 10 characters"
       icon={EMOJI.see_no_evil}
-      goBack={() => navigateTo("/")}
+      goBack={() => navigateTo(ROUTES.welcome)}
     >
       <Formik
         initialValues={initialValues}
