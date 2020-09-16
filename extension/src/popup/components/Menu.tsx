@@ -10,9 +10,10 @@ import {
 } from "popup/constants/styles";
 import { POPUP_WIDTH } from "constants/dimensions";
 
+import { navigateTo } from "popup/helpers/navigateTo";
+
 import { BasicButton } from "popup/basics/Buttons";
 
-import { history } from "popup/constants/history";
 import { applicationStateSelector, signOut } from "popup/ducks/authServices";
 import { Header } from "popup/components/Header";
 
@@ -113,7 +114,7 @@ export const Menu = () => {
     e.preventDefault();
     await dispatch(signOut());
     setIsOpen(false);
-    history.push("/");
+    navigateTo("/");
   };
 
   return applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
