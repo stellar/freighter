@@ -34,6 +34,7 @@ import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
 import { UnlockBackupPhrase } from "popup/views/UnlockBackupPhrase";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
+import { QR } from "popup/views/QR";
 
 import { Header } from "popup/components/Header";
 
@@ -152,6 +153,9 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.account}>
           <Header />
           <Account />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.qr}>
+          <QR />
         </PublicKeyRoute>
         <PrivateKeyRoute path={ROUTES.signTransaction}>
           <Header />
