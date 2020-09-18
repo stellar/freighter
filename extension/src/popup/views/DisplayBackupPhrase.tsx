@@ -2,24 +2,26 @@ import React, { useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 
+import { POPUP_WIDTH } from "constants/dimensions";
 import { emitMetric } from "helpers/metrics";
+import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
+
+import { ROUTES } from "popup/constants/routes";
+import { COLOR_PALETTE } from "popup/constants/styles";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+
+import { download } from "popup/helpers/download";
+import { navigateTo } from "popup/helpers/navigateTo";
+
+import { BasicButton, BackButton } from "popup/basics/Buttons";
+
+import { Toast } from "popup/components/Toast";
+import { ActionButton } from "popup/components/mnemonicPhrase/ActionButton";
+
+import { HeaderContainerEl, HeaderEl } from "popup/views/UnlockBackupPhrase";
 
 import Download from "popup/assets/download.png";
 import Copy from "popup/assets/copy.png";
-import { COLOR_PALETTE } from "popup/constants/styles";
-
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { download } from "popup/helpers/download";
-import { BasicButton } from "popup/basics/Buttons";
-import { SubmitButton } from "popup/basics/Forms";
-
-import { HalfScreen } from "popup/components/Onboarding";
-import { Toast } from "popup/components/Toast";
-import { ActionButton } from "./ActionButton";
-
-const WarningEl = styled.strong`
-  color: ${COLOR_PALETTE.primary};
-`;
 
 const MnemonicDisplayEl = styled.div`
   background: ${COLOR_PALETTE.primaryGradient};
@@ -59,25 +61,30 @@ const CopiedToastWrapperEl = styled.div`
   right: 15.625rem;
   position: absolute;
 `;
+const UnlockAccountEl = styled.div`
+  width: 100%;
+  max-width: ${POPUP_WIDTH}px;
+  box-sizing: border-box;
+  padding: 2rem 2.5rem;
+`;
 
-export const DisplayMnemonicPhrase = ({
-  mnemonicPhrase,
-  setReadyToConfirm,
-}: {
-  mnemonicPhrase: string;
-  setReadyToConfirm: (readyState: boolean) => void;
-}) => {
+export const DisplayBackupPhrase = () => {
+  const mnemonicPhrase = useMnemonicPhrase();
   const [isCopied, setIsCopied] = useState(false);
   const [isBlurred, setIsBlurred] = useState(true);
 
   return (
-    <HalfScreen data-testid="display-mnemonic-phrase">
+    <UnlockAccountEl data-testid="display-mnemonic-phrase">
+      <HeaderContainerEl>
+        <HeaderEl>
+          <BackButton onClick={() => navigateTo(ROUTES.account)} />
+          Show backup phrase
+        </HeaderEl>
+      </HeaderContainerEl>
       <p>
-        Your secret backup phrase makes it easy to back up and restore your
-        account.
-      </p>
-      <p>
-        <WarningEl>WARNING:</WarningEl> Never disclose your backup phase.
+        Your phrase is the only way to access your account on a new computer.
+        Anyone who has access to your phrase has access to your account, so keep
+        it noted in a safe place.
       </p>
       <MnemonicDisplayEl isBlurred={isBlurred}>
         {isBlurred ? (
@@ -85,7 +92,7 @@ export const DisplayMnemonicPhrase = ({
             data-testid="show"
             onClick={() => {
               setIsBlurred(false);
-              emitMetric(METRIC_NAMES.accountCreatorMnemonicViewPhrase);
+              emitMetric(METRIC_NAMES.backupPhraseViewed);
             }}
           >
             Show backup phrase
@@ -101,7 +108,7 @@ export const DisplayMnemonicPhrase = ({
               filename: "lyraMnemonicPhrase.txt",
               content: mnemonicPhrase,
             });
-            emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
+            emitMetric(METRIC_NAMES.backupPhraseDownload);
           }}
         >
           Download
@@ -112,7 +119,7 @@ export const DisplayMnemonicPhrase = ({
           text={mnemonicPhrase}
           onCopy={() => {
             setIsCopied(true);
-            emitMetric(METRIC_NAMES.accountCreatorMnemonicCopyPhrase);
+            emitMetric(METRIC_NAMES.backupPhraseCopy);
           }}
         >
           <ActionButton>
@@ -128,14 +135,6 @@ export const DisplayMnemonicPhrase = ({
           />
         </CopiedToastWrapperEl>
       </DisplayButtonsEl>
-      <SubmitButton
-        data-testid="confirm"
-        onClick={() => {
-          setReadyToConfirm(true);
-        }}
-      >
-        Next
-      </SubmitButton>
-    </HalfScreen>
+    </UnlockAccountEl>
   );
 };

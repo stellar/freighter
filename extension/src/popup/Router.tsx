@@ -32,6 +32,8 @@ import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
+import { UnlockBackupPhrase } from "popup/views/UnlockBackupPhrase";
+import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 
 import "popup/metrics/views";
 
@@ -151,11 +153,17 @@ export const Router = () => {
         <PrivateKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
         </PrivateKeyRoute>
+        <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
+          <DisplayBackupPhrase />
+        </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.grantAccess}>
           <GrantAccess />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
           <MnemonicPhrase />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.unlockBackupPhrase}>
+          <UnlockBackupPhrase />
         </PublicKeyRoute>
         <Route path={ROUTES.unlockAccount}>
           <UnlockAccount />

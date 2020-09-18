@@ -197,3 +197,19 @@ export const signOut = async (): Promise<{
 
   return response;
 };
+
+export const showBackupPhrase = async (
+  password: string,
+): Promise<{ error: string }> => {
+  let response = { error: "" };
+  try {
+    response = await sendMessageToBackground({
+      password,
+      type: SERVICE_TYPES.SHOW_BACKUP_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
