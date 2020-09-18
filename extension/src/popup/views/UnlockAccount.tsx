@@ -81,9 +81,9 @@ const ErrorEmojiEl = styled.div`
 
 export const UnlockAccount = () => {
   const location = useLocation();
-  const from = get(location, "state.from.pathname", "");
+  const from = get(location, "state.from.pathname", "") as ROUTES;
   const queryParams = get(location, "search", "");
-  const destination = from ? `${from}${queryParams}` : ROUTES.account;
+  const destination = from || ROUTES.account;
 
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
@@ -98,7 +98,7 @@ export const UnlockAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
     await dispatch(confirmPassword(password));
-    navigateTo(destination);
+    navigateTo(destination, queryParams);
   };
 
   return (
