@@ -4,8 +4,8 @@ import styled from "styled-components";
 
 import { emitMetric } from "helpers/metrics";
 
-import Download from "popup/assets/download.png";
-import Copy from "popup/assets/copy.png";
+import DownloadIcon from "popup/assets/download.svg";
+import CopyIcon from "popup/assets/copy.svg";
 import { COLOR_PALETTE } from "popup/constants/styles";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -105,7 +105,7 @@ export const DisplayMnemonicPhrase = ({
           }}
         >
           Download
-          <img src={Download} alt="Download button" />
+          <img src={DownloadIcon} alt="download button" />
         </ActionButton>
         <CopyToClipboard
           data-testid="copy"
@@ -117,7 +117,7 @@ export const DisplayMnemonicPhrase = ({
         >
           <ActionButton>
             Copy
-            <img src={Copy} alt="copy button" />
+            <img src={CopyIcon} alt="copy button" />
           </ActionButton>
         </CopyToClipboard>
         <CopiedToastWrapperEl>

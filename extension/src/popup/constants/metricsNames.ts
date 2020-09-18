@@ -49,7 +49,6 @@ export const METRIC_NAMES = {
   backupPhraseSuccess: "backup phrase: success",
   backupPhraseFail: "backup phrase: error",
 
-  backupPhraseViewed: "backup phrase: viewed phrase",
   backupPhraseDownload: "backup phrase: downloaded phrase",
   backupPhraseCopy: "backup phrase: copied phrase",
 };

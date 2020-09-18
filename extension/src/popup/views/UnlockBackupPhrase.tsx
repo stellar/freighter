@@ -13,6 +13,8 @@ import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
+import { navigateTo } from "popup/helpers/navigateTo";
+
 import { BackButton } from "popup/basics/Buttons";
 import {
   Form,
@@ -31,27 +33,30 @@ const UnlockAccountEl = styled.div`
 export const HeaderContainerEl = styled.div`
   display: flex;
   align-items: center;
-  padding: 2.5rem 0.25rem;
+  justify-content: flex-start;
+  padding: 0;
   line-height: 1;
 `;
 export const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
+  font-size: 1.56rem;
   margin: 1rem 0 0.75rem;
+  padding-left: 0.625rem;
 `;
-const SubheaderEl = styled.h3`
-  font-weight: ${FONT_WEIGHT.bold};
-  font-size: 0.95rem;
-  letter-spacing: 0.1px;
-  color: ${COLOR_PALETTE.primary}};
+export const BackButtonEl = styled(BackButton)`
+  position: relative;
+  top: 0;
+  left: 0;
 `;
-
 const CustomFormTextFieldEl = styled(TextField)`
   padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
 `;
-
 const ButtonRowEl = styled.div`
   padding: 1.5rem 0;
+`;
+const FormRowEl = styled(FormRow)`
+  padding: 3.25rem 0 0.15rem;
 `;
 
 export const UnlockBackupPhrase = () => {
@@ -85,21 +90,23 @@ export const UnlockBackupPhrase = () => {
   return (
     <UnlockAccountEl>
       <HeaderContainerEl>
-        <HeaderEl>
-          <BackButton onClick={() => history.push({ pathname: "/" })} />
-          Show backup phrase
-        </HeaderEl>
+        <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
+        <HeaderEl>Show backup phrase</HeaderEl>
       </HeaderContainerEl>
-      <p>
-        Your phrase is the only way to access your account on a new computer.
-        Anyone who has access to your phrase has access to your account, so keep
-        it noted in a safe place.
-      </p>
+
+      {/* TODO: REPLACE THE ERROR MESSAGE WITH ERROR MESSAGE COMPONENT */}
+      <div>
+        <p>Keep your phrase in a safe place</p>
+        <p>Your backup phrase is the only way to recover your account.</p>
+        <p>
+          Anyone who has access to your phrase has access to your account and to
+          the funds in it, so keep it noted in a safe place.
+        </p>
+      </div>
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
         {({ isSubmitting, isValid }) => (
           <Form>
-            <SubheaderEl>Enter your password to continue</SubheaderEl>
-            <FormRow>
+            <FormRowEl>
               <CustomFormTextFieldEl
                 autoComplete="off"
                 type="password"
@@ -107,11 +114,11 @@ export const UnlockBackupPhrase = () => {
                 placeholder="Enter password"
                 error={errorMessage}
               />
-            </FormRow>
+            </FormRowEl>
             <ApiErrorMessage error={errorMessage} />
             <ButtonRowEl>
               <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
-                Show Backup Phrase
+                Show my backup phrase
               </SubmitButton>
             </ButtonRowEl>
           </Form>
