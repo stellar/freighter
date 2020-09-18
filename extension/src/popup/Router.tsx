@@ -33,6 +33,8 @@ import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
 
+import { Header } from "popup/components/Header";
+
 import "popup/metrics/views";
 
 const PublicKeyRoute = (props: RouteProps) => {
@@ -146,30 +148,39 @@ export const Router = () => {
       <RouteListener />
       <Switch>
         <PublicKeyRoute path={ROUTES.account}>
+          <Header />
           <Account />
         </PublicKeyRoute>
         <PrivateKeyRoute path={ROUTES.signTransaction}>
+          <Header />
           <SignTransaction />
         </PrivateKeyRoute>
         <PublicKeyRoute path={ROUTES.grantAccess}>
+          <Header />
           <GrantAccess />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
+          <Header />
           <MnemonicPhrase />
         </PublicKeyRoute>
         <Route path={ROUTES.unlockAccount}>
+          <Header />
           <UnlockAccount />
         </Route>
         <Route path={ROUTES.mnemonicPhraseConfirmed}>
+          <Header />
           <FullscreenSuccessMessage />
         </Route>
         <Route path={ROUTES.accountCreator}>
+          <Header />
           <AccountCreator />
         </Route>
         <Route path={ROUTES.recoverAccount}>
+          <Header />
           <RecoverAccount />
         </Route>
         <Route path={ROUTES.recoverAccountSuccess}>
+          <Header />
           <FullscreenSuccessMessage />
         </Route>
         <HomeRoute />

@@ -9,7 +9,6 @@ import { metricsMiddleware } from "helpers/metrics";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
 import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
-import { Header } from "popup/components/Header";
 
 import { Router } from "./Router";
 
@@ -53,7 +52,6 @@ export function App() {
   return (
     <Provider store={store}>
       <GlobalStyle />
-      <Header />
       <Router />
     </Provider>
   );
