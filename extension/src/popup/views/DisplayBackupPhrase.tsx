@@ -6,9 +6,12 @@ import { POPUP_WIDTH } from "constants/dimensions";
 import { emitMetric } from "helpers/metrics";
 import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
 
+import { ROUTES } from "popup/constants/routes";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+
 import { download } from "popup/helpers/download";
+import { navigateTo } from "popup/helpers/navigateTo";
 
 import { BasicButton, BackButton } from "popup/basics/Buttons";
 
@@ -74,7 +77,7 @@ export const DisplayBackupPhrase = () => {
     <UnlockAccountEl data-testid="display-mnemonic-phrase">
       <HeaderContainerEl>
         <HeaderEl>
-          <BackButton onClick={() => window.location.replace("/")} />
+          <BackButton onClick={() => navigateTo(ROUTES.account)} />
           Show backup phrase
         </HeaderEl>
       </HeaderContainerEl>

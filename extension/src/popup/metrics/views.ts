@@ -21,6 +21,8 @@ const routeToEventName = {
   [ROUTES.recoverAccountSuccess]: METRIC_NAMES.viewRecoverAccountSuccess,
   [ROUTES.unlockBackupPhrase]: METRIC_NAMES.viewUnlockBackupPhrase,
   [ROUTES.displayBackupPhrase]: METRIC_NAMES.viewDisplayBackupPhrase,
+  [ROUTES.unlockBackupPhrase]: METRIC_NAMES.viewUnlockBackupPhrase,
+  [ROUTES.displayBackupPhrase]: METRIC_NAMES.viewDisplayBackupPhrase,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {
