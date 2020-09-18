@@ -26,7 +26,7 @@ registerHandler<AppState>(navigate, (_, a) => {
   const action = a as ReturnType<typeof navigate>;
   const { pathname, search } = action.payload.location;
 
-  const eventName = routeToEventName[pathname];
+  const eventName = routeToEventName[pathname as ROUTES];
 
   if (!eventName) {
     throw new Error(`Didn't find a metric event name for path '${pathname}'`);

@@ -5,6 +5,9 @@ import styled from "styled-components";
 import BigNumber from "bignumber.js";
 import punycode from "punycode";
 
+import { ROUTES } from "popup/constants/routes";
+
+import { navigateTo } from "popup/helpers/navigateTo";
 import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
@@ -224,7 +227,7 @@ export const SignTransaction = () => {
 
   return (
     <El>
-      <BackButton onClick={() => window.location.replace("/")} />
+      <BackButton onClick={() => navigateTo(ROUTES.welcome)} />
       <HeaderEl>Confirm Transaction</HeaderEl>
       <SubheaderEl>{punycodedDomain} is requesting a transaction</SubheaderEl>
       <ListEl>

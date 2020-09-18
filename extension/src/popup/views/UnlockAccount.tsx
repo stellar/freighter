@@ -5,13 +5,13 @@ import { useLocation } from "react-router-dom";
 import styled from "styled-components";
 import { Formik } from "formik";
 
-import { newTabHref } from "helpers/urls";
-
 import { ROUTES } from "popup/constants/routes";
-import { history } from "popup/constants/history";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { EMOJI } from "popup/constants/emoji";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+
+import { navigateTo } from "popup/helpers/navigateTo";
+import { newTabHref } from "helpers/urls";
 
 import { BasicButton } from "popup/basics/Buttons";
 import {
@@ -81,9 +81,9 @@ const ErrorEmojiEl = styled.div`
 
 export const UnlockAccount = () => {
   const location = useLocation();
-  const from = get(location, "state.from.pathname", "");
+  const from = get(location, "state.from.pathname", "") as ROUTES;
   const queryParams = get(location, "search", "");
-  const destination = from ? `${from}${queryParams}` : ROUTES.account;
+  const destination = from || ROUTES.account;
 
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
@@ -98,7 +98,7 @@ export const UnlockAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
     await dispatch(confirmPassword(password));
-    history.push(destination);
+    navigateTo(destination, queryParams);
   };
 
   return (

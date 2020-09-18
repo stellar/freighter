@@ -5,7 +5,8 @@ import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
-import { history } from "popup/constants/history";
+
+import { navigateTo } from "popup/helpers/navigateTo";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
@@ -76,7 +77,7 @@ export const RecoverAccount = () => {
         mnemonicPhrase: mnemonicPhrase.trim(),
       }),
     );
-    history.push(ROUTES.recoverAccountSuccess);
+    navigateTo(ROUTES.recoverAccountSuccess);
   };
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export const RecoverAccount = () => {
             header="Recover wallet from backup phrase"
             icon={icon}
             isMaxHeaderLength
-            goBack={() => history.push({ pathname: "/" })}
+            goBack={() => navigateTo(ROUTES.welcome)}
           >
             <>
               <FormRow>
