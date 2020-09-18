@@ -5,9 +5,6 @@ import styled from "styled-components";
 import BigNumber from "bignumber.js";
 import punycode from "punycode";
 
-import { ROUTES } from "popup/constants/routes";
-
-import { navigateTo } from "popup/helpers/navigateTo";
 import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
@@ -16,7 +13,7 @@ import { publicKeySelector } from "popup/ducks/authServices";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
-import { Button, BackButton } from "popup/basics/Buttons";
+import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
 const El = styled.div`
@@ -227,7 +224,6 @@ export const SignTransaction = () => {
 
   return (
     <El>
-      <BackButton onClick={() => navigateTo(ROUTES.welcome)} />
       <HeaderEl>Confirm Transaction</HeaderEl>
       <SubheaderEl>{punycodedDomain} is requesting a transaction</SubheaderEl>
       <ListEl>
