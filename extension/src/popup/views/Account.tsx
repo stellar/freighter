@@ -17,7 +17,7 @@ import { BasicButton } from "popup/basics/Buttons";
 import { Toast } from "popup/components/Toast";
 import { Menu } from "popup/components/Menu";
 
-import CopyColor from "popup/assets/copy-color.png";
+import CopyColorIcon from "popup/assets/copy-color.svg";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { Footer } from "popup/components/Footer";
 
@@ -51,10 +51,14 @@ const PublicKeyEl = styled.span`
 `;
 
 const CopyButtonEl = styled(BasicButton)`
-  background: url(${CopyColor});
-  background-size: cover;
-  width: 1rem;
-  height: 1rem;
+  padding: 0;
+  margin: 0;
+  vertical-align: middle;
+
+  img {
+    width: 1rem;
+    height: 1rem;
+  }
 `;
 
 const AccountDetailsEl = styled.section`
@@ -118,7 +122,9 @@ export const Account = () => {
                 emitMetric(METRIC_NAMES.copyPublickKey);
               }}
             >
-              <CopyButtonEl />
+              <CopyButtonEl>
+                <img src={CopyColorIcon} alt="copy button" />
+              </CopyButtonEl>
             </CopyToClipboard>
             <CopiedToastWrapperEl>
               <Toast
