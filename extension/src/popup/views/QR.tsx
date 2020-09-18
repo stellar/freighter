@@ -123,7 +123,7 @@ export const QR = () => {
           text={publicKey}
           onCopy={() => {
             setIsCopied(true);
-            emitMetric(METRIC_NAMES.accountCreatorMnemonicCopyPhrase);
+            emitMetric(METRIC_NAMES.qrCopyPublicKey);
           }}
         >
           <LinkButton>
@@ -143,9 +143,10 @@ export const QR = () => {
             window.open(
               `https://stellar.expert/explorer/${CURRENT_NETWORK}/account/${publicKey}`,
             );
+            emitMetric(METRIC_NAMES.qrClickedStellarExpert);
           }}
         >
-          <img src={StellarExpertIcon} alt="copy button" />
+          <img src={StellarExpertIcon} alt="view on StellarExpert button" />
           View on StellarExpert
         </LinkButton>
       </ButtonsEl>
