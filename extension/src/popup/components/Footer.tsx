@@ -5,7 +5,7 @@ import { COLOR_PALETTE } from "popup/constants/styles";
 const FooterEl = styled.footer`
   box-sizing: border-box;
   background: ${COLOR_PALETTE.white};
-  height: 8.5rem;
+  height: 8.375rem;
   padding: 1.4375rem 2rem;
   text-align: center;
 `;
