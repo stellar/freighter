@@ -127,7 +127,7 @@ export const Account = () => {
           <PublicKeyDisplayEl>
             <p>Your public key</p>
             <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
-            <Link to={ROUTES.qr}>
+            <Link to={ROUTES.viewPublicKey}>
               <QrButton />
             </Link>
             <CopyToClipboard

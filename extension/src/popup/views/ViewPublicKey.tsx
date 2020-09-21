@@ -92,7 +92,7 @@ const CopiedToastWrapperEl = styled.div`
   }
 `;
 
-export const QR = () => {
+export const ViewPublicKey = () => {
   const publicKey = useSelector(publicKeySelector);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -123,7 +123,7 @@ export const QR = () => {
           text={publicKey}
           onCopy={() => {
             setIsCopied(true);
-            emitMetric(METRIC_NAMES.qrCopyPublicKey);
+            emitMetric(METRIC_NAMES.viewPublicKeyCopy);
           }}
         >
           <LinkButton>
@@ -143,7 +143,7 @@ export const QR = () => {
             window.open(
               `https://stellar.expert/explorer/${CURRENT_NETWORK}/account/${publicKey}`,
             );
-            emitMetric(METRIC_NAMES.qrClickedStellarExpert);
+            emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
           }}
         >
           <img src={StellarExpertIcon} alt="view on StellarExpert button" />

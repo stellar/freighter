@@ -12,7 +12,7 @@ export const METRIC_NAMES = {
   viewUnlockAccount: "loaded screen: unlock account",
   viewUnlockBackupPhrase: "loaded screen: unlock backup phrase",
   viewDisplayBackupPhrase: "loaded screen: display backup phrase",
-  viewQR: "loaded screen: qr generator",
+  viewPublicKey: "loaded screen: view public key generator",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
@@ -53,6 +53,6 @@ export const METRIC_NAMES = {
   backupPhraseDownload: "backup phrase: downloaded phrase",
   backupPhraseCopy: "backup phrase: copied phrase",
 
-  qrCopyPublicKey: "qr generator: copied public key",
-  qrClickedStellarExpert: "qr generator: clicked StellarExpert",
+  viewPublicKeyCopy: "viewPublicKey: copied public key",
+  viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 };
