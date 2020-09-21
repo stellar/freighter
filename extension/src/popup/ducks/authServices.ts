@@ -132,16 +132,9 @@ export const confirmPassword = createAsyncThunk<
   return res;
 });
 
-export const loadAccount = createAsyncThunk("auth/loadAccount", async () => {
-  let res;
-
-  try {
-    res = await loadAccountService();
-  } catch (e) {
-    console.error(e);
-  }
-  return res;
-});
+export const loadAccount = createAsyncThunk("auth/loadAccount", () =>
+  loadAccountService(),
+);
 
 export const signOut = createAsyncThunk<
   APPLICATION_STATE,
@@ -249,6 +242,16 @@ const authSlice = createSlice({
         applicationState:
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
+      };
+    });
+    builder.addCase(loadAccount.rejected, (state, action) => {
+      const {
+        message = "An unknown error occurred when loading your account",
+      } = action.error;
+      return {
+        ...state,
+        applicationState: APPLICATION_STATE.APPLICATION_ERROR,
+        error: message,
       };
     });
     builder.addCase(confirmPassword.rejected, (state, action) => {

@@ -19,6 +19,7 @@ import {
   hasPrivateKeySelector,
   loadAccount,
   publicKeySelector,
+  authErrorSelector,
 } from "popup/ducks/authServices";
 import { navigate } from "popup/ducks/views";
 
@@ -32,18 +33,25 @@ import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
+import { AppError } from "popup/views/AppError";
 import { UnlockBackupPhrase } from "popup/views/UnlockBackupPhrase";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
+import { Debug } from "popup/views/Debug";
 
 import { Header } from "popup/components/Header";
 
 import "popup/metrics/views";
+import { DEVELOPMENT } from "@shared/constants/services";
 
 const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
+  const error = useSelector(authErrorSelector);
 
+  if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
+    return <AppError>{error}</AppError>;
+  }
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
     return <Loading />;
   }
@@ -74,7 +82,11 @@ const PrivateKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
+  const error = useSelector(authErrorSelector);
 
+  if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
+    return <AppError>{error}</AppError>;
+  }
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
     return <Loading />;
   }
@@ -95,6 +107,10 @@ const PrivateKeyRoute = (props: RouteProps) => {
 const HomeRoute = () => {
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
+  const error = useSelector(authErrorSelector);
+  if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
+    return <AppError>{error}</AppError>;
+  }
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
     return <Loading />;
   }
