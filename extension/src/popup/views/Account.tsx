@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 import { getAccountBalance } from "@shared/api/internal";
 
@@ -10,6 +11,8 @@ import { emitMetric } from "helpers/metrics";
 import { publicKeySelector } from "popup/ducks/authServices";
 
 import { POPUP_WIDTH } from "constants/dimensions";
+import { ROUTES } from "popup/constants/routes";
+
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { BasicButton } from "popup/basics/Buttons";
@@ -18,6 +21,7 @@ import { Toast } from "popup/components/Toast";
 import { Menu } from "popup/components/Menu";
 
 import CopyColorIcon from "popup/assets/copy-color.svg";
+import QrCode from "popup/assets/qr-code.png";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { Footer } from "popup/components/Footer";
 
@@ -61,6 +65,18 @@ const CopyButtonEl = styled(BasicButton)`
   }
 `;
 
+const QrButton = styled(BasicButton)`
+  background: url(${QrCode});
+  background-size: cover;
+  margin-right: 1rem;
+  width: 1rem;
+  height: 1rem;
+`;
+
+const VerticalCenterLink = styled(Link)`
+  vertical-align: middle;
+`;
+
 const AccountDetailsEl = styled.section`
   align-content: center;
   align-items: center;
@@ -80,7 +96,7 @@ const LumenBalanceEl = styled.h2`
 `;
 
 const CopiedToastWrapperEl = styled.div`
-  margin: 0.3rem 0 0 -5rem;
+  margin: 1rem 0 0 -2rem;
 `;
 
 const RowEl = styled.div`
@@ -115,6 +131,9 @@ export const Account = () => {
           <PublicKeyDisplayEl>
             <p>Your public key</p>
             <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
+            <VerticalCenterLink to={ROUTES.viewPublicKey}>
+              <QrButton />
+            </VerticalCenterLink>
             <CopyToClipboard
               text={publicKey}
               onCopy={() => {
