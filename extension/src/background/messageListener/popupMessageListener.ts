@@ -5,6 +5,7 @@ import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { PRODUCTION } from "constants/production";
 
 import { Response as Request } from "@shared/api/types";
 import {
@@ -97,18 +98,21 @@ export const popupMessageListener = (
     const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
     const wallet = fromMnemonic(mnemonicPhrase);
 
-    try {
-      const response = await fetch(
-        `https://friendbot.stellar.org?addr=${encodeURIComponent(
-          wallet.getPublicKey(0),
-        )}`,
-      );
-      const responseJSON = await response.json();
-      console.log("SUCCESS! You have a new account :)\n", responseJSON);
-    } catch (e) {
-      console.error(e);
-      throw new Error("Error creating account");
-    }
+    if (!PRODUCTION) {
+      // fund the account automatically if we're in a dev environment
+      try {
+        const response = await fetch(
+          `https://friendbot.stellar.org?addr=${encodeURIComponent(
+            wallet.getPublicKey(0),
+          )}`,
+        );
+        const responseJSON = await response.json();
+        console.log("SUCCESS! You have a new account :)\n", responseJSON);
+      } catch (e) {
+        console.error(e);
+        throw new Error("Error creating account");
+      }
+    } 
 
     await _storeAccount({
       password,
