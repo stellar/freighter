@@ -19,7 +19,7 @@ import { publicKeySelector } from "popup/ducks/authServices";
 import { Toast } from "popup/components/Toast";
 
 import CloseIcon from "popup/assets/icon-close-color.svg";
-import CopyIcon from "popup/assets/copy-color.png";
+import CopyIcon from "popup/assets/copy-color.svg";
 import StellarExpertIcon from "popup/assets/icon-stellar-expert.svg";
 
 const QrEl = styled.div`

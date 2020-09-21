@@ -73,6 +73,10 @@ const QrButton = styled(BasicButton)`
   height: 1rem;
 `;
 
+const VerticalCenterLink = styled(Link)`
+  vertical-align: middle;
+`;
+
 const AccountDetailsEl = styled.section`
   align-content: center;
   align-items: center;
@@ -92,7 +96,7 @@ const LumenBalanceEl = styled.h2`
 `;
 
 const CopiedToastWrapperEl = styled.div`
-  margin: 0.3rem 0 0 -5rem;
+  margin: 1rem 0 0 -2rem;
 `;
 
 const RowEl = styled.div`
@@ -127,9 +131,9 @@ export const Account = () => {
           <PublicKeyDisplayEl>
             <p>Your public key</p>
             <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
-            <Link to={ROUTES.viewPublicKey}>
+            <VerticalCenterLink to={ROUTES.viewPublicKey}>
               <QrButton />
-            </Link>
+            </VerticalCenterLink>
             <CopyToClipboard
               text={publicKey}
               onCopy={() => {
