@@ -1,6 +1,6 @@
 {
   "name": "@stellar/lyra-api",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "license": "Apache-2.0",
   "author": "Stellar Development Foundation <hello@stellar.org>",
   "description": "Utility functions to interact with Lyra extension",
