@@ -8,7 +8,7 @@ const { DEFAULT_STATS } = require("../@shared/constants/config");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
-const commonConfig = (env = { EXPERIMENTAL: false }) => ({
+const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
   node: { global: true, fs: "empty" },
   entry: {
     background: [
@@ -77,6 +77,9 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
     }),
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
+    }),
+    new webpack.DefinePlugin({
+      PRODUCTION: env.PRODUCTION,
     }),
   ],
   stats: DEFAULT_STATS,

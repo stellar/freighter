@@ -1,11 +1,11 @@
 import StellarSdk from "stellar-sdk";
 
-import { SERVER_URL } from "../constants/stellar";
+import { NETWORK_URL } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { sendMessageToBackground } from "./helpers";
 
-const server = new StellarSdk.Server(SERVER_URL);
+const server = new StellarSdk.Server(NETWORK_URL);
 
 export const createAccount = async (
   password: string,
@@ -124,6 +124,8 @@ export const getAccountBalance = async (
     response = await server.loadAccount(publicKey);
   } catch (e) {
     console.error(e);
+    // TODO: Check that this is indeed a 404 before returning 0
+    return { balance: "0" };
   }
   return response.balances.filter(
     // eslint-disable-next-line camelcase
