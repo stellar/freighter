@@ -136,6 +136,7 @@ export const getAccountBalance = async (
     response = await server.loadAccount(publicKey);
   } catch (e) {
     console.error(e);
+    // TODO: Check that this is indeed a 404 before returning 0
     return { balance: "0" };
   }
   return response.balances.filter(
