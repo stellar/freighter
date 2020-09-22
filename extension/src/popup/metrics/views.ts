@@ -23,6 +23,7 @@ const routeToEventName = {
   [ROUTES.displayBackupPhrase]: METRIC_NAMES.viewDisplayBackupPhrase,
   [ROUTES.unlockBackupPhrase]: METRIC_NAMES.viewUnlockBackupPhrase,
   [ROUTES.displayBackupPhrase]: METRIC_NAMES.viewDisplayBackupPhrase,
+  [ROUTES.debug]: METRIC_NAMES.viewDebug,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

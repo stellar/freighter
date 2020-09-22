@@ -207,6 +207,11 @@ export const Router = () => {
           <Header />
           <FullscreenSuccessMessage />
         </Route>
+        {DEVELOPMENT && (
+          <Route path={ROUTES.debug}>
+            <Debug />
+          </Route>
+        )}
         <HomeRoute />
       </Switch>
     </HashRouter>
