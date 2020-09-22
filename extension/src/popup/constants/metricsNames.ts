@@ -1,4 +1,5 @@
 export const METRIC_NAMES = {
+  viewDebug: "loaded screen: debug",
   viewWelcome: "loaded screen: welcome",
   viewAccount: "loaded screen: account",
   viewAccountCreator: "loaded screen: account creator",

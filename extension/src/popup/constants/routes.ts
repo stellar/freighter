@@ -1,4 +1,5 @@
 export enum ROUTES {
+  debug = "/debug",
   welcome = "/",
   account = "/account",
   signTransaction = "/sign-transaction",

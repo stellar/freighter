@@ -4,13 +4,17 @@ import {
   EXTERNAL_MSG_RESPONSE,
 } from "../constants/services";
 import { Response } from "./types";
+import { TimeoutError } from "../constants/errors";
 
 export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
   window.postMessage(
     { source: EXTERNAL_MSG_REQUEST, ...msg },
     window.location.origin,
   );
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new TimeoutError());
+    }, 1000);
     const messageListener = (event: { source: any; data: Response }) => {
       // We only accept messages from ourselves
       if (event.source !== window) return;
@@ -18,6 +22,8 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
       if (!event.data.source || event.data.source !== EXTERNAL_MSG_RESPONSE) {
         return;
       }
+
+      clearTimeout(timeout);
       resolve(event.data);
       window.removeEventListener("message", messageListener);
     };

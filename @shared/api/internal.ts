@@ -24,26 +24,14 @@ export const createAccount = async (
   return { publicKey };
 };
 
-export const loadAccount = async (): Promise<{
+export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
   applicationState: APPLICATION_STATE;
-}> => {
-  let response = {
-    hasPrivateKey: false,
-    publicKey: "",
-    applicationState: APPLICATION_STATE.APPLICATION_STARTED,
-  };
-
-  try {
-    response = await sendMessageToBackground({
-      type: SERVICE_TYPES.LOAD_ACCOUNT,
-    });
-  } catch (e) {
-    console.error(e);
-  }
-  return response;
-};
+}> =>
+  sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_ACCOUNT,
+  });
 
 export const getMnemonicPhrase = async (): Promise<{
   mnemonicPhrase: string;
