@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useSelector } from "react-redux";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { NETWORK_NAME } from "@shared/constants/stellar";
 
 import { applicationStateSelector } from "popup/ducks/authServices";
 
@@ -50,7 +51,7 @@ export const Header = ({ className, ...props }: HeaderProps) => {
   return (
     <HeaderEl className={className} {...props}>
       <H1El>Lyra</H1El>
-      <NetworkEl>Testnet</NetworkEl>
+      <NetworkEl>{NETWORK_NAME}</NetworkEl>
     </HeaderEl>
   );
 };

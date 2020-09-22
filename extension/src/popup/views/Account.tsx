@@ -85,7 +85,7 @@ const RowEl = styled.div`
 `;
 
 export const Account = () => {
-  const [accountBalance, setaccountBalance] = useState("");
+  const [accountBalance, setaccountBalance] = useState("0.00");
   const [isCopied, setIsCopied] = useState(false);
   const publicKey = useSelector(publicKeySelector);
 

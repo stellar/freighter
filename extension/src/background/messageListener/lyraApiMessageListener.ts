@@ -9,6 +9,7 @@ import {
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
 import { POPUP_WIDTH } from "constants/dimensions";
+import { NETWORK } from "@shared/constants/stellar";
 
 import { removeQueryParam } from "helpers/urls";
 
@@ -68,7 +69,7 @@ export const lyraApiMessageListener = (
 
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
-      StellarSdk.Networks.TESTNET,
+      StellarSdk.Networks[NETWORK],
     );
 
     const { tab } = sender;

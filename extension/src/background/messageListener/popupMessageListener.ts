@@ -5,7 +5,7 @@ import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { PRODUCTION } from "constants/production";
+import { isTestnet } from "@shared/constants/stellar";
 
 import { Response as Request } from "@shared/api/types";
 import {
@@ -98,7 +98,7 @@ export const popupMessageListener = (
     const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
     const wallet = fromMnemonic(mnemonicPhrase);
 
-    if (!PRODUCTION) {
+    if (isTestnet) {
       // fund the account automatically if we're in a dev environment
       try {
         const response = await fetch(

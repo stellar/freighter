@@ -15,6 +15,7 @@
     "build:lyra-api": "yarn workspace @stellar/lyra-api build",
     "build:docs": "yarn workspace docs build",
     "build:extension:experimental": "yarn workspace extension build:experimental",
+    "build:extension:production": "yarn workspace extension build:production",
     "build:extension": "yarn workspace extension build",
     "start": "run-p --print-label start:lyra-api start:docs start:extension start:unpacked",
     "start:lyra-api": "yarn workspace @stellar/lyra-api start",
