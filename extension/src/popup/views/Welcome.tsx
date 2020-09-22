@@ -4,9 +4,10 @@ import { Link } from "react-router-dom";
 
 import { HEADER_HEIGHT } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
-
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { COLOR_PALETTE } from "popup/constants/styles";
+
+import { Header } from "popup/components/Header";
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
 const BoxEl = styled.div`
   position: relative;
@@ -101,6 +102,7 @@ const HalfScreenEl = styled.section`
 export const Welcome = () => (
   <>
     <FullscreenStyle />
+    <Header />
     <ColumnScreenEl>
       <RowScreenEl>
         <LargeHeadingEl>
