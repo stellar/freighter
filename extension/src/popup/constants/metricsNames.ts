@@ -1,4 +1,5 @@
 export const METRIC_NAMES = {
+  viewDebug: "loaded screen: debug",
   viewWelcome: "loaded screen: welcome",
   viewAccount: "loaded screen: account",
   viewAccountCreator: "loaded screen: account creator",
@@ -12,7 +13,7 @@ export const METRIC_NAMES = {
   viewUnlockAccount: "loaded screen: unlock account",
   viewUnlockBackupPhrase: "loaded screen: unlock backup phrase",
   viewDisplayBackupPhrase: "loaded screen: display backup phrase",
-  viewDebug: "loaded screen: debug",
+  viewPublicKey: "loaded screen: view public key generator",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
@@ -50,7 +51,9 @@ export const METRIC_NAMES = {
   backupPhraseSuccess: "backup phrase: success",
   backupPhraseFail: "backup phrase: error",
 
-  backupPhraseViewed: "backup phrase: viewed phrase",
   backupPhraseDownload: "backup phrase: downloaded phrase",
   backupPhraseCopy: "backup phrase: copied phrase",
+
+  viewPublicKeyCopy: "viewPublicKey: copied public key",
+  viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 };

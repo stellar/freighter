@@ -27,6 +27,7 @@ const GlobalStyle = createGlobalStyle`
   }
   body, html, #root {
     height: ${POPUP_HEIGHT}px;
+    width: ${POPUP_WIDTH}px;
   }
 
   body * {

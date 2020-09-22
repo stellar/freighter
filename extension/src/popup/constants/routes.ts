@@ -1,4 +1,5 @@
 export enum ROUTES {
+  debug = "/debug",
   welcome = "/",
   account = "/account",
   signTransaction = "/sign-transaction",
@@ -11,5 +12,5 @@ export enum ROUTES {
   recoverAccountSuccess = "/recover-account-success",
   unlockBackupPhrase = "/unlock-backup-phrase",
   displayBackupPhrase = "/display-backup-phrase",
-  debug = "/debug",
+  viewPublicKey = "/viewPublicKey",
 }

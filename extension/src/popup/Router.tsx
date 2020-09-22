@@ -37,6 +37,7 @@ import { AppError } from "popup/views/AppError";
 import { UnlockBackupPhrase } from "popup/views/UnlockBackupPhrase";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
+import { ViewPublicKey } from "popup/views/ViewPublicKey";
 
 import { Header } from "popup/components/Header";
 
@@ -168,6 +169,9 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.account}>
           <Header />
           <Account />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.viewPublicKey}>
+          <ViewPublicKey />
         </PublicKeyRoute>
         <PrivateKeyRoute path={ROUTES.signTransaction}>
           <Header />
