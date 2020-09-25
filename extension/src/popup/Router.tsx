@@ -105,10 +105,33 @@ const PrivateKeyRoute = (props: RouteProps) => {
   return <Route {...props} />;
 };
 
+/*
+We don't know if the user is missing their public key because
+a) it’s in the keystore in localstorage and it needs to be extracted or b) the account doesn’t exist at all.
+We are checking for applicationState here to find out if the account doesn’t exist
+If an account doesn't exist, go to the <Welcome /> page; otherwise, go to <UnlockAccount/>
+*/
+
+const UnlockAccountRoute = (props: RouteProps) => {
+  const applicationState = useSelector(applicationStateSelector);
+
+  if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
+    return (
+      <Redirect
+        to={{
+          pathname: "/",
+        }}
+      />
+    );
+  }
+  return <Route {...props} />;
+};
+
 const HomeRoute = () => {
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
   const error = useSelector(authErrorSelector);
+
   if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
     return <AppError>{error}</AppError>;
   }
@@ -191,14 +214,14 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.unlockBackupPhrase}>
           <UnlockBackupPhrase />
         </PublicKeyRoute>
-        <Route path={ROUTES.unlockAccount}>
+        <UnlockAccountRoute path={ROUTES.unlockAccount}>
           <Header />
           <UnlockAccount />
-        </Route>
-        <Route path={ROUTES.mnemonicPhraseConfirmed}>
+        </UnlockAccountRoute>
+        <PublicKeyRoute path={ROUTES.mnemonicPhraseConfirmed}>
           <Header />
           <FullscreenSuccessMessage />
-        </Route>
+        </PublicKeyRoute>
         <Route path={ROUTES.accountCreator}>
           <Header />
           <AccountCreator />
@@ -207,16 +230,16 @@ export const Router = () => {
           <Header />
           <RecoverAccount />
         </Route>
-        <Route path={ROUTES.recoverAccountSuccess}>
+        <PublicKeyRoute path={ROUTES.recoverAccountSuccess}>
           <Header />
           <FullscreenSuccessMessage />
-        </Route>
+        </PublicKeyRoute>
+        <HomeRoute />
         {DEVELOPMENT && (
           <Route path={ROUTES.debug}>
             <Debug />
           </Route>
         )}
-        <HomeRoute />
       </Switch>
     </HashRouter>
   );
