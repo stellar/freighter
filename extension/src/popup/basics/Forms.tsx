@@ -80,7 +80,7 @@ export const Error = ({ name }: { name: string }) => (
 
 export const Label = styled.label`
   color: ${COLOR_PALETTE.secondaryText};
-  font-size: 0.8125rem;
+  font-size: 0.9rem;
 `;
 
 export const TextField = styled(Field)`
