@@ -8,6 +8,7 @@ import { emitMetric } from "helpers/metrics";
 
 import { BasicButton } from "popup/basics/Buttons";
 
+import { NETWORK_NAME } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -96,9 +97,6 @@ export const ViewPublicKey = () => {
   const publicKey = useSelector(publicKeySelector);
   const [isCopied, setIsCopied] = useState(false);
 
-  /* TODO: SHOULD BE BASED ON NETWORK SWITCH (MAINNET or TESTNET) */
-  const CURRENT_NETWORK = "testnet";
-
   return (
     <QrEl>
       <Header>
@@ -141,7 +139,8 @@ export const ViewPublicKey = () => {
         <LinkButton
           onClick={() => {
             window.open(
-              `https://stellar.expert/explorer/${CURRENT_NETWORK}/account/${publicKey}`,
+              
+              `https://stellar.expert/explorer/${NETWORK_NAME.toLowerCase()}/account/${publicKey}`,
             );
             emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
           }}
