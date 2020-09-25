@@ -71,17 +71,18 @@ export const RecoverAccount = () => {
 
   const handleSubmit = async (values: FormValues) => {
     const { password, mnemonicPhrase } = values;
+
     await dispatch(
       recoverAccount({
         password,
         mnemonicPhrase: mnemonicPhrase.trim(),
       }),
     );
-    navigateTo(ROUTES.recoverAccountSuccess);
   };
 
   useEffect(() => {
     if (publicKey) {
+      navigateTo(ROUTES.recoverAccountSuccess);
       window.close();
     }
   }, [publicKey]);
