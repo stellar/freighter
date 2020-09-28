@@ -5,11 +5,16 @@ import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
+import { EMOJI } from "popup/constants/emoji";
 
 import { navigateTo } from "popup/helpers/navigateTo";
+import {
+  password as passwordValidator,
+  confirmPassword as confirmPasswordValidator,
+  termsOfUse as termsofUseValidator,
+} from "popup/helpers/validators";
 import { createAccount, publicKeySelector } from "popup/ducks/authServices";
 
-import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 import {
   Form,
   SubmitButton,
@@ -18,12 +23,9 @@ import {
   CheckboxField,
   TextField,
 } from "popup/basics/Forms";
-import {
-  password as passwordValidator,
-  confirmPassword as confirmPasswordValidator,
-  termsOfUse as termsofUseValidator,
-} from "popup/helpers/validators";
-import { EMOJI } from "popup/constants/emoji";
+
+import { Onboarding, HalfScreen } from "popup/components/Onboarding";
+import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding-left: 1.55rem;
@@ -64,7 +66,6 @@ export const AccountCreator = () => {
   return (
     <Onboarding
       header="Create a password"
-      subheader="Min 10 characters"
       icon={EMOJI.see_no_evil}
       goBack={() => navigateTo(ROUTES.welcome)}
     >
@@ -94,6 +95,7 @@ export const AccountCreator = () => {
                 />
                 <Error name="confirmPassword" />
               </FormRow>
+              <PasswordRequirements />
               <FormRow>
                 <CheckboxField
                   name="termsOfUse"

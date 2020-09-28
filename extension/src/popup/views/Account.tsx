@@ -15,6 +15,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+
 import { BasicButton } from "popup/basics/Buttons";
 
 import { Toast } from "popup/components/Toast";

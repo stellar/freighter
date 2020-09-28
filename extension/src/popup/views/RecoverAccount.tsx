@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
+import { HEADER_HEIGHT } from "constants/dimensions";
+
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigateTo";
@@ -19,8 +21,6 @@ import {
   recoverAccount,
 } from "popup/ducks/authServices";
 
-import { HEADER_HEIGHT } from "constants/dimensions";
-
 import {
   ApiErrorMessage,
   Error,
@@ -30,7 +30,9 @@ import {
   SubmitButton,
   Form,
 } from "popup/basics/Forms";
+
 import { Onboarding, HalfScreen } from "popup/components/Onboarding";
+import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 const FullHeightFormEl = styled(Form)`
   height: calc(100vh - ${HEADER_HEIGHT}px);
@@ -135,6 +137,7 @@ export const RecoverAccount = () => {
                   />
                   <Error name="confirmPassword" />
                 </FormRow>
+                <PasswordRequirements />
                 <FormRow>
                   <CheckboxField
                     label={

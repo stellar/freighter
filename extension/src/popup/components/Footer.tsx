@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+
 import { COLOR_PALETTE } from "popup/constants/styles";
 
 const FooterEl = styled.footer`
