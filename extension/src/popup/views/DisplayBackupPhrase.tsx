@@ -17,6 +17,7 @@ import { Button } from "popup/basics/Buttons";
 
 import { Toast } from "popup/components/Toast";
 import { ActionButton } from "popup/components/mnemonicPhrase/ActionButton";
+import { WarningMessage } from "popup/components/WarningMessage";
 
 import {
   HeaderContainerEl,
@@ -24,6 +25,7 @@ import {
   BackButtonEl,
 } from "popup/views/UnlockBackupPhrase";
 
+import OrangeLockIcon from "popup/assets/icon-orange-lock.svg";
 import DownloadColorIcon from "popup/assets/download-color.svg";
 import CopyColorIcon from "popup/assets/copy-color.svg";
 
@@ -34,16 +36,14 @@ const MnemonicDisplayEl = styled.div`
   border: 2px solid ${COLOR_PALETTE.primary};
   border-radius: 20px;
   font-size: 1.125rem;
-  margin: 2rem 0 1rem;
+  margin: 0;
+  margin-bottom: 1rem;
   padding: 1rem;
   position: relative;
 `;
-
 const DisplayButtonsEl = styled.div`
   color: ${COLOR_PALETTE.primary};
   font-weight: ${FONT_WEIGHT.bold};
-  margin-bottom: 2.5rem;
-  margin-right: 1rem;
   position: relative;
   text-align: right;
 
@@ -64,11 +64,20 @@ const UnlockAccountEl = styled.div`
   padding: 2rem 2.5rem;
 `;
 const ButtonRowEl = styled.div`
-  padding: 1.5rem 0;
+  padding: 1.15rem 0 0;
 `;
 const ActionButtonEl = styled(ActionButton)`
+  padding: 0 0.75rem;
   color: ${COLOR_PALETTE.primary};
   opacity: 1;
+`;
+const H3 = styled.h3`
+  font-weight: ${FONT_WEIGHT.normal};
+  color: ${COLOR_PALETTE.primary};
+  font-size: 1.125rem;
+  line-height: 2;
+  margin: 0;
+  padding: 0 2px;
 `;
 
 export const DisplayBackupPhrase = () => {
@@ -81,15 +90,17 @@ export const DisplayBackupPhrase = () => {
         <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
         <HeaderEl>Show backup phrase</HeaderEl>
       </HeaderContainerEl>
-      {/* TODO: REPLACE THE ERROR MESSAGE WITH ERROR MESSAGE COMPONENT */}
-      <div>
-        <p>Keep your phrase in a safe place</p>
+      <WarningMessage
+        icon={OrangeLockIcon}
+        subheader="Keep your phrase in a safe place"
+      >
         <p>Your backup phrase is the only way to recover your account.</p>
         <p>
           Anyone who has access to your phrase has access to your account and to
           the funds in it, so keep it noted in a safe place.
         </p>
-      </div>
+      </WarningMessage>
+      <H3>Your backup phrase:</H3>
       <MnemonicDisplayEl>{mnemonicPhrase}</MnemonicDisplayEl>
       <DisplayButtonsEl>
         <ActionButtonEl

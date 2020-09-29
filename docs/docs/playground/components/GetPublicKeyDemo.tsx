@@ -4,16 +4,21 @@ import { PlaygroundInput } from "./basics/inputs";
 
 export const GetPublicKeyDemo = () => {
   const [publicKeyResult, setPublicKeyResult] = useState("");
+
   const btnHandler = async () => {
-    let publicKey;
+    let response = { publicKey: "" };
     let error = "";
+
     try {
-      publicKey = await getPublicKey();
+      response = await getPublicKey();
     } catch (e) {
       error = e;
     }
+
+    const { publicKey } = response;
     setPublicKeyResult(publicKey || error);
   };
+
   return (
     <section>
       <div>

@@ -13,7 +13,9 @@ export const SignTransactionDemo = () => {
     let error = "";
 
     try {
-      signedTransaction = await signTransaction(transactionXdr);
+      signedTransaction = await signTransaction({
+        transactionXdr,
+      });
     } catch (e) {
       error = e;
     }

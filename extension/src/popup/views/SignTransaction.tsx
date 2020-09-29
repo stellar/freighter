@@ -6,6 +6,7 @@ import BigNumber from "bignumber.js";
 import punycode from "punycode";
 
 import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
+import { removeQueryParam } from "helpers/urls";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
 
@@ -13,18 +14,24 @@ import { publicKeySelector } from "popup/ducks/authServices";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
+import { WarningMessage } from "popup/components/WarningMessage";
+
+import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
+
+const WHITELIST_ID = "whitelist";
+
 const El = styled.div`
-  padding: 2.25rem 2.5rem;
+  padding: 1.5rem 1.875rem;
   box-sizing: border-box;
 `;
 const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
-  margin: 1rem 0 0.75rem;
-  padding-top: 1.5rem;
+  margin: 0;
 `;
 const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
@@ -86,7 +93,13 @@ export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { transaction, domain } = getTransactionInfo(location.search);
+
   const punycodedDomain = punycode.toASCII(domain);
+  const whitelistStr = localStorage.getItem(WHITELIST_ID) || "";
+  const whitelist = whitelistStr.split(",");
+  const isDomainWhiteListed = whitelist.includes(
+    removeQueryParam(punycodedDomain),
+  );
 
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
@@ -225,6 +238,21 @@ export const SignTransaction = () => {
   return (
     <El>
       <HeaderEl>Confirm Transaction</HeaderEl>
+      {!isDomainWhiteListed ? (
+        <WarningMessage
+          icon={WarningShieldIcon}
+          subheader="This is the first time you interact with this domain in this browser"
+        >
+          <p>
+            Double check the domain name, if you suspect of something, don't
+            give it access.
+          </p>
+          <p>
+            If you interacted with this domain before in this browser and are
+            seeing this message, it may indicate a scam.
+          </p>
+        </WarningMessage>
+      ) : null}
       <SubheaderEl>{punycodedDomain} is requesting a transaction</SubheaderEl>
       <ListEl>
         <li>
