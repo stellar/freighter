@@ -6,16 +6,15 @@ export const GetPublicKeyDemo = () => {
   const [publicKeyResult, setPublicKeyResult] = useState("");
 
   const btnHandler = async () => {
-    let response = { publicKey: "" };
+    let publicKey;
     let error = "";
 
     try {
-      response = await getPublicKey();
+      publicKey = await getPublicKey();
     } catch (e) {
       error = e;
     }
 
-    const { publicKey } = response;
     setPublicKeyResult(publicKey || error);
   };
 
