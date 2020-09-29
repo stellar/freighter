@@ -12,10 +12,11 @@ export const COLOR_PALETTE = {
   error: "#F42703",
   errorFaded: "#FFBFBF",
   greyFaded: "#D2D5DB",
+  warning: "#E4792C",
+  warningFaded: "#F8E4CC",
   primaryGradient: "linear-gradient(180deg, #4b42e3 0%, #302cd1 100%)",
   darkPrimaryGradient: "linear-gradient(180deg, #443BDB 0%, #2521C3 100%)",
   menuGradient: "linear-gradient(180deg, #564df0 0%, #2d18b5 100%)",
-  warningGradient: "linear-gradient(180deg, #ed5c40 0%, #e33d24 100%)",
 };
 
 export const Z_INDEXES = {

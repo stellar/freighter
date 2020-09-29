@@ -24,11 +24,15 @@ import {
   TextField,
 } from "popup/basics/Forms";
 
+import { WarningMessage } from "popup/components/WarningMessage";
+
+import OrangeLockIcon from "popup/assets/icon-orange-lock.svg";
+
 const UnlockAccountEl = styled.div`
   width: 100%;
   max-width: ${POPUP_WIDTH}px;
   box-sizing: border-box;
-  padding: 2.25rem 2.5rem;
+  padding: 2.68rem 2.18rem;
 `;
 export const HeaderContainerEl = styled.div`
   display: flex;
@@ -36,13 +40,14 @@ export const HeaderContainerEl = styled.div`
   justify-content: flex-start;
   padding: 0;
   line-height: 1;
+  margin-bottom: 2.5rem;
 `;
 export const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
   font-size: 1.56rem;
-  margin: 1rem 0 0.75rem;
-  padding-left: 0.625rem;
+  margin: 0;
+  padding-left: 1rem;
 `;
 export const BackButtonEl = styled(BackButton)`
   position: relative;
@@ -56,7 +61,7 @@ const ButtonRowEl = styled.div`
   padding: 1.5rem 0;
 `;
 const FormRowEl = styled(FormRow)`
-  padding: 3.25rem 0 0.15rem;
+  padding: 2rem 0 0.15rem;
 `;
 
 export const UnlockBackupPhrase = () => {
@@ -93,16 +98,16 @@ export const UnlockBackupPhrase = () => {
         <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
         <HeaderEl>Show backup phrase</HeaderEl>
       </HeaderContainerEl>
-
-      {/* TODO: REPLACE THE ERROR MESSAGE WITH ERROR MESSAGE COMPONENT */}
-      <div>
-        <p>Keep your phrase in a safe place</p>
+      <WarningMessage
+        icon={OrangeLockIcon}
+        subheader="Keep your phrase in a safe place"
+      >
         <p>Your backup phrase is the only way to recover your account.</p>
         <p>
           Anyone who has access to your phrase has access to your account and to
           the funds in it, so keep it noted in a safe place.
         </p>
-      </div>
+      </WarningMessage>
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
         {({ isSubmitting, isValid }) => (
           <Form>
@@ -111,7 +116,7 @@ export const UnlockBackupPhrase = () => {
                 autoComplete="off"
                 type="password"
                 name="password"
-                placeholder="Enter password"
+                placeholder="Enter your password"
                 error={errorMessage}
               />
             </FormRowEl>

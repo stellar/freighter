@@ -12,20 +12,24 @@ import {
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
+
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
+import { WarningMessage } from "popup/components/WarningMessage";
+
+import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
 
 import "popup/metrics/access";
 
 const WHITELIST_ID = "whitelist";
 
 const GrantAccessEl = styled.div`
-  padding: 2.25rem 2.5rem;
+  padding: 1.5rem 1.875rem;
 `;
 const HeaderEl = styled.h1`
   color: ${COLOR_PALETTE.primary}};
   font-weight: ${FONT_WEIGHT.light};
-  margin: 1rem 0 0.75rem;
+  margin: 0;
 `;
 const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
@@ -66,24 +70,20 @@ const ButtonContainerEl = styled.div`
 const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
 `;
-const WarningMessageEl = styled.div`
-  background-color: ${COLOR_PALETTE.errorFaded};
-  padding: 0.5rem 1rem;
-  text-align: center;
-  font-size: 0.85rem;
-`;
 
 export const GrantAccess = () => {
   const location = useLocation();
   const dispatch = useDispatch();
+  const [isGranting, setIsGranting] = useState(false);
+
   const { url } = parsedSearchParam(location.search);
   const hostname = getUrlHostname(url);
   const punycodedDomain = punycode.toASCII(hostname);
-  const [isGranting, setIsGranting] = useState(false);
-
   const whitelistStr = localStorage.getItem(WHITELIST_ID) || "";
   const whitelist = whitelistStr.split(",");
-  const isDomainWhiteListed = whitelist.includes(removeQueryParam(url));
+  const isDomainWhiteListed = whitelist.includes(
+    removeQueryParam(punycodedDomain),
+  );
 
   const rejectAndClose = () => {
     dispatch(rejectAccess());
@@ -98,27 +98,24 @@ export const GrantAccess = () => {
 
   return (
     <GrantAccessEl>
-      <HeaderEl>Connection request</HeaderEl>
-      <SubheaderEl>{punycodedDomain} wants to know your public key</SubheaderEl>
+      <HeaderEl>Share public key</HeaderEl>
       {!isDomainWhiteListed ? (
-        <WarningMessageEl>
+        <WarningMessage
+          icon={WarningShieldIcon}
+          subheader="This is the first time you interact with this domain in this browser"
+        >
           <p>
-            <strong>
-              This is the first time you‘ve interacted with this domain on this
-              computer.
-            </strong>
+            Double check the domain name, if you suspect of something, don't
+            give it access.
           </p>
           <p>
-            Make sure the domain name above reads as it should, if you suspect
-            of something, don't give it permission. If you‘ve interacted with this
-            domain before in this browser, this might indicate a scam.
+            If you interacted with this domain before in this browser and are
+            seeing this message, it may indicate a scam.
           </p>
-        </WarningMessageEl>
+        </WarningMessage>
       ) : null}
-      <TextEl>
-        This site is asking for access to the public key associated with this
-        Lyra wallet. Only share your information with websites you trust.{" "}
-      </TextEl>
+      <SubheaderEl>{punycodedDomain} wants to know your public key</SubheaderEl>
+      <TextEl>This website wants to know your public key:</TextEl>
       <ButtonContainerEl isColumnDirection={!isDomainWhiteListed}>
         <SubmitButton
           isSubmitting={isGranting}

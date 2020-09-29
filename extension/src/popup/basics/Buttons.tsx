@@ -77,11 +77,11 @@ const BackButtonEl = styled(BasicButton)`
   left: 1rem;
   display: flex;
   align-items: center;
-  background: ${COLOR_PALETTE.inputBackground};
+  background: ${COLOR_PALETTE.greyFaded};
   border-radius: 0.625rem;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.3rem;
+  height: 2.3rem;
 
   img {
     transform: rotate(180deg);
