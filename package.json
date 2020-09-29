@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "run-p --print-label build:lyra-api build:docs build:extension",
-    "build:netlify": "run-s build:lyra-api build:docs",
+    "build:netlify": "cd docs && npm i && npm run build",
     "build:extension-preview": "run-s build:lyra-api build:extension:experimental",
     "build:lyra-api": "yarn workspace @stellar/lyra-api build",
     "build:docs": "yarn workspace docs build",

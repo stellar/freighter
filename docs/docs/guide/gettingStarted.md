@@ -1,6 +1,7 @@
 ---
 id: gettingStarted
 title: Getting Started
+slug: /
 ---
 
 To get started, you'll need both the Lyra extension and the API needed to integrate with it.
