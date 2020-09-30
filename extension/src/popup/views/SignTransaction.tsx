@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import styled from "styled-components";
 import BigNumber from "bignumber.js";
-import punycode from "punycode";
 
 import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
@@ -13,6 +12,8 @@ import { publicKeySelector } from "popup/ducks/authServices";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+
+import { getPunycodedDomain } from "helpers/urls";
 
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
@@ -93,7 +94,7 @@ export const SignTransaction = () => {
     location.search,
   );
 
-  const punycodedDomain = punycode.toASCII(domain);
+  const punycodedDomain = getPunycodedDomain(domain);
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
 

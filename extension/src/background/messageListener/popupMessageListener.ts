@@ -14,7 +14,10 @@ import {
   SendResponseInterface,
 } from "background/types";
 
-import { removeQueryParam } from "helpers/urls";
+import { ALLOWLIST_ID } from "constants/localStorageTypes";
+
+import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
+
 import { SessionTimer } from "background/helpers/session";
 import { store } from "background/store";
 import {
@@ -27,7 +30,6 @@ import {
 } from "background/ducks/session";
 
 const KEY_ID = "keyId";
-const ALLOWLIST_ID = "allowlist";
 const APPLICATION_ID = "applicationState";
 
 const sessionTimer = new SessionTimer();
@@ -222,14 +224,15 @@ export const popupMessageListener = (
 
   const grantAccess = () => {
     const { url = "" } = request;
-    const sanitizedUrl = removeQueryParam(url);
+    const sanitizedUrl = getUrlHostname(url);
+    const punycodedDomain = getPunycodedDomain(sanitizedUrl);
 
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
     const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
     const allowList = allowListStr.split(",");
-    allowList.push(sanitizedUrl);
+    allowList.push(punycodedDomain);
 
     localStorage.setItem(ALLOWLIST_ID, allowList.join());
 

@@ -8,17 +8,18 @@ import {
 } from "background/types";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { POPUP_WIDTH } from "constants/dimensions";
 import { NETWORK } from "@shared/constants/stellar";
 
-import { removeQueryParam } from "helpers/urls";
+import { POPUP_WIDTH } from "constants/dimensions";
+import { ALLOWLIST_ID } from "constants/localStorageTypes";
+
+import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 
 import { store } from "background/store";
 import { publicKeySelector } from "background/ducks/session";
 
 import { responseQueue, transactionQueue } from "./popupMessageListener";
 
-const ALLOWLIST_ID = "allowlist";
 const WINDOW_DIMENSIONS = `width=${POPUP_WIDTH},height=667`;
 
 export const lyraApiMessageListener = (
@@ -34,8 +35,9 @@ export const lyraApiMessageListener = (
 
     const { tab } = sender;
     const tabUrl = tab?.url ? tab.url : "";
+    const domain = getUrlHostname(tabUrl);
 
-    if (allowList.includes(removeQueryParam(tabUrl))) {
+    if (allowList.includes(getPunycodedDomain(domain))) {
       if (publicKey) {
         // okay, the requester checks out and we have public key, send it
         sendResponse({ publicKey });
@@ -75,12 +77,13 @@ export const lyraApiMessageListener = (
 
     const { tab } = sender;
     const tabUrl = tab?.url ? tab.url : "";
+    const domain = getUrlHostname(tabUrl);
+    const punycodedDomain = getPunycodedDomain(domain);
 
-    const sanitizedUrl = removeQueryParam(tabUrl);
     const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
     const allowList = allowListStr.split(",");
 
-    if (allowList.includes(removeQueryParam(tabUrl))) {
+    if (allowList.includes(punycodedDomain)) {
       isDomainListedAllowed = true;
     }
 
@@ -113,7 +116,7 @@ export const lyraApiMessageListener = (
         sendResponse({ signedTransaction });
 
         if (!isDomainListedAllowed) {
-          allowList.push(sanitizedUrl);
+          allowList.push(punycodedDomain);
           localStorage.setItem(ALLOWLIST_ID, allowList.join());
           isDomainListedAllowed = true;
         }

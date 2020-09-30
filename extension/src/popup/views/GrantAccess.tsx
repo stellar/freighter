@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
-import punycode from "punycode";
 
-import { parsedSearchParam, getUrlHostname } from "helpers/urls";
+import {
+  getUrlHostname,
+  parsedSearchParam,
+  getPunycodedDomain,
+} from "helpers/urls";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
@@ -55,8 +58,9 @@ export const GrantAccess = () => {
   const [isGranting, setIsGranting] = useState(false);
 
   const { url } = parsedSearchParam(location.search);
-  const hostname = getUrlHostname(url);
-  const punycodedDomain = punycode.toASCII(hostname);
+
+  const domain = getUrlHostname(url);
+  const punycodedDomain = getPunycodedDomain(domain);
 
   const rejectAndClose = () => {
     dispatch(rejectAccess());
