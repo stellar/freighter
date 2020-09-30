@@ -18,7 +18,7 @@ import { publicKeySelector } from "background/ducks/session";
 
 import { responseQueue, transactionQueue } from "./popupMessageListener";
 
-const WHITELIST_ID = "whitelist";
+const ALLOWLIST_ID = "allowlist";
 const WINDOW_DIMENSIONS = `width=${POPUP_WIDTH},height=667`;
 
 export const lyraApiMessageListener = (
@@ -27,15 +27,15 @@ export const lyraApiMessageListener = (
   sendResponse: (response: SendResponseInterface) => void,
 ) => {
   const requestAccess = () => {
-    // TODO: add check to make sure this origin is on whitelist
-    const whitelistStr = localStorage.getItem(WHITELIST_ID) || "";
-    const whitelist = whitelistStr.split(",");
+    // TODO: add check to make sure this origin is on allowlist
+    const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
+    const allowList = allowListStr.split(",");
     const publicKey = publicKeySelector(store.getState());
 
     const { tab } = sender;
     const tabUrl = tab?.url ? tab.url : "";
 
-    if (whitelist.includes(removeQueryParam(tabUrl))) {
+    if (allowList.includes(removeQueryParam(tabUrl))) {
       if (publicKey) {
         // okay, the requester checks out and we have public key, send it
         sendResponse({ publicKey });
@@ -65,18 +65,29 @@ export const lyraApiMessageListener = (
   };
 
   const submitTransaction = () => {
-    const { transactionXdr } = request;
+    let isDomainListedAllowed = false;
 
+    const { transactionXdr } = request;
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
       StellarSdk.Networks[NETWORK],
     );
 
     const { tab } = sender;
+    const tabUrl = tab?.url ? tab.url : "";
+
+    const sanitizedUrl = removeQueryParam(tabUrl);
+    const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
+    const allowList = allowListStr.split(",");
+
+    if (allowList.includes(removeQueryParam(tabUrl))) {
+      isDomainListedAllowed = true;
+    }
 
     const transactionInfo = {
       transaction,
       tab,
+      isDomainListedAllowed,
     };
 
     transactionQueue.push(transaction);
@@ -100,6 +111,12 @@ export const lyraApiMessageListener = (
     const response = (signedTransaction: string) => {
       if (signedTransaction) {
         sendResponse({ signedTransaction });
+
+        if (!isDomainListedAllowed) {
+          allowList.push(sanitizedUrl);
+          localStorage.setItem(ALLOWLIST_ID, allowList.join());
+          isDomainListedAllowed = true;
+        }
       } else {
         sendResponse({ error: "User declined access" });
       }

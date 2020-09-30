@@ -27,7 +27,7 @@ import {
 } from "background/ducks/session";
 
 const KEY_ID = "keyId";
-const WHITELIST_ID = "whitelist";
+const ALLOWLIST_ID = "allowlist";
 const APPLICATION_ID = "applicationState";
 
 const sessionTimer = new SessionTimer();
@@ -112,7 +112,7 @@ export const popupMessageListener = (
         console.error(e);
         throw new Error("Error creating account");
       }
-    } 
+    }
 
     await _storeAccount({
       password,
@@ -227,11 +227,11 @@ export const popupMessageListener = (
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
-    const whitelistStr = localStorage.getItem(WHITELIST_ID) || "";
-    const whitelist = whitelistStr.split(",");
-    whitelist.push(sanitizedUrl);
+    const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
+    const allowList = allowListStr.split(",");
+    allowList.push(sanitizedUrl);
 
-    localStorage.setItem(WHITELIST_ID, whitelist.join());
+    localStorage.setItem(ALLOWLIST_ID, allowList.join());
 
     if (typeof response === "function") {
       response(url);

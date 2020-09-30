@@ -1941,7 +1941,7 @@
   dependencies:
     "@ledgerhq/hw-app-str" "^4.48.0"
     "@ledgerhq/hw-transport-u2f" "^4.48.0"
-    "@stellar/lyra-api" "^1.0.0-alpha.2"
+    "@stellar/lyra-api" "^1.0.0-alpha.3"
     "@types/jest" "^24.0.11"
     change-case "^3.1.0"
     lodash "^4.17.14"
