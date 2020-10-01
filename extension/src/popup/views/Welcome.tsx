@@ -9,9 +9,13 @@ import { COLOR_PALETTE } from "popup/constants/styles";
 import { Header } from "popup/components/Header";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
+import CreateWalletIllo from "popup/assets/illo-create-wallet.svg";
+import ImportWalletIllo from "popup/assets/illo-import-wallet.svg";
+
 const BoxEl = styled.div`
   position: relative;
   width: 22.75rem;
+  height: 17.62rem;
   padding: 2.2rem 2.3rem;
   border-radius: 1.875rem;
   color: ${COLOR_PALETTE.white};
@@ -46,11 +50,10 @@ const HeadingEl = styled.h3`
   margin: 0.75rem 0;
 `;
 
-const BoxIconEl = styled.div`
-  font-size: 2.8rem;
+const IlloContainerEl = styled.div`
   position: absolute;
-  top: 1.5rem;
-  right: 1.6rem;
+  top: 1.1rem;
+  right: 1rem;
 `;
 
 const LinkButtonWrapperEl = styled.div`
@@ -113,11 +116,9 @@ export const Welcome = () => (
       <RowScreenEl>
         <HalfScreenEl>
           <CreateBoxEl>
-            <BoxIconEl>
-              <span role="img" aria-label="Waving hand">
-                👋
-              </span>
-            </BoxIconEl>
+            <IlloContainerEl>
+              <img src={CreateWalletIllo} alt="Create Wallet Illustration" />
+            </IlloContainerEl>
             <HeadingEl>I’m new!</HeadingEl>
             <p>I’m going to need a seed phrase</p>
             <LinkButtonWrapperEl>
@@ -129,11 +130,9 @@ export const Welcome = () => (
         </HalfScreenEl>
         <HalfScreenEl>
           <ImportBoxEl>
-            <BoxIconEl>
-              <span role="img" aria-label="Seedling">
-                🌱
-              </span>
-            </BoxIconEl>
+            <IlloContainerEl>
+              <img src={ImportWalletIllo} alt="Import Wallet Illustration" />
+            </IlloContainerEl>
             <HeadingEl>I’ve done this before</HeadingEl>
             <p>I have my 12 word seed phrase</p>
             <LinkButtonWrapperEl>

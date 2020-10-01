@@ -5,7 +5,6 @@ import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
-import { EMOJI } from "popup/constants/emoji";
 
 import { navigateTo } from "popup/helpers/navigateTo";
 import {
@@ -26,6 +25,8 @@ import {
 
 import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
+
+import CreatePasswordIllo from "popup/assets/illo-create-password.svg";
 
 const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding-left: 1.55rem;
@@ -66,7 +67,7 @@ export const AccountCreator = () => {
   return (
     <Onboarding
       header="Create a password"
-      icon={EMOJI.see_no_evil}
+      icon={CreatePasswordIllo}
       goBack={() => navigateTo(ROUTES.welcome)}
     >
       <Formik

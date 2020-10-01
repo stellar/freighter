@@ -17,7 +17,7 @@ const HeaderEl = styled.h1<HeaderProps>`
   font-weight: 200;
   font-size: 2.5rem;
   line-height: 1.3;
-  margin: 0.625rem 0;
+  margin: 1.25rem 0;
   max-width: ${(props) => (props.isMaxHeaderLength ? "22.35rem" : "21rem")};
 `;
 
@@ -28,7 +28,12 @@ const SubheaderEl = styled.h2`
   max-width: 23rem;
 `;
 
-export const Screen = styled.section`
+const IlloContainerEl = styled.div`
+  position: relative;
+  padding-top: 2rem;
+`;
+
+const Screen = styled.section`
   display: flex;
   flex-flow: column wrap;
   align-content: center;
@@ -42,8 +47,8 @@ export const Screen = styled.section`
   & > * {
     display: flex;
     flex-direction: column;
-    flex: 0 1 21.25rem;
-    justify-content: center;
+    flex: 0 1 32rem;
+    justify-content: flex-start;
   }
 
   /* Fix this in /basics once using the formik hook */
@@ -58,24 +63,22 @@ export const HalfScreen = styled.section`
   flex-direction: column;
   justify-content: center;
   padding: 0;
-  padding-top: 3.25rem;
+  padding-top: 2rem;
   padding-right: 0;
   padding-bottom: 2rem;
   padding-left: 4.55rem;
   width: 27rem;
 `;
 
-const EmojiSpanEl = styled.span`
-  font-size: 3.625rem;
+const HeadingEl = styled.div`
+  position: relative;
 `;
-
-const HeadingEl = styled.div``;
 
 export const Onboarding = ({
   goBack,
   header,
   subheader,
-  icon: { emoji, alt },
+  icon,
   children,
   isMaxHeaderLength,
 }: {
@@ -83,7 +86,7 @@ export const Onboarding = ({
   header: string;
   subheader?: string;
   isMaxHeaderLength?: boolean;
-  icon: { emoji: string; alt: string };
+  icon?: string;
   children: React.ReactNode;
 }) => {
   const history = useHistory();
@@ -95,9 +98,9 @@ export const Onboarding = ({
       {goBack && !isNewTabSession ? <BackButton onClick={goBack} /> : null}
       <Screen>
         <HeadingEl>
-          <EmojiSpanEl role="img" aria-label={alt}>
-            {emoji}
-          </EmojiSpanEl>
+          <IlloContainerEl>
+            <img src={icon} alt="Onboarding Illustration" />
+          </IlloContainerEl>
           <HeaderEl isMaxHeaderLength={isMaxHeaderLength}>{header}</HeaderEl>
           {subheader ? <SubheaderEl>{subheader}</SubheaderEl> : null}
         </HeadingEl>

@@ -8,16 +8,17 @@ import { HEADER_HEIGHT } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { COLOR_PALETTE } from "popup/constants/styles";
-import { EMOJI } from "popup/constants/emoji";
 
 import { SubmitButton } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
+
+import SuccessIllo from "popup/assets/illo-success-screen.svg";
 
 const HeaderEl = styled.h1`
   font-weight: 200;
   font-size: 2.6rem;
   line-height: 2.75rem;
-  margin: 1rem 0;
+  margin: 2.5rem 0 3rem;
 `;
 
 const WrapperEl = styled.div`
@@ -44,8 +45,9 @@ const FinishButtonEl = styled(SubmitButton)`
   margin: 2.5rem auto 0;
 `;
 
-const CelebrationEl = styled.h1`
-  font-size: 5rem;
+const IlloContainerEl = styled.div`
+  position: relative;
+  padding: 1rem 0;
 `;
 
 const MnemonicPhraseConfirmedMessage = () => (
@@ -85,12 +87,10 @@ export const FullscreenSuccessMessage = () => {
     <WrapperEl>
       <FullscreenStyle />
       <ContentWrapperEl>
+        <IlloContainerEl>
+          <img src={SuccessIllo} alt="Success Illustration" />
+        </IlloContainerEl>
         <HeaderEl>Woo, you’re in!</HeaderEl>
-        <CelebrationEl>
-          <span role="img" aria-label={EMOJI.celebrate.emoji}>
-            {EMOJI.celebrate.emoji}
-          </span>
-        </CelebrationEl>
         {IS_MNEMONIC_PHRASE_STATE ? (
           <MnemonicPhraseConfirmedMessage />
         ) : (

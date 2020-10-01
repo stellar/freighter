@@ -7,7 +7,6 @@ import { Formik } from "formik";
 
 import { ROUTES } from "popup/constants/routes";
 import { POPUP_WIDTH } from "constants/dimensions";
-import { EMOJI } from "popup/constants/emoji";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { navigateTo } from "popup/helpers/navigateTo";
@@ -24,6 +23,8 @@ import {
 
 import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 
+import WaveIllo from "popup/assets/illo-wave.svg";
+
 const UnlockAccountEl = styled.div`
   width: 100%;
   max-width: ${POPUP_WIDTH}px;
@@ -33,7 +34,7 @@ const UnlockAccountEl = styled.div`
 const HeaderContainerEl = styled.div`
   display: flex;
   align-items: center;
-  padding: 2.5rem 0.25rem;
+  padding: 0 0.25rem 3rem;
   line-height: 1;
 `;
 const HeaderEl = styled.h1`
@@ -63,20 +64,10 @@ const ListItemEl = styled.li`
   line-height: 1;
 `;
 const ButtonRowEl = styled.div`
-  padding: 1.5rem 0;
+  padding: 3.25rem 0 1.5rem;
 `;
-const EmojiSpanEl = styled.span`
-  font-size: 3rem;
-`;
-const ErrorEmojiEl = styled.div`
-  position: absolute;
-  right: 2rem;
-  top: 50%;
-  transform: translateY(-50%);
-
-  ${EmojiSpanEl} {
-    font-size: 1.75rem;
-  }
+const IlloContainerEl = styled.div`
+  position: relative;
 `;
 
 export const UnlockAccount = () => {
@@ -107,9 +98,9 @@ export const UnlockAccount = () => {
         {({ isSubmitting, isValid }) => (
           <Form>
             <HeaderContainerEl>
-              <EmojiSpanEl role="img" aria-label={EMOJI.wave.alt}>
-                {EMOJI.wave.emoji}
-              </EmojiSpanEl>
+              <IlloContainerEl>
+                <img src={WaveIllo} alt="Wave Illustration" />
+              </IlloContainerEl>
               <HeaderEl>Welcome back!</HeaderEl>
             </HeaderContainerEl>
             <FormRow>
@@ -120,16 +111,6 @@ export const UnlockAccount = () => {
                 placeholder="Enter password"
                 error={authError}
               />
-              {authError ? (
-                <ErrorEmojiEl>
-                  <EmojiSpanEl role="img" aria-label={EMOJI.vomit.alt}>
-                    {EMOJI.vomit.emoji}
-                  </EmojiSpanEl>
-                  <EmojiSpanEl role="img" aria-label={EMOJI.poop.alt}>
-                    {EMOJI.poop.emoji}
-                  </EmojiSpanEl>
-                </ErrorEmojiEl>
-              ) : null}
             </FormRow>
             <ApiErrorMessage error={authError} />
             <ButtonRowEl>
