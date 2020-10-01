@@ -34,6 +34,11 @@ import {
 import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
+import ImportWalletIllo from "popup/assets/illo-backup-phrase.svg";
+
+const HalfScreenEl = styled(HalfScreen)`
+  height: 33rem;
+`;
 const FullHeightFormEl = styled(Form)`
   height: calc(100vh - ${HEADER_HEIGHT}px);
 
@@ -89,11 +94,6 @@ export const RecoverAccount = () => {
     }
   }, [publicKey]);
 
-  const icon = {
-    emoji: "🕵",
-    alt: "Spy",
-  };
-
   return (
     <Formik
       initialValues={initialValues}
@@ -104,7 +104,7 @@ export const RecoverAccount = () => {
         <FullHeightFormEl>
           <Onboarding
             header="Recover wallet from backup phrase"
-            icon={icon}
+            icon={ImportWalletIllo}
             isMaxHeaderLength
             goBack={() => navigateTo(ROUTES.welcome)}
           >
@@ -118,7 +118,7 @@ export const RecoverAccount = () => {
                 <Error name="mnemonicPhrase" />
                 <ApiErrorMessage error={authError}></ApiErrorMessage>
               </FormRow>
-              <HalfScreen>
+              <HalfScreenEl>
                 <FormRow>
                   <TextField
                     autoComplete="off"
@@ -154,7 +154,7 @@ export const RecoverAccount = () => {
                     Recover
                   </SubmitButton>
                 </FormRow>
-              </HalfScreen>
+              </HalfScreenEl>
             </>
           </Onboarding>
         </FullHeightFormEl>
