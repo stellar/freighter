@@ -67,8 +67,6 @@ export const lyraApiMessageListener = (
   };
 
   const submitTransaction = () => {
-    let isDomainListedAllowed = false;
-
     const { transactionXdr } = request;
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
@@ -83,9 +81,7 @@ export const lyraApiMessageListener = (
     const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
     const allowList = allowListStr.split(",");
 
-    if (allowList.includes(punycodedDomain)) {
-      isDomainListedAllowed = true;
-    }
+    const isDomainListedAllowed = allowList.includes(punycodedDomain);
 
     const transactionInfo = {
       transaction,
@@ -118,7 +114,6 @@ export const lyraApiMessageListener = (
         if (!isDomainListedAllowed) {
           allowList.push(punycodedDomain);
           localStorage.setItem(ALLOWLIST_ID, allowList.join());
-          isDomainListedAllowed = true;
         }
       } else {
         sendResponse({ error: "User declined access" });

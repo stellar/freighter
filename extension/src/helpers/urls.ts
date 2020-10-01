@@ -14,6 +14,4 @@ export const getUrlHostname = (url: string) => {
   return u.hostname;
 };
 
-export const getPunycodedDomain = (url: string) => {
-  return punycode.toASCII(url);
-};
+export const getPunycodedDomain = (url: string) => punycode.toASCII(url);
