@@ -3,10 +3,8 @@ import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import styled from "styled-components";
 import BigNumber from "bignumber.js";
-import punycode from "punycode";
 
 import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
-import { removeQueryParam } from "helpers/urls";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
 
@@ -15,14 +13,14 @@ import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
+import { getPunycodedDomain } from "helpers/urls";
+
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
 import { WarningMessage } from "popup/components/WarningMessage";
 
 import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
-
-const WHITELIST_ID = "whitelist";
 
 const El = styled.div`
   padding: 1.5rem 1.875rem;
@@ -83,7 +81,7 @@ const ListEl = styled.ul`
 const ButtonContainerEl = styled.div`
   display: flex;
   justify-content: space-around;
-  padding: 3rem 1.25rem;
+  padding: 3rem 1.25rem 0;
 `;
 const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
@@ -92,17 +90,14 @@ const RejectButtonEl = styled(Button)`
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const { transaction, domain } = getTransactionInfo(location.search);
-
-  const punycodedDomain = punycode.toASCII(domain);
-  const whitelistStr = localStorage.getItem(WHITELIST_ID) || "";
-  const whitelist = whitelistStr.split(",");
-  const isDomainWhiteListed = whitelist.includes(
-    removeQueryParam(punycodedDomain),
+  const { transaction, domain, isDomainListedAllowed } = getTransactionInfo(
+    location.search,
   );
 
+  const punycodedDomain = getPunycodedDomain(domain);
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
+
   const [isConfirming, setIsConfirming] = useState(false);
 
   const rejectAndClose = () => {
@@ -238,7 +233,7 @@ export const SignTransaction = () => {
   return (
     <El>
       <HeaderEl>Confirm Transaction</HeaderEl>
-      {!isDomainWhiteListed ? (
+      {!isDomainListedAllowed ? (
         <WarningMessage
           icon={WarningShieldIcon}
           subheader="This is the first time you interact with this domain in this browser"

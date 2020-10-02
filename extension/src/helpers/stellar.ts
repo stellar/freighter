@@ -9,6 +9,7 @@ export const getTransactionInfo = (search: string) => {
   const {
     tab: { url },
     transaction,
+    isDomainListedAllowed,
   } = transactionInfo;
   const hostname = getUrlHostname(url);
   const { _operations } = transaction;
@@ -21,5 +22,6 @@ export const getTransactionInfo = (search: string) => {
     domain: hostname,
     operations: _operations,
     operationTypes,
+    isDomainListedAllowed,
   };
 };
