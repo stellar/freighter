@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import buffer from "buffer";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { get } from "lodash";
 import styled from "styled-components";
 import BigNumber from "bignumber.js";
 
@@ -26,22 +28,32 @@ const El = styled.div`
   box-sizing: border-box;
 `;
 const HeaderEl = styled.h1`
-  color: ${COLOR_PALETTE.primary}};
+  color: ${COLOR_PALETTE.primary};
   font-weight: ${FONT_WEIGHT.light};
   margin: 0;
+`;
+const OperationsHeader = styled.h2`
+  color: ${COLOR_PALETTE.primary};
+  font-size: 1.375rem;
+  margin: 0;
+  padding: 0;
+  padding-top: 2.25rem;
 `;
 const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
   font-size: 0.95rem;
   letter-spacing: 0.1px;
-  color: ${COLOR_PALETTE.primary}};
+  color: ${COLOR_PALETTE.primary};
 `;
 const OperationBoxHeaderEl = styled.h4`
-  color: ${COLOR_PALETTE.primary}};
-  font-size: 1.4rem;
-  font-weight: ${FONT_WEIGHT.light};
+  color: ${COLOR_PALETTE.primary};
+  font-size: 1.25rem;
+  font-weight: ${FONT_WEIGHT.normal};
   margin: 0;
-  margin-top: 2.5rem;
+  padding: 0;
+  padding-top: 1.875rem;
+  padding-bottom: 0.625rem;
+  padding-left: 0.43rem;
 
   strong {
     font-weight: ${FONT_WEIGHT.bold};
@@ -51,39 +63,57 @@ const OperationBoxEl = styled.div`
   text-align: left;
 `;
 const ListEl = styled.ul`
-  max-width: 300px;
+  width: 100%;
   font-size: 0.95rem;
   letter-spacing: 0.1px;
   list-style-type: none;
   padding: 0;
-  padding-left: 1.5rem;
   margin: 0;
-  margin-top: 2rem;
+  margin-top: 1rem;
   margin-bottom: 1.33em;
 
   li {
     display: flex;
-    justify-content: space-between;
-    margin: 1.35rem 0;
-    color: ${COLOR_PALETTE.secondaryText}};
+    margin: 1.25rem 0;
+    color: ${COLOR_PALETTE.secondaryText};
 
-    div {
-      width: 50%;
+    div:first-child {
+      padding-right: 0.75rem;
     }
   }
 
   strong {
     font-weight: ${FONT_WEIGHT.bold};
-    color: ${COLOR_PALETTE.text}};
+    color: ${COLOR_PALETTE.text};
   }
 `;
+const OperationsListEl = styled(ListEl)`
+  padding-left: 1.25rem;
+
+  li {
+    div {
+      width: 50%;
+
+      &:first-child {
+        padding: 0;
+        color: ${COLOR_PALETTE.text};
+      }
+    }
+  }
+`;
+
 const ButtonContainerEl = styled.div`
   display: flex;
   justify-content: space-around;
-  padding: 3rem 1.25rem 0;
+  padding-top: 3rem;
+  padding-bottom: 1.5rem;
 `;
 const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
+  width: 9.68rem;
+`;
+const SubmitButtonEl = styled(SubmitButton)`
+  width: 12.43rem;
 `;
 
 export const SignTransaction = () => {
@@ -93,7 +123,12 @@ export const SignTransaction = () => {
     location.search,
   );
 
-  const { _fee, _operations } = transaction;
+  const { _fee, _operations, _memo, _sequence } = transaction;
+  const operationText = _operations.length > 1 ? "Operations:" : "Operation:";
+  const memo = buffer.Buffer.from(get(_memo, "_value.data", [])).toString(
+    "utf-8",
+  );
+
   const publicKey = useSelector(publicKeySelector);
 
   const [isConfirming, setIsConfirming] = useState(false);
@@ -132,9 +167,7 @@ export const SignTransaction = () => {
     TransactionInfoValue: string | number;
   }) => (
     <li>
-      <div>
-        <strong>{TransactionInfoKey}</strong>
-      </div>
+      <div>{TransactionInfoKey}:</div>
       <div>{TransactionInfoValue}</div>
     </li>
   );
@@ -160,23 +193,29 @@ export const SignTransaction = () => {
         return (
           <OperationBoxEl>
             <OperationBoxHeaderEl>
-              Operation {operationIndex}{" "}
-              <strong>{OPERATION_TYPES[type]}</strong>
+              {operationIndex}. {OPERATION_TYPES[type]}
             </OperationBoxHeaderEl>
-            <ListEl>
+            <OperationsListEl>
+              {destination ? (
+                <KeyValueList
+                  TransactionInfoKey="Destination"
+                  TransactionInfoValue={truncatedPublicKey(destination)}
+                />
+              ) : null}
+
+              {asset ? (
+                <KeyValueList
+                  TransactionInfoKey="Asset"
+                  TransactionInfoValue={`${asset.code}`}
+                />
+              ) : null}
+
               {amount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
                   TransactionInfoValue={`${new BigNumber(amount).toFormat(2)} ${
                     asset.code
                   }`}
-                />
-              ) : null}
-
-              {destination ? (
-                <KeyValueList
-                  TransactionInfoKey="Destination"
-                  TransactionInfoValue={truncatedPublicKey(destination)}
                 />
               ) : null}
 
@@ -222,7 +261,7 @@ export const SignTransaction = () => {
                   TransactionInfoValue={price}
                 />
               ) : null}
-            </ListEl>
+            </OperationsListEl>
           </OperationBoxEl>
         );
       },
@@ -253,31 +292,50 @@ export const SignTransaction = () => {
       <ListEl>
         <li>
           <div>
-            <strong>Source Acc Key</strong>
+            <strong>Source account:</strong>
           </div>
           <div>{truncatedPublicKey(publicKey)}</div>
         </li>
         {_fee ? (
           <li>
             <div>
-              <strong>Base fee</strong>
+              <strong>Base fee:</strong>
             </div>
             <div> {_fee}</div>
           </li>
         ) : null}
+        {memo ? (
+          <li>
+            <div>
+              <strong>Memo:</strong>
+            </div>
+            <div> {memo} (MEMO_TEXT)</div>
+          </li>
+        ) : null}
+        {_sequence ? (
+          <li>
+            <div>
+              <strong>Transaction sequence number:</strong>
+            </div>
+            <div> {_sequence}</div>
+          </li>
+        ) : null}
       </ListEl>
+      <OperationsHeader>
+        {_operations.length} {operationText}
+      </OperationsHeader>
       <Operations />
       <ButtonContainerEl>
         <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
           Reject
         </RejectButtonEl>
-        <SubmitButton
+        <SubmitButtonEl
           isSubmitting={isConfirming}
           size="small"
           onClick={() => signAndClose()}
         >
-          Confirm
-        </SubmitButton>
+          Sign Transaction
+        </SubmitButtonEl>
       </ButtonContainerEl>
     </El>
   );
