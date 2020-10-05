@@ -1,3 +1,3 @@
-export class TimeoutError extends Error {
-  message = "Failed to communicate with extension. Is it installed?";
+export class NoExtensionInstalledError extends Error {
+  message = "Lyra does not appear to be installed.";
 }

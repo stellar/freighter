@@ -4,7 +4,13 @@ import {
   EXTERNAL_MSG_RESPONSE,
 } from "../constants/services";
 import { Response } from "./types";
-import { TimeoutError } from "../constants/errors";
+import { NoExtensionInstalledError } from "../constants/errors";
+
+declare global {
+  interface Window {
+    lyra: boolean;
+  }
+}
 
 export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
   window.postMessage(
@@ -12,9 +18,10 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
     window.location.origin,
   );
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new TimeoutError());
-    }, 1000);
+    if (!window.lyra) {
+      reject(new NoExtensionInstalledError());
+    }
+    
     const messageListener = (event: { source: any; data: Response }) => {
       // We only accept messages from ourselves
       if (event.source !== window) return;
@@ -23,7 +30,6 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
         return;
       }
 
-      clearTimeout(timeout);
       resolve(event.data);
       window.removeEventListener("message", messageListener);
     };
