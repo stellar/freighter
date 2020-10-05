@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import buffer from "buffer";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { get } from "lodash";
 import styled from "styled-components";
 import BigNumber from "bignumber.js";
 
@@ -123,6 +125,9 @@ export const SignTransaction = () => {
 
   const { _fee, _operations, _memo, _sequence } = transaction;
   const operationText = _operations.length > 1 ? "Operations:" : "Operation:";
+  const memo = buffer.Buffer.from(get(_memo, "_value.data", [])).toString(
+    "utf-8",
+  );
 
   const publicKey = useSelector(publicKeySelector);
 
@@ -299,12 +304,12 @@ export const SignTransaction = () => {
             <div> {_fee}</div>
           </li>
         ) : null}
-        {_memo && _memo.MEMO_TEXT ? (
+        {memo ? (
           <li>
             <div>
-              <strong>Base fee:</strong>
+              <strong>Memo:</strong>
             </div>
-            <div> {_memo.MEMO_TEXT}</div>
+            <div> {memo} (MEMO_TEXT)</div>
           </li>
         ) : null}
         {_sequence ? (
