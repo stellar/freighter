@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
+
 import { COLOR_PALETTE } from "popup/constants/styles";
 
 const TOAST_LENGTH = 1000;

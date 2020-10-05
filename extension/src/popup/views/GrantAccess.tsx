@@ -3,11 +3,7 @@ import { useDispatch } from "react-redux";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 
-import {
-  getUrlHostname,
-  parsedSearchParam,
-  getPunycodedDomain,
-} from "helpers/urls";
+import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
@@ -15,6 +11,7 @@ import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 import { WarningMessage } from "popup/components/WarningMessage";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
 
@@ -34,14 +31,6 @@ const SubheaderEl = styled.h3`
   letter-spacing: 0.1px;
   color: ${COLOR_PALETTE.primary}};
 `;
-const TextEl = styled.p`
-  font-size: 1.15rem;
-  text-align: center;
-  line-height: 1.9;
-  padding: 1.7rem 2rem;
-  margin: 0;
-`;
-
 const ButtonContainerEl = styled.div`
   display: flex;
   justify-content: space-around;
@@ -60,7 +49,6 @@ export const GrantAccess = () => {
   const { url } = parsedSearchParam(location.search);
 
   const domain = getUrlHostname(url);
-  const punycodedDomain = getPunycodedDomain(domain);
 
   const rejectAndClose = () => {
     dispatch(rejectAccess());
@@ -89,8 +77,8 @@ export const GrantAccess = () => {
           seeing this message, it may indicate a scam.
         </p>
       </WarningMessage>
-      <SubheaderEl>{punycodedDomain} wants to know your public key</SubheaderEl>
-      <TextEl>This website wants to know your public key:</TextEl>
+      <PunycodedDomain domain={domain} />
+      <SubheaderEl>This website wants to know your public key:</SubheaderEl>
       <ButtonContainerEl>
         <RejectButtonEl size="small" onClick={rejectAndClose}>
           Reject
