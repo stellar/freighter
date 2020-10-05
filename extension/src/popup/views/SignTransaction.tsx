@@ -13,12 +13,11 @@ import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
-import { getPunycodedDomain } from "helpers/urls";
-
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
 import { WarningMessage } from "popup/components/WarningMessage";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
 
@@ -94,7 +93,6 @@ export const SignTransaction = () => {
     location.search,
   );
 
-  const punycodedDomain = getPunycodedDomain(domain);
   const { _fee, _operations } = transaction;
   const publicKey = useSelector(publicKeySelector);
 
@@ -248,7 +246,10 @@ export const SignTransaction = () => {
           </p>
         </WarningMessage>
       ) : null}
-      <SubheaderEl>{punycodedDomain} is requesting a transaction</SubheaderEl>
+      <PunycodedDomain domain={domain} />
+      <SubheaderEl>
+        This website is requesting a signature to the follwing transaction:
+      </SubheaderEl>
       <ListEl>
         <li>
           <div>
