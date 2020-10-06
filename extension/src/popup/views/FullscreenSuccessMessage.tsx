@@ -7,11 +7,12 @@ import { emitMetric } from "helpers/metrics";
 import { HEADER_HEIGHT } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { COLOR_PALETTE } from "popup/constants/styles";
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { SubmitButton } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
+import WhiteLockIcon from "popup/assets/icon-white-lock.svg";
 import SuccessIllo from "popup/assets/illo-success-screen.svg";
 
 const HeaderEl = styled.h1`
@@ -36,8 +37,13 @@ const ContentWrapperEl = styled.div`
   text-align: center;
   margin: auto;
   color: ${COLOR_PALETTE.white};
-  max-width: 24.375rem;
+  max-width: 39.5rem;
   height: calc(100vh - ${HEADER_HEIGHT}px);
+`;
+
+const CopyEl = styled.div`
+  margin: auto;
+  max-width: 24.375rem;
 `;
 
 const FinishButtonEl = styled(SubmitButton)`
@@ -50,27 +56,78 @@ const IlloContainerEl = styled.div`
   padding: 1rem 0;
 `;
 
+const MessageEl = styled.div`
+  border-radius: 1.25rem;
+  background-color: #563bf1;
+  padding: 1.75rem 1.5rem;
+  text-align: left;
+  font-size: 0.93rem;
+  margin: 1.25rem 0 0;
+`;
+
+const IconEl = styled.img`
+  display: inline-block;
+  margin-top: -0.4rem;
+  max-width: 1.875rem;
+  max-height: 1.875rem;
+  vertical-align: middle;
+`;
+
+const MessageSubheaderEl = styled.h2`
+  color: ${COLOR_PALETTE.white};
+  display: inline-block;
+  font-weight: ${FONT_WEIGHT.bold};
+  font-size: 1.1rem;
+  padding-left: 0.65rem;
+  margin: 0;
+`;
+
+const MessageListEl = styled.ul`
+  padding: 0 1.3rem;
+
+  li {
+    margin-top: 1rem;
+  }
+`;
+
 const MnemonicPhraseConfirmedMessage = () => (
   <>
-    <p>
-      Awesome, you passed the test. Keep your seedphrase safe, it’s your
-      responsibility.
-    </p>
-    <p>
-      <strong>Note: Lyra cannot recover your seedphrase.</strong>
-    </p>
+    <CopyEl>
+      <p>
+        Awesome, you passed the test. Keep your backup phrase safe, it’s your
+        responsibility.
+      </p>
+    </CopyEl>
+    <MessageEl>
+      <IconEl src={WhiteLockIcon} />
+      <MessageSubheaderEl>
+        Avoid scams and keep your account safe:
+      </MessageSubheaderEl>
+      <MessageListEl>
+        <li>
+          Lyra will <strong>never ask for your backup phrase</strong> unless
+          you're actively importing your account using the browser extension -
+          never on an external website
+        </li>
+        <li>Always check the domain of websites you're using Lyra with</li>
+        <li>
+          Lyra cannot recover your account if you lose your backup phrase, so
+          keep it safe
+        </li>
+      </MessageListEl>
+    </MessageEl>
   </>
 );
 
 const RecoverAccountSuccessMessage = () => (
-  <>
+  <CopyEl>
     <p>You successfully imported your account.</p>
     <p>
       <strong>
         Check your account details by clicking on the Lyra icon on your browser.
       </strong>
     </p>
-  </>
+  </CopyEl>
 );
 
 export const FullscreenSuccessMessage = () => {
@@ -102,7 +159,7 @@ export const FullscreenSuccessMessage = () => {
             window.close();
           }}
         >
-          All done
+          {IS_MNEMONIC_PHRASE_STATE ? "Got it!" : "All done"}
         </FinishButtonEl>
       </ContentWrapperEl>
     </WrapperEl>
