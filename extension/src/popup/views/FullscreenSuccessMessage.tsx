@@ -7,7 +7,11 @@ import { emitMetric } from "helpers/metrics";
 import { HEADER_HEIGHT } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import {
+  COLOR_PALETTE,
+  FONT_WEIGHT,
+  ROUNDED_CORNERS,
+} from "popup/constants/styles";
 
 import { SubmitButton } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
@@ -57,7 +61,7 @@ const IlloContainerEl = styled.div`
 `;
 
 const MessageEl = styled.div`
-  border-radius: 1.25rem;
+  border-radius: ${ROUNDED_CORNERS};
   background-color: #563bf1;
   padding: 1.75rem 1.5rem;
   text-align: left;

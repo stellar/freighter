@@ -6,6 +6,7 @@ import {
   COLOR_PALETTE,
   FONT_WEIGHT,
   ANIMATION_TIMES,
+  ROUNDED_CORNERS,
 } from "popup/constants/styles";
 
 import ChevronIcon from "popup/assets/icon-chevron.svg";
@@ -38,7 +39,7 @@ const ButtonEl = styled(BasicButton)<ButtonProps>`
   font-size: 0.8rem;
   font-weight: ${FONT_WEIGHT.bold};
   padding: 1.45rem;
-  border-radius: 1.25rem;
+  border-radius: ${ROUNDED_CORNERS};
   background: ${COLOR_PALETTE.primaryGradient};
   color: ${COLOR_PALETTE.white};
   border: none;
