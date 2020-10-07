@@ -23,10 +23,14 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body, html {
+    height: ${POPUP_HEIGHT}px;
     width: ${POPUP_WIDTH}px;
   }
-  body, html, #root {
-    height: ${POPUP_HEIGHT}px;
+
+  #root {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
   }
 
   body * {

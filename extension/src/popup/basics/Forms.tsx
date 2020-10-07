@@ -3,7 +3,11 @@ import PropTypes from "prop-types";
 import styled from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
-import { COLOR_PALETTE, ANIMATION_TIMES } from "popup/constants/styles";
+import {
+  COLOR_PALETTE,
+  ANIMATION_TIMES,
+  ROUNDED_CORNERS,
+} from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 
 interface FormProps {
@@ -84,7 +88,7 @@ export const Label = styled.label`
 `;
 
 export const TextField = styled(Field)`
-  border-radius: 1.25rem;
+  border-radius: ${ROUNDED_CORNERS};
   border: ${(props) => (props.error ? `1px solid ${COLOR_PALETTE.error}` : 0)};
   box-sizing: border-box;
   background: ${COLOR_PALETTE.inputBackground};

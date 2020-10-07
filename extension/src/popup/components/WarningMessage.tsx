@@ -1,10 +1,14 @@
 import React from "react";
 import styled from "styled-components";
 
-import { FONT_WEIGHT, COLOR_PALETTE } from "popup/constants/styles";
+import {
+  FONT_WEIGHT,
+  COLOR_PALETTE,
+  ROUNDED_CORNERS,
+} from "popup/constants/styles";
 
 const El = styled.div`
-  border-radius: 1.25rem;
+  border-radius: ${ROUNDED_CORNERS};
   background-color: ${COLOR_PALETTE.warningFaded};
   padding: 1.5rem 1.25rem;
   text-align: left;

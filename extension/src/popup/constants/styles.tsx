@@ -35,3 +35,5 @@ export const FONT_WEIGHT = {
   normal: "400",
   bold: "600",
 };
+
+export const ROUNDED_CORNERS = "1.25rem";

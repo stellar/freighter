@@ -1,14 +1,18 @@
 import React from "react";
 import styled from "styled-components";
 
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import {
+  COLOR_PALETTE,
+  FONT_WEIGHT,
+  ROUNDED_CORNERS,
+} from "popup/constants/styles";
 
 import { getPunycodedDomain } from "helpers/urls";
 
 const El = styled.div`
   display: flex;
   background: ${COLOR_PALETTE.white};
-  border-radius: 1.25rem;
+  border-radius: ${ROUNDED_CORNERS};
   padding: 1.25rem;
   margin: 1.25rem 0px;
 `;
