@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 
 import { emitMetric } from "helpers/metrics";
 
-import { HEADER_HEIGHT } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
@@ -30,7 +29,7 @@ const WrapperEl = styled.div`
   background: ${COLOR_PALETTE.primary};
   display: flex;
   flex-direction: column;
-  height: calc(100vh - ${HEADER_HEIGHT}px);
+  flex-grow: 1;
 `;
 
 const ContentWrapperEl = styled.div`
@@ -42,7 +41,6 @@ const ContentWrapperEl = styled.div`
   margin: auto;
   color: ${COLOR_PALETTE.white};
   max-width: 39.5rem;
-  height: calc(100vh - ${HEADER_HEIGHT}px);
 `;
 
 const CopyEl = styled.div`
