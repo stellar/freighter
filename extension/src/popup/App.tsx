@@ -4,11 +4,13 @@ import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import { createGlobalStyle } from "styled-components";
 
+import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
+
 import { metricsMiddleware } from "helpers/metrics";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
-import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
+import { reducer as settings } from "popup/ducks/settings";
 
 import { Router } from "./Router";
 
@@ -41,6 +43,7 @@ const GlobalStyle = createGlobalStyle`
 
 const rootReducer = combineReducers({
   auth,
+  settings,
 });
 export type AppState = ReturnType<typeof rootReducer>;
 const store = configureStore({

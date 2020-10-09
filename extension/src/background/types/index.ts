@@ -10,6 +10,7 @@ export interface SendResponseInterface {
   isCorrectPhrase?: boolean;
   signedTransaction?: string;
   error?: string;
+  isDataSharingAllowed?: boolean;
 }
 
 export interface MessageResponder {

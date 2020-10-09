@@ -19,6 +19,7 @@ export interface Response {
   source: string;
   type: SERVICE_TYPES;
   url: string;
+  isDataSharingAllowed: boolean;
 }
 
 export interface ExternalRequest {

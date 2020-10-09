@@ -203,3 +203,27 @@ export const showBackupPhrase = async (
 
   return response;
 };
+
+export const saveSettings = async (
+  isDataSharingAllowed: boolean,
+): Promise<{ isDataSharingAllowed: boolean }> => {
+  let response = { isDataSharingAllowed: false };
+
+  try {
+    response = await sendMessageToBackground({
+      isDataSharingAllowed,
+      type: SERVICE_TYPES.SAVE_SETTINGS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const loadSettings = (): Promise<{
+  isDataSharingAllowed: boolean;
+}> =>
+  sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_SETTINGS,
+  });

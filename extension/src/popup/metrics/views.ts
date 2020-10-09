@@ -23,6 +23,7 @@ const routeToEventName = {
   [ROUTES.displayBackupPhrase]: METRIC_NAMES.viewDisplayBackupPhrase,
   [ROUTES.unlockBackupPhrase]: METRIC_NAMES.viewUnlockBackupPhrase,
   [ROUTES.displayBackupPhrase]: METRIC_NAMES.viewDisplayBackupPhrase,
+  [ROUTES.settings]: METRIC_NAMES.viewSettings,
   [ROUTES.viewPublicKey]: METRIC_NAMES.viewPublicKey,
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
 };

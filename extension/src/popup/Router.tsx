@@ -38,6 +38,7 @@ import { UnlockBackupPhrase } from "popup/views/UnlockBackupPhrase";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
+import { Settings } from "popup/views/Settings";
 
 import { Header } from "popup/components/Header";
 
@@ -213,6 +214,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.unlockBackupPhrase}>
           <UnlockBackupPhrase />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.settings}>
+          <Settings />
         </PublicKeyRoute>
         <UnlockAccountRoute path={ROUTES.unlockAccount}>
           <Header />
