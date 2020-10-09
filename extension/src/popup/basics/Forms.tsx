@@ -23,6 +23,7 @@ export const Form = ({ children, className }: FormProps) => (
 interface SubmitButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
+  dirty?: boolean;
   isSubmitting?: boolean;
   isValid?: boolean;
   size?: string;
@@ -31,22 +32,26 @@ interface SubmitButtonProps
 
 export const SubmitButton = ({
   children,
+  dirty = true,
   isSubmitting = false,
   isValid = true,
   onClick = () => {},
   size,
   ...props
-}: SubmitButtonProps) => (
-  <Button
-    {...props}
-    onClick={onClick}
-    size={size}
-    type="submit"
-    disabled={isSubmitting || !isValid}
-  >
-    {isSubmitting ? "Loading..." : children}
-  </Button>
-);
+}: SubmitButtonProps) => {
+  const isFormCompleteAndValid = isValid && dirty;
+  return (
+    <Button
+      {...props}
+      onClick={onClick}
+      size={size}
+      type="submit"
+      disabled={isSubmitting || !isFormCompleteAndValid}
+    >
+      {isSubmitting ? "Loading..." : children}
+    </Button>
+  );
+};
 
 /* Form */
 interface ErrorMessageProps {
