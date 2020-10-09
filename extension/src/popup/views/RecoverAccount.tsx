@@ -100,7 +100,7 @@ export const RecoverAccount = () => {
       onSubmit={handleSubmit}
       validationSchema={RecoverAccountSchema}
     >
-      {({ isSubmitting, isValid }) => (
+      {({ dirty, isSubmitting, isValid }) => (
         <FullHeightFormEl>
           <Onboarding
             header="Recover wallet from backup phrase"
@@ -150,7 +150,11 @@ export const RecoverAccount = () => {
                   <Error name="termsOfUse" />
                 </FormRow>
                 <FormRow>
-                  <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
+                  <SubmitButton
+                    dirty={dirty}
+                    isSubmitting={isSubmitting}
+                    isValid={isValid}
+                  >
                     Recover
                   </SubmitButton>
                 </FormRow>

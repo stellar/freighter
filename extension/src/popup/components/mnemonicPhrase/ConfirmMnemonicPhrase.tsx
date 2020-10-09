@@ -128,7 +128,7 @@ export const ConfirmMnemonicPhrase = ({
   return (
     <>
       <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
-        {({ setValues, values, isSubmitting, handleChange }) => (
+        {({ dirty, setValues, values, isSubmitting, handleChange }) => (
           <Form>
             <ModifiedHalfScreenEl>
               <ConfirmInputEl>
@@ -159,6 +159,7 @@ export const ConfirmMnemonicPhrase = ({
               <FormRow>
                 <SubmitButton
                   data-testid="confirm"
+                  dirty={dirty}
                   isSubmitting={isSubmitting}
                   isValid={!!displaySelectedWords().length}
                 >

@@ -109,7 +109,7 @@ export const UnlockBackupPhrase = () => {
         </p>
       </WarningMessage>
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-        {({ isSubmitting, isValid }) => (
+        {({ dirty, isSubmitting, isValid }) => (
           <Form>
             <FormRowEl>
               <CustomFormTextFieldEl
@@ -122,7 +122,11 @@ export const UnlockBackupPhrase = () => {
             </FormRowEl>
             <ApiErrorMessage error={errorMessage} />
             <ButtonRowEl>
-              <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
+              <SubmitButton
+                dirty={dirty}
+                isSubmitting={isSubmitting}
+                isValid={isValid}
+              >
                 Show my backup phrase
               </SubmitButton>
             </ButtonRowEl>

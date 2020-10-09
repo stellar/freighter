@@ -95,7 +95,7 @@ export const UnlockAccount = () => {
   return (
     <UnlockAccountEl>
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-        {({ isSubmitting, isValid }) => (
+        {({ dirty, isSubmitting, isValid }) => (
           <Form>
             <HeaderContainerEl>
               <IlloContainerEl>
@@ -114,7 +114,11 @@ export const UnlockAccount = () => {
             </FormRow>
             <ApiErrorMessage error={authError} />
             <ButtonRowEl>
-              <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
+              <SubmitButton
+                dirty={dirty}
+                isSubmitting={isSubmitting}
+                isValid={isValid}
+              >
                 Log In
               </SubmitButton>
             </ButtonRowEl>

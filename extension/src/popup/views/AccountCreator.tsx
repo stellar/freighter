@@ -75,7 +75,7 @@ export const AccountCreator = () => {
         onSubmit={handleSubmit}
         validationSchema={AccountCreatorSchema}
       >
-        {({ isSubmitting, isValid }) => (
+        {({ dirty, isSubmitting, isValid }) => (
           <Form>
             <ModifiedHalfScreenEl>
               <FormRow>
@@ -109,7 +109,11 @@ export const AccountCreator = () => {
                 <Error name="termsOfUse" />
               </FormRow>
               <FormRow>
-                <SubmitButton isSubmitting={isSubmitting} isValid={isValid}>
+                <SubmitButton
+                  dirty={dirty}
+                  isSubmitting={isSubmitting}
+                  isValid={isValid}
+                >
                   Log In
                 </SubmitButton>
               </FormRow>
