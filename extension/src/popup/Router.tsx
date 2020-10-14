@@ -21,6 +21,7 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/authServices";
+import { loadSettings } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
@@ -184,6 +185,7 @@ export const Router = () => {
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(loadAccount());
+    dispatch(loadSettings());
   }, [dispatch]);
 
   return (

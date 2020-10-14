@@ -307,11 +307,11 @@ export const popupMessageListener = (
   };
 
   const loadSettings = () => {
-    const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "false";
-    const bool = JSON.parse(dataSharingValue);
+    const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "true";
+    const isDataSharingAllowed = JSON.parse(dataSharingValue);
 
     sendResponse({
-      isDataSharingAllowed: bool,
+      isDataSharingAllowed,
     });
   };
 

@@ -48,14 +48,14 @@ const CheckboxFieldEl = styled(CheckboxField)`
 
 export const Settings = () => {
   const dispatch = useDispatch();
-  const DefaultDataSharingSetting = useSelector(settingsDataSharingSelector);
+  const userDataSharingSetting = useSelector(settingsDataSharingSelector);
 
   interface SettingValues {
     isDataSharingAllowed: boolean;
   }
 
   const initialValues: SettingValues = {
-    isDataSharingAllowed: DefaultDataSharingSetting,
+    isDataSharingAllowed: userDataSharingSetting,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -70,7 +70,11 @@ export const Settings = () => {
         <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
         <HeaderEl>Show backup phrase</HeaderEl>
       </HeaderContainerEl>
-      <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+      <Formik
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        enableReinitialize
+      >
         <Form>
           <SettingRowEl>
             <SubheaderEl>Anonymous data sharing</SubheaderEl>

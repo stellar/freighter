@@ -46,7 +46,7 @@ const rootReducer = combineReducers({
   settings,
 });
 export type AppState = ReturnType<typeof rootReducer>;
-const store = configureStore({
+export const store = configureStore({
   reducer: rootReducer,
   middleware: [metricsMiddleware<AppState>(), ...getDefaultMiddleware()],
 });

@@ -8,6 +8,7 @@ export const redirectMessagesToBackground = () => {
   window.addEventListener(
     "message",
     async (event) => {
+      const messagedId = event?.data?.messageId || 0;
       // We only accept messages from ourselves
       if (event.source !== window) return;
       // Only respond to messages tagged as being from Lyra API
@@ -22,7 +23,7 @@ export const redirectMessagesToBackground = () => {
       }
       // Send the response back to Lyra API
       window.postMessage(
-        { source: EXTERNAL_MSG_RESPONSE, ...res },
+        { source: EXTERNAL_MSG_RESPONSE, messagedId, ...res },
         window.location.origin,
       );
     },
