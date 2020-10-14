@@ -62,6 +62,7 @@ export const Settings = () => {
     const { isDataSharingAllowed } = formValue;
 
     await dispatch(saveSettings({ isDataSharingAllowed }));
+    navigateTo(ROUTES.account);
   };
 
   return (
