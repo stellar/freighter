@@ -3,6 +3,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 
 export interface Response {
   error: string;
+  messagedId: number;
   applicationState: APPLICATION_STATE;
   publicKey: string;
   hasPrivateKey: boolean;
@@ -19,6 +20,7 @@ export interface Response {
   source: string;
   type: SERVICE_TYPES;
   url: string;
+  isDataSharingAllowed: boolean;
 }
 
 export interface ExternalRequest {

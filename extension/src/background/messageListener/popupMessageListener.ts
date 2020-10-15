@@ -31,6 +31,7 @@ import {
 
 const KEY_ID = "keyId";
 const APPLICATION_ID = "applicationState";
+const DATA_SHARING_ID = "dataSharingStatus";
 
 const sessionTimer = new SessionTimer();
 
@@ -294,6 +295,26 @@ export const popupMessageListener = (
     });
   };
 
+  /* @TODO add toggle for Mainnet & Testnet */
+  const saveSettings = () => {
+    const { isDataSharingAllowed } = request;
+
+    localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
+
+    sendResponse({
+      isDataSharingAllowed,
+    });
+  };
+
+  const loadSettings = () => {
+    const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "true";
+    const isDataSharingAllowed = JSON.parse(dataSharingValue);
+
+    sendResponse({
+      isDataSharingAllowed,
+    });
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
@@ -307,6 +328,8 @@ export const popupMessageListener = (
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
+    [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,
+    [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
   };
 
   if (messageResponder[request.type]) {

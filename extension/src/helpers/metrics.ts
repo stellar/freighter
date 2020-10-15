@@ -2,6 +2,9 @@ import throttle from "lodash/throttle";
 import { Middleware, AnyAction } from "redux";
 import { createAsyncThunk, createAction } from "@reduxjs/toolkit";
 
+import { store } from "popup/App";
+import { settingsDataSharingSelector } from "popup/ducks/settings";
+
 type metricHandler<AppState> = (state: AppState, action: AnyAction) => void;
 const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
 
@@ -88,9 +91,7 @@ const getUserId = () => {
   const storedId = localStorage.getItem("metrics_user_id");
   if (!storedId) {
     // Create a random ID by taking the decimal portion of a random number
-    const newId = Math.random()
-      .toString()
-      .split(".")[1];
+    const newId = Math.random().toString().split(".")[1];
     localStorage.setItem("metrics_user_id", newId);
     return newId;
   }
@@ -106,6 +107,8 @@ const getUserId = () => {
  * @returns {void}
  */
 export const emitMetric = (name: string, body?: any) => {
+  const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
+  if (!isDataSharingAllowed) return;
   cache.push({
     /* eslint-disable camelcase */
     event_type: name,

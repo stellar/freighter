@@ -29,6 +29,7 @@ import { WarningMessage } from "popup/components/WarningMessage";
 import OrangeLockIcon from "popup/assets/icon-orange-lock.svg";
 
 const UnlockAccountEl = styled.div`
+  background: ${COLOR_PALETTE.background};
   width: 100%;
   max-width: ${POPUP_WIDTH}px;
   box-sizing: border-box;

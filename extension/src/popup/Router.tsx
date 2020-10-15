@@ -21,6 +21,7 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/authServices";
+import { loadSettings } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
@@ -38,6 +39,7 @@ import { UnlockBackupPhrase } from "popup/views/UnlockBackupPhrase";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
+import { Settings } from "popup/views/Settings";
 
 import { Header } from "popup/components/Header";
 
@@ -183,6 +185,7 @@ export const Router = () => {
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(loadAccount());
+    dispatch(loadSettings());
   }, [dispatch]);
 
   return (
@@ -213,6 +216,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.unlockBackupPhrase}>
           <UnlockBackupPhrase />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.settings}>
+          <Settings />
         </PublicKeyRoute>
         <UnlockAccountRoute path={ROUTES.unlockAccount}>
           <Header />

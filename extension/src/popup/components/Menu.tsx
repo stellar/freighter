@@ -43,7 +43,7 @@ const MenuEl = styled.div`
   padding: 0.675rem 3.375rem;
 `;
 const MenuOpenButtonEl = styled(BasicButton)`
-  padding: 10px 12px;
+  padding: 1.68rem 0.75rem;
   border-radius: 0.25rem;
   transition: background ${ANIMATION_TIMES.fast} ease-out;
 
@@ -75,7 +75,7 @@ const SlideoutNavListEl = styled.ul`
 const SlideoutNavListItemEl = styled.li`
   cursor: pointer;
   display: block;
-  padding: 2rem 0;
+  padding: 1rem 0;
   font-size: 1.5rem;
   font-weight: 200;
   color: white;
@@ -133,6 +133,9 @@ export const Menu = () => {
           <SlideoutNavListEl>
             <SlideoutNavListItemEl>
               <Link to={ROUTES.unlockBackupPhrase}>Show backup phrase</Link>
+            </SlideoutNavListItemEl>
+            <SlideoutNavListItemEl>
+              <Link to={ROUTES.settings}>Settings</Link>
             </SlideoutNavListItemEl>
             <SlideoutNavListItemEl>
               <a href="/">Help</a>

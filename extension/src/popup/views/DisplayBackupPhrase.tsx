@@ -58,6 +58,7 @@ const CopiedToastWrapperEl = styled.div`
   position: absolute;
 `;
 const UnlockAccountEl = styled.div`
+  background: ${COLOR_PALETTE.background};
   width: 100%;
   max-width: ${POPUP_WIDTH}px;
   box-sizing: border-box;

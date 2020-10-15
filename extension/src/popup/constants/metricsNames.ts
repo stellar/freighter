@@ -14,6 +14,7 @@ export const METRIC_NAMES = {
   viewUnlockBackupPhrase: "loaded screen: unlock backup phrase",
   viewDisplayBackupPhrase: "loaded screen: display backup phrase",
   viewPublicKey: "loaded screen: view public key generator",
+  viewSettings: "loaded screen: settings",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
