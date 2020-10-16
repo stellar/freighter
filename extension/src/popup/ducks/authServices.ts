@@ -177,7 +177,11 @@ const initialState: InitialState = {
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
+  reducers: {
+    clearApiError(state) {
+      state.error = "";
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(createAccount.fulfilled, (state, action) => {
       const { publicKey } = action.payload || { publicKey: "" };
@@ -307,5 +311,7 @@ export const publicKeySelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.publicKey,
 );
+
+export const { clearApiError } = authSlice.actions;
 
 export { reducer };

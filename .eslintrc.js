@@ -12,6 +12,12 @@ module.exports = {
         "import/no-extraneous-dependencies": [0, { devDependencies: false }],
       },
     },
+    {
+      files: ["*/**/ducks/*.ts"],
+      rules: {
+        "no-param-reassign": "off",
+      },
+    },
   ],
   rules: {
     "no-console": 0,
