@@ -16,6 +16,7 @@ import {
   mnemonicPhrase as mnemonicPhraseValidator,
 } from "popup/helpers/validators";
 import {
+  clearApiError,
   authErrorSelector,
   publicKeySelector,
   recoverAccount,
@@ -94,13 +95,21 @@ export const RecoverAccount = () => {
     }
   }, [publicKey]);
 
+  const clearMnemonicPhraseError = (e: React.ChangeEvent<any>) => {
+    // TODO: This pattern could be reused if we run into more instances of needing to clear an API error
+
+    if (authError && e.target.value === "") {
+      dispatch(clearApiError());
+    }
+  };
+
   return (
     <Formik
       initialValues={initialValues}
       onSubmit={handleSubmit}
       validationSchema={RecoverAccountSchema}
     >
-      {({ dirty, isSubmitting, isValid }) => (
+      {({ dirty, handleChange, isSubmitting, isValid }) => (
         <FullHeightFormEl>
           <Onboarding
             header="Recover wallet from backup phrase"
@@ -113,6 +122,10 @@ export const RecoverAccount = () => {
                 <TextField
                   component="textarea"
                   name="mnemonicPhrase"
+                  onChange={(e: React.ChangeEvent) => {
+                    clearMnemonicPhraseError(e);
+                    handleChange(e);
+                  }}
                   placeholder="Enter your 12 word phrase to restore your wallet"
                 />
                 <Error name="mnemonicPhrase" />
