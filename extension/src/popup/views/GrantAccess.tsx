@@ -1,12 +1,14 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 
 import { getUrlHostname, parsedSearchParam } from "helpers/urls";
+import { truncatedPublicKey } from "helpers/stellar";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
+import { publicKeySelector } from "popup/ducks/authServices";
 
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
@@ -31,14 +33,21 @@ const SubheaderEl = styled.h3`
   letter-spacing: 0.1px;
   color: ${COLOR_PALETTE.primary}};
 `;
+const PublicKeyEl = styled.p`
+  color: ${COLOR_PALETTE.primary}};
+`;
 const ButtonContainerEl = styled.div`
   display: flex;
   justify-content: space-around;
-  padding: 3rem 1.25rem;
+  padding: 3rem 0;
   flex-direction: row;
 `;
 const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
+  width: 9.75rem;
+`;
+const SharePublicKeyButtonEl = styled(SubmitButton)`
+  width: 12.25rem;
 `;
 
 export const GrantAccess = () => {
@@ -49,6 +58,7 @@ export const GrantAccess = () => {
   const { url } = parsedSearchParam(location.search);
 
   const domain = getUrlHostname(url);
+  const publicKey = useSelector(publicKeySelector);
 
   const rejectAndClose = () => {
     dispatch(rejectAccess());
@@ -66,7 +76,7 @@ export const GrantAccess = () => {
       <HeaderEl>Share public key</HeaderEl>
       <WarningMessage
         icon={WarningShieldIcon}
-        subheader="This is the first time you interact with this domain in this browser"
+        subheader="This is the first time you've interacted with this domain in this browser"
       >
         <p>
           Double check the domain name, if you suspect of something, don't give
@@ -79,17 +89,18 @@ export const GrantAccess = () => {
       </WarningMessage>
       <PunycodedDomain domain={domain} />
       <SubheaderEl>This website wants to know your public key:</SubheaderEl>
+      <PublicKeyEl>&#9675; {truncatedPublicKey(publicKey)}</PublicKeyEl>
       <ButtonContainerEl>
         <RejectButtonEl size="small" onClick={rejectAndClose}>
           Reject
         </RejectButtonEl>
-        <SubmitButton
+        <SharePublicKeyButtonEl
           isSubmitting={isGranting}
           size="small"
           onClick={() => grantAndClose()}
         >
-          Give access
-        </SubmitButton>
+          Share public key
+        </SharePublicKeyButtonEl>
       </ButtonContainerEl>
     </GrantAccessEl>
   );
