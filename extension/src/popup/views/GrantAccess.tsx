@@ -95,7 +95,7 @@ export const GrantAccess = () => {
           size="small"
           onClick={() => grantAndClose()}
         >
-          Give access
+          Share public key
         </SubmitButton>
       </ButtonContainerEl>
     </GrantAccessEl>
