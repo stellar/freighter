@@ -39,11 +39,15 @@ const PublicKeyEl = styled.p`
 const ButtonContainerEl = styled.div`
   display: flex;
   justify-content: space-around;
-  padding: 3rem 1.25rem;
+  padding: 3rem 0;
   flex-direction: row;
 `;
 const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
+  width: 9.75rem;
+`;
+const SharePublicKeyButtonEl = styled(SubmitButton)`
+  width: 12.25rem;
 `;
 
 export const GrantAccess = () => {
@@ -90,13 +94,13 @@ export const GrantAccess = () => {
         <RejectButtonEl size="small" onClick={rejectAndClose}>
           Reject
         </RejectButtonEl>
-        <SubmitButton
+        <SharePublicKeyButtonEl
           isSubmitting={isGranting}
           size="small"
           onClick={() => grantAndClose()}
         >
           Share public key
-        </SubmitButton>
+        </SharePublicKeyButtonEl>
       </ButtonContainerEl>
     </GrantAccessEl>
   );
