@@ -8,6 +8,7 @@ import {
 } from "popup/constants/styles";
 
 import { getPunycodedDomain } from "helpers/urls";
+import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 
 const El = styled.div`
   display: flex;
@@ -18,6 +19,9 @@ const El = styled.div`
 `;
 const FaviconEl = styled.div`
   padding-right: 1.125rem;
+`;
+const FaviconImgEl = styled.img`
+  vertical-align: middle;
 `;
 const DomainEl = styled.div`
   display: flex;
@@ -40,12 +44,13 @@ export const PunycodedDomain = ({ domain, ...props }: { domain: string }) => {
   const punycodedDomain = getPunycodedDomain(domain);
   const isDomainValid = punycodedDomain === domain;
 
-  // @TODO faviocon
-  const favicon = false;
+  const favicon = getSiteFavicon(domain);
 
   return (
     <El {...props}>
-      {favicon ? <FaviconEl>hello</FaviconEl> : null}
+      <FaviconEl>
+        <FaviconImgEl src={favicon} alt="Site favicon" />
+      </FaviconEl>
       <DomainEl>
         {isDomainValid ? (
           <PunycodedDomainEl>{punycodedDomain}</PunycodedDomainEl>
