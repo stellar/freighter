@@ -21,6 +21,7 @@ export const COLOR_PALETTE = {
 
 export const Z_INDEXES = {
   body: 0,
+  loader: -1,
   nav: 10,
 };
 

@@ -12,8 +12,9 @@ import {
   ROUNDED_CORNERS,
 } from "popup/constants/styles";
 
-import { SubmitButton } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
+import { Header } from "popup/components/Header";
+import { SubmitButton } from "popup/basics/Forms";
 
 import WhiteLockIcon from "popup/assets/icon-white-lock.svg";
 import SuccessIllo from "popup/assets/illo-success-screen.svg";
@@ -143,27 +144,30 @@ export const FullscreenSuccessMessage = () => {
     : METRIC_NAMES.recoverAccountFinished;
 
   return (
-    <WrapperEl>
-      <FullscreenStyle />
-      <ContentWrapperEl>
-        <IlloContainerEl>
-          <img src={SuccessIllo} alt="Success Illustration" />
-        </IlloContainerEl>
-        <HeaderEl>Woo, you’re in!</HeaderEl>
-        {IS_MNEMONIC_PHRASE_STATE ? (
-          <MnemonicPhraseConfirmedMessage />
-        ) : (
-          <RecoverAccountSuccessMessage />
-        )}
-        <FinishButtonEl
-          onClick={() => {
-            emitMetric(finishButtonMetric);
-            window.close();
-          }}
-        >
-          {IS_MNEMONIC_PHRASE_STATE ? "Got it!" : "All done"}
-        </FinishButtonEl>
-      </ContentWrapperEl>
-    </WrapperEl>
+    <>
+      <Header />
+      <WrapperEl>
+        <FullscreenStyle />
+        <ContentWrapperEl>
+          <IlloContainerEl>
+            <img src={SuccessIllo} alt="Success Illustration" />
+          </IlloContainerEl>
+          <HeaderEl>Woo, you’re in!</HeaderEl>
+          {IS_MNEMONIC_PHRASE_STATE ? (
+            <MnemonicPhraseConfirmedMessage />
+          ) : (
+            <RecoverAccountSuccessMessage />
+          )}
+          <FinishButtonEl
+            onClick={() => {
+              emitMetric(finishButtonMetric);
+              window.close();
+            }}
+          >
+            {IS_MNEMONIC_PHRASE_STATE ? "Got it!" : "All done"}
+          </FinishButtonEl>
+        </ContentWrapperEl>
+      </WrapperEl>
+    </>
   );
 };

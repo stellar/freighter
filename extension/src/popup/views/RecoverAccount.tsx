@@ -32,6 +32,7 @@ import {
   Form,
 } from "popup/basics/Forms";
 
+import { Header } from "popup/components/Header";
 import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
@@ -104,78 +105,82 @@ export const RecoverAccount = () => {
   };
 
   return (
-    <Formik
-      initialValues={initialValues}
-      onSubmit={handleSubmit}
-      validationSchema={RecoverAccountSchema}
-    >
-      {({ dirty, handleChange, isSubmitting, isValid }) => (
-        <FullHeightFormEl>
-          <Onboarding
-            header="Recover wallet from backup phrase"
-            icon={ImportWalletIllo}
-            isMaxHeaderLength
-            goBack={() => navigateTo(ROUTES.welcome)}
-          >
-            <>
-              <FormRow>
-                <TextField
-                  component="textarea"
-                  name="mnemonicPhrase"
-                  onChange={(e: React.ChangeEvent) => {
-                    clearMnemonicPhraseError(e);
-                    handleChange(e);
-                  }}
-                  placeholder="Enter your 12 word phrase to restore your wallet"
-                />
-                <Error name="mnemonicPhrase" />
-                <ApiErrorMessage error={authError}></ApiErrorMessage>
-              </FormRow>
-              <HalfScreenEl>
+    <>
+      <Header />
+      <Formik
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        validationSchema={RecoverAccountSchema}
+      >
+        {({ dirty, handleChange, isSubmitting, isValid }) => (
+          <FullHeightFormEl>
+            <Onboarding
+              header="Recover wallet from backup phrase"
+              icon={ImportWalletIllo}
+              isMaxHeaderLength
+              goBack={() => navigateTo(ROUTES.welcome)}
+            >
+              <>
                 <FormRow>
                   <TextField
-                    autoComplete="off"
-                    name="password"
-                    placeholder="Define new password"
-                    type="password"
+                    component="textarea"
+                    name="mnemonicPhrase"
+                    onChange={(e: React.ChangeEvent) => {
+                      clearMnemonicPhraseError(e);
+                      handleChange(e);
+                    }}
+                    placeholder="Enter your 12 word phrase to restore your wallet"
                   />
-                  <Error name="password" />
+                  <Error name="mnemonicPhrase" />
+                  <ApiErrorMessage error={authError}></ApiErrorMessage>
                 </FormRow>
-                <FormRow>
-                  <TextField
-                    autoComplete="off"
-                    name="confirmPassword"
-                    placeholder="Confirm password"
-                    type="password"
-                  />
-                  <Error name="confirmPassword" />
-                </FormRow>
-                <PasswordRequirements />
-                <FormRow>
-                  <CheckboxField
-                    label={
-                      <span>
-                        I have read and agree to <a href="/ac">Terms of Use</a>
-                      </span>
-                    }
-                    name="termsOfUse"
-                  />
-                  <Error name="termsOfUse" />
-                </FormRow>
-                <FormRow>
-                  <SubmitButton
-                    dirty={dirty}
-                    isSubmitting={isSubmitting}
-                    isValid={isValid}
-                  >
-                    Recover
-                  </SubmitButton>
-                </FormRow>
-              </HalfScreenEl>
-            </>
-          </Onboarding>
-        </FullHeightFormEl>
-      )}
-    </Formik>
+                <HalfScreenEl>
+                  <FormRow>
+                    <TextField
+                      autoComplete="off"
+                      name="password"
+                      placeholder="Define new password"
+                      type="password"
+                    />
+                    <Error name="password" />
+                  </FormRow>
+                  <FormRow>
+                    <TextField
+                      autoComplete="off"
+                      name="confirmPassword"
+                      placeholder="Confirm password"
+                      type="password"
+                    />
+                    <Error name="confirmPassword" />
+                  </FormRow>
+                  <PasswordRequirements />
+                  <FormRow>
+                    <CheckboxField
+                      label={
+                        <span>
+                          I have read and agree to{" "}
+                          <a href="/ac">Terms of Use</a>
+                        </span>
+                      }
+                      name="termsOfUse"
+                    />
+                    <Error name="termsOfUse" />
+                  </FormRow>
+                  <FormRow>
+                    <SubmitButton
+                      dirty={dirty}
+                      isSubmitting={isSubmitting}
+                      isValid={isValid}
+                    >
+                      Recover
+                    </SubmitButton>
+                  </FormRow>
+                </HalfScreenEl>
+              </>
+            </Onboarding>
+          </FullHeightFormEl>
+        )}
+      </Formik>
+    </>
   );
 };

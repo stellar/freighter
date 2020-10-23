@@ -21,6 +21,8 @@ import {
   TextField,
 } from "popup/basics/Forms";
 
+import { Header } from "popup/components/Header";
+
 import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 
 import WaveIllo from "popup/assets/illo-wave.svg";
@@ -93,50 +95,53 @@ export const UnlockAccount = () => {
   };
 
   return (
-    <UnlockAccountEl>
-      <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-        {({ dirty, isSubmitting, isValid }) => (
-          <Form>
-            <HeaderContainerEl>
-              <IlloContainerEl>
-                <img src={WaveIllo} alt="Wave Illustration" />
-              </IlloContainerEl>
-              <HeaderEl>Welcome back!</HeaderEl>
-            </HeaderContainerEl>
-            <FormRow>
-              <CustomFormTextFieldEl
-                autoComplete="off"
-                type="password"
-                name="password"
-                placeholder="Enter password"
-                error={authError}
-              />
-            </FormRow>
-            <ApiErrorMessage error={authError} />
-            <ButtonRowEl>
-              <SubmitButton
-                dirty={dirty}
-                isSubmitting={isSubmitting}
-                isValid={isValid}
-              >
-                Log In
-              </SubmitButton>
-            </ButtonRowEl>
-          </Form>
-        )}
-      </Formik>
-      <UnorderedListEl>
-        <ListItemEl>Want to add another account?</ListItemEl>
-        <ListItemEl>
-          <ImportButtonEl
-            onClick={() => {
-              window.open(newTabHref(ROUTES.recoverAccount));
-            }}
-          >
-            Import using backup phrase
-          </ImportButtonEl>
-        </ListItemEl>
-      </UnorderedListEl>
-    </UnlockAccountEl>
+    <>
+      <Header />
+      <UnlockAccountEl>
+        <Formik onSubmit={handleSubmit} initialValues={initialValues}>
+          {({ dirty, isSubmitting, isValid }) => (
+            <Form>
+              <HeaderContainerEl>
+                <IlloContainerEl>
+                  <img src={WaveIllo} alt="Wave Illustration" />
+                </IlloContainerEl>
+                <HeaderEl>Welcome back!</HeaderEl>
+              </HeaderContainerEl>
+              <FormRow>
+                <CustomFormTextFieldEl
+                  autoComplete="off"
+                  type="password"
+                  name="password"
+                  placeholder="Enter password"
+                  error={authError}
+                />
+              </FormRow>
+              <ApiErrorMessage error={authError} />
+              <ButtonRowEl>
+                <SubmitButton
+                  dirty={dirty}
+                  isSubmitting={isSubmitting}
+                  isValid={isValid}
+                >
+                  Log In
+                </SubmitButton>
+              </ButtonRowEl>
+            </Form>
+          )}
+        </Formik>
+        <UnorderedListEl>
+          <ListItemEl>Want to add another account?</ListItemEl>
+          <ListItemEl>
+            <ImportButtonEl
+              onClick={() => {
+                window.open(newTabHref(ROUTES.recoverAccount));
+              }}
+            >
+              Import using backup phrase
+            </ImportButtonEl>
+          </ListItemEl>
+        </UnorderedListEl>
+      </UnlockAccountEl>
+    </>
   );
 };

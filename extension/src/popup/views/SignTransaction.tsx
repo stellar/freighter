@@ -18,8 +18,9 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
-import { WarningMessage } from "popup/components/WarningMessage";
+import { Header } from "popup/components/Header";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import { WarningMessage } from "popup/components/WarningMessage";
 
 import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
 
@@ -268,75 +269,78 @@ export const SignTransaction = () => {
     );
 
   return (
-    <El>
-      <HeaderEl>Confirm Transaction</HeaderEl>
-      {!isDomainListedAllowed ? (
-        <WarningMessage
-          icon={WarningShieldIcon}
-          subheader="This is the first time you interact with this domain in this browser"
-        >
-          <p>
-            Double check the domain name, if you suspect of something, don't
-            give it access.
-          </p>
-          <p>
-            If you interacted with this domain before in this browser and are
-            seeing this message, it may indicate a scam.
-          </p>
-        </WarningMessage>
-      ) : null}
-      <PunycodedDomain domain={domain} />
-      <SubheaderEl>
-        This website is requesting a signature to the follwing transaction:
-      </SubheaderEl>
-      <ListEl>
-        <li>
-          <div>
-            <strong>Source account:</strong>
-          </div>
-          <div>{truncatedPublicKey(publicKey)}</div>
-        </li>
-        {_fee ? (
+    <>
+      <Header />
+      <El>
+        <HeaderEl>Confirm Transaction</HeaderEl>
+        {!isDomainListedAllowed ? (
+          <WarningMessage
+            icon={WarningShieldIcon}
+            subheader="This is the first time you interact with this domain in this browser"
+          >
+            <p>
+              Double check the domain name, if you suspect of something, don't
+              give it access.
+            </p>
+            <p>
+              If you interacted with this domain before in this browser and are
+              seeing this message, it may indicate a scam.
+            </p>
+          </WarningMessage>
+        ) : null}
+        <PunycodedDomain domain={domain} />
+        <SubheaderEl>
+          This website is requesting a signature to the follwing transaction:
+        </SubheaderEl>
+        <ListEl>
           <li>
             <div>
-              <strong>Base fee:</strong>
+              <strong>Source account:</strong>
             </div>
-            <div> {_fee}</div>
+            <div>{truncatedPublicKey(publicKey)}</div>
           </li>
-        ) : null}
-        {memo ? (
-          <li>
-            <div>
-              <strong>Memo:</strong>
-            </div>
-            <div> {memo} (MEMO_TEXT)</div>
-          </li>
-        ) : null}
-        {_sequence ? (
-          <li>
-            <div>
-              <strong>Transaction sequence number:</strong>
-            </div>
-            <div> {_sequence}</div>
-          </li>
-        ) : null}
-      </ListEl>
-      <OperationsHeader>
-        {_operations.length} {operationText}
-      </OperationsHeader>
-      <Operations />
-      <ButtonContainerEl>
-        <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
-          Reject
-        </RejectButtonEl>
-        <SubmitButtonEl
-          isSubmitting={isConfirming}
-          size="small"
-          onClick={() => signAndClose()}
-        >
-          Sign Transaction
-        </SubmitButtonEl>
-      </ButtonContainerEl>
-    </El>
+          {_fee ? (
+            <li>
+              <div>
+                <strong>Base fee:</strong>
+              </div>
+              <div> {_fee}</div>
+            </li>
+          ) : null}
+          {memo ? (
+            <li>
+              <div>
+                <strong>Memo:</strong>
+              </div>
+              <div> {memo} (MEMO_TEXT)</div>
+            </li>
+          ) : null}
+          {_sequence ? (
+            <li>
+              <div>
+                <strong>Transaction sequence number:</strong>
+              </div>
+              <div> {_sequence}</div>
+            </li>
+          ) : null}
+        </ListEl>
+        <OperationsHeader>
+          {_operations.length} {operationText}
+        </OperationsHeader>
+        <Operations />
+        <ButtonContainerEl>
+          <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
+            Reject
+          </RejectButtonEl>
+          <SubmitButtonEl
+            isSubmitting={isConfirming}
+            size="small"
+            onClick={() => signAndClose()}
+          >
+            Sign Transaction
+          </SubmitButtonEl>
+        </ButtonContainerEl>
+      </El>
+    </>
   );
 };
