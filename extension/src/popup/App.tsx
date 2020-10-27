@@ -2,7 +2,7 @@ import React from "react";
 import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
-import { createGlobalStyle } from "styled-components";
+import styled, { createGlobalStyle } from "styled-components";
 
 import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 
@@ -11,6 +11,8 @@ import { metricsMiddleware } from "helpers/metrics";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
 import { reducer as settings } from "popup/ducks/settings";
+
+import { Loading } from "popup/views/Loading";
 
 import { Router } from "./Router";
 
@@ -33,6 +35,7 @@ const GlobalStyle = createGlobalStyle`
     display: flex;
     flex-flow: column;
     height: 100%;
+    position: relative;
   }
 
   body * {
@@ -43,6 +46,10 @@ const GlobalStyle = createGlobalStyle`
     color: ${COLOR_PALETTE.primary};
     text-decoration: none;
   }
+`;
+
+const RouteWrapperEl = styled.div`
+  background: ${COLOR_PALETTE.background};
 `;
 
 const rootReducer = combineReducers({
@@ -59,7 +66,10 @@ export function App() {
   return (
     <Provider store={store}>
       <GlobalStyle />
-      <Router />
+      <RouteWrapperEl>
+        <Router />
+      </RouteWrapperEl>
+      <Loading />
     </Provider>
   );
 }

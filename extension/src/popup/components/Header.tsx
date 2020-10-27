@@ -1,11 +1,7 @@
 import React from "react";
 import styled from "styled-components";
-import { useSelector } from "react-redux";
 
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { NETWORK_NAME } from "@shared/constants/stellar";
-
-import { applicationStateSelector } from "popup/ducks/authServices";
 
 import { HEADER_HEIGHT } from "constants/dimensions";
 import { COLOR_PALETTE } from "popup/constants/styles";
@@ -42,12 +38,6 @@ type HeaderProps = {
 };
 
 export const Header = ({ className, ...props }: HeaderProps) => {
-  const applicationState = useSelector(applicationStateSelector);
-
-  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return null;
-  }
-
   return (
     <HeaderEl className={className} {...props}>
       <H1El>Lyra</H1El>

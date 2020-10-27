@@ -41,8 +41,6 @@ import { Debug } from "popup/views/Debug";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 
-import { Header } from "popup/components/Header";
-
 import "popup/metrics/views";
 import { DEVELOPMENT } from "@shared/constants/services";
 
@@ -55,9 +53,11 @@ const PublicKeyRoute = (props: RouteProps) => {
   if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
     return <AppError>{error}</AppError>;
   }
+
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return <Loading />;
+    return null;
   }
+
   if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
     return (
       <Redirect
@@ -91,7 +91,7 @@ const PrivateKeyRoute = (props: RouteProps) => {
     return <AppError>{error}</AppError>;
   }
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return <Loading />;
+    return null;
   }
   if (!hasPrivateKey) {
     return (
@@ -138,8 +138,9 @@ const HomeRoute = () => {
     return <AppError>{error}</AppError>;
   }
   if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return <Loading />;
+    return null;
   }
+
   if (!publicKey) {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
       return <Redirect to={ROUTES.unlockAccount} />;
@@ -193,25 +194,21 @@ export const Router = () => {
       <RouteListener />
       <Switch>
         <PublicKeyRoute path={ROUTES.account}>
-          <Header />
           <Account />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />
         </PublicKeyRoute>
         <PrivateKeyRoute path={ROUTES.signTransaction}>
-          <Header />
           <SignTransaction />
         </PrivateKeyRoute>
         <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
           <DisplayBackupPhrase />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.grantAccess}>
-          <Header />
           <GrantAccess />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
-          <Header />
           <MnemonicPhrase />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.unlockBackupPhrase}>
@@ -221,23 +218,18 @@ export const Router = () => {
           <Settings />
         </PublicKeyRoute>
         <UnlockAccountRoute path={ROUTES.unlockAccount}>
-          <Header />
           <UnlockAccount />
         </UnlockAccountRoute>
         <PublicKeyRoute path={ROUTES.mnemonicPhraseConfirmed}>
-          <Header />
           <FullscreenSuccessMessage />
         </PublicKeyRoute>
         <Route path={ROUTES.accountCreator}>
-          <Header />
           <AccountCreator />
         </Route>
         <Route path={ROUTES.recoverAccount}>
-          <Header />
           <RecoverAccount />
         </Route>
         <PublicKeyRoute path={ROUTES.recoverAccountSuccess}>
-          <Header />
           <FullscreenSuccessMessage />
         </PublicKeyRoute>
         <HomeRoute />

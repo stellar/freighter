@@ -18,6 +18,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { BasicButton } from "popup/basics/Buttons";
 
+import { Header } from "popup/components/Header";
 import { Toast } from "popup/components/Toast";
 import { Menu } from "popup/components/Menu";
 
@@ -106,7 +107,7 @@ const RowEl = styled.div`
 `;
 
 export const Account = () => {
-  const [accountBalance, setaccountBalance] = useState("0.00");
+  const [accountBalance, setaccountBalance] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const publicKey = useSelector(publicKeySelector);
 
@@ -124,8 +125,9 @@ export const Account = () => {
     fetchAccountBalance();
   }, [publicKey]);
 
-  return (
+  return accountBalance ? (
     <>
+      <Header />
       <AccountEl>
         <RowEl>
           <Menu />
@@ -164,5 +166,5 @@ export const Account = () => {
       </AccountEl>
       <Footer />
     </>
-  );
+  ) : null;
 };

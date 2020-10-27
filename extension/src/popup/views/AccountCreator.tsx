@@ -23,6 +23,7 @@ import {
   TextField,
 } from "popup/basics/Forms";
 
+import { Header } from "popup/components/Header";
 import { Onboarding, HalfScreen } from "popup/components/Onboarding";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
@@ -65,62 +66,65 @@ export const AccountCreator = () => {
   }, [publicKey]);
 
   return (
-    <Onboarding
-      header="Create a password"
-      icon={CreatePasswordIllo}
-      goBack={() => navigateTo(ROUTES.welcome)}
-    >
-      <Formik
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        validationSchema={AccountCreatorSchema}
+    <>
+      <Header />
+      <Onboarding
+        header="Create a password"
+        icon={CreatePasswordIllo}
+        goBack={() => navigateTo(ROUTES.welcome)}
       >
-        {({ dirty, isSubmitting, isValid }) => (
-          <Form>
-            <ModifiedHalfScreenEl>
-              <FormRow>
-                <TextField
-                  autoComplete="off"
-                  name="password"
-                  placeholder="New password"
-                  type="password"
-                />
-                <Error name="password" />
-              </FormRow>
-              <FormRow>
-                <TextField
-                  autoComplete="off"
-                  name="confirmPassword"
-                  placeholder="Confirm password"
-                  type="password"
-                />
-                <Error name="confirmPassword" />
-              </FormRow>
-              <PasswordRequirements />
-              <FormRow>
-                <CheckboxField
-                  name="termsOfUse"
-                  label={
-                    <span>
-                      I have read and agree to <a href="/ac">Terms of Use</a>
-                    </span>
-                  }
-                />
-                <Error name="termsOfUse" />
-              </FormRow>
-              <FormRow>
-                <SubmitButton
-                  dirty={dirty}
-                  isSubmitting={isSubmitting}
-                  isValid={isValid}
-                >
-                  Log In
-                </SubmitButton>
-              </FormRow>
-            </ModifiedHalfScreenEl>
-          </Form>
-        )}
-      </Formik>
-    </Onboarding>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          validationSchema={AccountCreatorSchema}
+        >
+          {({ dirty, isSubmitting, isValid }) => (
+            <Form>
+              <ModifiedHalfScreenEl>
+                <FormRow>
+                  <TextField
+                    autoComplete="off"
+                    name="password"
+                    placeholder="New password"
+                    type="password"
+                  />
+                  <Error name="password" />
+                </FormRow>
+                <FormRow>
+                  <TextField
+                    autoComplete="off"
+                    name="confirmPassword"
+                    placeholder="Confirm password"
+                    type="password"
+                  />
+                  <Error name="confirmPassword" />
+                </FormRow>
+                <PasswordRequirements />
+                <FormRow>
+                  <CheckboxField
+                    name="termsOfUse"
+                    label={
+                      <span>
+                        I have read and agree to <a href="/ac">Terms of Use</a>
+                      </span>
+                    }
+                  />
+                  <Error name="termsOfUse" />
+                </FormRow>
+                <FormRow>
+                  <SubmitButton
+                    dirty={dirty}
+                    isSubmitting={isSubmitting}
+                    isValid={isValid}
+                  >
+                    Log In
+                  </SubmitButton>
+                </FormRow>
+              </ModifiedHalfScreenEl>
+            </Form>
+          )}
+        </Formik>
+      </Onboarding>
+    </>
   );
 };

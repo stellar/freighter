@@ -15,6 +15,8 @@ import { SubmitButton } from "popup/basics/Forms";
 import { WarningMessage } from "popup/components/WarningMessage";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
+import { Header } from "popup/components/Header";
+
 import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
 
 import "popup/metrics/access";
@@ -72,36 +74,39 @@ export const GrantAccess = () => {
   };
 
   return (
-    <GrantAccessEl>
-      <HeaderEl>Share public key</HeaderEl>
-      <WarningMessage
-        icon={WarningShieldIcon}
-        subheader="This is the first time you've interacted with this domain in this browser"
-      >
-        <p>
-          Double check the domain name, if you suspect of something, don't give
-          it access.
-        </p>
-        <p>
-          If you interacted with this domain before in this browser and are
-          seeing this message, it may indicate a scam.
-        </p>
-      </WarningMessage>
-      <PunycodedDomain domain={domain} />
-      <SubheaderEl>This website wants to know your public key:</SubheaderEl>
-      <PublicKeyEl>&#9675; {truncatedPublicKey(publicKey)}</PublicKeyEl>
-      <ButtonContainerEl>
-        <RejectButtonEl size="small" onClick={rejectAndClose}>
-          Reject
-        </RejectButtonEl>
-        <SharePublicKeyButtonEl
-          isSubmitting={isGranting}
-          size="small"
-          onClick={() => grantAndClose()}
+    <>
+      <Header />
+      <GrantAccessEl>
+        <HeaderEl>Share public key</HeaderEl>
+        <WarningMessage
+          icon={WarningShieldIcon}
+          subheader="This is the first time you've interacted with this domain in this browser"
         >
-          Share public key
-        </SharePublicKeyButtonEl>
-      </ButtonContainerEl>
-    </GrantAccessEl>
+          <p>
+            Double check the domain name, if you suspect of something, don't
+            give it access.
+          </p>
+          <p>
+            If you interacted with this domain before in this browser and are
+            seeing this message, it may indicate a scam.
+          </p>
+        </WarningMessage>
+        <PunycodedDomain domain={domain} />
+        <SubheaderEl>This website wants to know your public key:</SubheaderEl>
+        <PublicKeyEl>&#9675; {truncatedPublicKey(publicKey)}</PublicKeyEl>
+        <ButtonContainerEl>
+          <RejectButtonEl size="small" onClick={rejectAndClose}>
+            Reject
+          </RejectButtonEl>
+          <SharePublicKeyButtonEl
+            isSubmitting={isGranting}
+            size="small"
+            onClick={() => grantAndClose()}
+          >
+            Share public key
+          </SharePublicKeyButtonEl>
+        </ButtonContainerEl>
+      </GrantAccessEl>
+    </>
   );
 };
