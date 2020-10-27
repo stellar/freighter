@@ -31,15 +31,16 @@ const WrapperEl = styled.div`
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  height: 100%;
 `;
 
 const ContentWrapperEl = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 2rem 0;
+  padding: 0 0 2rem 0;
   text-align: center;
-  margin: auto;
+  margin: 0 auto;
   color: ${COLOR_PALETTE.white};
   max-width: 39.5rem;
 `;
