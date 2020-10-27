@@ -37,11 +37,9 @@ type HeaderProps = {
   className?: string;
 };
 
-export const Header = ({ className, ...props }: HeaderProps) => {
-  return (
-    <HeaderEl className={className} {...props}>
-      <H1El>Lyra</H1El>
-      <NetworkEl>{NETWORK_NAME}</NetworkEl>
-    </HeaderEl>
-  );
-};
+export const Header = ({ className, ...props }: HeaderProps) => (
+  <HeaderEl className={className} {...props}>
+    <H1El>Lyra</H1El>
+    <NetworkEl>{NETWORK_NAME}</NetworkEl>
+  </HeaderEl>
+);
