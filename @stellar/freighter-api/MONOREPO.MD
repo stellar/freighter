@@ -1,4 +1,4 @@
-# Usage in Lyra Monorepo
+# Usage in Freighter Monorepo
 
 ## Installation
 

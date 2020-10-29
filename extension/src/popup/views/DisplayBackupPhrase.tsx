@@ -108,7 +108,7 @@ export const DisplayBackupPhrase = () => {
           data-testid="download"
           onClick={() => {
             download({
-              filename: "lyraMnemonicPhrase.txt",
+              filename: "freighterMnemonicPhrase.txt",
               content: mnemonicPhrase,
             });
             emitMetric(METRIC_NAMES.backupPhraseDownload);

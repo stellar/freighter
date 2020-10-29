@@ -84,9 +84,10 @@ export const Settings = () => {
                 name="isDataSharingAllowed"
                 label={
                   <span>
-                    Allow Lyra to collect anonymous information about usage.
-                    Lyra will never collect your personal information such as IP
-                    address, keys, balance or transaction amounts.
+                    Allow Freighter to collect anonymous information about
+                    usage. Freighter will never collect your personal
+                    information such as IP address, keys, balance or transaction
+                    amounts.
                   </span>
                 }
               />

@@ -22,7 +22,7 @@ import { responseQueue, transactionQueue } from "./popupMessageListener";
 
 const WINDOW_DIMENSIONS = `width=${POPUP_WIDTH},height=667`;
 
-export const lyraApiMessageListener = (
+export const freighterApiMessageListener = (
   request: Request,
   sender: Sender,
   sendResponse: (response: SendResponseInterface) => void,
@@ -49,7 +49,7 @@ export const lyraApiMessageListener = (
     const encodeOrigin = btoa(JSON.stringify(tab));
     window.open(
       chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
-      "Lyra: Connect",
+      "Freighter: Connect",
       WINDOW_DIMENSIONS,
     );
 
@@ -97,7 +97,7 @@ export const lyraApiMessageListener = (
       chrome.runtime.getURL(
         `/index.html#/sign-transaction?${encodetransactionInfo}`,
       ),
-      "Lyra: Sign Transaction",
+      "Freighter: Sign Transaction",
       WINDOW_DIMENSIONS,
     );
     if (!popup) {

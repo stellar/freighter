@@ -1,19 +1,8 @@
-# Lyra Chrome Extension
+# Freighter Chrome Extension
 
 ## Get Started
 
-This project builds a Chrome extension that handles authentication as well as a
-"playground" to test out the public facing API that Lyra provides. This
-playground calls the Lyra API exactly how a client site like
-accountviewer.stellar.org would call it
-
-### Install project dependencies
-
-Navigate to this project folder in Terminal and run
-
-```
-yarn
-```
+This project builds a Chrome extension
 
 ### Build the extension and install it on your machine
 
@@ -41,7 +30,7 @@ yarn build:experimental
 
 5. Click `Load Unpacked` and it will open your file system. Navigate to this
    folder and click the `build` folder. Hit `Select`. You should now see an icon
-   for Lyra in Chrome.
+   for Freighter in Chrome.
 
 ## Project Setup
 
@@ -54,27 +43,7 @@ nomenclature. All of these are located in the `src/` folder:
    Chrome parlance, this is called the `popup` and is therefore located in
    `src/popup`.
 
-2. The API that is exposed to client websites. This API is a channel to the
-   extension. A developer for `laboratory.stellar.org`, for example, would call
-   this API to get data from Lyra. This gateway is managed by the
-   `content script` and it has 2 functions.
-
-   First, the `content script` automatically embeds a script into _EVERY_ page a
-   user opens while they have Lyra installed. This script adds a property to the
-   page's `window` called `lyra` that contains the API. When a method from
-   `window.lyra` is called, it will send a message back to the `content script`.
-
-   The second function is to listen to messages from the API and forward them on
-   to the extension. It will subsequently listen to the response from the
-   extension and send that back to the API on the client page.
-
-   In essence, `content script` controls data flow between the client page and
-   the extension.
-
-Lyra API and `content script` share the same window, so we post a message to
-that shared window for both components to have access to it.
-
-3. The "backend" service. We want to do things like account creation and store
+2. The "backend" service. We want to do things like account creation and store
    sensitive data, like public keys, in a secure place away from the `popup` and
    away from the `content script`. We want this service to be a standalone
    entity that these other 2 can make requests to and receive only what the
@@ -82,22 +51,19 @@ that shared window for both components to have access to it.
    and is instantiated by `public/background`. The code is located in
    `src/background`.
 
-This script is run by the Chrome extension on browser starts and continues
-running, storing data and listening/responding to messages from `popup` and
-`content script`, and only terminates on browser close (or extension
-uninstall/reload). It is run in a headless browser, so it has access to all Web
-APIs and Chrome APIs. It also has accessible dev tools, which can be reached by
-going to `chrome://extensions/` and clicking `inspect views: background page`
+   This script is run by the Chrome extension on browser starts and continues
+   running, storing data and listening/responding to messages from `popup` and
+   `content script`, and only terminates on browser close (or extension
+   uninstall/reload). It is run in a headless browser, so it has access to all
+   Web APIs and Chrome APIs. It also has accessible dev tools, which can be
+   reached by going to `chrome://extensions/` and clicking
+   `inspect views: background page`
 
-### Other parts of the codebase
-
-All helpers, statics, etc. that are shared by the 3 components are located in
-the top level of `src`. This includes the `api` folder, which sends messages to
-the `background`. Both `popup` and `content script` can send to and receive from
-`background`.
-
-The `public` folder contains all extension specific instantiation and assets. It
-also contains the code for the aforementioned `Playground`.
+3. The `content script` that allows external sites to send and receive messages
+   to `background`. Using an event listener, it waits for an application to
+   attempt to communicate using `@stellar/freighter-api`(under the hood,
+   `window.postMessage`). Once it picks up a message and determines that this
+   from `freighter-api`, it sends the message onto `background`.
 
 ### Create a dev environment for the Popup and Playground to run in
 

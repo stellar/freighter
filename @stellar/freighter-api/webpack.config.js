@@ -12,7 +12,7 @@ const config = {
   devtool: "source-map",
   output: {
     globalObject: "this",
-    library: "lyra-api",
+    library: "freighter-api",
     libraryTarget: "umd",
     path: BUILD_PATH,
     filename: "[name].min.js",

@@ -109,14 +109,14 @@ const MnemonicPhraseConfirmedMessage = () => (
       </MessageSubheaderEl>
       <MessageListEl>
         <li>
-          Lyra will <strong>never ask for your backup phrase</strong> unless
-          you're actively importing your account using the browser extension -
-          never on an external website
+          Freighter will <strong>never ask for your backup phrase</strong>{" "}
+          unless you're actively importing your account using the browser
+          extension - never on an external website
         </li>
-        <li>Always check the domain of websites you're using Lyra with</li>
+        <li>Always check the domain of websites you're using Freighter with</li>
         <li>
-          Lyra cannot recover your account if you lose your backup phrase, so
-          keep it safe
+          Freighter cannot recover your account if you lose your backup phrase,
+          so keep it safe
         </li>
       </MessageListEl>
     </MessageEl>
@@ -128,7 +128,8 @@ const RecoverAccountSuccessMessage = () => (
     <p>You successfully imported your account.</p>
     <p>
       <strong>
-        Check your account details by clicking on the Lyra icon on your browser.
+        Check your account details by clicking on the Freighter icon on your
+        browser.
       </strong>
     </p>
   </CopyEl>

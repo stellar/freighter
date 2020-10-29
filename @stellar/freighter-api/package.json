@@ -1,11 +1,11 @@
 {
-  "name": "@stellar/lyra-api",
-  "version": "1.0.0-alpha.3",
+  "name": "@stellar/freighter-api",
+  "version": "1.0.0-beta.0",
   "license": "Apache-2.0",
   "author": "Stellar Development Foundation <hello@stellar.org>",
-  "description": "Utility functions to interact with Lyra extension",
+  "description": "Utility functions to interact with Freighter extension",
   "repository": {
-    "url": "git@github.com:stellar/lyra.git",
+    "url": "git@github.com:stellar/freighter.git",
     "type": "git"
   },
   "main": "build/index.min.js",
@@ -14,7 +14,7 @@
     "build": "webpack --config webpack.config.js --mode production",
     "start": "webpack --config webpack.config.js --watch --mode development"
   },
-  "types": "build/@stellar/lyra-api/src/index.d.ts",
+  "types": "build/@stellar/freighter-api/src/index.d.ts",
   "devDependencies": {
     "@stellar/eslint-config": "^1.0.3",
     "@stellar/prettier-config": "^1.0.1",

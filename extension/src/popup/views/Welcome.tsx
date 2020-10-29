@@ -110,7 +110,7 @@ export const Welcome = () => (
       <RowScreenEl>
         <LargeHeadingEl>
           Welcome, <br />
-          are you new to <strong>Lyra?</strong>
+          are you new to <strong>Freighter?</strong>
         </LargeHeadingEl>
       </RowScreenEl>
       <RowScreenEl>
