@@ -5,9 +5,12 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { RetinaImg } from "popup/basics/Images";
 
-import accountViewerLogo from "popup/assets/logo-av@2x.png";
-import laboratoryLogo from "popup/assets/logo-laboratory@2x.png";
-import stellarTermLogo from "popup/assets/logo-stellarterm@2x.png";
+import accountViewerLogo from "popup/assets/logo-av.png";
+import accountViewerLogo2x from "popup/assets/logo-av@2x.png";
+import laboratoryLogo from "popup/assets/logo-laboratory.png";
+import laboratoryLogo2x from "popup/assets/logo-laboratory@2x.png";
+import stellarTermLogo from "popup/assets/logo-stellarterm.png";
+import stellarTermLogo2x from "popup/assets/logo-stellarterm@2x.png";
 
 const FooterEl = styled.footer`
   box-sizing: border-box;
@@ -49,7 +52,8 @@ export const Footer = () => (
           rel="noreferrer"
         >
           <RetinaImg
-            retina={accountViewerLogo}
+            retina={accountViewerLogo2x}
+            src={accountViewerLogo}
             alt="Stellar Account Viewer logo"
           />
         </a>
@@ -60,12 +64,20 @@ export const Footer = () => (
           target="_blank"
           rel="noreferrer"
         >
-          <RetinaImg retina={laboratoryLogo} alt="Stellar Laboratory logo" />
+          <RetinaImg
+            retina={laboratoryLogo2x}
+            src={laboratoryLogo}
+            alt="Stellar Laboratory logo"
+          />
         </a>
       </FooterListItemEl>
       <FooterListItemEl>
         <a href="https://stellarterm.com" target="_blank" rel="noreferrer">
-          <RetinaImg retina={stellarTermLogo} alt="StellarTerm logo" />
+          <RetinaImg
+            retina={stellarTermLogo2x}
+            src={stellarTermLogo}
+            alt="StellarTerm logo"
+          />
         </a>
       </FooterListItemEl>
     </FooterListEl>
