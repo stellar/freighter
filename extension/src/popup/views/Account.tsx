@@ -83,7 +83,7 @@ const AccountDetailsEl = styled.section`
   align-content: center;
   align-items: center;
   display: flex;
-  padding: 2.25rem 0 8.5rem;
+  padding: 2.25rem 0 6.48rem;
   justify-content: space-evenly;
 `;
 
