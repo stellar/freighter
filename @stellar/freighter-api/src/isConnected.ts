@@ -4,4 +4,4 @@ declare global {
   }
 }
 
-export const isConnected = () => window.freighter;
+export const isConnected = () => !!window.freighter;
