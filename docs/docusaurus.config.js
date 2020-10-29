@@ -1,16 +1,16 @@
 module.exports = {
-  title: "Lyra Documentation",
-  url: "https://lyra-docs.netlify.app",
+  title: "Freighter Documentation",
+  url: "https://freighter-docs.netlify.app",
   baseUrl: "/",
   onBrokenLinks: "throw",
   favicon: "./images/logo.png",
-  organizationName: "@stellar", // Usually your GitHub org/user name.
-  projectName: "lyraDocs", // Usually your repo name.
+  organizationName: "@stellar",
+  projectName: "freighterDocs",
   themeConfig: {
     navbar: {
-      title: "Lyra Documentation",
+      title: "Freighter Documentation",
       logo: {
-        alt: "Lyra Logo",
+        alt: "Freighter Logo",
         src: "./images/logo.png",
       },
       items: [

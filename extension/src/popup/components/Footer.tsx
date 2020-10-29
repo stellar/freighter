@@ -28,7 +28,7 @@ const FooterListItemEl = styled.li`
 
 export const Footer = () => (
   <FooterEl>
-    <FooterHeaderEl>Use Lyra with</FooterHeaderEl>
+    <FooterHeaderEl>Use Freighter with</FooterHeaderEl>
     <FooterListEl>
       <FooterListItemEl>
         <a href="/">Laboratory</a>

@@ -1,6 +1,6 @@
 ---
-id: usingLyra
-title: Using Lyra
+id: usingFreighter
+title: Using Freighter
 ---
 
 We now have an extension installed on our machine and a library to interact with it. This library will provide you methods to send and receive data from a user's extension in your website or application.
@@ -10,13 +10,17 @@ We now have an extension installed on our machine and a library to interact with
 First import the whole library in a NodeJs application
 
 ```javascript
-import lyraApi from "@stellar/lyra-api";
+import freighterApi from "@stellar/freighter-api";
 ```
 
 or import just the modules you require:
 
 ```javascript
-import { isConnected, getPublicKey, signTransaction } from "@stellar/lyra-api";
+import {
+  isConnected,
+  getPublicKey,
+  signTransaction,
+} from "@stellar/freighter-api";
 ```
 
 Now let's dig into what functionality is available to you:
@@ -25,13 +29,13 @@ Now let's dig into what functionality is available to you:
 
 #### `isConnected() -> <boolean>`
 
-This function is useful for determining if a user in your application has Lyra installed.
+This function is useful for determining if a user in your application has Freighter installed.
 
 ```javascript
-import { isConnected } from "@stellar/lyra-api";
+import { isConnected } from "@stellar/freighter-api";
 
 if (isConnected()) {
-  alert("User has Lyra!");
+  alert("User has Freighter!");
 }
 ```
 
@@ -44,10 +48,14 @@ If a user has never interacted with your app before, this function will prompt t
 If the user has authorized your application previously, it will be on the extension's "Allow list", meaning the extension can immediately provide the public key without any user action.
 
 ```javascript
-import { isConnected, getPublicKey, signTransaction } from "@stellar/lyra-api";
+import {
+  isConnected,
+  getPublicKey,
+  signTransaction,
+} from "@stellar/freighter-api";
 
 if (isConnected()) {
-  alert("User has Lyra!");
+  alert("User has Freighter!");
 }
 
 const retrievePublicKey = async () => {
@@ -81,10 +89,14 @@ The user will need to provide their password if the extension does not currently
 _NOTE:_ Then user must provide a valid transaction XDR string for the extension to properly sign.
 
 ```javascript
-import { isConnected, getPublicKey, signTransaction } from "@stellar/lyra-api";
+import {
+  isConnected,
+  getPublicKey,
+  signTransaction,
+} from "@stellar/freighter-api";
 
 if (isConnected()) {
-  alert("User has Lyra!");
+  alert("User has Freighter!");
 }
 
 const retrievePublicKey = async () => {

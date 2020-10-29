@@ -1,3 +1,3 @@
 export class NoExtensionInstalledError extends Error {
-  message = "Lyra does not appear to be installed.";
+  message = "Freighter does not appear to be installed.";
 }

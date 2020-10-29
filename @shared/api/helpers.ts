@@ -8,7 +8,7 @@ import { NoExtensionInstalledError } from "../constants/errors";
 
 declare global {
   interface Window {
-    lyra: boolean;
+    freighter: boolean;
   }
 }
 
@@ -20,7 +20,7 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
     window.location.origin,
   );
   return new Promise((resolve, reject) => {
-    if (!window.lyra) {
+    if (!window.freighter) {
       reject(new NoExtensionInstalledError());
     }
 

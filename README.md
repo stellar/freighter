@@ -1,11 +1,11 @@
-# Lyra
+# Freighter
 
 This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 - the browser extension (`/extension`)
-- the client-facing SDK (`/@stellar/lyra-sdk`)
+- the client-facing SDK (`/@stellar/freighter-api`)
 - the docs (`/docs`)
-- some shared files that the above use (`/@lyra/*`)
+- some shared files that the above use (`/@freighter/*`)
 
 ## Getting Started
 
@@ -16,7 +16,7 @@ yarn start
 
 This will start up multiple watching builds in parallel:
 
-- The `@stellar/lyra-api` npm module
+- The `@stellar/freighter-api` npm module
 - The docs, serving on `localhost:3000`
 - A dev server with the webapp running in the extension, serving on
   `localhost:9000`
@@ -27,7 +27,7 @@ Each of these will build in response to editing their source.
 These can be started individually with `yarn start:\<workspace name\>` where
 `\<workspace name\>` is one of:
 
-- `lyra-api`
+- `freighter-api`
 - `docs`
 - `extension`
 
@@ -35,7 +35,7 @@ These can be started individually with `yarn start:\<workspace name\>` where
 yarn build
 ```
 
-This will produce final output for the docs, the `@stellar/lyra` npm module, and
+This will produce final output for the docs, the `@stellar/freighter` npm module, and
 the extension.
 
 `yarn build:\<workspace name\>`, like the equivalent start commands, will build
@@ -55,7 +55,7 @@ time you make a change.
 ## Importing a workspace
 
 In some cases, you will want to import a workspace into another. For example, in
-`extension` we need to import `@lyra/constants`. To do this, simply add
-`@lyra/constants` to the dependencies list in package.json in `extension`. Yarn
+`extension` we need to import `@freighter/constants`. To do this, simply add
+`@freighter/constants` to the dependencies list in package.json in `extension`. Yarn
 symlinks all the workspaces, so doing so will allow you to import files from the
-`@lyra/constants` workspace as if it were a published npm package.
+`@freighter/constants` workspace as if it were a published npm package.

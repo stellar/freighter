@@ -39,7 +39,7 @@ type HeaderProps = {
 
 export const Header = ({ className, ...props }: HeaderProps) => (
   <HeaderEl className={className} {...props}>
-    <H1El>Lyra</H1El>
+    <H1El>Freighter</H1El>
     <NetworkEl>{NETWORK_NAME}</NetworkEl>
   </HeaderEl>
 );

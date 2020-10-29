@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { isConnected } from "@stellar/lyra-api";
+import { isConnected } from "@stellar/freighter-api";
 import { PlaygroundInput } from "./basics/inputs";
 
 export const IsConnectedDemo = () => {
@@ -10,7 +10,7 @@ export const IsConnectedDemo = () => {
   return (
     <section>
       <div>
-        Is Lyra currently connected to your browser?
+        Is Freighter currently connected to your browser?
         <PlaygroundInput readOnly value={isConnectedState} />
       </div>
       <button type="button" onClick={btnHandler}>

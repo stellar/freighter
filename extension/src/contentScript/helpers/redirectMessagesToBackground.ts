@@ -11,7 +11,7 @@ export const redirectMessagesToBackground = () => {
       const messagedId = event?.data?.messageId || 0;
       // We only accept messages from ourselves
       if (event.source !== window) return;
-      // Only respond to messages tagged as being from Lyra API
+      // Only respond to messages tagged as being from Freighter API
       if (!event.data.source || event.data.source !== EXTERNAL_MSG_REQUEST)
         return;
       // Forward the message on to Background
@@ -21,7 +21,7 @@ export const redirectMessagesToBackground = () => {
       } catch (e) {
         console.error(e);
       }
-      // Send the response back to Lyra API
+      // Send the response back to Freighter API
       window.postMessage(
         { source: EXTERNAL_MSG_RESPONSE, messagedId, ...res },
         window.location.origin,
