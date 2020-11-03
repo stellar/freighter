@@ -59,3 +59,7 @@ In some cases, you will want to import a workspace into another. For example, in
 `@freighter/constants` to the dependencies list in package.json in `extension`. Yarn
 symlinks all the workspaces, so doing so will allow you to import files from the
 `@freighter/constants` workspace as if it were a published npm package.
+
+## Dependencies
+
+Many dev dependencies (such as Typescript, linters, Webpack, etc.) have been moved to the root `package.json` to allow devs to upgrade these libraries all in one place.

@@ -13,9 +13,10 @@ describe("navigateTo", () => {
   });
   it("should call history.push with path and query params", () => {
     history.push = jest.fn();
-    const PATH = "/path-name";
 
     navigateTo(PATH, QUERY_PARAM);
-    expect(history.push).toHaveBeenCalledWith({ pathname: `${PATH}${QUERY_PARAM}` });
+    expect(history.push).toHaveBeenCalledWith({
+      pathname: `${PATH}${QUERY_PARAM}`,
+    });
   });
 });

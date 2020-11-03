@@ -1,4 +1,5 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
@@ -45,7 +46,7 @@ const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
       },
       {
         test: /\.(ts|tsx)$/,
-        use: ["ts-loader", "eslint-loader"],
+        use: ["ts-loader"],
         exclude: /node-modules/,
       },
       {
@@ -81,6 +82,7 @@ const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
     new webpack.DefinePlugin({
       PRODUCTION: env.PRODUCTION,
     }),
+    new ESLintPlugin(),
   ],
   stats: DEFAULT_STATS,
   devServer: {
