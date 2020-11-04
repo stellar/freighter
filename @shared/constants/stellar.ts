@@ -1,10 +1,15 @@
 declare const PRODUCTION: boolean;
 
+const TESTNET = "Testnet";
+const PUBNET = "Public net";
+
 export const isTestnet = !PRODUCTION;
 
 export const NETWORK = isTestnet ? "TESTNET" : "PUBLIC";
 
-export const NETWORK_NAME = isTestnet ? "Testnet" : "Pubnet";
+export const NETWORK_NAME = isTestnet ? TESTNET : PUBNET;
+
+export const OTHER_NETWORK_NAME = !isTestnet ? TESTNET : PUBNET;
 
 export const NETWORK_URL = isTestnet
   ? "https://horizon-testnet.stellar.org"
