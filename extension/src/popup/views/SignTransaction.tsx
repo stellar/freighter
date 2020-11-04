@@ -155,7 +155,7 @@ export const SignTransaction = () => {
 
   const [isConfirming, setIsConfirming] = useState(false);
 
-  if (_networkPassphrase === NETWORK_PASSPHRASE) {
+  if (_networkPassphrase !== NETWORK_PASSPHRASE) {
     return <NetworkMismatchWarning />;
   }
 
