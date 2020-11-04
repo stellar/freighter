@@ -122,7 +122,7 @@ const SubmitButtonEl = styled(SubmitButton)`
 const NetworkMismatchWarning = () => (
   <>
     <WarningMessage subheader={`Freighter is currently on ${NETWORK_NAME}`}>
-      <p>The transaction you're trying to sign is on {OTHER_NETWORK_NAME}.</p>
+      <p>The transaction you’re trying to sign is on {OTHER_NETWORK_NAME}.</p>
       <p>Signing this transaction is not possible at the moment.</p>
     </WarningMessage>
     <ButtonContainerEl>

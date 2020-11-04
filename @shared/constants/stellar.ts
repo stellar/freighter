@@ -1,3 +1,5 @@
+import StellarSdk from "stellar-sdk";
+
 declare const PRODUCTION: boolean;
 
 const TESTNET = "Testnet";
@@ -16,5 +18,5 @@ export const NETWORK_URL = isTestnet
   : "https://horizon.stellar.org";
 
 export const NETWORK_PASSPHRASE = isTestnet
-  ? "Test SDF Network ; September 2015"
-  : "Public Global Stellar Network ; September 2015";
+  ? StellarSdk.Networks.TESTNET
+  : StellarSdk.Networks.PUBLIC;
