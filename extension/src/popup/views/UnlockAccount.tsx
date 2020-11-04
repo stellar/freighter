@@ -105,7 +105,7 @@ export const UnlockAccount = () => {
                 <IlloContainerEl>
                   <img src={WaveIllo} alt="Wave Illustration" />
                 </IlloContainerEl>
-                <HeaderEl>Welcome back!</HeaderEl>
+                <HeaderEl>Log in</HeaderEl>
               </HeaderContainerEl>
               <FormRow>
                 <CustomFormTextFieldEl
@@ -130,7 +130,7 @@ export const UnlockAccount = () => {
           )}
         </Formik>
         <UnorderedListEl>
-          <ListItemEl>Want to add another account?</ListItemEl>
+          <ListItemEl>Want to use a different account?</ListItemEl>
           <ListItemEl>
             <ImportButtonEl
               onClick={() => {

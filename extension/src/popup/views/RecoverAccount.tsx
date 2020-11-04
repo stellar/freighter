@@ -115,7 +115,7 @@ export const RecoverAccount = () => {
         {({ dirty, handleChange, isSubmitting, isValid }) => (
           <FullHeightFormEl>
             <Onboarding
-              header="Recover wallet from backup phrase"
+              header="Import wallet from backup phrase"
               icon={ImportWalletIllo}
               isMaxHeaderLength
               goBack={() => navigateTo(ROUTES.welcome)}
@@ -139,7 +139,7 @@ export const RecoverAccount = () => {
                     <TextField
                       autoComplete="off"
                       name="password"
-                      placeholder="Define new password"
+                      placeholder="Set new password"
                       type="password"
                     />
                     <Error name="password" />
@@ -159,7 +159,13 @@ export const RecoverAccount = () => {
                       label={
                         <span>
                           I have read and agree to{" "}
-                          <a href="/ac">Terms of Use</a>
+                          <a href="https://stellar.org/terms-of-service">
+                            Terms of Use
+                          </a>{" "}
+                          and{" "}
+                          <a href="https://stellar.org/privacy-policy">
+                            Privacy Policy
+                          </a>
                         </span>
                       }
                       name="termsOfUse"
@@ -172,7 +178,7 @@ export const RecoverAccount = () => {
                       isSubmitting={isSubmitting}
                       isValid={isValid}
                     >
-                      Recover
+                      Import
                     </SubmitButton>
                   </FormRow>
                 </HalfScreenEl>

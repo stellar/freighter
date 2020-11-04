@@ -12,12 +12,10 @@ import { publicKeySelector } from "popup/ducks/authServices";
 
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
-import { WarningMessage } from "popup/components/WarningMessage";
+import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import { Header } from "popup/components/Header";
-
-import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
 
 import "popup/metrics/access";
 
@@ -78,19 +76,7 @@ export const GrantAccess = () => {
       <Header />
       <GrantAccessEl>
         <HeaderEl>Share public key</HeaderEl>
-        <WarningMessage
-          icon={WarningShieldIcon}
-          subheader="This is the first time you've interacted with this domain in this browser"
-        >
-          <p>
-            Double check the domain name, if you suspect of something, don't
-            give it access.
-          </p>
-          <p>
-            If you interacted with this domain before in this browser and are
-            seeing this message, it may indicate a scam.
-          </p>
-        </WarningMessage>
+        <FirstTimeWarningMessage />
         <PunycodedDomain domain={domain} />
         <SubheaderEl>This website wants to know your public key:</SubheaderEl>
         <PublicKeyEl>&#9675; {truncatedPublicKey(publicKey)}</PublicKeyEl>

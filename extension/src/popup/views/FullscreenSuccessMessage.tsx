@@ -98,8 +98,9 @@ const MnemonicPhraseConfirmedMessage = () => (
   <>
     <CopyEl>
       <p>
-        Awesome, you passed the test. Keep your backup phrase safe, it’s your
-        responsibility.
+        You got your backup phrase right — keep it safe and secure and to never
+        share it with anyone. Remember: you store, control, and manage your own
+        keys with the backup phrase.
       </p>
     </CopyEl>
     <MessageEl>
@@ -111,12 +112,16 @@ const MnemonicPhraseConfirmedMessage = () => (
         <li>
           Freighter will <strong>never ask for your backup phrase</strong>{" "}
           unless you're actively importing your account using the browser
-          extension - never on an external website
+          extension. We will never ask for your backup phrase on an external
+          website.
         </li>
-        <li>Always check the domain of websites you're using Freighter with</li>
+        <li>
+          Always check the domain of websites you're using Freighter with to
+          make sure you’re interacting with the authentic site.
+        </li>
         <li>
           Freighter cannot recover your account if you lose your backup phrase,
-          so keep it safe
+          so keep it safe and secure.
         </li>
       </MessageListEl>
     </MessageEl>
@@ -166,7 +171,7 @@ export const FullscreenSuccessMessage = () => {
               window.close();
             }}
           >
-            {IS_MNEMONIC_PHRASE_STATE ? "Got it!" : "All done"}
+            Got it!
           </FinishButtonEl>
         </ContentWrapperEl>
       </WrapperEl>

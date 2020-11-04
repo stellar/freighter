@@ -93,7 +93,8 @@ export const confirmMnemonicPhrase = createAsyncThunk<
     } else {
       return thunkApi.rejectWithValue({
         applicationState: res.applicationState,
-        errorMessage: "The phrase you entered is incorrect",
+        errorMessage:
+          "The secret phrase you entered is invalid, please check the phrase you have noted and try again.",
       });
     }
 

@@ -24,9 +24,9 @@ export const MnemonicPhrase = () => {
         <Header />
         {readyToConfirm ? (
           <Onboarding
-            header="Confirm your secret phrase"
+            header="Confirm your backup phrase"
             icon={ImportWalletIllo}
-            subheader="Please select each word in the same order you have them noted to confirm you got them right"
+            subheader="Select each word in the correct order to confirm you got them right"
             goBack={() => {
               setReadyToConfirm(false);
               emitMetric(METRIC_NAMES.accountCreatorConfirmMnemonicBack);
@@ -35,7 +35,7 @@ export const MnemonicPhrase = () => {
             <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />
           </Onboarding>
         ) : (
-          <Onboarding header="Secret backup phrase" icon={ImportWalletIllo}>
+          <Onboarding header="Backup phrase" icon={ImportWalletIllo}>
             <DisplayMnemonicPhrase
               mnemonicPhrase={mnemonicPhrase}
               setReadyToConfirm={setReadyToConfirm}

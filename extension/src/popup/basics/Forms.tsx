@@ -65,7 +65,6 @@ interface ErrorMessageProps {
 const FormErrorEl = styled.div`
   color: ${COLOR_PALETTE.error};
   font-size: 0.8125rem;
-  height: 1rem;
   padding: 0.25rem 0 0.75rem;
   text-align: center;
   line-height: 1;
