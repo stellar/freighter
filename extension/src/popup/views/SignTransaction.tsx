@@ -20,6 +20,7 @@ import { SubmitButton } from "popup/basics/Forms";
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import { WarningMessage } from "popup/components/WarningMessage";
 
 const El = styled.div`
   padding: 1.5rem 1.875rem;
@@ -114,6 +115,14 @@ const SubmitButtonEl = styled(SubmitButton)`
   width: 12.43rem;
 `;
 
+const NetworkMismatchWarning = ({ network }) => (
+<WarningMessage icon="" subheader={`Freighter is currently on ${network}`}>
+  <p>The transaction you're trying to sign is on {other network}.</p>
+  <p>
+Signing this transaction is not possible at the moment.</p>
+  </WarningMessage>
+)
+
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
@@ -121,11 +130,13 @@ export const SignTransaction = () => {
     location.search,
   );
 
-  const { _fee, _operations, _memo, _sequence, _source } = transaction;
+  const { _fee, _operations, _memo, _networkPassphrase,  _sequence, _source } = transaction;
   const operationText = _operations.length > 1 ? "Operations:" : "Operation:";
   const memo = buffer.Buffer.from(get(_memo, "_value.data", [])).toString(
     "utf-8",
   );
+
+  console.log(transaction);
 
   const [isConfirming, setIsConfirming] = useState(false);
 
