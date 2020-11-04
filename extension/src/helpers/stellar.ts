@@ -25,3 +25,5 @@ export const getTransactionInfo = (search: string) => {
     isDomainListedAllowed,
   };
 };
+
+export const stroopToXlm = (stroop: number) => stroop / 10000000;
