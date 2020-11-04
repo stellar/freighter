@@ -22,7 +22,7 @@ export const PasswordRequirements = () => (
       <li>Min 10 characters</li>
       <li>At least one uppercase letter</li>
       <li>At least one lowercase letter</li>
-      <li>At leasone one number</li>
+      <li>At least one one number</li>
     </ListEl>
   </El>
 );
