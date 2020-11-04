@@ -105,7 +105,14 @@ export const AccountCreator = () => {
                     name="termsOfUse"
                     label={
                       <span>
-                        I have read and agree to <a href="/ac">Terms of Use</a>
+                        I have read and agree to{" "}
+                        <a href="https://stellar.org/terms-of-service">
+                          Terms of Use
+                        </a>{" "}
+                        and{" "}
+                        <a href="https://stellar.org/privacy-policy">
+                          Privacy Policy
+                        </a>
                       </span>
                     }
                   />
@@ -117,7 +124,7 @@ export const AccountCreator = () => {
                     isSubmitting={isSubmitting}
                     isValid={isValid}
                   >
-                    Log In
+                    Next
                   </SubmitButton>
                 </FormRow>
               </ModifiedHalfScreenEl>

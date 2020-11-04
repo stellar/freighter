@@ -17,10 +17,6 @@ import { HalfScreen } from "popup/components/Onboarding";
 import { Toast } from "popup/components/Toast";
 import { ActionButton } from "./ActionButton";
 
-const WarningEl = styled.strong`
-  color: ${COLOR_PALETTE.primary};
-`;
-
 const MnemonicDisplayEl = styled.div`
   background: ${COLOR_PALETTE.primaryGradient};
   border-radius: 30px;
@@ -73,11 +69,16 @@ export const DisplayMnemonicPhrase = ({
   return (
     <HalfScreen data-testid="display-mnemonic-phrase">
       <p>
-        Your secret backup phrase makes it easy to back up and restore your
-        account.
+        Your backup phrase gives you access to your account and is the only way
+        to restore it in a new browser. We do not store and cannot help you
+        recover your backup phrase or get you access to your account, so please
+        keep your backup phrase in a safe and secure place and don't share it
+        with anyone. If you lose your backup phrase, you will permanently lose
+        access to your account.
       </p>
       <p>
-        <WarningEl>WARNING:</WarningEl> Never disclose your backup phase.
+        For your security, we will ask you to confirm your backup phrase in the
+        next step.
       </p>
       <MnemonicDisplayEl isBlurred={isBlurred}>
         {isBlurred ? (

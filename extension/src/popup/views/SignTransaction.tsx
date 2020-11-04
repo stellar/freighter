@@ -18,11 +18,9 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
+import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
-import { WarningMessage } from "popup/components/WarningMessage";
-
-import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
 
 const El = styled.div`
   padding: 1.5rem 1.875rem;
@@ -273,24 +271,10 @@ export const SignTransaction = () => {
       <Header />
       <El>
         <HeaderEl>Confirm Transaction</HeaderEl>
-        {!isDomainListedAllowed ? (
-          <WarningMessage
-            icon={WarningShieldIcon}
-            subheader="This is the first time you interact with this domain in this browser"
-          >
-            <p>
-              Double check the domain name, if you suspect of something, don't
-              give it access.
-            </p>
-            <p>
-              If you interacted with this domain before in this browser and are
-              seeing this message, it may indicate a scam.
-            </p>
-          </WarningMessage>
-        ) : null}
+        {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
         <PunycodedDomain domain={domain} />
         <SubheaderEl>
-          This website is requesting a signature to the follwing transaction:
+          This website is requesting a signature on the following transaction:
         </SubheaderEl>
         <ListEl>
           <li>
@@ -337,7 +321,7 @@ export const SignTransaction = () => {
             size="small"
             onClick={() => signAndClose()}
           >
-            Sign Transaction
+            Confirm Transaction
           </SubmitButtonEl>
         </ButtonContainerEl>
       </El>

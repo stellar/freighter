@@ -17,7 +17,7 @@ import { Button } from "popup/basics/Buttons";
 
 import { Toast } from "popup/components/Toast";
 import { ActionButton } from "popup/components/mnemonicPhrase/ActionButton";
-import { WarningMessage } from "popup/components/WarningMessage";
+import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
 
 import {
   HeaderContainerEl,
@@ -25,7 +25,6 @@ import {
   BackButtonEl,
 } from "popup/views/UnlockBackupPhrase";
 
-import OrangeLockIcon from "popup/assets/icon-orange-lock.svg";
 import DownloadColorIcon from "popup/assets/download-color.svg";
 import CopyColorIcon from "popup/assets/copy-color.svg";
 
@@ -91,16 +90,7 @@ export const DisplayBackupPhrase = () => {
         <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
         <HeaderEl>Show backup phrase</HeaderEl>
       </HeaderContainerEl>
-      <WarningMessage
-        icon={OrangeLockIcon}
-        subheader="Keep your phrase in a safe place"
-      >
-        <p>Your backup phrase is the only way to recover your account.</p>
-        <p>
-          Anyone who has access to your phrase has access to your account and to
-          the funds in it, so keep it noted in a safe place.
-        </p>
-      </WarningMessage>
+      <BackupPhraseWarningMessage />
       <H3>Your backup phrase:</H3>
       <MnemonicDisplayEl>{mnemonicPhrase}</MnemonicDisplayEl>
       <DisplayButtonsEl>

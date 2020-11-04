@@ -19,9 +19,10 @@ const ListEl = styled.ul`
 export const PasswordRequirements = () => (
   <El>
     <ListEl>
-      <li>Must be at least 10 characters long</li>
-      <li>Must contain an uppercase and lowercase letter</li>
-      <li>Must contain a number</li>
+      <li>Min 10 characters</li>
+      <li>At least one uppercase letter</li>
+      <li>At least one lowercase letter</li>
+      <li>At least one one number</li>
     </ListEl>
   </El>
 );

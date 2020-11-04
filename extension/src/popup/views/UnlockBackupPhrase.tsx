@@ -24,9 +24,7 @@ import {
   TextField,
 } from "popup/basics/Forms";
 
-import { WarningMessage } from "popup/components/WarningMessage";
-
-import OrangeLockIcon from "popup/assets/icon-orange-lock.svg";
+import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
 
 const UnlockAccountEl = styled.div`
   background: ${COLOR_PALETTE.background};
@@ -99,16 +97,7 @@ export const UnlockBackupPhrase = () => {
         <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
         <HeaderEl>Show backup phrase</HeaderEl>
       </HeaderContainerEl>
-      <WarningMessage
-        icon={OrangeLockIcon}
-        subheader="Keep your phrase in a safe place"
-      >
-        <p>Your backup phrase is the only way to recover your account.</p>
-        <p>
-          Anyone who has access to your phrase has access to your account and to
-          the funds in it, so keep it noted in a safe place.
-        </p>
-      </WarningMessage>
+      <BackupPhraseWarningMessage />
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
         {({ dirty, isSubmitting, isValid }) => (
           <Form>
