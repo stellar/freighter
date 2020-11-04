@@ -28,7 +28,7 @@ const DomainEl = styled.div`
 `;
 const PunycodedDomainEl = styled.div`
   color: ${COLOR_PALETTE.primary};
-  font-size: 1.18rem;
+  font-size: 1rem;
   font-weight: ${FONT_WEIGHT.bold};
 `;
 const InvalidDomainEl = styled.div`

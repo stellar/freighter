@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import buffer from "buffer";
 import { useLocation } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { get } from "lodash";
 import styled from "styled-components";
 import BigNumber from "bignumber.js";
@@ -10,7 +10,6 @@ import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
 import { OPERATION_TYPES } from "constants/operationTypes";
 
-import { publicKeySelector } from "popup/ducks/authServices";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
@@ -122,13 +121,11 @@ export const SignTransaction = () => {
     location.search,
   );
 
-  const { _fee, _operations, _memo, _sequence } = transaction;
+  const { _fee, _operations, _memo, _sequence, _source } = transaction;
   const operationText = _operations.length > 1 ? "Operations:" : "Operation:";
   const memo = buffer.Buffer.from(get(_memo, "_value.data", [])).toString(
     "utf-8",
   );
-
-  const publicKey = useSelector(publicKeySelector);
 
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -281,7 +278,7 @@ export const SignTransaction = () => {
             <div>
               <strong>Source account:</strong>
             </div>
-            <div>{truncatedPublicKey(publicKey)}</div>
+            <div>{truncatedPublicKey(_source)}</div>
           </li>
           {_fee ? (
             <li>
