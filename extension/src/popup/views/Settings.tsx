@@ -69,7 +69,7 @@ export const Settings = () => {
     <El>
       <HeaderContainerEl>
         <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
-        <HeaderEl>Show backup phrase</HeaderEl>
+        <HeaderEl>Settings</HeaderEl>
       </HeaderContainerEl>
       <Formik
         initialValues={initialValues}
