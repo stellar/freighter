@@ -8,11 +8,15 @@ import BigNumber from "bignumber.js";
 
 import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
 
-import { OPERATION_TYPES } from "constants/operationTypes";
-
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import { OPERATION_TYPES } from "constants/operationTypes";
+import {
+  NETWORK_NAME,
+  NETWORK_PASSPHRASE,
+  OTHER_NETWORK_NAME,
+} from "@shared/constants/stellar";
 
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
@@ -20,6 +24,7 @@ import { SubmitButton } from "popup/basics/Forms";
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import { WarningMessage } from "popup/components/WarningMessage";
 
 const El = styled.div`
   padding: 1.5rem 1.875rem;
@@ -114,6 +119,20 @@ const SubmitButtonEl = styled(SubmitButton)`
   width: 12.43rem;
 `;
 
+const NetworkMismatchWarning = () => (
+  <>
+    <WarningMessage subheader={`Freighter is currently on ${NETWORK_NAME}`}>
+      <p>The transaction you’re trying to sign is on {OTHER_NETWORK_NAME}.</p>
+      <p>Signing this transaction is not possible at the moment.</p>
+    </WarningMessage>
+    <ButtonContainerEl>
+      <SubmitButtonEl size="small" onClick={() => window.close()}>
+        Close
+      </SubmitButtonEl>
+    </ButtonContainerEl>
+  </>
+);
+
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
@@ -121,13 +140,24 @@ export const SignTransaction = () => {
     location.search,
   );
 
-  const { _fee, _operations, _memo, _sequence, _source } = transaction;
+  const {
+    _fee,
+    _operations,
+    _memo,
+    _networkPassphrase,
+    _sequence,
+    _source,
+  } = transaction;
   const operationText = _operations.length > 1 ? "Operations:" : "Operation:";
   const memo = buffer.Buffer.from(get(_memo, "_value.data", [])).toString(
     "utf-8",
   );
 
   const [isConfirming, setIsConfirming] = useState(false);
+
+  if (_networkPassphrase !== NETWORK_PASSPHRASE) {
+    return <NetworkMismatchWarning />;
+  }
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());

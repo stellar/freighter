@@ -47,12 +47,12 @@ export const WarningMessage = ({
   children,
 }: {
   subheader: string;
-  icon: string;
+  icon?: string;
   children: React.ReactNode;
 }) => (
   <El>
     <HeadingEl>
-      <IconEl src={icon} alt="Warning Message Icon" />
+      {icon && <IconEl src={icon} alt="Warning Message Icon" />}
       <SubheaderEl>{subheader}</SubheaderEl>
     </HeadingEl>
     {children}
