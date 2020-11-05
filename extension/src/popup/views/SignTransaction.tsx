@@ -319,7 +319,7 @@ export const SignTransaction = () => {
               <div>
                 <strong>Base fee:</strong>
               </div>
-              <div> {stroopToXlm(_fee)}</div>
+              <div> {stroopToXlm(_fee)} XLM</div>
             </li>
           ) : null}
           {memo ? (
