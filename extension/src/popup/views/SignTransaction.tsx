@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { get } from "lodash";
 import styled from "styled-components";
-import BigNumber from "bignumber.js";
 
 import {
   truncatedPublicKey,
@@ -243,9 +242,7 @@ export const SignTransaction = () => {
               {amount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={`${new BigNumber(amount).toFormat(2)} ${
-                    asset.code
-                  }`}
+                  TransactionInfoValue={`${amount} ${asset.code}`}
                 />
               ) : null}
 
@@ -281,7 +278,7 @@ export const SignTransaction = () => {
               {buyAmount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={new BigNumber(buyAmount).toFormat(2)}
+                  TransactionInfoValue={buyAmount}
                 />
               ) : null}
 

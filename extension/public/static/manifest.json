@@ -1,7 +1,7 @@
 {
   "name": "Freighter",
   "version": "1.0.0",
-  "version_name": "beta.0",
+  "version_name": "beta.1",
   "description": "Browser extension to create a Stellar wallet and share wallet information with web applications",
   "permissions": ["storage"],
   "background": {

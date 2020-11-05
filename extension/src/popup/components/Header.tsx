@@ -2,9 +2,10 @@ import React from "react";
 import styled from "styled-components";
 
 import { NETWORK_NAME } from "@shared/constants/stellar";
-
 import { HEADER_HEIGHT } from "constants/dimensions";
 import { COLOR_PALETTE } from "popup/constants/styles";
+
+import FreighterLogoLockup from "popup/assets/logo-lockup-freighter.svg";
 
 const HeaderEl = styled.header`
   background: ${COLOR_PALETTE.primaryGradient};
@@ -17,12 +18,9 @@ const HeaderEl = styled.header`
   height: ${HEADER_HEIGHT}px;
 `;
 
-const H1El = styled.h1`
-  color: #fff;
-  font-size: 2rem;
-  font-weight: 200;
-  line-height: 1;
-  margin: 0;
+const FreighterLogoEl = styled.img`
+  height: 7.1rem;
+  width: 10.3rem;
 `;
 
 const NetworkEl = styled.h3`
@@ -39,7 +37,7 @@ type HeaderProps = {
 
 export const Header = ({ className, ...props }: HeaderProps) => (
   <HeaderEl className={className} {...props}>
-    <H1El>Freighter</H1El>
+    <FreighterLogoEl alt="Freighter logo" src={FreighterLogoLockup} />
     <NetworkEl>{NETWORK_NAME}</NetworkEl>
   </HeaderEl>
 );
