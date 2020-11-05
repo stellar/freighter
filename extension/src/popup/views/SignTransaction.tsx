@@ -4,7 +4,6 @@ import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { get } from "lodash";
 import styled from "styled-components";
-import BigNumber from "bignumber.js";
 
 import {
   truncatedPublicKey,
@@ -122,8 +121,6 @@ const RejectButtonEl = styled(Button)`
 const SubmitButtonEl = styled(SubmitButton)`
   width: 12.43rem;
 `;
-
-const AMOUNT_DECIMAL_PLACES = 7;
 
 const NetworkMismatchWarning = () => (
   <>
@@ -245,9 +242,7 @@ export const SignTransaction = () => {
               {amount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={`${new BigNumber(amount).toFormat(
-                    AMOUNT_DECIMAL_PLACES,
-                  )} ${asset.code}`}
+                  TransactionInfoValue={`${amount} ${asset.code}`}
                 />
               ) : null}
 
@@ -283,9 +278,7 @@ export const SignTransaction = () => {
               {buyAmount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={new BigNumber(buyAmount).toFormat(
-                    AMOUNT_DECIMAL_PLACES,
-                  )}
+                  TransactionInfoValue={buyAmount}
                 />
               ) : null}
 
