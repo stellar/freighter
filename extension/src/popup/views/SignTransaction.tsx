@@ -243,7 +243,7 @@ export const SignTransaction = () => {
               {amount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={`${new BigNumber(amount).toFormat(2)} ${
+                  TransactionInfoValue={`${new BigNumber(amount)} ${
                     asset.code
                   }`}
                 />
@@ -281,7 +281,7 @@ export const SignTransaction = () => {
               {buyAmount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={new BigNumber(buyAmount).toFormat(2)}
+                  TransactionInfoValue={`${new BigNumber(buyAmount)}`}
                 />
               ) : null}
 
