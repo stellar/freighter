@@ -123,6 +123,8 @@ const SubmitButtonEl = styled(SubmitButton)`
   width: 12.43rem;
 `;
 
+const AMOUNT_DECIMAL_PLACES = 7;
+
 const NetworkMismatchWarning = () => (
   <>
     <WarningMessage subheader={`Freighter is currently on ${NETWORK_NAME}`}>
@@ -243,9 +245,9 @@ export const SignTransaction = () => {
               {amount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={`${new BigNumber(amount)} ${
-                    asset.code
-                  }`}
+                  TransactionInfoValue={`${new BigNumber(amount).toFormat(
+                    AMOUNT_DECIMAL_PLACES,
+                  )} ${asset.code}`}
                 />
               ) : null}
 
@@ -281,7 +283,9 @@ export const SignTransaction = () => {
               {buyAmount ? (
                 <KeyValueList
                   TransactionInfoKey="Amount"
-                  TransactionInfoValue={`${new BigNumber(buyAmount)}`}
+                  TransactionInfoValue={new BigNumber(buyAmount).toFormat(
+                    AMOUNT_DECIMAL_PLACES,
+                  )}
                 />
               ) : null}
 
