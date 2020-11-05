@@ -6,7 +6,11 @@ import { get } from "lodash";
 import styled from "styled-components";
 import BigNumber from "bignumber.js";
 
-import { truncatedPublicKey, getTransactionInfo } from "helpers/stellar";
+import {
+  truncatedPublicKey,
+  getTransactionInfo,
+  stroopToXlm,
+} from "helpers/stellar";
 
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
@@ -315,7 +319,7 @@ export const SignTransaction = () => {
               <div>
                 <strong>Base fee:</strong>
               </div>
-              <div> {_fee}</div>
+              <div> {stroopToXlm(_fee)}</div>
             </li>
           ) : null}
           {memo ? (
