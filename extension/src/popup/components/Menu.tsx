@@ -138,7 +138,7 @@ export const Menu = () => {
               <Link to={ROUTES.settings}>Settings</Link>
             </SlideoutNavListItemEl>
             <SlideoutNavListItemEl>
-              <a href="/">Help</a>
+              <a href="http://freighter.app/help">Help</a>
             </SlideoutNavListItemEl>
             <SlideoutNavListItemEl onClick={(e) => signOutAndClose(e)}>
               <a href="/">Sign out</a>
