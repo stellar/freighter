@@ -14,7 +14,6 @@ import {
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
-import { OPERATION_TYPES } from "constants/operationTypes";
 import {
   NETWORK_NAME,
   NETWORK_PASSPHRASE,
@@ -23,9 +22,11 @@ import {
 
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
+import { TransactionList } from "popup/basics/TransactionList";
 
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
+import { Operations } from "popup/components/signTransaction/Operations";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { WarningMessage } from "popup/components/WarningMessage";
 
@@ -50,62 +51,6 @@ const SubheaderEl = styled.h3`
   font-size: 0.95rem;
   letter-spacing: 0.1px;
   color: ${COLOR_PALETTE.primary};
-`;
-const OperationBoxHeaderEl = styled.h4`
-  color: ${COLOR_PALETTE.primary};
-  font-size: 1.25rem;
-  font-weight: ${FONT_WEIGHT.normal};
-  margin: 0;
-  padding: 0;
-  padding-top: 1.875rem;
-  padding-bottom: 0.625rem;
-  padding-left: 0.43rem;
-
-  strong {
-    font-weight: ${FONT_WEIGHT.bold};
-  }
-`;
-const OperationBoxEl = styled.div`
-  text-align: left;
-`;
-const ListEl = styled.ul`
-  width: 100%;
-  font-size: 0.95rem;
-  letter-spacing: 0.1px;
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  margin-top: 1rem;
-  margin-bottom: 1.33em;
-
-  li {
-    display: flex;
-    margin: 1.25rem 0;
-    color: ${COLOR_PALETTE.secondaryText};
-
-    div:first-child {
-      padding-right: 0.75rem;
-    }
-  }
-
-  strong {
-    font-weight: ${FONT_WEIGHT.bold};
-    color: ${COLOR_PALETTE.text};
-  }
-`;
-const OperationsListEl = styled(ListEl)`
-  padding-left: 1.25rem;
-
-  li {
-    div {
-      width: 50%;
-
-      &:first-child {
-        padding: 0;
-        color: ${COLOR_PALETTE.text};
-      }
-    }
-  }
 `;
 
 const ButtonContainerEl = styled.div`
@@ -156,6 +101,8 @@ export const SignTransaction = () => {
     "utf-8",
   );
 
+  console.log(transaction);
+
   const [isConfirming, setIsConfirming] = useState(false);
 
   if (_networkPassphrase !== NETWORK_PASSPHRASE) {
@@ -173,127 +120,6 @@ export const SignTransaction = () => {
     window.close();
   };
 
-  interface TransactionInfoResponse {
-    amount: string;
-    destination: string;
-    asset: { code: string };
-    signer: {
-      ed25519PublicKey: string;
-      weight: number;
-    };
-    type: keyof typeof OPERATION_TYPES;
-    buying: { code: string };
-    selling: { code: string };
-    buyAmount: string;
-    price: string;
-  }
-
-  const KeyValueList = ({
-    TransactionInfoKey,
-    TransactionInfoValue,
-  }: {
-    TransactionInfoKey: string;
-    TransactionInfoValue: string | number;
-  }) => (
-    <li>
-      <div>{TransactionInfoKey}:</div>
-      <div>{TransactionInfoValue}</div>
-    </li>
-  );
-
-  const Operations = () =>
-    _operations.map(
-      (
-        {
-          amount,
-          destination,
-          asset,
-          signer,
-          type,
-          buying,
-          selling,
-          buyAmount,
-          price,
-        }: TransactionInfoResponse,
-        i: number,
-      ) => {
-        const operationIndex = i + 1;
-
-        return (
-          <OperationBoxEl>
-            <OperationBoxHeaderEl>
-              {operationIndex}. {OPERATION_TYPES[type]}
-            </OperationBoxHeaderEl>
-            <OperationsListEl>
-              {destination ? (
-                <KeyValueList
-                  TransactionInfoKey="Destination"
-                  TransactionInfoValue={truncatedPublicKey(destination)}
-                />
-              ) : null}
-
-              {asset ? (
-                <KeyValueList
-                  TransactionInfoKey="Asset"
-                  TransactionInfoValue={`${asset.code}`}
-                />
-              ) : null}
-
-              {amount ? (
-                <KeyValueList
-                  TransactionInfoKey="Amount"
-                  TransactionInfoValue={`${amount} ${asset.code}`}
-                />
-              ) : null}
-
-              {signer ? (
-                <>
-                  <KeyValueList
-                    TransactionInfoKey="Signer"
-                    TransactionInfoValue={truncatedPublicKey(
-                      signer.ed25519PublicKey,
-                    )}
-                  />
-                  <KeyValueList
-                    TransactionInfoKey="Weight"
-                    TransactionInfoValue={signer.weight}
-                  />
-                </>
-              ) : null}
-
-              {buying ? (
-                <KeyValueList
-                  TransactionInfoKey="Buying"
-                  TransactionInfoValue={buying.code}
-                />
-              ) : null}
-
-              {selling ? (
-                <KeyValueList
-                  TransactionInfoKey="Selling"
-                  TransactionInfoValue={selling.code}
-                />
-              ) : null}
-
-              {buyAmount ? (
-                <KeyValueList
-                  TransactionInfoKey="Amount"
-                  TransactionInfoValue={buyAmount}
-                />
-              ) : null}
-
-              {price ? (
-                <KeyValueList
-                  TransactionInfoKey="Price"
-                  TransactionInfoValue={price}
-                />
-              ) : null}
-            </OperationsListEl>
-          </OperationBoxEl>
-        );
-      },
-    );
-
   return (
     <>
       <Header />
@@ -304,7 +130,7 @@ export const SignTransaction = () => {
         <SubheaderEl>
           This website is requesting a signature on the following transaction:
         </SubheaderEl>
-        <ListEl>
+        <TransactionList>
           <li>
             <div>
               <strong>Source account:</strong>
@@ -335,11 +161,11 @@ export const SignTransaction = () => {
               <div> {_sequence}</div>
             </li>
           ) : null}
-        </ListEl>
+        </TransactionList>
         <OperationsHeader>
           {_operations.length} {operationText}
         </OperationsHeader>
-        <Operations />
+        <Operations operations={_operations} />
         <ButtonContainerEl>
           <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
             Reject
