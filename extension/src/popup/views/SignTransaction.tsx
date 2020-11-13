@@ -105,9 +105,9 @@ export const SignTransaction = () => {
 
   const [isConfirming, setIsConfirming] = useState(false);
 
-  if (_networkPassphrase !== NETWORK_PASSPHRASE) {
-    return <NetworkMismatchWarning />;
-  }
+  // if (_networkPassphrase !== NETWORK_PASSPHRASE) {
+  //   return <NetworkMismatchWarning />;
+  // }
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());

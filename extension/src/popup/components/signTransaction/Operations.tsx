@@ -14,7 +14,8 @@ interface TransactionInfoResponse {
   asset: { code: string };
   signer: {
     ed25519PublicKey?: string;
-    sha256Hash?: { data: [] };
+    sha256Hash?: { data: Buffer };
+    preAuthTx?: { data: Buffer };
     weight: number;
   };
   type: keyof typeof OPERATION_TYPES;
@@ -86,6 +87,9 @@ enum AuthorizationMap {
   "Authorization Revocable; Authorization Immutable",
   "Authorization Required; Authorization Required; Authorization Immutable",
 }
+
+const formattedBuffer = (data: Buffer) =>
+  truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
 
 export const Operations = ({
   operations,
@@ -160,9 +164,19 @@ export const Operations = ({
                 <>
                   <KeyValueList
                     operationKey="Signer"
-                    operationValue={new Buffer(signer.sha256Hash.data).toString(
-                      "base64",
-                    )}
+                    operationValue={formattedBuffer(signer.sha256Hash.data)}
+                  />
+                  <KeyValueList
+                    operationKey="Weight"
+                    operationValue={signer.weight}
+                  />
+                </>
+              ) : null}
+              {signer.preAuthTx ? (
+                <>
+                  <KeyValueList
+                    operationKey="Signer"
+                    operationValue={formattedBuffer(signer.preAuthTx.data)}
                   />
                   <KeyValueList
                     operationKey="Weight"
@@ -198,7 +212,7 @@ export const Operations = ({
               {inflationDest ? (
                 <KeyValueList
                   operationKey="Inflation Destination"
-                  operationValue={inflationDest}
+                  operationValue={truncatedPublicKey(inflationDest)}
                 />
               ) : null}
               {setFlags ? (
