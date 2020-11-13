@@ -101,13 +101,11 @@ export const SignTransaction = () => {
     "utf-8",
   );
 
-  console.log(transaction);
-
   const [isConfirming, setIsConfirming] = useState(false);
 
-  // if (_networkPassphrase !== NETWORK_PASSPHRASE) {
-  //   return <NetworkMismatchWarning />;
-  // }
+  if (_networkPassphrase !== NETWORK_PASSPHRASE) {
+    return <NetworkMismatchWarning />;
+  }
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
