@@ -1,7 +1,7 @@
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
 export const truncatedPublicKey = (publicKey: string) =>
-  `${publicKey.slice(0, 4)}…${publicKey.slice(-4)}`;
+  publicKey ? `${publicKey.slice(0, 4)}…${publicKey.slice(-4)}` : "";
 
 export const getTransactionInfo = (search: string) => {
   const transactionInfo = parsedSearchParam(search);

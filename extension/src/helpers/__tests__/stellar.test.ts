@@ -8,4 +8,7 @@ describe("truncatedPublicKey", () => {
       ),
     ).toBe("GAJV…U7B3");
   });
+  it("returns empty on no input", () => {
+    expect(truncatedPublicKey("")).toBe("");
+  });
 });
