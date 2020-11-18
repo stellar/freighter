@@ -207,11 +207,11 @@ export const Operations = ({
               {amount ? (
                 <KeyValueList
                   operationKey="Amount"
-                  operationValue={`${amount} ${asset.code}`}
+                  operationValue={`${amount}`}
                 />
               ) : null}
 
-              {signer.ed25519PublicKey ? (
+              {signer?.ed25519PublicKey ? (
                 <>
                   <KeyValueList
                     operationKey="Signer"
@@ -223,11 +223,11 @@ export const Operations = ({
                   />
                 </>
               ) : null}
-              {signer.sha256Hash ? (
+              {signer?.sha256Hash ? (
                 <>
                   <KeyValueList
                     operationKey="Signer"
-                    operationValue={formattedBuffer(signer.sha256Hash.data)}
+                    operationValue={formattedBuffer(signer?.sha256Hash?.data)}
                   />
                   <KeyValueList
                     operationKey="Weight"
@@ -235,7 +235,7 @@ export const Operations = ({
                   />
                 </>
               ) : null}
-              {signer.preAuthTx ? (
+              {signer?.preAuthTx ? (
                 <>
                   <KeyValueList
                     operationKey="Signer"
