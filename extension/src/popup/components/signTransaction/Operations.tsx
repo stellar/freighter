@@ -84,7 +84,6 @@ const PathHeaderEl = styled.h5`
 const PathWrapperEl = styled.div`
   font-size: 0.75rem;
   flex-direction: column;
-  padding-left: 1rem;
 `;
 
 const PathNumberEl = styled.h6`
@@ -110,12 +109,17 @@ const PathList = ({ paths }: { paths: [Path] }) => (
   <PathListItem>
     <PathHeaderEl>Paths: </PathHeaderEl>
     {paths.map(({ code, issuer }, i) => (
-      <PathWrapperEl>
+      <PathWrapperEl key={`${code} ${i}`}>
         <PathNumberEl>#{i + 1}</PathNumberEl>
-        <KeyValueList operationKey="Asset Code" operationValue={code} />
-        {issuer ? (
-          <KeyValueList operationKey="Issuer" operationValue={issuer} />
-        ) : null}
+        <ul>
+          <KeyValueList operationKey="Asset Code" operationValue={code} />
+          {issuer ? (
+            <KeyValueList
+              operationKey="Issuer"
+              operationValue={truncatedPublicKey(issuer)}
+            />
+          ) : null}
+        </ul>
       </PathWrapperEl>
     ))}
   </PathListItem>
