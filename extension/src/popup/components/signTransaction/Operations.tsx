@@ -8,16 +8,24 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { TransactionList } from "popup/basics/TransactionList";
 
+interface Path {
+  code: string;
+  issuer?: string;
+}
+
 interface TransactionInfoResponse {
   amount: string;
   destination: string;
   asset: { code: string };
+  destAsset: { code: string };
+  sendAsset: { code: string };
   signer: {
     ed25519PublicKey?: string;
     sha256Hash?: { data: Buffer };
     preAuthTx?: { data: Buffer };
     weight: number;
   };
+  path: [Path];
   type: keyof typeof OPERATION_TYPES;
   buying: { code: string };
   selling: { code: string };
@@ -64,6 +72,27 @@ const OperationsListEl = styled(TransactionList)`
   }
 `;
 
+const PathListItem = styled.li`
+  flex-direction: column;
+`;
+
+const PathHeaderEl = styled.h5`
+  color: ${COLOR_PALETTE.primary};
+  font-size: 1rem;
+`;
+
+const PathWrapperEl = styled.div`
+  font-size: 0.75rem;
+  flex-direction: column;
+  padding-left: 1rem;
+`;
+
+const PathNumberEl = styled.h6`
+  color: ${COLOR_PALETTE.primary};
+  font-size: 0.875rem;
+  margin: 0;
+`;
+
 const KeyValueList = ({
   operationKey,
   operationValue,
@@ -75,6 +104,21 @@ const KeyValueList = ({
     <div>{operationKey}:</div>
     <div>{operationValue}</div>
   </li>
+);
+
+const PathList = ({ paths }: { paths: [Path] }) => (
+  <PathListItem>
+    <PathHeaderEl>Paths: </PathHeaderEl>
+    {paths.map(({ code, issuer }, i) => (
+      <PathWrapperEl>
+        <PathNumberEl>#{i + 1}</PathNumberEl>
+        <KeyValueList operationKey="Asset Code" operationValue={code} />
+        {issuer ? (
+          <KeyValueList operationKey="Issuer" operationValue={issuer} />
+        ) : null}
+      </PathWrapperEl>
+    ))}
+  </PathListItem>
 );
 
 enum AuthorizationMap {
@@ -103,6 +147,9 @@ export const Operations = ({
           amount,
           destination,
           asset,
+          destAsset,
+          path,
+          sendAsset,
           signer,
           type,
           buying,
@@ -138,6 +185,22 @@ export const Operations = ({
                 <KeyValueList
                   operationKey="Asset"
                   operationValue={`${asset.code}`}
+                />
+              ) : null}
+
+              {sendAsset ? (
+                <KeyValueList
+                  operationKey="Sending Asset"
+                  operationValue={`${sendAsset.code}`}
+                />
+              ) : null}
+
+              {path?.length ? <PathList paths={path} /> : null}
+
+              {destAsset ? (
+                <KeyValueList
+                  operationKey="Destination Asset"
+                  operationValue={`${destAsset.code}`}
                 />
               ) : null}
 
