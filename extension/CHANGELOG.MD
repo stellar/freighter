@@ -1,3 +1,8 @@
+# v1.0.2-beta.0
+
+- Address issue with `Sell order` transactions causing a breaking error
+- Show all path details in `signTransaction` UI for path payments
+
 # v1.0.1-beta.0
 
 - Make `truncatedPublickey` return empty string on undefined input instead of
