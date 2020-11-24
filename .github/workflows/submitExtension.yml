@@ -42,9 +42,9 @@ jobs:
           node-version: "12"
       - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
       - name: Zip extension build
-          uses: montudor/action-zip@v0.1.0
-          with:
-            args: zip -qq -r ./extension/build/build.zip ./extension/build
+        uses: montudor/action-zip@v0.1.0
+        with:
+          args: zip -qq -r ./extension/build/build.zip ./extension/build
       - name: Upload & release
         uses: mnao305/chrome-extension-upload@1.1.1
         with:
@@ -53,20 +53,20 @@ jobs:
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
-        - name: Commit files
-          run: |
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add -A
-            git commit -m "docs(): bumping release ${{ steps.semantic_release_info.outputs.git_tag }}"
-            git tag ${{ github.event.inputs.version }}
-        - name: Create GitHub Release
-          uses: actions/create-release@v1
-          env:
-            GITHUB_TOKEN: ${{ github.token }}
-          with:
-            tag_name: ${{ github.event.inputs.version }}
-            release_name: ${{ github.event.inputs.version }}
-            body: ${{ github.event.inputs.version }}
-            draft: false
-            prerelease: false
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "docs(): bumping release ${{ steps.semantic_release_info.outputs.git_tag }}"
+          git tag ${{ github.event.inputs.version }}
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          release_name: ${{ github.event.inputs.version }}
+          body: ${{ github.event.inputs.version }}
+          draft: false
+          prerelease: false
