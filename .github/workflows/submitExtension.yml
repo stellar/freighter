@@ -1,0 +1,72 @@
+name: Submit extension to browser store
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Bump Version
+        default: v1.0.0
+        required: true
+jobs:
+  bump-version:
+    name: Bump Package Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update package.json version
+        uses: jossef/action-set-json-field@v1
+        with:
+          file: ./extension/package.json
+          field: version
+          value: ${{ github.event.inputs.version }}
+      - name: Update manifest.json version_name
+        uses: jossef/action-set-json-field@v1
+        with:
+          file: ./extension/public/manifest.json
+          field: version_name
+          value: ${{ github.event.inputs.version }}
+      - name: Get manifest.json version
+        id: manifest_version
+        uses: frabert/replace-string-action@v1.2
+        with:
+          pattern: ./extension/public/static/package.json
+          string: ${{ github.event.inputs.version }}
+          value: ^(.*?)-
+      - name: Update manifest.json version
+        uses: jossef/action-set-json-field@v1
+        with:
+          file: ./extension/public/static/manifest.json
+          field: version
+          value: ${{ steps.manifest_version.outputs.replaced }}
+      - name: Build extension
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12"
+      - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
+      - name: Zip extension build
+        uses: montudor/action-zip@v0.1.0
+        with:
+          args: zip -qq -r ./extension/build/build.zip ./extension/build
+      - name: Upload & release
+        uses: mnao305/chrome-extension-upload@1.1.1
+        with:
+          file-path: ./extension/build/build.zip
+          extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
+          client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
+          client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "docs(): bumping release ${{ steps.semantic_release_info.outputs.git_tag }}"
+          git tag ${{ github.event.inputs.version }}
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          release_name: ${{ github.event.inputs.version }}
+          body: ${{ github.event.inputs.version }}
+          draft: false
+          prerelease: false
