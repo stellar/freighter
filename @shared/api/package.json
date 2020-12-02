@@ -6,7 +6,8 @@
   "dependencies": {
     "prettier": "^2.0.5",
     "stellar-sdk": "5.0.1",
-    "typescript": "~3.7.2"
+    "typescript": "~3.7.2",
+    "webextension-polyfill-ts": "^0.22.0"
   },
   "devDependencies": {
     "@stellar/prettier-config": "^1.0.1"

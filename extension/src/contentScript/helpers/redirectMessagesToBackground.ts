@@ -1,4 +1,4 @@
-import { sendMessageToBackground } from "@shared/api/helpers";
+import { browser } from "webextension-polyfill-ts";
 import {
   EXTERNAL_MSG_REQUEST,
   EXTERNAL_MSG_RESPONSE,
@@ -17,7 +17,7 @@ export const redirectMessagesToBackground = () => {
       // Forward the message on to Background
       let res = { error: "Unable to send message to extension" };
       try {
-        res = await sendMessageToBackground(event.data);
+        res = await browser.runtime.sendMessage(event.data);
       } catch (e) {
         console.error(e);
       }
