@@ -12,7 +12,7 @@ import {
 } from "popup/constants/styles";
 import { ROUTES } from "popup/constants/routes";
 
-import { navigateTo } from "popup/helpers/navigateTo";
+import { navigateTo } from "popup/helpers/navigate";
 
 import { BasicButton } from "popup/basics/Buttons";
 

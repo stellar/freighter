@@ -13,7 +13,7 @@ import { ROUTES } from "popup/constants/routes";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { navigateTo } from "popup/helpers/navigateTo";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 
 import { publicKeySelector } from "popup/ducks/authServices";
 
@@ -138,8 +138,7 @@ export const ViewPublicKey = () => {
         </CopiedToastWrapperEl>
         <LinkButton
           onClick={() => {
-            window.open(
-              
+            openTab(
               `https://stellar.expert/explorer/${NETWORK_NAME.toLowerCase()}/account/${publicKey}`,
             );
             emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);

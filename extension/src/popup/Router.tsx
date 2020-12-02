@@ -12,6 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { newTabHref } from "helpers/urls";
+import { openTab } from "popup/helpers/navigate";
 
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -151,7 +152,7 @@ const HomeRoute = () => {
     In this particular case, open the tab if we are in the "popup" view.
     */
     if (window.innerWidth === POPUP_WIDTH) {
-      window.open(newTabHref(ROUTES.welcome));
+      openTab(newTabHref(ROUTES.welcome));
       window.close();
     }
     return <Welcome />;
@@ -162,7 +163,7 @@ const HomeRoute = () => {
       return <Redirect to={ROUTES.account} />;
     case APPLICATION_STATE.PASSWORD_CREATED ||
       APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
-      window.open(newTabHref(ROUTES.mnemonicPhrase));
+      openTab(newTabHref(ROUTES.mnemonicPhrase));
       return <Loading />;
     default:
       return <Welcome />;

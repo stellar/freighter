@@ -6,7 +6,7 @@ import { object as YupObject } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
 
-import { navigateTo } from "popup/helpers/navigateTo";
+import { navigateTo } from "popup/helpers/navigate";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,

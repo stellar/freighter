@@ -12,7 +12,7 @@ import {
   saveSettings,
   settingsDataSharingSelector,
 } from "popup/ducks/settings";
-import { navigateTo } from "popup/helpers/navigateTo";
+import { navigateTo } from "popup/helpers/navigate";
 
 import { Form, FormRow, CheckboxField, SubmitButton } from "popup/basics/Forms";
 import {

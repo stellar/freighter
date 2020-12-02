@@ -1,5 +1,5 @@
 import { history } from "popup/constants/history";
-import { navigateTo } from "../navigateTo";
+import { navigateTo } from "../navigate";
 
 const PATH = "/path-name";
 const QUERY_PARAM = "?test";

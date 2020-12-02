@@ -11,7 +11,7 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { download } from "popup/helpers/download";
-import { navigateTo } from "popup/helpers/navigateTo";
+import { navigateTo } from "popup/helpers/navigate";
 
 import { Button } from "popup/basics/Buttons";
 

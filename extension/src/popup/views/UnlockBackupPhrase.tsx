@@ -13,7 +13,7 @@ import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
-import { navigateTo } from "popup/helpers/navigateTo";
+import { navigateTo } from "popup/helpers/navigate";
 
 import { BackButton } from "popup/basics/Buttons";
 import {
