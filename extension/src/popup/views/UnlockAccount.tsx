@@ -9,7 +9,7 @@ import { ROUTES } from "popup/constants/routes";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
-import { navigateTo } from "popup/helpers/navigateTo";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 
 import { BasicButton } from "popup/basics/Buttons";
@@ -134,7 +134,7 @@ export const UnlockAccount = () => {
           <ListItemEl>
             <ImportButtonEl
               onClick={() => {
-                window.open(newTabHref(ROUTES.recoverAccount));
+                openTab(newTabHref(ROUTES.recoverAccount));
               }}
             >
               Import using backup phrase
