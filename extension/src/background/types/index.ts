@@ -1,5 +1,7 @@
+import { Tabs } from "webextension-polyfill-ts";
+
 export interface Sender {
-  tab?: chrome.tabs.Tab;
+  tab?: Tabs.Tab;
 }
 
 export interface SendResponseInterface {

@@ -55,7 +55,9 @@ const settingsSlice = createSlice({
     builder.addCase(
       saveSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed } = action.payload;
+        const { isDataSharingAllowed } = action?.payload || {
+          isDataSharingAllowed: false,
+        };
 
         return {
           ...state,
@@ -66,11 +68,13 @@ const settingsSlice = createSlice({
     builder.addCase(
       loadSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed } = action.payload;
+        const { isDataSharingAllowed } = action?.payload || {
+          isDataSharingAllowed: false,
+        };
 
         return {
           ...state,
-          isDataSharingAllowed: isDataSharingAllowed || false,
+          isDataSharingAllowed,
         };
       },
     );

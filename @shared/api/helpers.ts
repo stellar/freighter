@@ -1,3 +1,4 @@
+import { browser } from "webextension-polyfill-ts";
 import {
   DEVELOPMENT,
   EXTERNAL_MSG_RESPONSE,
@@ -39,13 +40,14 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
   });
 };
 
-export const sendMessageToBackground = (msg: {}): Promise<Response> => {
+export const sendMessageToBackground = async (msg: {}): Promise<Response> => {
+  let res;
   if (DEVELOPMENT) {
     // treat this as an external call because we're making the call from the browser, not the popup
-    return sendMessageToContentScript(msg);
+    res = await sendMessageToContentScript(msg);
+  } else {
+    res = await browser.runtime.sendMessage(msg);
   }
 
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(msg, (res: Response) => resolve(res));
-  });
+  return res;
 };

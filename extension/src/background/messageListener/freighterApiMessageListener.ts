@@ -1,11 +1,7 @@
 import StellarSdk from "stellar-sdk";
 
 import { ExternalRequest as Request } from "@shared/api/types";
-import {
-  MessageResponder,
-  Sender,
-  SendResponseInterface,
-} from "background/types";
+import { MessageResponder, Sender } from "background/types";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
 import { NETWORK } from "@shared/constants/stellar";
@@ -25,7 +21,6 @@ const WINDOW_DIMENSIONS = `width=${POPUP_WIDTH},height=667`;
 export const freighterApiMessageListener = (
   request: Request,
   sender: Sender,
-  sendResponse: (response: SendResponseInterface) => void,
 ) => {
   const requestAccess = () => {
     // TODO: add check to make sure this origin is on allowlist
@@ -37,12 +32,9 @@ export const freighterApiMessageListener = (
     const tabUrl = tab?.url ? tab.url : "";
     const domain = getUrlHostname(tabUrl);
 
-    if (allowList.includes(getPunycodedDomain(domain))) {
-      if (publicKey) {
-        // okay, the requester checks out and we have public key, send it
-        sendResponse({ publicKey });
-        return;
-      }
+    if (allowList.includes(getPunycodedDomain(domain)) && publicKey) {
+      // okay, the requester checks out and we have public key, send it
+      return { publicKey };
     }
 
     // otherwise, we need to confirm either url or password. Maybe both
@@ -57,13 +49,13 @@ export const freighterApiMessageListener = (
       // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
       // if we're good, of course
       if (url === tabUrl) {
-        sendResponse({ publicKey: publicKeySelector(store.getState()) });
-      } else {
-        sendResponse({ error: "User declined access" });
+        return { publicKey: publicKeySelector(store.getState()) };
       }
+
+      return { error: "User declined access" };
     };
 
-    responseQueue.push(response);
+    return responseQueue.push(response);
   };
 
   const submitTransaction = () => {
@@ -101,28 +93,25 @@ export const freighterApiMessageListener = (
       WINDOW_DIMENSIONS,
     );
     if (!popup) {
-      responseQueue.push(() => {
-        sendResponse({ error: "Couldn't open access prompt" });
-      });
+      responseQueue.push(() => ({ error: "Couldn't open access prompt" }));
       return;
     }
 
     const response = (signedTransaction: string) => {
       if (signedTransaction) {
-        sendResponse({ signedTransaction });
-
         if (!isDomainListedAllowed) {
           allowList.push(punycodedDomain);
           localStorage.setItem(ALLOWLIST_ID, allowList.join());
         }
-      } else {
-        sendResponse({ error: "User declined access" });
+        return { signedTransaction };
       }
+
+      return { error: "User declined access" };
     };
 
-    popup.addEventListener("beforeunload", () => {
-      sendResponse({ error: "User declined access" });
-    });
+    popup.addEventListener("beforeunload", () => ({
+      error: "User declined access",
+    }));
     responseQueue.push(response);
   };
 
@@ -131,7 +120,5 @@ export const freighterApiMessageListener = (
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
   };
 
-  if (messageResponder[request.type]) {
-    messageResponder[request.type]();
-  }
+  return messageResponder[request.type]();
 };

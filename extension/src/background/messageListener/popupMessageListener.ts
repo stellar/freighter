@@ -8,11 +8,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { isTestnet } from "@shared/constants/stellar";
 
 import { Response as Request } from "@shared/api/types";
-import {
-  MessageResponder,
-  Sender,
-  SendResponseInterface,
-} from "background/types";
+import { MessageResponder } from "background/types";
 
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
 
@@ -46,11 +42,7 @@ interface StellarHdWallet {
   getSecret: (number: Number) => string;
 }
 
-export const popupMessageListener = (
-  request: Request,
-  _: Sender,
-  sendResponse: (response: SendResponseInterface) => void,
-) => {
+export const popupMessageListener = (request: Request) => {
   const localKeyStore = new KeyManagerPlugins.LocalStorageKeyStore();
   localKeyStore.configure({ storage: localStorage });
   const keyManager = new KeyManager({
@@ -124,20 +116,21 @@ export const popupMessageListener = (
     });
     localStorage.setItem(APPLICATION_ID, APPLICATION_STATE.PASSWORD_CREATED);
 
-    sendResponse({ publicKey: publicKeySelector(store.getState()) });
+    return { publicKey: publicKeySelector(store.getState()) };
   };
 
   const loadAccount = () => {
-    sendResponse({
+    console.log(store.getState());
+    return {
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
       publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
-    });
+    };
   };
 
-  const getMnemonicPhrase = () => {
-    sendResponse({ mnemonicPhrase: mnemonicPhraseSelector(store.getState()) });
-  };
+  const getMnemonicPhrase = () => ({
+    mnemonicPhrase: mnemonicPhraseSelector(store.getState()),
+  });
 
   const confirmMnemonicPhrase = () => {
     const isCorrectPhrase =
@@ -150,10 +143,10 @@ export const popupMessageListener = (
 
     localStorage.setItem(APPLICATION_ID, applicationState);
 
-    sendResponse({
+    return {
       isCorrectPhrase,
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
-    });
+    };
   };
 
   const recoverAccount = () => {
@@ -177,10 +170,11 @@ export const popupMessageListener = (
       localStorage.setItem(APPLICATION_ID, applicationState);
     }
 
-    sendResponse({
+
+    return {
       publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
-    });
+    };
   };
 
   const showBackupPhrase = async () => {
@@ -188,9 +182,9 @@ export const popupMessageListener = (
 
     try {
       await keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
-      sendResponse({});
+      return {};
     } catch (e) {
-      sendResponse({ error: "Incorrect Password" });
+      return { error: "Incorrect Password" };
     }
   };
 
@@ -216,11 +210,11 @@ export const popupMessageListener = (
       sessionTimer.startSession({ privateKey });
     }
 
-    sendResponse({
+    return {
       publicKey: publicKeySelector(store.getState()),
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
-    });
+    };
   };
 
   const grantAccess = () => {
@@ -239,10 +233,10 @@ export const popupMessageListener = (
 
     if (typeof response === "function") {
       response(url);
-      sendResponse({});
-    } else {
-      sendResponse({ error: "Access was denied" });
+      return {};
     }
+
+    return { error: "Access was denied" };
   };
 
   const rejectAccess = () => {
@@ -271,11 +265,11 @@ export const popupMessageListener = (
 
       if (typeof transactionResponse === "function") {
         transactionResponse(response);
-        sendResponse({});
+        return {};
       }
-    } else {
-      sendResponse({ error: "Session timed out" });
     }
+
+    return { error: "Session timed out" };
   };
 
   const rejectTransaction = () => {
@@ -289,10 +283,10 @@ export const popupMessageListener = (
   const signOut = () => {
     store.dispatch(logOut());
 
-    sendResponse({
+    return {
       publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
-    });
+    };
   };
 
   /* @TODO add toggle for Mainnet & Testnet */
@@ -301,18 +295,18 @@ export const popupMessageListener = (
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
 
-    sendResponse({
+    return {
       isDataSharingAllowed,
-    });
+    };
   };
 
   const loadSettings = () => {
     const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "true";
     const isDataSharingAllowed = JSON.parse(dataSharingValue);
 
-    sendResponse({
+    return {
       isDataSharingAllowed,
-    });
+    };
   };
 
   const messageResponder: MessageResponder = {
@@ -332,7 +326,5 @@ export const popupMessageListener = (
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
   };
 
-  if (messageResponder[request.type]) {
-    messageResponder[request.type]();
-  }
+  return messageResponder[request.type]();
 };
