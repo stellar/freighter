@@ -11,8 +11,8 @@
   "main": "build/index.min.js",
   "scripts": {
     "prepare": "yarn build",
-    "build": "webpack --config webpack.config.js --mode production",
-    "start": "webpack --config webpack.config.js --watch --mode development"
+    "build": "webpack --config webpack.production.js --mode production",
+    "start": "webpack --config webpack.dev.js --watch --mode development"
   },
   "types": "build/@stellar/freighter-api/src/index.d.ts",
   "dependencies": {}
