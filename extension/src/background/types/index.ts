@@ -1,9 +1,3 @@
-import { Tabs } from "webextension-polyfill-ts";
-
-export interface Sender {
-  tab?: Tabs.Tab;
-}
-
 export interface SendResponseInterface {
   publicKey?: string;
   hasPrivateKey?: boolean;

@@ -1,7 +1,7 @@
 const webpack = require("webpack");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
-const { DEFAULT_STATS } = require("../../@shared/constants/config");
+const { DEFAULT_STATS } = require("../../config/webpack");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 

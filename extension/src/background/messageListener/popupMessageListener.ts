@@ -232,8 +232,7 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(ALLOWLIST_ID, allowList.join());
 
     if (typeof response === "function") {
-      response(url);
-      return {};
+      return response(url);
     }
 
     return { error: "Access was denied" };

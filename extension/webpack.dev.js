@@ -19,7 +19,7 @@ const devConfig = {
       modules: [
         {
           test: /webextension-polyfill-ts/,
-          replace: "./src/shims/webextension-polyfill.ts",
+          replace: "../config/shims/webextension-polyfill.ts",
         },
       ],
     }),
