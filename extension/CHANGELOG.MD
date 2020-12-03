@@ -1,3 +1,8 @@
+# v1.0.3-beta.0
+
+- Using `webextension-polyfill-ts` to enable Firefox compatibility, plus
+  subsequent refactoring
+
 # v1.0.2-beta.0
 
 - Address issue with `Sell order` transactions causing a breaking error
