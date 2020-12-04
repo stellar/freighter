@@ -3,6 +3,7 @@ import { browser, Runtime } from "webextension-polyfill-ts";
 
 import { ExternalRequest as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
+import { TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
 import { NETWORK } from "@shared/constants/stellar";
@@ -90,7 +91,7 @@ export const freighterApiMessageListener = (
       tab,
       isDomainListedAllowed,
       url: tabUrl,
-    };
+    } as TransactionInfo;
 
     transactionQueue.push(transaction);
 

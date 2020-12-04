@@ -6,11 +6,7 @@ export const truncatedPublicKey = (publicKey: string) =>
 export const getTransactionInfo = (search: string) => {
   const transactionInfo = parsedSearchParam(search);
 
-  const {
-    tab: { url },
-    transaction,
-    isDomainListedAllowed,
-  } = transactionInfo;
+  const { url, transaction, isDomainListedAllowed } = transactionInfo;
   const hostname = getUrlHostname(url);
   const { _operations } = transaction;
   const operationTypes = _operations.map(
