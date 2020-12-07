@@ -11,15 +11,21 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 You will need
 
-- Nodev(v14.11.0 or newer): https://nodejs.org/en/download/
+- Node (v14.11.0 or newer): https://nodejs.org/en/download/
 - Yarn (v1.22.5 or newer): https://classic.yarnpkg.com/en/docs/install
 
 ## Build the extension
 
-To simply build a production version of the extension, install the prerequisites then navigate to this root folder in your command line and run:
+To simply build a production version of the extension, install the prerequisites then navigate to this root folder in your command line and run these 2 steps:
 
 ```
-build:extension:production
+yarn
+```
+
+followed by
+
+```
+yarn build:extension:production
 ```
 
 This will generate the files that make up the extension in `extension/build`
