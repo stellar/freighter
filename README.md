@@ -7,7 +7,24 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 - the docs (`/docs`)
 - some shared files that the above use (`/@freighter/*`)
 
-## Getting Started
+## Prerequisites
+
+You will need
+
+- Node: https://nodejs.org/en/download/
+- Yarn: https://classic.yarnpkg.com/en/docs/install
+
+## Build the extension
+
+To simply build a production version of the extension, install the prerequisites then navigate to this root folder in your command line:
+
+```
+build:extension:production
+```
+
+This will generate the files that make up the extension in `extension/build`
+
+## Starting a dev environment
 
 ```
 yarn
@@ -52,7 +69,7 @@ It's important to note that these two won't interact with the _dev server_ popup
 UI on `localhost:9000` — you'll need to re-install the unpacked extension each
 time you make a change.
 
-## Importing a workspace
+### Importing a workspace
 
 In some cases, you will want to import a workspace into another. For example, in
 `extension` we need to import `@freighter/constants`. To do this, simply add
@@ -60,6 +77,6 @@ In some cases, you will want to import a workspace into another. For example, in
 symlinks all the workspaces, so doing so will allow you to import files from the
 `@freighter/constants` workspace as if it were a published npm package.
 
-## Dependencies
+### Dependencies
 
 Many dev dependencies (such as Typescript, linters, Webpack, etc.) have been moved to the root `package.json` to allow devs to upgrade these libraries all in one place.
