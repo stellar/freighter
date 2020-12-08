@@ -119,14 +119,11 @@ export const popupMessageListener = (request: Request) => {
     return { publicKey: publicKeySelector(store.getState()) };
   };
 
-  const loadAccount = () => {
-    console.log(store.getState());
-    return {
-      hasPrivateKey: hasPrivateKeySelector(store.getState()),
-      publicKey: publicKeySelector(store.getState()),
-      applicationState: localStorage.getItem(APPLICATION_ID) || "",
-    };
-  };
+  const loadAccount = () => ({
+    hasPrivateKey: hasPrivateKeySelector(store.getState()),
+    publicKey: publicKeySelector(store.getState()),
+    applicationState: localStorage.getItem(APPLICATION_ID) || "",
+  });
 
   const getMnemonicPhrase = () => ({
     mnemonicPhrase: mnemonicPhraseSelector(store.getState()),
