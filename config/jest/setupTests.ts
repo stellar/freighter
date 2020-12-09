@@ -11,5 +11,6 @@ import "jsdom-global";
 const jsdom = new JSDOM("<!doctype html><html><body></body></html>");
 const { window } = jsdom;
 
-global.fetch = window.fetch = fetch;
+global.fetch = fetch;
+window.fetch = fetch;
 global.DEVELOPMENT = true;
