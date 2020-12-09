@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import buffer from "buffer";
 import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { get } from "lodash";
 import styled from "styled-components";
 
 import {
@@ -10,6 +8,7 @@ import {
   getTransactionInfo,
   stroopToXlm,
 } from "helpers/stellar";
+import { decodeMemo } from "popup/helpers/decodeMemo";
 
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
@@ -87,7 +86,6 @@ export const SignTransaction = () => {
   const { transaction, domain, isDomainListedAllowed } = getTransactionInfo(
     location.search,
   );
-
   const {
     _fee,
     _operations,
@@ -97,9 +95,7 @@ export const SignTransaction = () => {
     _source,
   } = transaction;
   const operationText = _operations.length > 1 ? "Operations:" : "Operation:";
-  const memo = buffer.Buffer.from(get(_memo, "_value.data", [])).toString(
-    "utf-8",
-  );
+  const memo = decodeMemo(_memo);
 
   const [isConfirming, setIsConfirming] = useState(false);
 
