@@ -45,6 +45,7 @@ const ButtonEl = styled(BasicButton)<ButtonProps>`
   border: none;
   -webkit-appearance: none;
   transition: all ${ANIMATION_TIMES.fast} ease-in-out;
+  white-space: nowrap;
 
   &:hover {
     background: ${COLOR_PALETTE.darkPrimaryGradient};

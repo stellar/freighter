@@ -73,6 +73,7 @@ const QrButton = styled(BasicButton)`
   margin-right: 1rem;
   width: 1rem;
   height: 1rem;
+  vertical-align: text-top;
 `;
 
 const VerticalCenterLink = styled(Link)`
