@@ -22,14 +22,14 @@ jobs:
       - name: Update manifest.json version_name
         uses: jossef/action-set-json-field@v1
         with:
-          file: ./extension/public/manifest.json
+          file: ./extension/public/static/manifest.json
           field: version_name
           value: ${{ github.event.inputs.version }}
       - name: Get manifest.json version
         id: manifest_version
         uses: frabert/replace-string-action@v1.2
         with:
-          pattern: ./extension/public/static/package.json
+          pattern: ./extension/public/static/manifest.json
           string: ${{ github.event.inputs.version }}
           value: ^(.*?)-
       - name: Update manifest.json version
