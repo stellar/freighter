@@ -1,15 +1,16 @@
-# Freighter Chrome Extension
+# Freighter Web Extension
 
 ## Get Started
 
-This project builds a Chrome extension
+This project builds a web extension
 
 ### Build the extension and install it on your machine
 
 We will compile the code for the extension and that load this local instance
-into your browser.
+into your browser. NOTE: This command will build the extension on Testnet for
+local testing.
 
-1. Run
+Run
 
 ```
 yarn build
@@ -22,42 +23,63 @@ running
 yarn build:experimental
 ```
 
-2. Now, in Chrome, navigate to `chrome://extensions/`.
+To install on Chrome:
 
-3. Toggle `Developer mode` to the ON position in the top right corner
+1. In Chrome, navigate to `chrome://extensions/`.
 
-4. You will now see a button in the top left titled `Load Unpacked`
+2. Toggle `Developer mode` to the ON position in the top right corner
 
-5. Click `Load Unpacked` and it will open your file system. Navigate to this
-   folder and click the `build` folder. Hit `Select`. You should now see an icon
-   for Freighter in Chrome.
+3. You will now see a button in the top left titled `Load Unpacked`
+
+4. Click `Load Unpacked` and it will open your file system.
+
+5. Navigate to this folder and click the `build` folder. Hit `Select`. You
+   should now see an icon for Freighter in Chrome.
+
+To install on Firefox:
+
+1. In Firefox, navigate to about:debugging#/runtime/this-firefox
+
+2. Click `Load Temporary Add-On`
+
+3. Navigate to this folder and open the `build` folder and find `manifest.json`.
+   Hit `Select`. You should now see an icon for Freighter in Firefox
+
+### Build the extension and use Pubnet
+
+When working locally, you will generally want to run the extension on Testnet.
+But when we build for the app store, we will want the extension to use Pubnet.
+In order to do that, run
+
+```
+yarn build:production
+```
 
 ## Project Setup
 
-This app has 3 main components that are named using Chrome extension
-nomenclature. All of these are located in the `src/` folder:
+This app has 3 main components that are named using extension nomenclature. All
+of these are located in the `src/` folder:
 
-1. The UI that appears when you click on the Chrome extension in your browser.
-   This code also controls the fullscreen authentiction flow and any popups
-   triggered by the extension. This is all controlled by one React app. In
-   Chrome parlance, this is called the `popup` and is therefore located in
-   `src/popup`.
+1. The UI that appears when you click on the extension in your browser. This
+   code also controls the fullscreen authentiction flow and any popups triggered
+   by the extension. This is all controlled by one React app. In web extension
+   parlance, this is called the `popup` and is therefore located in `src/popup`.
 
 2. The "backend" service. We want to do things like account creation and store
    sensitive data, like public keys, in a secure place away from the `popup` and
    away from the `content script`. We want this service to be a standalone
    entity that these other 2 can make requests to and receive only what the
-   backend sees fit. In Chrome terms, this is known as the `background` script
-   and is instantiated by `public/background`. The code is located in
+   backend sees fit. In web extension terms, this is known as the `background`
+   script and is instantiated by `public/background`. The code is located in
    `src/background`.
 
-   This script is run by the Chrome extension on browser starts and continues
-   running, storing data and listening/responding to messages from `popup` and
+   This script is run by the extension on browser starts and continues running,
+   storing data and listening/responding to messages from `popup` and
    `content script`, and only terminates on browser close (or extension
    uninstall/reload). It is run in a headless browser, so it has access to all
-   Web APIs and Chrome APIs. It also has accessible dev tools, which can be
-   reached by going to `chrome://extensions/` and clicking
-   `inspect views: background page`
+   Web APIs. It also has accessible dev tools, which can be reached by going to
+   `chrome://extensions/` or `about:debugging#/runtime/this-firefox` and
+   clicking `Inspect`
 
 3. The `content script` that allows external sites to send and receive messages
    to `background`. Using an event listener, it waits for an application to
@@ -91,4 +113,5 @@ You can also set the `experimental` flag to true by running
 yarn start:experimental
 ```
 
-This will enable some experimental features that are still under development.
+This will enable some features hidden by the `experimental` feature flag that
+are still under development.
