@@ -43,7 +43,7 @@ import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 
 import "popup/metrics/views";
-import { DEVELOPMENT } from "@shared/constants/services";
+import { DEV_SERVER } from "@shared/constants/services";
 
 const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -234,7 +234,7 @@ export const Router = () => {
           <FullscreenSuccessMessage />
         </PublicKeyRoute>
         <HomeRoute />
-        {DEVELOPMENT && (
+        {DEV_SERVER && (
           <Route path={ROUTES.debug}>
             <Debug />
           </Route>

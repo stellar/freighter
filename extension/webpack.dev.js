@@ -13,7 +13,7 @@ const devConfig = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      DEVELOPMENT: true,
+      DEV_SERVER: true,
     }),
     new ModuleReplaceWebpackPlugin({
       modules: [

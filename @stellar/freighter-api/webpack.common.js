@@ -38,7 +38,7 @@ const config = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      DEVELOPMENT: false,
+      DEV_SERVER: false,
     }),
   ],
   stats: DEFAULT_STATS,
