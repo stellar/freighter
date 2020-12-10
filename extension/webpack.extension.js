@@ -9,7 +9,7 @@ const prodConfig = {
   mode: "production",
   plugins: [
     new webpack.DefinePlugin({
-      DEVELOPMENT: false,
+      DEV_SERVER: false,
     }),
   ],
   // This if to fine tune logged output. Since this is an extension, not a

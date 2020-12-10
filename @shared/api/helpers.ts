@@ -1,6 +1,6 @@
 import { browser } from "webextension-polyfill-ts";
 import {
-  DEVELOPMENT,
+  DEV_SERVER,
   EXTERNAL_MSG_RESPONSE,
   EXTERNAL_MSG_REQUEST,
 } from "../constants/services";
@@ -42,7 +42,7 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
 
 export const sendMessageToBackground = async (msg: {}): Promise<Response> => {
   let res;
-  if (DEVELOPMENT) {
+  if (DEV_SERVER) {
     // treat this as an external call because we're making the call from the browser, not the popup
     res = await sendMessageToContentScript(msg);
   } else {
