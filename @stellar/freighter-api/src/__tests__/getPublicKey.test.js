@@ -1,5 +1,5 @@
-import { getPublicKey } from "../getPublicKey";
 import * as apiExternal from "@shared/api/external";
+import { getPublicKey } from "../getPublicKey";
 
 describe("getPublicKey", () => {
   it("returns a publicKey", async () => {
@@ -8,7 +8,7 @@ describe("getPublicKey", () => {
     const publicKey = await getPublicKey();
     expect(publicKey).toBe(TEST_KEY);
   });
-  it("throws an error", async () => {
+  it("throws an error", () => {
     const TEST_ERROR = "Error!";
     apiExternal.requestPublicKey = jest.fn().mockImplementation(() => {
       throw TEST_ERROR;
