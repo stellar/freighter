@@ -11,6 +11,8 @@ jobs:
     name: Bump Package Version
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Update package.json version
         uses: jossef/action-set-json-field@v1
         with:
