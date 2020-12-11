@@ -62,11 +62,8 @@ jobs:
           git add -A
           git commit -m "docs(): bumping release ${{ steps.semantic_release_info.outputs.git_tag }}"
           git tag ${{ github.event.inputs.version }}
-      - name: Push changes
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          github_token: ${{ github.token }}
-          tags: true
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
