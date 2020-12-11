@@ -31,7 +31,7 @@ jobs:
         with:
           pattern: ./extension/public/static/manifest.json
           string: ${{ github.event.inputs.version }}
-          value: ^(.*?)-
+          value: /^(.*?)-/
       - name: Update manifest.json version
         uses: jossef/action-set-json-field@v1
         with:
@@ -47,14 +47,14 @@ jobs:
         uses: montudor/action-zip@v0.1.0
         with:
           args: zip -qq -r ./extension/build/build.zip ./extension/build
-      - name: Upload & release
-        uses: mnao305/chrome-extension-upload@1.1.1
-        with:
-          file-path: ./extension/build/build.zip
-          extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
-          client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
-          client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
-          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      # - name: Upload & release
+      #   uses: mnao305/chrome-extension-upload@1.1.1
+      #   with:
+      #     file-path: ./extension/build/build.zip
+      #     extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
+      #     client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
+      #     client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
+      #     refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
@@ -62,6 +62,11 @@ jobs:
           git add -A
           git commit -m "docs(): bumping release ${{ steps.semantic_release_info.outputs.git_tag }}"
           git tag ${{ github.event.inputs.version }}
+      - name: Push changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ github.token }}
+          tags: true
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
