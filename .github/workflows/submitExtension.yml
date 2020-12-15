@@ -83,6 +83,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build.zip
+          asset_path: ./extension/build.zip
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
