@@ -43,8 +43,9 @@ jobs:
         with:
           node-version: "12"
       - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
+      - name: Install zip
+        uses: montudor/action-zip@v0.1.1
       - name: Zip extension build
-        uses: montudor/action-zip@v0.1.0
         run: zip -qq -r ./build.zip build
         working-directory: ./extension
       # - name: Upload & release
