@@ -29,9 +29,9 @@ jobs:
         id: manifest_version
         uses: frabert/replace-string-action@v1.2
         with:
-          pattern: ./extension/public/static/manifest.json
           string: ${{ github.event.inputs.version }}
           pattern: /^(.*?)-/
+          replace-with: "$1"
       - name: Update manifest.json version
         uses: jossef/action-set-json-field@v1
         with:
