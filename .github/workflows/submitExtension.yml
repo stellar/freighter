@@ -45,8 +45,8 @@ jobs:
       - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
       - name: Zip extension build
         uses: montudor/action-zip@v0.1.0
-        with:
-          args: zip -qq -r ./extension/build/build.zip ./extension/build
+        run: zip -qq -r ./build.zip build
+        working-directory: ./extension
       # - name: Upload & release
       #   uses: mnao305/chrome-extension-upload@1.1.1
       #   with:
@@ -82,6 +82,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./extension/build/build.zip
+          asset_path: ./build.zip
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
