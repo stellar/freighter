@@ -13,12 +13,13 @@ export const TransactionList = styled.ul`
   margin-bottom: 1.33em;
 
   li {
+    align-items: center;
     display: flex;
-    margin: 1.25rem 0;
+    min-height: 2.1875rem;
     color: ${COLOR_PALETTE.secondaryText};
 
-    div:first-child {
-      padding-right: 0.75rem;
+    > div {
+      margin-right: 0.75rem;
     }
   }
 
