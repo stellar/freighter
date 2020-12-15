@@ -46,8 +46,8 @@ jobs:
       - name: Install zip
         uses: montudor/action-zip@v0.1.1
       - name: Zip extension build
-        run: zip -qq -r ./build.zip build
-        working-directory: ./extension
+        run: zip -qq -r ./build.zip *
+        working-directory: ./extension/build
       # - name: Upload & release
       #   uses: mnao305/chrome-extension-upload@1.1.1
       #   with:
@@ -83,6 +83,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./extension/build.zip
+          asset_path: ./extension/build/build.zip
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
