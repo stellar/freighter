@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Bump Version
+        description: New Version
         default: "1.0.0"
         required: true
 jobs:
