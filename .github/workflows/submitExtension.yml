@@ -30,31 +30,31 @@ jobs:
         uses: frabert/replace-string-action@v1.2
         with:
           string: ${{ github.event.inputs.version }}
-          pattern: ^(.*?)-
-          replace-with: $1
+          pattern: \-(.*)
+          replace-with: ""
       - name: Update manifest.json version
         uses: jossef/action-set-json-field@v1
         with:
           file: ./extension/public/static/manifest.json
           field: version
           value: ${{ steps.manifest_version.outputs.replaced }}
-      - name: Build extension
-        uses: actions/setup-node@v1
-        with:
-          node-version: "12"
-      - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
-      - name: Install zip
-        uses: montudor/action-zip@v0.1.1
-      - name: Zip extension build
-        run: zip -qq -r ./build.zip *
-        working-directory: ./extension/build
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git commit -m "docs(): bumping release to ${{ steps.manifest_version.outputs.replaced }}"
-          git tag ${{ github.event.inputs.version }}
+      # - name: Build extension
+      #   uses: actions/setup-node@v1
+      #   with:
+      #     node-version: "12"
+      # - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
+      # - name: Install zip
+      #   uses: montudor/action-zip@v0.1.1
+      # - name: Zip extension build
+      #   run: zip -qq -r ./build.zip *
+      #   working-directory: ./extension/build
+      # - name: Commit files
+      #   run: |
+      #     git config --local user.email "action@github.com"
+      #     git config --local user.name "GitHub Action"
+      #     git add -A
+      #     git commit -m "docs(): bumping release to ${{ steps.manifest_version.outputs.replaced }}"
+      #     git tag ${{ github.event.inputs.version }}
       # - name: Create Pull Request
       #   uses: peter-evans/create-pull-request@v3
       #   with:
