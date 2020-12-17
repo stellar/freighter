@@ -30,8 +30,8 @@ jobs:
         uses: frabert/replace-string-action@v1.2
         with:
           string: ${{ github.event.inputs.version }}
-          pattern: /^(.*?)-/
-          replace-with: "$1"
+          pattern: ^(.*?)-
+          replace-with: $1
       - name: Update manifest.json version
         uses: jossef/action-set-json-field@v1
         with:
@@ -53,38 +53,38 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A
-          git commit -m "docs(): bumping release ${{ steps.semantic_release_info.outputs.git_tag }}"
+          git commit -m "docs(): bumping release to ${{ steps.manifest_version.outputs.replaced }}"
           git tag ${{ github.event.inputs.version }}
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          title: Bump versions to ${{ github.event.inputs.version }}
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          release_name: ${{ github.event.inputs.version }}
-          body: ${{ github.event.inputs.version }}
-          draft: false
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./extension/build/build.zip
-          asset_name: build-${{ github.event.inputs.version }}.zip
-          asset_content_type: application/zip
-      - name: Submit extension to Chrome
-        uses: mnao305/chrome-extension-upload@1.1.1
-        with:
-          file-path: ./extension/build/build.zip
-          extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
-          client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
-          client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
-          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v3
+      #   with:
+      #     title: Bump versions to ${{ github.event.inputs.version }}
+      # - name: Create GitHub Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     tag_name: ${{ github.event.inputs.version }}
+      #     release_name: ${{ github.event.inputs.version }}
+      #     body: ${{ github.event.inputs.version }}
+      #     draft: false
+      #     prerelease: false
+      # - name: Upload Release Asset
+      #   id: upload-release-asset
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./extension/build/build.zip
+      #     asset_name: build-${{ github.event.inputs.version }}.zip
+      #     asset_content_type: application/zip
+      # - name: Submit extension to Chrome
+      #   uses: mnao305/chrome-extension-upload@1.1.1
+      #   with:
+      #     file-path: ./extension/build/build.zip
+      #     extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
+      #     client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
+      #     client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
+      #     refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
