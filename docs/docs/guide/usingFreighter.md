@@ -82,7 +82,7 @@ const result = retrievePublicKey();
 
 #### `signTransaction(string) -> <Promise<string>>`
 
-This function accepts an object containing an transaction XDR string, which it will decode, sign as the user, and then return the signed transaction to your application.
+This function accepts a transaction XDR string, which it will decode, sign as the user, and then return the signed transaction to your application.
 
 The user will need to provide their password if the extension does not currently have their private key. Once the user has provided their password, the extension will have access to the user private key for 5 minutes. The user must then review the transaction details and accept within those 5 minutes for the transaction to be signed.
 
@@ -123,7 +123,7 @@ const userSignTransaction = async (xdr: String) => {
   let error = "";
 
   try {
-    res = await signTransaction(xdr);
+    signedTransaction = await signTransaction(xdr);
   } catch (e) {
     error = e;
   }
@@ -135,5 +135,44 @@ const userSignTransaction = async (xdr: String) => {
   return signedTransaction;
 };
 
-const userSignedTransaction = userSignTransaction();
+const xdr = ""; // replace this with an xdr string of the transaction you want to sign
+const userSignedTransaction = userSignTransaction(xdr);
+```
+
+freighter-api will return a signed transaction xdr. Below is an example of how you might submit this signed transaction to Horizon using `stellar-sdk` (https://github.com/stellar/js-stellar-sdk):
+
+```javascript
+import StellarSdk from "stellar-sdk";
+
+const userSignTransaction = async (xdr: String) => {
+  let signedTransaction = "";
+  let error = "";
+
+  try {
+    signedTransaction = await signTransaction(xdr);
+  } catch (e) {
+    error = e;
+  }
+
+  if (error) {
+    return error;
+  }
+
+  return signedTransaction;
+};
+
+const xdr = ""; // replace this with an xdr string of the transaction you want to sign
+
+const userSignedTransaction = userSignTransaction(xdr);
+
+const SERVER_URL = "https://horizon-testnet.stellar.org";
+
+const server = new StellarSdk.Server(SERVER_URL);
+
+const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
+  userSignedTransaction,
+  SERVER_URL
+);
+
+const response = await server.submitTransaction(transactionToSubmit);
 ```

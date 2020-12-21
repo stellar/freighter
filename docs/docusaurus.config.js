@@ -1,6 +1,6 @@
 module.exports = {
   title: "Freighter Documentation",
-  url: "https://freighter-docs.netlify.app",
+  url: "https://docs.freighter.app",
   baseUrl: "/",
   onBrokenLinks: "throw",
   favicon: "./images/logo.png",
@@ -18,6 +18,19 @@ module.exports = {
           href: "https://github.com/stellar/lyra/tree/master/docs",
           label: "GitHub",
           position: "left",
+        },
+      ],
+    },
+    footer: {
+      links: [
+        {
+          title: "Questions or comments?",
+          items: [
+            {
+              label: "Let us know!",
+              to: "https://stellarform.typeform.com/to/r4FiNpX1",
+            },
+          ],
         },
       ],
     },
