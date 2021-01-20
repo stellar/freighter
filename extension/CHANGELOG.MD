@@ -1,7 +1,13 @@
-# v1.0.3-beta.0
+# v1.0.4-beta.0
+
+- No functional change in this version. Privacy Policy has been updated and
+  extension resubmitted for Firefox review
+
+# v1.0.3-beta.2
 
 - Using `webextension-polyfill-ts` to enable Firefox compatibility, plus
   subsequent refactoring
+- Properly decode all memo types
 
 # v1.0.2-beta.0
 
