@@ -6,19 +6,18 @@ import { Link } from "react-router-dom";
 
 import { getAccountBalance } from "@shared/api/internal";
 
-import { truncatedPublicKey } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { publicKeySelector } from "popup/ducks/authServices";
 
 import { POPUP_WIDTH } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 
-import { COLOR_PALETTE } from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { BasicButton } from "popup/basics/Buttons";
 
 import { Header } from "popup/components/Header";
+import { KeyIdenticon } from "popup/components/KeyIdenticon";
 import { Toast } from "popup/components/Toast";
 import { Menu } from "popup/components/Menu";
 
@@ -28,6 +27,7 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 import { Footer } from "popup/components/Footer";
 
 import "popup/metrics/authServices";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
 const AccountEl = styled.div`
   width: 100%;
@@ -37,8 +37,6 @@ const AccountEl = styled.div`
 `;
 
 const PublicKeyDisplayEl = styled.div`
-  position: relative;
-  display: inline-block;
   padding-right: 0.45rem;
   font-size: 0.81rem;
   text-align: right;
@@ -49,17 +47,14 @@ const PublicKeyDisplayEl = styled.div`
   }
 `;
 
-const PublicKeyEl = styled.span`
-  font-size: 0.875rem;
-  color: ${COLOR_PALETTE.secondaryText};
-  margin-right: 1rem;
-  opacity: 0.7;
+const PublicKeyButtonsEl = styled.div`
+  align-items: center;
+  display: flex;
 `;
 
 const CopyButtonEl = styled(BasicButton)`
   padding: 0;
   margin: 0;
-  vertical-align: middle;
 
   img {
     width: 1rem;
@@ -134,21 +129,26 @@ export const Account = () => {
           <Menu />
           <PublicKeyDisplayEl>
             <p>Your public key</p>
-            <PublicKeyEl>{truncatedPublicKey(publicKey)}</PublicKeyEl>
-            <VerticalCenterLink to={ROUTES.viewPublicKey}>
-              <QrButton />
-            </VerticalCenterLink>
-            <CopyToClipboard
-              text={publicKey}
-              onCopy={() => {
-                setIsCopied(true);
-                emitMetric(METRIC_NAMES.copyPublickKey);
-              }}
-            >
-              <CopyButtonEl>
-                <img src={CopyColorIcon} alt="copy button" />
-              </CopyButtonEl>
-            </CopyToClipboard>
+            <PublicKeyButtonsEl>
+              <KeyIdenticon
+                color={COLOR_PALETTE.primary}
+                publicKey={publicKey}
+              />
+              <VerticalCenterLink to={ROUTES.viewPublicKey}>
+                <QrButton />
+              </VerticalCenterLink>
+              <CopyToClipboard
+                text={publicKey}
+                onCopy={() => {
+                  setIsCopied(true);
+                  emitMetric(METRIC_NAMES.copyPublickKey);
+                }}
+              >
+                <CopyButtonEl>
+                  <img src={CopyColorIcon} alt="copy button" />
+                </CopyButtonEl>
+              </CopyToClipboard>
+            </PublicKeyButtonsEl>
             <CopiedToastWrapperEl>
               <Toast
                 message="Copied to your clipboard 👌"
