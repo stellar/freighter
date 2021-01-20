@@ -42,7 +42,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: "12"
-      - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
+      - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
       - name: Install zip
         uses: montudor/action-zip@v0.1.1
       - name: Zip extension build

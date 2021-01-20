@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.3.5",
+    "@sentry/browser": "^6.0.0",
+    "@sentry/tracing": "^6.0.0",
     "@shared/api": "1.0.0",
     "@shared/constants": "1.0.0",
     "@stellar/wallet-sdk": "^0.1.0-rc.10",
@@ -45,8 +47,8 @@
     "punycode": "^2.1.1",
     "qrcode.react": "^1.0.0",
     "react": "^16.12.0",
-    "react-dom": "^16.12.0",
     "react-copy-to-clipboard": "^5.0.2",
+    "react-dom": "^16.12.0",
     "react-redux": "^7.2.0",
     "react-router-dom": "^5.1.2",
     "redux": "^4.0.5",
