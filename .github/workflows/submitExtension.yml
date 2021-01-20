@@ -3,12 +3,12 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Bump Version
-        default: v1.0.0
+        description: New Version
+        default: "1.0.0"
         required: true
 jobs:
   bump-version:
-    name: Bump Package Version
+    name: Bump Package Version and Submit Extension
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,9 +29,9 @@ jobs:
         id: manifest_version
         uses: frabert/replace-string-action@v1.2
         with:
-          pattern: ./extension/public/static/manifest.json
           string: ${{ github.event.inputs.version }}
-          value: /^(.*?)-/
+          pattern: \-(.*)
+          replace-with: ""
       - name: Update manifest.json version
         uses: jossef/action-set-json-field@v1
         with:
@@ -42,29 +42,25 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: "12"
-      - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"'
+      - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
+      - name: Install zip
+        uses: montudor/action-zip@v0.1.1
       - name: Zip extension build
-        uses: montudor/action-zip@v0.1.0
-        with:
-          args: zip -qq -r ./extension/build/build.zip ./extension/build
-      # - name: Upload & release
-      #   uses: mnao305/chrome-extension-upload@1.1.1
-      #   with:
-      #     file-path: ./extension/build/build.zip
-      #     extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
-      #     client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
-      #     client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
-      #     refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+        run: zip -qq -r ./build.zip *
+        working-directory: ./extension/build
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A
-          git commit -m "docs(): bumping release ${{ steps.semantic_release_info.outputs.git_tag }}"
+          git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
           git tag ${{ github.event.inputs.version }}
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
+        with:
+          title: Bump versions to ${{ github.event.inputs.version }}
       - name: Create GitHub Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -74,3 +70,21 @@ jobs:
           body: ${{ github.event.inputs.version }}
           draft: false
           prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./extension/build/build.zip
+          asset_name: build-${{ github.event.inputs.version }}.zip
+          asset_content_type: application/zip
+      - name: Submit extension to Chrome
+        uses: mnao305/chrome-extension-upload@1.1.1
+        with:
+          file-path: ./extension/build/build.zip
+          extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
+          client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
+          client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}

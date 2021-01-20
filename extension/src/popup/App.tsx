@@ -3,6 +3,8 @@ import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import styled, { createGlobalStyle } from "styled-components";
+import * as Sentry from "@sentry/browser";
+import { Integrations } from "@sentry/tracing";
 
 import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 
@@ -62,6 +64,15 @@ export const store = configureStore({
   reducer: rootReducer,
   middleware: [metricsMiddleware<AppState>(), ...getDefaultMiddleware()],
 });
+
+if (process.env.SENTRY_KEY) {
+  Sentry.init({
+    dsn: process.env.SENTRY_KEY,
+    release: `freighter@${process.env.npm_package_version}`,
+    integrations: [new Integrations.BrowserTracing()],
+    tracesSampleRate: 1.0,
+  });
+}
 
 export function App() {
   return (
