@@ -54,6 +54,10 @@ const IlloContainerEl = styled.div`
   position: absolute;
   top: 1.1rem;
   right: 1rem;
+
+  img {
+    height: 3.125rem;
+  }
 `;
 
 const LinkButtonWrapperEl = styled.div`

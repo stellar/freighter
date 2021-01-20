@@ -29,6 +29,14 @@ import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 import CreatePasswordIllo from "popup/assets/illo-create-password.svg";
 
+const IconImgEl = styled.img`
+  height: 6.25rem;
+`;
+
+const IconEl = () => (
+  <IconImgEl src={CreatePasswordIllo} alt="Create Password" />
+);
+
 const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding-left: 1.55rem;
 `;
@@ -70,7 +78,7 @@ export const AccountCreator = () => {
       <Header />
       <Onboarding
         header="Create a password"
-        icon={CreatePasswordIllo}
+        icon={<IconEl />}
         goBack={() => navigateTo(ROUTES.welcome)}
       >
         <Formik

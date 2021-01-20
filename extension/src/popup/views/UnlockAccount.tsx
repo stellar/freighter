@@ -70,6 +70,10 @@ const ButtonRowEl = styled.div`
 `;
 const IlloContainerEl = styled.div`
   position: relative;
+
+  img {
+    height: 4.0625rem;
+  }
 `;
 
 export const UnlockAccount = () => {

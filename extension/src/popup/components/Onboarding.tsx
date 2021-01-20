@@ -86,7 +86,7 @@ export const Onboarding = ({
   header: string;
   subheader?: string;
   isMaxHeaderLength?: boolean;
-  icon?: string;
+  icon?: React.ReactElement;
   children: React.ReactNode;
 }) => {
   const history = useHistory();
@@ -98,9 +98,7 @@ export const Onboarding = ({
       {goBack && !isNewTabSession ? <BackButton onClick={goBack} /> : null}
       <Screen>
         <HeadingEl>
-          <IlloContainerEl>
-            <img src={icon} alt="Onboarding Illustration" />
-          </IlloContainerEl>
+          <IlloContainerEl>{icon}</IlloContainerEl>
           <HeaderEl isMaxHeaderLength={isMaxHeaderLength}>{header}</HeaderEl>
           {subheader ? <SubheaderEl>{subheader}</SubheaderEl> : null}
         </HeadingEl>

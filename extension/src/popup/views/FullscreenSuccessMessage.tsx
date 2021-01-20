@@ -94,6 +94,10 @@ const MessageListEl = styled.ul`
   }
 `;
 
+const SuccessImgEl = styled.img`
+  height: 7.5rem;
+`;
+
 const MnemonicPhraseConfirmedMessage = () => (
   <>
     <CopyEl>
@@ -157,7 +161,7 @@ export const FullscreenSuccessMessage = () => {
         <FullscreenStyle />
         <ContentWrapperEl>
           <IlloContainerEl>
-            <img src={SuccessIllo} alt="Success Illustration" />
+            <SuccessImgEl src={SuccessIllo} alt="Success Illustration" />
           </IlloContainerEl>
           <HeaderEl>Woo, you’re in!</HeaderEl>
           {IS_MNEMONIC_PHRASE_STATE ? (

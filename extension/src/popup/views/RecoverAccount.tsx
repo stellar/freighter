@@ -51,6 +51,12 @@ const FullHeightFormEl = styled(Form)`
   }
 `;
 
+const IconImgEl = styled.img`
+  height: 7.5rem;
+`;
+
+const IconEl = () => <IconImgEl src={ImportWalletIllo} alt="Import wallet" />;
+
 export const RecoverAccount = () => {
   const publicKey = useSelector(publicKeySelector);
   const authError = useSelector(authErrorSelector);
@@ -116,7 +122,7 @@ export const RecoverAccount = () => {
           <FullHeightFormEl>
             <Onboarding
               header="Import wallet from backup phrase"
-              icon={ImportWalletIllo}
+              icon={<IconEl />}
               isMaxHeaderLength
               goBack={() => navigateTo(ROUTES.welcome)}
             >

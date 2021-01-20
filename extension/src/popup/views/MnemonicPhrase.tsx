@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import shuffle from "lodash/shuffle";
+import styled from "styled-components";
 
 import { emitMetric } from "helpers/metrics";
 import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
@@ -13,6 +14,12 @@ import { DisplayMnemonicPhrase } from "popup/components/mnemonicPhrase/DisplayMn
 
 import ImportWalletIllo from "popup/assets/illo-backup-phrase.svg";
 
+const IconImgEl = styled.img`
+  height: 7.5rem;
+`;
+
+const IconEl = () => <IconImgEl src={ImportWalletIllo} alt="Import wallet" />;
+
 export const MnemonicPhrase = () => {
   const [readyToConfirm, setReadyToConfirm] = useState(false);
 
@@ -25,7 +32,7 @@ export const MnemonicPhrase = () => {
         {readyToConfirm ? (
           <Onboarding
             header="Confirm your backup phrase"
-            icon={ImportWalletIllo}
+            icon={<IconEl />}
             subheader="Select each word in the correct order to confirm you got them right"
             goBack={() => {
               setReadyToConfirm(false);
@@ -35,7 +42,7 @@ export const MnemonicPhrase = () => {
             <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />
           </Onboarding>
         ) : (
-          <Onboarding header="Backup phrase" icon={ImportWalletIllo}>
+          <Onboarding header="Backup phrase" icon={<IconEl />}>
             <DisplayMnemonicPhrase
               mnemonicPhrase={mnemonicPhrase}
               setReadyToConfirm={setReadyToConfirm}
