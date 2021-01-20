@@ -8,6 +8,8 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { TransactionList } from "popup/basics/TransactionList";
 
+import { KeyIdenticon } from "popup/components/KeyIdenticon";
+
 interface Path {
   code: string;
   issuer?: string;
@@ -43,6 +45,7 @@ interface TransactionInfoResponse {
 const OperationBoxEl = styled.div`
   text-align: left;
 `;
+
 const OperationBoxHeaderEl = styled.h4`
   color: ${COLOR_PALETTE.primary};
   font-size: 1.25rem;
@@ -57,11 +60,12 @@ const OperationBoxHeaderEl = styled.h4`
     font-weight: ${FONT_WEIGHT.bold};
   }
 `;
+
 const OperationsListEl = styled(TransactionList)`
   padding-left: 1.25rem;
 
   li {
-    div {
+    & > div {
       width: 50%;
 
       &:first-child {
@@ -97,7 +101,7 @@ const KeyValueList = ({
   operationValue,
 }: {
   operationKey: string;
-  operationValue: string | number;
+  operationValue: string | number | React.ReactNode;
 }) => (
   <li>
     <div>{operationKey}:</div>
@@ -181,7 +185,7 @@ export const Operations = ({
               {destination ? (
                 <KeyValueList
                   operationKey="Destination"
-                  operationValue={truncatedPublicKey(destination)}
+                  operationValue={<KeyIdenticon publicKey={destination} />}
                 />
               ) : null}
 
@@ -219,7 +223,9 @@ export const Operations = ({
                 <>
                   <KeyValueList
                     operationKey="Signer"
-                    operationValue={truncatedPublicKey(signer.ed25519PublicKey)}
+                    operationValue={
+                      <KeyIdenticon publicKey={signer.ed25519PublicKey} />
+                    }
                   />
                   <KeyValueList
                     operationKey="Weight"
@@ -279,7 +285,7 @@ export const Operations = ({
               {inflationDest ? (
                 <KeyValueList
                   operationKey="Inflation Destination"
-                  operationValue={truncatedPublicKey(inflationDest)}
+                  operationValue={<KeyIdenticon publicKey={inflationDest} />}
                 />
               ) : null}
               {setFlags ? (

@@ -4,7 +4,6 @@ import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 
 import { getUrlHostname, parsedSearchParam } from "helpers/urls";
-import { truncatedPublicKey } from "helpers/stellar";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
@@ -16,6 +15,7 @@ import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstT
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import { Header } from "popup/components/Header";
+import { KeyIdenticon } from "popup/components/KeyIdenticon";
 
 import "popup/metrics/access";
 
@@ -31,9 +31,6 @@ const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
   font-size: 0.95rem;
   letter-spacing: 0.1px;
-  color: ${COLOR_PALETTE.primary}};
-`;
-const PublicKeyEl = styled.p`
   color: ${COLOR_PALETTE.primary}};
 `;
 const ButtonContainerEl = styled.div`
@@ -79,7 +76,7 @@ export const GrantAccess = () => {
         <FirstTimeWarningMessage />
         <PunycodedDomain domain={domain} />
         <SubheaderEl>This website wants to know your public key:</SubheaderEl>
-        <PublicKeyEl>&#9675; {truncatedPublicKey(publicKey)}</PublicKeyEl>
+        <KeyIdenticon color={COLOR_PALETTE.primary} publicKey={publicKey} />
         <ButtonContainerEl>
           <RejectButtonEl size="small" onClick={rejectAndClose}>
             Reject

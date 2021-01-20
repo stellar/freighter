@@ -3,11 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
 
-import {
-  truncatedPublicKey,
-  getTransactionInfo,
-  stroopToXlm,
-} from "helpers/stellar";
+import { getTransactionInfo, stroopToXlm } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/decodeMemo";
 
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
@@ -25,6 +21,7 @@ import { TransactionList } from "popup/basics/TransactionList";
 
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
+import { KeyIdenticon } from "popup/components/KeyIdenticon";
 import { Operations } from "popup/components/signTransaction/Operations";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { WarningMessage } from "popup/components/WarningMessage";
@@ -129,7 +126,7 @@ export const SignTransaction = () => {
             <div>
               <strong>Source account:</strong>
             </div>
-            <div>{truncatedPublicKey(_source)}</div>
+            <KeyIdenticon publicKey={_source} />
           </li>
           {_fee ? (
             <li>
