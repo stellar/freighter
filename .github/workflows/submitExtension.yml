@@ -80,6 +80,15 @@ jobs:
           asset_path: ./extension/build/build.zip
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
+      - name: Submit extension to Firefox
+        uses: kewisch/action-web-ext@v1
+        with:
+          cmd: sign
+          source: ./extension/build/build.zip
+          channel: listed
+          apiKey: ${{ secrets.AMO_SIGN_KEY }}
+          apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
+          timeout: 900000
       - name: Submit extension to Chrome
         uses: mnao305/chrome-extension-upload@1.1.1
         with:
@@ -88,3 +97,13 @@ jobs:
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: proj-freighter
+          SLACK_COLOR: "#391EDA"
+          SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
+          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
+          SLACK_TITLE: Freighter v${{ github.event.inputs.version }} has been submitted to app stores for review!
+          SLACK_USERNAME: Freighter Administrative Assistant
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
