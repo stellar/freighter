@@ -1,3 +1,10 @@
+# v1.0.5-beta.0
+
+- Updated illos
+- Added identicons for each public key
+- Add a Typeform for users to leave feedback
+- Added Sentry for bug tracking
+
 # v1.0.4-beta.0
 
 - No functional change in this version. Privacy Policy has been updated and
