@@ -26,7 +26,9 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 
+// TODO: store this in local storage to prevent getting wiped on ext refresh
 let DEFAULT_ACCOUNT_ID = 0;
+
 const APPLICATION_ID = "applicationState";
 const DATA_SHARING_ID = "dataSharingStatus";
 
