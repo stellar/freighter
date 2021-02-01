@@ -243,6 +243,8 @@ export const popupMessageListener = (request: Request) => {
     let selectedPrivateKey = "";
     let accountMnemonicPhrase;
 
+    // TODO: We don't need to do all of this if we have public key/allAccounts and just simply need to start the private key timer
+
     await Promise.all(
       keyIdList.map(async (keyId: string) => {
         let keyStore;
@@ -277,7 +279,7 @@ export const popupMessageListener = (request: Request) => {
       }),
     );
     sessionTimer.startSession({ privateKey: selectedPrivateKey });
-    console.log(store.getState());
+
     return {
       publicKey: publicKeySelector(store.getState()),
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
