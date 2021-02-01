@@ -10,13 +10,14 @@ import { isTestnet } from "@shared/constants/stellar";
 import { Response as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
-import { ALLOWLIST_ID } from "constants/localStorageTypes";
+import { ALLOWLIST_ID, KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 
 import { SessionTimer } from "background/helpers/session";
 import { store } from "background/store";
 import {
+  allAccountsSelector,
   hasPrivateKeySelector,
   privateKeySelector,
   logIn,
@@ -25,7 +26,9 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 
-const KEY_ID = "keyId";
+// TODO: store this in local storage to prevent getting wiped on ext refresh
+let DEFAULT_ACCOUNT_ID = 0;
+
 const APPLICATION_ID = "applicationState";
 const DATA_SHARING_ID = "dataSharingStatus";
 
@@ -59,10 +62,18 @@ export const popupMessageListener = (request: Request) => {
     password: string;
     wallet: StellarHdWallet;
   }) => {
-    const publicKey = wallet.getPublicKey(0);
-    const privateKey = wallet.getSecret(0);
+    const publicKey = wallet.getPublicKey(DEFAULT_ACCOUNT_ID);
+    const privateKey = wallet.getSecret(DEFAULT_ACCOUNT_ID);
 
-    store.dispatch(logIn({ publicKey, mnemonicPhrase }));
+    const allAccounts = allAccountsSelector(store.getState());
+
+    store.dispatch(
+      logIn({
+        publicKey,
+        mnemonicPhrase,
+        allAccounts: [...allAccounts, publicKey],
+      }),
+    );
 
     const keyMetadata = {
       key: {
@@ -84,21 +95,21 @@ export const popupMessageListener = (request: Request) => {
       console.error(e);
     }
 
+    const keyIdListStr = localStorage.getItem(KEY_ID_LIST) || "[]";
+    const keyIdListArr = JSON.parse(keyIdListStr);
+    keyIdListArr.push(keyStore.id);
+
+    localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
     localStorage.setItem(KEY_ID, keyStore.id);
   };
 
-  const createAccount = async () => {
-    const { password } = request;
-
-    const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
-    const wallet = fromMnemonic(mnemonicPhrase);
-
+  const _fundAccount = async (wallet: { getPublicKey: Function }) => {
     if (isTestnet) {
       // fund the account automatically if we're in a dev environment
       try {
         const response = await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(
-            wallet.getPublicKey(0),
+            wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
           )}`,
         );
         const responseJSON = await response.json();
@@ -108,6 +119,15 @@ export const popupMessageListener = (request: Request) => {
         throw new Error("Error creating account");
       }
     }
+  };
+
+  const createAccount = async () => {
+    const { password } = request;
+
+    const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
+    const wallet = fromMnemonic(mnemonicPhrase);
+
+    await _fundAccount(wallet);
 
     await _storeAccount({
       password,
@@ -119,10 +139,34 @@ export const popupMessageListener = (request: Request) => {
     return { publicKey: publicKeySelector(store.getState()) };
   };
 
+  const addAccount = async () => {
+    const { password } = request;
+    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
+
+    if (!mnemonicPhrase) {
+      return { error: "Mnemonic phrase not found" };
+    }
+
+    const wallet = fromMnemonic(mnemonicPhrase);
+
+    DEFAULT_ACCOUNT_ID += 1;
+
+    await _fundAccount(wallet);
+
+    await _storeAccount({
+      password,
+      wallet,
+      mnemonicPhrase,
+    });
+
+    return { publicKey: publicKeySelector(store.getState()) };
+  };
+
   const loadAccount = () => ({
     hasPrivateKey: hasPrivateKeySelector(store.getState()),
     publicKey: publicKeySelector(store.getState()),
     applicationState: localStorage.getItem(APPLICATION_ID) || "",
+    allAccounts: allAccountsSelector(store.getState()),
   });
 
   const getMnemonicPhrase = () => ({
@@ -167,7 +211,6 @@ export const popupMessageListener = (request: Request) => {
       localStorage.setItem(APPLICATION_ID, applicationState);
     }
 
-
     return {
       publicKey: publicKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
@@ -187,30 +230,61 @@ export const popupMessageListener = (request: Request) => {
 
   const confirmPassword = async () => {
     const { password } = request;
-    let keyStore;
-    try {
-      keyStore = await keyManager.loadKey(
-        localStorage.getItem(KEY_ID) || "",
-        password,
-      );
-    } catch (e) {
-      console.error(e);
-    }
-    let extra = { mnemonicPhrase: "" };
-    let publicKey = "";
-    let privateKey = "";
+    const keyIdList = JSON.parse(localStorage.getItem(KEY_ID_LIST) || `[]`);
 
-    if (keyStore) {
-      ({ privateKey, publicKey, extra } = keyStore);
-      const { mnemonicPhrase } = extra;
-      store.dispatch(logIn({ publicKey, mnemonicPhrase }));
-      sessionTimer.startSession({ privateKey });
+    // migration needed
+    if (!keyIdList.length) {
+      keyIdList.push(localStorage.getItem(KEY_ID));
+      localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
     }
+
+    const unlockedAccounts = [] as Array<string>;
+    let selectedPublicKey = "";
+    let selectedPrivateKey = "";
+    let accountMnemonicPhrase;
+
+    // TODO: We don't need to do all of this if we have public key/allAccounts and just simply need to start the private key timer
+
+    await Promise.all(
+      keyIdList.map(async (keyId: string) => {
+        let keyStore;
+        try {
+          keyStore = await keyManager.loadKey(keyId, password);
+        } catch (e) {
+          console.error(e);
+        }
+
+        if (keyStore) {
+          const {
+            publicKey,
+            privateKey,
+            extra = { mnemonicPhrase: "" },
+          } = keyStore;
+          const { mnemonicPhrase } = extra;
+          unlockedAccounts.push(publicKey);
+          if (keyId === localStorage.getItem(KEY_ID)) {
+            selectedPublicKey = publicKey;
+            selectedPrivateKey = privateKey;
+            accountMnemonicPhrase = mnemonicPhrase;
+          }
+        }
+      }),
+    );
+
+    store.dispatch(
+      logIn({
+        publicKey: selectedPublicKey,
+        mnemonicPhrase: accountMnemonicPhrase,
+        allAccounts: unlockedAccounts,
+      }),
+    );
+    sessionTimer.startSession({ privateKey: selectedPrivateKey });
 
     return {
       publicKey: publicKeySelector(store.getState()),
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      allAccounts: allAccountsSelector(store.getState()),
     };
   };
 
@@ -307,6 +381,7 @@ export const popupMessageListener = (request: Request) => {
 
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
+    [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,

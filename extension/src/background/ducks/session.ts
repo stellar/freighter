@@ -4,11 +4,13 @@ const initialState = {
   publicKey: "",
   privateKey: "",
   mnemonicPhrase: "",
+  allAccounts: [""],
 };
 
 interface UiData {
   publicKey: string;
   mnemonicPhrase?: string;
+  allAccounts: Array<string>;
 }
 
 interface AppData {
@@ -20,12 +22,17 @@ export const sessionSlice = createSlice({
   initialState,
   reducers: {
     logIn: (state, action: { payload: UiData }) => {
-      const { publicKey, mnemonicPhrase = "" } = action.payload;
+      const {
+        publicKey,
+        mnemonicPhrase = "",
+        allAccounts = [""],
+      } = action.payload;
 
       return {
         ...state,
         publicKey,
         mnemonicPhrase,
+        allAccounts,
       };
     },
     logOut: () => initialState,
@@ -55,6 +62,10 @@ export const publicKeySelector = createSelector(
 export const mnemonicPhraseSelector = createSelector(
   sessionSelector,
   (session) => session.mnemonicPhrase,
+);
+export const allAccountsSelector = createSelector(
+  sessionSelector,
+  (session) => session.allAccounts,
 );
 export const hasPrivateKeySelector = createSelector(
   sessionSelector,
