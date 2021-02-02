@@ -2,6 +2,7 @@ export enum ROUTES {
   debug = "/debug",
   welcome = "/",
   account = "/account",
+  addAccount = "/add-account",
   signTransaction = "/sign-transaction",
   grantAccess = "/grant-access",
   mnemonicPhrase = "/mnemonic-phrase",

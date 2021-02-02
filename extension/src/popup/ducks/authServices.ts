@@ -5,6 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
+  addAccount as addAccountService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   createAccount as createAccountService,
   recoverAccount as recoverAccountService,
@@ -26,6 +27,24 @@ export const createAccount = createAsyncThunk<
 
   try {
     res = await createAccountService(password);
+  } catch (e) {
+    console.error("Failed when creating an account: ", e.message);
+    return thunkApi.rejectWithValue({
+      errorMessage: e.message,
+    });
+  }
+  return res;
+});
+
+export const addAccount = createAsyncThunk<
+  { publicKey: string; allAccounts: Array<string> },
+  string,
+  { rejectValue: ErrorMessage }
+>("auth/addAccount", async (password, thunkApi) => {
+  let res = { publicKey: "", allAccounts: [] as Array<string> };
+
+  try {
+    res = await addAccountService(password);
   } catch (e) {
     console.error("Failed when creating an account: ", e.message);
     return thunkApi.rejectWithValue({
@@ -107,6 +126,7 @@ export const confirmPassword = createAsyncThunk<
     publicKey: string;
     hasPrivateKey: boolean;
     applicationState: APPLICATION_STATE;
+    allAccounts: Array<string>;
   },
   string,
   { rejectValue: ErrorMessage }
@@ -115,6 +135,7 @@ export const confirmPassword = createAsyncThunk<
     publicKey: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: [""],
   };
   try {
     res = await confirmPasswordService(phrase);
@@ -162,6 +183,7 @@ export const signOut = createAsyncThunk<
 });
 
 interface InitialState {
+  allAccounts: Array<string>;
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
@@ -169,6 +191,7 @@ interface InitialState {
 }
 
 const initialState: InitialState = {
+  allAccounts: [],
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   publicKey: "",
   error: "",
@@ -194,6 +217,26 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(createAccount.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
+    builder.addCase(addAccount.fulfilled, (state, action) => {
+      const { publicKey, allAccounts } = action.payload || {
+        publicKey: "",
+        allAccounts: [],
+      };
+
+      return {
+        ...state,
+        publicKey,
+        allAccounts,
+      };
+    });
+    builder.addCase(addAccount.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
 
       return {
@@ -236,10 +279,16 @@ const authSlice = createSlice({
       applicationState: action.payload.applicationState,
     }));
     builder.addCase(loadAccount.fulfilled, (state, action) => {
-      const { hasPrivateKey, publicKey, applicationState } = action.payload || {
+      const {
+        hasPrivateKey,
+        publicKey,
+        applicationState,
+        allAccounts,
+      } = action.payload || {
         hasPrivateKey: false,
         publicKey: "",
         applicationState: APPLICATION_STATE.APPLICATION_STARTED,
+        allAccounts: [""],
       };
       return {
         ...state,
@@ -247,6 +296,7 @@ const authSlice = createSlice({
         applicationState:
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
+        allAccounts,
       };
     });
     builder.addCase(loadAccount.rejected, (state, action) => {
@@ -268,10 +318,16 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(confirmPassword.fulfilled, (state, action) => {
-      const { publicKey, applicationState, hasPrivateKey } = action.payload || {
+      const {
+        publicKey,
+        applicationState,
+        hasPrivateKey,
+        allAccounts,
+      } = action.payload || {
         publicKey: "",
         hasPrivateKey: false,
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        allAccounts: [""],
       };
       return {
         ...state,
@@ -279,6 +335,7 @@ const authSlice = createSlice({
         applicationState:
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
+        allAccounts,
       };
     });
     builder.addCase(signOut.fulfilled, (_state, action) => {
@@ -299,6 +356,10 @@ const authSelector = (state: { auth: InitialState }) => state.auth;
 export const hasPrivateKeySelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.hasPrivateKey,
+);
+export const allAccountsSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.allAccounts,
 );
 export const applicationStateSelector = createSelector(
   authSelector,

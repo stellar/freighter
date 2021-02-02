@@ -127,6 +127,7 @@ export const Account = () => {
       <AccountEl>
         <RowEl>
           <Menu />
+          <Link to={ROUTES.addAccount}>Add Account</Link>
           <PublicKeyDisplayEl>
             <p>Your public key</p>
             <PublicKeyButtonsEl>

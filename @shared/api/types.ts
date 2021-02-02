@@ -21,6 +21,7 @@ export interface Response {
   type: SERVICE_TYPES;
   url: string;
   isDataSharingAllowed: boolean;
+  allAccounts: Array<string>;
 }
 
 export interface ExternalRequest {

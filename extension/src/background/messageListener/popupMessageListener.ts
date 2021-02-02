@@ -159,7 +159,12 @@ export const popupMessageListener = (request: Request) => {
       mnemonicPhrase,
     });
 
-    return { publicKey: publicKeySelector(store.getState()) };
+    const currentState = store.getState();
+
+    return {
+      publicKey: publicKeySelector(currentState),
+      allAccounts: allAccountsSelector(currentState),
+    };
   };
 
   const loadAccount = () => ({
