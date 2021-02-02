@@ -24,10 +24,29 @@ export const createAccount = async (
   return { publicKey };
 };
 
+export const addAccount = async (
+  password: string,
+): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
+  let publicKey = "";
+  let allAccounts = [] as Array<string>;
+
+  try {
+    ({ allAccounts, publicKey } = await sendMessageToBackground({
+      password,
+      type: SERVICE_TYPES.ADD_ACCOUNT,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { allAccounts, publicKey };
+};
+
 export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
   applicationState: APPLICATION_STATE;
+  allAccounts: Array<string>;
 }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_ACCOUNT,
@@ -95,11 +114,13 @@ export const confirmPassword = async (
   publicKey: string;
   hasPrivateKey: boolean;
   applicationState: APPLICATION_STATE;
+  allAccounts: Array<string>;
 }> => {
   let response = {
     publicKey: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: [] as Array<string>,
   };
   try {
     response = await sendMessageToBackground({
