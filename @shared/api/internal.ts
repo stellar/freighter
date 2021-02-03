@@ -42,6 +42,14 @@ export const addAccount = async (
   return { allAccounts, publicKey };
 };
 
+export const makeAccountActive = (
+  publicKey: string,
+): Promise<{ publicKey: string; hasPrivateKey: boolean }> =>
+  sendMessageToBackground({
+    publicKey,
+    type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
+  });
+
 export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
