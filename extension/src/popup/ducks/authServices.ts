@@ -6,6 +6,7 @@ import {
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
+  makeAccountActive as makeAccountActiveService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   createAccount as createAccountService,
   recoverAccount as recoverAccountService,
@@ -53,6 +54,11 @@ export const addAccount = createAsyncThunk<
   }
   return res;
 });
+
+export const makeAccountActive = createAsyncThunk(
+  "auth/makeAccountActive",
+  (publicKey: string) => makeAccountActiveService(publicKey),
+);
 
 export const recoverAccount = createAsyncThunk<
   { publicKey: string },
@@ -242,6 +248,28 @@ const authSlice = createSlice({
       return {
         ...state,
         error: errorMessage,
+      };
+    });
+    builder.addCase(makeAccountActive.fulfilled, (state, action) => {
+      const { publicKey, hasPrivateKey } = action.payload || {
+        publicKey: "",
+        hasPrivateKey: false,
+      };
+
+      return {
+        ...state,
+        publicKey,
+        hasPrivateKey,
+      };
+    });
+    builder.addCase(makeAccountActive.rejected, (state, action) => {
+      const {
+        message = "Freighter was unable to switch to this account",
+      } = action.error;
+
+      return {
+        ...state,
+        error: message,
       };
     });
     builder.addCase(recoverAccount.fulfilled, (state, action) => {

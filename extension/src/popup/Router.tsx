@@ -16,6 +16,7 @@ import { openTab } from "popup/helpers/navigate";
 
 import { ROUTES } from "popup/constants/routes";
 import {
+  allAccountsSelector,
   applicationStateSelector,
   hasPrivateKeySelector,
   loadAccount,
@@ -132,6 +133,7 @@ const UnlockAccountRoute = (props: RouteProps) => {
 };
 
 const HomeRoute = () => {
+  const allAccounts = useSelector(allAccountsSelector);
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
   const error = useSelector(authErrorSelector);
@@ -143,7 +145,7 @@ const HomeRoute = () => {
     return null;
   }
 
-  if (!publicKey) {
+  if (!publicKey || !allAccounts.length) {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
       return <Redirect to={ROUTES.unlockAccount} />;
     }

@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 
 import { getAccountBalance } from "@shared/api/internal";
 
 import { emitMetric } from "helpers/metrics";
-import { publicKeySelector } from "popup/ducks/authServices";
+import {
+  allAccountsSelector,
+  publicKeySelector,
+  makeAccountActive,
+} from "popup/ducks/authServices";
 
 import { POPUP_WIDTH } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
@@ -106,6 +110,9 @@ export const Account = () => {
   const [accountBalance, setaccountBalance] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const publicKey = useSelector(publicKeySelector);
+  const allAccounts = useSelector(allAccountsSelector);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     let res = { balance: "" };
@@ -166,6 +173,26 @@ export const Account = () => {
           </div>
         </AccountDetailsEl>
       </AccountEl>
+      <ul>
+        {allAccounts.map((account) => (
+          <li>
+            <small>
+              {account}{" "}
+              {account === publicKey ? (
+                "✓"
+              ) : (
+                <button
+                  onClick={() => {
+                    dispatch(makeAccountActive(account));
+                  }}
+                >
+                  Activate
+                </button>
+              )}
+            </small>
+          </li>
+        ))}
+      </ul>
       <Footer />
     </>
   ) : null;
