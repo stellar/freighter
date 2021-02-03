@@ -13,8 +13,9 @@ import { MessageResponder } from "background/types";
 import { ALLOWLIST_ID, KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
-
+import { getKeyIdList } from "background/helpers/keyId";
 import { SessionTimer } from "background/helpers/session";
+
 import { store } from "background/store";
 import {
   allAccountsSelector,
@@ -24,6 +25,7 @@ import {
   logOut,
   mnemonicPhraseSelector,
   publicKeySelector,
+  setActivePublicKey,
 } from "background/ducks/session";
 
 // TODO: store this in local storage to prevent getting wiped on ext refresh
@@ -95,8 +97,7 @@ export const popupMessageListener = (request: Request) => {
       console.error(e);
     }
 
-    const keyIdListStr = localStorage.getItem(KEY_ID_LIST) || "[]";
-    const keyIdListArr = JSON.parse(keyIdListStr);
+    const keyIdListArr = getKeyIdList();
     keyIdListArr.push(keyStore.id);
 
     localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
@@ -164,6 +165,26 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
+    };
+  };
+
+  const makeAccountActive = () => {
+    const { publicKey } = request;
+
+    const allAccounts = allAccountsSelector(store.getState());
+    const publicKeyIndex =
+      allAccounts.indexOf(publicKey) > -1 ? allAccounts.indexOf(publicKey) : 0;
+    const keyIdList = getKeyIdList();
+
+    const activeKeyId = keyIdList[publicKeyIndex];
+
+    localStorage.setItem(KEY_ID, activeKeyId);
+
+    store.dispatch(setActivePublicKey({ publicKey }));
+
+    return {
+      publicKey: publicKeySelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
     };
   };
 
@@ -235,7 +256,7 @@ export const popupMessageListener = (request: Request) => {
 
   const confirmPassword = async () => {
     const { password } = request;
-    const keyIdList = JSON.parse(localStorage.getItem(KEY_ID_LIST) || `[]`);
+    const keyIdList = getKeyIdList();
 
     // migration needed
     if (!keyIdList.length) {
@@ -388,6 +409,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
+    [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,
     [SERVICE_TYPES.RECOVER_ACCOUNT]: recoverAccount,
