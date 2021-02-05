@@ -6,7 +6,6 @@ import styled from "styled-components";
 import { Formik } from "formik";
 
 import { ROUTES } from "popup/constants/routes";
-import { POPUP_WIDTH } from "constants/dimensions";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { navigateTo, openTab } from "popup/helpers/navigate";
@@ -20,6 +19,7 @@ import {
   ApiErrorMessage,
   TextField,
 } from "popup/basics/Forms";
+import { SubviewWrapper } from "popup/basics/AccountSubview";
 
 import { Header } from "popup/components/Header";
 
@@ -27,12 +27,6 @@ import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
 
 import WaveIllo from "popup/assets/illo-wave.svg";
 
-const UnlockAccountEl = styled.div`
-  width: 100%;
-  max-width: ${POPUP_WIDTH}px;
-  box-sizing: border-box;
-  padding: 2rem 2.5rem;
-`;
 const HeaderContainerEl = styled.div`
   display: flex;
   align-items: center;
@@ -100,7 +94,7 @@ export const UnlockAccount = () => {
   return (
     <>
       <Header />
-      <UnlockAccountEl>
+      <SubviewWrapper>
         <Formik onSubmit={handleSubmit} initialValues={initialValues}>
           {({ dirty, isSubmitting, isValid }) => (
             <Form>
@@ -144,7 +138,7 @@ export const UnlockAccount = () => {
             </ImportButtonEl>
           </ListItemEl>
         </UnorderedListEl>
-      </UnlockAccountEl>
+      </SubviewWrapper>
     </>
   );
 };

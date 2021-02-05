@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
+import { POPUP_WIDTH } from "constants/dimensions";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { ROUTES } from "popup/constants/routes";
 
@@ -30,7 +31,7 @@ export const HeaderEl = styled.h1`
   padding-left: 1rem;
 `;
 
-export const SubviewBackButton = () => (
+const SubviewBackButton = () => (
   <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
 );
 
@@ -44,3 +45,10 @@ export const SubviewHeader = ({ headerText }: SubiewHeaderProps) => (
     <HeaderEl>{headerText}</HeaderEl>
   </HeaderContainerEl>
 );
+
+export const SubviewWrapper = styled.div`
+  width: 100%;
+  max-width: ${POPUP_WIDTH}px;
+  box-sizing: border-box;
+  padding: 2rem 2.5rem;
+`;

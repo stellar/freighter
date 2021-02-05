@@ -3,12 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { Formik } from "formik";
 
-import { POPUP_WIDTH } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
 
-import { SubviewHeader } from "popup/basics/AccountSubview";
+import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 import {
   ApiErrorMessage,
   Error,
@@ -22,13 +21,6 @@ import { addAccount, authErrorSelector } from "popup/ducks/authServices";
 
 import { WarningMessage } from "popup/components/WarningMessage";
 import IconOrangeLock from "popup/assets/icon-orange-lock.svg";
-
-const UnlockAccountEl = styled.div`
-  width: 100%;
-  max-width: ${POPUP_WIDTH}px;
-  box-sizing: border-box;
-  padding: 2rem 2.5rem;
-`;
 
 export const ImportAccount = () => {
   interface FormValues {
@@ -52,7 +44,7 @@ export const ImportAccount = () => {
 
   return (
     <>
-      <UnlockAccountEl>
+      <SubviewWrapper>
         <SubviewHeader headerText="Import Stellar secret key" />
         <WarningMessage
           icon={IconOrangeLock}
@@ -62,7 +54,7 @@ export const ImportAccount = () => {
             <li>
               Freighter <strong>can’t recover</strong> your imported secret key
               using your backup phrase. Storing your secret key is your
-              reponsability
+              reponsibility
             </li>
 
             <li>
@@ -112,7 +104,7 @@ export const ImportAccount = () => {
             </>
           )}
         </Formik>
-      </UnlockAccountEl>
+      </SubviewWrapper>
     </>
   );
 };

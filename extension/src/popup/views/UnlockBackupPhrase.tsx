@@ -4,16 +4,13 @@ import { Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
 
-import { POPUP_WIDTH } from "constants/dimensions";
-
 import { emitMetric } from "helpers/metrics";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
-import { COLOR_PALETTE } from "popup/constants/styles";
 
-import { SubviewHeader } from "popup/basics/AccountSubview";
+import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 import {
   Form,
   SubmitButton,
@@ -23,14 +20,6 @@ import {
 } from "popup/basics/Forms";
 
 import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
-
-const UnlockAccountEl = styled.div`
-  background: ${COLOR_PALETTE.background};
-  width: 100%;
-  max-width: ${POPUP_WIDTH}px;
-  box-sizing: border-box;
-  padding: 2.68rem 2.18rem;
-`;
 
 const CustomFormTextFieldEl = styled(TextField)`
   padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
@@ -71,7 +60,7 @@ export const UnlockBackupPhrase = () => {
   };
 
   return (
-    <UnlockAccountEl>
+    <SubviewWrapper>
       <SubviewHeader headerText="Show backup phrase" />
       <BackupPhraseWarningMessage />
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
@@ -99,6 +88,6 @@ export const UnlockBackupPhrase = () => {
           </Form>
         )}
       </Formik>
-    </UnlockAccountEl>
+    </SubviewWrapper>
   );
 };

@@ -3,8 +3,6 @@ import styled from "styled-components";
 import { Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 
-import { POPUP_WIDTH } from "constants/dimensions";
-
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { ROUTES } from "popup/constants/routes";
 
@@ -14,15 +12,9 @@ import {
 } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
 
-import { SubviewHeader } from "popup/basics/AccountSubview";
+import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 import { Form, FormRow, CheckboxField, SubmitButton } from "popup/basics/Forms";
 
-const El = styled.div`
-  background: ${COLOR_PALETTE.background};
-  width: 100%;
-  max-width: ${POPUP_WIDTH}px;
-  padding: 2rem 2.5rem;
-`;
 const SettingRowEl = styled.div`
   margin-bottom: 2.8rem;
 `;
@@ -62,7 +54,7 @@ export const Settings = () => {
   };
 
   return (
-    <El>
+    <SubviewWrapper>
       <SubviewHeader headerText="Settings" />
       <Formik
         initialValues={initialValues}
@@ -91,6 +83,6 @@ export const Settings = () => {
           </FormRowEl>
         </Form>
       </Formik>
-    </El>
+    </SubviewWrapper>
   );
 };

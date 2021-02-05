@@ -1,14 +1,12 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
-import styled from "styled-components";
 
-import { POPUP_WIDTH } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
 
-import { SubviewHeader } from "popup/basics/AccountSubview";
+import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 
 import {
   ApiErrorMessage,
@@ -19,13 +17,6 @@ import {
 } from "popup/basics/Forms";
 
 import { addAccount, authErrorSelector } from "popup/ducks/authServices";
-
-const UnlockAccountEl = styled.div`
-  width: 100%;
-  max-width: ${POPUP_WIDTH}px;
-  box-sizing: border-box;
-  padding: 2rem 2.5rem;
-`;
 
 interface FormValues {
   password: string;
@@ -51,8 +42,8 @@ export const AddAccount = () => {
 
   return (
     <>
-      <UnlockAccountEl>
-        <SubviewHeader headerText="Enter password to continue" />
+      <SubviewWrapper>
+        <SubviewHeader headerText="Add a new Stellar address" />
         <Formik initialValues={initialValues} onSubmit={handleSubmit}>
           {({ dirty, isSubmitting, isValid }) => (
             <>
@@ -72,13 +63,13 @@ export const AddAccount = () => {
                   isSubmitting={isSubmitting}
                   isValid={isValid}
                 >
-                  Add new account
+                  Add new address
                 </SubmitButton>
               </FormRow>
             </>
           )}
-        </Formik>{" "}
-      </UnlockAccountEl>
+        </Formik>
+      </SubviewWrapper>
     </>
   );
 };
