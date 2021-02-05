@@ -90,7 +90,6 @@ export const AccountListIdenticon = ({
   active = false,
   checked = false,
   publicKey = "",
-  ...props
 }: KeyIdenticonProps) => {
   const dispatch = useDispatch();
   const shortPublicKey = truncatedPublicKey(publicKey);
@@ -110,7 +109,7 @@ export const AccountListIdenticon = ({
         <AccountNumberEl active={active}>
           Account {accountNumber}
         </AccountNumberEl>
-        <PublicKeyEl {...props}>{shortPublicKey}</PublicKeyEl>
+        <PublicKeyEl>{shortPublicKey}</PublicKeyEl>
       </AccountKeyButtonEl>
     </KeyIdenticonWrapperEl>
   );
