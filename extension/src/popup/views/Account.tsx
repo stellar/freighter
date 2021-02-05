@@ -51,9 +51,10 @@ const AccountHeaderEl = styled.div`
 `;
 
 const AccountDropdownButtonEl = styled.div`
+  align-items: center;
   border: 1px solid ${COLOR_PALETTE.greyFaded};
   border-radius: 5rem;
-  align-items: center;
+  cursor: pointer;
   display: flex;
   margin: 0.875rem 0;
   padding: 0.75rem;
@@ -69,6 +70,7 @@ const AccountDropdownArrowEl = styled.span`
 `;
 
 interface AccountDropdownOptionsProps {
+  dropdownCount: number;
   isDropdownOpen: boolean;
 }
 
@@ -77,8 +79,11 @@ const AccountDropdownOptionsEl = styled.ul`
   border-radius: 0.3125rem;
   box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.06);
   height: auto;
-  max-height: ${({ isDropdownOpen }: AccountDropdownOptionsProps) =>
-    isDropdownOpen ? "13rem" : "0"};
+  max-height: ${({
+    dropdownCount,
+    isDropdownOpen,
+  }: AccountDropdownOptionsProps) =>
+    isDropdownOpen ? `${dropdownCount * 6.5}rem` : "0"};
   list-style-type: none;
   margin: 0 0 0 0.75rem;
   overflow: hidden;
@@ -192,12 +197,15 @@ export const Account = () => {
             />
             <AccountDropdownArrowEl />
           </AccountDropdownButtonEl>
-          <AccountDropdownOptionsEl isDropdownOpen={isDropdownOpen}>
+          <AccountDropdownOptionsEl
+            dropdownCount={allAccounts.length}
+            isDropdownOpen={isDropdownOpen}
+          >
             {allAccounts.map((account: string, i: number) => {
               const isSelected = account === publicKey;
 
               return (
-                <AccountDropdownAccountEl>
+                <AccountDropdownAccountEl key={`account-${account}`}>
                   <AccountListIdenticon
                     accountNumber={i + 1}
                     active={isSelected}
