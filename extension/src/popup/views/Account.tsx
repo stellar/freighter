@@ -24,7 +24,9 @@ import { AccountListIdenticon } from "popup/components/identicons/AccountListIde
 import { Toast } from "popup/components/Toast";
 import { Menu } from "popup/components/Menu";
 
+import CreateNewIcon from "popup/assets/create-new.svg";
 import CopyColorIcon from "popup/assets/copy-color.svg";
+import ImportNewIcon from "popup/assets/import-new.svg";
 import QrCode from "popup/assets/qr-code.png";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { Footer } from "popup/components/Footer";
@@ -48,9 +50,7 @@ const AccountHeaderEl = styled.div`
   padding: 0 1rem;
 `;
 
-const AccountDropdownEl = styled.div``;
-
-const AccountDropdownButtonEl = styled(BasicButton)`
+const AccountDropdownButtonEl = styled.div`
   border: 1px solid ${COLOR_PALETTE.greyFaded};
   border-radius: 5rem;
   align-items: center;
@@ -89,11 +89,22 @@ const AccountDropdownOptionsEl = styled.ul`
 
 const AccountDropdownAccountEl = styled.li`
   border-bottom: 1px solid ${COLOR_PALETTE.greyFaded};
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 5.6rem 0.75rem 1rem;
 `;
 
 const AccountDropdownOptionEl = styled.li`
   padding: 0.75rem 1rem;
+`;
+
+const AccountDropdownOptionLinkEl = styled(Link)`
+  color: ${COLOR_PALETTE.secondaryText};
+  display: flex;
+`;
+
+const AccountDropdownOptionIconEl = styled.div`
+  margin-right: 0.5rem;
+  width: 1.5rem;
+  text-align: center;
 `;
 
 const CopyButtonEl = styled(BasicButton)`
@@ -170,7 +181,7 @@ export const Account = () => {
         <Menu />
       </Header>
       <AccountHeaderEl>
-        <AccountDropdownEl>
+        <section>
           <AccountDropdownButtonEl
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
@@ -191,7 +202,7 @@ export const Account = () => {
               </AccountDropdownAccountEl>
             ))}
             <AccountDropdownOptionEl>
-              <Link
+              <AccountDropdownOptionLinkEl
                 to={{
                   pathname: ROUTES.addAccount,
                   state: {
@@ -200,14 +211,22 @@ export const Account = () => {
                   },
                 }}
               >
-                + Create a new Stellar address
-              </Link>
+                <AccountDropdownOptionIconEl>
+                  <img src={CreateNewIcon} alt="create new address button" />{" "}
+                </AccountDropdownOptionIconEl>
+                <span>Create a new Stellar address</span>
+              </AccountDropdownOptionLinkEl>
             </AccountDropdownOptionEl>
             <AccountDropdownOptionEl>
-              <Link to={ROUTES.addAccount}>+ Import a Stellar secret key</Link>
+              <AccountDropdownOptionLinkEl to={ROUTES.addAccount}>
+                <AccountDropdownOptionIconEl>
+                  <img src={ImportNewIcon} alt="import a Stellar key button" />{" "}
+                </AccountDropdownOptionIconEl>
+                <span>Import a Stellar secret key</span>
+              </AccountDropdownOptionLinkEl>
             </AccountDropdownOptionEl>
           </AccountDropdownOptionsEl>
-        </AccountDropdownEl>
+        </section>
         <CopyToClipboard
           text={publicKey}
           onCopy={() => {

@@ -63,13 +63,15 @@ const AccountKeyButtonEl = styled(BasicButton)`
 `;
 
 const AccountNumberEl = styled.h3`
-  color: ${COLOR_PALETTE.primary};
-  margin: 0;
+  font-size: 0.8125rem;
+  color: ${({ active }: ActiveProps) =>
+    active ? COLOR_PALETTE.primary : COLOR_PALETTE.text};
+  margin: 0 0 0.1875rem 0;
 `;
 
 const PublicKeyEl = styled.span`
   font-size: 0.8125rem;
-  color: ${COLOR_PALETTE.secondaryText};
+  color: ${COLOR_PALETTE.grey};
 `;
 
 interface KeyIdenticonProps {
@@ -99,7 +101,9 @@ export const AccountListIdenticon = ({
         <IdenticonEl string={shortPublicKey} />
       </IdenticonWrapperEl>
       <AccountKeyButtonEl active={active} onClick={handleMakeAccountActive}>
-        <AccountNumberEl>Account {accountNumber}</AccountNumberEl>
+        <AccountNumberEl active={active}>
+          Account {accountNumber}
+        </AccountNumberEl>
         <PublicKeyEl {...props}>{shortPublicKey}</PublicKeyEl>
       </AccountKeyButtonEl>
     </KeyIdenticonWrapperEl>
