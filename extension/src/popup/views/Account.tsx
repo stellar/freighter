@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 import { getAccountBalance } from "@shared/api/internal";
@@ -10,7 +10,6 @@ import { emitMetric } from "helpers/metrics";
 import {
   allAccountsSelector,
   publicKeySelector,
-  makeAccountActive,
 } from "popup/ducks/authServices";
 
 import { POPUP_WIDTH } from "constants/dimensions";
@@ -21,7 +20,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { BasicButton } from "popup/basics/Buttons";
 
 import { Header } from "popup/components/Header";
-import { KeyIdenticon } from "popup/components/KeyIdenticon";
+import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { Toast } from "popup/components/Toast";
 import { Menu } from "popup/components/Menu";
 
@@ -40,27 +39,70 @@ const AccountEl = styled.div`
   padding: 1.25rem 2rem;
 `;
 
-const PublicKeyDisplayEl = styled.div`
-  padding-right: 0.45rem;
+const AccountHeaderEl = styled.div`
+  align-items: center;
+  background: ${COLOR_PALETTE.white};
+  display: flex;
   font-size: 0.81rem;
-  text-align: right;
-
-  p {
-    margin: 0;
-    line-height: 2;
-  }
+  justify-content: space-between;
+  padding: 0 1rem;
 `;
 
-const PublicKeyButtonsEl = styled.div`
+const AccountDropdownEl = styled.div``;
+
+const AccountDropdownButtonEl = styled(BasicButton)`
+  border: 1px solid ${COLOR_PALETTE.greyFaded};
+  border-radius: 5rem;
   align-items: center;
   display: flex;
+  margin: 0.875rem 0;
+  padding: 0.75rem;
+`;
+
+const AccountDropdownArrowEl = styled.span`
+  border-left: 0.5rem solid transparent;
+  border-right: 0.5rem solid transparent;
+  border-top: 0.5rem solid #7b869d;
+  margin: 0 0.75rem 0 3rem;
+  width: 0;
+  height: 0;
+`;
+
+interface AccountDropdownOptionsProps {
+  isDropdownOpen: boolean;
+}
+
+const AccountDropdownOptionsEl = styled.ul`
+  background: ${COLOR_PALETTE.white};
+  border-radius: 0.3125rem;
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.06);
+  height: auto;
+  max-height: ${({ isDropdownOpen }: AccountDropdownOptionsProps) =>
+    isDropdownOpen ? "13rem" : "0"};
+  list-style-type: none;
+  margin: 0 0 0 0.75rem;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  transition: max-height 0.3s ease-out;
+`;
+
+const AccountDropdownAccountEl = styled.li`
+  border-bottom: 1px solid ${COLOR_PALETTE.greyFaded};
+  padding: 0.75rem 1rem;
+`;
+
+const AccountDropdownOptionEl = styled.li`
+  padding: 0.75rem 1rem;
 `;
 
 const CopyButtonEl = styled(BasicButton)`
+  color: ${COLOR_PALETTE.primary};
+  display: flex;
   padding: 0;
-  margin: 0;
 
   img {
+    margin-right: 0.5rem;
     width: 1rem;
     height: 1rem;
   }
@@ -69,9 +111,9 @@ const CopyButtonEl = styled(BasicButton)`
 const QrButton = styled(BasicButton)`
   background: url(${QrCode});
   background-size: cover;
-  margin-right: 1rem;
   width: 1rem;
   height: 1rem;
+  margin-right: 0.5rem;
   vertical-align: text-top;
 `;
 
@@ -101,18 +143,12 @@ const CopiedToastWrapperEl = styled.div`
   margin: 1rem 0 0 -2rem;
 `;
 
-const RowEl = styled.div`
-  display: flex;
-  justify-content: space-between;
-`;
-
 export const Account = () => {
   const [accountBalance, setaccountBalance] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const publicKey = useSelector(publicKeySelector);
   const allAccounts = useSelector(allAccountsSelector);
-
-  const dispatch = useDispatch();
 
   useEffect(() => {
     let res = { balance: "" };
@@ -130,42 +166,73 @@ export const Account = () => {
 
   return accountBalance ? (
     <>
-      <Header />
-      <AccountEl>
-        <RowEl>
-          <Menu />
-          <Link to={ROUTES.addAccount}>Add Account</Link>
-          <PublicKeyDisplayEl>
-            <p>Your public key</p>
-            <PublicKeyButtonsEl>
-              <KeyIdenticon
-                color={COLOR_PALETTE.primary}
-                publicKey={publicKey}
-              />
-              <VerticalCenterLink to={ROUTES.viewPublicKey}>
-                <QrButton />
-              </VerticalCenterLink>
-              <CopyToClipboard
-                text={publicKey}
-                onCopy={() => {
-                  setIsCopied(true);
-                  emitMetric(METRIC_NAMES.copyPublickKey);
+      <Header>
+        <Menu />
+      </Header>
+      <AccountHeaderEl>
+        <AccountDropdownEl>
+          <AccountDropdownButtonEl
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          >
+            <AccountListIdenticon
+              accountNumber={allAccounts.indexOf(publicKey) + 1}
+              publicKey={publicKey}
+            />
+            <AccountDropdownArrowEl />
+          </AccountDropdownButtonEl>
+          <AccountDropdownOptionsEl isDropdownOpen={isDropdownOpen}>
+            {allAccounts.map((account: string, i: number) => (
+              <AccountDropdownAccountEl>
+                <AccountListIdenticon
+                  accountNumber={i + 1}
+                  active={account === publicKey}
+                  publicKey={account}
+                />
+              </AccountDropdownAccountEl>
+            ))}
+            <AccountDropdownOptionEl>
+              <Link
+                to={{
+                  pathname: ROUTES.addAccount,
+                  state: {
+                    header: "Create a new Stellar address",
+                    cta: "Add address",
+                  },
                 }}
               >
-                <CopyButtonEl>
-                  <img src={CopyColorIcon} alt="copy button" />
-                </CopyButtonEl>
-              </CopyToClipboard>
-            </PublicKeyButtonsEl>
-            <CopiedToastWrapperEl>
-              <Toast
-                message="Copied to your clipboard 👌"
-                isShowing={isCopied}
-                setIsShowing={setIsCopied}
-              />
-            </CopiedToastWrapperEl>
-          </PublicKeyDisplayEl>
-        </RowEl>
+                + Create a new Stellar address
+              </Link>
+            </AccountDropdownOptionEl>
+            <AccountDropdownOptionEl>
+              <Link to={ROUTES.addAccount}>+ Import a Stellar secret key</Link>
+            </AccountDropdownOptionEl>
+          </AccountDropdownOptionsEl>
+        </AccountDropdownEl>
+        <CopyToClipboard
+          text={publicKey}
+          onCopy={() => {
+            setIsCopied(true);
+            emitMetric(METRIC_NAMES.copyPublickKey);
+          }}
+        >
+          <CopyButtonEl>
+            <img src={CopyColorIcon} alt="copy button" /> Copy
+          </CopyButtonEl>
+        </CopyToClipboard>
+        <VerticalCenterLink to={ROUTES.viewPublicKey}>
+          <QrButton /> Details
+        </VerticalCenterLink>
+        <CopiedToastWrapperEl>
+          <Toast
+            message="Copied to your clipboard 👌"
+            isShowing={isCopied}
+            setIsShowing={setIsCopied}
+          />
+        </CopiedToastWrapperEl>
+      </AccountHeaderEl>
+      <AccountEl>
+        <Link to={ROUTES.addAccount}>Add Account</Link>
+
         <AccountDetailsEl>
           <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
           <div>
@@ -173,26 +240,6 @@ export const Account = () => {
           </div>
         </AccountDetailsEl>
       </AccountEl>
-      <ul>
-        {allAccounts.map((account) => (
-          <li>
-            <small>
-              {account}{" "}
-              {account === publicKey ? (
-                "✓"
-              ) : (
-                <button
-                  onClick={() => {
-                    dispatch(makeAccountActive(account));
-                  }}
-                >
-                  Activate
-                </button>
-              )}
-            </small>
-          </li>
-        ))}
-      </ul>
       <Footer />
     </>
   ) : null;

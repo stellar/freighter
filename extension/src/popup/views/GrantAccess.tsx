@@ -15,7 +15,7 @@ import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstT
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import { Header } from "popup/components/Header";
-import { KeyIdenticon } from "popup/components/KeyIdenticon";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import "popup/metrics/access";
 

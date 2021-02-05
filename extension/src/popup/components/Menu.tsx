@@ -43,7 +43,8 @@ const MenuEl = styled.div`
   padding: 0.675rem 3.375rem;
 `;
 const MenuOpenButtonEl = styled(BasicButton)`
-  padding: 1.68rem 0.75rem;
+  margin-bottom: 1.75rem;
+  padding: 0;
   border-radius: 0.25rem;
   transition: background ${ANIMATION_TIMES.fast} ease-out;
 
