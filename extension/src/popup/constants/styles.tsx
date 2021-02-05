@@ -11,6 +11,7 @@ export const COLOR_PALETTE = {
   secondary: "#654CF7",
   error: "#F42703",
   errorFaded: "#FFBFBF",
+  grey: "#99A2B4",
   greyFaded: "#D2D5DB",
   warning: "#E4792C",
   warningFaded: "#F8E4CC",

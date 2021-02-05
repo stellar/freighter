@@ -21,7 +21,7 @@ import { TransactionList } from "popup/basics/TransactionList";
 
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
-import { KeyIdenticon } from "popup/components/KeyIdenticon";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { Operations } from "popup/components/signTransaction/Operations";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { WarningMessage } from "popup/components/WarningMessage";

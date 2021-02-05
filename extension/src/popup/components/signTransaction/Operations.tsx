@@ -8,7 +8,7 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { TransactionList } from "popup/basics/TransactionList";
 
-import { KeyIdenticon } from "popup/components/KeyIdenticon";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 interface Path {
   code: string;

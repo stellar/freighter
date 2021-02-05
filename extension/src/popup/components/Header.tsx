@@ -23,21 +23,32 @@ const FreighterLogoEl = styled.img`
   width: 10.3rem;
 `;
 
+const RightSectionEl = styled.div`
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+`;
+
 const NetworkEl = styled.h3`
   opacity: 0.5;
   color: #fff;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1;
+  margin: 0;
 `;
 
 type HeaderProps = {
+  children?: React.ReactNode;
   className?: string;
 };
 
-export const Header = ({ className, ...props }: HeaderProps) => (
+export const Header = ({ children, className, ...props }: HeaderProps) => (
   <HeaderEl className={className} {...props}>
     <FreighterLogoEl alt="Freighter logo" src={FreighterLogoLockup} />
-    <NetworkEl>{NETWORK_NAME}</NetworkEl>
+    <RightSectionEl>
+      {children}
+      <NetworkEl>{NETWORK_NAME}</NetworkEl>
+    </RightSectionEl>
   </HeaderEl>
 );
