@@ -186,21 +186,27 @@ export const Account = () => {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
             <AccountListIdenticon
+              active
               accountNumber={allAccounts.indexOf(publicKey) + 1}
               publicKey={publicKey}
             />
             <AccountDropdownArrowEl />
           </AccountDropdownButtonEl>
           <AccountDropdownOptionsEl isDropdownOpen={isDropdownOpen}>
-            {allAccounts.map((account: string, i: number) => (
-              <AccountDropdownAccountEl>
-                <AccountListIdenticon
-                  accountNumber={i + 1}
-                  active={account === publicKey}
-                  publicKey={account}
-                />
-              </AccountDropdownAccountEl>
-            ))}
+            {allAccounts.map((account: string, i: number) => {
+              const isSelected = account === publicKey;
+
+              return (
+                <AccountDropdownAccountEl>
+                  <AccountListIdenticon
+                    accountNumber={i + 1}
+                    active={isSelected}
+                    checked={isSelected}
+                    publicKey={account}
+                  />
+                </AccountDropdownAccountEl>
+              );
+            })}
             <AccountDropdownOptionEl>
               <AccountDropdownOptionLinkEl
                 to={{

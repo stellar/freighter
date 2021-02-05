@@ -16,6 +16,10 @@ const KeyIdenticonWrapperEl = styled.div`
   display: flex;
 `;
 
+interface CheckedProps {
+  checked: boolean;
+}
+
 interface ActiveProps {
   active: boolean;
 }
@@ -28,8 +32,8 @@ const IdenticonWrapperEl = styled.div`
   height: 2.1875rem;
   width: 2.1875rem;
 
-  ${({ active }: ActiveProps) =>
-    active &&
+  ${({ checked }: CheckedProps) =>
+    checked &&
     `
   {
     &:after {
@@ -77,12 +81,14 @@ const PublicKeyEl = styled.span`
 interface KeyIdenticonProps {
   accountNumber: number;
   active?: boolean;
+  checked?: boolean;
   publicKey: string;
 }
 
 export const AccountListIdenticon = ({
   accountNumber,
   active = false,
+  checked = false,
   publicKey = "",
   ...props
 }: KeyIdenticonProps) => {
@@ -97,7 +103,7 @@ export const AccountListIdenticon = ({
 
   return (
     <KeyIdenticonWrapperEl>
-      <IdenticonWrapperEl active={active}>
+      <IdenticonWrapperEl checked={checked}>
         <IdenticonEl string={shortPublicKey} />
       </IdenticonWrapperEl>
       <AccountKeyButtonEl active={active} onClick={handleMakeAccountActive}>
