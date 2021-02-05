@@ -3,6 +3,7 @@ export enum ROUTES {
   welcome = "/",
   account = "/account",
   addAccount = "/add-account",
+  importAccount = "/import-account",
   signTransaction = "/sign-transaction",
   grantAccess = "/grant-access",
   mnemonicPhrase = "/mnemonic-phrase",

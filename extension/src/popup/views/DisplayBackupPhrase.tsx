@@ -14,16 +14,11 @@ import { download } from "popup/helpers/download";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { Button } from "popup/basics/Buttons";
+import { SubviewHeader } from "popup/basics/AccountSubview";
 
 import { Toast } from "popup/components/Toast";
 import { ActionButton } from "popup/components/mnemonicPhrase/ActionButton";
 import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
-
-import {
-  HeaderContainerEl,
-  HeaderEl,
-  BackButtonEl,
-} from "popup/views/UnlockBackupPhrase";
 
 import DownloadColorIcon from "popup/assets/download-color.svg";
 import CopyColorIcon from "popup/assets/copy-color.svg";
@@ -86,10 +81,7 @@ export const DisplayBackupPhrase = () => {
 
   return (
     <UnlockAccountEl data-testid="display-mnemonic-phrase">
-      <HeaderContainerEl>
-        <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
-        <HeaderEl>Show backup phrase</HeaderEl>
-      </HeaderContainerEl>
+      <SubviewHeader headerText="Show backup phrase" />
       <BackupPhraseWarningMessage />
       <H3>Your backup phrase:</H3>
       <MnemonicDisplayEl>{mnemonicPhrase}</MnemonicDisplayEl>

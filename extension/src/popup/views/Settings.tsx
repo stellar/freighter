@@ -14,12 +14,8 @@ import {
 } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
 
+import { SubviewHeader } from "popup/basics/AccountSubview";
 import { Form, FormRow, CheckboxField, SubmitButton } from "popup/basics/Forms";
-import {
-  HeaderContainerEl,
-  HeaderEl,
-  BackButtonEl,
-} from "popup/views/UnlockBackupPhrase";
 
 const El = styled.div`
   background: ${COLOR_PALETTE.background};
@@ -67,10 +63,7 @@ export const Settings = () => {
 
   return (
     <El>
-      <HeaderContainerEl>
-        <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
-        <HeaderEl>Settings</HeaderEl>
-      </HeaderContainerEl>
+      <SubviewHeader headerText="Settings" />
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}

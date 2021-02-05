@@ -28,7 +28,8 @@ import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
 import { AccountCreator } from "popup/views/AccountCreator";
-import { AddAccount } from "popup/views/AddAccount";
+import { AddAccount } from "popup/views/AddAccount/AddAccount";
+import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
@@ -202,6 +203,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.addAccount}>
           <AddAccount />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.importAccount}>
+          <ImportAccount />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />

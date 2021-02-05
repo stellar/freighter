@@ -1,22 +1,31 @@
 import React from "react";
 import get from "lodash/get";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import styled from "styled-components";
+import { Formik } from "formik";
 
-import { POPUP_WIDTH } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
-import { COLOR_PALETTE } from "popup/constants/styles";
+import { POPUP_WIDTH } from "constants/dimensions";
+import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 
 import { BasicButton } from "popup/basics/Buttons";
+import {
+  Form,
+  SubmitButton,
+  FormRow,
+  ApiErrorMessage,
+  TextField,
+} from "popup/basics/Forms";
 
 import { Header } from "popup/components/Header";
-import { PasswordConfirmation } from "popup/components/PasswordConfirmation";
 
-import { confirmPassword } from "popup/ducks/authServices";
+import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
+
+import WaveIllo from "popup/assets/illo-wave.svg";
 
 const UnlockAccountEl = styled.div`
   width: 100%;
@@ -24,7 +33,19 @@ const UnlockAccountEl = styled.div`
   box-sizing: border-box;
   padding: 2rem 2.5rem;
 `;
-
+const HeaderContainerEl = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 0 0.25rem 3rem;
+  line-height: 1;
+`;
+const HeaderEl = styled.h1`
+  display: inline-block;
+  color: ${COLOR_PALETTE.primary}};
+  font-weight: ${FONT_WEIGHT.light};
+  margin: 0;
+  margin-left: 1rem;
+`;
 const ImportButtonEl = styled(BasicButton)`
   color: ${COLOR_PALETTE.primary};
 `;
@@ -36,10 +57,22 @@ const UnorderedListEl = styled.ul`
   padding: 0;
   padding-top: 0.25rem;
 `;
+const CustomFormTextFieldEl = styled(TextField)`
+  padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
+`;
 const ListItemEl = styled.li`
   color: ${COLOR_PALETTE.secondaryText};
   padding: 0.5rem 0;
   line-height: 1;
+`;
+const ButtonRowEl = styled.div`
+  padding: 3.25rem 0 1.5rem;
+`;
+const IlloContainerEl = styled.div`
+  position: relative;
+  img {
+    height: 4.0625rem;
+  }
 `;
 
 export const UnlockAccount = () => {
@@ -47,11 +80,16 @@ export const UnlockAccount = () => {
   const from = get(location, "state.from.pathname", "") as ROUTES;
   const queryParams = get(location, "search", "");
   const destination = from || ROUTES.account;
+
+  const dispatch = useDispatch();
+  const authError = useSelector(authErrorSelector);
+
   interface FormValues {
     password: string;
   }
-
-  const dispatch = useDispatch();
+  const initialValues: FormValues = {
+    password: "",
+  };
 
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
@@ -63,7 +101,37 @@ export const UnlockAccount = () => {
     <>
       <Header />
       <UnlockAccountEl>
-        <PasswordConfirmation handleSubmit={handleSubmit} />
+        <Formik onSubmit={handleSubmit} initialValues={initialValues}>
+          {({ dirty, isSubmitting, isValid }) => (
+            <Form>
+              <HeaderContainerEl>
+                <IlloContainerEl>
+                  <img src={WaveIllo} alt="Wave Illustration" />
+                </IlloContainerEl>
+                <HeaderEl>Log in</HeaderEl>
+              </HeaderContainerEl>
+              <FormRow>
+                <CustomFormTextFieldEl
+                  autoComplete="off"
+                  type="password"
+                  name="password"
+                  placeholder="Enter password"
+                  error={authError}
+                />
+              </FormRow>
+              <ApiErrorMessage error={authError} />
+              <ButtonRowEl>
+                <SubmitButton
+                  dirty={dirty}
+                  isSubmitting={isSubmitting}
+                  isValid={isValid}
+                >
+                  Log In
+                </SubmitButton>
+              </ButtonRowEl>
+            </Form>
+          )}
+        </Formik>
         <UnorderedListEl>
           <ListItemEl>Want to use a different account?</ListItemEl>
           <ListItemEl>

@@ -12,6 +12,7 @@ const routeToEventName = {
   [ROUTES.welcome]: METRIC_NAMES.viewWelcome,
   [ROUTES.account]: METRIC_NAMES.viewAccount,
   [ROUTES.addAccount]: METRIC_NAMES.viewAddAccount,
+  [ROUTES.importAccount]: METRIC_NAMES.viewImportAccount,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,

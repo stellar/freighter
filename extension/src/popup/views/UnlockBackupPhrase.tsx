@@ -11,11 +11,9 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
-import { navigateTo } from "popup/helpers/navigate";
-
-import { BackButton } from "popup/basics/Buttons";
+import { SubviewHeader } from "popup/basics/AccountSubview";
 import {
   Form,
   SubmitButton,
@@ -33,26 +31,7 @@ const UnlockAccountEl = styled.div`
   box-sizing: border-box;
   padding: 2.68rem 2.18rem;
 `;
-export const HeaderContainerEl = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0;
-  line-height: 1;
-  margin-bottom: 2.5rem;
-`;
-export const HeaderEl = styled.h1`
-  color: ${COLOR_PALETTE.primary}};
-  font-weight: ${FONT_WEIGHT.light};
-  font-size: 1.56rem;
-  margin: 0;
-  padding-left: 1rem;
-`;
-export const BackButtonEl = styled(BackButton)`
-  position: relative;
-  top: 0;
-  left: 0;
-`;
+
 const CustomFormTextFieldEl = styled(TextField)`
   padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
 `;
@@ -93,10 +72,7 @@ export const UnlockBackupPhrase = () => {
 
   return (
     <UnlockAccountEl>
-      <HeaderContainerEl>
-        <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
-        <HeaderEl>Show backup phrase</HeaderEl>
-      </HeaderContainerEl>
+      <SubviewHeader headerText="Show backup phrase" />
       <BackupPhraseWarningMessage />
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
         {({ dirty, isSubmitting, isValid }) => (
