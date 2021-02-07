@@ -1,6 +1,5 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import styled from "styled-components";
 import { Formik } from "formik";
 
 import { ROUTES } from "popup/constants/routes";
