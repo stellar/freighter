@@ -63,7 +63,7 @@ export const AddAccount = () => {
                   isSubmitting={isSubmitting}
                   isValid={isValid}
                 >
-                  Add new address
+                  Add New Address
                 </SubmitButton>
               </FormRow>
             </>
