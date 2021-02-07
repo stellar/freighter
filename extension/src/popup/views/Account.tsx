@@ -232,7 +232,7 @@ export const Account = () => {
               </AccountDropdownOptionLinkEl>
             </AccountDropdownOptionEl>
             <AccountDropdownOptionEl>
-              <AccountDropdownOptionLinkEl to={ROUTES.addAccount}>
+              <AccountDropdownOptionLinkEl to={ROUTES.importAccount}>
                 <AccountDropdownOptionIconEl>
                   <img src={ImportNewIcon} alt="import a Stellar key button" />{" "}
                 </AccountDropdownOptionIconEl>
@@ -264,8 +264,6 @@ export const Account = () => {
         </CopiedToastWrapperEl>
       </AccountHeaderEl>
       <AccountEl>
-        <Link to={ROUTES.addAccount}>Add Account</Link>
-
         <AccountDetailsEl>
           <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
           <div>

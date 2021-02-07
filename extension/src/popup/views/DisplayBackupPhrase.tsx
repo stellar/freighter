@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 
-import { POPUP_WIDTH } from "constants/dimensions";
 import { emitMetric } from "helpers/metrics";
 import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
 
@@ -14,16 +13,11 @@ import { download } from "popup/helpers/download";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { Button } from "popup/basics/Buttons";
+import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 
 import { Toast } from "popup/components/Toast";
 import { ActionButton } from "popup/components/mnemonicPhrase/ActionButton";
 import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
-
-import {
-  HeaderContainerEl,
-  HeaderEl,
-  BackButtonEl,
-} from "popup/views/UnlockBackupPhrase";
 
 import DownloadColorIcon from "popup/assets/download-color.svg";
 import CopyColorIcon from "popup/assets/copy-color.svg";
@@ -56,13 +50,6 @@ const CopiedToastWrapperEl = styled.div`
   right: 15.625rem;
   position: absolute;
 `;
-const UnlockAccountEl = styled.div`
-  background: ${COLOR_PALETTE.background};
-  width: 100%;
-  max-width: ${POPUP_WIDTH}px;
-  box-sizing: border-box;
-  padding: 2rem 2.5rem;
-`;
 const ButtonRowEl = styled.div`
   padding: 1.15rem 0 0;
 `;
@@ -85,11 +72,8 @@ export const DisplayBackupPhrase = () => {
   const [isCopied, setIsCopied] = useState(false);
 
   return (
-    <UnlockAccountEl data-testid="display-mnemonic-phrase">
-      <HeaderContainerEl>
-        <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
-        <HeaderEl>Show backup phrase</HeaderEl>
-      </HeaderContainerEl>
+    <SubviewWrapper data-testid="display-mnemonic-phrase">
+      <SubviewHeader headerText="Show backup phrase" />
       <BackupPhraseWarningMessage />
       <H3>Your backup phrase:</H3>
       <MnemonicDisplayEl>{mnemonicPhrase}</MnemonicDisplayEl>
@@ -131,6 +115,6 @@ export const DisplayBackupPhrase = () => {
       <ButtonRowEl>
         <Button onClick={() => navigateTo(ROUTES.account)}>Close</Button>
       </ButtonRowEl>
-    </UnlockAccountEl>
+    </SubviewWrapper>
   );
 };

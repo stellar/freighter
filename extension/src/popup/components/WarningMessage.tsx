@@ -22,6 +22,10 @@ const El = styled.div`
       margin-bottom: 0;
     }
   }
+
+  li {
+    margin-bottom: 1rem;
+  }
 `;
 
 const HeadingEl = styled.div`

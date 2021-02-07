@@ -4,18 +4,13 @@ import { Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
 
-import { POPUP_WIDTH } from "constants/dimensions";
-
 import { emitMetric } from "helpers/metrics";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
-import { navigateTo } from "popup/helpers/navigate";
-
-import { BackButton } from "popup/basics/Buttons";
+import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 import {
   Form,
   SubmitButton,
@@ -26,33 +21,6 @@ import {
 
 import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
 
-const UnlockAccountEl = styled.div`
-  background: ${COLOR_PALETTE.background};
-  width: 100%;
-  max-width: ${POPUP_WIDTH}px;
-  box-sizing: border-box;
-  padding: 2.68rem 2.18rem;
-`;
-export const HeaderContainerEl = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0;
-  line-height: 1;
-  margin-bottom: 2.5rem;
-`;
-export const HeaderEl = styled.h1`
-  color: ${COLOR_PALETTE.primary}};
-  font-weight: ${FONT_WEIGHT.light};
-  font-size: 1.56rem;
-  margin: 0;
-  padding-left: 1rem;
-`;
-export const BackButtonEl = styled(BackButton)`
-  position: relative;
-  top: 0;
-  left: 0;
-`;
 const CustomFormTextFieldEl = styled(TextField)`
   padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
 `;
@@ -92,11 +60,8 @@ export const UnlockBackupPhrase = () => {
   };
 
   return (
-    <UnlockAccountEl>
-      <HeaderContainerEl>
-        <BackButtonEl onClick={() => navigateTo(ROUTES.account)} />
-        <HeaderEl>Show backup phrase</HeaderEl>
-      </HeaderContainerEl>
+    <SubviewWrapper>
+      <SubviewHeader headerText="Show backup phrase" />
       <BackupPhraseWarningMessage />
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
         {({ dirty, isSubmitting, isValid }) => (
@@ -123,6 +88,6 @@ export const UnlockBackupPhrase = () => {
           </Form>
         )}
       </Formik>
-    </UnlockAccountEl>
+    </SubviewWrapper>
   );
 };

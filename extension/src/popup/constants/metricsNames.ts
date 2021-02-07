@@ -4,6 +4,7 @@ export const METRIC_NAMES = {
   viewAccount: "loaded screen: account",
   viewAccountCreator: "loaded screen: account creator",
   viewAddAccount: "loaded screen: add account",
+  viewImportAccount: "loaded screen: import account",
   viewGrantAccess: "loaded screen: grant access",
   viewLoading: "loaded screen: loading",
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
