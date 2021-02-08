@@ -26,6 +26,7 @@ import {
   mnemonicPhraseSelector,
   publicKeySelector,
   setActivePublicKey,
+  timeoutAccountAccess,
 } from "background/ducks/session";
 
 // TODO: store this in local storage to prevent getting wiped on ext refresh
@@ -174,6 +175,8 @@ export const popupMessageListener = (request: Request) => {
       mnemonicPhrase,
     });
 
+    store.dispatch(timeoutAccountAccess());
+
     const currentState = store.getState();
 
     return {
@@ -213,6 +216,8 @@ export const popupMessageListener = (request: Request) => {
       mnemonicPhrase,
     });
 
+    sessionTimer.startSession({ privateKey });
+
     const currentState = store.getState();
 
     return {
@@ -234,10 +239,13 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(KEY_ID, activeKeyId);
 
     store.dispatch(setActivePublicKey({ publicKey }));
+    store.dispatch(timeoutAccountAccess());
+
+    const currentState = store.getState();
 
     return {
-      publicKey: publicKeySelector(store.getState()),
-      hasPrivateKey: hasPrivateKeySelector(store.getState()),
+      publicKey: publicKeySelector(currentState),
+      hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
 
