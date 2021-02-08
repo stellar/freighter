@@ -1,5 +1,5 @@
 import React from "react";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import styled, { createGlobalStyle } from "styled-components";
@@ -62,8 +62,10 @@ const rootReducer = combineReducers({
 export type AppState = ReturnType<typeof rootReducer>;
 export const store = configureStore({
   reducer: rootReducer,
-  middleware: [metricsMiddleware<AppState>(), ...getDefaultMiddleware()],
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().prepend(metricsMiddleware<AppState>()),
 });
+export type AppDispatch = typeof store.dispatch;
 
 if (process.env.SENTRY_KEY) {
   Sentry.init({

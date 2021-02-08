@@ -201,20 +201,21 @@ export const Account = () => {
             dropdownCount={allAccounts.length}
             isDropdownOpen={isDropdownOpen}
           >
-            {allAccounts.map((account: string, i: number) => {
-              const isSelected = account === publicKey;
+            {allAccounts.length > 1 &&
+              allAccounts.map((account: string, i: number) => {
+                const isSelected = account === publicKey;
 
-              return (
-                <AccountDropdownAccountEl key={`account-${account}`}>
-                  <AccountListIdenticon
-                    accountNumber={i + 1}
-                    active={isSelected}
-                    checked={isSelected}
-                    publicKey={account}
-                  />
-                </AccountDropdownAccountEl>
-              );
-            })}
+                return (
+                  <AccountDropdownAccountEl key={`account-${account}`}>
+                    <AccountListIdenticon
+                      accountNumber={i + 1}
+                      active={isSelected}
+                      checked={isSelected}
+                      publicKey={account}
+                    />
+                  </AccountDropdownAccountEl>
+                );
+              })}
             <AccountDropdownOptionEl>
               <AccountDropdownOptionLinkEl
                 to={{

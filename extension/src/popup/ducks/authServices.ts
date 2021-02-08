@@ -6,6 +6,7 @@ import {
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
+  importAccount as importAccountService,
   makeAccountActive as makeAccountActiveService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   createAccount as createAccountService,
@@ -20,11 +21,11 @@ interface ErrorMessage {
 }
 
 export const createAccount = createAsyncThunk<
-  { publicKey: string },
+  { allAccounts: Array<string>; publicKey: string },
   string,
   { rejectValue: ErrorMessage }
 >("auth/createAccount", async (password, thunkApi) => {
-  let res = { publicKey: "" };
+  let res = { allAccounts: [] as Array<string>, publicKey: "" };
 
   try {
     res = await createAccountService(password);
@@ -55,20 +56,39 @@ export const addAccount = createAsyncThunk<
   return res;
 });
 
+export const importAccount = createAsyncThunk<
+  { publicKey: string; allAccounts: Array<string> },
+  { password: string; privateKey: string },
+  { rejectValue: ErrorMessage }
+>("auth/importAccount", async ({ password, privateKey }, thunkApi) => {
+  let res = { publicKey: "", allAccounts: [] as Array<string> };
+
+  try {
+    res = await importAccountService(password, privateKey);
+  } catch (e) {
+    console.log(8);
+    console.error("Failed when importing an account: ", e);
+    return thunkApi.rejectWithValue({
+      errorMessage: e,
+    });
+  }
+  return res;
+});
+
 export const makeAccountActive = createAsyncThunk(
   "auth/makeAccountActive",
   (publicKey: string) => makeAccountActiveService(publicKey),
 );
 
 export const recoverAccount = createAsyncThunk<
-  { publicKey: string },
+  { allAccounts: Array<string>; publicKey: string },
   {
     password: string;
     mnemonicPhrase: string;
   },
   { rejectValue: ErrorMessage }
 >("auth/recoverAccount", async ({ password, mnemonicPhrase }, thunkApi) => {
-  let res = { publicKey: "" };
+  let res = { allAccounts: [] as Array<string>, publicKey: "" };
 
   try {
     res = await recoverAccountService(password, mnemonicPhrase);
@@ -214,10 +234,14 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(createAccount.fulfilled, (state, action) => {
-      const { publicKey } = action.payload || { publicKey: "" };
+      const { allAccounts, publicKey } = action.payload || {
+        publicKey: "",
+        allAccounts: [],
+      };
 
       return {
         ...state,
+        allAccounts,
         applicationState: APPLICATION_STATE.PASSWORD_CREATED,
         publicKey,
       };
@@ -250,6 +274,27 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(importAccount.fulfilled, (state, action) => {
+      const { publicKey, allAccounts } = action.payload || {
+        publicKey: "",
+        allAccounts: [],
+      };
+
+      return {
+        ...state,
+        publicKey,
+        allAccounts,
+      };
+    });
+    builder.addCase(importAccount.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+      console.log(9);
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
     builder.addCase(makeAccountActive.fulfilled, (state, action) => {
       const { publicKey, hasPrivateKey } = action.payload || {
         publicKey: "",
@@ -273,11 +318,15 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(recoverAccount.fulfilled, (state, action) => {
-      const { publicKey } = action.payload || { publicKey: "" };
+      const { publicKey, allAccounts } = action.payload || {
+        publicKey: "",
+        allAccounts: [],
+      };
 
       return {
         ...state,
         error: "",
+        allAccounts,
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
       };
@@ -316,7 +365,7 @@ const authSlice = createSlice({
         hasPrivateKey: false,
         publicKey: "",
         applicationState: APPLICATION_STATE.APPLICATION_STARTED,
-        allAccounts: [""],
+        allAccounts: [],
       };
       return {
         ...state,
