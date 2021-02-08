@@ -61,7 +61,7 @@ export const importAccount = async (
     console.error(e);
   }
 
-  // @TODO: should this be universal?
+  // @TODO: should this be universal? See asana ticket.
   if (error) {
     throw error;
   }
