@@ -1,22 +1,25 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik } from "formik";
+import { bool as YupBool, object as YupObject, string as YupString } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
 
+import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 import {
   ApiErrorMessage,
   Error,
+  Form,
   FormRow,
   CheckboxField,
   TextField,
   SubmitButton,
 } from "popup/basics/Forms";
 
-import { addAccount, authErrorSelector } from "popup/ducks/authServices";
+import { importAccount, authErrorSelector } from "popup/ducks/authServices";
 
 import { WarningMessage } from "popup/components/WarningMessage";
 import IconOrangeLock from "popup/assets/icon-orange-lock.svg";
@@ -24,21 +27,31 @@ import IconOrangeLock from "popup/assets/icon-orange-lock.svg";
 export const ImportAccount = () => {
   interface FormValues {
     password: string;
-    secretKey: string;
+    privateKey: string;
   }
 
   const initialValues: FormValues = {
     password: "",
-    secretKey: "",
+    privateKey: "",
   };
 
-  const dispatch = useDispatch();
+  const ImportAccountSchema = YupObject().shape({
+    privateKey: YupString().required(),
+    password: YupString().required(),
+    authorization: YupBool().required(),
+  });
+
+  const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
 
   const handleSubmit = async (values: FormValues) => {
-    const { password } = values;
-    await dispatch(addAccount(password));
-    navigateTo(ROUTES.account);
+    const { password, privateKey } = values;
+
+    const res = await dispatch(importAccount({ password, privateKey }));
+
+    if (importAccount.fulfilled.match(res)) {
+      navigateTo(ROUTES.account);
+    }
   };
 
   return (
@@ -62,17 +75,21 @@ export const ImportAccount = () => {
             </li>
           </ul>
         </WarningMessage>
-        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          validationSchema={ImportAccountSchema}
+        >
           {({ dirty, isSubmitting, isValid }) => (
-            <>
+            <Form>
               <FormRow>
                 <TextField
                   autoComplete="off"
-                  name="secretKey"
+                  name="privateKey"
                   placeholder="Your Stellar secret key"
                   type="password"
                 />
-                <Error name="secretKey" />
+                <Error name="privateKey" />
               </FormRow>
               <FormRow>
                 <TextField
@@ -100,7 +117,7 @@ export const ImportAccount = () => {
                   Import Secret Key
                 </SubmitButton>
               </FormRow>
-            </>
+            </Form>
           )}
         </Formik>
       </SubviewWrapper>

@@ -9,11 +9,12 @@ const server = new StellarSdk.Server(NETWORK_URL);
 
 export const createAccount = async (
   password: string,
-): Promise<{ publicKey: string }> => {
+): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
   let publicKey = "";
+  let allAccounts = [] as Array<string>;
 
   try {
-    ({ publicKey } = await sendMessageToBackground({
+    ({ allAccounts, publicKey } = await sendMessageToBackground({
       password,
       type: SERVICE_TYPES.CREATE_ACCOUNT,
     }));
@@ -21,7 +22,7 @@ export const createAccount = async (
     console.error(e);
   }
 
-  return { publicKey };
+  return { allAccounts, publicKey };
 };
 
 export const addAccount = async (
@@ -37,6 +38,32 @@ export const addAccount = async (
     }));
   } catch (e) {
     console.error(e);
+  }
+
+  return { allAccounts, publicKey };
+};
+
+export const importAccount = async (
+  password: string,
+  privateKey: string,
+): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
+  let error = "";
+  let publicKey = "";
+  let allAccounts = [] as Array<string>;
+
+  try {
+    ({ allAccounts, publicKey, error } = await sendMessageToBackground({
+      password,
+      privateKey,
+      type: SERVICE_TYPES.IMPORT_ACCOUNT,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  // @TODO: should this be universal? See asana ticket.
+  if (error) {
+    throw error;
   }
 
   return { allAccounts, publicKey };
@@ -100,11 +127,12 @@ export const confirmMnemonicPhrase = async (
 export const recoverAccount = async (
   password: string,
   recoverMnemonic: string,
-): Promise<{ publicKey: string }> => {
+): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
   let publicKey = "";
+  let allAccounts = [] as Array<string>;
 
   try {
-    ({ publicKey } = await sendMessageToBackground({
+    ({ allAccounts, publicKey } = await sendMessageToBackground({
       password,
       recoverMnemonic,
       type: SERVICE_TYPES.RECOVER_ACCOUNT,
@@ -113,7 +141,7 @@ export const recoverAccount = async (
     console.error(e);
   }
 
-  return { publicKey };
+  return { allAccounts, publicKey };
 };
 
 export const confirmPassword = async (
