@@ -11,6 +11,7 @@ import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 import {
   ApiErrorMessage,
   Error,
+  Form,
   FormRow,
   TextField,
   SubmitButton,
@@ -46,7 +47,7 @@ export const AddAccount = () => {
         <SubviewHeader headerText="Add a new Stellar address" />
         <Formik initialValues={initialValues} onSubmit={handleSubmit}>
           {({ dirty, isSubmitting, isValid }) => (
-            <>
+            <Form>
               <FormRow>
                 <TextField
                   autoComplete="off"
@@ -66,7 +67,7 @@ export const AddAccount = () => {
                   Add New Address
                 </SubmitButton>
               </FormRow>
-            </>
+            </Form>
           )}
         </Formik>
       </SubviewWrapper>

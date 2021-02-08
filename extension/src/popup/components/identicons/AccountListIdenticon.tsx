@@ -83,6 +83,7 @@ interface KeyIdenticonProps {
   active?: boolean;
   checked?: boolean;
   publicKey: string;
+  setIsDropdownOpen?: (IsDropdownOpen: boolean) => void;
 }
 
 export const AccountListIdenticon = ({
@@ -90,6 +91,7 @@ export const AccountListIdenticon = ({
   active = false,
   checked = false,
   publicKey = "",
+  setIsDropdownOpen,
 }: KeyIdenticonProps) => {
   const dispatch = useDispatch();
   const shortPublicKey = truncatedPublicKey(publicKey);
@@ -97,6 +99,10 @@ export const AccountListIdenticon = ({
   const handleMakeAccountActive = () => {
     if (!active) {
       dispatch(makeAccountActive(publicKey));
+
+      if (setIsDropdownOpen) {
+        setIsDropdownOpen(false);
+      }
     }
   };
 

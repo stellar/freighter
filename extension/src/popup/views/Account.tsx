@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
@@ -141,7 +141,7 @@ const AccountDetailsEl = styled.section`
   align-content: center;
   align-items: center;
   display: flex;
-  padding: 2.25rem 0 6.48rem;
+  padding: 2rem 0 6rem;
   justify-content: space-evenly;
 `;
 
@@ -156,7 +156,9 @@ const LumenBalanceEl = styled.h2`
 `;
 
 const CopiedToastWrapperEl = styled.div`
-  margin: 1rem 0 0 -2rem;
+  margin: 5rem 0 0 -2rem;
+  position: absolute;
+  right: 15rem;
 `;
 
 export const Account = () => {
@@ -165,6 +167,7 @@ export const Account = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const publicKey = useSelector(publicKeySelector);
   const allAccounts = useSelector(allAccountsSelector);
+  const accountDropDownRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let res = { balance: "" };
@@ -180,13 +183,22 @@ export const Account = () => {
     fetchAccountBalance();
   }, [publicKey]);
 
+  const closeDropdown = (e: React.ChangeEvent<any>) => {
+    if (
+      accountDropDownRef.current &&
+      !accountDropDownRef.current.contains(e.target)
+    ) {
+      setIsDropdownOpen(false);
+    }
+  };
+
   return accountBalance ? (
-    <>
+    <section onClick={closeDropdown}>
       <Header>
         <Menu />
       </Header>
       <AccountHeaderEl>
-        <section>
+        <section ref={accountDropDownRef}>
           <AccountDropdownButtonEl
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
@@ -212,6 +224,7 @@ export const Account = () => {
                       active={isSelected}
                       checked={isSelected}
                       publicKey={account}
+                      setIsDropdownOpen={setIsDropdownOpen}
                     />
                   </AccountDropdownAccountEl>
                 );
@@ -253,9 +266,6 @@ export const Account = () => {
             <img src={CopyColorIcon} alt="copy button" /> Copy
           </CopyButtonEl>
         </CopyToClipboard>
-        <VerticalCenterLink to={ROUTES.viewPublicKey}>
-          <QrButton /> Details
-        </VerticalCenterLink>
         <CopiedToastWrapperEl>
           <Toast
             message="Copied to your clipboard 👌"
@@ -263,6 +273,9 @@ export const Account = () => {
             setIsShowing={setIsCopied}
           />
         </CopiedToastWrapperEl>
+        <VerticalCenterLink to={ROUTES.viewPublicKey}>
+          <QrButton /> Details
+        </VerticalCenterLink>
       </AccountHeaderEl>
       <AccountEl>
         <AccountDetailsEl>
@@ -273,6 +286,6 @@ export const Account = () => {
         </AccountDetailsEl>
       </AccountEl>
       <Footer />
-    </>
+    </section>
   ) : null;
 };
