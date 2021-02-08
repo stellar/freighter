@@ -4,7 +4,7 @@ const initialState = {
   publicKey: "",
   privateKey: "",
   mnemonicPhrase: "",
-  allAccounts: [""],
+  allAccounts: [] as Array<string>,
 };
 
 interface UiData {
@@ -25,7 +25,7 @@ export const sessionSlice = createSlice({
       const {
         publicKey,
         mnemonicPhrase = "",
-        allAccounts = [""],
+        allAccounts = [],
       } = action.payload;
 
       return {

@@ -42,9 +42,9 @@ export const transactionQueue: Array<{
   toXDR: () => void;
 }> = [];
 
-interface StellarHdWallet {
-  getPublicKey: (number: Number) => string;
-  getSecret: (number: Number) => string;
+interface KeyPair {
+  publicKey: string;
+  privateKey: string;
 }
 
 export const popupMessageListener = (request: Request) => {
@@ -58,14 +58,13 @@ export const popupMessageListener = (request: Request) => {
   const _storeAccount = async ({
     mnemonicPhrase,
     password,
-    wallet,
+    keyPair,
   }: {
     mnemonicPhrase: string;
     password: string;
-    wallet: StellarHdWallet;
+    keyPair: KeyPair;
   }) => {
-    const publicKey = wallet.getPublicKey(DEFAULT_ACCOUNT_ID);
-    const privateKey = wallet.getSecret(DEFAULT_ACCOUNT_ID);
+    const { publicKey, privateKey } = keyPair;
 
     const allAccounts = allAccountsSelector(store.getState());
 
@@ -130,14 +129,24 @@ export const popupMessageListener = (request: Request) => {
 
     await _fundAccount(wallet);
 
+    const keyPair = {
+      publicKey: wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
+      privateKey: wallet.getSecret(DEFAULT_ACCOUNT_ID),
+    };
+
     await _storeAccount({
       password,
-      wallet,
+      keyPair,
       mnemonicPhrase,
     });
     localStorage.setItem(APPLICATION_ID, APPLICATION_STATE.PASSWORD_CREATED);
 
-    return { publicKey: publicKeySelector(store.getState()) };
+    const currentState = store.getState();
+
+    return {
+      allAccounts: allAccountsSelector(currentState),
+      publicKey: publicKeySelector(currentState),
+    };
   };
 
   const addAccount = async () => {
@@ -154,9 +163,53 @@ export const popupMessageListener = (request: Request) => {
 
     await _fundAccount(wallet);
 
+    const keyPair = {
+      publicKey: wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
+      privateKey: wallet.getSecret(DEFAULT_ACCOUNT_ID),
+    };
+
     await _storeAccount({
       password,
-      wallet,
+      keyPair,
+      mnemonicPhrase,
+    });
+
+    const currentState = store.getState();
+
+    return {
+      publicKey: publicKeySelector(currentState),
+      allAccounts: allAccountsSelector(currentState),
+    };
+  };
+
+  const importAccount = async () => {
+    const { password, privateKey } = request;
+    let sourceKeys;
+
+    try {
+      sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+    } catch (e) {
+      console.error(e);
+
+      return {
+        error: "Please enter a valid secret key/password combination",
+      };
+    }
+
+    const keyPair = {
+      publicKey: sourceKeys.publicKey(),
+      privateKey,
+    };
+
+    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
+
+    if (!mnemonicPhrase) {
+      return { error: "Mnemonic phrase not found" };
+    }
+
+    await _storeAccount({
+      password,
+      keyPair,
       mnemonicPhrase,
     });
 
@@ -188,12 +241,16 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const loadAccount = () => ({
-    hasPrivateKey: hasPrivateKeySelector(store.getState()),
-    publicKey: publicKeySelector(store.getState()),
-    applicationState: localStorage.getItem(APPLICATION_ID) || "",
-    allAccounts: allAccountsSelector(store.getState()),
-  });
+  const loadAccount = () => {
+    const currentState = store.getState();
+
+    return {
+      hasPrivateKey: hasPrivateKeySelector(currentState),
+      publicKey: publicKeySelector(currentState),
+      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      allAccounts: allAccountsSelector(currentState),
+    };
+  };
 
   const getMnemonicPhrase = () => ({
     mnemonicPhrase: mnemonicPhraseSelector(store.getState()),
@@ -220,6 +277,8 @@ export const popupMessageListener = (request: Request) => {
     const { password, recoverMnemonic } = request;
     let wallet;
     let applicationState;
+
+    // @TODO: We should clear any possible old localstorage
     try {
       wallet = fromMnemonic(recoverMnemonic);
     } catch (e) {
@@ -227,7 +286,12 @@ export const popupMessageListener = (request: Request) => {
     }
 
     if (wallet) {
-      _storeAccount({ mnemonicPhrase: recoverMnemonic, password, wallet });
+      const keyPair = {
+        publicKey: wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
+        privateKey: wallet.getSecret(DEFAULT_ACCOUNT_ID),
+      };
+
+      _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
 
       // if we don't have an application state, assign them one
       applicationState =
@@ -237,8 +301,11 @@ export const popupMessageListener = (request: Request) => {
       localStorage.setItem(APPLICATION_ID, applicationState);
     }
 
+    const currentState = store.getState();
+
     return {
-      publicKey: publicKeySelector(store.getState()),
+      allAccounts: allAccountsSelector(currentState),
+      publicKey: publicKeySelector(currentState),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
     };
   };
@@ -408,6 +475,7 @@ export const popupMessageListener = (request: Request) => {
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
+    [SERVICE_TYPES.IMPORT_ACCOUNT]: importAccount,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
