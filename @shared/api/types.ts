@@ -6,6 +6,7 @@ export interface Response {
   messagedId: number;
   applicationState: APPLICATION_STATE;
   publicKey: string;
+  privateKey: string;
   hasPrivateKey: boolean;
   mnemonicPhrase: string;
   isCorrectPhrase: boolean;
