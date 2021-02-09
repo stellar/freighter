@@ -29,11 +29,9 @@ import {
   timeoutAccountAccess,
 } from "background/ducks/session";
 
-// TODO: store this in local storage to prevent getting wiped on ext refresh
-let DEFAULT_ACCOUNT_ID = 0;
-
 const APPLICATION_ID = "applicationState";
 const DATA_SHARING_ID = "dataSharingStatus";
+const KEY_DERIVATION_NUMBER_ID = "keyDerivationNumberId";
 
 const sessionTimer = new SessionTimer();
 
@@ -104,14 +102,12 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(KEY_ID, keyStore.id);
   };
 
-  const _fundAccount = async (wallet: { getPublicKey: Function }) => {
+  const _fundAccount = async (publicKey: string) => {
     if (isTestnet) {
       // fund the account automatically if we're in a dev environment
       try {
         const response = await fetch(
-          `https://friendbot.stellar.org?addr=${encodeURIComponent(
-            wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
-          )}`,
+          `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
         );
         const responseJSON = await response.json();
         console.log("SUCCESS! You have a new account :)\n", responseJSON);
@@ -128,11 +124,18 @@ export const popupMessageListener = (request: Request) => {
     const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
     const wallet = fromMnemonic(mnemonicPhrase);
 
-    await _fundAccount(wallet);
+    const KEY_DERIVATION_NUMBER = 0;
+
+    await _fundAccount(wallet.getPublicKey(KEY_DERIVATION_NUMBER));
+
+    localStorage.setItem(
+      KEY_DERIVATION_NUMBER_ID,
+      KEY_DERIVATION_NUMBER.toString(),
+    );
 
     const keyPair = {
-      publicKey: wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
-      privateKey: wallet.getSecret(DEFAULT_ACCOUNT_ID),
+      publicKey: wallet.getPublicKey(KEY_DERIVATION_NUMBER),
+      privateKey: wallet.getSecret(KEY_DERIVATION_NUMBER),
     };
 
     await _storeAccount({
@@ -159,14 +162,13 @@ export const popupMessageListener = (request: Request) => {
     }
 
     const wallet = fromMnemonic(mnemonicPhrase);
-
-    DEFAULT_ACCOUNT_ID += 1;
-
-    await _fundAccount(wallet);
+    const keyNumber =
+      Number(localStorage.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
+    await _fundAccount(wallet.getPublicKey(keyNumber));
 
     const keyPair = {
-      publicKey: wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
-      privateKey: wallet.getSecret(DEFAULT_ACCOUNT_ID),
+      publicKey: wallet.getPublicKey(keyNumber),
+      privateKey: wallet.getSecret(keyNumber),
     };
 
     await _storeAccount({
@@ -174,6 +176,8 @@ export const popupMessageListener = (request: Request) => {
       keyPair,
       mnemonicPhrase,
     });
+
+    localStorage.setItem(KEY_DERIVATION_NUMBER_ID, keyNumber.toString());
 
     store.dispatch(timeoutAccountAccess());
 
@@ -295,9 +299,10 @@ export const popupMessageListener = (request: Request) => {
 
     if (wallet) {
       const keyPair = {
-        publicKey: wallet.getPublicKey(DEFAULT_ACCOUNT_ID),
-        privateKey: wallet.getSecret(DEFAULT_ACCOUNT_ID),
+        publicKey: wallet.getPublicKey(0),
+        privateKey: wallet.getSecret(0),
       };
+      localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
 
@@ -330,55 +335,67 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const confirmPassword = async () => {
+    /* In Popup, we call loadAccount to figure out what the state the user is in,
+    then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
+    <UnlockAccount /> calls this method to fill in any missing data */
+
     const { password } = request;
     const keyIdList = getKeyIdList();
 
-    // migration needed
+    /* migration needed to v1.0.6-beta data model */
     if (!keyIdList.length) {
       keyIdList.push(localStorage.getItem(KEY_ID));
       localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
+      localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
     }
+    /* end migration script */
 
     const unlockedAccounts = [] as Array<string>;
     let selectedPublicKey = "";
     let selectedPrivateKey = "";
     let accountMnemonicPhrase;
 
-    // TODO: We don't need to do all of this if we have public key/allAccounts and just simply need to start the private key timer
-
-    await Promise.all(
-      keyIdList.map(async (keyId: string) => {
-        let keyStore;
-        try {
-          keyStore = await keyManager.loadKey(keyId, password);
-        } catch (e) {
-          console.error(e);
-        }
-
-        if (keyStore) {
-          const {
-            publicKey,
-            privateKey,
-            extra = { mnemonicPhrase: "" },
-          } = keyStore;
-          const { mnemonicPhrase } = extra;
-          unlockedAccounts.push(publicKey);
-          if (keyId === localStorage.getItem(KEY_ID)) {
-            selectedPublicKey = publicKey;
-            selectedPrivateKey = privateKey;
-            accountMnemonicPhrase = mnemonicPhrase;
+    if (
+      !publicKeySelector(store.getState()) ||
+      !allAccountsSelector(store.getState()).length
+    ) {
+      // construct allAccounts and set the active account
+      await Promise.all(
+        keyIdList.map(async (keyId: string) => {
+          let keyStore;
+          try {
+            keyStore = await keyManager.loadKey(keyId, password);
+          } catch (e) {
+            console.error(e);
           }
-        }
-      }),
-    );
 
-    store.dispatch(
-      logIn({
-        publicKey: selectedPublicKey,
-        mnemonicPhrase: accountMnemonicPhrase,
-        allAccounts: unlockedAccounts,
-      }),
-    );
+          if (keyStore) {
+            const {
+              publicKey,
+              privateKey,
+              extra = { mnemonicPhrase: "" },
+            } = keyStore;
+            const { mnemonicPhrase } = extra;
+            unlockedAccounts.push(publicKey);
+
+            // if this account matches the keyId, set as active account
+            if (keyId === localStorage.getItem(KEY_ID)) {
+              selectedPublicKey = publicKey;
+              selectedPrivateKey = privateKey;
+              accountMnemonicPhrase = mnemonicPhrase;
+            }
+          }
+        }),
+      );
+
+      store.dispatch(
+        logIn({
+          publicKey: selectedPublicKey,
+          mnemonicPhrase: accountMnemonicPhrase,
+          allAccounts: unlockedAccounts,
+        }),
+      );
+    }
     sessionTimer.startSession({ privateKey: selectedPrivateKey });
 
     return {
