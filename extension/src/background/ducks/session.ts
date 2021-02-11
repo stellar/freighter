@@ -4,13 +4,13 @@ const initialState = {
   publicKey: "",
   privateKey: "",
   mnemonicPhrase: "",
-  allAccounts: [] as Array<string>,
+  allAccounts: [] as Array<{}>,
 };
 
 interface UiData {
   publicKey: string;
   mnemonicPhrase?: string;
-  allAccounts?: Array<string>;
+  allAccounts?: Array<{}>;
 }
 
 interface AppData {

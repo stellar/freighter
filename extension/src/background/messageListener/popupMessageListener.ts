@@ -7,13 +7,25 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { isTestnet } from "@shared/constants/stellar";
 
-import { Response as Request } from "@shared/api/types";
+import { Account, Response as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
-import { ALLOWLIST_ID, KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
+import {
+  ACCOUNT_NAME_LIST_ID,
+  ALLOWLIST_ID,
+  APPLICATION_ID,
+  DATA_SHARING_ID,
+  KEY_DERIVATION_NUMBER_ID,
+  KEY_ID,
+  KEY_ID_LIST,
+} from "constants/localStorageTypes";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
-import { getKeyIdList } from "background/helpers/keyId";
+import {
+  addAccountName,
+  getAccountNameList,
+  getKeyIdList,
+} from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 
 import { store } from "background/store";
@@ -28,10 +40,6 @@ import {
   setActivePublicKey,
   timeoutAccountAccess,
 } from "background/ducks/session";
-
-const APPLICATION_ID = "applicationState";
-const DATA_SHARING_ID = "dataSharingStatus";
-const KEY_DERIVATION_NUMBER_ID = "keyDerivationNumberId";
 
 const sessionTimer = new SessionTimer();
 
@@ -58,26 +66,36 @@ export const popupMessageListener = (request: Request) => {
     mnemonicPhrase,
     password,
     keyPair,
+    imported = false,
   }: {
     mnemonicPhrase: string;
     password: string;
     keyPair: KeyPair;
+    imported?: boolean;
   }) => {
     const { publicKey, privateKey } = keyPair;
 
     const allAccounts = allAccountsSelector(store.getState());
+    const accountName = `Account ${allAccounts.length + 1}`;
 
     store.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
-        allAccounts: [...allAccounts, publicKey],
+        allAccounts: [
+          ...allAccounts,
+          {
+            publicKey,
+            name: accountName,
+            imported,
+          },
+        ],
       }),
     );
 
     const keyMetadata = {
       key: {
-        extra: { mnemonicPhrase },
+        extra: { imported, mnemonicPhrase },
         type: KeyType.plaintextKey,
         publicKey,
         privateKey,
@@ -100,6 +118,10 @@ export const popupMessageListener = (request: Request) => {
 
     localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
     localStorage.setItem(KEY_ID, keyStore.id);
+    addAccountName({
+      keyId: keyStore.id,
+      accountName,
+    });
   };
 
   const _fundAccount = async (publicKey: string) => {
@@ -218,6 +240,7 @@ export const popupMessageListener = (request: Request) => {
       password,
       keyPair,
       mnemonicPhrase,
+      imported: true,
     });
 
     sessionTimer.startSession({ privateKey });
@@ -234,8 +257,10 @@ export const popupMessageListener = (request: Request) => {
     const { publicKey } = request;
 
     const allAccounts = allAccountsSelector(store.getState());
-    const publicKeyIndex =
-      allAccounts.indexOf(publicKey) > -1 ? allAccounts.indexOf(publicKey) : 0;
+    let publicKeyIndex = allAccounts.findIndex((account) =>
+      account.hasOwnProperty(publicKey),
+    );
+    publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
     const keyIdList = getKeyIdList();
 
     const activeKeyId = keyIdList[publicKeyIndex];
@@ -344,13 +369,21 @@ export const popupMessageListener = (request: Request) => {
 
     /* migration needed to v1.0.6-beta data model */
     if (!keyIdList.length) {
-      keyIdList.push(localStorage.getItem(KEY_ID));
-      localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
-      localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+      const keyId = localStorage.getItem(KEY_ID);
+      if (keyId) {
+        keyIdList.push(keyId);
+        localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
+        localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+        localStorage.setItem(
+          ACCOUNT_NAME_LIST_ID,
+          JSON.stringify({ [keyId]: "Account 1" }),
+        );
+      }
     }
     /* end migration script */
 
-    const unlockedAccounts = [] as Array<string>;
+    const accountNameList = getAccountNameList();
+    const unlockedAccounts = [] as Array<Account>;
     let selectedPublicKey = "";
     let selectedPrivateKey = "";
     let accountMnemonicPhrase;
@@ -375,8 +408,12 @@ export const popupMessageListener = (request: Request) => {
               privateKey,
               extra = { mnemonicPhrase: "" },
             } = keyStore;
-            const { mnemonicPhrase } = extra;
-            unlockedAccounts.push(publicKey);
+            const { mnemonicPhrase, imported = false } = extra;
+            unlockedAccounts.push({
+              publicKey,
+              name: accountNameList[keyId] || `Account ${keyIdList.length}`,
+              imported,
+            });
 
             // if this account matches the keyId, set as active account
             if (keyId === localStorage.getItem(KEY_ID)) {
