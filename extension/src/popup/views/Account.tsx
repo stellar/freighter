@@ -192,6 +192,10 @@ export const Account = () => {
     }
   };
 
+  const { name: currentAccountName } = allAccounts.find(
+    ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+  ) || { publicKey: "", name: "" };
+
   return accountBalance ? (
     <section onClick={closeDropdown}>
       <Header>
@@ -204,7 +208,7 @@ export const Account = () => {
           >
             <AccountListIdenticon
               active
-              accountNumber={allAccounts.indexOf(publicKey) + 1}
+              accountName={currentAccountName}
               publicKey={publicKey}
             />
             <AccountDropdownArrowEl />
@@ -214,21 +218,23 @@ export const Account = () => {
             isDropdownOpen={isDropdownOpen}
           >
             {allAccounts.length > 1 &&
-              allAccounts.map((account: string, i: number) => {
-                const isSelected = account === publicKey;
+              allAccounts.map(
+                ({ publicKey: accountPublicKey, name: accountName }) => {
+                  const isSelected = publicKey === accountPublicKey;
 
-                return (
-                  <AccountDropdownAccountEl key={`account-${account}`}>
-                    <AccountListIdenticon
-                      accountNumber={i + 1}
-                      active={isSelected}
-                      checked={isSelected}
-                      publicKey={account}
-                      setIsDropdownOpen={setIsDropdownOpen}
-                    />
-                  </AccountDropdownAccountEl>
-                );
-              })}
+                  return (
+                    <AccountDropdownAccountEl key={`account-${accountName}`}>
+                      <AccountListIdenticon
+                        accountName={accountName}
+                        active={isSelected}
+                        checked={isSelected}
+                        publicKey={accountPublicKey}
+                        setIsDropdownOpen={setIsDropdownOpen}
+                      />
+                    </AccountDropdownAccountEl>
+                  );
+                },
+              )}
             <AccountDropdownOptionEl>
               <AccountDropdownOptionLinkEl
                 to={{

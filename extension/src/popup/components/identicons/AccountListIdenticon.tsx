@@ -79,7 +79,7 @@ const PublicKeyEl = styled.span`
 `;
 
 interface KeyIdenticonProps {
-  accountNumber: number;
+  accountName: string;
   active?: boolean;
   checked?: boolean;
   publicKey: string;
@@ -87,7 +87,7 @@ interface KeyIdenticonProps {
 }
 
 export const AccountListIdenticon = ({
-  accountNumber,
+  accountName,
   active = false,
   checked = false,
   publicKey = "",
@@ -112,9 +112,7 @@ export const AccountListIdenticon = ({
         <IdenticonEl string={shortPublicKey} />
       </IdenticonWrapperEl>
       <AccountKeyButtonEl active={active} onClick={handleMakeAccountActive}>
-        <AccountNumberEl active={active}>
-          Account {accountNumber}
-        </AccountNumberEl>
+        <AccountNumberEl active={active}>{accountName}</AccountNumberEl>
         <PublicKeyEl>{shortPublicKey}</PublicKeyEl>
       </AccountKeyButtonEl>
     </KeyIdenticonWrapperEl>
