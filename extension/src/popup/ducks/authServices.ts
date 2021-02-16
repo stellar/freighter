@@ -15,17 +15,18 @@ import {
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
 } from "@shared/api/internal";
+import { Account } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
 }
 
 export const createAccount = createAsyncThunk<
-  { allAccounts: Array<string>; publicKey: string },
+  { allAccounts: Array<Account>; publicKey: string },
   string,
   { rejectValue: ErrorMessage }
 >("auth/createAccount", async (password, thunkApi) => {
-  let res = { allAccounts: [] as Array<string>, publicKey: "" };
+  let res = { allAccounts: [] as Array<Account>, publicKey: "" };
 
   try {
     res = await createAccountService(password);
@@ -39,11 +40,11 @@ export const createAccount = createAsyncThunk<
 });
 
 export const addAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<string> },
+  { publicKey: string; allAccounts: Array<Account> },
   string,
   { rejectValue: ErrorMessage }
 >("auth/addAccount", async (password, thunkApi) => {
-  let res = { publicKey: "", allAccounts: [] as Array<string> };
+  let res = { publicKey: "", allAccounts: [] as Array<Account> };
 
   try {
     res = await addAccountService(password);
@@ -57,11 +58,11 @@ export const addAccount = createAsyncThunk<
 });
 
 export const importAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<string> },
+  { publicKey: string; allAccounts: Array<Account> },
   { password: string; privateKey: string },
   { rejectValue: ErrorMessage }
 >("auth/importAccount", async ({ password, privateKey }, thunkApi) => {
-  let res = { publicKey: "", allAccounts: [] as Array<string> };
+  let res = { publicKey: "", allAccounts: [] as Array<Account> };
 
   try {
     res = await importAccountService(password, privateKey);
@@ -81,14 +82,14 @@ export const makeAccountActive = createAsyncThunk(
 );
 
 export const recoverAccount = createAsyncThunk<
-  { allAccounts: Array<string>; publicKey: string },
+  { allAccounts: Array<Account>; publicKey: string },
   {
     password: string;
     mnemonicPhrase: string;
   },
   { rejectValue: ErrorMessage }
 >("auth/recoverAccount", async ({ password, mnemonicPhrase }, thunkApi) => {
-  let res = { allAccounts: [] as Array<string>, publicKey: "" };
+  let res = { allAccounts: [] as Array<Account>, publicKey: "" };
 
   try {
     res = await recoverAccountService(password, mnemonicPhrase);
@@ -152,7 +153,7 @@ export const confirmPassword = createAsyncThunk<
     publicKey: string;
     hasPrivateKey: boolean;
     applicationState: APPLICATION_STATE;
-    allAccounts: Array<string>;
+    allAccounts: Array<Account>;
   },
   string,
   { rejectValue: ErrorMessage }
@@ -161,7 +162,7 @@ export const confirmPassword = createAsyncThunk<
     publicKey: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-    allAccounts: [""],
+    allAccounts: [] as Array<Account>,
   };
   try {
     res = await confirmPasswordService(phrase);
@@ -209,7 +210,7 @@ export const signOut = createAsyncThunk<
 });
 
 interface InitialState {
-  allAccounts: Array<string>;
+  allAccounts: Array<Account>;
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
