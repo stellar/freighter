@@ -432,6 +432,19 @@ export const popupMessageListener = (request: Request) => {
           allAccounts: unlockedAccounts,
         }),
       );
+    } else {
+      let keyStore;
+      try {
+        keyStore = await keyManager.loadKey(
+          localStorage.getItem(KEY_ID) || "",
+          password,
+        );
+      } catch (e) {
+        console.error(e);
+        return { error: "Could not log into selected account" };
+      }
+
+      selectedPrivateKey = keyStore.privateKey;
     }
     sessionTimer.startSession({ privateKey: selectedPrivateKey });
 
