@@ -22,10 +22,16 @@ export interface Response {
   type: SERVICE_TYPES;
   url: string;
   isDataSharingAllowed: boolean;
-  allAccounts: Array<string>;
+  allAccounts: Array<Account>;
 }
 
 export interface ExternalRequest {
   transactionXdr: string;
   type: EXTERNAL_SERVICE_TYPES;
+}
+
+export interface Account {
+  publicKey: string;
+  name: string;
+  imported: boolean;
 }

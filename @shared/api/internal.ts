@@ -1,5 +1,5 @@
 import StellarSdk from "stellar-sdk";
-
+import { Account } from "./types";
 import { NETWORK_URL } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -9,9 +9,9 @@ const server = new StellarSdk.Server(NETWORK_URL);
 
 export const createAccount = async (
   password: string,
-): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
+): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
   let publicKey = "";
-  let allAccounts = [] as Array<string>;
+  let allAccounts = [] as Array<Account>;
 
   try {
     ({ allAccounts, publicKey } = await sendMessageToBackground({
@@ -27,9 +27,9 @@ export const createAccount = async (
 
 export const addAccount = async (
   password: string,
-): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
+): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
   let publicKey = "";
-  let allAccounts = [] as Array<string>;
+  let allAccounts = [] as Array<Account>;
 
   try {
     ({ allAccounts, publicKey } = await sendMessageToBackground({
@@ -46,10 +46,10 @@ export const addAccount = async (
 export const importAccount = async (
   password: string,
   privateKey: string,
-): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
+): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
   let error = "";
   let publicKey = "";
-  let allAccounts = [] as Array<string>;
+  let allAccounts = [] as Array<Account>;
 
   try {
     ({ allAccounts, publicKey, error } = await sendMessageToBackground({
@@ -81,7 +81,7 @@ export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
   applicationState: APPLICATION_STATE;
-  allAccounts: Array<string>;
+  allAccounts: Array<Account>;
 }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_ACCOUNT,
@@ -127,9 +127,9 @@ export const confirmMnemonicPhrase = async (
 export const recoverAccount = async (
   password: string,
   recoverMnemonic: string,
-): Promise<{ publicKey: string; allAccounts: Array<string> }> => {
+): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
   let publicKey = "";
-  let allAccounts = [] as Array<string>;
+  let allAccounts = [] as Array<Account>;
 
   try {
     ({ allAccounts, publicKey } = await sendMessageToBackground({
@@ -150,13 +150,13 @@ export const confirmPassword = async (
   publicKey: string;
   hasPrivateKey: boolean;
   applicationState: APPLICATION_STATE;
-  allAccounts: Array<string>;
+  allAccounts: Array<Account>;
 }> => {
   let response = {
     publicKey: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-    allAccounts: [] as Array<string>,
+    allAccounts: [] as Array<Account>,
   };
   try {
     response = await sendMessageToBackground({
