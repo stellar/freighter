@@ -13,6 +13,7 @@ export const COLOR_PALETTE = {
   errorFaded: "#FFBFBF",
   grey: "#99A2B4",
   greyFaded: "#D2D5DB",
+  greyDark: "#7B869D",
   warning: "#E4792C",
   warningFaded: "#F8E4CC",
   primaryGradient: "linear-gradient(180deg, #4b42e3 0%, #302cd1 100%)",

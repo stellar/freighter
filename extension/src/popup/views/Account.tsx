@@ -32,7 +32,7 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 import { Footer } from "popup/components/Footer";
 
 import "popup/metrics/authServices";
-import { COLOR_PALETTE } from "popup/constants/styles";
+import { COLOR_PALETTE, ROUNDED_CORNERS } from "popup/constants/styles";
 
 const AccountEl = styled.div`
   width: 100%;
@@ -63,7 +63,7 @@ const AccountDropdownButtonEl = styled.div`
 const AccountDropdownArrowEl = styled.span`
   border-left: 0.5rem solid transparent;
   border-right: 0.5rem solid transparent;
-  border-top: 0.5rem solid #7b869d;
+  border-top: 0.5rem solid ${COLOR_PALETTE.greyDark};
   margin: 0 0.75rem 0 3rem;
   width: 0;
   height: 0;
@@ -94,11 +94,24 @@ const AccountDropdownOptionsEl = styled.ul`
 
 const AccountDropdownAccountEl = styled.li`
   border-bottom: 1px solid ${COLOR_PALETTE.greyFaded};
-  padding: 0.75rem 5.6rem 0.75rem 1rem;
+  display: flex;
+  padding: 0.75rem 0 0.75rem 1rem;
+  width: 16rem;
 `;
 
 const AccountDropdownOptionEl = styled.li`
   padding: 0.75rem 1rem;
+`;
+
+const AccountTagEl = styled.span`
+  background: ${COLOR_PALETTE.greyFaded};
+  border-radius: ${ROUNDED_CORNERS};
+  color: ${COLOR_PALETTE.greyDark};
+  font-size: 0.625rem;
+  height: 1rem;
+  line-height: 1.1rem;
+  padding: 0 0.75rem;
+  margin: 1rem 0 0 1rem;
 `;
 
 const AccountDropdownOptionLinkEl = styled(Link)`
@@ -161,6 +174,8 @@ const CopiedToastWrapperEl = styled.div`
   right: 15rem;
 `;
 
+const ImportedTagEl = () => <AccountTagEl>IMPORTED</AccountTagEl>;
+
 export const Account = () => {
   const [accountBalance, setaccountBalance] = useState("");
   const [isCopied, setIsCopied] = useState(false);
@@ -219,7 +234,11 @@ export const Account = () => {
           >
             {allAccounts.length > 1 &&
               allAccounts.map(
-                ({ publicKey: accountPublicKey, name: accountName }) => {
+                ({
+                  publicKey: accountPublicKey,
+                  name: accountName,
+                  imported,
+                }) => {
                   const isSelected = publicKey === accountPublicKey;
 
                   return (
@@ -231,6 +250,7 @@ export const Account = () => {
                         publicKey={accountPublicKey}
                         setIsDropdownOpen={setIsDropdownOpen}
                       />
+                      {imported ? <ImportedTagEl /> : null}
                     </AccountDropdownAccountEl>
                   );
                 },
