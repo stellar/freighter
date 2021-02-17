@@ -23,6 +23,7 @@ export interface Response {
   url: string;
   isDataSharingAllowed: boolean;
   allAccounts: Array<Account>;
+  accountName: string;
 }
 
 export interface ExternalRequest {

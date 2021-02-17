@@ -39,6 +39,7 @@ import {
   publicKeySelector,
   setActivePublicKey,
   timeoutAccountAccess,
+  updateAllAccountsAccountName,
 } from "background/ducks/session";
 
 const sessionTimer = new SessionTimer();
@@ -275,6 +276,20 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(currentState),
       hasPrivateKey: hasPrivateKeySelector(currentState),
+    };
+  };
+
+  const updateAccountName = () => {
+    const { accountName } = request;
+    const keyId = localStorage.getItem(KEY_ID) || "";
+
+    store.dispatch(
+      updateAllAccountsAccountName({ updatedAccountName: accountName }),
+    );
+    addAccountName({ keyId, accountName });
+
+    return {
+      allAccounts: allAccountsSelector(store.getState()),
     };
   };
 
@@ -553,6 +568,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.IMPORT_ACCOUNT]: importAccount,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
+    [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,
     [SERVICE_TYPES.RECOVER_ACCOUNT]: recoverAccount,

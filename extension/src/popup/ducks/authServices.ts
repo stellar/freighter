@@ -295,7 +295,6 @@ const authSlice = createSlice({
     });
     builder.addCase(importAccount.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
-      console.log(9);
 
       return {
         ...state,
@@ -317,6 +316,26 @@ const authSlice = createSlice({
     builder.addCase(makeAccountActive.rejected, (state, action) => {
       const {
         message = "Freighter was unable to switch to this account",
+      } = action.error;
+
+      return {
+        ...state,
+        error: message,
+      };
+    });
+    builder.addCase(updateAccountName.fulfilled, (state, action) => {
+      const { allAccounts } = action.payload || {
+        allAccounts: [],
+      };
+
+      return {
+        ...state,
+        allAccounts,
+      };
+    });
+    builder.addCase(updateAccountName.rejected, (state, action) => {
+      const {
+        message = "Freighter was unable update this account's name",
       } = action.error;
 
       return {
