@@ -8,6 +8,7 @@ import { getAccountBalance } from "@shared/api/internal";
 
 import { emitMetric } from "helpers/metrics";
 import {
+  accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/authServices";
@@ -182,6 +183,7 @@ export const Account = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const publicKey = useSelector(publicKeySelector);
   const allAccounts = useSelector(allAccountsSelector);
+  const currentAccountName = useSelector(accountNameSelector);
   const accountDropDownRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -206,10 +208,6 @@ export const Account = () => {
       setIsDropdownOpen(false);
     }
   };
-
-  const { name: currentAccountName } = allAccounts.find(
-    ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
-  ) || { publicKey: "", name: "" };
 
   return accountBalance ? (
     <section onClick={closeDropdown}>

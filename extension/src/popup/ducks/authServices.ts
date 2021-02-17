@@ -8,6 +8,7 @@ import {
   addAccount as addAccountService,
   importAccount as importAccountService,
   makeAccountActive as makeAccountActiveService,
+  updateAccountName as updateAccountNameService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   createAccount as createAccountService,
   recoverAccount as recoverAccountService,
@@ -79,6 +80,11 @@ export const importAccount = createAsyncThunk<
 export const makeAccountActive = createAsyncThunk(
   "auth/makeAccountActive",
   (publicKey: string) => makeAccountActiveService(publicKey),
+);
+
+export const updateAccountName = createAsyncThunk(
+  "auth/updateAccountName",
+  (accountName: string) => updateAccountNameService(accountName),
 );
 
 export const recoverAccount = createAsyncThunk<
@@ -450,6 +456,18 @@ export const authErrorSelector = createSelector(
 export const publicKeySelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.publicKey,
+);
+
+export const accountNameSelector = createSelector(
+  publicKeySelector,
+  allAccountsSelector,
+  (publicKey, allAccounts) => {
+    const { name } = allAccounts.find(
+      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+    ) || { publicKey: "", name: "" };
+
+    return name;
+  },
 );
 
 export const { clearApiError } = authSlice.actions;

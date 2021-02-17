@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
 import {
+  FONT_FAMILY,
   COLOR_PALETTE,
   ANIMATION_TIMES,
   ROUNDED_CORNERS,
@@ -112,19 +113,19 @@ export const TextField = styled(Field)`
   }
 
   :focus &::-webkit-input-placeholder {
-    font-family: "Muli", sans-serif;
+    font-family: ${FONT_FAMILY};
   }
 
   &:-ms-input-placeholder {
-    font-family: "Muli", sans-serif;
+    font-family: ${FONT_FAMILY};
   }
 
   &:-moz-placeholder {
-    font-family: "Muli", sans-serif;
+    font-family: ${FONT_FAMILY};
   }
 
   &::-moz-placeholder {
-    font-family: "Muli", sans-serif;
+    font-family: ${FONT_FAMILY};
   }
 `;
 

@@ -1,26 +1,38 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import QrCode from "qrcode.react";
+import { Formik } from "formik";
 
 import { emitMetric } from "helpers/metrics";
 
 import { BasicButton } from "popup/basics/Buttons";
+import { Form, TextField } from "popup/basics/Forms";
 
 import { NETWORK_NAME } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import {
+  COLOR_PALETTE,
+  FONT_FAMILY,
+  FONT_WEIGHT,
+} from "popup/constants/styles";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { navigateTo, openTab } from "popup/helpers/navigate";
 
-import { publicKeySelector } from "popup/ducks/authServices";
+import {
+  accountNameSelector,
+  publicKeySelector,
+  updateAccountName,
+} from "popup/ducks/authServices";
 
 import { Toast } from "popup/components/Toast";
 
+import CheckIcon from "popup/assets/check.svg";
 import CloseIcon from "popup/assets/icon-close-color.svg";
 import CopyIcon from "popup/assets/copy-color.svg";
+import PencilIcon from "popup/assets/pencil.svg";
 import StellarExpertIcon from "popup/assets/icon-stellar-expert.svg";
 
 const QrEl = styled.div`
@@ -32,6 +44,7 @@ const QrEl = styled.div`
 const Header = styled.div`
   display: flex;
   justify-content: flex-end;
+  margin-bottom: 1rem;
 
   img {
     display: block;
@@ -50,10 +63,34 @@ const QrCodeEl = styled(QrCode)`
   border-radius: 10px;
   border: 2px solid ${COLOR_PALETTE.greyFaded};
 `;
+const HeadingWrapperEl = styled.div`
+  display: flex;
+  justify-content: center;
+  margin: 0 0 0.25rem 2.9rem;
+`;
 const HeadingEl = styled.h1`
   color: ${COLOR_PALETTE.primary};
   font-weight: ${FONT_WEIGHT.light};
   margin: 1rem 0 0.75rem;
+  text-align: center;
+`;
+const EditNameFormEl = styled(Form)`
+  position: relative;
+`;
+const EditNameButtonEl = styled(BasicButton)`
+  margin-left: 0.9rem;
+`;
+const SubmitNameButtonEl = styled(BasicButton)`
+  margin-top: -0.5rem;
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+`;
+const AccountNameInputEl = styled(TextField)`
+  font-family: ${FONT_FAMILY};
+  font-size: 2rem;
+  font-weight: ${FONT_WEIGHT.light};
+  padding: 1rem 0;
   text-align: center;
 `;
 const PublicKeyText = styled.p`
@@ -95,16 +132,63 @@ const CopiedToastWrapperEl = styled.div`
 
 export const ViewPublicKey = () => {
   const publicKey = useSelector(publicKeySelector);
+  const accountName = useSelector(accountNameSelector);
   const [isCopied, setIsCopied] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const accountNameElRef = useRef<HTMLElement>(null);
+
+  interface FormValue {
+    accountName: string;
+  }
+
+  const initialValues: FormValue = {
+    accountName,
+  };
+
+  const handleSubmit = async (values: FormValue) => {
+    const { accountName: newAccountName } = values;
+
+    if (accountName !== newAccountName) {
+      await updateAccountName(newAccountName);
+    }
+    setIsEditingName(false);
+  };
+
+  const closeEditNameField = (e: React.ChangeEvent<any>) => {
+    if (
+      accountNameElRef.current &&
+      !accountNameElRef.current.contains(e.target)
+    ) {
+      setIsEditingName(false);
+    }
+  };
 
   return (
-    <QrEl>
+    <QrEl onClick={closeEditNameField}>
       <Header>
         <BasicButton onClick={() => navigateTo(ROUTES.account)}>
           <img src={CloseIcon} alt="close icon" />
         </BasicButton>
       </Header>
-      <HeadingEl>Your Account</HeadingEl>
+      {isEditingName ? (
+        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+          <section ref={accountNameElRef}>
+            <EditNameFormEl>
+              <AccountNameInputEl autocomplete="off" name="accountName" />
+              <SubmitNameButtonEl>
+                <img src={CheckIcon} alt="check icon" />
+              </SubmitNameButtonEl>
+            </EditNameFormEl>
+          </section>
+        </Formik>
+      ) : (
+        <HeadingWrapperEl>
+          <HeadingEl>{accountName}</HeadingEl>
+          <EditNameButtonEl onClick={() => setIsEditingName(true)}>
+            <img alt="edit name icon" src={PencilIcon} />
+          </EditNameButtonEl>
+        </HeadingWrapperEl>
+      )}
       <QrCodeContainerEl>
         <QrCodeEl
           style={{
