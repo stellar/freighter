@@ -193,7 +193,7 @@ export const Account = () => {
         console.log(e);
       }
       const { balance } = res;
-      setaccountBalance(Number(balance).toFixed(2));
+      setaccountBalance(balance);
     };
     fetchAccountBalance();
   }, [publicKey]);
