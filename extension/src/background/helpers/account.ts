@@ -3,8 +3,12 @@ import { ACCOUNT_NAME_LIST_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 export const getKeyIdList = () =>
   JSON.parse(localStorage.getItem(KEY_ID_LIST) || "[]");
 
-export const getAccountNameList = () =>
-  JSON.parse(localStorage.getItem(ACCOUNT_NAME_LIST_ID) || "{}");
+export const getAccountNameList = () => {
+  const encodedaccountNameList =
+    localStorage.getItem(ACCOUNT_NAME_LIST_ID) || btoa("{}");
+
+  return JSON.parse(atob(encodedaccountNameList));
+};
 
 export const addAccountName = ({
   keyId,
@@ -17,5 +21,7 @@ export const addAccountName = ({
 
   accountNameList[keyId] = accountName;
 
-  localStorage.setItem(ACCOUNT_NAME_LIST_ID, JSON.stringify(accountNameList));
+  const encodedaccountNameList = btoa(JSON.stringify(accountNameList));
+
+  localStorage.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
 };
