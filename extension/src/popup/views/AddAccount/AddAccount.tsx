@@ -4,6 +4,7 @@ import { Formik } from "formik";
 
 import { ROUTES } from "popup/constants/routes";
 
+import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
@@ -32,13 +33,17 @@ export const AddAccount = () => {
     password: string;
   }
 
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
 
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
-    await dispatch(addAccount(password));
-    navigateTo(ROUTES.account);
+
+    const res = await dispatch(addAccount(password));
+
+    if (addAccount.fulfilled.match(res)) {
+      navigateTo(ROUTES.account);
+    }
   };
 
   return (

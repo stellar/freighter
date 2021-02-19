@@ -62,6 +62,9 @@ export const popupMessageListener = (request: Request) => {
   });
   keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
 
+  const _unlockKeystore = ({ password }: { password: string }) =>
+    keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+
   const _storeAccount = async ({
     mnemonicPhrase,
     password,
@@ -183,6 +186,13 @@ export const popupMessageListener = (request: Request) => {
       return { error: "Mnemonic phrase not found" };
     }
 
+    try {
+      await _unlockKeystore({ password });
+    } catch (e) {
+      console.error(e);
+      return { error: "Incorrect password" };
+    }
+
     const wallet = fromMnemonic(mnemonicPhrase);
     const keyNumber =
       Number(localStorage.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
@@ -216,13 +226,11 @@ export const popupMessageListener = (request: Request) => {
     let sourceKeys;
 
     try {
+      await _unlockKeystore({ password });
       sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
-
-      return {
-        error: "Please enter a valid secret key/password combination",
-      };
+      return { error: "Please enter a valid secret key/password combination" };
     }
 
     const keyPair = {
@@ -315,7 +323,6 @@ export const popupMessageListener = (request: Request) => {
     let wallet;
     let applicationState;
 
-    // @TODO: We should clear any possible old localstorage
     try {
       wallet = fromMnemonic(recoverMnemonic);
     } catch (e) {
@@ -327,6 +334,7 @@ export const popupMessageListener = (request: Request) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
+      localStorage.clear();
       localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
@@ -352,7 +360,7 @@ export const popupMessageListener = (request: Request) => {
     const { password } = request;
 
     try {
-      await keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+      await _unlockKeystore({ password });
       return {};
     } catch (e) {
       return { error: "Incorrect Password" };
@@ -382,20 +390,39 @@ export const popupMessageListener = (request: Request) => {
     }
     /* end migration script */
 
+    let activeAccountKeystore;
+
+    // first make sure the password is correct to get active keystore, short circuit if not
+    try {
+      activeAccountKeystore = await _unlockKeystore({ password });
+    } catch (e) {
+      console.error(e);
+      return { error: "Could not log into selected account" };
+    }
+
+    const {
+      publicKey: activePublicKey,
+      privateKey: activePrivateKey,
+      extra: activeExtra = { mnemonicPhrase: "" },
+    } = activeAccountKeystore;
+
+    const activeMnemonicPhrase = activeExtra.mnemonicPhrase;
+
     const accountNameList = getAccountNameList();
     const unlockedAccounts = [] as Array<Account>;
-    let selectedPublicKey = "";
-    let selectedPrivateKey = "";
-    let accountMnemonicPhrase;
 
     if (
       !publicKeySelector(store.getState()) ||
       !allAccountsSelector(store.getState()).length
     ) {
-      // construct allAccounts and set the active account
+      // we have cleared redux store via reloading extension/browser
+      // construct allAccounts from local storage
+      // log the user in using all accounts and public key/phrase from above to create the store
       await Promise.all(
         keyIdList.map(async (keyId: string) => {
           let keyStore;
+
+          // iterate over each keyId we have and get the associated keystore
           try {
             keyStore = await keyManager.loadKey(keyId, password);
           } catch (e) {
@@ -403,50 +430,30 @@ export const popupMessageListener = (request: Request) => {
           }
 
           if (keyStore) {
-            const {
-              publicKey,
-              privateKey,
-              extra = { mnemonicPhrase: "" },
-            } = keyStore;
-            const { mnemonicPhrase, imported = false } = extra;
+            // push the data into a list of accounts
+
+            const { publicKey, extra = { mnemonicPhrase: "" } } = keyStore;
+            const { imported = false } = extra;
             unlockedAccounts.push({
               publicKey,
               name: accountNameList[keyId] || `Account ${keyIdList.length}`,
               imported,
             });
-
-            // if this account matches the keyId, set as active account
-            if (keyId === localStorage.getItem(KEY_ID)) {
-              selectedPublicKey = publicKey;
-              selectedPrivateKey = privateKey;
-              accountMnemonicPhrase = mnemonicPhrase;
-            }
           }
         }),
       );
 
       store.dispatch(
         logIn({
-          publicKey: selectedPublicKey,
-          mnemonicPhrase: accountMnemonicPhrase,
+          publicKey: activePublicKey,
+          mnemonicPhrase: activeMnemonicPhrase,
           allAccounts: unlockedAccounts,
         }),
       );
-    } else {
-      let keyStore;
-      try {
-        keyStore = await keyManager.loadKey(
-          localStorage.getItem(KEY_ID) || "",
-          password,
-        );
-      } catch (e) {
-        console.error(e);
-        return { error: "Could not log into selected account" };
-      }
-
-      selectedPrivateKey = keyStore.privateKey;
     }
-    sessionTimer.startSession({ privateKey: selectedPrivateKey });
+
+    // start the timer now that we have active private key
+    sessionTimer.startSession({ privateKey: activePrivateKey });
 
     return {
       publicKey: publicKeySelector(store.getState()),
