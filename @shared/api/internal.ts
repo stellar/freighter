@@ -28,16 +28,21 @@ export const createAccount = async (
 export const addAccount = async (
   password: string,
 ): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
+  let error = "";
   let publicKey = "";
   let allAccounts = [] as Array<Account>;
 
   try {
-    ({ allAccounts, publicKey } = await sendMessageToBackground({
+    ({ allAccounts, error, publicKey } = await sendMessageToBackground({
       password,
       type: SERVICE_TYPES.ADD_ACCOUNT,
     }));
   } catch (e) {
     console.error(e);
+  }
+
+  if (error) {
+    throw new Error(error);
   }
 
   return { allAccounts, publicKey };
@@ -63,7 +68,7 @@ export const importAccount = async (
 
   // @TODO: should this be universal? See asana ticket.
   if (error) {
-    throw error;
+    throw new Error(error);
   }
 
   return { allAccounts, publicKey };

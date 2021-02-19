@@ -70,7 +70,7 @@ export const importAccount = createAsyncThunk<
     console.log(8);
     console.error("Failed when importing an account: ", e);
     return thunkApi.rejectWithValue({
-      errorMessage: e,
+      errorMessage: e.message,
     });
   }
   return res;
