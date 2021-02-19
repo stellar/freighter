@@ -18,7 +18,11 @@ import {
   SubmitButton,
 } from "popup/basics/Forms";
 
-import { addAccount, authErrorSelector } from "popup/ducks/authServices";
+import {
+  addAccount,
+  authErrorSelector,
+  clearApiError,
+} from "popup/ducks/authServices";
 
 interface FormValues {
   password: string;
@@ -46,17 +50,27 @@ export const AddAccount = () => {
     }
   };
 
+  const clearAddAccountError = (e: React.ChangeEvent<any>) => {
+    if (authError && e.target.value === "") {
+      dispatch(clearApiError());
+    }
+  };
+
   return (
     <>
       <SubviewWrapper>
         <SubviewHeader headerText="Add a new Stellar address" />
         <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-          {({ dirty, isSubmitting, isValid }) => (
+          {({ dirty, handleChange, isSubmitting, isValid }) => (
             <Form>
               <FormRow>
                 <TextField
                   autoComplete="off"
                   name="password"
+                  onChange={(e: React.ChangeEvent) => {
+                    clearAddAccountError(e);
+                    handleChange(e);
+                  }}
                   placeholder="Enter password"
                   type="password"
                 />
