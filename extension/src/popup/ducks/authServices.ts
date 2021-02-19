@@ -67,7 +67,6 @@ export const importAccount = createAsyncThunk<
   try {
     res = await importAccountService(password, privateKey);
   } catch (e) {
-    console.log(8);
     console.error("Failed when importing an account: ", e);
     return thunkApi.rejectWithValue({
       errorMessage: e.message,
@@ -263,6 +262,7 @@ const authSlice = createSlice({
 
       return {
         ...state,
+        error: "",
         publicKey,
         allAccounts,
       };
@@ -283,13 +283,13 @@ const authSlice = createSlice({
 
       return {
         ...state,
+        error: "",
         publicKey,
         allAccounts,
       };
     });
     builder.addCase(importAccount.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
-      console.log(9);
 
       return {
         ...state,

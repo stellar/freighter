@@ -19,7 +19,11 @@ import {
   SubmitButton,
 } from "popup/basics/Forms";
 
-import { importAccount, authErrorSelector } from "popup/ducks/authServices";
+import {
+  clearApiError,
+  importAccount,
+  authErrorSelector,
+} from "popup/ducks/authServices";
 
 import { WarningMessage } from "popup/components/WarningMessage";
 import IconOrangeLock from "popup/assets/icon-orange-lock.svg";
@@ -54,6 +58,12 @@ export const ImportAccount = () => {
     }
   };
 
+  const clearImportAccountError = (e: React.ChangeEvent<any>) => {
+    if (authError && e.target.value === "") {
+      dispatch(clearApiError());
+    }
+  };
+
   return (
     <>
       <SubviewWrapper>
@@ -80,12 +90,16 @@ export const ImportAccount = () => {
           onSubmit={handleSubmit}
           validationSchema={ImportAccountSchema}
         >
-          {({ dirty, isSubmitting, isValid }) => (
+          {({ dirty, handleChange, isSubmitting, isValid }) => (
             <Form>
               <FormRow>
                 <TextField
                   autoComplete="off"
                   name="privateKey"
+                  onChange={(e: React.ChangeEvent) => {
+                    clearImportAccountError(e);
+                    handleChange(e);
+                  }}
                   placeholder="Your Stellar secret key"
                   type="password"
                 />
@@ -95,6 +109,10 @@ export const ImportAccount = () => {
                 <TextField
                   autoComplete="off"
                   name="password"
+                  onChange={(e: React.ChangeEvent) => {
+                    clearImportAccountError(e);
+                    handleChange(e);
+                  }}
                   placeholder="Enter password"
                   type="password"
                 />
