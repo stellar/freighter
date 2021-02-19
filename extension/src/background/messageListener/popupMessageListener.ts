@@ -11,7 +11,6 @@ import { Account, Response as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
 import {
-  ACCOUNT_NAME_LIST_ID,
   ALLOWLIST_ID,
   APPLICATION_ID,
   DATA_SHARING_ID,
@@ -374,10 +373,7 @@ export const popupMessageListener = (request: Request) => {
         keyIdList.push(keyId);
         localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
         localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
-        localStorage.setItem(
-          ACCOUNT_NAME_LIST_ID,
-          JSON.stringify({ [keyId]: "Account 1" }),
-        );
+        addAccountName({ keyId, accountName: "Account 1" });
       }
     }
     /* end migration script */
