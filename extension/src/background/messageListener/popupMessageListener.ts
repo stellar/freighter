@@ -264,8 +264,8 @@ export const popupMessageListener = (request: Request) => {
     const { publicKey } = request;
 
     const allAccounts = allAccountsSelector(store.getState());
-    let publicKeyIndex = allAccounts.findIndex((account) =>
-      account.hasOwnProperty(publicKey),
+    let publicKeyIndex = allAccounts.findIndex(
+      (account: Account) => account.publicKey === publicKey,
     );
     publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
     const keyIdList = getKeyIdList();
