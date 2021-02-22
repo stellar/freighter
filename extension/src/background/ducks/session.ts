@@ -1,16 +1,18 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 
+import { Account } from "@shared/api/types";
+
 const initialState = {
   publicKey: "",
   privateKey: "",
   mnemonicPhrase: "",
-  allAccounts: [] as Array<{}>,
+  allAccounts: [] as Array<Account>,
 };
 
 interface UiData {
   publicKey: string;
   mnemonicPhrase?: string;
-  allAccounts?: Array<{}>;
+  allAccounts?: Array<Account>;
 }
 
 interface AppData {
