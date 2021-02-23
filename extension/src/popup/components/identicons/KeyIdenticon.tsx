@@ -1,10 +1,11 @@
 import React from "react";
-import Identicon from "react-identicons";
 import styled from "styled-components";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 
 import { truncatedPublicKey } from "helpers/stellar";
+
+import { IdenticonImg } from "./IdenticonImg";
 
 const KeyIdenticonWrapperEl = styled.div`
   align-items: center;
@@ -19,11 +20,6 @@ const IdenticonWrapperEl = styled.div`
   height: 2.1875rem;
   margin-right: 0.5rem;
   width: 2.1875rem;
-`;
-
-const IdenticonEl = styled(Identicon)`
-  height: 100% !important;
-  width: 100% !important;
 `;
 
 const PublicKeyEl = styled.span`
@@ -47,7 +43,7 @@ export const KeyIdenticon = ({
   return (
     <KeyIdenticonWrapperEl>
       <IdenticonWrapperEl>
-        <IdenticonEl string={shortPublicKey} />
+        <IdenticonImg publicKey={publicKey} />
       </IdenticonWrapperEl>
       <PublicKeyEl color={color} {...props}>
         {shortPublicKey}

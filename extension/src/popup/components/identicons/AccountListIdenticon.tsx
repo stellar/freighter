@@ -1,5 +1,4 @@
 import React from "react";
-import Identicon from "react-identicons";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
 
@@ -10,6 +9,8 @@ import { BasicButton } from "popup/basics/Buttons";
 import { truncatedPublicKey } from "helpers/stellar";
 
 import { makeAccountActive } from "popup/ducks/authServices";
+
+import { IdenticonImg } from "./IdenticonImg";
 
 const KeyIdenticonWrapperEl = styled.div`
   align-items: center;
@@ -51,11 +52,6 @@ const IdenticonWrapperEl = styled.div`
     }
   }
   `}
-`;
-
-const IdenticonEl = styled(Identicon)`
-  height: 100% !important;
-  width: 100% !important;
 `;
 
 const AccountKeyButtonEl = styled(BasicButton)`
@@ -109,7 +105,7 @@ export const AccountListIdenticon = ({
   return (
     <KeyIdenticonWrapperEl>
       <IdenticonWrapperEl checked={checked}>
-        <IdenticonEl string={shortPublicKey} />
+        <IdenticonImg publicKey={publicKey} />
       </IdenticonWrapperEl>
       <AccountKeyButtonEl active={active} onClick={handleMakeAccountActive}>
         <AccountNumberEl active={active}>{accountName}</AccountNumberEl>
