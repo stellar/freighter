@@ -5,7 +5,7 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 - the browser extension (`/extension`)
 - the client-facing SDK (`/@stellar/freighter-api`)
 - the docs (`/docs`)
-- some shared files that the above use (`/@freighter/*`)
+- some shared files that the above use (`/@shared/*`)
 
 ## Prerequisites
 
@@ -78,10 +78,10 @@ time you make a change.
 ### Importing a workspace
 
 In some cases, you will want to import a workspace into another. For example, in
-`extension` we need to import `@freighter/constants`. To do this, simply add
-`@freighter/constants` to the dependencies list in package.json in `extension`. Yarn
+`extension` we need to import `@shared/constants`. To do this, simply add
+`@shared/constants` to the dependencies list in package.json in `extension`. Yarn
 symlinks all the workspaces, so doing so will allow you to import files from the
-`@freighter/constants` workspace as if it were a published npm package.
+`@shared/constants` workspace as if it were a published npm package.
 
 ### Dependencies
 
