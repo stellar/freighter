@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import QrCode from "qrcode.react";
@@ -137,6 +137,8 @@ export const ViewPublicKey = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const accountNameElRef = useRef<HTMLElement>(null);
 
+  const dispatch = useDispatch();
+
   interface FormValue {
     accountName: string;
   }
@@ -147,9 +149,8 @@ export const ViewPublicKey = () => {
 
   const handleSubmit = async (values: FormValue) => {
     const { accountName: newAccountName } = values;
-
     if (accountName !== newAccountName) {
-      await updateAccountName(newAccountName);
+      await dispatch(updateAccountName(newAccountName));
     }
     setIsEditingName(false);
   };
@@ -174,8 +175,8 @@ export const ViewPublicKey = () => {
         <Formik initialValues={initialValues} onSubmit={handleSubmit}>
           <section ref={accountNameElRef}>
             <EditNameFormEl>
-              <AccountNameInputEl autocomplete="off" name="accountName" />
-              <SubmitNameButtonEl>
+              <AccountNameInputEl autoComplete="off" name="accountName" />
+              <SubmitNameButtonEl type="submit">
                 <img src={CheckIcon} alt="check icon" />
               </SubmitNameButtonEl>
             </EditNameFormEl>
