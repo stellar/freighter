@@ -1,3 +1,8 @@
+# v1.0.6-beta.0
+
+- Allow for multiple accounts: either populating next account from mnemonic
+  phrase or importing a different account by secret key
+
 # v1.0.5-beta.0
 
 - Updated illos
