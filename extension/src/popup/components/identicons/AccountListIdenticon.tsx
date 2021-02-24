@@ -57,9 +57,9 @@ const IdenticonWrapperEl = styled.div`
 const AccountKeyButtonEl = styled(BasicButton)`
   background: none;
   border: 0;
-  cursor: ${({ active }: ActiveProps) => (active ? "cursor" : "pointer")};
   margin-left: 0.9375rem;
   text-align: left;
+  width: 9.4375rem;
 `;
 
 const AccountNumberEl = styled.h3`
@@ -67,6 +67,9 @@ const AccountNumberEl = styled.h3`
   color: ${({ active }: ActiveProps) =>
     active ? COLOR_PALETTE.primary : COLOR_PALETTE.text};
   margin: 0 0 0.1875rem 0;
+  max-height: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const PublicKeyEl = styled.span`
@@ -107,7 +110,7 @@ export const AccountListIdenticon = ({
       <IdenticonWrapperEl checked={checked}>
         <IdenticonImg publicKey={publicKey} />
       </IdenticonWrapperEl>
-      <AccountKeyButtonEl active={active} onClick={handleMakeAccountActive}>
+      <AccountKeyButtonEl onClick={handleMakeAccountActive}>
         <AccountNumberEl active={active}>{accountName}</AccountNumberEl>
         <PublicKeyEl>{shortPublicKey}</PublicKeyEl>
       </AccountKeyButtonEl>
