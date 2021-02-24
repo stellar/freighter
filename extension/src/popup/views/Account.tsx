@@ -58,6 +58,8 @@ const AccountDropdownButtonEl = styled.div`
   cursor: pointer;
   display: flex;
   margin: 0.875rem 0;
+  max-height: 3.8125rem;
+  max-width: 15.5rem;
   padding: 0.75rem;
 `;
 
@@ -65,7 +67,7 @@ const AccountDropdownArrowEl = styled.span`
   border-left: 0.5rem solid transparent;
   border-right: 0.5rem solid transparent;
   border-top: 0.5rem solid ${COLOR_PALETTE.greyDark};
-  margin: 0 0.75rem 0 3rem;
+  margin: 0 0.75rem 0 0;
   width: 0;
   height: 0;
 `;

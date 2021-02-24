@@ -10,6 +10,7 @@ import { emitMetric } from "helpers/metrics";
 import { BasicButton } from "popup/basics/Buttons";
 import { Form, TextField } from "popup/basics/Forms";
 
+import { POPUP_WIDTH } from "constants/dimensions";
 import { NETWORK_NAME } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -72,7 +73,10 @@ const HeadingEl = styled.h1`
   color: ${COLOR_PALETTE.primary};
   font-weight: ${FONT_WEIGHT.light};
   margin: 1rem 0 0.75rem;
+  max-width: calc(${POPUP_WIDTH}px - 2rem);
+  overflow: hidden;
   text-align: center;
+  text-overflow: ellipsis;
 `;
 const EditNameFormEl = styled(Form)`
   position: relative;
