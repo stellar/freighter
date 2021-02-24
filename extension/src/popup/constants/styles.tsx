@@ -1,3 +1,5 @@
+export const FONT_FAMILY = '"Muli", sans-serif';
+
 export const COLOR_PALETTE = {
   white: "#fff",
   offWhite: "#fefefe",

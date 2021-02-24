@@ -56,6 +56,29 @@ export const sessionSlice = createSlice({
       };
     },
     timeoutAccountAccess: (state) => ({ ...state, privateKey: "" }),
+    updateAllAccountsAccountName: (
+      state,
+      action: { payload: { updatedAccountName: string } },
+    ) => {
+      const { updatedAccountName = "" } = action.payload;
+
+      const newAllAccounts = state.allAccounts.map((account) => {
+        if (state.publicKey === account.publicKey) {
+          // this is the current active public key, let's edit it
+          return {
+            ...account,
+            name: updatedAccountName,
+          };
+        }
+
+        return account;
+      });
+
+      return {
+        ...state,
+        allAccounts: newAllAccounts,
+      };
+    },
   },
 });
 
@@ -69,6 +92,7 @@ export const {
     grantAccountAccess,
     setActivePublicKey,
     timeoutAccountAccess,
+    updateAllAccountsAccountName,
   },
 } = sessionSlice;
 

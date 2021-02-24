@@ -3,13 +3,13 @@ import styled from "styled-components";
 
 import { NETWORK_NAME } from "@shared/constants/stellar";
 import { HEADER_HEIGHT } from "constants/dimensions";
-import { COLOR_PALETTE } from "popup/constants/styles";
+import { FONT_FAMILY, COLOR_PALETTE } from "popup/constants/styles";
 
 import FreighterLogoLockup from "popup/assets/logo-lockup-freighter.svg";
 
 const HeaderEl = styled.header`
   background: ${COLOR_PALETTE.primaryGradient};
-  font-family: "Muli";
+  font-family: ${FONT_FAMILY};
   display: flex;
   justify-content: space-between;
   align-items: center;

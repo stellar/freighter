@@ -82,6 +82,14 @@ export const makeAccountActive = (
     type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
   });
 
+export const updateAccountName = (
+  accountName: string,
+): Promise<{ allAccounts: Array<Account> }> =>
+  sendMessageToBackground({
+    accountName,
+    type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
+  });
+
 export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;

@@ -10,7 +10,7 @@ import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 
 import { metricsMiddleware } from "helpers/metrics";
 
-import { COLOR_PALETTE } from "popup/constants/styles";
+import { FONT_FAMILY, COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/authServices";
 import { reducer as settings } from "popup/ducks/settings";
 
@@ -22,7 +22,7 @@ const GlobalStyle = createGlobalStyle`
   body {
     background: ${COLOR_PALETTE.background};
     overscroll-behavior: none;
-    font-family: 'Muli', sans-serif;
+    font-family: ${FONT_FAMILY};
     font-size: 100%;
     margin: 0;
     padding:0;
