@@ -59,7 +59,7 @@ const AccountKeyButtonEl = styled(BasicButton)`
   border: 0;
   margin-left: 0.9375rem;
   text-align: left;
-  width: 9.4375rem;
+  width: 6.0625rem;
 `;
 
 const AccountNumberEl = styled.h3`

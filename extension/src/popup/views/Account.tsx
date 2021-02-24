@@ -67,7 +67,7 @@ const AccountDropdownArrowEl = styled.span`
   border-left: 0.5rem solid transparent;
   border-right: 0.5rem solid transparent;
   border-top: 0.5rem solid ${COLOR_PALETTE.greyDark};
-  margin: 0 0.75rem 0 0;
+  margin: 0 0.75rem 0 3rem;
   width: 0;
   height: 0;
 `;
@@ -98,7 +98,7 @@ const AccountDropdownOptionsEl = styled.ul`
 const AccountDropdownAccountEl = styled.li`
   border-bottom: 1px solid ${COLOR_PALETTE.greyFaded};
   display: flex;
-  padding: 0.75rem 0 0.75rem 1rem;
+  padding: 0.75rem 0.2rem 0.75rem 1rem;
   width: 16rem;
 `;
 
@@ -114,7 +114,7 @@ const AccountTagEl = styled.span`
   height: 1rem;
   line-height: 1.1rem;
   padding: 0 0.75rem;
-  margin: 1rem 0 0 1rem;
+  margin: 1.1rem 0 0 0.75rem;
 `;
 
 const AccountDropdownOptionLinkEl = styled(Link)`
