@@ -8,7 +8,7 @@ export const getTransactionInfo = (search: string) => {
 
   const { url, transaction, isDomainListedAllowed } = transactionInfo;
   const hostname = getUrlHostname(url);
-  const { _operations } = transaction;
+  const { _operations = [] } = transaction;
   const operationTypes = _operations.map(
     (operation: { type: string }) => operation.type,
   );
