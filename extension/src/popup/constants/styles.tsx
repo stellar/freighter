@@ -17,6 +17,8 @@ export const COLOR_PALETTE = {
   greyFaded: "#D2D5DB",
   greyDark: "#7B869D",
   warning: "#E4792C",
+  warningHigh: "#E44D2C",
+  warningHighFaded: "#F8CFCC",
   warningFaded: "#F8E4CC",
   primaryGradient: "linear-gradient(180deg, #4b42e3 0%, #302cd1 100%)",
   darkPrimaryGradient: "linear-gradient(180deg, #443BDB 0%, #2521C3 100%)",
