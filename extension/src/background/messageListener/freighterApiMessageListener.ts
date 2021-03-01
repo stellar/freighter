@@ -88,10 +88,7 @@ export const freighterApiMessageListener = (
     const isDomainListedAllowed = allowList.includes(punycodedDomain);
 
     const directoryLookupJson = await cachedFetch(STELLAR_DIRECTORY_URL);
-
-    const {
-      _embedded: { records: accountData },
-    } = directoryLookupJson;
+    const accountData = directoryLookupJson?._embedded?.records || [];
 
     const { _operations } = transaction;
 
