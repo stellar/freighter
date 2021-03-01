@@ -1,3 +1,9 @@
+# v1.0.7-beta.0
+
+- Allow custom account names for generatred/imported accounts
+- Stop rounding XLM balance
+- Use correct identicons
+
 # v1.0.6-beta.0
 
 - Allow for multiple accounts: either populating next account from mnemonic
