@@ -3,11 +3,6 @@ import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
 
-import { getTransactionInfo, stroopToXlm } from "helpers/stellar";
-import { decodeMemo } from "popup/helpers/decodeMemo";
-
-import { rejectTransaction, signTransaction } from "popup/ducks/access";
-
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import {
   NETWORK_NAME,
@@ -15,16 +10,24 @@ import {
   OTHER_NETWORK_NAME,
 } from "@shared/constants/stellar";
 
+import { getTransactionInfo, stroopToXlm } from "helpers/stellar";
+import { decodeMemo } from "popup/helpers/decodeMemo";
+
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
+
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
-import { TransactionList } from "popup/basics/TransactionList";
+import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
 
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { FlaggedWarningMessage } from "popup/components/warningMessages/FlaggedWarningMessage";
 import { Operations } from "popup/components/signTransaction/Operations";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { WarningMessage } from "popup/components/WarningMessage";
+
+import IconExcalamtion from "popup/assets/icon-exclamation.svg";
 
 const El = styled.div`
   padding: 1.5rem 1.875rem;
@@ -77,12 +80,36 @@ const NetworkMismatchWarning = () => (
   </>
 );
 
+const getMemoDisplay = ({
+  memo,
+  isMemoRequired,
+}: {
+  memo: string;
+  isMemoRequired: boolean;
+}) => {
+  if (isMemoRequired) {
+    return (
+      <IconWithLabel isHighAlert alt="exclamation icon" icon={IconExcalamtion}>
+        Not defined
+      </IconWithLabel>
+    );
+  }
+  if (memo) {
+    return <span>{`${memo} (MEMO_TEXT)`}</span>;
+  }
+
+  return null;
+};
+
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const { transaction, domain, isDomainListedAllowed } = getTransactionInfo(
-    location.search,
-  );
+  const {
+    transaction,
+    domain,
+    isDomainListedAllowed,
+    flaggedKeys,
+  } = getTransactionInfo(location.search);
   const {
     _fee,
     _operations,
@@ -111,11 +138,26 @@ export const SignTransaction = () => {
     window.close();
   };
 
+  const isUnsafe = flaggedKeys.some(({ tags }) => tags.includes("unsafe"));
+  const isMalicious = flaggedKeys.some(({ tags }) =>
+    tags.includes("malicious"),
+  );
+  const isMemoRequired = flaggedKeys.some(({ tags }) =>
+    tags.includes("memo-required"),
+  );
+
   return (
     <>
       <Header />
       <El>
         <HeaderEl>Confirm Transaction</HeaderEl>
+        {flaggedKeys.length ? (
+          <FlaggedWarningMessage
+            isUnsafe={isUnsafe}
+            isMalicious={isMalicious}
+            isMemoRequired={isMemoRequired}
+          />
+        ) : null}
         {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
         <PunycodedDomain domain={domain} />
         <SubheaderEl>
@@ -136,14 +178,12 @@ export const SignTransaction = () => {
               <div> {stroopToXlm(_fee)} XLM</div>
             </li>
           ) : null}
-          {memo ? (
-            <li>
-              <div>
-                <strong>Memo:</strong>
-              </div>
-              <div> {memo} (MEMO_TEXT)</div>
-            </li>
-          ) : null}
+          <li>
+            <div>
+              <strong>Memo:</strong>
+            </div>
+            <div> {getMemoDisplay({ memo, isMemoRequired })} </div>
+          </li>
           {_sequence ? (
             <li>
               <div>
@@ -156,12 +196,13 @@ export const SignTransaction = () => {
         <OperationsHeader>
           {_operations.length} {operationText}
         </OperationsHeader>
-        <Operations operations={_operations} />
+        <Operations flaggedKeys={flaggedKeys} operations={_operations} />
         <ButtonContainerEl>
           <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
             Reject
           </RejectButtonEl>
           <SubmitButtonEl
+            isValid={!isMalicious}
             isSubmitting={isConfirming}
             size="small"
             onClick={() => signAndClose()}

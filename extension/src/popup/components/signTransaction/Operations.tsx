@@ -1,14 +1,18 @@
 import React from "react";
 import styled from "styled-components";
 
-import { truncatedPublicKey } from "helpers/stellar";
-
 import { OPERATION_TYPES } from "constants/operationTypes";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
-import { TransactionList } from "popup/basics/TransactionList";
+import { FlaggedKeys } from "types/transactions";
+
+import { truncatedPublicKey } from "helpers/stellar";
+
+import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+
+import IconExcalamtion from "popup/assets/icon-exclamation.svg";
 
 interface Path {
   code: string;
@@ -96,6 +100,10 @@ const PathNumberEl = styled.h6`
   margin: 0;
 `;
 
+const OpertionValueExtraEl = styled.div`
+  margin-top: 0.5rem;
+`;
+
 const KeyValueList = ({
   operationKey,
   operationValue,
@@ -104,7 +112,10 @@ const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <li>
-    <div>{operationKey}:</div>
+    <div>
+      {operationKey}
+      {operationKey ? ":" : null}
+    </div>
     <div>{operationValue}</div>
   </li>
 );
@@ -129,6 +140,37 @@ const PathList = ({ paths }: { paths: [Path] }) => (
   </PathListItem>
 );
 
+const DestinationWarning = ({
+  destination,
+  flaggedKeys,
+}: {
+  destination: string;
+  flaggedKeys: FlaggedKeys;
+}) => {
+  const { tags: flaggedTags } = flaggedKeys.find(
+    ({ address }) => address === destination,
+  ) || { tags: [] as Array<string> };
+  const isMalicious = flaggedTags.includes("malicious");
+  const isUnsafe = flaggedTags.includes("unsafe");
+
+  return isUnsafe || isMalicious ? (
+    <KeyValueList
+      operationKey=""
+      operationValue={
+        <OpertionValueExtraEl>
+          <IconWithLabel
+            isHighAlert={isMalicious}
+            alt="exclamation icon"
+            icon={IconExcalamtion}
+          >
+            {isMalicious ? "Malicious" : "Unsafe"} account
+          </IconWithLabel>
+        </OpertionValueExtraEl>
+      }
+    />
+  ) : null;
+};
+
 enum AuthorizationMap {
   "",
   "Authorization Required",
@@ -144,8 +186,10 @@ const formattedBuffer = (data: Buffer) =>
   truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
 
 export const Operations = ({
+  flaggedKeys,
   operations,
 }: {
+  flaggedKeys: FlaggedKeys;
   operations: [TransactionInfoResponse];
 }) => (
   <>
@@ -183,10 +227,16 @@ export const Operations = ({
             </OperationBoxHeaderEl>
             <OperationsListEl>
               {destination ? (
-                <KeyValueList
-                  operationKey="Destination"
-                  operationValue={<KeyIdenticon publicKey={destination} />}
-                />
+                <>
+                  <KeyValueList
+                    operationKey="Destination"
+                    operationValue={<KeyIdenticon publicKey={destination} />}
+                  />
+                  <DestinationWarning
+                    destination={destination}
+                    flaggedKeys={flaggedKeys}
+                  />
+                </>
               ) : null}
 
               {asset ? (

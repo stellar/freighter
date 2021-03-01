@@ -7,9 +7,10 @@ import {
   ROUNDED_CORNERS,
 } from "popup/constants/styles";
 
-const El = styled.div`
+const WrapperEl = styled.div`
   border-radius: ${ROUNDED_CORNERS};
-  background-color: ${COLOR_PALETTE.warningFaded};
+  background-color: ${({ isHighAlert }: { isHighAlert: boolean }) =>
+    isHighAlert ? COLOR_PALETTE.warningHighFaded : COLOR_PALETTE.warningFaded};
   padding: 1.5rem 1.25rem;
   text-align: left;
   font-size: 0.93rem;
@@ -21,6 +22,11 @@ const El = styled.div`
     &:last-child {
       margin-bottom: 0;
     }
+  }
+
+  a {
+    color: ${COLOR_PALETTE.text};
+    text-decoration: underline;
   }
 
   li {
@@ -37,7 +43,8 @@ const IconEl = styled.img`
   max-height: 1.875rem;
 `;
 const SubheaderEl = styled.h2`
-  color: ${COLOR_PALETTE.warning};
+  color: ${({ isHighAlert }: { isHighAlert: boolean }) =>
+    isHighAlert ? COLOR_PALETTE.warningHigh : COLOR_PALETTE.warning};
   font-weight: ${FONT_WEIGHT.bold};
   font-size: 1.1rem;
   max-width: 23rem;
@@ -46,19 +53,21 @@ const SubheaderEl = styled.h2`
 `;
 
 export const WarningMessage = ({
+  isHighAlert = false,
   subheader,
   icon,
   children,
 }: {
+  isHighAlert?: boolean;
   subheader: string;
   icon?: string;
   children: React.ReactNode;
 }) => (
-  <El>
+  <WrapperEl isHighAlert={isHighAlert}>
     <HeadingEl>
       {icon && <IconEl src={icon} alt="Warning Message Icon" />}
-      <SubheaderEl>{subheader}</SubheaderEl>
+      <SubheaderEl isHighAlert={isHighAlert}>{subheader}</SubheaderEl>
     </HeadingEl>
     {children}
-  </El>
+  </WrapperEl>
 );
