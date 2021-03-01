@@ -154,13 +154,20 @@ const DestinationWarning = ({
   const isUnsafe = flaggedTags.includes("unsafe");
 
   return isUnsafe || isMalicious ? (
-    <IconWithLabel
-      isHighAlert={isMalicious}
-      alt="exclamation icon"
-      icon={IconExcalamtion}
-    >
-      {isMalicious ? "Malicious" : "Unsafe"} account
-    </IconWithLabel>
+    <KeyValueList
+      operationKey=""
+      operationValue={
+        <OpertionValueExtraEl>
+          <IconWithLabel
+            isHighAlert={isMalicious}
+            alt="exclamation icon"
+            icon={IconExcalamtion}
+          >
+            {isMalicious ? "Malicious" : "Unsafe"} account
+          </IconWithLabel>
+        </OpertionValueExtraEl>
+      }
+    />
   ) : null;
 };
 
@@ -225,16 +232,9 @@ export const Operations = ({
                     operationKey="Destination"
                     operationValue={<KeyIdenticon publicKey={destination} />}
                   />
-                  <KeyValueList
-                    operationKey=""
-                    operationValue={
-                      <OpertionValueExtraEl>
-                        <DestinationWarning
-                          destination={destination}
-                          flaggedKeys={flaggedKeys}
-                        />
-                      </OpertionValueExtraEl>
-                    }
+                  <DestinationWarning
+                    destination={destination}
+                    flaggedKeys={flaggedKeys}
                   />
                 </>
               ) : null}
