@@ -7,10 +7,11 @@ import { TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
 import { NETWORK } from "@shared/constants/stellar";
-
+import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
 
+import { cachedFetch } from "background/helpers/cachedFetch";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 
 import { store } from "background/store";
@@ -70,7 +71,7 @@ export const freighterApiMessageListener = (
     });
   };
 
-  const submitTransaction = () => {
+  const submitTransaction = async () => {
     const { transactionXdr } = request;
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
@@ -86,11 +87,33 @@ export const freighterApiMessageListener = (
 
     const isDomainListedAllowed = allowList.includes(punycodedDomain);
 
+    const directoryLookupJson = await cachedFetch(STELLAR_DIRECTORY_URL);
+    const accountData = directoryLookupJson?._embedded?.records || [];
+
+    const { _operations } = transaction;
+
+    const flaggedKeys = _operations.reduce(
+      (arr: Array<{}>, operation: { destination: string }) => {
+        const listing = accountData.find(
+          ({ address }: { address: string }) =>
+            address === operation.destination,
+        );
+
+        if (listing) {
+          arr.push(listing);
+        }
+
+        return arr;
+      },
+      [],
+    );
+
     const transactionInfo = {
       transaction,
       tab,
       isDomainListedAllowed,
       url: tabUrl,
+      flaggedKeys,
     } as TransactionInfo;
 
     transactionQueue.push(transaction);
