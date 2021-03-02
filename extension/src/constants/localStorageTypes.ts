@@ -5,5 +5,5 @@ export const APPLICATION_ID = "applicationState";
 export const DATA_SHARING_ID = "dataSharingStatus";
 export const KEY_DERIVATION_NUMBER_ID = "keyDerivationNumber";
 export const ACCOUNT_NAME_LIST_ID = "accountNameList";
-export const CACHED_FETCH_ID = "cachedFetchId";
-export const CACHED_FETCH_DATE_ID = "cachedFetchDateId";
+export const CACHED_DIRECTORY_ID = "cachedDirectoryId";
+export const CACHED_DIRECTORY_DATE_ID = "cachedDirectoryDateId";
