@@ -1,9 +1,10 @@
 import { Tabs } from "webextension-polyfill-ts";
 
-export type FlaggedKeys = Array<{
-  address: string;
-  tags: Array<string>;
-}>;
+export interface FlaggedKeys {
+  [address: string]: {
+    tags: Array<string>;
+  };
+}
 
 export interface TransactionInfo {
   url: string;

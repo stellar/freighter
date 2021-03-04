@@ -9,6 +9,7 @@ import {
   NETWORK_PASSPHRASE,
   OTHER_NETWORK_NAME,
 } from "@shared/constants/stellar";
+import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { getTransactionInfo, stroopToXlm } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/decodeMemo";
@@ -138,27 +139,35 @@ export const SignTransaction = () => {
     window.close();
   };
 
-  const isUnsafe = flaggedKeys.some(({ tags }) => tags.includes("unsafe"));
-  const isMalicious = flaggedKeys.some(({ tags }) =>
-    tags.includes("malicious"),
+  const flaggedKeyValues = Object.values(flaggedKeys);
+  debugger;
+  const isUnsafe = flaggedKeyValues.some(({ tags }) =>
+    tags.includes(TRANSACTION_WARNING.unsafe),
   );
-  const isMemoRequired = flaggedKeys.some(({ tags }) =>
-    tags.includes("memo-required"),
+  const isMalicious = flaggedKeyValues.some(({ tags }) =>
+    tags.includes(TRANSACTION_WARNING.malicious),
   );
+  const isMemoRequired = flaggedKeyValues.some(({ tags }) =>
+    tags.includes(TRANSACTION_WARNING.memoRequired),
+  );
+
+  const isSubmitDisabled = isMemoRequired || isMalicious;
 
   return (
     <>
       <Header />
       <El>
         <HeaderEl>Confirm Transaction</HeaderEl>
-        {flaggedKeys.length ? (
+        {flaggedKeyValues.length ? (
           <FlaggedWarningMessage
             isUnsafe={isUnsafe}
             isMalicious={isMalicious}
             isMemoRequired={isMemoRequired}
           />
         ) : null}
-        {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
+        {!isDomainListedAllowed && !isSubmitDisabled ? (
+          <FirstTimeWarningMessage />
+        ) : null}
         <PunycodedDomain domain={domain} />
         <SubheaderEl>
           This website is requesting a signature on the following transaction:
@@ -202,7 +211,7 @@ export const SignTransaction = () => {
             Reject
           </RejectButtonEl>
           <SubmitButtonEl
-            isValid={!isMalicious}
+            isValid={!isSubmitDisabled}
             isSubmitting={isConfirming}
             size="small"
             onClick={() => signAndClose()}

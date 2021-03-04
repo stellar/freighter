@@ -3,13 +3,14 @@ import { browser, Runtime } from "webextension-polyfill-ts";
 
 import { ExternalRequest as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
-import { TransactionInfo } from "types/transactions";
+import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { NETWORK } from "@shared/constants/stellar";
+import { NETWORK, NETWORK_URL } from "@shared/constants/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
+import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
@@ -92,21 +93,31 @@ export const freighterApiMessageListener = (
 
     const { _operations } = transaction;
 
-    const flaggedKeys = _operations.reduce(
-      (arr: Array<{}>, operation: { destination: string }) => {
-        const listing = accountData.find(
-          ({ address }: { address: string }) =>
-            address === operation.destination,
-        );
+    const flaggedKeys: FlaggedKeys = {};
 
-        if (listing) {
-          arr.push(listing);
-        }
+    _operations.forEach((operation: { destination: string }) => {
+      accountData.forEach(
+        ({ address, tags }: { address: string; tags: Array<string> }) => {
+          if (address === operation.destination) {
+            flaggedKeys[operation.destination] = {
+              ...flaggedKeys[operation.destination],
+              tags,
+            };
+          }
+        },
+      );
+    });
 
-        return arr;
-      },
-      [],
-    );
+    const server = new StellarSdk.Server(NETWORK_URL);
+
+    try {
+      await server.checkMemoRequired(transaction);
+    } catch (e) {
+      flaggedKeys[e.accountId] = {
+        ...flaggedKeys[e.accountId],
+        tags: [TRANSACTION_WARNING.memoRequired],
+      };
+    }
 
     const transactionInfo = {
       transaction,

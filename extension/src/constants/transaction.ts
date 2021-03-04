@@ -13,3 +13,9 @@ export enum OPERATION_TYPES {
   payment = "Payment",
   setOptions = "Set Options",
 }
+
+export enum TRANSACTION_WARNING {
+  malicious = "malicious",
+  unsafe = "unsafe",
+  memoRequired = "memo-required",
+}

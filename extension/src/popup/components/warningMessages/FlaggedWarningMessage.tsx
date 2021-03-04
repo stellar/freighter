@@ -25,7 +25,7 @@ const DangerousAccountWarning = ({
           subheader="Malicious account detected"
         >
           <p>
-            An account you're interacting with is tagged as malicious on{" "}
+            An account you’re interacting with is tagged as malicious on{" "}
             <DirectoryLink />.
           </p>
           <p>For your safety, signing this transaction is disabled</p>
@@ -38,7 +38,7 @@ const DangerousAccountWarning = ({
         subheader="Warning: unsafe account"
       >
         <p>
-          An account you're interacting with is tagged as unsafe on{" "}
+          An account you’re interacting with is tagged as unsafe on{" "}
           <DirectoryLink />. Please proceed with caution.
         </p>
       </WarningMessage>
@@ -56,9 +56,9 @@ const MemoWarningMessage = ({ isMemoRequired }: { isMemoRequired: boolean }) =>
       subheader="Memo is required"
     >
       <p>
-        The destination account (Kraken) requires the use of the memo field
-        which is not present in the transaction you're about to sign. Freighter
-        automatically disabled the option to sign this transaction.
+        A destination account requires the use of the memo field which is not
+        present in the transaction you’re about to sign. Freighter automatically
+        disabled the option to sign this transaction.
       </p>
 
       <p>

@@ -1,8 +1,9 @@
 import React from "react";
 import styled from "styled-components";
 
-import { OPERATION_TYPES } from "constants/operationTypes";
+import { OPERATION_TYPES } from "constants/transaction";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { FlaggedKeys } from "types/transactions";
 
@@ -140,19 +141,13 @@ const PathList = ({ paths }: { paths: [Path] }) => (
   </PathListItem>
 );
 
-const DestinationWarning = ({
-  destination,
-  flaggedKeys,
+const UnsafeMaliciousWarning = ({
+  isUnsafe,
+  isMalicious,
 }: {
-  destination: string;
-  flaggedKeys: FlaggedKeys;
+  isUnsafe: boolean;
+  isMalicious: boolean;
 }) => {
-  const { tags: flaggedTags } = flaggedKeys.find(
-    ({ address }) => address === destination,
-  ) || { tags: [] as Array<string> };
-  const isMalicious = flaggedTags.includes("malicious");
-  const isUnsafe = flaggedTags.includes("unsafe");
-
   return isUnsafe || isMalicious ? (
     <KeyValueList
       operationKey=""
@@ -169,6 +164,49 @@ const DestinationWarning = ({
       }
     />
   ) : null;
+};
+
+const MemoRequiredWarning = ({
+  isMemoRequired,
+}: {
+  isMemoRequired: boolean;
+}) => {
+  return isMemoRequired ? (
+    <KeyValueList
+      operationKey=""
+      operationValue={
+        <OpertionValueExtraEl>
+          <IconWithLabel
+            isHighAlert
+            alt="exclamation icon"
+            icon={IconExcalamtion}
+          >
+            Memo required
+          </IconWithLabel>
+        </OpertionValueExtraEl>
+      }
+    />
+  ) : null;
+};
+
+const DestinationWarning = ({
+  destination,
+  flaggedKeys,
+}: {
+  destination: string;
+  flaggedKeys: FlaggedKeys;
+}) => {
+  const flaggedTags = flaggedKeys[destination]?.tags || [];
+  const isMalicious = flaggedTags.includes(TRANSACTION_WARNING.malicious);
+  const isUnsafe = flaggedTags.includes(TRANSACTION_WARNING.unsafe);
+  const isMemoRequired = flaggedTags.includes(TRANSACTION_WARNING.memoRequired);
+
+  return (
+    <>
+      <UnsafeMaliciousWarning isMalicious={isMalicious} isUnsafe={isUnsafe} />
+      <MemoRequiredWarning isMemoRequired={isMemoRequired} />
+    </>
+  );
 };
 
 enum AuthorizationMap {
