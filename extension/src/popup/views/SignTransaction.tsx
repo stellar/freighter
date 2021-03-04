@@ -140,15 +140,14 @@ export const SignTransaction = () => {
   };
 
   const flaggedKeyValues = Object.values(flaggedKeys);
-  debugger;
   const isUnsafe = flaggedKeyValues.some(({ tags }) =>
     tags.includes(TRANSACTION_WARNING.unsafe),
   );
   const isMalicious = flaggedKeyValues.some(({ tags }) =>
     tags.includes(TRANSACTION_WARNING.malicious),
   );
-  const isMemoRequired = flaggedKeyValues.some(({ tags }) =>
-    tags.includes(TRANSACTION_WARNING.memoRequired),
+  const isMemoRequired = flaggedKeyValues.some(
+    ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
@@ -205,7 +204,11 @@ export const SignTransaction = () => {
         <OperationsHeader>
           {_operations.length} {operationText}
         </OperationsHeader>
-        <Operations flaggedKeys={flaggedKeys} operations={_operations} />
+        <Operations
+          flaggedKeys={flaggedKeys}
+          isMemoRequired={isMemoRequired}
+          operations={_operations}
+        />
         <ButtonContainerEl>
           <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
             Reject

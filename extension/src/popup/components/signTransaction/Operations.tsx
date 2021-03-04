@@ -142,23 +142,23 @@ const PathList = ({ paths }: { paths: [Path] }) => (
 );
 
 const UnsafeMaliciousWarning = ({
-  isUnsafe,
-  isMalicious,
+  isDestUnsafe,
+  isDestMalicious,
 }: {
-  isUnsafe: boolean;
-  isMalicious: boolean;
+  isDestUnsafe: boolean;
+  isDestMalicious: boolean;
 }) => {
-  return isUnsafe || isMalicious ? (
+  return isDestUnsafe || isDestMalicious ? (
     <KeyValueList
       operationKey=""
       operationValue={
         <OpertionValueExtraEl>
           <IconWithLabel
-            isHighAlert={isMalicious}
+            isHighAlert={isDestMalicious}
             alt="exclamation icon"
             icon={IconExcalamtion}
           >
-            {isMalicious ? "Malicious" : "Unsafe"} account
+            {isDestMalicious ? "Malicious" : "Unsafe"} account
           </IconWithLabel>
         </OpertionValueExtraEl>
       }
@@ -167,11 +167,11 @@ const UnsafeMaliciousWarning = ({
 };
 
 const MemoRequiredWarning = ({
-  isMemoRequired,
+  isDestMemoRequired,
 }: {
-  isMemoRequired: boolean;
+  isDestMemoRequired: boolean;
 }) => {
-  return isMemoRequired ? (
+  return isDestMemoRequired ? (
     <KeyValueList
       operationKey=""
       operationValue={
@@ -192,19 +192,28 @@ const MemoRequiredWarning = ({
 const DestinationWarning = ({
   destination,
   flaggedKeys,
+  isMemoRequired,
 }: {
   destination: string;
   flaggedKeys: FlaggedKeys;
+  isMemoRequired: boolean;
 }) => {
   const flaggedTags = flaggedKeys[destination]?.tags || [];
-  const isMalicious = flaggedTags.includes(TRANSACTION_WARNING.malicious);
-  const isUnsafe = flaggedTags.includes(TRANSACTION_WARNING.unsafe);
-  const isMemoRequired = flaggedTags.includes(TRANSACTION_WARNING.memoRequired);
+  const isDestMalicious = flaggedTags.includes(TRANSACTION_WARNING.malicious);
+  const isDestUnsafe = flaggedTags.includes(TRANSACTION_WARNING.unsafe);
+  const isDestMemoRequired = flaggedTags.includes(
+    TRANSACTION_WARNING.memoRequired,
+  );
 
   return (
     <>
-      <UnsafeMaliciousWarning isMalicious={isMalicious} isUnsafe={isUnsafe} />
-      <MemoRequiredWarning isMemoRequired={isMemoRequired} />
+      <UnsafeMaliciousWarning
+        isDestMalicious={isDestMalicious}
+        isDestUnsafe={isDestUnsafe}
+      />
+      {isMemoRequired ? (
+        <MemoRequiredWarning isDestMemoRequired={isDestMemoRequired} />
+      ) : null}
     </>
   );
 };
@@ -225,9 +234,11 @@ const formattedBuffer = (data: Buffer) =>
 
 export const Operations = ({
   flaggedKeys,
+  isMemoRequired,
   operations,
 }: {
   flaggedKeys: FlaggedKeys;
+  isMemoRequired: boolean;
   operations: [TransactionInfoResponse];
 }) => (
   <>
@@ -273,6 +284,7 @@ export const Operations = ({
                   <DestinationWarning
                     destination={destination}
                     flaggedKeys={flaggedKeys}
+                    isMemoRequired={isMemoRequired}
                   />
                 </>
               ) : null}
