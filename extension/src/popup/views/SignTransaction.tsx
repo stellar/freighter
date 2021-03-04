@@ -9,6 +9,7 @@ import {
   NETWORK_PASSPHRASE,
   OTHER_NETWORK_NAME,
 } from "@shared/constants/stellar";
+import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { getTransactionInfo, stroopToXlm } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/decodeMemo";
@@ -138,27 +139,34 @@ export const SignTransaction = () => {
     window.close();
   };
 
-  const isUnsafe = flaggedKeys.some(({ tags }) => tags.includes("unsafe"));
-  const isMalicious = flaggedKeys.some(({ tags }) =>
-    tags.includes("malicious"),
+  const flaggedKeyValues = Object.values(flaggedKeys);
+  const isUnsafe = flaggedKeyValues.some(({ tags }) =>
+    tags.includes(TRANSACTION_WARNING.unsafe),
   );
-  const isMemoRequired = flaggedKeys.some(({ tags }) =>
-    tags.includes("memo-required"),
+  const isMalicious = flaggedKeyValues.some(({ tags }) =>
+    tags.includes(TRANSACTION_WARNING.malicious),
   );
+  const isMemoRequired = flaggedKeyValues.some(
+    ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
+  );
+
+  const isSubmitDisabled = isMemoRequired || isMalicious;
 
   return (
     <>
       <Header />
       <El>
         <HeaderEl>Confirm Transaction</HeaderEl>
-        {flaggedKeys.length ? (
+        {flaggedKeyValues.length ? (
           <FlaggedWarningMessage
             isUnsafe={isUnsafe}
             isMalicious={isMalicious}
             isMemoRequired={isMemoRequired}
           />
         ) : null}
-        {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
+        {!isDomainListedAllowed && !isSubmitDisabled ? (
+          <FirstTimeWarningMessage />
+        ) : null}
         <PunycodedDomain domain={domain} />
         <SubheaderEl>
           This website is requesting a signature on the following transaction:
@@ -196,13 +204,17 @@ export const SignTransaction = () => {
         <OperationsHeader>
           {_operations.length} {operationText}
         </OperationsHeader>
-        <Operations flaggedKeys={flaggedKeys} operations={_operations} />
+        <Operations
+          flaggedKeys={flaggedKeys}
+          isMemoRequired={isMemoRequired}
+          operations={_operations}
+        />
         <ButtonContainerEl>
           <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
             Reject
           </RejectButtonEl>
           <SubmitButtonEl
-            isValid={!isMalicious}
+            isValid={!isSubmitDisabled}
             isSubmitting={isConfirming}
             size="small"
             onClick={() => signAndClose()}

@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
-import { OPERATION_TYPES } from "constants/operationTypes";
+import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { FlaggedKeys } from "types/transactions";
@@ -140,35 +140,81 @@ const PathList = ({ paths }: { paths: [Path] }) => (
   </PathListItem>
 );
 
-const DestinationWarning = ({
-  destination,
-  flaggedKeys,
+const UnsafeMaliciousWarning = ({
+  isDestUnsafe,
+  isDestMalicious,
 }: {
-  destination: string;
-  flaggedKeys: FlaggedKeys;
+  isDestUnsafe: boolean;
+  isDestMalicious: boolean;
 }) => {
-  const { tags: flaggedTags } = flaggedKeys.find(
-    ({ address }) => address === destination,
-  ) || { tags: [] as Array<string> };
-  const isMalicious = flaggedTags.includes("malicious");
-  const isUnsafe = flaggedTags.includes("unsafe");
-
-  return isUnsafe || isMalicious ? (
+  return isDestUnsafe || isDestMalicious ? (
     <KeyValueList
       operationKey=""
       operationValue={
         <OpertionValueExtraEl>
           <IconWithLabel
-            isHighAlert={isMalicious}
+            isHighAlert={isDestMalicious}
             alt="exclamation icon"
             icon={IconExcalamtion}
           >
-            {isMalicious ? "Malicious" : "Unsafe"} account
+            {isDestMalicious ? "Malicious" : "Unsafe"} account
           </IconWithLabel>
         </OpertionValueExtraEl>
       }
     />
   ) : null;
+};
+
+const MemoRequiredWarning = ({
+  isDestMemoRequired,
+}: {
+  isDestMemoRequired: boolean;
+}) => {
+  return isDestMemoRequired ? (
+    <KeyValueList
+      operationKey=""
+      operationValue={
+        <OpertionValueExtraEl>
+          <IconWithLabel
+            isHighAlert
+            alt="exclamation icon"
+            icon={IconExcalamtion}
+          >
+            Memo required
+          </IconWithLabel>
+        </OpertionValueExtraEl>
+      }
+    />
+  ) : null;
+};
+
+const DestinationWarning = ({
+  destination,
+  flaggedKeys,
+  isMemoRequired,
+}: {
+  destination: string;
+  flaggedKeys: FlaggedKeys;
+  isMemoRequired: boolean;
+}) => {
+  const flaggedTags = flaggedKeys[destination]?.tags || [];
+  const isDestMalicious = flaggedTags.includes(TRANSACTION_WARNING.malicious);
+  const isDestUnsafe = flaggedTags.includes(TRANSACTION_WARNING.unsafe);
+  const isDestMemoRequired = flaggedTags.includes(
+    TRANSACTION_WARNING.memoRequired,
+  );
+
+  return (
+    <>
+      <UnsafeMaliciousWarning
+        isDestMalicious={isDestMalicious}
+        isDestUnsafe={isDestUnsafe}
+      />
+      {isMemoRequired ? (
+        <MemoRequiredWarning isDestMemoRequired={isDestMemoRequired} />
+      ) : null}
+    </>
+  );
 };
 
 enum AuthorizationMap {
@@ -187,9 +233,11 @@ const formattedBuffer = (data: Buffer) =>
 
 export const Operations = ({
   flaggedKeys,
+  isMemoRequired,
   operations,
 }: {
   flaggedKeys: FlaggedKeys;
+  isMemoRequired: boolean;
   operations: [TransactionInfoResponse];
 }) => (
   <>
@@ -235,6 +283,7 @@ export const Operations = ({
                   <DestinationWarning
                     destination={destination}
                     flaggedKeys={flaggedKeys}
+                    isMemoRequired={isMemoRequired}
                   />
                 </>
               ) : null}
