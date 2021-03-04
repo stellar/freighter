@@ -1,9 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 
-import { OPERATION_TYPES } from "constants/transaction";
+import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
-import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { FlaggedKeys } from "types/transactions";
 
