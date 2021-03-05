@@ -429,30 +429,33 @@ export const popupMessageListener = (request: Request) => {
       // we have cleared redux store via reloading extension/browser
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
-      await Promise.all(
-        keyIdList.map(async (keyId: string) => {
-          let keyStore;
 
-          // iterate over each keyId we have and get the associated keystore
-          try {
-            keyStore = await keyManager.loadKey(keyId, password);
-          } catch (e) {
-            console.error(e);
-          }
+      // for loop to preserve order of accounts
+      // eslint-disable-next-line no-plusplus
+      for (let i = 0; i < keyIdList.length; i++) {
+        const keyId = keyIdList[i];
+        let keyStore;
 
-          if (keyStore) {
-            // push the data into a list of accounts
+        // iterate over each keyId we have and get the associated keystore
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          keyStore = await keyManager.loadKey(keyId, password);
+        } catch (e) {
+          console.error(e);
+        }
 
-            const { publicKey, extra = { mnemonicPhrase: "" } } = keyStore;
-            const { imported = false } = extra;
-            unlockedAccounts.push({
-              publicKey,
-              name: accountNameList[keyId] || `Account ${keyIdList.length}`,
-              imported,
-            });
-          }
-        }),
-      );
+        if (keyStore) {
+          // push the data into a list of accounts
+
+          const { publicKey, extra = { mnemonicPhrase: "" } } = keyStore;
+          const { imported = false } = extra;
+          unlockedAccounts.push({
+            publicKey,
+            name: accountNameList[keyId] || `Account ${keyIdList.length}`,
+            imported,
+          });
+        }
+      }
 
       store.dispatch(
         logIn({
