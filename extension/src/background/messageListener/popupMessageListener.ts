@@ -568,33 +568,6 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  // var func = async () => {
-  //   var prom1 = () =>
-  //     new Promise((resolve) => {
-  //       setTimeout(() => {
-  //         resolve("p1");
-  //       }, 3000);
-  //     });
-
-  //   var prom2 = () =>
-  //     new Promise((resolve) => {
-  //       setTimeout(() => {
-  //         resolve("p2");
-  //       }, 1000);
-  //     });
-
-  //   var hold = [];
-  //   var arr = [prom1, prom2];
-  //   await Promise.all(
-  //     arr.map(async (num) => {
-  //       var a = await num();
-  //       hold.push(a);
-  //     }),
-  //   );
-
-  //   console.log(hold);
-  // };
-
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
