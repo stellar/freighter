@@ -430,7 +430,7 @@ export const popupMessageListener = (request: Request) => {
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
 
-      // for loop to preserve order of keyIdList
+      // for loop to preserve order of accounts
       // eslint-disable-next-line no-plusplus
       for (let i = 0; i < keyIdList.length; i++) {
         const keyId = keyIdList[i];
