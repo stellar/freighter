@@ -187,20 +187,29 @@ export const getAccountBalance = async (
   publicKey: string,
 ): Promise<{
   balance: string;
+  isFunded: boolean;
 }> => {
-  let response = { balances: [] };
+  let response = {
+    balances: [{ asset_code: "", balance: "" }],
+    isFunded: true,
+  };
 
   try {
     response = await server.loadAccount(publicKey);
   } catch (e) {
     console.error(e);
     // TODO: Check that this is indeed a 404 before returning 0
-    return { balance: "0" };
+    return { balance: "0", isFunded: false };
   }
-  return response.balances.filter(
+
+  const { balance: nativeBalance } = response.balances.filter(
     // eslint-disable-next-line camelcase
     (balance: { asset_code?: string }) => !balance.asset_code,
   )[0];
+  return {
+    isFunded: true,
+    balance: nativeBalance,
+  };
 };
 
 export const rejectAccess = async (): Promise<void> => {

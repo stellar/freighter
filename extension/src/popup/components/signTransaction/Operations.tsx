@@ -12,7 +12,7 @@ import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
-import IconExcalamtion from "popup/assets/icon-exclamation.svg";
+import IconExclamation from "popup/assets/icon-exclamation.svg";
 
 interface Path {
   code: string;
@@ -155,7 +155,7 @@ const UnsafeMaliciousWarning = ({
           <IconWithLabel
             isHighAlert={isDestMalicious}
             alt="exclamation icon"
-            icon={IconExcalamtion}
+            icon={IconExclamation}
           >
             {isDestMalicious ? "Malicious" : "Unsafe"} account
           </IconWithLabel>
@@ -178,7 +178,7 @@ const MemoRequiredWarning = ({
           <IconWithLabel
             isHighAlert
             alt="exclamation icon"
-            icon={IconExcalamtion}
+            icon={IconExclamation}
           >
             Memo required
           </IconWithLabel>

@@ -17,6 +17,8 @@ import { navigateTo } from "popup/helpers/navigate";
 import { BasicButton } from "popup/basics/Buttons";
 
 import { applicationStateSelector, signOut } from "popup/ducks/authServices";
+
+import { Footer } from "popup/components/Footer";
 import { Header } from "popup/components/Header";
 
 import CloseIcon from "popup/assets/icon-close.svg";
@@ -76,7 +78,7 @@ const SlideoutNavListEl = styled.ul`
 const SlideoutNavListItemEl = styled.li`
   cursor: pointer;
   display: block;
-  padding: 1rem 0;
+  padding: 0.57rem 0;
   font-size: 1.5rem;
   font-weight: 200;
   color: white;
@@ -161,6 +163,7 @@ export const Menu = () => {
             </SlideoutNavListItemEl>
           </SlideoutNavListEl>
         </MenuEl>
+        <Footer />
       </SlideoutNavEl>
     </>
   ) : null;
