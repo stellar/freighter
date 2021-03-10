@@ -16,22 +16,22 @@ const DangerousAccountWarning = ({
   isUnsafe: boolean;
   isMalicious: boolean;
 }) => {
+  if (isMalicious) {
+    return (
+      <WarningMessage
+        isHighAlert
+        icon={WarningExclamationIcon}
+        subheader="Malicious account detected"
+      >
+        <p>
+          An account you’re interacting with is tagged as malicious on{" "}
+          <DirectoryLink />.
+        </p>
+        <p>For your safety, signing this transaction is disabled</p>
+      </WarningMessage>
+    );
+  }
   if (isUnsafe) {
-    if (isMalicious) {
-      return (
-        <WarningMessage
-          isHighAlert
-          icon={WarningExclamationIcon}
-          subheader="Malicious account detected"
-        >
-          <p>
-            An account you’re interacting with is tagged as malicious on{" "}
-            <DirectoryLink />.
-          </p>
-          <p>For your safety, signing this transaction is disabled</p>
-        </WarningMessage>
-      );
-    }
     return (
       <WarningMessage
         icon={WarningShieldIcon}
