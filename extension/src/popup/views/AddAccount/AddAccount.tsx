@@ -33,10 +33,6 @@ const initialValues: FormValues = {
 };
 
 export const AddAccount = () => {
-  interface FormValues {
-    password: string;
-  }
-
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
 

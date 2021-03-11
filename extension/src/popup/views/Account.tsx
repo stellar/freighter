@@ -194,7 +194,7 @@ export const Account = () => {
       try {
         res = await getAccountBalance(publicKey);
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
       const { balance } = res;
       setaccountBalance(balance);

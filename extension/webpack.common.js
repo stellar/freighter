@@ -68,6 +68,10 @@ const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
     ],
   },
   plugins: [
+    new ESLintPlugin({
+      extensions: [".ts", ".tsx"],
+      failOnWarning: true,
+    }),
     new CopyWebpackPlugin([
       { from: path.resolve(__dirname, "./public/static"), to: BUILD_PATH },
     ]),
@@ -82,7 +86,6 @@ const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
     new webpack.DefinePlugin({
       PRODUCTION: env.PRODUCTION,
     }),
-    new ESLintPlugin(),
   ],
   stats: DEFAULT_STATS,
   devServer: {
