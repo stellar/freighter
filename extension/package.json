@@ -1,6 +1,6 @@
 {
   "name": "extension",
-  "version": "1.0.8-beta.1-rc",
+  "version": "1.0.8-beta.0",
   "license": "Apache-2.0",
   "prettier": "@stellar/prettier-config",
   "scripts": {
