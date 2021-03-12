@@ -12,16 +12,14 @@ module.exports = {
         "import/no-extraneous-dependencies": [0, { devDependencies: false }],
       },
     },
-    {
-      files: ["*/**/ducks/*.ts"],
-      rules: {
-        "no-param-reassign": "off",
-      },
-    },
   ],
   rules: {
-    "no-console": 0,
-    "react/jsx-filename-extension": [1, { extensions: [".tsx", ".jsx"] }],
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": ["error"],
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["error"],
+    "no-console": "off",
+    "react/jsx-filename-extension": ["error", { extensions: [".tsx", ".jsx"] }],
   },
   settings: {
     "import/resolver": {

@@ -27,7 +27,13 @@ const makeDummyStore = (state: any) =>
   });
 
 const { MemoryRouter } = jest.requireActual("react-router-dom");
-const Wrapper: React.FunctionComponent<any> = ({ children, state }) => (
+const Wrapper: React.FunctionComponent<any> = ({
+  children,
+  state,
+}: {
+  children: React.ReactChildren;
+  state: {};
+}) => (
   <MemoryRouter>
     <Provider store={makeDummyStore(state)}>{children}</Provider>
   </MemoryRouter>

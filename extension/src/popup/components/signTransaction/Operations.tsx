@@ -124,7 +124,7 @@ const PathList = ({ paths }: { paths: [Path] }) => (
   <PathListItem>
     <PathHeaderEl>Paths: </PathHeaderEl>
     {paths.map(({ code, issuer }, i) => (
-      <PathWrapperEl key={`${code} ${i}`}>
+      <PathWrapperEl key={`${code} ${i + 1}`}>
         <PathNumberEl>#{i + 1}</PathNumberEl>
         <ul>
           <KeyValueList operationKey="Asset Code" operationValue={code} />
@@ -146,8 +146,8 @@ const UnsafeMaliciousWarning = ({
 }: {
   isDestUnsafe: boolean;
   isDestMalicious: boolean;
-}) => {
-  return isDestUnsafe || isDestMalicious ? (
+}) =>
+  isDestUnsafe || isDestMalicious ? (
     <KeyValueList
       operationKey=""
       operationValue={
@@ -163,14 +163,13 @@ const UnsafeMaliciousWarning = ({
       }
     />
   ) : null;
-};
 
 const MemoRequiredWarning = ({
   isDestMemoRequired,
 }: {
   isDestMemoRequired: boolean;
-}) => {
-  return isDestMemoRequired ? (
+}) =>
+  isDestMemoRequired ? (
     <KeyValueList
       operationKey=""
       operationValue={
@@ -186,7 +185,6 @@ const MemoRequiredWarning = ({
       }
     />
   ) : null;
-};
 
 const DestinationWarning = ({
   destination,
@@ -234,11 +232,11 @@ const formattedBuffer = (data: Buffer) =>
 export const Operations = ({
   flaggedKeys,
   isMemoRequired,
-  operations,
+  operations = [] as Array<TransactionInfoResponse>,
 }: {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
-  operations: [TransactionInfoResponse];
+  operations: Array<TransactionInfoResponse>;
 }) => (
   <>
     {operations.map(
@@ -263,7 +261,7 @@ export const Operations = ({
           lowThreshold,
           medThreshold,
           highThreshold,
-        }: TransactionInfoResponse,
+        },
         i: number,
       ) => {
         const operationIndex = i + 1;

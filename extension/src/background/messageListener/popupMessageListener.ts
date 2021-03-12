@@ -131,11 +131,9 @@ export const popupMessageListener = (request: Request) => {
     if (isTestnet) {
       // fund the account automatically if we're in a dev environment
       try {
-        const response = await fetch(
+        await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
         );
-        const responseJSON = await response.json();
-        console.log("SUCCESS! You have a new account :)\n", responseJSON);
       } catch (e) {
         console.error(e);
         throw new Error("Error creating account");

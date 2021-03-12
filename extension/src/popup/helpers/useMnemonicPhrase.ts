@@ -11,7 +11,7 @@ export const useMnemonicPhrase = () => {
       try {
         res = await getMnemonicPhrase();
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
 
       const { mnemonicPhrase: fetchedMnemonicPhrase } = res;
