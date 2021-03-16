@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@stellar/wallet-sdk": "^0.1.0-rc.10",
     "prettier": "^2.0.5",
     "stellar-sdk": "5.0.1",
     "typescript": "~3.7.2",

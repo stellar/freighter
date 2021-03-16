@@ -1,10 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-
-import { getAccountBalance } from "@shared/api/internal";
 
 import { emitMetric } from "helpers/metrics";
 import {
@@ -22,9 +20,8 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { BasicButton } from "popup/basics/Buttons";
 
 import { Header } from "popup/components/Header";
-import { AccountAssets } from "popup/components/account/AccountAssets";
+import { AccountDetails } from "popup/components/account/AccountDetails";
 import { AccountDropdown } from "popup/components/account/AccountDropdown";
-import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { Toast } from "popup/components/Toast";
 import { Menu } from "popup/components/Menu";
 
@@ -37,7 +34,7 @@ const AccountEl = styled.div`
   width: 100%;
   max-width: ${POPUP_WIDTH}px;
   box-sizing: border-box;
-  padding: 1.75rem 1rem;
+  padding: 1.75rem 0;
 `;
 
 const AccountHeaderEl = styled.div`
@@ -74,7 +71,7 @@ const VerticalCenterLink = styled(Link)`
   vertical-align: middle;
 `;
 
-const AccountDetailsEl = styled.section`
+const AccountDetailsWrapperEl = styled.section`
   padding-bottom: 6rem;
 `;
 
@@ -85,29 +82,12 @@ const CopiedToastWrapperEl = styled.div`
 `;
 
 export const Account = () => {
-  const [accountBalance, setaccountBalance] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isAccountFunded, setIsAccountFunded] = useState(true);
   const publicKey = useSelector(publicKeySelector);
   const allAccounts = useSelector(allAccountsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const accountDropDownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let res = { balance: "", isFunded: true };
-    const fetchAccountBalance = async () => {
-      try {
-        res = await getAccountBalance(publicKey);
-      } catch (e) {
-        console.error(e);
-      }
-      const { balance, isFunded } = res;
-      setaccountBalance(balance);
-      setIsAccountFunded(isFunded);
-    };
-    fetchAccountBalance();
-  }, [publicKey]);
 
   const closeDropdown = (e: React.ChangeEvent<any>) => {
     if (
@@ -118,7 +98,7 @@ export const Account = () => {
     }
   };
 
-  return accountBalance ? (
+  return (
     <section onClick={closeDropdown}>
       <Header>
         <Menu />
@@ -155,14 +135,10 @@ export const Account = () => {
         </VerticalCenterLink>
       </AccountHeaderEl>
       <AccountEl>
-        <AccountDetailsEl>
-          {isAccountFunded ? (
-            <AccountAssets accountBalance={accountBalance} />
-          ) : (
-            <NotFundedMessage />
-          )}
-        </AccountDetailsEl>
+        <AccountDetailsWrapperEl>
+          <AccountDetails />
+        </AccountDetailsWrapperEl>
       </AccountEl>
     </section>
-  ) : null;
+  );
 };

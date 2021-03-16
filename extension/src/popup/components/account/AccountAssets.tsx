@@ -1,24 +1,24 @@
 import React from "react";
 import styled from "styled-components";
+import { BigNumber } from "bignumber.js";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import { Balances } from "@shared/api/types";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
-const AccountAssetsHeaderEl = styled.h3`
-  color: ${COLOR_PALETTE.greyDark};
-  font-size: 1rem;
-  font-weight: ${FONT_WEIGHT.normal};
-  margin: 0;
-`;
-
 const AssetWrapper = styled.div`
-  align-items: center;
-  display: flex;
   height: 4rem;
 `;
 
-const StellarLogoEl = styled.img`
+const AssetEl = styled.div`
+  align-items: center;
+  border-bottom: 1px solid ${COLOR_PALETTE.greyFaded};
+  display: flex;
+  padding: 0 1rem;
+`;
+
+const AssetLogoEl = styled.img`
   margin-right: 0.75rem;
   width: 1.625rem;
 `;
@@ -34,18 +34,16 @@ const AssetTypeEl = styled.span`
   font-weight: ${FONT_WEIGHT.normal};
 `;
 
-interface AccountAssetsProps {
-  accountBalance: string;
-}
-
-export const AccountAssets = ({ accountBalance }: AccountAssetsProps) => (
-  <>
-    <AccountAssetsHeaderEl>Account assets</AccountAssetsHeaderEl>
-    <AssetWrapper>
-      <StellarLogoEl alt="Stellar logo" src={StellarLogo} />
-      <LumenBalanceEl>
-        {accountBalance} <AssetTypeEl>XLM</AssetTypeEl>
-      </LumenBalanceEl>
-    </AssetWrapper>
-  </>
+export const AccountAssets = ({ balances }: { balances: Balances }) => (
+  <AssetWrapper>
+    {balances &&
+      Object.values(balances).map(({ token: { code, type }, total }) => (
+        <AssetEl key={type}>
+          <AssetLogoEl alt="Asset logo" src={StellarLogo} />
+          <LumenBalanceEl>
+            {new BigNumber(total).toString()} <AssetTypeEl>{code}</AssetTypeEl>
+          </LumenBalanceEl>
+        </AssetEl>
+      ))}
+  </AssetWrapper>
 );
