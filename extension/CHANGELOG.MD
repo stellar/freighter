@@ -2,8 +2,8 @@
 
 - Use SEP-29 to flag transactions with a warning if they are missing a required
   memo
-- Use stellar.expert's directory to flag transactions interactions with
-  malicious and/or unsafe accounts
+- Use stellar.expert's directory to flag transactions interacting with malicious
+  and/or unsafe accounts
 
 # v1.0.7-beta.0
 
