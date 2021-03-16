@@ -1,6 +1,13 @@
+# v1.0.8-beta.0
+
+- Use SEP-29 to flag transactions with a warning if they are missing a required
+  memo
+- Use stellar.expert's directory to flag transactions interactions with
+  malicious and/or unsafe accounts
+
 # v1.0.7-beta.0
 
-- Allow custom account names for generatred/imported accounts
+- Allow custom account names for generated/imported accounts
 - Stop rounding XLM balance
 - Use correct identicons
 
