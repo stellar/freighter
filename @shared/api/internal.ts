@@ -201,7 +201,7 @@ export const getAccountDetails = async (
     const transactionData = await dataProvider.fetchPayments({
       limit: TRANSACTIONS_LIMIT,
     });
-    payments = transactionData?.records || {};
+    payments = transactionData?.records || null;
   } catch (e) {
     console.error(e);
   }
