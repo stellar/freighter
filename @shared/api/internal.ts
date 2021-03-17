@@ -1,11 +1,11 @@
-import StellarSdk from "stellar-sdk";
-import { Account } from "./types";
-import { NETWORK_URL } from "../constants/stellar";
+import { DataProvider } from "@stellar/wallet-sdk";
+import { Account, AccountDetailsInterface } from "./types";
+import { NETWORK_PASSPHRASE, NETWORK_URL } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { sendMessageToBackground } from "./helpers";
 
-const server = new StellarSdk.Server(NETWORK_URL);
+const TRANSACTIONS_LIMIT = 15;
 
 export const createAccount = async (
   password: string,
@@ -183,32 +183,40 @@ export const confirmPassword = async (
   return response;
 };
 
-export const getAccountBalance = async (
+export const getAccountDetails = async (
   publicKey: string,
-): Promise<{
-  balance: string;
-  isFunded: boolean;
-}> => {
-  let response = {
-    balances: [{ asset_code: "", balance: "" }],
-    isFunded: true,
-  };
+): Promise<AccountDetailsInterface> => {
+  const dataProvider = new DataProvider({
+    serverUrl: NETWORK_URL,
+    accountOrKey: publicKey,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  });
+
+  let payments = null;
+  let balances = null;
+  let isFunded = null;
 
   try {
-    response = await server.loadAccount(publicKey);
+    ({ balances } = await dataProvider.fetchAccountDetails());
+    const transactionData = await dataProvider.fetchPayments({
+      limit: TRANSACTIONS_LIMIT,
+    });
+    payments = transactionData?.records || null;
   } catch (e) {
     console.error(e);
-    // TODO: Check that this is indeed a 404 before returning 0
-    return { balance: "0", isFunded: false };
   }
 
-  const { balance: nativeBalance } = response.balances.filter(
-    // eslint-disable-next-line camelcase
-    (balance: { asset_code?: string }) => !balance.asset_code,
-  )[0];
+  try {
+    isFunded = await dataProvider.isAccountFunded();
+  } catch (e) {
+    isFunded = false;
+    console.error(e);
+  }
+
   return {
-    isFunded: true,
-    balance: nativeBalance,
+    balances,
+    isFunded,
+    payments,
   };
 };
 

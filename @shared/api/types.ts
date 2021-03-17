@@ -1,3 +1,5 @@
+import { Types } from "@stellar/wallet-sdk";
+
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 
@@ -35,4 +37,12 @@ export interface Account {
   publicKey: string;
   name: string;
   imported: boolean;
+}
+
+export type Balances = Types.BalanceMap | null;
+
+export interface AccountDetailsInterface {
+  balances: Balances;
+  isFunded: boolean | null;
+  payments: Array<Types.Payment> | null;
 }
