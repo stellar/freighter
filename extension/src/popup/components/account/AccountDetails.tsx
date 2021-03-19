@@ -10,7 +10,7 @@ import { publicKeySelector } from "popup/ducks/authServices";
 import {
   getAccountDetails,
   getAssetIcons,
-  getAssetIcon,
+  retryAssetIcon,
 } from "@shared/api/internal";
 
 import { AccountDetailsInterface, AssetIcons } from "@shared/api/types";
@@ -113,7 +113,7 @@ export const AccountDetails = () => {
     /* if we retried the toml and their link is still bad, just give up here */
     if (hasIconFetchRetried) return;
     try {
-      const res = await getAssetIcon({ key, code, assetIcons });
+      const res = await retryAssetIcon({ key, code, assetIcons });
       setAssetIcons(res);
       setHasIconFetchRetried(true);
     } catch (e) {

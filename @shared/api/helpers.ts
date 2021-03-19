@@ -66,20 +66,20 @@ have to push releases to update it.
 Ideally, this will be replaced by a backend server that does all this work for us in the near future.
 
 Until then, the very first time a user loads a non native asset in the UI, we will check that asset's issuer public key
-to find their listed website. Using the website, we attempt to look at their stellar.toml file to
+account info to find their listed website. Using the website, we attempt to look at their stellar.toml file to
 see if it provides an icon url. 
 
 So, on this very first time, this requires 3 roundtrips for an image: 
 - first to Horizon to get issuer info, 
-- second to the issuer toml file to get the actual url
+- second to the issuer toml file to get the icon url
 - third to get the actual image data from the url
 
-If any of that fails, we move on with no image
+If any of that fails, we move on with no image and fallback to a generic bullet.
 
 If we successfully do that, we save the resulting url in our localStorage cache.
 
-So, any subsequent times, this requires only 1 roundtrip for an image
-- first, just get the image from the url we already have saved for that asset
+So, any subsequent attempts to load the asset, it requires only 1 roundtrip for an image
+- first, just get the image from the url we already have saved for that asset and load it
 */
 export const getIconUrlFromIssuer = async ({
   key,

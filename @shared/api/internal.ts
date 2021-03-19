@@ -243,7 +243,7 @@ export const getAssetIcons = async (balances: Balances) => {
   return assetIcons;
 };
 
-export const getAssetIcon = async ({
+export const retryAssetIcon = async ({
   key,
   code,
   assetIcons,
