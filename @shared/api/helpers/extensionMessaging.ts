@@ -3,9 +3,9 @@ import {
   DEV_SERVER,
   EXTERNAL_MSG_RESPONSE,
   EXTERNAL_MSG_REQUEST,
-} from "../constants/services";
-import { Response } from "./types";
-import { NoExtensionInstalledError } from "../constants/errors";
+} from "../../constants/services";
+import { Response } from "../types";
+import { NoExtensionInstalledError } from "../../constants/errors";
 
 declare global {
   interface Window {

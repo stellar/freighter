@@ -26,6 +26,8 @@ export interface Response {
   isDataSharingAllowed: boolean;
   allAccounts: Array<Account>;
   accountName: string;
+  assetCode: string;
+  iconUrl: string;
 }
 
 export interface ExternalRequest {
@@ -37,6 +39,10 @@ export interface Account {
   publicKey: string;
   name: string;
   imported: boolean;
+}
+
+export interface AssetIcons {
+  [code: string]: string;
 }
 
 export type Balances = Types.BalanceMap | null;

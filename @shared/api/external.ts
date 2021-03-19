@@ -1,5 +1,5 @@
 import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
-import { sendMessageToContentScript } from "./helpers";
+import { sendMessageToContentScript } from "./helpers/extensionMessaging";
 
 export const requestPublicKey = async (): Promise<string> => {
   let response = { publicKey: "", error: "" };

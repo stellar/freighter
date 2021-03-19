@@ -13,6 +13,7 @@ import { MessageResponder } from "background/types";
 import {
   ALLOWLIST_ID,
   APPLICATION_ID,
+  CACHED_ASSET_ICONS_ID,
   DATA_SHARING_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
@@ -566,6 +567,28 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
+  const getCachedAssetIcon = () => {
+    const { assetCode } = request;
+
+    const assetIconCache = JSON.parse(
+      localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
+    );
+
+    return {
+      iconUrl: assetIconCache[assetCode],
+    };
+  };
+
+  const cacheAssetIcon = () => {
+    const { assetCode, iconUrl } = request;
+
+    const assetIconCache = JSON.parse(
+      localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
+    );
+    assetIconCache[assetCode] = iconUrl;
+    localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
@@ -585,6 +608,8 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
+    [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
+    [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
   };
 
   return messageResponder[request.type]();

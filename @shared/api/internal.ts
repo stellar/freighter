@@ -1,9 +1,10 @@
 import { DataProvider } from "@stellar/wallet-sdk";
-import { Account, AccountDetailsInterface } from "./types";
+import { Account, AccountDetailsInterface, Balances } from "./types";
 import { NETWORK_PASSPHRASE, NETWORK_URL } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
-import { sendMessageToBackground } from "./helpers";
+import { sendMessageToBackground } from "./helpers/extensionMessaging";
+import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 
 const TRANSACTIONS_LIMIT = 15;
 
@@ -218,6 +219,53 @@ export const getAccountDetails = async (
     isFunded,
     payments,
   };
+};
+
+export const getAssetIcons = async (balances: Balances) => {
+  const assetIcons = {} as { [code: string]: string };
+
+  if (balances) {
+    let icon = "";
+    const balanceValues = Object.values(balances);
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < balanceValues.length; i++) {
+      const { token } = balanceValues[i];
+      if ("issuer" in token) {
+        const {
+          issuer: { key },
+          code,
+        } = token;
+        // eslint-disable-next-line no-await-in-loop
+        icon = await getIconUrlFromIssuer({ key, code });
+        assetIcons[code] = icon;
+      }
+    }
+  }
+  return assetIcons;
+};
+
+export const retryAssetIcon = async ({
+  key,
+  code,
+  assetIcons,
+}: {
+  key: string;
+  code: string;
+  assetIcons: { [code: string]: string };
+}) => {
+  const newAssetIcons = { ...assetIcons };
+  try {
+    await sendMessageToBackground({
+      assetCode: code,
+      iconUrl: null,
+      type: SERVICE_TYPES.CACHE_ASSET_ICON,
+    });
+  } catch (e) {
+    return assetIcons;
+  }
+  const icon = await getIconUrlFromIssuer({ key, code });
+  newAssetIcons[code] = icon;
+  return newAssetIcons;
 };
 
 export const rejectAccess = async (): Promise<void> => {
