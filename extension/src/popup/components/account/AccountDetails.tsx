@@ -7,8 +7,13 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { BasicButton } from "popup/basics/Buttons";
 
 import { publicKeySelector } from "popup/ducks/authServices";
-import { getAccountDetails } from "@shared/api/internal";
-import { AccountDetailsInterface } from "@shared/api/types";
+import {
+  getAccountDetails,
+  getAssetIcons,
+  getAssetIcon,
+} from "@shared/api/internal";
+
+import { AccountDetailsInterface, AssetIcons } from "@shared/api/types";
 
 import { AccountAssets } from "./AccountAssets";
 import { AccountHistory } from "./AccountHistory";
@@ -44,9 +49,13 @@ const defaultAccountDetails = {
 
 export const AccountDetails = () => {
   const [isAccountAssetsActive, setIsAccountAssetsActive] = useState(true);
-
   const [accountDetails, setAccountDetails] = useState(defaultAccountDetails);
+  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
+  const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
+  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
   const publicKey = useSelector(publicKeySelector);
+
+  const { isFunded, balances } = accountDetails;
 
   useEffect(() => {
     const fetchAccountDetails = async () => {
@@ -61,7 +70,31 @@ export const AccountDetails = () => {
     fetchAccountDetails();
   }, [publicKey]);
 
-  const { isFunded, balances } = accountDetails;
+  useEffect(() => {
+    const collection = [] as Array<any>;
+    if (!balances) return;
+
+    // put XLM at the top of the balance list
+    Object.entries(balances).forEach(([k, v]) => {
+      if (k === "native") {
+        collection.unshift(v);
+      } else {
+        collection.push(v);
+      }
+    });
+    setSortedBalances(collection);
+
+    // get each asset's icon
+    const fetchAssetIcons = async () => {
+      try {
+        const res = await getAssetIcons(balances);
+        setAssetIcons(res);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchAssetIcons();
+  }, [balances]);
 
   const handleDetailToggle = (isAssetsActive: boolean) => {
     if (isAccountAssetsActive !== isAssetsActive) {
@@ -69,10 +102,28 @@ export const AccountDetails = () => {
     }
   };
 
+  /* if an image url 404's, this will try exactly once to rescrape the toml for a new url to cache */
+  const retryAssetIconFetch = async ({
+    key,
+    code,
+  }: {
+    key: string;
+    code: string;
+  }) => {
+    /* if we retried the toml and their link is still bad, just give up here */
+    if (hasIconFetchRetried) return;
+    try {
+      const res = await getAssetIcon({ key, code, assetIcons });
+      setAssetIcons(res);
+      setHasIconFetchRetried(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (isFunded === null) {
     return null;
   }
-
   return isFunded ? (
     <>
       <AccountHeaderEl>
@@ -90,7 +141,11 @@ export const AccountDetails = () => {
         </AccountToggleBtnEl>
       </AccountHeaderEl>
       {isAccountAssetsActive ? (
-        <AccountAssets balances={balances} />
+        <AccountAssets
+          sortedBalances={sortedBalances}
+          assetIcons={assetIcons}
+          retryAssetIconFetch={retryAssetIconFetch}
+        />
       ) : (
         <AccountHistory />
       )}

@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { BigNumber } from "bignumber.js";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
-import { Balances } from "@shared/api/types";
+import { AssetIcons } from "@shared/api/types";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -23,6 +23,14 @@ const AssetLogoEl = styled.img`
   width: 1.625rem;
 `;
 
+const AssetBulletEl = styled.div`
+  background: ${COLOR_PALETTE.primary};
+  border-radius: 10rem;
+  height: 0.5rem;
+  margin: 0 1.375rem 0 0.5rem;
+  width: 0.5rem;
+`;
+
 const LumenBalanceEl = styled.h2`
   font-size: 1.56rem;
   font-weight: ${FONT_WEIGHT.bold};
@@ -34,16 +42,51 @@ const AssetTypeEl = styled.span`
   font-weight: ${FONT_WEIGHT.normal};
 `;
 
-export const AccountAssets = ({ balances }: { balances: Balances }) => (
+const AssetIcon = ({
+  assetIcons,
+  code,
+  issuerKey,
+  retryAssetIconFetch,
+}: {
+  assetIcons: AssetIcons;
+  code: string;
+  issuerKey: string;
+  retryAssetIconFetch: (arg: { key: string; code: string }) => void;
+}) =>
+  assetIcons[code] || code === "XLM" ? (
+    <AssetLogoEl
+      alt="Asset logo"
+      src={code === "XLM" ? StellarLogo : assetIcons[code] || ""}
+      onError={() => {
+        retryAssetIconFetch({ key: issuerKey, code });
+      }}
+    />
+  ) : (
+    <AssetBulletEl />
+  );
+
+export const AccountAssets = ({
+  assetIcons,
+  sortedBalances,
+  retryAssetIconFetch,
+}: {
+  assetIcons: AssetIcons;
+  sortedBalances: Array<any>;
+  retryAssetIconFetch: (arg: { key: string; code: string }) => void;
+}) => (
   <AssetWrapper>
-    {balances &&
-      Object.values(balances).map(({ token: { code, type }, total }) => (
-        <AssetEl key={type}>
-          <AssetLogoEl alt="Asset logo" src={StellarLogo} />
-          <LumenBalanceEl>
-            {new BigNumber(total).toString()} <AssetTypeEl>{code}</AssetTypeEl>
-          </LumenBalanceEl>
-        </AssetEl>
-      ))}
+    {sortedBalances.map(({ token: { issuer, code }, total }) => (
+      <AssetEl key={code}>
+        <AssetIcon
+          assetIcons={assetIcons}
+          code={code}
+          issuerKey={issuer?.key}
+          retryAssetIconFetch={retryAssetIconFetch}
+        />
+        <LumenBalanceEl>
+          {new BigNumber(total).toString()} <AssetTypeEl>{code}</AssetTypeEl>
+        </LumenBalanceEl>
+      </AssetEl>
+    ))}
   </AssetWrapper>
 );
