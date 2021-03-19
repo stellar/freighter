@@ -3,7 +3,8 @@ import { Account, AccountDetailsInterface, Balances } from "./types";
 import { NETWORK_PASSPHRASE, NETWORK_URL } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
-import { sendMessageToBackground, getIconUrlFromIssuer } from "./helpers";
+import { sendMessageToBackground } from "./helpers/extensionMessaging";
+import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 
 const TRANSACTIONS_LIMIT = 15;
 
