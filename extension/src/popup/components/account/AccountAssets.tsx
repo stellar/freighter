@@ -55,7 +55,7 @@ const AssetIcon = ({
 }) =>
   assetIcons[code] || code === "XLM" ? (
     <AssetLogoEl
-      alt="Asset logo"
+      alt={`${code} logo`}
       src={code === "XLM" ? StellarLogo : assetIcons[code] || ""}
       onError={() => {
         retryAssetIconFetch({ key: issuerKey, code });
