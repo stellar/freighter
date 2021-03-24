@@ -5,10 +5,13 @@ import { BigNumber } from "bignumber.js";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { AssetIcons } from "@shared/api/types";
 
+import { ScrollingView } from "popup/basics/AccountSubview";
+
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 const AssetWrapper = styled.div`
-  height: 4rem;
+  ${ScrollingView}
+  padding-left: 0.75rem;
 `;
 
 const AssetEl = styled.div`
@@ -37,7 +40,7 @@ const LumenBalanceEl = styled.h2`
 `;
 
 const AssetTypeEl = styled.span`
-  color: ${COLOR_PALETTE.secondaryText};
+  color: ${COLOR_PALETTE.lightText};
   font-size: 1.25rem;
   font-weight: ${FONT_WEIGHT.normal};
 `;

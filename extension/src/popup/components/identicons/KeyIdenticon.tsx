@@ -12,14 +12,22 @@ const KeyIdenticonWrapperEl = styled.div`
   display: flex;
 `;
 
+interface IdenticonWrapperElProps {
+  isSmall?: boolean;
+}
+
 const IdenticonWrapperEl = styled.div`
   background: ${COLOR_PALETTE.white};
   border: 0.125rem solid #d2d5db;
   border-radius: 2rem;
-  padding: 0.5rem;
-  height: 2.1875rem;
+  display: flex;
+  padding: ${({ isSmall }: IdenticonWrapperElProps) =>
+    isSmall ? "0.2rem" : "0.5rem"};
+  height: ${({ isSmall }: IdenticonWrapperElProps) =>
+    isSmall ? "1.375rem" : "2.1875rem"};
   margin-right: 0.5rem;
-  width: 2.1875rem;
+  width: ${({ isSmall }: IdenticonWrapperElProps) =>
+    isSmall ? "1.375rem" : "2.1875rem"};
 `;
 
 const PublicKeyEl = styled.span`
@@ -29,7 +37,7 @@ const PublicKeyEl = styled.span`
   opacity: 0.7;
 `;
 
-interface KeyIdenticonProps {
+interface KeyIdenticonProps extends IdenticonWrapperElProps {
   color?: string;
   publicKey: string;
 }
@@ -37,12 +45,13 @@ interface KeyIdenticonProps {
 export const KeyIdenticon = ({
   color = "",
   publicKey = "",
+  isSmall = false,
   ...props
 }: KeyIdenticonProps) => {
   const shortPublicKey = truncatedPublicKey(publicKey);
   return (
     <KeyIdenticonWrapperEl>
-      <IdenticonWrapperEl>
+      <IdenticonWrapperEl isSmall={isSmall}>
         <IdenticonImg publicKey={publicKey} />
       </IdenticonWrapperEl>
       <PublicKeyEl color={color} {...props}>

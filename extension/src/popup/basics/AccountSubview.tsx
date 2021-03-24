@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 import { POPUP_WIDTH } from "constants/dimensions";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
@@ -51,4 +51,9 @@ export const SubviewWrapper = styled.div`
   max-width: ${POPUP_WIDTH}px;
   box-sizing: border-box;
   padding: 2rem 2.5rem;
+`;
+
+export const ScrollingView = css`
+  height: 14.375rem;
+  overflow: scroll;
 `;

@@ -1,5 +1,11 @@
+import StellarSdk from "stellar-sdk";
 import { DataProvider } from "@stellar/wallet-sdk";
-import { Account, AccountDetailsInterface, Balances } from "./types";
+import {
+  Account,
+  AccountDetailsInterface,
+  Balances,
+  HorizonOperation,
+} from "./types";
 import { NETWORK_PASSPHRASE, NETWORK_URL } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -193,31 +199,41 @@ export const getAccountDetails = async (
     networkPassphrase: NETWORK_PASSPHRASE,
   });
 
-  let payments = null;
   let balances = null;
   let isFunded = null;
+  let operations = [] as Array<HorizonOperation>;
 
   try {
     ({ balances } = await dataProvider.fetchAccountDetails());
-    const transactionData = await dataProvider.fetchPayments({
-      limit: TRANSACTIONS_LIMIT,
-    });
-    payments = transactionData?.records || null;
+    isFunded = true;
   } catch (e) {
     console.error(e);
+    return {
+      balances,
+      isFunded: false,
+      operations,
+    };
   }
 
   try {
-    isFunded = await dataProvider.isAccountFunded();
+    const server = new StellarSdk.Server(NETWORK_URL);
+    const operationsData = await server
+      .operations()
+      .forAccount(publicKey)
+      .order("desc")
+      .join("transactions")
+      .limit(TRANSACTIONS_LIMIT)
+      .call();
+
+    operations = operationsData.records || [];
   } catch (e) {
-    isFunded = false;
     console.error(e);
   }
 
   return {
     balances,
     isFunded,
-    payments,
+    operations,
   };
 };
 
