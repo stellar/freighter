@@ -71,10 +71,6 @@ const VerticalCenterLink = styled(Link)`
   vertical-align: middle;
 `;
 
-const AccountDetailsWrapperEl = styled.section`
-  padding-bottom: 6rem;
-`;
-
 const CopiedToastWrapperEl = styled.div`
   margin: 5rem 0 0 -2rem;
   position: absolute;
@@ -135,9 +131,7 @@ export const Account = () => {
         </VerticalCenterLink>
       </AccountHeaderEl>
       <AccountEl>
-        <AccountDetailsWrapperEl>
-          <AccountDetails />
-        </AccountDetailsWrapperEl>
+        <AccountDetails />
       </AccountEl>
     </section>
   );

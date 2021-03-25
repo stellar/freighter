@@ -1,3 +1,4 @@
+import { Horizon } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
@@ -47,8 +48,14 @@ export interface AssetIcons {
 
 export type Balances = Types.BalanceMap | null;
 
+/* eslint-disable camelcase */
+export type HorizonOperation = Horizon.PaymentOperationResponse & {
+  transaction_attr: Horizon.TransactionResponse;
+};
+/* eslint-enable camelcase */
+
 export interface AccountDetailsInterface {
   balances: Balances;
   isFunded: boolean | null;
-  payments: Array<Types.Payment> | null;
+  operations: Array<HorizonOperation> | [];
 }

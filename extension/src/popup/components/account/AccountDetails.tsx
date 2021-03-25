@@ -21,6 +21,7 @@ import { NotFundedMessage } from "./NotFundedMessage";
 
 const AccountHeaderEl = styled.section`
   align-items: center;
+  border-bottom: 1px solid ${COLOR_PALETTE.greyFaded};
   display: flex;
 `;
 
@@ -33,7 +34,7 @@ const AccountToggleBtnEl = styled(BasicButton)`
     ${({ isActive }: AccountToggleBtnElProps) =>
       isActive ? COLOR_PALETTE.primary : COLOR_PALETTE.background};
   color: ${({ isActive }: AccountToggleBtnElProps) =>
-    isActive ? COLOR_PALETTE.primary : COLOR_PALETTE.greyDark};
+    isActive ? COLOR_PALETTE.primary : COLOR_PALETTE.lightText};
   font-size: 1rem;
   font-weight: ${FONT_WEIGHT.normal};
   margin: 0;
@@ -44,7 +45,7 @@ const AccountToggleBtnEl = styled(BasicButton)`
 const defaultAccountDetails = {
   balances: null,
   isFunded: null,
-  payments: null,
+  operations: [],
 } as AccountDetailsInterface;
 
 export const AccountDetails = () => {
@@ -55,7 +56,7 @@ export const AccountDetails = () => {
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
   const publicKey = useSelector(publicKeySelector);
 
-  const { isFunded, balances } = accountDetails;
+  const { isFunded, balances, operations } = accountDetails;
 
   useEffect(() => {
     const fetchAccountDetails = async () => {
@@ -147,7 +148,7 @@ export const AccountDetails = () => {
           retryAssetIconFetch={retryAssetIconFetch}
         />
       ) : (
-        <AccountHistory />
+        <AccountHistory publicKey={publicKey} operations={operations} />
       )}
     </>
   ) : (

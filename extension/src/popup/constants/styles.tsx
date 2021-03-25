@@ -7,6 +7,7 @@ export const COLOR_PALETTE = {
   inputBackground: "rgba(210, 216, 229, 0.4)",
   text: "#060E1A",
   secondaryText: "#748098",
+  lightText: "#4B4E54",
   primary: "#391EDA",
   primaryMuted: "#615BCE",
   primaryFaded: "#BCB9FF",
