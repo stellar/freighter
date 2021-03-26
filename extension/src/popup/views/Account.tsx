@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
@@ -46,10 +46,19 @@ const AccountHeaderEl = styled.div`
   padding: 0 1rem;
 `;
 
+const AccountHeaderButtonStyle = css`
+  border-radius: 0.3125rem;
+  padding: 0.5rem;
+
+  &:hover {
+    background: #f8fafe;
+  }
+`;
+
 const CopyButtonEl = styled(BasicButton)`
   color: ${COLOR_PALETTE.primary};
   display: flex;
-  padding: 0;
+  ${AccountHeaderButtonStyle}
 
   img {
     margin-right: 0.5rem;
@@ -67,12 +76,14 @@ const QrButton = styled(BasicButton)`
   vertical-align: text-top;
 `;
 
-const VerticalCenterLink = styled(Link)`
+const DetailsLink = styled(Link)`
+  ${AccountHeaderButtonStyle}
   vertical-align: middle;
 `;
 
 const CopiedToastWrapperEl = styled.div`
   margin: 5rem 0 0 -2rem;
+  padding: 0.5rem;
   position: absolute;
   right: 15rem;
 `;
@@ -126,9 +137,9 @@ export const Account = () => {
             setIsShowing={setIsCopied}
           />
         </CopiedToastWrapperEl>
-        <VerticalCenterLink to={ROUTES.viewPublicKey}>
+        <DetailsLink to={ROUTES.viewPublicKey}>
           <QrButton /> Details
-        </VerticalCenterLink>
+        </DetailsLink>
       </AccountHeaderEl>
       <AccountEl>
         <AccountDetails />

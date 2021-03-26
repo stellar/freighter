@@ -13,7 +13,7 @@ const HeaderEl = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2.25rem 2rem;
+  padding: 2.25rem 1rem 2.25rem 2rem;
   text-align: left;
   height: ${HEADER_HEIGHT}px;
 `;
@@ -35,7 +35,7 @@ const NetworkEl = styled.h3`
   font-size: 1rem;
   font-weight: 400;
   line-height: 1;
-  margin: 0;
+  margin-right: 0.5rem;
 `;
 
 type HeaderProps = {
