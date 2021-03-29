@@ -123,7 +123,7 @@ export const Account = () => {
           text={publicKey}
           onCopy={() => {
             setIsCopied(true);
-            emitMetric(METRIC_NAMES.copyPublickKey);
+            emitMetric(METRIC_NAMES.accountScreenCopyPublickKey);
           }}
         >
           <CopyButtonEl>

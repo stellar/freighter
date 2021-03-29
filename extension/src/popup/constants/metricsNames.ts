@@ -35,10 +35,15 @@ export const METRIC_NAMES = {
   accountCreatorFinished:
     "account creator finished: closed account creator flow",
 
+  accountScreenAddAccount: "account screen: created new account",
+  accountScreenCopyPublickKey: "account screen: copied public key",
+  accountScreenImportAccount: "account screen: created new account",
+
   confirmPasswordSuccess: "re-auth: success",
   confirmPasswordFail: "re-auth: error",
 
-  copyPublickKey: "account screen: copied public key",
+  historyOpenFullHistory: "history: opened full history on external website",
+  historyOpenItem: "history: opened item on external website",
 
   recoverAccountSuccess: "recover account: success",
   recoverAccountFail: "recover account: error",
@@ -49,6 +54,7 @@ export const METRIC_NAMES = {
   grantAccessFail: "grant access: rejected",
 
   signTransaction: "sign transaction: confirmed",
+  signTransactionMemoRequired: "sign transaction: memo required error",
   rejectTransaction: "sign transaction: rejected",
 
   backupPhraseSuccess: "backup phrase: success",
@@ -57,6 +63,7 @@ export const METRIC_NAMES = {
   backupPhraseDownload: "backup phrase: downloaded phrase",
   backupPhraseCopy: "backup phrase: copied phrase",
 
+  viewPublicAccountRenamed: "viewPublicKey: renamed account",
   viewPublicKeyCopy: "viewPublicKey: copied public key",
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 };

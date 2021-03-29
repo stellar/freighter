@@ -155,6 +155,7 @@ export const ViewPublicKey = () => {
     const { accountName: newAccountName } = values;
     if (accountName !== newAccountName) {
       await dispatch(updateAccountName(newAccountName));
+      emitMetric(METRIC_NAMES.viewPublicAccountRenamed);
     }
     setIsEditingName(false);
   };

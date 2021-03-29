@@ -2,11 +2,15 @@ import React from "react";
 import { camelCase } from "lodash";
 import styled from "styled-components";
 
+import { BasicButton } from "popup/basics/Buttons";
+
 import { isTestnet } from "@shared/constants/stellar";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { OPERATION_TYPES } from "constants/transaction";
 import { HorizonOperation } from "@shared/api/types";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
+import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -64,9 +68,11 @@ const TimestampEl = styled(HistoryColumnRowEl)`
   font-size: 0.75rem;
 `;
 
-const FullHistoryEl = styled.a`
+const FullHistoryBtnEl = styled(BasicButton)`
+  color: ${COLOR_PALETTE.primary};
   display: block;
-  margin-top: 1.5rem;
+  font-size: 1rem;
+  margin: 1.5rem auto;
   text-align: center;
 `;
 
@@ -141,7 +147,12 @@ const HistoryItem = ({
   const renderPaymentComponent = () => PaymentComponent;
 
   return (
-    <HistoryItemEl onClick={() => openTab(`${STELLAR_EXPERT_URL}/op/${id}`)}>
+    <HistoryItemEl
+      onClick={() => {
+        emitMetric(METRIC_NAMES.historyOpenItem);
+        openTab(`${STELLAR_EXPERT_URL}/op/${id}`);
+      }}
+    >
       <HistoryColumnEl>
         <TimestampEl>
           {new Date(Date.parse(createdAt)).toLocaleString()}
@@ -178,12 +189,13 @@ export const AccountHistory = ({
         />
       ))}
     </HistoryListEl>
-    <FullHistoryEl
-      target="_blank"
-      rel="noreferrer"
-      href={`${STELLAR_EXPERT_URL}/account/${publicKey}`}
+    <FullHistoryBtnEl
+      onClick={() => {
+        emitMetric(METRIC_NAMES.historyOpenFullHistory);
+        openTab(`${STELLAR_EXPERT_URL}/account/${publicKey}`);
+      }}
     >
       Check full history on stellar.expert
-    </FullHistoryEl>
+    </FullHistoryBtnEl>
   </>
 );
