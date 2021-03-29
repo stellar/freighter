@@ -36,13 +36,12 @@ const AssetBulletEl = styled.div`
 
 const LumenBalanceEl = styled.h2`
   font-size: 1.56rem;
-  font-weight: ${FONT_WEIGHT.bold};
+  font-weight: ${FONT_WEIGHT.normal};
 `;
 
 const AssetTypeEl = styled.span`
   color: ${COLOR_PALETTE.lightText};
   font-size: 1.25rem;
-  font-weight: ${FONT_WEIGHT.normal};
 `;
 
 const AssetIcon = ({

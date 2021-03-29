@@ -7,22 +7,22 @@ import { COLOR_PALETTE } from "popup/constants/styles";
 import { OPERATION_TYPES } from "constants/transaction";
 import { HorizonOperation } from "@shared/api/types";
 
-import { ScrollingView } from "popup/basics/AccountSubview";
+import { openTab } from "popup/helpers/navigate";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import IconOpenExternal from "popup/assets/icon-open-external.svg";
 
 const HistoryListEl = styled.ul`
-  ${ScrollingView}
   list-style-type: none;
   margin: 0;
   padding: 0;
 `;
 
-const OpenButtonEl = styled.a`
+const OpenExternalIconEl = styled.img`
   display: flex;
   opacity: 0;
+  width: 0.9375rem;
 `;
 
 const HistoryItemEl = styled.li`
@@ -31,10 +31,12 @@ const HistoryItemEl = styled.li`
   display: flex;
   justify-content: space-between;
   height: 4rem;
-  padding: 0 1rem;
+  padding: 0 1rem 0 2rem;
 
   &: hover {
-    ${OpenButtonEl} {
+    background: ${COLOR_PALETTE.white};
+    cursor: pointer;
+    ${OpenExternalIconEl} {
       opacity: 1;
     }
   }
@@ -139,7 +141,7 @@ const HistoryItem = ({
   const renderPaymentComponent = () => PaymentComponent;
 
   return (
-    <HistoryItemEl>
+    <HistoryItemEl onClick={() => openTab(`${STELLAR_EXPERT_URL}/op/${id}`)}>
       <HistoryColumnEl>
         <TimestampEl>
           {new Date(Date.parse(createdAt)).toLocaleString()}
@@ -154,13 +156,7 @@ const HistoryItem = ({
         </HistoryColumnRowEl>
       </HistoryColumnEl>
       <PaymentColumnEl>{renderPaymentComponent()}</PaymentColumnEl>
-      <OpenButtonEl
-        target="_blank"
-        rel="noreferrer"
-        href={`${STELLAR_EXPERT_URL}/op/${id}`}
-      >
-        <img src={IconOpenExternal} alt="open in stellar.expert" />
-      </OpenButtonEl>
+      <OpenExternalIconEl src={IconOpenExternal} alt="open in stellar.expert" />
     </HistoryItemEl>
   );
 };

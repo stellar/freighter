@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { BasicButton } from "popup/basics/Buttons";
+import { ScrollingView } from "popup/basics/AccountSubview";
 
 import { publicKeySelector } from "popup/ducks/authServices";
 import {
@@ -25,6 +26,10 @@ const AccountHeaderEl = styled.section`
   display: flex;
 `;
 
+const AccountBodyEl = styled.section`
+  ${ScrollingView}
+`;
+
 interface AccountToggleBtnElProps {
   isActive: boolean;
 }
@@ -36,10 +41,15 @@ const AccountToggleBtnEl = styled(BasicButton)`
   color: ${({ isActive }: AccountToggleBtnElProps) =>
     isActive ? COLOR_PALETTE.primary : COLOR_PALETTE.lightText};
   font-size: 1rem;
-  font-weight: ${FONT_WEIGHT.normal};
+  font-weight: ${({ isActive }: AccountToggleBtnElProps) =>
+    isActive ? FONT_WEIGHT.bold : FONT_WEIGHT.normal};
   margin: 0;
   padding: 0 1rem 1.25rem 1rem;
   width: 50%;
+
+  &:hover {
+    color: ${COLOR_PALETTE.primary};
+  }
 `;
 
 const defaultAccountDetails = {
@@ -141,15 +151,17 @@ export const AccountDetails = () => {
           History
         </AccountToggleBtnEl>
       </AccountHeaderEl>
-      {isAccountAssetsActive ? (
-        <AccountAssets
-          sortedBalances={sortedBalances}
-          assetIcons={assetIcons}
-          retryAssetIconFetch={retryAssetIconFetch}
-        />
-      ) : (
-        <AccountHistory publicKey={publicKey} operations={operations} />
-      )}
+      <AccountBodyEl>
+        {isAccountAssetsActive ? (
+          <AccountAssets
+            sortedBalances={sortedBalances}
+            assetIcons={assetIcons}
+            retryAssetIconFetch={retryAssetIconFetch}
+          />
+        ) : (
+          <AccountHistory publicKey={publicKey} operations={operations} />
+        )}
+      </AccountBodyEl>
     </>
   ) : (
     <NotFundedMessage />

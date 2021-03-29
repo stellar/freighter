@@ -8,6 +8,7 @@ import { ROUTES } from "popup/constants/routes";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 
 import { Account } from "@shared/api/types";
+import AccountDropdownIcon from "popup/assets/icon-dropdown-arrow.svg";
 import CreateNewIcon from "popup/assets/create-new.svg";
 import ImportNewIcon from "popup/assets/import-new.svg";
 
@@ -23,13 +24,8 @@ const AccountDropdownButtonEl = styled.div`
   padding: 0.75rem;
 `;
 
-const AccountDropdownArrowEl = styled.span`
-  border-left: 0.5rem solid transparent;
-  border-right: 0.5rem solid transparent;
-  border-top: 0.5rem solid ${COLOR_PALETTE.greyDark};
+const AccountDropdownArrowEl = styled.img`
   margin: 0 0.75rem 0 3rem;
-  width: 0;
-  height: 0;
 `;
 
 interface AccountDropdownOptionsProps {
@@ -48,7 +44,7 @@ const AccountDropdownOptionsEl = styled.ul`
   }: AccountDropdownOptionsProps) =>
     isDropdownOpen ? `${dropdownCount * 6.5}rem` : "0"};
   list-style-type: none;
-  margin: 0 0 0 0.75rem;
+  margin: 0;
   overflow: hidden;
   padding: 0;
   position: absolute;
@@ -114,7 +110,7 @@ export const AccountDropdown = ({
         accountName={currentAccountName}
         publicKey={publicKey}
       />
-      <AccountDropdownArrowEl />
+      <AccountDropdownArrowEl src={AccountDropdownIcon} alt="dropdown icon" />
     </AccountDropdownButtonEl>
     <AccountDropdownOptionsEl
       dropdownCount={allAccounts.length}

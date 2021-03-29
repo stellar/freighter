@@ -8,4 +8,5 @@ export const navigateTo = (path: ROUTES, queryParams?: string) => {
   history.push({ pathname });
 };
 
+/* Firefox will not let you use window.open to programatically open a tab. Use this instead */
 export const openTab = (url: string) => browser.tabs.create({ url });

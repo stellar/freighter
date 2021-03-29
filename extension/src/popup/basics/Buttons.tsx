@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { HEADER_HEIGHT } from "constants/dimensions";
 import {
   COLOR_PALETTE,
+  FONT_FAMILY,
   FONT_WEIGHT,
   ANIMATION_TIMES,
   ROUNDED_CORNERS,
@@ -15,6 +16,7 @@ export const BasicButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
+  font-family: ${FONT_FAMILY};
   -webkit-appearance: none;
 
   :focus {

@@ -156,7 +156,7 @@ const CheckboxFieldEl = styled(Field).attrs(() => ({ type: "checkbox" }))`
     left: 0;
     height: 1rem;
     width: 1rem;
-    margin: 0.375rem;
+    margin: 0.36rem 0.28rem;
   }
 `;
 
