@@ -4,9 +4,11 @@ import { Formik } from "formik";
 import { bool as YupBool, object as YupObject, string as YupString } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
+import { emitMetric } from "helpers/metrics";
 
 import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 import {
@@ -54,6 +56,9 @@ export const ImportAccount = () => {
     const res = await dispatch(importAccount({ password, privateKey }));
 
     if (importAccount.fulfilled.match(res)) {
+      emitMetric(METRIC_NAMES.accountScreenImportAccount, {
+        number_of_accounts: res.payload.allAccounts.length,
+      });
       navigateTo(ROUTES.account);
     }
   };
