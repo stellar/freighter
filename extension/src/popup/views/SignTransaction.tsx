@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
@@ -11,6 +11,7 @@ import {
 } from "@shared/constants/stellar";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
+import { emitMetric } from "helpers/metrics";
 import { getTransactionInfo, stroopToXlm } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/decodeMemo";
 
@@ -19,6 +20,8 @@ import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
+
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
@@ -124,10 +127,6 @@ export const SignTransaction = () => {
 
   const [isConfirming, setIsConfirming] = useState(false);
 
-  if (_networkPassphrase !== NETWORK_PASSPHRASE) {
-    return <NetworkMismatchWarning />;
-  }
-
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
     window.close();
@@ -150,7 +149,23 @@ export const SignTransaction = () => {
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
+  useEffect(() => {
+    if (isMemoRequired) {
+      emitMetric(METRIC_NAMES.signTransactionMemoRequired);
+    }
+    if (isUnsafe) {
+      emitMetric(METRIC_NAMES.signTransactionUnsafe);
+    }
+    if (isMalicious) {
+      emitMetric(METRIC_NAMES.signTransactionMalicious);
+    }
+  }, [isMemoRequired, isMalicious, isUnsafe]);
+
   const isSubmitDisabled = isMemoRequired || isMalicious;
+
+  if (_networkPassphrase !== NETWORK_PASSPHRASE) {
+    return <NetworkMismatchWarning />;
+  }
 
   return (
     <>
