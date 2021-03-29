@@ -63,7 +63,7 @@ export const METRIC_NAMES = {
   backupPhraseDownload: "backup phrase: downloaded phrase",
   backupPhraseCopy: "backup phrase: copied phrase",
 
-  viewPublicAccountRenamed: "viewPublicKey: renamed account",
+  viewPublicKeyAccountRenamed: "viewPublicKey: renamed account",
   viewPublicKeyCopy: "viewPublicKey: copied public key",
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 };
