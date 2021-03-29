@@ -153,7 +153,13 @@ export const SignTransaction = () => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
-  }, [isMemoRequired]);
+    if (isUnsafe) {
+      emitMetric(METRIC_NAMES.signTransactionUnsafe);
+    }
+    if (isMalicious) {
+      emitMetric(METRIC_NAMES.signTransactionMalicious);
+    }
+  }, [isMemoRequired, isMalicious, isUnsafe]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 

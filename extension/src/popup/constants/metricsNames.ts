@@ -55,6 +55,8 @@ export const METRIC_NAMES = {
 
   signTransaction: "sign transaction: confirmed",
   signTransactionMemoRequired: "sign transaction: memo required error",
+  signTransactionMalicious: "sign transaction: malicious account warning",
+  signTransactionUnsafe: "sign transaction: unsafe account warning",
   rejectTransaction: "sign transaction: rejected",
 
   backupPhraseSuccess: "backup phrase: success",
