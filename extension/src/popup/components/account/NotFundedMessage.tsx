@@ -10,7 +10,7 @@ import {
 const NotFundedWrapperEl = styled.section`
   background: ${COLOR_PALETTE.white};
   border-radius: ${ROUNDED_CORNERS};
-  margin-bottom: 1.2rem;
+  margin: 0 1rem 1.2rem 1rem;
   padding: 1rem 1.25rem;
 
   p {
