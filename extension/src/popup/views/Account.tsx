@@ -34,7 +34,7 @@ const AccountEl = styled.div`
   width: 100%;
   max-width: ${POPUP_WIDTH}px;
   box-sizing: border-box;
-  padding: 1.75rem 0;
+  padding: 1.75rem 0 0 0;
 `;
 
 const AccountHeaderEl = styled.div`

@@ -54,6 +54,6 @@ export const SubviewWrapper = styled.div`
 `;
 
 export const ScrollingView = css`
-  height: 14.375rem;
+  height: 20rem;
   overflow: scroll;
 `;
