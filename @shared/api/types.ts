@@ -25,6 +25,7 @@ export interface Response {
   type: SERVICE_TYPES;
   url: string;
   isDataSharingAllowed: boolean;
+  isTestnet: boolean;
   allAccounts: Array<Account>;
   accountName: string;
   assetCode: string;
@@ -40,6 +41,11 @@ export interface Account {
   publicKey: string;
   name: string;
   imported: boolean;
+}
+
+export interface Settings {
+  isDataSharingAllowed: boolean;
+  isTestnet: boolean;
 }
 
 export interface AssetIcons {

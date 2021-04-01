@@ -8,3 +8,4 @@ export const ACCOUNT_NAME_LIST_ID = "accountNameList";
 export const CACHED_DIRECTORY_ID = "cachedDirectoryId";
 export const CACHED_DIRECTORY_DATE_ID = "cachedDirectoryDateId";
 export const CACHED_ASSET_ICONS_ID = "cachedAssetIconsId";
+export const IS_TESTNET_ID = "isTestnetId";

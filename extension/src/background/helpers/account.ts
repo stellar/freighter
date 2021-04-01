@@ -1,4 +1,8 @@
-import { ACCOUNT_NAME_LIST_ID, KEY_ID_LIST } from "constants/localStorageTypes";
+import {
+  ACCOUNT_NAME_LIST_ID,
+  KEY_ID_LIST,
+  IS_TESTNET_ID,
+} from "constants/localStorageTypes";
 
 export const getKeyIdList = () =>
   JSON.parse(localStorage.getItem(KEY_ID_LIST) || "[]");
@@ -25,3 +29,6 @@ export const addAccountName = ({
 
   localStorage.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
 };
+
+export const getIsTestnet = () =>
+  JSON.parse(localStorage.getItem(IS_TESTNET_ID) || "false");

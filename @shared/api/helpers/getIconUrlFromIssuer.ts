@@ -1,9 +1,7 @@
 import StellarSdk, { StellarTomlResolver } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
-import { NETWORK_URL } from "../../constants/stellar";
-
-const server = new StellarSdk.Server(NETWORK_URL);
+import { getNetworkUrl } from "../../helpers/stellar";
 
 /* 
 This runs a slightly convoluted process to find an icon's url. 
@@ -55,6 +53,8 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* Otherwise, 1. load their account from the API */
+    const serverUrl = await getNetworkUrl();
+    const server = new StellarSdk.Server(serverUrl);
     response = await server.loadAccount(key);
   } catch (e) {
     return iconUrl;

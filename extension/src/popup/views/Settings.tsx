@@ -49,7 +49,7 @@ export const Settings = () => {
   const handleSubmit = async (formValue: SettingValues) => {
     const { isDataSharingAllowed } = formValue;
 
-    await dispatch(saveSettings({ isDataSharingAllowed }));
+    await dispatch(saveSettings({ isDataSharingAllowed, isTestnet: false }));
     navigateTo(ROUTES.account);
   };
 

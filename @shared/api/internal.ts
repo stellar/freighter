@@ -5,8 +5,9 @@ import {
   AccountDetailsInterface,
   Balances,
   HorizonOperation,
+  Settings,
 } from "./types";
-import { NETWORK_PASSPHRASE, NETWORK_URL } from "../constants/stellar";
+import { getNetworkPassphrase, getNetworkUrl } from "../helpers/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
@@ -193,10 +194,13 @@ export const confirmPassword = async (
 export const getAccountDetails = async (
   publicKey: string,
 ): Promise<AccountDetailsInterface> => {
+  const networkPassphrase = await getNetworkPassphrase();
+  const serverUrl = await getNetworkUrl();
+
   const dataProvider = new DataProvider({
-    serverUrl: NETWORK_URL,
+    serverUrl,
     accountOrKey: publicKey,
-    networkPassphrase: NETWORK_PASSPHRASE,
+    networkPassphrase,
   });
 
   let balances = null;
@@ -216,7 +220,7 @@ export const getAccountDetails = async (
   }
 
   try {
-    const server = new StellarSdk.Server(NETWORK_URL);
+    const server = new StellarSdk.Server(serverUrl);
     const operationsData = await server
       .operations()
       .forAccount(publicKey)
@@ -355,14 +359,16 @@ export const showBackupPhrase = async (
   return response;
 };
 
-export const saveSettings = async (
-  isDataSharingAllowed: boolean,
-): Promise<{ isDataSharingAllowed: boolean }> => {
-  let response = { isDataSharingAllowed: false };
+export const saveSettings = async ({
+  isDataSharingAllowed,
+  isTestnet,
+}: Settings): Promise<Settings> => {
+  let response = { isDataSharingAllowed: false, isTestnet: false };
 
   try {
     response = await sendMessageToBackground({
       isDataSharingAllowed,
+      isTestnet,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -372,9 +378,7 @@ export const saveSettings = async (
   return response;
 };
 
-export const loadSettings = (): Promise<{
-  isDataSharingAllowed: boolean;
-}> =>
+export const loadSettings = (): Promise<Settings> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
