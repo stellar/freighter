@@ -9,6 +9,10 @@ import {
   saveSettings as saveSettingsService,
   loadSettings as loadSettingsService,
 } from "@shared/api/internal";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/helpers/stellar";
 
 import { Settings } from "@shared/api/types";
 
@@ -18,7 +22,7 @@ interface ErrorMessage {
 
 const initialState: Settings = {
   isDataSharingAllowed: false,
-  isTestnet: false,
+  networkDetails: MAINNET_NETWORK_DETAILS,
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
@@ -26,8 +30,8 @@ export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
 );
 
 export const saveSettings = createAsyncThunk<
-  Settings,
-  Settings,
+  { isDataSharingAllowed: boolean; networkDetails: NetworkDetails },
+  { isDataSharingAllowed: boolean; isTestnet: boolean },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
@@ -55,28 +59,28 @@ const settingsSlice = createSlice({
     builder.addCase(
       saveSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed, isTestnet } = action?.payload || {
+        const { isDataSharingAllowed, networkDetails } = action?.payload || {
           ...initialState,
         };
 
         return {
           ...state,
           isDataSharingAllowed,
-          isTestnet,
+          networkDetails,
         };
       },
     );
     builder.addCase(
       loadSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed, isTestnet } = action?.payload || {
+        const { isDataSharingAllowed, networkDetails } = action?.payload || {
           ...initialState,
         };
 
         return {
           ...state,
           isDataSharingAllowed,
-          isTestnet,
+          networkDetails,
         };
       },
     );
@@ -91,7 +95,8 @@ export const settingsDataSharingSelector = createSelector(
   settingsSelector,
   (settings) => settings.isDataSharingAllowed,
 );
-export const settingsIsTestnetSelector = createSelector(
+
+export const settingsNetworkDetailsSelector = createSelector(
   settingsSelector,
-  (settings) => settings.isTestnet,
+  (settings) => settings.networkDetails,
 );

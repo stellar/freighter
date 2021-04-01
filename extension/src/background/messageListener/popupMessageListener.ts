@@ -27,6 +27,7 @@ import {
   getKeyIdList,
   getIsTestnet,
 } from "background/helpers/account";
+import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
 
 import { store } from "background/store";
@@ -556,7 +557,7 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       isDataSharingAllowed,
-      isTestnet,
+      networkDetails: getNetworkDetails(isTestnet),
     };
   };
 
@@ -566,7 +567,7 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       isDataSharingAllowed,
-      isTestnet: getIsTestnet(),
+      networkDetails: getNetworkDetails(getIsTestnet()),
     };
   };
 

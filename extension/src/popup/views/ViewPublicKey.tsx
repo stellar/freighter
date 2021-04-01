@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled from "styled-components";
@@ -11,7 +11,6 @@ import { BasicButton } from "popup/basics/Buttons";
 import { Form, TextField } from "popup/basics/Forms";
 
 import { POPUP_WIDTH } from "constants/dimensions";
-import { getNetworkName } from "@shared/helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import {
   COLOR_PALETTE,
@@ -27,7 +26,7 @@ import {
   publicKeySelector,
   updateAccountName,
 } from "popup/ducks/authServices";
-import { settingsIsTestnetSelector } from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { Toast } from "popup/components/Toast";
 
@@ -140,25 +139,10 @@ export const ViewPublicKey = () => {
   const accountName = useSelector(accountNameSelector);
   const [isCopied, setIsCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [networkName, setNetworkName] = useState("");
   const accountNameElRef = useRef<HTMLElement>(null);
-  const isTestnet = useSelector(settingsIsTestnetSelector);
+  const { networkName } = useSelector(settingsNetworkDetailsSelector);
 
   const dispatch = useDispatch();
-  useEffect(() => {
-    const fetchNetworkName = async () => {
-      let fetchedNetworkName;
-      try {
-        fetchedNetworkName = await getNetworkName();
-      } catch (e) {
-        console.error(e);
-      }
-
-      setNetworkName(fetchedNetworkName.toLowerCase());
-    };
-
-    fetchNetworkName();
-  }, [isTestnet]);
 
   interface FormValue {
     accountName: string;

@@ -1,0 +1,12 @@
+{
+  "name": "@shared/helpers",
+  "prettier": "@stellar/prettier-config",
+  "version": "1.0.0",
+  "dependencies": {
+    "typescript": "~3.7.2",
+    "stellar-sdk": "5.0.1"
+  },
+  "devDependencies": {
+    "@stellar/prettier-config": "^1.0.1"
+  }
+}

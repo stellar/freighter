@@ -17,6 +17,7 @@
     "@sentry/tracing": "^6.0.0",
     "@shared/api": "1.0.0",
     "@shared/constants": "1.0.0",
+    "@shared/helpers": "1.0.0",
     "@stellar/wallet-sdk": "^0.1.0-rc.10",
     "@testing-library/react": "^10.4.8",
     "@testing-library/user-event": "^7.1.2",

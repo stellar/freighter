@@ -6,60 +6,65 @@ import { sendMessageToBackground } from "../api/helpers/extensionMessaging";
 const TESTNET = "Testnet";
 const PUBNET = "Public net";
 
-const _getIsTestnet = async () => {
-  let isTestnet = false;
-  try {
-    ({ isTestnet } = await sendMessageToBackground({
-      type: SERVICE_TYPES.LOAD_SETTINGS,
-    }));
-  } catch (e) {
-    console.error(e);
-  }
-
-  return isTestnet;
-};
-
-export const getNetwork = async () =>
-  (await _getIsTestnet()) ? "TESTNET" : "PUBLIC";
-
-export const getNetworkName = async () =>
-  (await _getIsTestnet()) ? TESTNET : PUBNET;
-
-export const getOtherNetworkName = async () =>
-  (await _getIsTestnet()) ? PUBNET : TESTNET;
-
-export const getNetworkUrl = async () =>
-  (await _getIsTestnet())
-    ? "https://horizon-testnet.stellar.org"
-    : "https://horizon.stellar.org";
-
-export const getNetworkPassphrase = async () =>
-  (await _getIsTestnet())
-    ? StellarSdk.Networks.TESTNET
-    : StellarSdk.Networks.PUBLIC;
-
 export interface NetworkDetails {
+  isTestnet: boolean;
   network: string;
-  networkName: typeof PUBNET | typeof TESTNET;
-  otherNetworkName: typeof PUBNET | typeof TESTNET;
+  networkName: string;
+  otherNetworkName: string;
   networkUrl: string;
   networkPassphrase:
     | typeof StellarSdk.Networks.TESTNET
     | typeof StellarSdk.Networks.PUBLIC;
 }
 
-export const getNetworkDetails = async (): Promise<NetworkDetails> => {
-  const isTestnet = await _getIsTestnet();
+export const MAINNET_NETWORK_DETAILS = {
+  network: "PUBLIC",
+  networkName: PUBNET,
+  otherNetworkName: TESTNET,
+  networkUrl: "https://horizon.stellar.org",
+  networkPassphrase: StellarSdk.Networks.PUBLIC,
+} as NetworkDetails;
+
+export const TESTNET_NETWORK_DETAILS = {
+  network: "TESTNET",
+  networkName: TESTNET,
+  otherNetworkName: PUBNET,
+  networkUrl: "https://horizon-testnet.stellar.org",
+  networkPassphrase: StellarSdk.Networks.TESTNET,
+} as NetworkDetails;
+
+export const getAsyncNetworkDetails = async () => {
+  let networkDetails = MAINNET_NETWORK_DETAILS;
+  try {
+    ({ networkDetails } = await sendMessageToBackground({
+      type: SERVICE_TYPES.LOAD_SETTINGS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return networkDetails;
+};
+
+export const getNetworkDetails = (isTestnet: boolean) => {
+  const detailsObj = isTestnet
+    ? { ...TESTNET_NETWORK_DETAILS }
+    : { ...MAINNET_NETWORK_DETAILS };
+
+  const {
+    network,
+    networkName,
+    otherNetworkName,
+    networkUrl,
+    networkPassphrase,
+  } = detailsObj;
 
   return {
-    network: isTestnet ? "TESTNET" : "PUBLIC",
-    networkName: isTestnet ? TESTNET : PUBNET,
-    otherNetworkName: isTestnet ? PUBNET : TESTNET,
-    networkUrl: isTestnet
-      ? "https://horizon-testnet.stellar.org"
-      : "https://horizon.stellar.org",
-    networkPassphrase: isTestnet
-      ? StellarSdk.Networks.TESTNET
-      : StellarSdk.Networks.PUBLIC,
+    isTestnet,
+    network,
+    networkName,
+    otherNetworkName,
+    networkUrl,
+    networkPassphrase,
   };
 };

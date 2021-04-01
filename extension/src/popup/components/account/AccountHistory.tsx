@@ -13,7 +13,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
 
-import { settingsIsTestnetSelector } from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
@@ -179,7 +179,7 @@ export const AccountHistory = ({
   publicKey: string;
   operations: Array<HorizonOperation>;
 }) => {
-  const isTestnet = useSelector(settingsIsTestnetSelector);
+  const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
 
   const STELLAR_EXPERT_URL = `https://stellar.expert/explorer/${
     isTestnet ? "testnet" : "public"

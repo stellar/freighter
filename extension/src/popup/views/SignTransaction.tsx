@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
-import { getNetworkDetails, NetworkDetails } from "@shared/helpers/stellar";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
@@ -18,6 +17,8 @@ import { SubmitButton } from "popup/basics/Forms";
 import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
@@ -108,7 +109,6 @@ export const SignTransaction = () => {
   const memo = decodeMemo(_memo);
 
   const [isConfirming, setIsConfirming] = useState(false);
-  const [networkDetails, setNetworkDetails] = useState({} as NetworkDetails);
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
@@ -133,21 +133,6 @@ export const SignTransaction = () => {
   );
 
   useEffect(() => {
-    const fetchNetworkDetails = async () => {
-      let fetchedNetworkDetails;
-      try {
-        fetchedNetworkDetails = await getNetworkDetails();
-      } catch (e) {
-        console.error(e);
-      }
-
-      setNetworkDetails(fetchedNetworkDetails);
-    };
-
-    fetchNetworkDetails();
-  }, []);
-
-  useEffect(() => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
@@ -161,7 +146,9 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
-  const { networkName, otherNetworkName, networkPassphrase } = networkDetails;
+  const { networkName, otherNetworkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
 
   const NetworkMismatchWarning = () => (
     <>

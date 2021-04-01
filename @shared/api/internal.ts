@@ -7,7 +7,7 @@ import {
   HorizonOperation,
   Settings,
 } from "./types";
-import { getNetworkPassphrase, getNetworkUrl } from "../helpers/stellar";
+import { MAINNET_NETWORK_DETAILS, NetworkDetails } from "../helpers/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
@@ -191,14 +191,17 @@ export const confirmPassword = async (
   return response;
 };
 
-export const getAccountDetails = async (
-  publicKey: string,
-): Promise<AccountDetailsInterface> => {
-  const networkPassphrase = await getNetworkPassphrase();
-  const serverUrl = await getNetworkUrl();
+export const getAccountDetails = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountDetailsInterface> => {
+  const { networkUrl, networkPassphrase } = networkDetails;
 
   const dataProvider = new DataProvider({
-    serverUrl,
+    serverUrl: networkUrl,
     accountOrKey: publicKey,
     networkPassphrase,
   });
@@ -220,7 +223,7 @@ export const getAccountDetails = async (
   }
 
   try {
-    const server = new StellarSdk.Server(serverUrl);
+    const server = new StellarSdk.Server(networkUrl);
     const operationsData = await server
       .operations()
       .forAccount(publicKey)
@@ -362,8 +365,14 @@ export const showBackupPhrase = async (
 export const saveSettings = async ({
   isDataSharingAllowed,
   isTestnet,
-}: Settings): Promise<Settings> => {
-  let response = { isDataSharingAllowed: false, isTestnet: false };
+}: {
+  isDataSharingAllowed: boolean;
+  isTestnet: boolean;
+}): Promise<Settings> => {
+  let response = {
+    isDataSharingAllowed: false,
+    networkDetails: MAINNET_NETWORK_DETAILS,
+  };
 
   try {
     response = await sendMessageToBackground({
