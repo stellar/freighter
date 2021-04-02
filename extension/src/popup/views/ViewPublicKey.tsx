@@ -230,7 +230,7 @@ export const ViewPublicKey = () => {
         <LinkButton
           onClick={() => {
             openTab(
-              `https://stellar.expert/explorer/${networkName}/account/${publicKey}`,
+              `https://stellar.expert/explorer/${networkName.toLowerCase()}/account/${publicKey}`,
             );
             emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
           }}
