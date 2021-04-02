@@ -244,7 +244,13 @@ export const getAccountDetails = async ({
   };
 };
 
-export const getAssetIcons = async (balances: Balances) => {
+export const getAssetIcons = async ({
+  balances,
+  networkDetails,
+}: {
+  balances: Balances;
+  networkDetails: NetworkDetails;
+}) => {
   const assetIcons = {} as { [code: string]: string };
 
   if (balances) {
@@ -259,7 +265,7 @@ export const getAssetIcons = async (balances: Balances) => {
           code,
         } = token;
         // eslint-disable-next-line no-await-in-loop
-        icon = await getIconUrlFromIssuer({ key, code });
+        icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         assetIcons[code] = icon;
       }
     }
@@ -271,10 +277,12 @@ export const retryAssetIcon = async ({
   key,
   code,
   assetIcons,
+  networkDetails,
 }: {
   key: string;
   code: string;
   assetIcons: { [code: string]: string };
+  networkDetails: NetworkDetails;
 }) => {
   const newAssetIcons = { ...assetIcons };
   try {
@@ -286,7 +294,7 @@ export const retryAssetIcon = async ({
   } catch (e) {
     return assetIcons;
   }
-  const icon = await getIconUrlFromIssuer({ key, code });
+  const icon = await getIconUrlFromIssuer({ key, code, networkDetails });
   newAssetIcons[code] = icon;
   return newAssetIcons;
 };

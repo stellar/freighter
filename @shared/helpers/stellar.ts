@@ -1,8 +1,5 @@
 import StellarSdk from "stellar-sdk";
 
-import { SERVICE_TYPES } from "../constants/services";
-import { sendMessageToBackground } from "../api/helpers/extensionMessaging";
-
 const TESTNET = "Testnet";
 const PUBNET = "Public net";
 
@@ -32,19 +29,6 @@ export const TESTNET_NETWORK_DETAILS = {
   networkUrl: "https://horizon-testnet.stellar.org",
   networkPassphrase: StellarSdk.Networks.TESTNET,
 } as NetworkDetails;
-
-export const getAsyncNetworkDetails = async () => {
-  let networkDetails = MAINNET_NETWORK_DETAILS;
-  try {
-    ({ networkDetails } = await sendMessageToBackground({
-      type: SERVICE_TYPES.LOAD_SETTINGS,
-    }));
-  } catch (e) {
-    console.error(e);
-  }
-
-  return networkDetails;
-};
 
 export const getNetworkDetails = (isTestnet: boolean) => {
   const detailsObj = isTestnet

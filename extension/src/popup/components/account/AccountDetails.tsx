@@ -100,14 +100,14 @@ export const AccountDetails = () => {
     // get each asset's icon
     const fetchAssetIcons = async () => {
       try {
-        const res = await getAssetIcons(balances);
+        const res = await getAssetIcons({ balances, networkDetails });
         setAssetIcons(res);
       } catch (e) {
         console.error(e);
       }
     };
     fetchAssetIcons();
-  }, [balances]);
+  }, [balances, networkDetails]);
 
   const handleDetailToggle = (isAssetsActive: boolean) => {
     if (isAccountAssetsActive !== isAssetsActive) {
@@ -126,7 +126,12 @@ export const AccountDetails = () => {
     /* if we retried the toml and their link is still bad, just give up here */
     if (hasIconFetchRetried) return;
     try {
-      const res = await retryAssetIcon({ key, code, assetIcons });
+      const res = await retryAssetIcon({
+        key,
+        code,
+        assetIcons,
+        networkDetails,
+      });
       setAssetIcons(res);
       setHasIconFetchRetried(true);
     } catch (e) {
