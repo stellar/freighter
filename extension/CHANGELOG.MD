@@ -1,3 +1,9 @@
+# v1.0.9
+
+- Show all assets held by an account
+- Show a limited transaction history for each account
+- Show an unfunded account warning message
+
 # v1.0.8-beta.0
 
 - Use SEP-29 to flag transactions with a warning if they are missing a required
