@@ -5,7 +5,6 @@ import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { isTestnet } from "@shared/constants/stellar";
 
 import { Account, Response as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
@@ -15,6 +14,7 @@ import {
   APPLICATION_ID,
   CACHED_ASSET_ICONS_ID,
   DATA_SHARING_ID,
+  IS_TESTNET_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
@@ -25,7 +25,9 @@ import {
   addAccountName,
   getAccountNameList,
   getKeyIdList,
+  getIsTestnet,
 } from "background/helpers/account";
+import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
 
 import { store } from "background/store";
@@ -129,7 +131,7 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const _fundAccount = async (publicKey: string) => {
-    if (isTestnet) {
+    if (getIsTestnet()) {
       // fund the account automatically if we're in a dev environment
       try {
         await fetch(
@@ -547,14 +549,15 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  /* @TODO add toggle for Mainnet & Testnet */
   const saveSettings = () => {
-    const { isDataSharingAllowed } = request;
+    const { isDataSharingAllowed, isTestnet } = request;
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
+    localStorage.setItem(IS_TESTNET_ID, JSON.stringify(isTestnet));
 
     return {
       isDataSharingAllowed,
+      networkDetails: getNetworkDetails(isTestnet),
     };
   };
 
@@ -564,6 +567,7 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       isDataSharingAllowed,
+      networkDetails: getNetworkDetails(getIsTestnet()),
     };
   };
 

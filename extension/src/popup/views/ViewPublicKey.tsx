@@ -11,7 +11,6 @@ import { BasicButton } from "popup/basics/Buttons";
 import { Form, TextField } from "popup/basics/Forms";
 
 import { POPUP_WIDTH } from "constants/dimensions";
-import { NETWORK_NAME } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 import {
   COLOR_PALETTE,
@@ -27,6 +26,7 @@ import {
   publicKeySelector,
   updateAccountName,
 } from "popup/ducks/authServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { Toast } from "popup/components/Toast";
 
@@ -140,6 +140,7 @@ export const ViewPublicKey = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const accountNameElRef = useRef<HTMLElement>(null);
+  const { networkName } = useSelector(settingsNetworkDetailsSelector);
 
   const dispatch = useDispatch();
 
@@ -229,7 +230,7 @@ export const ViewPublicKey = () => {
         <LinkButton
           onClick={() => {
             openTab(
-              `https://stellar.expert/explorer/${NETWORK_NAME.toLowerCase()}/account/${publicKey}`,
+              `https://stellar.expert/explorer/${networkName.toLowerCase()}/account/${publicKey}`,
             );
             emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
           }}

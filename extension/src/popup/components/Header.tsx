@@ -1,9 +1,11 @@
 import React from "react";
 import styled from "styled-components";
+import { useSelector } from "react-redux";
 
-import { NETWORK_NAME } from "@shared/constants/stellar";
 import { HEADER_HEIGHT } from "constants/dimensions";
 import { FONT_FAMILY, COLOR_PALETTE } from "popup/constants/styles";
+
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import FreighterLogoLockup from "popup/assets/logo-lockup-freighter.svg";
 
@@ -43,12 +45,15 @@ type HeaderProps = {
   className?: string;
 };
 
-export const Header = ({ children, className, ...props }: HeaderProps) => (
-  <HeaderEl className={className} {...props}>
-    <FreighterLogoEl alt="Freighter logo" src={FreighterLogoLockup} />
-    <RightSectionEl>
-      {children}
-      <NetworkEl>{NETWORK_NAME}</NetworkEl>
-    </RightSectionEl>
-  </HeaderEl>
-);
+export const Header = ({ children, className, ...props }: HeaderProps) => {
+  const { networkName } = useSelector(settingsNetworkDetailsSelector);
+  return (
+    <HeaderEl className={className} {...props}>
+      <FreighterLogoEl alt="Freighter logo" src={FreighterLogoLockup} />
+      <RightSectionEl>
+        {children}
+        <NetworkEl>{networkName}</NetworkEl>
+      </RightSectionEl>
+    </HeaderEl>
+  );
+};

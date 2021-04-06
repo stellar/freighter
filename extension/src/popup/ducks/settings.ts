@@ -9,43 +9,47 @@ import {
   saveSettings as saveSettingsService,
   loadSettings as loadSettingsService,
 } from "@shared/api/internal";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/helpers/stellar";
+
+import { Settings } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
 }
+
+const initialState: Settings = {
+  isDataSharingAllowed: false,
+  networkDetails: MAINNET_NETWORK_DETAILS,
+};
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
   loadSettingsService(),
 );
 
 export const saveSettings = createAsyncThunk<
-  { isDataSharingAllowed: boolean },
-  { isDataSharingAllowed: boolean },
+  { isDataSharingAllowed: boolean; networkDetails: NetworkDetails },
+  { isDataSharingAllowed: boolean; isTestnet: boolean },
   { rejectValue: ErrorMessage }
->("settings/saveSettings", async ({ isDataSharingAllowed }, thunkApi) => {
-  let res = {
-    isDataSharingAllowed: false,
-  };
+>(
+  "settings/saveSettings",
+  async ({ isDataSharingAllowed, isTestnet }, thunkApi) => {
+    let res = { ...initialState };
 
-  try {
-    res = await saveSettingsService(isDataSharingAllowed);
-  } catch (e) {
-    console.error(e);
-    return thunkApi.rejectWithValue({
-      errorMessage: e.message,
-    });
-  }
+    try {
+      res = await saveSettingsService({ isDataSharingAllowed, isTestnet });
+    } catch (e) {
+      console.error(e);
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message,
+      });
+    }
 
-  return res;
-});
-
-interface Settings {
-  isDataSharingAllowed: boolean;
-}
-
-const initialState: Settings = {
-  isDataSharingAllowed: false,
-};
+    return res;
+  },
+);
 
 const settingsSlice = createSlice({
   name: "settings",
@@ -55,26 +59,28 @@ const settingsSlice = createSlice({
     builder.addCase(
       saveSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed } = action?.payload || {
-          isDataSharingAllowed: false,
+        const { isDataSharingAllowed, networkDetails } = action?.payload || {
+          ...initialState,
         };
 
         return {
           ...state,
           isDataSharingAllowed,
+          networkDetails,
         };
       },
     );
     builder.addCase(
       loadSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed } = action?.payload || {
-          isDataSharingAllowed: false,
+        const { isDataSharingAllowed, networkDetails } = action?.payload || {
+          ...initialState,
         };
 
         return {
           ...state,
           isDataSharingAllowed,
+          networkDetails,
         };
       },
     );
@@ -88,4 +94,9 @@ const settingsSelector = (state: { settings: Settings }) => state.settings;
 export const settingsDataSharingSelector = createSelector(
   settingsSelector,
   (settings) => settings.isDataSharingAllowed,
+);
+
+export const settingsNetworkDetailsSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.networkDetails,
 );

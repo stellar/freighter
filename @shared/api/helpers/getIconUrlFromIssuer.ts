@@ -1,9 +1,7 @@
 import StellarSdk, { StellarTomlResolver } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
-import { NETWORK_URL } from "../../constants/stellar";
-
-const server = new StellarSdk.Server(NETWORK_URL);
+import { NetworkDetails } from "../../helpers/stellar";
 
 /* 
 This runs a slightly convoluted process to find an icon's url. 
@@ -32,9 +30,11 @@ So, any subsequent attempts to load the asset, it requires only 1 roundtrip for 
 export const getIconUrlFromIssuer = async ({
   key,
   code,
+  networkDetails,
 }: {
   key: string;
   code: string;
+  networkDetails: NetworkDetails;
 }) => {
   let iconUrl = "";
   let response;
@@ -55,6 +55,8 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* Otherwise, 1. load their account from the API */
+    const { networkUrl } = networkDetails;
+    const server = new StellarSdk.Server(networkUrl);
     response = await server.loadAccount(key);
   } catch (e) {
     return iconUrl;

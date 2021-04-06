@@ -8,6 +8,7 @@ import { BasicButton } from "popup/basics/Buttons";
 import { ScrollingView } from "popup/basics/AccountSubview";
 
 import { publicKeySelector } from "popup/ducks/authServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   getAccountDetails,
   getAssetIcons,
@@ -65,13 +66,14 @@ export const AccountDetails = () => {
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
   const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const { isFunded, balances, operations } = accountDetails;
 
   useEffect(() => {
     const fetchAccountDetails = async () => {
       try {
-        const res = await getAccountDetails(publicKey);
+        const res = await getAccountDetails({ publicKey, networkDetails });
         setAccountDetails(res);
       } catch (e) {
         console.error(e);
@@ -79,7 +81,7 @@ export const AccountDetails = () => {
     };
 
     fetchAccountDetails();
-  }, [publicKey]);
+  }, [publicKey, networkDetails]);
 
   useEffect(() => {
     const collection = [] as Array<any>;
@@ -98,14 +100,14 @@ export const AccountDetails = () => {
     // get each asset's icon
     const fetchAssetIcons = async () => {
       try {
-        const res = await getAssetIcons(balances);
+        const res = await getAssetIcons({ balances, networkDetails });
         setAssetIcons(res);
       } catch (e) {
         console.error(e);
       }
     };
     fetchAssetIcons();
-  }, [balances]);
+  }, [balances, networkDetails]);
 
   const handleDetailToggle = (isAssetsActive: boolean) => {
     if (isAccountAssetsActive !== isAssetsActive) {
@@ -124,7 +126,12 @@ export const AccountDetails = () => {
     /* if we retried the toml and their link is still bad, just give up here */
     if (hasIconFetchRetried) return;
     try {
-      const res = await retryAssetIcon({ key, code, assetIcons });
+      const res = await retryAssetIcon({
+        key,
+        code,
+        assetIcons,
+        networkDetails,
+      });
       setAssetIcons(res);
       setHasIconFetchRetried(true);
     } catch (e) {

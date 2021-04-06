@@ -1,10 +1,10 @@
 import React from "react";
 import { camelCase } from "lodash";
 import styled from "styled-components";
+import { useSelector } from "react-redux";
 
 import { BasicButton } from "popup/basics/Buttons";
 
-import { isTestnet } from "@shared/constants/stellar";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { OPERATION_TYPES } from "constants/transaction";
 import { HorizonOperation } from "@shared/api/types";
@@ -12,6 +12,8 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
+
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
@@ -76,10 +78,6 @@ const FullHistoryBtnEl = styled(BasicButton)`
   text-align: center;
 `;
 
-const STELLAR_EXPERT_URL = `https://stellar.expert/explorer/${
-  isTestnet ? "testnet" : "public"
-}`;
-
 interface PaymentInfoProps {
   amount: string;
   assetCode: string | undefined;
@@ -115,9 +113,11 @@ const HistoryItem = ({
     transaction_attr: { operation_count: operationCount },
   },
   publicKey,
+  url,
 }: {
   operation: HorizonOperation;
   publicKey: string;
+  url: string;
 }) => {
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const operationString = OPERATION_TYPES[operationType];
@@ -150,7 +150,7 @@ const HistoryItem = ({
     <HistoryItemEl
       onClick={() => {
         emitMetric(METRIC_NAMES.historyOpenItem);
-        openTab(`${STELLAR_EXPERT_URL}/op/${id}`);
+        openTab(`${url}/op/${id}`);
       }}
     >
       <HistoryColumnEl>
@@ -178,24 +178,32 @@ export const AccountHistory = ({
 }: {
   publicKey: string;
   operations: Array<HorizonOperation>;
-}) => (
-  <>
-    <HistoryListEl>
-      {operations.map((operation: HorizonOperation) => (
-        <HistoryItem
-          key={operation.id}
-          operation={operation}
-          publicKey={publicKey}
-        />
-      ))}
-    </HistoryListEl>
-    <FullHistoryBtnEl
-      onClick={() => {
-        emitMetric(METRIC_NAMES.historyOpenFullHistory);
-        openTab(`${STELLAR_EXPERT_URL}/account/${publicKey}`);
-      }}
-    >
-      Check full history on stellar.expert
-    </FullHistoryBtnEl>
-  </>
-);
+}) => {
+  const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
+
+  const STELLAR_EXPERT_URL = `https://stellar.expert/explorer/${
+    isTestnet ? "testnet" : "public"
+  }`;
+  return (
+    <>
+      <HistoryListEl>
+        {operations.map((operation: HorizonOperation) => (
+          <HistoryItem
+            key={operation.id}
+            operation={operation}
+            publicKey={publicKey}
+            url={STELLAR_EXPERT_URL}
+          />
+        ))}
+      </HistoryListEl>
+      <FullHistoryBtnEl
+        onClick={() => {
+          emitMetric(METRIC_NAMES.historyOpenFullHistory);
+          openTab(`${STELLAR_EXPERT_URL}/account/${publicKey}`);
+        }}
+      >
+        Check full history on stellar.expert
+      </FullHistoryBtnEl>
+    </>
+  );
+};

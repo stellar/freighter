@@ -3,6 +3,7 @@ import { Types } from "@stellar/wallet-sdk";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
+import { NetworkDetails } from "../helpers/stellar";
 
 export interface Response {
   error: string;
@@ -25,6 +26,8 @@ export interface Response {
   type: SERVICE_TYPES;
   url: string;
   isDataSharingAllowed: boolean;
+  isTestnet: boolean;
+  networkDetails: NetworkDetails;
   allAccounts: Array<Account>;
   accountName: string;
   assetCode: string;
@@ -40,6 +43,11 @@ export interface Account {
   publicKey: string;
   name: string;
   imported: boolean;
+}
+
+export interface Settings {
+  isDataSharingAllowed: boolean;
+  networkDetails: NetworkDetails;
 }
 
 export interface AssetIcons {

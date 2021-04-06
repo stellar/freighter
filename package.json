@@ -4,6 +4,7 @@
   "workspaces": [
     "@shared/api",
     "@shared/constants",
+    "@shared/helpers",
     "docs",
     "extension",
     "@stellar/freighter-api"

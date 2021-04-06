@@ -5,8 +5,9 @@ import {
   AccountDetailsInterface,
   Balances,
   HorizonOperation,
+  Settings,
 } from "./types";
-import { NETWORK_PASSPHRASE, NETWORK_URL } from "../constants/stellar";
+import { MAINNET_NETWORK_DETAILS, NetworkDetails } from "../helpers/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
@@ -190,13 +191,19 @@ export const confirmPassword = async (
   return response;
 };
 
-export const getAccountDetails = async (
-  publicKey: string,
-): Promise<AccountDetailsInterface> => {
+export const getAccountDetails = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountDetailsInterface> => {
+  const { networkUrl, networkPassphrase } = networkDetails;
+
   const dataProvider = new DataProvider({
-    serverUrl: NETWORK_URL,
+    serverUrl: networkUrl,
     accountOrKey: publicKey,
-    networkPassphrase: NETWORK_PASSPHRASE,
+    networkPassphrase,
   });
 
   let balances = null;
@@ -216,7 +223,7 @@ export const getAccountDetails = async (
   }
 
   try {
-    const server = new StellarSdk.Server(NETWORK_URL);
+    const server = new StellarSdk.Server(networkUrl);
     const operationsData = await server
       .operations()
       .forAccount(publicKey)
@@ -237,7 +244,13 @@ export const getAccountDetails = async (
   };
 };
 
-export const getAssetIcons = async (balances: Balances) => {
+export const getAssetIcons = async ({
+  balances,
+  networkDetails,
+}: {
+  balances: Balances;
+  networkDetails: NetworkDetails;
+}) => {
   const assetIcons = {} as { [code: string]: string };
 
   if (balances) {
@@ -252,7 +265,7 @@ export const getAssetIcons = async (balances: Balances) => {
           code,
         } = token;
         // eslint-disable-next-line no-await-in-loop
-        icon = await getIconUrlFromIssuer({ key, code });
+        icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         assetIcons[code] = icon;
       }
     }
@@ -264,10 +277,12 @@ export const retryAssetIcon = async ({
   key,
   code,
   assetIcons,
+  networkDetails,
 }: {
   key: string;
   code: string;
   assetIcons: { [code: string]: string };
+  networkDetails: NetworkDetails;
 }) => {
   const newAssetIcons = { ...assetIcons };
   try {
@@ -279,7 +294,7 @@ export const retryAssetIcon = async ({
   } catch (e) {
     return assetIcons;
   }
-  const icon = await getIconUrlFromIssuer({ key, code });
+  const icon = await getIconUrlFromIssuer({ key, code, networkDetails });
   newAssetIcons[code] = icon;
   return newAssetIcons;
 };
@@ -355,14 +370,22 @@ export const showBackupPhrase = async (
   return response;
 };
 
-export const saveSettings = async (
-  isDataSharingAllowed: boolean,
-): Promise<{ isDataSharingAllowed: boolean }> => {
-  let response = { isDataSharingAllowed: false };
+export const saveSettings = async ({
+  isDataSharingAllowed,
+  isTestnet,
+}: {
+  isDataSharingAllowed: boolean;
+  isTestnet: boolean;
+}): Promise<Settings> => {
+  let response = {
+    isDataSharingAllowed: false,
+    networkDetails: MAINNET_NETWORK_DETAILS,
+  };
 
   try {
     response = await sendMessageToBackground({
       isDataSharingAllowed,
+      isTestnet,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -372,9 +395,7 @@ export const saveSettings = async (
   return response;
 };
 
-export const loadSettings = (): Promise<{
-  isDataSharingAllowed: boolean;
-}> =>
+export const loadSettings = (): Promise<Settings> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });

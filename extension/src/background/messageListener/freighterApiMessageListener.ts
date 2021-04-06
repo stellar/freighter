@@ -6,12 +6,13 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { NETWORK, NETWORK_URL } from "@shared/constants/stellar";
+import { getNetworkDetails } from "@shared/helpers/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
+import { getIsTestnet } from "background/helpers/account";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 
@@ -74,9 +75,10 @@ export const freighterApiMessageListener = (
 
   const submitTransaction = async () => {
     const { transactionXdr } = request;
+    const { network, networkUrl } = getNetworkDetails(getIsTestnet());
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
-      StellarSdk.Networks[NETWORK],
+      StellarSdk.Networks[network],
     );
 
     const { tab, url: tabUrl = "" } = sender;
@@ -108,7 +110,7 @@ export const freighterApiMessageListener = (
       );
     });
 
-    const server = new StellarSdk.Server(NETWORK_URL);
+    const server = new StellarSdk.Server(networkUrl);
 
     try {
       await server.checkMemoRequired(transaction);
