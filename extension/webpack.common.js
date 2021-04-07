@@ -83,9 +83,6 @@ const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
     }),
-    new webpack.DefinePlugin({
-      PRODUCTION: env.PRODUCTION,
-    }),
   ],
   stats: DEFAULT_STATS,
   devServer: {

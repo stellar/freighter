@@ -2,8 +2,12 @@ const merge = require("webpack-merge");
 const webpack = require("webpack");
 const { commonConfig } = require("./webpack.common.js");
 
-const prodConfig = {
+const prodConfig = (env = { PRODUCTION: false }) => ({
   mode: "production",
+  optimization: {
+    minimize: env.PRODUCTION,
+  },
+
   plugins: [
     new webpack.DefinePlugin({
       DEV_SERVER: false,
@@ -14,6 +18,6 @@ const prodConfig = {
   performance: {
     hints: false,
   },
-};
+});
 
-module.exports = (env) => merge(prodConfig, commonConfig(env));
+module.exports = (env) => merge(prodConfig(env), commonConfig(env));

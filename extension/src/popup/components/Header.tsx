@@ -31,13 +31,30 @@ const RightSectionEl = styled.div`
   flex-direction: column;
 `;
 
+const NetworkWrapperEl = styled.div`
+  align-items: center;
+  display: flex;
+  margin-right: 0.5rem;
+`;
+
 const NetworkEl = styled.h3`
-  opacity: 0.5;
-  color: #fff;
-  font-size: 1rem;
+  color: ${COLOR_PALETTE.white};
+  font-family: Arial, sans-serif;
+  font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1;
+`;
+
+const NetworkIconEl = styled.div`
+  background: ${({ isTestnet }: { isTestnet: boolean }) =>
+    isTestnet
+      ? COLOR_PALETTE.testNetworkIcon
+      : COLOR_PALETTE.publicNetworkIcon};
+  border-radius: 2rem;
+  height: 0.6875rem;
   margin-right: 0.5rem;
+  position: relative;
+  width: 0.6875rem;
 `;
 
 type HeaderProps = {
@@ -46,13 +63,18 @@ type HeaderProps = {
 };
 
 export const Header = ({ children, className, ...props }: HeaderProps) => {
-  const { networkName } = useSelector(settingsNetworkDetailsSelector);
+  const { isTestnet, networkName } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
   return (
     <HeaderEl className={className} {...props}>
       <FreighterLogoEl alt="Freighter logo" src={FreighterLogoLockup} />
       <RightSectionEl>
         {children}
-        <NetworkEl>{networkName}</NetworkEl>
+        <NetworkWrapperEl>
+          <NetworkIconEl isTestnet={isTestnet} />
+          <NetworkEl>{networkName}</NetworkEl>
+        </NetworkWrapperEl>
       </RightSectionEl>
     </HeaderEl>
   );
