@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import styled, { css } from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
@@ -183,6 +184,12 @@ export const CheckboxField = ({
     {label}
   </CheckAndRadioWrapperEl>
 );
+
+CheckboxField.propTypes = {
+  name: PropTypes.string.isRequired,
+  label: PropTypes.node.isRequired,
+  className: PropTypes.string,
+};
 
 const RadioFieldEl = styled(Field).attrs(() => ({ type: "radio" }))`
   ${CheckAndRadioFieldStyle}
