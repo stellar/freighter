@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack --config webpack.extension.js",
     "build:experimental": "yarn build --env.EXPERIMENTAL=true",
-    "build:production": "yarn build --env.PRODUCTION=true",
+    "build:production": "yarn build --env.PRODUCTION",
     "start": "webpack-dev-server --config webpack.dev.js",
     "start:experimental": "yarn start --env.EXPERIMENTAL=true",
     "start:unpacked-extension": "yarn build --watch --info-verbosity verbose"
