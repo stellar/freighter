@@ -14,7 +14,12 @@ declare global {
 }
 
 export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
-  const MESSAGE_ID = Date.now();
+  /* 
+    In the case of multiple calls coming in sequentially, we use this MESSAGE_ID to make sure we're responding to
+    the appropriate message sender. Otherwise, we can run into race conditions where we simply resolve all 
+    sent messages with the first thing that comes back.
+  */
+  const MESSAGE_ID = Date.now() + Math.random();
 
   window.postMessage(
     { source: EXTERNAL_MSG_REQUEST, messageId: MESSAGE_ID, ...msg },

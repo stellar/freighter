@@ -9,20 +9,23 @@ import {
   saveSettings as saveSettingsService,
   loadSettings as loadSettingsService,
 } from "@shared/api/internal";
-import {
-  MAINNET_NETWORK_DETAILS,
-  NetworkDetails,
-} from "@shared/helpers/stellar";
+import { NetworkDetails } from "@shared/helpers/stellar";
 
 import { Settings } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
 }
-
 const initialState: Settings = {
   isDataSharingAllowed: false,
-  networkDetails: MAINNET_NETWORK_DETAILS,
+  networkDetails: {
+    isTestnet: false,
+    network: "",
+    networkName: "",
+    otherNetworkName: "",
+    networkUrl: "",
+    networkPassphrase: "",
+  } as NetworkDetails,
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>

@@ -21,6 +21,8 @@ export const COLOR_PALETTE = {
   warningHigh: "#E44D2C",
   warningHighFaded: "#F8CFCC",
   warningFaded: "#F8E4CC",
+  publicNetworkIcon: "#68E375",
+  testNetworkIcon: "#FF994F",
   primaryGradient: "linear-gradient(180deg, #4b42e3 0%, #302cd1 100%)",
   darkPrimaryGradient: "linear-gradient(180deg, #443BDB 0%, #2521C3 100%)",
   menuGradient: "linear-gradient(180deg, #564df0 0%, #2d18b5 100%)",

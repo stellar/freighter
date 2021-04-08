@@ -9,7 +9,7 @@ const { DEFAULT_STATS } = require("../config/webpack");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
-const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
+const commonConfig = (env = { EXPERIMENTAL: false }) => ({
   node: { global: true, fs: "empty" },
   entry: {
     background: [
@@ -82,9 +82,6 @@ const commonConfig = (env = { EXPERIMENTAL: false, PRODUCTION: false }) => ({
     }),
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
-    }),
-    new webpack.DefinePlugin({
-      PRODUCTION: env.PRODUCTION,
     }),
   ],
   stats: DEFAULT_STATS,

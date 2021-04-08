@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
 
 import {
@@ -10,6 +10,8 @@ import {
   ROUNDED_CORNERS,
 } from "popup/constants/styles";
 import { Button } from "popup/basics/Buttons";
+
+import CheckIcon from "popup/assets/check.svg";
 
 interface FormProps {
   children: React.ReactNode;
@@ -129,38 +131,45 @@ export const TextField = styled(Field)`
   }
 `;
 
-const CheckBoxWrapperEl = styled(Label)`
+const CheckAndRadioWrapperEl = styled(Label)`
   display: flex;
   align-items: center;
 `;
 
-const CheckboxFieldEl = styled(Field).attrs(() => ({ type: "checkbox" }))`
+const CheckAndRadioFieldStyle = css`
   position: relative;
   margin-right: 0.625rem;
   appearance: unset;
   align-items: center;
   background: ${COLOR_PALETTE.inputBackground};
   border: 0.125rem solid ${COLOR_PALETTE.inputBackground};
-  border-radius: 0.625rem;
   color: ${COLOR_PALETTE.primary};
   cursor: pointer;
+  display: flex;
+  flex: 1 0 auto;
   height: 2rem;
+  justify-content: center;
   width: 2rem;
 
   &:checked:after {
     content: "";
-    background: ${COLOR_PALETTE.primary};
-    border-radius: 2rem;
     position: absolute;
-    top: 0;
-    left: 0;
-    height: 1rem;
-    width: 1rem;
-    margin: 0.36rem 0.28rem;
   }
 `;
 
-interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+const CheckboxFieldEl = styled(Field).attrs(() => ({ type: "checkbox" }))`
+  ${CheckAndRadioFieldStyle}
+  border-radius: 0.625rem;
+  &:checked:after {
+    background: url("${CheckIcon}") no-repeat;
+    height: 1rem;
+    margin: 0.36rem 0.28rem;
+    width: 1.3125rem;
+  }
+`;
+
+interface CheckAndRadioProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   label: React.ReactNode;
 }
 
@@ -169,14 +178,38 @@ export const CheckboxField = ({
   label,
   className,
   ...props
-}: CheckboxProps) => (
-  <CheckBoxWrapperEl className={className}>
+}: CheckAndRadioProps) => (
+  <CheckAndRadioWrapperEl className={className}>
     <CheckboxFieldEl {...props} id={name} name={name} />
     {label}
-  </CheckBoxWrapperEl>
+  </CheckAndRadioWrapperEl>
 );
+
 CheckboxField.propTypes = {
   name: PropTypes.string.isRequired,
   label: PropTypes.node.isRequired,
   className: PropTypes.string,
 };
+
+const RadioFieldEl = styled(Field).attrs(() => ({ type: "radio" }))`
+  ${CheckAndRadioFieldStyle}
+  border-radius: 2rem;
+  &:checked:after {
+    background: ${COLOR_PALETTE.primary};
+    border-radius: 2rem;
+    height: 0.875rem;
+    width: 0.875rem;
+  }
+`;
+
+export const RadioField = ({
+  name,
+  label,
+  className,
+  ...props
+}: CheckAndRadioProps) => (
+  <CheckAndRadioWrapperEl className={className}>
+    <RadioFieldEl {...props} id={name} name={name} />
+    {label}
+  </CheckAndRadioWrapperEl>
+);
