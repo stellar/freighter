@@ -15,6 +15,8 @@ import {
   CACHED_ASSET_ICONS_ID,
   DATA_SHARING_ID,
   IS_TESTNET_ID,
+  IS_VALIDATING_MEMO_ID,
+  IS_VALIDATING_SAFETY_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
@@ -26,6 +28,8 @@ import {
   getAccountNameList,
   getKeyIdList,
   getIsTestnet,
+  getIsValidatingMemo,
+  getIsValidatingSafety,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
@@ -550,10 +554,23 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const saveSettings = () => {
-    const { isDataSharingAllowed, isTestnet } = request;
+    const {
+      isDataSharingAllowed,
+      isTestnet,
+      isValidatingMemo,
+      isValidatingSafety,
+    } = request;
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
     localStorage.setItem(IS_TESTNET_ID, JSON.stringify(isTestnet));
+    localStorage.setItem(
+      IS_VALIDATING_MEMO_ID,
+      JSON.stringify(isValidatingMemo),
+    );
+    localStorage.setItem(
+      IS_VALIDATING_SAFETY_ID,
+      JSON.stringify(isValidatingSafety),
+    );
 
     return {
       isDataSharingAllowed,
@@ -564,9 +581,13 @@ export const popupMessageListener = (request: Request) => {
   const loadSettings = () => {
     const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "true";
     const isDataSharingAllowed = JSON.parse(dataSharingValue);
+    const isValidatingMemo = getIsValidatingMemo();
+    const isValidatingSafety = getIsValidatingSafety();
 
     return {
       isDataSharingAllowed,
+      isValidatingMemo,
+      isValidatingSafety,
       networkDetails: getNetworkDetails(getIsTestnet()),
     };
   };
