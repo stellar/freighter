@@ -51,8 +51,8 @@ export const Settings = () => {
   const dispatch = useDispatch();
   const {
     isDataSharingAllowed,
-    isValidatingMemo,
-    isValidatingSafety,
+    isMemoValidationEnabled,
+    isSafetyValidationEnabled,
   } = useSelector(settingsSelector);
   const { network } = useSelector(settingsNetworkDetailsSelector);
 
@@ -65,8 +65,8 @@ export const Settings = () => {
 
   const initialValues: SettingValues = {
     networkSelected: network,
-    isValidatingMemoValue: isValidatingMemo,
-    isValidatingSafetyValue: isValidatingSafety,
+    isValidatingMemoValue: isMemoValidationEnabled,
+    isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
   };
 
@@ -81,8 +81,8 @@ export const Settings = () => {
     await dispatch(
       saveSettings({
         isTestnet: networkSelected === TESTNET_NETWORK_DETAILS.network,
-        isValidatingMemo: isValidatingMemoValue,
-        isValidatingSafety: isValidatingSafetyValue,
+        isMemoValidationEnabled: isValidatingMemoValue,
+        isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
       }),
     );

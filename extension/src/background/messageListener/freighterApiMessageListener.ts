@@ -6,7 +6,10 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { getNetworkDetails } from "@shared/helpers/stellar";
+import {
+  getNetworkDetails,
+  MAINNET_NETWORK_DETAILS,
+} from "@shared/helpers/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
@@ -14,8 +17,8 @@ import { TRANSACTION_WARNING } from "constants/transaction";
 
 import {
   getIsTestnet,
-  getIsValidatingMemo,
-  getIsValidatingSafety,
+  getIsMemoValidationEnabled,
+  getIsSafetyValidationEnabled,
 } from "background/helpers/account";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
@@ -101,8 +104,8 @@ export const freighterApiMessageListener = (
 
     const flaggedKeys: FlaggedKeys = {};
 
-    const isValidatingMemo = getIsValidatingMemo();
-    const isValidatingSafety = getIsValidatingSafety();
+    const isValidatingMemo = getIsMemoValidationEnabled();
+    const isValidatingSafety = getIsSafetyValidationEnabled();
 
     if (isValidatingMemo || isValidatingSafety) {
       _operations.forEach((operation: { destination: string }) => {

@@ -26,8 +26,8 @@ const initialState: Settings = {
     networkUrl: "",
     networkPassphrase: "",
   } as NetworkDetails,
-  isValidatingMemo: true,
-  isValidatingSafety: true,
+  isMemoValidationEnabled: true,
+  isSafetyValidationEnabled: true,
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
@@ -39,14 +39,19 @@ export const saveSettings = createAsyncThunk<
   {
     isDataSharingAllowed: boolean;
     isTestnet: boolean;
-    isValidatingMemo: boolean;
-    isValidatingSafety: boolean;
+    isMemoValidationEnabled: boolean;
+    isSafetyValidationEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
   async (
-    { isDataSharingAllowed, isTestnet, isValidatingMemo, isValidatingSafety },
+    {
+      isDataSharingAllowed,
+      isTestnet,
+      isMemoValidationEnabled,
+      isSafetyValidationEnabled,
+    },
     thunkApi,
   ) => {
     let res = { ...initialState };
@@ -55,8 +60,8 @@ export const saveSettings = createAsyncThunk<
       res = await saveSettingsService({
         isDataSharingAllowed,
         isTestnet,
-        isValidatingMemo,
-        isValidatingSafety,
+        isMemoValidationEnabled,
+        isSafetyValidationEnabled,
       });
     } catch (e) {
       console.error(e);
@@ -80,8 +85,8 @@ const settingsSlice = createSlice({
         const {
           isDataSharingAllowed,
           networkDetails,
-          isValidatingMemo,
-          isValidatingSafety,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -89,8 +94,8 @@ const settingsSlice = createSlice({
         return {
           ...state,
           isDataSharingAllowed,
-          isValidatingMemo,
-          isValidatingSafety,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
           networkDetails,
         };
       },
@@ -101,8 +106,8 @@ const settingsSlice = createSlice({
         const {
           isDataSharingAllowed,
           networkDetails,
-          isValidatingMemo,
-          isValidatingSafety,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -111,8 +116,8 @@ const settingsSlice = createSlice({
           ...state,
           isDataSharingAllowed,
           networkDetails,
-          isValidatingMemo,
-          isValidatingSafety,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
         };
       },
     );

@@ -28,8 +28,8 @@ import {
   getAccountNameList,
   getKeyIdList,
   getIsTestnet,
-  getIsValidatingMemo,
-  getIsValidatingSafety,
+  getIsMemoValidationEnabled,
+  getIsSafetyValidationEnabled,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
@@ -557,19 +557,19 @@ export const popupMessageListener = (request: Request) => {
     const {
       isDataSharingAllowed,
       isTestnet,
-      isValidatingMemo,
-      isValidatingSafety,
+      isMemoValidationEnabled,
+      isSafetyValidationEnabled,
     } = request;
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
     localStorage.setItem(IS_TESTNET_ID, JSON.stringify(isTestnet));
     localStorage.setItem(
       IS_VALIDATING_MEMO_ID,
-      JSON.stringify(isValidatingMemo),
+      JSON.stringify(isMemoValidationEnabled),
     );
     localStorage.setItem(
       IS_VALIDATING_SAFETY_ID,
-      JSON.stringify(isValidatingSafety),
+      JSON.stringify(isSafetyValidationEnabled),
     );
 
     return {
@@ -581,13 +581,11 @@ export const popupMessageListener = (request: Request) => {
   const loadSettings = () => {
     const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "true";
     const isDataSharingAllowed = JSON.parse(dataSharingValue);
-    const isValidatingMemo = getIsValidatingMemo();
-    const isValidatingSafety = getIsValidatingSafety();
 
     return {
       isDataSharingAllowed,
-      isValidatingMemo,
-      isValidatingSafety,
+      isMemoValidationEnabled: getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
       networkDetails: getNetworkDetails(getIsTestnet()),
     };
   };

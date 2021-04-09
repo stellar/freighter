@@ -35,8 +35,8 @@ export const addAccountName = ({
 export const getIsTestnet = () =>
   JSON.parse(localStorage.getItem(IS_TESTNET_ID) || "false");
 
-export const getIsValidatingMemo = () =>
+export const getIsMemoValidationEnabled = () =>
   JSON.parse(localStorage.getItem(IS_VALIDATING_MEMO_ID) || "true");
 
-export const getIsValidatingSafety = () =>
+export const getIsSafetyValidationEnabled = () =>
   JSON.parse(localStorage.getItem(IS_VALIDATING_SAFETY_ID) || "true");
