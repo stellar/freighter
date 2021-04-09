@@ -101,10 +101,10 @@ export const freighterApiMessageListener = (
 
     const flaggedKeys: FlaggedKeys = {};
 
-    const isValidatingMemos = getIsValidatingMemo();
+    const isValidatingMemo = getIsValidatingMemo();
     const isValidatingSafety = getIsValidatingSafety();
 
-    if (isValidatingMemos || isValidatingSafety) {
+    if (isValidatingMemo || isValidatingSafety) {
       _operations.forEach((operation: { destination: string }) => {
         accountData.forEach(
           ({ address, tags }: { address: string; tags: Array<string> }) => {
@@ -112,7 +112,7 @@ export const freighterApiMessageListener = (
               const collectedTags = [...tags];
 
               /* if the user has opted out of validation, remove applicable tags */
-              if (!isValidatingMemos) {
+              if (!isValidatingMemo) {
                 collectedTags.filter(
                   (tag) => tag !== TRANSACTION_WARNING.memoRequired,
                 );
