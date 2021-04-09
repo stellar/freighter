@@ -26,6 +26,8 @@ const initialState: Settings = {
     networkUrl: "",
     networkPassphrase: "",
   } as NetworkDetails,
+  isMemoValidationEnabled: true,
+  isSafetyValidationEnabled: true,
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
@@ -33,16 +35,34 @@ export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
 );
 
 export const saveSettings = createAsyncThunk<
-  { isDataSharingAllowed: boolean; networkDetails: NetworkDetails },
-  { isDataSharingAllowed: boolean; isTestnet: boolean },
+  Settings,
+  {
+    isDataSharingAllowed: boolean;
+    isTestnet: boolean;
+    isMemoValidationEnabled: boolean;
+    isSafetyValidationEnabled: boolean;
+  },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
-  async ({ isDataSharingAllowed, isTestnet }, thunkApi) => {
+  async (
+    {
+      isDataSharingAllowed,
+      isTestnet,
+      isMemoValidationEnabled,
+      isSafetyValidationEnabled,
+    },
+    thunkApi,
+  ) => {
     let res = { ...initialState };
 
     try {
-      res = await saveSettingsService({ isDataSharingAllowed, isTestnet });
+      res = await saveSettingsService({
+        isDataSharingAllowed,
+        isTestnet,
+        isMemoValidationEnabled,
+        isSafetyValidationEnabled,
+      });
     } catch (e) {
       console.error(e);
       return thunkApi.rejectWithValue({
@@ -62,13 +82,20 @@ const settingsSlice = createSlice({
     builder.addCase(
       saveSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed, networkDetails } = action?.payload || {
+        const {
+          isDataSharingAllowed,
+          networkDetails,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
+        } = action?.payload || {
           ...initialState,
         };
 
         return {
           ...state,
           isDataSharingAllowed,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
           networkDetails,
         };
       },
@@ -76,7 +103,12 @@ const settingsSlice = createSlice({
     builder.addCase(
       loadSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
-        const { isDataSharingAllowed, networkDetails } = action?.payload || {
+        const {
+          isDataSharingAllowed,
+          networkDetails,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
+        } = action?.payload || {
           ...initialState,
         };
 
@@ -84,6 +116,8 @@ const settingsSlice = createSlice({
           ...state,
           isDataSharingAllowed,
           networkDetails,
+          isMemoValidationEnabled,
+          isSafetyValidationEnabled,
         };
       },
     );
@@ -92,7 +126,8 @@ const settingsSlice = createSlice({
 
 export const { reducer } = settingsSlice;
 
-const settingsSelector = (state: { settings: Settings }) => state.settings;
+export const settingsSelector = (state: { settings: Settings }) =>
+  state.settings;
 
 export const settingsDataSharingSelector = createSelector(
   settingsSelector,

@@ -2,6 +2,8 @@ import {
   ACCOUNT_NAME_LIST_ID,
   KEY_ID_LIST,
   IS_TESTNET_ID,
+  IS_VALIDATING_MEMO_ID,
+  IS_VALIDATING_SAFETY_ID,
 } from "constants/localStorageTypes";
 
 export const getKeyIdList = () =>
@@ -32,3 +34,9 @@ export const addAccountName = ({
 
 export const getIsTestnet = () =>
   JSON.parse(localStorage.getItem(IS_TESTNET_ID) || "false");
+
+export const getIsMemoValidationEnabled = () =>
+  JSON.parse(localStorage.getItem(IS_VALIDATING_MEMO_ID) || "true");
+
+export const getIsSafetyValidationEnabled = () =>
+  JSON.parse(localStorage.getItem(IS_VALIDATING_SAFETY_ID) || "true");

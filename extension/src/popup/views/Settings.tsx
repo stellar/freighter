@@ -12,7 +12,7 @@ import {
 
 import {
   saveSettings,
-  settingsDataSharingSelector,
+  settingsSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
@@ -40,35 +40,50 @@ const SubheaderEl = styled.h2`
 const RadioFieldEl = styled(RadioField)`
   margin-bottom: 0.625rem;
 `;
-const NetworkRadioLabelEl = styled.span`
+const SettingsLabelEl = styled.span`
   width: 21.375rem;
 `;
-const CheckboxFieldEl = styled(CheckboxField)`
+const SettingsCheckboxFieldEl = styled(CheckboxField)`
   align-items: flex-start;
 `;
 
 export const Settings = () => {
   const dispatch = useDispatch();
-  const userDataSharingSetting = useSelector(settingsDataSharingSelector);
+  const {
+    isDataSharingAllowed,
+    isMemoValidationEnabled,
+    isSafetyValidationEnabled,
+  } = useSelector(settingsSelector);
   const { network } = useSelector(settingsNetworkDetailsSelector);
 
   interface SettingValues {
-    isDataSharingAllowed: boolean;
     networkSelected: string;
+    isValidatingMemoValue: boolean;
+    isValidatingSafetyValue: boolean;
+    isDataSharingAllowedValue: boolean;
   }
 
   const initialValues: SettingValues = {
-    isDataSharingAllowed: userDataSharingSetting,
     networkSelected: network,
+    isValidatingMemoValue: isMemoValidationEnabled,
+    isValidatingSafetyValue: isSafetyValidationEnabled,
+    isDataSharingAllowedValue: isDataSharingAllowed,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
-    const { isDataSharingAllowed, networkSelected } = formValue;
+    const {
+      networkSelected,
+      isValidatingMemoValue,
+      isValidatingSafetyValue,
+      isDataSharingAllowedValue,
+    } = formValue;
 
     await dispatch(
       saveSettings({
-        isDataSharingAllowed,
         isTestnet: networkSelected === TESTNET_NETWORK_DETAILS.network,
+        isMemoValidationEnabled: isValidatingMemoValue,
+        isSafetyValidationEnabled: isValidatingSafetyValue,
+        isDataSharingAllowed: isDataSharingAllowedValue,
       }),
     );
     navigateTo(ROUTES.account);
@@ -88,30 +103,51 @@ export const Settings = () => {
             <FormRow>
               <RadioFieldEl
                 name="networkSelected"
-                label={
-                  <NetworkRadioLabelEl>Public network</NetworkRadioLabelEl>
-                }
+                label={<SettingsLabelEl>Public network</SettingsLabelEl>}
                 value={MAINNET_NETWORK_DETAILS.network}
               />
               <RadioFieldEl
                 name="networkSelected"
-                label={<NetworkRadioLabelEl>Test network</NetworkRadioLabelEl>}
+                label={<SettingsLabelEl>Test network</SettingsLabelEl>}
                 value={TESTNET_NETWORK_DETAILS.network}
+              />
+            </FormRow>
+          </SettingRowEl>
+          <SettingRowEl>
+            <SubheaderEl>Verification with stellar.expert</SubheaderEl>
+            <FormRow>
+              <CheckboxField
+                name="isValidatingMemoValue"
+                label={
+                  <SettingsLabelEl>
+                    Validate addresses that require a memo
+                  </SettingsLabelEl>
+                }
+              />
+            </FormRow>
+            <FormRow>
+              <CheckboxField
+                name="isValidatingSafetyValue"
+                label={
+                  <SettingsLabelEl>
+                    Block malicious or unsafe addresses and domains
+                  </SettingsLabelEl>
+                }
               />
             </FormRow>
           </SettingRowEl>
           <SettingRowEl>
             <SubheaderEl>Anonymous data sharing</SubheaderEl>
             <FormRow>
-              <CheckboxFieldEl
-                name="isDataSharingAllowed"
+              <SettingsCheckboxFieldEl
+                name="isDataSharingAllowedValue"
                 label={
-                  <span>
+                  <SettingsLabelEl>
                     Allow Freighter to collect anonymous information about
                     usage. Freighter will never collect your personal
                     information such as IP address, keys, balance or transaction
                     amounts.
-                  </span>
+                  </SettingsLabelEl>
                 }
               />
             </FormRow>

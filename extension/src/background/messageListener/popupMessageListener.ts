@@ -15,6 +15,8 @@ import {
   CACHED_ASSET_ICONS_ID,
   DATA_SHARING_ID,
   IS_TESTNET_ID,
+  IS_VALIDATING_MEMO_ID,
+  IS_VALIDATING_SAFETY_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
@@ -26,6 +28,8 @@ import {
   getAccountNameList,
   getKeyIdList,
   getIsTestnet,
+  getIsMemoValidationEnabled,
+  getIsSafetyValidationEnabled,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
@@ -550,10 +554,23 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const saveSettings = () => {
-    const { isDataSharingAllowed, isTestnet } = request;
+    const {
+      isDataSharingAllowed,
+      isTestnet,
+      isMemoValidationEnabled,
+      isSafetyValidationEnabled,
+    } = request;
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
     localStorage.setItem(IS_TESTNET_ID, JSON.stringify(isTestnet));
+    localStorage.setItem(
+      IS_VALIDATING_MEMO_ID,
+      JSON.stringify(isMemoValidationEnabled),
+    );
+    localStorage.setItem(
+      IS_VALIDATING_SAFETY_ID,
+      JSON.stringify(isSafetyValidationEnabled),
+    );
 
     return {
       isDataSharingAllowed,
@@ -567,6 +584,8 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       isDataSharingAllowed,
+      isMemoValidationEnabled: getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
       networkDetails: getNetworkDetails(getIsTestnet()),
     };
   };

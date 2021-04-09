@@ -27,6 +27,8 @@ export interface Response {
   url: string;
   isDataSharingAllowed: boolean;
   isTestnet: boolean;
+  isMemoValidationEnabled: boolean;
+  isSafetyValidationEnabled: boolean;
   networkDetails: NetworkDetails;
   allAccounts: Array<Account>;
   accountName: string;
@@ -48,6 +50,8 @@ export interface Account {
 export interface Settings {
   isDataSharingAllowed: boolean;
   networkDetails: NetworkDetails;
+  isMemoValidationEnabled: boolean;
+  isSafetyValidationEnabled: boolean;
 }
 
 export interface AssetIcons {

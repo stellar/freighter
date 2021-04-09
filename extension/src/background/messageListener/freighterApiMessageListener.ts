@@ -12,7 +12,11 @@ import { POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
-import { getIsTestnet } from "background/helpers/account";
+import {
+  getIsTestnet,
+  getIsMemoValidationEnabled,
+  getIsSafetyValidationEnabled,
+} from "background/helpers/account";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 
@@ -97,21 +101,41 @@ export const freighterApiMessageListener = (
 
     const flaggedKeys: FlaggedKeys = {};
 
-    _operations.forEach((operation: { destination: string }) => {
-      accountData.forEach(
-        ({ address, tags }: { address: string; tags: Array<string> }) => {
-          if (address === operation.destination) {
-            flaggedKeys[operation.destination] = {
-              ...flaggedKeys[operation.destination],
-              tags,
-            };
-          }
-        },
-      );
-    });
+    const isValidatingMemo = getIsMemoValidationEnabled();
+    const isValidatingSafety = getIsSafetyValidationEnabled();
+
+    if (isValidatingMemo || isValidatingSafety) {
+      _operations.forEach((operation: { destination: string }) => {
+        accountData.forEach(
+          ({ address, tags }: { address: string; tags: Array<string> }) => {
+            if (address === operation.destination) {
+              const collectedTags = [...tags];
+
+              /* if the user has opted out of validation, remove applicable tags */
+              if (!isValidatingMemo) {
+                collectedTags.filter(
+                  (tag) => tag !== TRANSACTION_WARNING.memoRequired,
+                );
+              }
+              if (!isValidatingSafety) {
+                collectedTags.filter(
+                  (tag) => tag !== TRANSACTION_WARNING.unsafe,
+                );
+                collectedTags.filter(
+                  (tag) => tag !== TRANSACTION_WARNING.malicious,
+                );
+              }
+              flaggedKeys[operation.destination] = {
+                ...flaggedKeys[operation.destination],
+                tags: collectedTags,
+              };
+            }
+          },
+        );
+      });
+    }
 
     const server = new StellarSdk.Server(networkUrl);
-
     try {
       await server.checkMemoRequired(transaction);
     } catch (e) {
