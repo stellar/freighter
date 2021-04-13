@@ -138,7 +138,6 @@ export const popupMessageListener = (request: Request) => {
     const { publicKey } = request;
 
     if (getIsTestnet()) {
-      // fund the account automatically if we're in a dev environment
       try {
         await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
