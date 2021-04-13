@@ -34,10 +34,12 @@ export interface Response {
   accountName: string;
   assetCode: string;
   iconUrl: string;
+  network: string;
 }
 
 export interface ExternalRequest {
   transactionXdr: string;
+  network: string;
   type: EXTERNAL_SERVICE_TYPES;
 }
 
