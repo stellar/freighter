@@ -6,7 +6,10 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { getNetworkDetails } from "@shared/helpers/stellar";
+import {
+  getNetworkDetails,
+  MAINNET_NETWORK_DETAILS,
+} from "@shared/helpers/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
@@ -17,6 +20,7 @@ import {
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
 } from "background/helpers/account";
+import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 
@@ -42,15 +46,11 @@ export const freighterApiMessageListener = (
   sender: Runtime.MessageSender,
 ) => {
   const requestAccess = () => {
-    // TODO: add check to make sure this origin is on allowlist
-    const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
-    const allowList = allowListStr.split(",");
     const publicKey = publicKeySelector(store.getState());
 
     const { tab, url: tabUrl = "" } = sender;
-    const domain = getUrlHostname(tabUrl);
 
-    if (allowList.includes(getPunycodedDomain(domain)) && publicKey) {
+    if (isSenderAllowed({ sender }) && publicKey) {
       // okay, the requester checks out and we have public key, send it
       return { publicKey };
     }
@@ -78,8 +78,11 @@ export const freighterApiMessageListener = (
   };
 
   const submitTransaction = async () => {
-    const { transactionXdr } = request;
-    const { network, networkUrl } = getNetworkDetails(getIsTestnet());
+    const {
+      transactionXdr,
+      network = MAINNET_NETWORK_DETAILS.network,
+    } = request;
+    const { networkUrl } = getNetworkDetails(getIsTestnet());
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
       StellarSdk.Networks[network],
@@ -92,7 +95,7 @@ export const freighterApiMessageListener = (
     const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
     const allowList = allowListStr.split(",");
 
-    const isDomainListedAllowed = allowList.includes(punycodedDomain);
+    const isDomainListedAllowed = isSenderAllowed({ sender });
 
     const directoryLookupJson = await cachedFetch(STELLAR_DIRECTORY_URL);
     const accountData = directoryLookupJson?._embedded?.records || [];
@@ -190,9 +193,22 @@ export const freighterApiMessageListener = (
     });
   };
 
+  const requestNetwork = () => {
+    let network = "";
+
+    try {
+      ({ network } = getNetworkDetails(getIsTestnet()));
+    } catch (error) {
+      console.error(error);
+      return { error };
+    }
+    return { network };
+  };
+
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
   };
 
   return messageResponder[request.type]();
