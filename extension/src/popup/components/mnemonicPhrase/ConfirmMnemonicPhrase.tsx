@@ -9,7 +9,7 @@ import {
   confirmMnemonicPhrase,
   authErrorSelector,
   applicationStateSelector,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 
 import CloseIcon from "popup/assets/icon-close.svg";
 

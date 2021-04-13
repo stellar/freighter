@@ -20,7 +20,7 @@ import {
   authErrorSelector,
   publicKeySelector,
   recoverAccount,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 
 import {
   ApiErrorMessage,

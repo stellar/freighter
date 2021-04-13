@@ -16,7 +16,7 @@ import { navigateTo } from "popup/helpers/navigate";
 
 import { BasicButton } from "popup/basics/Buttons";
 
-import { applicationStateSelector, signOut } from "popup/ducks/authServices";
+import { applicationStateSelector, signOut } from "popup/ducks/accountServices";
 
 import { Footer } from "popup/components/Footer";
 import { Header } from "popup/components/Header";

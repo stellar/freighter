@@ -11,6 +11,7 @@ import {
   updateAccountName as updateAccountNameService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   createAccount as createAccountService,
+  fundAccount as fundAccountService,
   recoverAccount as recoverAccountService,
   loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
@@ -39,6 +40,17 @@ export const createAccount = createAsyncThunk<
   }
   return res;
 });
+
+export const fundAccount = createAsyncThunk(
+  "auth/fundAccount",
+  async (publicKey: string) => {
+    try {
+      await fundAccountService(publicKey);
+    } catch (e) {
+      console.error("Failed when funding an account: ", e.message);
+    }
+  },
+);
 
 export const addAccount = createAsyncThunk<
   { publicKey: string; allAccounts: Array<Account> },

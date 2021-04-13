@@ -11,7 +11,7 @@ import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 import { metricsMiddleware } from "helpers/metrics";
 
 import { FONT_FAMILY, COLOR_PALETTE } from "popup/constants/styles";
-import { reducer as auth } from "popup/ducks/authServices";
+import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 
 import { Loading } from "popup/views/Loading";

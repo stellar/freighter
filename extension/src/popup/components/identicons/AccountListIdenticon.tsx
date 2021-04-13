@@ -8,7 +8,7 @@ import { BasicButton } from "popup/basics/Buttons";
 
 import { truncatedPublicKey } from "helpers/stellar";
 
-import { makeAccountActive } from "popup/ducks/authServices";
+import { makeAccountActive } from "popup/ducks/accountServices";
 
 import WhiteCheckIcon from "popup/assets/icon-white-check.svg";
 

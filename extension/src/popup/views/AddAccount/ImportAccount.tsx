@@ -25,7 +25,7 @@ import {
   clearApiError,
   importAccount,
   authErrorSelector,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 
 import { WarningMessage } from "popup/components/WarningMessage";
 import IconOrangeLock from "popup/assets/icon-orange-lock.svg";

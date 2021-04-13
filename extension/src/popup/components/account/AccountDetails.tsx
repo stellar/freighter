@@ -7,7 +7,7 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { BasicButton } from "popup/basics/Buttons";
 import { ScrollingView } from "popup/basics/AccountSubview";
 
-import { publicKeySelector } from "popup/ducks/authServices";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   getAccountDetails,
@@ -65,6 +65,9 @@ export const AccountDetails = () => {
   const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
+  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
+    false,
+  );
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -81,7 +84,7 @@ export const AccountDetails = () => {
     };
 
     fetchAccountDetails();
-  }, [publicKey, networkDetails]);
+  }, [publicKey, networkDetails, isAccountFriendbotFunded]);
 
   useEffect(() => {
     const collection = [] as Array<any>;
@@ -171,6 +174,10 @@ export const AccountDetails = () => {
       </AccountBodyEl>
     </>
   ) : (
-    <NotFundedMessage />
+    <NotFundedMessage
+      isTestnet={networkDetails.isTestnet}
+      setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+      publicKey={publicKey}
+    />
   );
 };

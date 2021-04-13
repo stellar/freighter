@@ -25,7 +25,7 @@ import {
   accountNameSelector,
   publicKeySelector,
   updateAccountName,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { Toast } from "popup/components/Toast";

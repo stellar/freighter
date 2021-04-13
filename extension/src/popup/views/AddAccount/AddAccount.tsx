@@ -24,7 +24,7 @@ import {
   addAccount,
   authErrorSelector,
   clearApiError,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 
 interface FormValues {
   password: string;

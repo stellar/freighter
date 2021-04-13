@@ -134,9 +134,10 @@ export const popupMessageListener = (request: Request) => {
     });
   };
 
-  const _fundAccount = async (publicKey: string) => {
+  const fundAccount = async () => {
+    const { publicKey } = request;
+
     if (getIsTestnet()) {
-      // fund the account automatically if we're in a dev environment
       try {
         await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
@@ -146,6 +147,8 @@ export const popupMessageListener = (request: Request) => {
         throw new Error("Error creating account");
       }
     }
+
+    return { publicKey };
   };
 
   const createAccount = async () => {
@@ -155,8 +158,6 @@ export const popupMessageListener = (request: Request) => {
     const wallet = fromMnemonic(mnemonicPhrase);
 
     const KEY_DERIVATION_NUMBER = 0;
-
-    await _fundAccount(wallet.getPublicKey(KEY_DERIVATION_NUMBER));
 
     localStorage.setItem(
       KEY_DERIVATION_NUMBER_ID,
@@ -201,7 +202,6 @@ export const popupMessageListener = (request: Request) => {
     const wallet = fromMnemonic(mnemonicPhrase);
     const keyNumber =
       Number(localStorage.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
-    await _fundAccount(wallet.getPublicKey(keyNumber));
 
     const keyPair = {
       publicKey: wallet.getPublicKey(keyNumber),
@@ -574,6 +574,8 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       isDataSharingAllowed,
+      isMemoValidationEnabled: getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
       networkDetails: getNetworkDetails(isTestnet),
     };
   };
@@ -614,6 +616,7 @@ export const popupMessageListener = (request: Request) => {
 
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
+    [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
     [SERVICE_TYPES.IMPORT_ACCOUNT]: importAccount,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,

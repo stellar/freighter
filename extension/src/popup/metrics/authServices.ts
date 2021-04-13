@@ -7,7 +7,7 @@ import {
   confirmPassword,
   confirmMnemonicPhrase,
   recoverAccount,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
 
 registerHandler<AppState>(createAccount.fulfilled, () => {
