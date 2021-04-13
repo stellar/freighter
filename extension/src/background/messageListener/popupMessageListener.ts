@@ -575,6 +575,8 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       isDataSharingAllowed,
+      isMemoValidationEnabled: getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
       networkDetails: getNetworkDetails(isTestnet),
     };
   };
