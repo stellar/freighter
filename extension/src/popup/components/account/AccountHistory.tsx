@@ -54,7 +54,7 @@ const HistoryColumnEl = styled.div`
 `;
 
 const PaymentColumnEl = styled(HistoryColumnEl)`
-  margin-left: 7.5rem;
+  margin-left: 7.4rem;
 `;
 
 const HistoryColumnRowEl = styled.div`
