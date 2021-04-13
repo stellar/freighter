@@ -68,7 +68,12 @@ export const NotFundedMessage = ({
         <NotFundedHeaderEl>
           This Stellar address is not funded
         </NotFundedHeaderEl>
-        <p>To create this account, fund it with a minimum of 1 XLM.</p>
+        <p>
+          To create this account, fund it with a minimum of 1 XLM.
+          {isTestnet
+            ? " On the Test Network, Friendbot can fund new accounts."
+            : ""}
+        </p>
         <p>
           <a
             href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
