@@ -23,7 +23,10 @@ import { SubviewWrapper } from "popup/basics/AccountSubview";
 
 import { Header } from "popup/components/Header";
 
-import { confirmPassword, authErrorSelector } from "popup/ducks/authServices";
+import {
+  confirmPassword,
+  authErrorSelector,
+} from "popup/ducks/accountServices";
 
 import WaveIllo from "popup/assets/illo-wave.svg";
 

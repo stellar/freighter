@@ -33,6 +33,17 @@ export const createAccount = async (
   return { allAccounts, publicKey };
 };
 
+export const fundAccount = async (publicKey: string): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      publicKey,
+      type: SERVICE_TYPES.FUND_ACCOUNT,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const addAccount = async (
   password: string,
 ): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {

@@ -1,5 +1,11 @@
 import React from "react";
+import { useDispatch } from "react-redux";
+import { Formik, Form } from "formik";
 import styled from "styled-components";
+
+import { SubmitButton } from "popup/basics/Forms";
+
+import { fundAccount } from "popup/ducks/accountServices";
 
 import {
   COLOR_PALETTE,
@@ -40,27 +46,61 @@ const NotFundedHeaderEl = styled.h3`
   }
 `;
 
-export const NotFundedMessage = () => (
-  <NotFundedWrapperEl>
-    <NotFundedHeaderEl>This Stellar address is not funded</NotFundedHeaderEl>
-    <p>To create this account, fund it with a minimum of 1 XLM.</p>
-    <p>
-      <a
-        href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
-        rel="noreferrer"
-        target="_blank"
-      >
-        Learn more about account creation
-      </a>
-    </p>
-    <p>
-      <a
-        href="https://www.stellar.org/lumens/exchanges"
-        rel="noreferrer"
-        target="_blank"
-      >
-        See where you can buy lumens
-      </a>
-    </p>
-  </NotFundedWrapperEl>
-);
+export const NotFundedMessage = ({
+  isTestnet,
+  publicKey,
+  setIsAccountFriendbotFunded,
+}: {
+  isTestnet: boolean;
+  publicKey: string;
+  setIsAccountFriendbotFunded: (isAccountFriendbotFunded: boolean) => void;
+}) => {
+  const dispatch = useDispatch();
+
+  const handleFundAccount = async () => {
+    await dispatch(fundAccount(publicKey));
+    setIsAccountFriendbotFunded(true);
+  };
+
+  return (
+    <>
+      <NotFundedWrapperEl>
+        <NotFundedHeaderEl>
+          This Stellar address is not funded
+        </NotFundedHeaderEl>
+        <p>To create this account, fund it with a minimum of 1 XLM.</p>
+        <p>
+          <a
+            href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Learn more about account creation
+          </a>
+        </p>
+        {isTestnet ? null : (
+          <p>
+            <a
+              href="https://www.stellar.org/lumens/exchanges"
+              rel="noreferrer"
+              target="_blank"
+            >
+              See where you can buy lumens
+            </a>
+          </p>
+        )}
+      </NotFundedWrapperEl>
+      {isTestnet ? (
+        <Formik initialValues={{}} onSubmit={handleFundAccount}>
+          {({ isSubmitting }) => (
+            <Form>
+              <SubmitButton isSubmitting={isSubmitting}>
+                Fund with Friendbot
+              </SubmitButton>
+            </Form>
+          )}
+        </Formik>
+      ) : null}
+    </>
+  );
+};

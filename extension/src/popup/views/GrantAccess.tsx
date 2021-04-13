@@ -7,7 +7,7 @@ import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
-import { publicKeySelector } from "popup/ducks/authServices";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";

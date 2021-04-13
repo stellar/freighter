@@ -9,7 +9,7 @@ import {
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { POPUP_WIDTH } from "constants/dimensions";

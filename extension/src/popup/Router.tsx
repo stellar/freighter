@@ -22,7 +22,7 @@ import {
   loadAccount,
   publicKeySelector,
   authErrorSelector,
-} from "popup/ducks/authServices";
+} from "popup/ducks/accountServices";
 import { loadSettings } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 

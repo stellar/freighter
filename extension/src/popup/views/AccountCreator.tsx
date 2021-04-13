@@ -12,7 +12,7 @@ import {
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import { createAccount, publicKeySelector } from "popup/ducks/authServices";
+import { createAccount, publicKeySelector } from "popup/ducks/accountServices";
 
 import {
   Form,

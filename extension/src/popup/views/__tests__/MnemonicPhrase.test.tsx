@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { Provider } from "react-redux";
 
-import { reducer as auth } from "popup/ducks/authServices";
+import { reducer as auth } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
