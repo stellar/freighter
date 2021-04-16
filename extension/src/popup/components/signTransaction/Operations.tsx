@@ -20,33 +20,37 @@ interface Path {
 }
 
 interface TransactionInfoResponse {
+  account: string;
   amount: string;
-  destination: string;
   asset: { code: string };
+  buyAmount: string;
+  buying: { code: string };
+  clearFlags: number;
+  destination: string;
   destAsset: { code: string };
+  highThreshold: number;
+  inflationDest: string;
+  lowThreshold: number;
+  masterWeight: number;
+  medThreshold: number;
+  path: [Path];
+  price: string;
   sendAsset: { code: string };
+  selling: { code: string };
+  setFlags: number;
   signer: {
     ed25519PublicKey?: string;
     sha256Hash?: { data: Buffer };
     preAuthTx?: { data: Buffer };
     weight: number;
   };
-  path: [Path];
+  source: string;
+  sponsoredId: string;
   type: keyof typeof OPERATION_TYPES;
-  buying: { code: string };
-  selling: { code: string };
-  buyAmount: string;
-  price: string;
-  inflationDest: string;
-  setFlags: number;
-  clearFlags: number;
-  masterWeight: number;
-  lowThreshold: number;
-  medThreshold: number;
-  highThreshold: number;
 }
 
 const OperationBoxEl = styled.div`
+  overflow: hidden;
   text-align: left;
 `;
 
@@ -78,6 +82,10 @@ const OperationsListEl = styled(TransactionList)`
       }
     }
   }
+`;
+
+const OperationKeyOrValue = styled.div`
+  text-transform: capitalize;
 `;
 
 const PathListItem = styled.li`
@@ -112,12 +120,25 @@ const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <li>
-    <div>
+    <OperationKeyOrValue>
       {operationKey}
       {operationKey ? ":" : null}
-    </div>
-    <div>{operationValue}</div>
+    </OperationKeyOrValue>
+    <OperationKeyOrValue>{operationValue}</OperationKeyOrValue>
   </li>
+);
+
+const KeyValueWithPublicKey = ({
+  operationKey,
+  operationValue,
+}: {
+  operationKey: string;
+  operationValue: string;
+}) => (
+  <KeyValueList
+    operationKey={operationKey}
+    operationValue={<KeyIdenticon publicKey={operationValue} />}
+  />
 );
 
 const PathList = ({ paths }: { paths: [Path] }) => (
@@ -242,41 +263,46 @@ export const Operations = ({
     {operations.map(
       (
         {
+          account,
           amount,
-          destination,
           asset,
-          destAsset,
-          path,
-          sendAsset,
-          signer,
-          type,
-          buying,
-          selling,
           buyAmount,
-          price,
-          inflationDest,
-          setFlags,
+          buying,
           clearFlags,
-          masterWeight,
-          lowThreshold,
-          medThreshold,
+          destination,
+          destAsset,
           highThreshold,
+          inflationDest,
+          lowThreshold,
+          masterWeight,
+          medThreshold,
+          path,
+          price,
+          selling,
+          sendAsset,
+          setFlags,
+          signer,
+          source,
+          sponsoredId,
+          type,
+          ...rest
         },
         i: number,
       ) => {
         const operationIndex = i + 1;
+        console.log(rest);
 
         return (
           <OperationBoxEl key={operationIndex}>
             <OperationBoxHeaderEl>
-              {operationIndex}. {OPERATION_TYPES[type]}
+              {operationIndex}. {OPERATION_TYPES[type] || type}
             </OperationBoxHeaderEl>
             <OperationsListEl>
               {destination ? (
                 <>
-                  <KeyValueList
+                  <KeyValueWithPublicKey
                     operationKey="Destination"
-                    operationValue={<KeyIdenticon publicKey={destination} />}
+                    operationValue={destination}
                   />
                   <DestinationWarning
                     destination={destination}
@@ -318,11 +344,9 @@ export const Operations = ({
 
               {signer?.ed25519PublicKey ? (
                 <>
-                  <KeyValueList
+                  <KeyValueWithPublicKey
                     operationKey="Signer"
-                    operationValue={
-                      <KeyIdenticon publicKey={signer.ed25519PublicKey} />
-                    }
+                    operationValue={signer.ed25519PublicKey}
                   />
                   <KeyValueList
                     operationKey="Weight"
@@ -380,9 +404,9 @@ export const Operations = ({
                 <KeyValueList operationKey="Price" operationValue={price} />
               ) : null}
               {inflationDest ? (
-                <KeyValueList
+                <KeyValueWithPublicKey
                   operationKey="Inflation Destination"
-                  operationValue={<KeyIdenticon publicKey={inflationDest} />}
+                  operationValue={inflationDest}
                 />
               ) : null}
               {setFlags ? (
@@ -421,6 +445,29 @@ export const Operations = ({
                   operationValue={highThreshold}
                 />
               ) : null}
+              {sponsoredId ? (
+                <KeyValueWithPublicKey
+                  operationKey="Sponsored Id"
+                  operationValue={sponsoredId}
+                />
+              ) : null}
+              {account ? (
+                <KeyValueWithPublicKey
+                  operationKey="Account"
+                  operationValue={account}
+                />
+              ) : null}
+              {source ? (
+                <KeyValueWithPublicKey
+                  operationKey="Source"
+                  operationValue={source}
+                />
+              ) : null}
+              {Object.entries(rest).map(([k, v]) => (
+                <div key={k}>
+                  <KeyValueList key={k} operationKey={k} operationValue={v} />
+                </div>
+              ))}
             </OperationsListEl>
           </OperationBoxEl>
         );
