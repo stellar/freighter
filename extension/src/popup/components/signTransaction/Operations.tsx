@@ -1,7 +1,11 @@
 import React from "react";
 import styled from "styled-components";
 
-import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
+import {
+  CLAIM_PREDICATES,
+  OPERATION_TYPES,
+  TRANSACTION_WARNING,
+} from "constants/transaction";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { FlaggedKeys } from "types/transactions";
@@ -19,12 +23,33 @@ interface Path {
   issuer?: string;
 }
 
+interface PredicateSwitch {
+  name: keyof typeof CLAIM_PREDICATES;
+  value: number;
+}
+
+type PredicateValue =
+  | Array<Predicate>
+  | { high: number; low: number; unsigned: boolean; _switch?: PredicateSwitch }
+  | { _value: PredicateValue; _switch: PredicateSwitch };
+
+interface Predicate {
+  _switch: PredicateSwitch;
+  _value?: PredicateValue;
+}
+
+interface Claimant {
+  _destination: string;
+  _predicate: Predicate;
+}
+
 interface TransactionInfoResponse {
   account: string;
   amount: string;
   asset: { code: string };
   buyAmount: string;
   buying: { code: string };
+  claimants: Array<Claimant>;
   clearFlags: number;
   destination: string;
   destAsset: { code: string };
@@ -92,7 +117,7 @@ const PathListItem = styled.li`
   flex-direction: column;
 `;
 
-const PathHeaderEl = styled.h5`
+const SubHeaderEl = styled.h5`
   color: ${COLOR_PALETTE.primary};
   font-size: 1rem;
 `;
@@ -143,7 +168,7 @@ const KeyValueWithPublicKey = ({
 
 const PathList = ({ paths }: { paths: [Path] }) => (
   <PathListItem>
-    <PathHeaderEl>Paths: </PathHeaderEl>
+    <SubHeaderEl>Paths: </SubHeaderEl>
     {paths.map(({ code, issuer }, i) => (
       <PathWrapperEl key={`${code} ${i + 1}`}>
         <PathNumberEl>#{i + 1}</PathNumberEl>
@@ -268,6 +293,7 @@ export const Operations = ({
           asset,
           buyAmount,
           buying,
+          claimants,
           clearFlags,
           destination,
           destAsset,
@@ -290,7 +316,6 @@ export const Operations = ({
         i: number,
       ) => {
         const operationIndex = i + 1;
-        console.log(rest);
 
         return (
           <OperationBoxEl key={operationIndex}>
@@ -463,11 +488,27 @@ export const Operations = ({
                   operationValue={source}
                 />
               ) : null}
-              {Object.entries(rest).map(([k, v]) => (
-                <div key={k}>
-                  <KeyValueList key={k} operationKey={k} operationValue={v} />
-                </div>
-              ))}
+              {claimants && claimants.length
+                ? claimants.map(({ _destination }, index) => (
+                    /* eslint-disable react/no-array-index-key */
+                    <div key={`${_destination}${index}`}>
+                      {/* eslint-enable */}
+                      <SubHeaderEl>Claimant {index + 1}</SubHeaderEl>
+                      <KeyValueWithPublicKey
+                        operationKey="Destination"
+                        operationValue={_destination}
+                      />
+                      {/* TODO: Add appicable predicate UI */}
+                    </div>
+                  ))
+                : null}
+              {Object.entries(rest).map(([k, v]) =>
+                React.isValidElement(v) ? (
+                  <div key={k}>
+                    <KeyValueList key={k} operationKey={k} operationValue={v} />
+                  </div>
+                ) : null,
+              )}
             </OperationsListEl>
           </OperationBoxEl>
         );
