@@ -30,6 +30,6 @@ export enum CLAIM_PREDICATES {
   claimPredicateAnd = "And",
   claimPredicateOr = "Or",
   claimPredicateNot = "Not",
-  claimPredicateBeforeRelativeTime = "Relative Time Before",
+  claimPredicateBeforeRelativeTime = "Before Relative Time",
   claimPredicateBeforeAbsoluteTime = "Before Absolute Time",
 }
