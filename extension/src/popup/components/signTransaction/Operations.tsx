@@ -1,7 +1,11 @@
 import React from "react";
 import styled from "styled-components";
 
-import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
+import {
+  CLAIM_PREDICATES,
+  OPERATION_TYPES,
+  TRANSACTION_WARNING,
+} from "constants/transaction";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { FlaggedKeys } from "types/transactions";
@@ -19,34 +23,59 @@ interface Path {
   issuer?: string;
 }
 
+interface PredicateSwitch {
+  name: keyof typeof CLAIM_PREDICATES;
+  value: number;
+}
+
+type PredicateValue =
+  | Array<Predicate>
+  | { high: number; low: number; unsigned: boolean; _switch?: PredicateSwitch }
+  | { _value: PredicateValue; _switch: PredicateSwitch };
+
+interface Predicate {
+  _switch: PredicateSwitch;
+  _value?: PredicateValue;
+}
+
+interface Claimant {
+  _destination: string;
+  _predicate: Predicate;
+}
+
 interface TransactionInfoResponse {
+  account: string;
   amount: string;
-  destination: string;
   asset: { code: string };
+  buyAmount: string;
+  buying: { code: string };
+  claimants: Array<Claimant>;
+  clearFlags: number;
+  destination: string;
   destAsset: { code: string };
+  highThreshold: number;
+  inflationDest: string;
+  lowThreshold: number;
+  masterWeight: number;
+  medThreshold: number;
+  path: [Path];
+  price: string;
   sendAsset: { code: string };
+  selling: { code: string };
+  setFlags: number;
   signer: {
     ed25519PublicKey?: string;
     sha256Hash?: { data: Buffer };
     preAuthTx?: { data: Buffer };
     weight: number;
   };
-  path: [Path];
+  source: string;
+  sponsoredId: string;
   type: keyof typeof OPERATION_TYPES;
-  buying: { code: string };
-  selling: { code: string };
-  buyAmount: string;
-  price: string;
-  inflationDest: string;
-  setFlags: number;
-  clearFlags: number;
-  masterWeight: number;
-  lowThreshold: number;
-  medThreshold: number;
-  highThreshold: number;
 }
 
 const OperationBoxEl = styled.div`
+  overflow: hidden;
   text-align: left;
 `;
 
@@ -80,11 +109,15 @@ const OperationsListEl = styled(TransactionList)`
   }
 `;
 
+const OperationKeyOrValue = styled.div`
+  text-transform: capitalize;
+`;
+
 const PathListItem = styled.li`
   flex-direction: column;
 `;
 
-const PathHeaderEl = styled.h5`
+const SubHeaderEl = styled.h5`
   color: ${COLOR_PALETTE.primary};
   font-size: 1rem;
 `;
@@ -112,17 +145,30 @@ const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <li>
-    <div>
+    <OperationKeyOrValue>
       {operationKey}
       {operationKey ? ":" : null}
-    </div>
-    <div>{operationValue}</div>
+    </OperationKeyOrValue>
+    <OperationKeyOrValue>{operationValue}</OperationKeyOrValue>
   </li>
+);
+
+const KeyValueWithPublicKey = ({
+  operationKey,
+  operationValue,
+}: {
+  operationKey: string;
+  operationValue: string;
+}) => (
+  <KeyValueList
+    operationKey={operationKey}
+    operationValue={<KeyIdenticon publicKey={operationValue} />}
+  />
 );
 
 const PathList = ({ paths }: { paths: [Path] }) => (
   <PathListItem>
-    <PathHeaderEl>Paths: </PathHeaderEl>
+    <SubHeaderEl>Paths: </SubHeaderEl>
     {paths.map(({ code, issuer }, i) => (
       <PathWrapperEl key={`${code} ${i + 1}`}>
         <PathNumberEl>#{i + 1}</PathNumberEl>
@@ -242,25 +288,30 @@ export const Operations = ({
     {operations.map(
       (
         {
+          account,
           amount,
-          destination,
           asset,
-          destAsset,
-          path,
-          sendAsset,
-          signer,
-          type,
-          buying,
-          selling,
           buyAmount,
-          price,
-          inflationDest,
-          setFlags,
+          buying,
+          claimants,
           clearFlags,
-          masterWeight,
-          lowThreshold,
-          medThreshold,
+          destination,
+          destAsset,
           highThreshold,
+          inflationDest,
+          lowThreshold,
+          masterWeight,
+          medThreshold,
+          path,
+          price,
+          selling,
+          sendAsset,
+          setFlags,
+          signer,
+          source,
+          sponsoredId,
+          type,
+          ...rest
         },
         i: number,
       ) => {
@@ -269,14 +320,14 @@ export const Operations = ({
         return (
           <OperationBoxEl key={operationIndex}>
             <OperationBoxHeaderEl>
-              {operationIndex}. {OPERATION_TYPES[type]}
+              {operationIndex}. {OPERATION_TYPES[type] || type}
             </OperationBoxHeaderEl>
             <OperationsListEl>
               {destination ? (
                 <>
-                  <KeyValueList
+                  <KeyValueWithPublicKey
                     operationKey="Destination"
-                    operationValue={<KeyIdenticon publicKey={destination} />}
+                    operationValue={destination}
                   />
                   <DestinationWarning
                     destination={destination}
@@ -318,11 +369,9 @@ export const Operations = ({
 
               {signer?.ed25519PublicKey ? (
                 <>
-                  <KeyValueList
+                  <KeyValueWithPublicKey
                     operationKey="Signer"
-                    operationValue={
-                      <KeyIdenticon publicKey={signer.ed25519PublicKey} />
-                    }
+                    operationValue={signer.ed25519PublicKey}
                   />
                   <KeyValueList
                     operationKey="Weight"
@@ -380,9 +429,9 @@ export const Operations = ({
                 <KeyValueList operationKey="Price" operationValue={price} />
               ) : null}
               {inflationDest ? (
-                <KeyValueList
+                <KeyValueWithPublicKey
                   operationKey="Inflation Destination"
-                  operationValue={<KeyIdenticon publicKey={inflationDest} />}
+                  operationValue={inflationDest}
                 />
               ) : null}
               {setFlags ? (
@@ -421,6 +470,45 @@ export const Operations = ({
                   operationValue={highThreshold}
                 />
               ) : null}
+              {sponsoredId ? (
+                <KeyValueWithPublicKey
+                  operationKey="Sponsored Id"
+                  operationValue={sponsoredId}
+                />
+              ) : null}
+              {account ? (
+                <KeyValueWithPublicKey
+                  operationKey="Account"
+                  operationValue={account}
+                />
+              ) : null}
+              {source ? (
+                <KeyValueWithPublicKey
+                  operationKey="Source"
+                  operationValue={source}
+                />
+              ) : null}
+              {claimants && claimants.length
+                ? claimants.map(({ _destination }, index) => (
+                    /* eslint-disable react/no-array-index-key */
+                    <div key={`${_destination}${index}`}>
+                      {/* eslint-enable */}
+                      <SubHeaderEl>Claimant {index + 1}</SubHeaderEl>
+                      <KeyValueWithPublicKey
+                        operationKey="Destination"
+                        operationValue={_destination}
+                      />
+                      {/* TODO: Add appicable predicate UI */}
+                    </div>
+                  ))
+                : null}
+              {Object.entries(rest).map(([k, v]) =>
+                React.isValidElement(v) ? (
+                  <div key={k}>
+                    <KeyValueList key={k} operationKey={k} operationValue={v} />
+                  </div>
+                ) : null,
+              )}
             </OperationsListEl>
           </OperationBoxEl>
         );
