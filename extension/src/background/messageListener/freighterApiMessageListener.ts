@@ -82,7 +82,8 @@ export const freighterApiMessageListener = (
       transactionXdr,
       network = MAINNET_NETWORK_DETAILS.network,
     } = request;
-    const { networkUrl } = getNetworkDetails(getIsTestnet());
+    const isTestnet = getIsTestnet();
+    const { networkUrl } = getNetworkDetails(isTestnet);
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXdr,
       StellarSdk.Networks[network],
@@ -104,8 +105,8 @@ export const freighterApiMessageListener = (
 
     const flaggedKeys: FlaggedKeys = {};
 
-    const isValidatingMemo = getIsMemoValidationEnabled();
-    const isValidatingSafety = getIsSafetyValidationEnabled();
+    const isValidatingMemo = getIsMemoValidationEnabled() && !isTestnet;
+    const isValidatingSafety = getIsSafetyValidationEnabled() && !isTestnet;
 
     if (isValidatingMemo || isValidatingSafety) {
       _operations.forEach((operation: { destination: string }) => {
