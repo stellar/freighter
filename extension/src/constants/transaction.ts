@@ -4,6 +4,7 @@ export enum OPERATION_TYPES {
   beginSponsoringFutureReserves = "Begin Sponsoring Future Reserves",
   bumpSequence = "Bump Sequence",
   changeTrust = "Change Trust",
+  claimClaimableBalance = "Claim Claimable Balance",
   createAccount = "Create Account",
   createClaimableBalance = "Create Claimable Balance",
   createPassiveSellOffer = "Create Passive Sell Offer",
@@ -15,6 +16,11 @@ export enum OPERATION_TYPES {
   pathPaymentStrictSend = "Path Payment Strict Send",
   payment = "Payment",
   revokeAccountSponsorship = "Revoke Account Sponsorship",
+  revokeClaimableBalanceSponsorship = "Revoke Claimable Balance Sponsorship",
+  revokeDataSponsorship = "Revoke Data Sponsorship",
+  revokeOfferSponsorship = "Revoke Offer Sponsorship",
+  revokeSignerSponsorship = "Revoke Signer Sponsorship",
+  revokeTrustlineSponsorship = "Revoke Trustline Sponsorship",
   setOptions = "Set Options",
 }
 
