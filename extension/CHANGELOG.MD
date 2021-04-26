@@ -1,3 +1,9 @@
+# v1.1.0
+
+- Allow users to toggle between Mainnet and Testnet
+- Allow Claimable Balances and Sponsorship operations
+- Allow users to toggle stellar.expert checks
+
 # v1.0.9
 
 - Show all assets held by an account
