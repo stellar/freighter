@@ -1,5 +1,10 @@
 const PLAYGROUND_BASE_PATH = "playground";
-const playgroundPaths = ["isConnected", "getPublicKey", "signTransaction"];
+const playgroundPaths = [
+  "isConnected",
+  "getPublicKey",
+  "getNetwork",
+  "signTransaction",
+];
 
 const GUIDE_BASE_PATH = "guide";
 const guidePaths = ["introduction", "gettingStarted", "usingFreighter"];
