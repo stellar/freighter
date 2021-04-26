@@ -516,7 +516,13 @@ export const Operations = ({
 
               {Object.entries(rest).map(([k, v]) => (
                 <div key={k}>
-                  <KeyValueList key={k} operationKey={k} operationValue={v} />
+                  <KeyValueList
+                    key={k}
+                    operationKey={k}
+                    operationValue={
+                      typeof v === "string" ? v : JSON.stringify(v)
+                    }
+                  />
                 </div>
               ))}
             </OperationsListEl>
