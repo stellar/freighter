@@ -25,8 +25,9 @@ export const submitTransaction = async (
   network?: string,
 ): Promise<string> => {
   let response = { signedTransaction: "", error: "" };
-  if (network !== NETWORKS.PUBLIC && network !== NETWORKS.TESTNET) {
-    return `Network must be ${NETWORKS.PUBLIC} or ${NETWORKS.TESTNET}`;
+  if (network && network !== NETWORKS.PUBLIC && network !== NETWORKS.TESTNET) {
+    const error = `Network must be ${NETWORKS.PUBLIC} or ${NETWORKS.TESTNET}`;
+    throw error;
   }
   try {
     response = await sendMessageToContentScript({
