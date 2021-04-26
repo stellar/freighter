@@ -322,7 +322,6 @@ export const Operations = ({
         i: number,
       ) => {
         const operationIndex = i + 1;
-        console.log(rest);
         return (
           <OperationBoxEl key={operationIndex}>
             <OperationBoxHeaderEl>
