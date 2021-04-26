@@ -47,6 +47,7 @@ interface TransactionInfoResponse {
   account: string;
   amount: string;
   asset: { code: string };
+  balanceId: string;
   buyAmount: string;
   buying: { code: string };
   claimants: Array<Claimant>;
@@ -58,10 +59,12 @@ interface TransactionInfoResponse {
   lowThreshold: number;
   masterWeight: number;
   medThreshold: number;
+  offerId: number;
   path: [Path];
   price: string;
-  sendAsset: { code: string };
+  seller: string;
   selling: { code: string };
+  sendAsset: { code: string };
   setFlags: number;
   signer: {
     ed25519PublicKey?: string;
@@ -109,7 +112,7 @@ const OperationsListEl = styled(TransactionList)`
   }
 `;
 
-const OperationKeyOrValue = styled.div`
+const OperationKey = styled.div`
   text-transform: capitalize;
 `;
 
@@ -145,11 +148,11 @@ const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <li>
-    <OperationKeyOrValue>
+    <OperationKey>
       {operationKey}
       {operationKey ? ":" : null}
-    </OperationKeyOrValue>
-    <OperationKeyOrValue>{operationValue}</OperationKeyOrValue>
+    </OperationKey>
+    <div>{operationValue}</div>
   </li>
 );
 
@@ -291,6 +294,7 @@ export const Operations = ({
           account,
           amount,
           asset,
+          balanceId,
           buyAmount,
           buying,
           claimants,
@@ -302,8 +306,10 @@ export const Operations = ({
           lowThreshold,
           masterWeight,
           medThreshold,
+          offerId,
           path,
           price,
+          seller,
           selling,
           sendAsset,
           setFlags,
@@ -316,7 +322,6 @@ export const Operations = ({
         i: number,
       ) => {
         const operationIndex = i + 1;
-
         return (
           <OperationBoxEl key={operationIndex}>
             <OperationBoxHeaderEl>
@@ -368,40 +373,28 @@ export const Operations = ({
               ) : null}
 
               {signer?.ed25519PublicKey ? (
-                <>
-                  <KeyValueWithPublicKey
-                    operationKey="Signer"
-                    operationValue={signer.ed25519PublicKey}
-                  />
-                  <KeyValueList
-                    operationKey="Weight"
-                    operationValue={signer.weight}
-                  />
-                </>
+                <KeyValueWithPublicKey
+                  operationKey="Signer"
+                  operationValue={signer.ed25519PublicKey}
+                />
               ) : null}
               {signer?.sha256Hash ? (
-                <>
-                  <KeyValueList
-                    operationKey="Signer"
-                    operationValue={formattedBuffer(signer?.sha256Hash?.data)}
-                  />
-                  <KeyValueList
-                    operationKey="Weight"
-                    operationValue={signer.weight}
-                  />
-                </>
+                <KeyValueList
+                  operationKey="Signer"
+                  operationValue={formattedBuffer(signer?.sha256Hash?.data)}
+                />
               ) : null}
               {signer?.preAuthTx ? (
-                <>
-                  <KeyValueList
-                    operationKey="Signer"
-                    operationValue={formattedBuffer(signer.preAuthTx.data)}
-                  />
-                  <KeyValueList
-                    operationKey="Weight"
-                    operationValue={signer.weight}
-                  />
-                </>
+                <KeyValueList
+                  operationKey="Signer"
+                  operationValue={formattedBuffer(signer.preAuthTx.data)}
+                />
+              ) : null}
+              {signer?.weight ? (
+                <KeyValueList
+                  operationKey="Weight"
+                  operationValue={signer.weight}
+                />
               ) : null}
 
               {buying ? (
@@ -502,13 +495,36 @@ export const Operations = ({
                     </div>
                   ))
                 : null}
-              {Object.entries(rest).map(([k, v]) =>
-                React.isValidElement(v) ? (
-                  <div key={k}>
-                    <KeyValueList key={k} operationKey={k} operationValue={v} />
-                  </div>
-                ) : null,
-              )}
+              {seller ? (
+                <KeyValueWithPublicKey
+                  operationKey="Seller"
+                  operationValue={seller}
+                />
+              ) : null}
+              {offerId ? (
+                <KeyValueList
+                  operationKey="Offer Id"
+                  operationValue={offerId}
+                />
+              ) : null}
+              {balanceId ? (
+                <KeyValueList
+                  operationKey="Balance Id"
+                  operationValue={balanceId}
+                />
+              ) : null}
+
+              {Object.entries(rest).map(([k, v]) => (
+                <div key={k}>
+                  <KeyValueList
+                    key={k}
+                    operationKey={k}
+                    operationValue={
+                      typeof v === "string" ? v : JSON.stringify(v)
+                    }
+                  />
+                </div>
+              ))}
             </OperationsListEl>
           </OperationBoxEl>
         );
