@@ -30,7 +30,6 @@ export const Transaction = ({
   transaction,
 }: TransactionProps) => {
   const { _fee, _operations, _memo, _sequence, _source } = transaction;
-  console.log(transaction);
 
   const operationText =
     _operations && _operations.length > 1 ? "Operations:" : "Operation:";
