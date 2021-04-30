@@ -3,32 +3,32 @@ import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import {
+  COLOR_PALETTE,
+  FONT_WEIGHT,
+  ROUNDED_CORNERS,
+} from "popup/constants/styles";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
-import { getTransactionInfo, stroopToXlm } from "helpers/stellar";
+import { getTransactionInfo } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/decodeMemo";
 
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { Button } from "popup/basics/Buttons";
-import { SubmitButton } from "popup/basics/Forms";
-import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
+import { ButtonContainer, SubmitButton } from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
 import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
 import { Header } from "popup/components/Header";
-import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { FlaggedWarningMessage } from "popup/components/warningMessages/FlaggedWarningMessage";
-import { Operations } from "popup/components/signTransaction/Operations";
-import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { WarningMessage } from "popup/components/WarningMessage";
-
-import IconExcalamtion from "popup/assets/icon-exclamation.svg";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import { Transaction } from "popup/components/signTransaction/Transaction";
+import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
 
 const El = styled.div`
   padding: 1.5rem 1.875rem;
@@ -39,13 +39,7 @@ const HeaderEl = styled.h1`
   font-weight: ${FONT_WEIGHT.light};
   margin: 0;
 `;
-const OperationsHeader = styled.h2`
-  color: ${COLOR_PALETTE.primary};
-  font-size: 1.375rem;
-  margin: 0;
-  padding: 0;
-  padding-top: 2.25rem;
-`;
+
 const SubheaderEl = styled.h3`
   font-weight: ${FONT_WEIGHT.bold};
   font-size: 0.95rem;
@@ -53,40 +47,20 @@ const SubheaderEl = styled.h3`
   color: ${COLOR_PALETTE.primary};
 `;
 
-const ButtonContainerEl = styled.div`
-  display: flex;
-  justify-content: space-around;
-  padding-top: 3rem;
-  padding-bottom: 1.5rem;
+const InnerTransactionWrapper = styled.div`
+  border: 1px solid ${COLOR_PALETTE.primary};
+  border-radius: ${ROUNDED_CORNERS};
+  height: 10rem;
+  opacity: 0.7;
+  overflow: scroll;
+  padding: 1rem 2rem;
+  zoom: 0.7;
 `;
+
 const RejectButtonEl = styled(Button)`
   background: ${COLOR_PALETTE.text};
   width: 9.68rem;
 `;
-const SubmitButtonEl = styled(SubmitButton)`
-  width: 12.43rem;
-`;
-
-const getMemoDisplay = ({
-  memo,
-  isMemoRequired,
-}: {
-  memo: string;
-  isMemoRequired: boolean;
-}) => {
-  if (isMemoRequired) {
-    return (
-      <IconWithLabel isHighAlert alt="exclamation icon" icon={IconExcalamtion}>
-        Not defined
-      </IconWithLabel>
-    );
-  }
-  if (memo) {
-    return <span>{`${memo} (MEMO_TEXT)`}</span>;
-  }
-
-  return null;
-};
 
 export const SignTransaction = () => {
   const location = useLocation();
@@ -99,13 +73,15 @@ export const SignTransaction = () => {
   } = getTransactionInfo(location.search);
   const {
     _fee,
-    _operations,
+    _feeSource,
+    _innerTransaction,
     _memo,
     _networkPassphrase,
     _sequence,
-    _source,
   } = transaction;
-  const operationText = _operations.length > 1 ? "Operations:" : "Operation:";
+
+  const isFeeBump = !!_innerTransaction;
+
   const memo = decodeMemo(_memo);
 
   const [isConfirming, setIsConfirming] = useState(false);
@@ -156,11 +132,11 @@ export const SignTransaction = () => {
         <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
         <p>Signing this transaction is not possible at the moment.</p>
       </WarningMessage>
-      <ButtonContainerEl>
-        <SubmitButtonEl size="small" onClick={() => window.close()}>
+      <ButtonContainer>
+        <SubmitButton size="small" onClick={() => window.close()}>
           Close
-        </SubmitButtonEl>
-      </ButtonContainerEl>
+        </SubmitButton>
+      </ButtonContainer>
     </>
   );
 
@@ -185,59 +161,47 @@ export const SignTransaction = () => {
         ) : null}
         <PunycodedDomain domain={domain} />
         <SubheaderEl>
-          This website is requesting a signature on the following transaction:
+          This website is requesting a signature on the following{" "}
+          {isFeeBump ? "fee bump " : ""}transaction:
         </SubheaderEl>
-        <TransactionList>
-          <li>
-            <div>
-              <strong>Source account:</strong>
-            </div>
-            <KeyIdenticon publicKey={_source} />
-          </li>
-          {_fee ? (
-            <li>
-              <div>
-                <strong>Base fee:</strong>
-              </div>
-              <div> {stroopToXlm(_fee)} XLM</div>
-            </li>
-          ) : null}
-          <li>
-            <div>
-              <strong>Memo:</strong>
-            </div>
-            <div> {getMemoDisplay({ memo, isMemoRequired })} </div>
-          </li>
-          {_sequence ? (
-            <li>
-              <div>
-                <strong>Transaction sequence number:</strong>
-              </div>
-              <div> {_sequence}</div>
-            </li>
-          ) : null}
-        </TransactionList>
-        <OperationsHeader>
-          {_operations.length} {operationText}
-        </OperationsHeader>
-        <Operations
-          flaggedKeys={flaggedKeys}
-          isMemoRequired={isMemoRequired}
-          operations={_operations}
-        />
-        <ButtonContainerEl>
+        {isFeeBump ? (
+          <>
+            <TransactionHeader
+              _fee={_fee}
+              _sequence={_sequence}
+              source={_feeSource}
+              isFeeBump
+              isMemoRequired={isMemoRequired}
+            />
+            <InnerTransactionWrapper>
+              <Transaction
+                flaggedKeys={flaggedKeys}
+                isMemoRequired={isMemoRequired}
+                transaction={_innerTransaction}
+              />
+            </InnerTransactionWrapper>
+          </>
+        ) : (
+          <Transaction
+            flaggedKeys={flaggedKeys}
+            isMemoRequired={isMemoRequired}
+            transaction={transaction}
+          />
+        )}
+
+        <ButtonContainer>
           <RejectButtonEl size="small" onClick={() => rejectAndClose()}>
             Reject
           </RejectButtonEl>
-          <SubmitButtonEl
+          <SubmitButton
             isValid={!isSubmitDisabled}
             isSubmitting={isConfirming}
             size="small"
             onClick={() => signAndClose()}
           >
             Confirm Transaction
-          </SubmitButtonEl>
-        </ButtonContainerEl>
+          </SubmitButton>
+        </ButtonContainer>
       </El>
     </>
   );
