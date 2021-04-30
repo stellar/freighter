@@ -101,7 +101,8 @@ export const freighterApiMessageListener = (
     const directoryLookupJson = await cachedFetch(STELLAR_DIRECTORY_URL);
     const accountData = directoryLookupJson?._embedded?.records || [];
 
-    const { _operations } = transaction;
+    const _operations =
+      transaction._operations || transaction._innerTransaction._operations;
 
     const flaggedKeys: FlaggedKeys = {};
 
