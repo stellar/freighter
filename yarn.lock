@@ -2791,11 +2791,6 @@
   resolved "https://registry.yarnpkg.com/@stellar/eslint-config/-/eslint-config-1.0.5.tgz#00616eb6342e839ffa5c0d9e2539dccd64ede764"
   integrity sha512-RpkhdJffBU1oEsdyAJgfKHDSRJCWbyNOp08F1UP0yGp1tBLp0FopURl7m1Nx2Xd1o1PkN6h01wV6lpdiCbZWYQ==
 
-"@stellar/freighter-api@1.0.0-beta.0":
-  version "1.0.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@stellar/freighter-api/-/freighter-api-1.0.0-beta.0.tgz#08c3f4ebb4d1b8c3e92039242ca5c877814864b4"
-  integrity sha512-wngITwqu9h4yfgqXvJS27VEkrlPh/u6uTDOPI2Ct8pZzde3fVPYGK+42izhGAe5oOvbziZQqHkHIPh+rkl7YHg==
-
 "@stellar/lyra-api@^1.0.0-alpha.2":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@stellar/lyra-api/-/lyra-api-1.0.0.tgz#61fa093db7207d642c6d216feabdeda619badd5e"
