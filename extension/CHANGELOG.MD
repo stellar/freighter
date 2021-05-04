@@ -1,3 +1,7 @@
+# v1.1.1
+
+- Add support for Fee Bump transactions
+
 # v1.1.0
 
 - Allow users to toggle between Mainnet and Testnet
