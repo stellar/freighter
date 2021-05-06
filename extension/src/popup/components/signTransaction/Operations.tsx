@@ -134,6 +134,10 @@ const OperationKey = styled.div`
   text-transform: capitalize;
 `;
 
+const OperationRow = styled.li`
+  margin-bottom: 0.5rem;
+`;
+
 const SubHeaderEl = styled.h5`
   color: ${COLOR_PALETTE.primary};
   font-size: 1rem;
@@ -161,13 +165,13 @@ const KeyValueList = ({
   operationKey: string;
   operationValue: string | number | React.ReactNode;
 }) => (
-  <li>
+  <OperationRow>
     <OperationKey>
       {operationKey}
       {operationKey ? ":" : null}
     </OperationKey>
     <div>{operationValue}</div>
-  </li>
+  </OperationRow>
 );
 
 const KeyValueWithPublicKey = ({
