@@ -109,7 +109,6 @@ const PathListItem = styled.li`
 `;
 
 const OperationsListEl = styled(TransactionList)`
-  font-size: 0.8rem;
   padding-left: 1.25rem;
 
   li {

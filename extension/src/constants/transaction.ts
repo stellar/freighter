@@ -44,7 +44,7 @@ export enum CLAIM_PREDICATES {
 }
 
 export enum FLAG_TYPES {
-  Authorized = "Authorized",
-  AuthorizedToMaintainLiabilities = "Authorized To Maintain Liabilities",
-  ClawbackEnabled = "Clawback Enabled",
+  authorized = "Authorized",
+  authorizedToMaintainLiabilities = "Authorized To Maintain Liabilities",
+  clawbackEnabled = "Clawback Enabled",
 }
