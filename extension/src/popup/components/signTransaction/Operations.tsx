@@ -3,6 +3,7 @@ import styled from "styled-components";
 
 import {
   CLAIM_PREDICATES,
+  FLAG_TYPES,
   OPERATION_TYPES,
   TRANSACTION_WARNING,
 } from "constants/transaction";
@@ -43,6 +44,8 @@ interface Claimant {
   _predicate: Predicate;
 }
 
+type FLAGS = { [key in FLAG_TYPES]: boolean };
+
 interface TransactionInfoResponse {
   account: string;
   amount: string;
@@ -54,6 +57,8 @@ interface TransactionInfoResponse {
   clearFlags: number;
   destination: string;
   destAsset: { code: string };
+  flags: FLAGS;
+  from: string;
   highThreshold: number;
   inflationDest: string;
   lowThreshold: number;
@@ -74,6 +79,7 @@ interface TransactionInfoResponse {
   };
   source: string;
   sponsoredId: string;
+  trustor: string;
   type: keyof typeof OPERATION_TYPES;
 }
 
@@ -97,7 +103,13 @@ const OperationBoxHeaderEl = styled.h4`
   }
 `;
 
+const PathListItem = styled.li`
+  display: block;
+  flex-direction: column;
+`;
+
 const OperationsListEl = styled(TransactionList)`
+  font-size: 0.8rem;
   padding-left: 1.25rem;
 
   li {
@@ -105,19 +117,22 @@ const OperationsListEl = styled(TransactionList)`
       width: 50%;
 
       &:first-child {
-        padding: 0;
         color: ${COLOR_PALETTE.text};
+        overflow: hidden;
+        padding: 0;
+        text-overflow: ellipsis;
       }
     }
+  }
+
+  ${PathListItem} {
+    align-items: start;
+    margin-bottom: 1rem;
   }
 `;
 
 const OperationKey = styled.div`
   text-transform: capitalize;
-`;
-
-const PathListItem = styled.li`
-  flex-direction: column;
 `;
 
 const SubHeaderEl = styled.h5`
@@ -187,6 +202,19 @@ const PathList = ({ paths }: { paths: [Path] }) => (
       </PathWrapperEl>
     ))}
   </PathListItem>
+);
+
+const FlagList = ({ flags }: { flags: FLAGS }) => (
+  <>
+    {Object.entries(flags).map(([flag, value]) => (
+      <div key={flag}>
+        <KeyValueList
+          operationKey={FLAG_TYPES[flag as keyof typeof FLAG_TYPES]}
+          operationValue={value.toString()}
+        />
+      </div>
+    ))}
+  </>
 );
 
 const UnsafeMaliciousWarning = ({
@@ -301,6 +329,8 @@ export const Operations = ({
           clearFlags,
           destination,
           destAsset,
+          flags,
+          from,
           highThreshold,
           inflationDest,
           lowThreshold,
@@ -316,6 +346,7 @@ export const Operations = ({
           signer,
           source,
           sponsoredId,
+          trustor,
           type,
           ...rest
         },
@@ -328,6 +359,77 @@ export const Operations = ({
               {operationIndex}. {OPERATION_TYPES[type] || type}
             </OperationBoxHeaderEl>
             <OperationsListEl>
+              {account ? (
+                <KeyValueWithPublicKey
+                  operationKey="Account"
+                  operationValue={account}
+                />
+              ) : null}
+
+              {amount ? (
+                <KeyValueList
+                  operationKey="Amount"
+                  operationValue={`${amount}`}
+                />
+              ) : null}
+
+              {asset ? (
+                <KeyValueList
+                  operationKey="Asset"
+                  operationValue={`${asset.code}`}
+                />
+              ) : null}
+
+              {balanceId ? (
+                <KeyValueList
+                  operationKey="Balance Id"
+                  operationValue={balanceId}
+                />
+              ) : null}
+
+              {buyAmount ? (
+                <KeyValueList
+                  operationKey="Amount"
+                  operationValue={buyAmount}
+                />
+              ) : null}
+
+              {buying ? (
+                <KeyValueList
+                  operationKey="Buying"
+                  operationValue={buying.code}
+                />
+              ) : null}
+
+              {claimants && claimants.length
+                ? claimants.map(({ _destination }, index) => (
+                    /* eslint-disable react/no-array-index-key */
+                    <div key={`${_destination}${index}`}>
+                      {/* eslint-enable */}
+                      <SubHeaderEl>Claimant {index + 1}</SubHeaderEl>
+                      <KeyValueWithPublicKey
+                        operationKey="Destination"
+                        operationValue={_destination}
+                      />
+                      {/* TODO: Add appicable predicate UI */}
+                    </div>
+                  ))
+                : null}
+
+              {clearFlags ? (
+                <KeyValueList
+                  operationKey="Clear Flags"
+                  operationValue={AuthorizationMap[clearFlags]}
+                />
+              ) : null}
+
+              {destAsset ? (
+                <KeyValueList
+                  operationKey="Destination Asset"
+                  operationValue={`${destAsset.code}`}
+                />
+              ) : null}
+
               {destination ? (
                 <>
                   <KeyValueWithPublicKey
@@ -342,11 +444,63 @@ export const Operations = ({
                 </>
               ) : null}
 
-              {asset ? (
-                <KeyValueList
-                  operationKey="Asset"
-                  operationValue={`${asset.code}`}
+              {flags && Object.keys(flags).length ? (
+                <FlagList flags={flags} />
+              ) : null}
+
+              {from ? (
+                <KeyValueWithPublicKey
+                  operationKey="From"
+                  operationValue={from}
                 />
+              ) : null}
+
+              {highThreshold ? (
+                <KeyValueList
+                  operationKey="High Threshold"
+                  operationValue={highThreshold}
+                />
+              ) : null}
+
+              {inflationDest ? (
+                <KeyValueWithPublicKey
+                  operationKey="Inflation Destination"
+                  operationValue={inflationDest}
+                />
+              ) : null}
+
+              {lowThreshold ? (
+                <KeyValueList
+                  operationKey="Low Threshold"
+                  operationValue={lowThreshold}
+                />
+              ) : null}
+
+              {masterWeight ? (
+                <KeyValueList
+                  operationKey="Master Weight"
+                  operationValue={masterWeight}
+                />
+              ) : null}
+
+              {medThreshold ? (
+                <KeyValueList
+                  operationKey="Medium Threshold"
+                  operationValue={medThreshold}
+                />
+              ) : null}
+
+              {offerId ? (
+                <KeyValueList
+                  operationKey="Offer Id"
+                  operationValue={offerId}
+                />
+              ) : null}
+
+              {path?.length ? <PathList paths={path} /> : null}
+
+              {price ? (
+                <KeyValueList operationKey="Price" operationValue={price} />
               ) : null}
 
               {sendAsset ? (
@@ -356,19 +510,24 @@ export const Operations = ({
                 />
               ) : null}
 
-              {path?.length ? <PathList paths={path} /> : null}
-
-              {destAsset ? (
-                <KeyValueList
-                  operationKey="Destination Asset"
-                  operationValue={`${destAsset.code}`}
+              {seller ? (
+                <KeyValueWithPublicKey
+                  operationKey="Seller"
+                  operationValue={seller}
                 />
               ) : null}
 
-              {amount ? (
+              {selling ? (
                 <KeyValueList
-                  operationKey="Amount"
-                  operationValue={`${amount}`}
+                  operationKey="Selling"
+                  operationValue={selling.code}
+                />
+              ) : null}
+
+              {setFlags ? (
+                <KeyValueList
+                  operationKey="Set Flags"
+                  operationValue={AuthorizationMap[setFlags]}
                 />
               ) : null}
 
@@ -397,120 +556,24 @@ export const Operations = ({
                 />
               ) : null}
 
-              {buying ? (
-                <KeyValueList
-                  operationKey="Buying"
-                  operationValue={buying.code}
-                />
-              ) : null}
-
-              {selling ? (
-                <KeyValueList
-                  operationKey="Selling"
-                  operationValue={selling.code}
-                />
-              ) : null}
-
-              {buyAmount ? (
-                <KeyValueList
-                  operationKey="Amount"
-                  operationValue={buyAmount}
-                />
-              ) : null}
-
-              {price ? (
-                <KeyValueList operationKey="Price" operationValue={price} />
-              ) : null}
-              {inflationDest ? (
-                <KeyValueWithPublicKey
-                  operationKey="Inflation Destination"
-                  operationValue={inflationDest}
-                />
-              ) : null}
-              {setFlags ? (
-                <KeyValueList
-                  operationKey="Set Flags"
-                  operationValue={AuthorizationMap[setFlags]}
-                />
-              ) : null}
-              {clearFlags ? (
-                <KeyValueList
-                  operationKey="Clear Flags"
-                  operationValue={AuthorizationMap[clearFlags]}
-                />
-              ) : null}
-              {masterWeight ? (
-                <KeyValueList
-                  operationKey="Master Weight"
-                  operationValue={masterWeight}
-                />
-              ) : null}
-              {lowThreshold ? (
-                <KeyValueList
-                  operationKey="Low Threshold"
-                  operationValue={lowThreshold}
-                />
-              ) : null}
-              {medThreshold ? (
-                <KeyValueList
-                  operationKey="Medium Threshold"
-                  operationValue={medThreshold}
-                />
-              ) : null}
-              {highThreshold ? (
-                <KeyValueList
-                  operationKey="High Threshold"
-                  operationValue={highThreshold}
-                />
-              ) : null}
-              {sponsoredId ? (
-                <KeyValueWithPublicKey
-                  operationKey="Sponsored Id"
-                  operationValue={sponsoredId}
-                />
-              ) : null}
-              {account ? (
-                <KeyValueWithPublicKey
-                  operationKey="Account"
-                  operationValue={account}
-                />
-              ) : null}
               {source ? (
                 <KeyValueWithPublicKey
                   operationKey="Source"
                   operationValue={source}
                 />
               ) : null}
-              {claimants && claimants.length
-                ? claimants.map(({ _destination }, index) => (
-                    /* eslint-disable react/no-array-index-key */
-                    <div key={`${_destination}${index}`}>
-                      {/* eslint-enable */}
-                      <SubHeaderEl>Claimant {index + 1}</SubHeaderEl>
-                      <KeyValueWithPublicKey
-                        operationKey="Destination"
-                        operationValue={_destination}
-                      />
-                      {/* TODO: Add appicable predicate UI */}
-                    </div>
-                  ))
-                : null}
-              {seller ? (
+
+              {sponsoredId ? (
                 <KeyValueWithPublicKey
-                  operationKey="Seller"
-                  operationValue={seller}
+                  operationKey="Sponsored Id"
+                  operationValue={sponsoredId}
                 />
               ) : null}
-              {offerId ? (
-                <KeyValueList
-                  operationKey="Offer Id"
-                  operationValue={offerId}
-                />
-              ) : null}
-              {balanceId ? (
-                <KeyValueList
-                  operationKey="Balance Id"
-                  operationValue={balanceId}
+
+              {trustor ? (
+                <KeyValueWithPublicKey
+                  operationKey="Trustor"
+                  operationValue={trustor}
                 />
               ) : null}
 

@@ -5,6 +5,8 @@ export enum OPERATION_TYPES {
   bumpSequence = "Bump Sequence",
   changeTrust = "Change Trust",
   claimClaimableBalance = "Claim Claimable Balance",
+  clawback = "Clawback",
+  clawbackClaimableBalance = "Clawback Claimable Balance",
   createAccount = "Create Account",
   createClaimableBalance = "Create Claimable Balance",
   createPassiveSellOffer = "Create Passive Sell Offer",
@@ -22,6 +24,7 @@ export enum OPERATION_TYPES {
   revokeSignerSponsorship = "Revoke Signer Sponsorship",
   revokeTrustlineSponsorship = "Revoke Trustline Sponsorship",
   setOptions = "Set Options",
+  setTrustLineFlags = "Set Trustline Flags",
 }
 
 export enum TRANSACTION_WARNING {
@@ -38,4 +41,10 @@ export enum CLAIM_PREDICATES {
   claimPredicateNot = "Not",
   claimPredicateBeforeRelativeTime = "Before Relative Time",
   claimPredicateBeforeAbsoluteTime = "Before Absolute Time",
+}
+
+export enum FLAG_TYPES {
+  Authorized = "Authorized",
+  AuthorizedToMaintainLiabilities = "Authorized To Maintain Liabilities",
+  ClawbackEnabled = "Clawback Enabled",
 }
