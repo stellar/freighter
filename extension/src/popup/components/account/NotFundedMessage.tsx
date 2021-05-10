@@ -18,12 +18,16 @@ const NotFundedWrapperEl = styled.section`
   border-radius: ${ROUNDED_CORNERS};
   margin: 0 1rem 1.2rem 1rem;
   padding: 1rem 1.25rem;
+`;
 
-  p {
-    font-size: 0.875rem;
-    line-height: 1.375rem;
-    margin: 0;
-  }
+const NotFundedCopyEl = styled.p`
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  margin: 0;
+`;
+
+const FriendBotCopyEl = styled(NotFundedCopyEl)`
+  margin: 0.5rem 0;
 `;
 
 const NotFundedHeaderEl = styled.h3`
@@ -68,13 +72,18 @@ export const NotFundedMessage = ({
         <NotFundedHeaderEl>
           This Stellar address is not funded
         </NotFundedHeaderEl>
-        <p>
+        <NotFundedCopyEl>
           To create this account, fund it with a minimum of 1 XLM.
-          {isTestnet
-            ? " On the Test Network, Friendbot can fund new accounts."
-            : ""}
-        </p>
-        <p>
+        </NotFundedCopyEl>
+
+        {isTestnet ? (
+          <FriendBotCopyEl>
+            You can fund this account on the test network using the Friendbot
+            tool. Friendbot is a horizon API endpoint that will fund an account
+            with 10,000 lumens on the test network.
+          </FriendBotCopyEl>
+        ) : null}
+        <NotFundedCopyEl>
           <a
             href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
             rel="noreferrer"
@@ -82,9 +91,9 @@ export const NotFundedMessage = ({
           >
             Learn more about account creation
           </a>
-        </p>
+        </NotFundedCopyEl>
         {isTestnet ? null : (
-          <p>
+          <NotFundedCopyEl>
             <a
               href="https://www.stellar.org/lumens/exchanges"
               rel="noreferrer"
@@ -92,7 +101,7 @@ export const NotFundedMessage = ({
             >
               See where you can buy lumens
             </a>
-          </p>
+          </NotFundedCopyEl>
         )}
       </NotFundedWrapperEl>
       {isTestnet ? (
