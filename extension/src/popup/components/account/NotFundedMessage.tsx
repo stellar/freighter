@@ -73,7 +73,7 @@ export const NotFundedMessage = ({
           This Stellar address is not funded
         </NotFundedHeaderEl>
         <NotFundedCopyEl>
-          To create this account, fund it with a minimum of 1 XLM.{" "}
+          To create this account, fund it with a minimum of 1 XLM.
         </NotFundedCopyEl>
 
         {isTestnet ? (
