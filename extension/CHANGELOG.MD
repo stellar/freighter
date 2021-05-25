@@ -1,3 +1,8 @@
+# v1.1.2
+
+- Add labels for Protocol 17 operations
+- Update copy
+
 # v1.1.1
 
 - Add support for Fee Bump transactions
