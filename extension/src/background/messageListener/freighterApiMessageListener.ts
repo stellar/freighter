@@ -22,7 +22,7 @@ import {
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
-import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
+import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
 
 import { store } from "background/store";
 import { publicKeySelector } from "background/ducks/session";
@@ -56,7 +56,8 @@ export const freighterApiMessageListener = (
     }
 
     // otherwise, we need to confirm either url or password. Maybe both
-    const encodeOrigin = btoa(JSON.stringify({ tab, url: tabUrl }));
+    const encodeOrigin = encodeObject({ tab, url: tabUrl });
+
     browser.windows.create({
       url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
       ...WINDOW_SETTINGS,
@@ -160,7 +161,7 @@ export const freighterApiMessageListener = (
 
     transactionQueue.push(transaction);
 
-    const encodetransactionInfo = btoa(JSON.stringify(transactionInfo));
+    const encodetransactionInfo = encodeObject(transactionInfo);
 
     const popup = browser.windows.create({
       url: chrome.runtime.getURL(
