@@ -1,3 +1,7 @@
+# v1.1.3
+
+- Parse non-latin characters correctly
+
 # v1.1.2
 
 - Add labels for Protocol 17 operations
