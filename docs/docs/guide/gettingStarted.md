@@ -26,4 +26,8 @@ or
 
 #### For browser-based applications
 
-- Install the packaged library via script tag using cdnjs: `<script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script> `
+- Install the packaged library via script tag using cdnjs, swapping in the desired version number for `{version}`:
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script>
+```

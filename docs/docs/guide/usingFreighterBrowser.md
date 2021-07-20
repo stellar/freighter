@@ -49,7 +49,7 @@ const retrievePublicKey = async () => {
   let error = "";
 
   try {
-    publicKey = await getPublicKey();
+    publicKey = await window.freighterApi.getPublicKey();
   } catch (e) {
     error = e;
   }
@@ -103,7 +103,7 @@ This function accepts a transaction XDR string as the first parameter, which it 
 
 The user will need to provide their password if the extension does not currently have their private key. Once the user has provided their password, the extension will have access to the user private key for 5 minutes. The user must then review the transaction details and accept within those 5 minutes for the transaction to be signed.
 
-_NOTE:_ Then user must provide a valid transaction XDR string for the extension to properly sign.
+_NOTE:_ The user must provide a valid transaction XDR string for the extension to properly sign.
 
 The second parameter is an optional string that you may pass to indicate what network you’re intending this transaction to be signed on. The parameter must be either `PUBLIC` or `TESTNET`. If you choose not to pass a param, freighter-api will default to `PUBLIC`.
 
