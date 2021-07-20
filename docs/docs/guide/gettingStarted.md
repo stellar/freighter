@@ -16,8 +16,18 @@ You'll want a local version of the extension to test with.
 
 Now we need a way to communicate with the extension. To facilitate this, we create a Javascript library called Freighter-API that will let you send and receives messages from the extension.
 
+#### For Node.js applications
+
 - Install the module using npm: `npm install @stellar/freighter-api`
 
 or
 
 - Install the module using yarn: `yarn add @stellar/freighter-api`
+
+#### For browser-based applications
+
+- Install the packaged library via script tag using cdnjs, swapping in the desired version number for `{version}`:
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script>
+```

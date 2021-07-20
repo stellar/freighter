@@ -7,12 +7,6 @@ import {
 import { Response } from "../types";
 import { NoExtensionInstalledError } from "../../constants/errors";
 
-declare global {
-  interface Window {
-    freighter: boolean;
-  }
-}
-
 export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
   /* 
     In the case of multiple calls coming in sequentially, we use this MESSAGE_ID to make sure we're responding to

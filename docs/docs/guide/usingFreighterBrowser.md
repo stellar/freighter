@@ -1,27 +1,21 @@
 ---
-id: usingFreighter
-title: Using Freighter
+id: usingFreighterBrowser
+title: Using Freighter in the browser
 ---
 
 We now have an extension installed on our machine and a library to interact with it. This library will provide you methods to send and receive data from a user's extension in your website or application.
 
 ### Importing
 
-First import the whole library in a NodeJs application
+First import the library in the `<head>` tag of your page.
 
-```javascript
-import freighterApi from "@stellar/freighter-api";
+```html
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script>
+</head>
 ```
 
-or import just the modules you require:
-
-```javascript
-import {
-  isConnected,
-  getPublicKey,
-  signTransaction,
-} from "@stellar/freighter-api";
-```
+This will expose a global variable called `window.freighterApi` that will contain our library.
 
 Now let's dig into what functionality is available to you:
 
@@ -32,9 +26,7 @@ Now let's dig into what functionality is available to you:
 This function is useful for determining if a user in your application has Freighter installed.
 
 ```javascript
-import { isConnected } from "@stellar/freighter-api";
-
-if (isConnected()) {
+if (window.freighterApi.isConnected()) {
   alert("User has Freighter!");
 }
 ```
@@ -48,13 +40,7 @@ If a user has never interacted with your app before, this function will prompt t
 If the user has authorized your application previously, it will be on the extension's "Allow list", meaning the extension can immediately provide the public key without any user action.
 
 ```javascript
-import {
-  isConnected,
-  getPublicKey,
-  signTransaction,
-} from "@stellar/freighter-api";
-
-if (isConnected()) {
+if (window.freighterApi.isConnected()) {
   alert("User has Freighter!");
 }
 
@@ -63,7 +49,7 @@ const retrievePublicKey = async () => {
   let error = "";
 
   try {
-    publicKey = await getPublicKey();
+    publicKey = await window.freighterApi.getPublicKey();
   } catch (e) {
     error = e;
   }
@@ -85,13 +71,7 @@ const result = retrievePublicKey();
 This function is useful for determining what network the user has configured Freighter to use. Freighter will be configured to either `PUBLIC` or `TESTNET`.
 
 ```javascript
-import {
-  isConnected,
-  getNetwork,
-  signTransaction,
-} from "@stellar/freighter-api";
-
-if (isConnected()) {
+if (window.freighterApi.isConnected()) {
   alert("User has Freighter!");
 }
 
@@ -100,7 +80,7 @@ const retrieveNetwork = async () => {
   let error = "";
 
   try {
-    network = await getNetwork();
+    network = await window.freighterApi.getNetwork();
   } catch (e) {
     error = e;
   }
@@ -123,20 +103,14 @@ This function accepts a transaction XDR string as the first parameter, which it 
 
 The user will need to provide their password if the extension does not currently have their private key. Once the user has provided their password, the extension will have access to the user private key for 5 minutes. The user must then review the transaction details and accept within those 5 minutes for the transaction to be signed.
 
-_NOTE:_ Then user must provide a valid transaction XDR string for the extension to properly sign.
+_NOTE:_ The user must provide a valid transaction XDR string for the extension to properly sign.
 
 The second parameter is an optional string that you may pass to indicate what network you’re intending this transaction to be signed on. The parameter must be either `PUBLIC` or `TESTNET`. If you choose not to pass a param, freighter-api will default to `PUBLIC`.
 
 This is useful in the case that the user's Freighter is configured to the wrong network. Freighter will be able to throw a blocking error message communicating that you intended this transaction to be signed on a different network.
 
 ```javascript
-import {
-  isConnected,
-  getPublicKey,
-  signTransaction,
-} from "@stellar/freighter-api";
-
-if (isConnected()) {
+if (window.freighterApi.isConnected()) {
   alert("User has Freighter!");
 }
 
@@ -145,7 +119,7 @@ const retrievePublicKey = async () => {
   let error = "";
 
   try {
-    publicKey = await getPublicKey();
+    publicKey = await window.freighterApi.getPublicKey();
   } catch (e) {
     error = e;
   }
@@ -164,7 +138,7 @@ const userSignTransaction = async (xdr: string, network: string) => {
   let error = "";
 
   try {
-    signedTransaction = await signTransaction(xdr, network);
+    signedTransaction = await window.freighterApi.signTransaction(xdr, network);
   } catch (e) {
     error = e;
   }
@@ -183,14 +157,12 @@ const userSignedTransaction = userSignTransaction(xdr, "TESTNET");
 freighter-api will return a signed transaction xdr. Below is an example of how you might submit this signed transaction to Horizon using `stellar-sdk` (https://github.com/stellar/js-stellar-sdk):
 
 ```javascript
-import StellarSdk from "stellar-sdk";
-
 const userSignTransaction = async (xdr: string, network: string) => {
   let signedTransaction = "";
   let error = "";
 
   try {
-    signedTransaction = await signTransaction(xdr, network);
+    signedTransaction = await window.freighterApi.signTransaction(xdr, network);
   } catch (e) {
     error = e;
   }
@@ -208,7 +180,7 @@ const userSignedTransaction = userSignTransaction(xdr, "TESTNET");
 
 const SERVER_URL = "https://horizon-testnet.stellar.org";
 
-const server = new StellarSdk.Server(SERVER_URL);
+const server = StellarSdk.Server(SERVER_URL);
 
 const transactionToSubmit = StellarSdk.TransactionBuilder.fromXDR(
   userSignedTransaction,
