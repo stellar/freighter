@@ -7,7 +7,12 @@ const playgroundPaths = [
 ];
 
 const GUIDE_BASE_PATH = "guide";
-const guidePaths = ["introduction", "gettingStarted", "usingFreighter"];
+const guidePaths = [
+  "introduction",
+  "gettingStarted",
+  "usingFreighterNode",
+  "usingFreighterBrowser",
+];
 
 const constructPaths = (paths, basePath) =>
   paths.map((path) => `${basePath}/${path}`);

@@ -73,3 +73,10 @@ export interface AccountDetailsInterface {
   isFunded: boolean | null;
   operations: Array<HorizonOperation> | [];
 }
+
+declare global {
+  interface Window {
+    freighter: boolean;
+    freighterApi: { [key: string]: any };
+  }
+}
