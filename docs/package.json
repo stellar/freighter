@@ -26,7 +26,7 @@
     "@docusaurus/core": "2.0.0-alpha.68",
     "@docusaurus/preset-classic": "2.0.0-alpha.68",
     "@mdx-js/react": "^1.6.19",
-    "@stellar/freighter-api": "1.0.1",
+    "@stellar/freighter-api": "1.1.1",
     "clsx": "^1.1.1",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
