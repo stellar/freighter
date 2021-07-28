@@ -5,12 +5,3 @@ import { getNetwork } from "./getNetwork";
 
 export { getPublicKey, signTransaction, isConnected, getNetwork };
 export default { getPublicKey, signTransaction, isConnected, getNetwork };
-
-if (typeof window !== "undefined") {
-  window.freighterApi = {
-    getPublicKey,
-    signTransaction,
-    isConnected,
-    getNetwork,
-  };
-}
