@@ -28,6 +28,8 @@ or
 
 - Install the packaged library via script tag using cdnjs, swapping in the desired version number for `{version}`:
 
+_NOTE:_ You must use version `1.1.2` or above
+
 ```html
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script>
 ```

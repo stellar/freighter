@@ -13,7 +13,7 @@ const config = {
   devtool: "source-map",
   output: {
     globalObject: "this",
-    library: "freighter-api",
+    library: "freighterApi",
     libraryTarget: "umd",
     path: BUILD_PATH,
     filename: "[name].min.js",

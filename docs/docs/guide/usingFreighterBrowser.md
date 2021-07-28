@@ -9,6 +9,10 @@ We now have an extension installed on our machine and a library to interact with
 
 First import the library in the `<head>` tag of your page.
 
+- Install the packaged library via script tag using cdnjs, swapping in the desired version number for `{version}`
+
+_NOTE:_ You must use version `1.1.2` or above
+
 ```html
 <head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script>
