@@ -50,7 +50,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Comment PR
-        uses: thollander/actions-comment-pull-request@master
+        uses: thollander/actions-comment-pull-request@v1
         with:
           message: Preview build at https://github.com/${{ github.repository }}/releases/download/pr-release-${{ github.event.number }}/build-pr-preview-${{ github.event.number }}.zip
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
