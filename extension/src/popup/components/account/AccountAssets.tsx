@@ -5,12 +5,9 @@ import { BigNumber } from "bignumber.js";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { AssetIcons } from "@shared/api/types";
 
-import { ScrollingView } from "popup/basics/AccountSubview";
-
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 const AssetWrapper = styled.div`
-  ${ScrollingView}
   padding-left: 0.75rem;
 `;
 

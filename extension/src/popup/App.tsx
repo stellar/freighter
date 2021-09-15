@@ -53,7 +53,6 @@ const GlobalStyle = createGlobalStyle`
 const RouteWrapperEl = styled.div`
   background: ${COLOR_PALETTE.background};
   height: 100%;
-  overflow: scroll;
 `;
 
 const rootReducer = combineReducers({
