@@ -11,7 +11,7 @@ import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 
 import { FlaggedKeys } from "types/transactions";
 
-import { truncatedPublicKey } from "helpers/stellar";
+import { truncatedPoolId, truncatedPublicKey } from "helpers/stellar";
 
 import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
 
@@ -61,9 +61,16 @@ interface TransactionInfoResponse {
   from: string;
   highThreshold: number;
   inflationDest: string;
+  liquidityPoolId: string;
   lowThreshold: number;
   masterWeight: number;
   medThreshold: number;
+  maxAmountA: number;
+  maxAmountB: number;
+  maxPrice: number;
+  minAmountA: number;
+  minAmountB: number;
+  minPrice: number;
   offerId: number;
   path: [Path];
   price: string;
@@ -336,8 +343,15 @@ export const Operations = ({
           from,
           highThreshold,
           inflationDest,
+          liquidityPoolId,
           lowThreshold,
           masterWeight,
+          maxAmountA,
+          maxAmountB,
+          maxPrice,
+          minAmountA,
+          minAmountB,
+          minPrice,
           medThreshold,
           offerId,
           path,
@@ -483,6 +497,52 @@ export const Operations = ({
                 <KeyValueList
                   operationKey="Master Weight"
                   operationValue={masterWeight}
+                />
+              ) : null}
+
+              {liquidityPoolId ? (
+                <KeyValueList
+                  operationKey="Liquidity Pool ID"
+                  operationValue={truncatedPoolId(liquidityPoolId)}
+                />
+              ) : null}
+
+              {maxAmountA ? (
+                <KeyValueList
+                  operationKey="Max Amount A"
+                  operationValue={maxAmountA}
+                />
+              ) : null}
+
+              {maxAmountB ? (
+                <KeyValueList
+                  operationKey="Max Amount B"
+                  operationValue={maxAmountB}
+                />
+              ) : null}
+              {maxPrice ? (
+                <KeyValueList
+                  operationKey="Max Price"
+                  operationValue={maxPrice}
+                />
+              ) : null}
+              {minAmountA ? (
+                <KeyValueList
+                  operationKey="Min Amount A"
+                  operationValue={minAmountA}
+                />
+              ) : null}
+
+              {minAmountB ? (
+                <KeyValueList
+                  operationKey="min Amount B"
+                  operationValue={minAmountB}
+                />
+              ) : null}
+              {minPrice ? (
+                <KeyValueList
+                  operationKey="Min Price"
+                  operationValue={minPrice}
                 />
               ) : null}
 
