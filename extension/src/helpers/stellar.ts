@@ -1,7 +1,12 @@
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
+const truncateString = (str: string) =>
+  str ? `${str.slice(0, 4)}…${str.slice(-4)}` : "";
+
 export const truncatedPublicKey = (publicKey: string) =>
-  publicKey ? `${publicKey.slice(0, 4)}…${publicKey.slice(-4)}` : "";
+  truncateString(publicKey);
+
+export const truncatedPoolId = (poolId: string) => truncateString(poolId);
 
 export const getTransactionInfo = (search: string) => {
   const transactionInfo = parsedSearchParam(search);

@@ -11,6 +11,8 @@ export enum OPERATION_TYPES {
   createClaimableBalance = "Create Claimable Balance",
   createPassiveSellOffer = "Create Passive Sell Offer",
   endSponsoringFutureReserves = "End Sponsoring Future Reserves",
+  liquidityPoolDeposit = "Liquidity Pool Deposit",
+  liquidityPoolWithdraw = "Liquidity Pool Withdraw",
   manageBuyOffer = "Manage Buy Offer",
   manageData = "Manage Data",
   manageSellOffer = "Manage Sell Offer",
