@@ -1,3 +1,13 @@
+# v1.1.4
+
+**Bug Fixes:**
+
+- Fixed scrollbar issue: https://github.com/stellar/freighter/issues/268
+
+**Updates:**
+
+- Added Protocol 18 Support
+
 # v1.1.3
 
 - Parse non-latin characters correctly
