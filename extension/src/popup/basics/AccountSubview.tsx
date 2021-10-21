@@ -1,7 +1,7 @@
 import React from "react";
 import styled, { css } from "styled-components";
 
-import { POPUP_WIDTH } from "constants/dimensions";
+import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { ROUTES } from "popup/constants/routes";
 
@@ -48,7 +48,9 @@ export const SubviewHeader = ({ headerText }: SubiewHeaderProps) => (
 
 export const SubviewWrapper = styled.div`
   width: 100%;
+  max-height: ${POPUP_HEIGHT}px;
   max-width: ${POPUP_WIDTH}px;
+  overflow: scroll;
   box-sizing: border-box;
   padding: 2rem 2.5rem;
 `;
