@@ -94,7 +94,7 @@ export const AccountDetails = () => {
     Object.entries(balances).forEach(([k, v]) => {
       if (k === "native") {
         collection.unshift(v);
-      } else {
+      } else if (!k.includes(":lp")) {
         collection.push(v);
       }
     });
