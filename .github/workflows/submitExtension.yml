@@ -14,26 +14,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Update package.json version
-        uses: jossef/action-set-json-field@v1
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12
         with:
           file: ./extension/package.json
           field: version
           value: ${{ github.event.inputs.version }}
       - name: Update manifest.json version_name
-        uses: jossef/action-set-json-field@v1
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12
         with:
           file: ./extension/public/static/manifest.json
           field: version_name
           value: ${{ github.event.inputs.version }}
       - name: Get manifest.json version
         id: manifest_version
-        uses: frabert/replace-string-action@v1.2
+        uses: frabert/replace-string-action@v4ec615c8a75164a61d8fb333ad5e2e86ff038af1
         with:
           string: ${{ github.event.inputs.version }}
           pattern: \-(.*)
           replace-with: ""
       - name: Update manifest.json version
-        uses: jossef/action-set-json-field@v1
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12
         with:
           file: ./extension/public/static/manifest.json
           field: version
@@ -42,9 +42,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: "12"
-      - run: yarn install && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
+      - run: yarn install && yarn build:freighter-api && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
       - name: Install zip
-        uses: montudor/action-zip@v0.1.1
+        uses: montudor/action-zip@vc25e01d7489d0274569440a2f0281b4569df16bc
       - name: Zip extension build
         run: zip -qq -r ./build.zip *
         working-directory: ./extension/build
@@ -56,7 +56,7 @@ jobs:
           git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
           git tag ${{ github.event.inputs.version }}
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@ebc5e0258578dc3e4b0da1f649c75ec39fb6a1f4
         with:
           title: Bump versions to ${{ github.event.inputs.version }}
       - name: Create GitHub Release
@@ -81,7 +81,7 @@ jobs:
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
       - name: Submit extension to Firefox
-        uses: kewisch/action-web-ext@v1
+        uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056
         with:
           cmd: sign
           source: ./extension/build/build.zip
@@ -90,7 +90,7 @@ jobs:
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
       - name: Submit extension to Chrome
-        uses: mnao305/chrome-extension-upload@1.1.1
+        uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293
         with:
           file-path: ./extension/build/build.zip
           extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
@@ -98,7 +98,7 @@ jobs:
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@4d4ce0d91186ffe6633a8cda645146d38e88228b
         env:
           MSG_MINIMAL: true
           SLACK_CHANNEL: proj-freighter
