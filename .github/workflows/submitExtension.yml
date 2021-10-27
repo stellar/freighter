@@ -27,7 +27,7 @@ jobs:
           value: ${{ github.event.inputs.version }}
       - name: Get manifest.json version
         id: manifest_version
-        uses: frabert/replace-string-action@v4ec615c8a75164a61d8fb333ad5e2e86ff038af1
+        uses: frabert/replace-string-action@4ec615c8a75164a61d8fb333ad5e2e86ff038af1
         with:
           string: ${{ github.event.inputs.version }}
           pattern: \-(.*)
