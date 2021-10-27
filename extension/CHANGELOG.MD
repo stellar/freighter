@@ -1,3 +1,11 @@
+# v1.1.5
+
+**Bug Fixes:**
+
+- Fixed scrollbar issue on Settings subview:
+  https://github.com/stellar/freighter/issues/281
+- Update @stellar/wallet-sdk so liquidity pool shares don't break asset balances
+
 # v1.1.4
 
 **Bug Fixes:**
