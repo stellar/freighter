@@ -11,12 +11,13 @@ import laboratoryLogo from "popup/assets/logo-laboratory.png";
 import laboratoryLogo2x from "popup/assets/logo-laboratory@2x.png";
 import stellarTermLogo from "popup/assets/logo-stellarterm.png";
 import stellarTermLogo2x from "popup/assets/logo-stellarterm@2x.png";
+import lumenswapLogo from "popup/assets/Lumenswap-logo.png";
+import lumenswapLogo2x from "popup/assets/Lumenswap-logo@2x.png";
 
 const FooterEl = styled.footer`
   box-sizing: border-box;
   background: ${COLOR_PALETTE.white};
-  height: 7.75rem;
-  padding: 0.9375rem 2rem;
+  padding: 0.9375rem 0.5rem;
   text-align: center;
 `;
 
@@ -77,6 +78,15 @@ export const Footer = () => (
             retina={stellarTermLogo2x}
             src={stellarTermLogo}
             alt="StellarTerm logo"
+          />
+        </a>
+      </FooterListItemEl>
+      <FooterListItemEl>
+        <a href="https://lumenswap.io/" target="_blank" rel="noreferrer">
+          <RetinaImg
+            retina={lumenswapLogo2x}
+            src={lumenswapLogo}
+            alt="LumenSwap"
           />
         </a>
       </FooterListItemEl>
