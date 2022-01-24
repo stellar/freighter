@@ -171,6 +171,7 @@ const HistoryItem = ({
         </HistoryColumnRowEl>
       </HistoryColumnEl>
       <PaymentColumnEl>{renderPaymentComponent()}</PaymentColumnEl>
+      <OpenExternalIconEl src={IconOpenExternal} alt="open in stellar.expert" />
     </HistoryItemEl>
   );
 };
