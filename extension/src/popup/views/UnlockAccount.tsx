@@ -3,7 +3,8 @@ import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import styled from "styled-components";
-import { Formik } from "formik";
+import { Field, Formik, FieldProps } from "formik";
+import { Input } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
@@ -12,13 +13,7 @@ import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 
 import { BasicButton } from "popup/basics/Buttons";
-import {
-  Form,
-  SubmitButton,
-  FormRow,
-  ApiErrorMessage,
-  TextField,
-} from "popup/basics/Forms";
+import { Form, SubmitButton, FormRow } from "popup/basics/Forms";
 import { SubviewWrapper } from "popup/basics/AccountSubview";
 
 import { Header } from "popup/components/Header";
@@ -53,9 +48,6 @@ const UnorderedListEl = styled.ul`
   margin: 0 auto;
   padding: 0;
   padding-top: 0.25rem;
-`;
-const CustomFormTextFieldEl = styled(TextField)`
-  padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
 `;
 const ListItemEl = styled.li`
   color: ${COLOR_PALETTE.secondaryText};
@@ -108,15 +100,19 @@ export const UnlockAccount = () => {
                 <HeaderEl>Log in</HeaderEl>
               </HeaderContainerEl>
               <FormRow>
-                <CustomFormTextFieldEl
-                  autoComplete="off"
-                  type="password"
-                  name="password"
-                  placeholder="Enter password"
-                  error={authError}
-                />
+                <Field name="password">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      autoComplete="off"
+                      id="password-input"
+                      error={authError}
+                      placeholder="Enter Password"
+                      type="password"
+                      {...field}
+                    />
+                  )}
+                </Field>
               </FormRow>
-              <ApiErrorMessage error={authError} />
               <ButtonRowEl>
                 <SubmitButton
                   dirty={dirty}
