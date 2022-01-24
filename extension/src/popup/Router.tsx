@@ -23,7 +23,10 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import { loadSettings } from "popup/ducks/settings";
+import {
+  loadSettings,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
@@ -189,10 +192,20 @@ const RouteListener = () => {
 
 export const Router = () => {
   const dispatch = useDispatch();
+  const applicationState = useSelector(applicationStateSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
   useEffect(() => {
     dispatch(loadAccount());
     dispatch(loadSettings());
   }, [dispatch]);
+
+  if (
+    applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
+    !networkDetails.network
+  ) {
+    return <Loading />;
+  }
 
   return (
     <HashRouter>

@@ -10,20 +10,15 @@ import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 
 import { metricsMiddleware } from "helpers/metrics";
 
-import { FONT_FAMILY, COLOR_PALETTE } from "popup/constants/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
-
-import { Loading } from "popup/views/Loading";
 
 import { Router } from "./Router";
 
 const GlobalStyle = createGlobalStyle`
   body {
-    background: ${COLOR_PALETTE.background};
     overscroll-behavior: none;
-    font-family: ${FONT_FAMILY};
-    font-size: 100%;
     margin: 0;
     padding:0;
   }
@@ -51,7 +46,6 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const RouteWrapperEl = styled.div`
-  background: ${COLOR_PALETTE.background};
   height: 100%;
 `;
 
@@ -83,7 +77,6 @@ export function App() {
       <RouteWrapperEl>
         <Router />
       </RouteWrapperEl>
-      <Loading />
     </Provider>
   );
 }
