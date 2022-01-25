@@ -1,12 +1,14 @@
 import React from "react";
 
-import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
+import { IconWithLabel } from "popup/basics/TransactionList";
 
 import { stroopToXlm } from "helpers/stellar";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import IconExcalamtion from "popup/assets/icon-exclamation.svg";
+
+import "./styles.scss";
 
 const getMemoDisplay = ({
   memo,
@@ -46,44 +48,47 @@ export const TransactionHeader = ({
   isMemoRequired,
   memo,
 }: TransactionListProps) => (
-  <TransactionList>
-    <li>
+  <div className="TransactionHeader">
+    <div>
       <div>
         <strong>Source account:</strong>
       </div>
-      <KeyIdenticon publicKey={source} />
-    </li>
+      <div>
+        <KeyIdenticon publicKey={source} />
+      </div>
+    </div>
+
     {_fee ? (
-      <li>
+      <div>
         <div>
           <strong>Base fee:</strong>
         </div>
         <div> {stroopToXlm(_fee)} XLM</div>
-      </li>
+      </div>
     ) : null}
     {memo ? (
-      <li>
+      <div>
         <div>
           <strong>Memo:</strong>
         </div>
         <div> {getMemoDisplay({ memo, isMemoRequired })} </div>
-      </li>
+      </div>
     ) : null}
 
     {_sequence ? (
-      <li>
+      <div>
         <div>
           <strong>Transaction sequence number:</strong>
         </div>
         <div> {_sequence}</div>
-      </li>
+      </div>
     ) : null}
     {isFeeBump ? (
-      <li>
+      <div>
         <div>
           <strong>Inner Transaction:</strong>
         </div>
-      </li>
+      </div>
     ) : null}
-  </TransactionList>
+  </div>
 );

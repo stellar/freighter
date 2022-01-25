@@ -76,6 +76,7 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
               sourceMap: true,
             },
           },
+          { loader: "sass-loader" },
         ],
       },
       {

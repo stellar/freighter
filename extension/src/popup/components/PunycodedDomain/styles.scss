@@ -1,0 +1,20 @@
+.PunycodedDomain {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 1rem;
+
+  &--domain {
+    color: var(--pal-text-primary);
+  }
+
+  &--title {
+    color: var(--pal-text-tertiary);
+    font-size: 0.875rem;
+  }
+
+  div {
+    margin-bottom: 0.5rem;
+  }
+}
