@@ -86,7 +86,7 @@ export const Welcome = () => (
             <TextEl>I’m going to need a seed phrase</TextEl>
             <div className="Welcome--button-container">
               <Button onClick={() => navigateTo(ROUTES.accountCreator)}>
-                Create wallet
+                CREATE WALLET
               </Button>
             </div>
           </Card>
@@ -100,7 +100,7 @@ export const Welcome = () => (
                 variant={Button.variant.tertiary}
                 onClick={() => navigateTo(ROUTES.recoverAccount)}
               >
-                Import wallet
+                IMPORT WALLET
               </Button>
             </div>
           </Card>
