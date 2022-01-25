@@ -14,11 +14,7 @@ import { decodeMemo } from "popup/helpers/decodeMemo";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-import {
-  ButtonContainer,
-  SubmitButton,
-  ModalWrapper,
-} from "popup/basics/Modal";
+import { SubmitButton, ModalWrapper } from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -110,11 +106,11 @@ export const SignTransaction = () => {
         <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
         <p>Signing this transaction is not possible at the moment.</p>
       </WarningMessage>
-      <ButtonContainer>
+      <div className="SignTransaction--button-container">
         <SubmitButton size="small" onClick={() => window.close()}>
           Close
         </SubmitButton>
-      </ButtonContainer>
+      </div>
     </>
   );
 
@@ -166,7 +162,7 @@ export const SignTransaction = () => {
         />
       )}
 
-      <ButtonContainer>
+      <div className="SignTransaction--button-container">
         <Button
           variant={Button.variant.tertiary}
           onClick={() => rejectAndClose()}
@@ -180,7 +176,7 @@ export const SignTransaction = () => {
         >
           Sign Transaction
         </Button>
-      </ButtonContainer>
+      </div>
     </ModalWrapper>
   );
 };
