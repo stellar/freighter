@@ -36,8 +36,8 @@ const HistoryItemEl = styled.li`
   color: ${COLOR_PALETTE.lightText};
   display: flex;
   justify-content: space-between;
-  height: 4rem;
-  padding: 0 1rem 0 2rem;
+  flex-direction: row;
+  padding: 1rem;
 
   &: hover {
     background: ${COLOR_PALETTE.white};
@@ -51,14 +51,15 @@ const HistoryItemEl = styled.li`
 const HistoryColumnEl = styled.div`
   display: flex;
   flex-direction: column;
+  flex: 2;
 `;
 
 const PaymentColumnEl = styled(HistoryColumnEl)`
-  margin-left: 7.4rem;
+  flex: 1;
 `;
 
 const HistoryColumnRowEl = styled.div`
-  margin-top: 0.5rem;
+  flex: 2;
 `;
 
 const PaymentEl = styled(HistoryColumnRowEl)`
@@ -68,6 +69,7 @@ const PaymentEl = styled(HistoryColumnRowEl)`
 const TimestampEl = styled(HistoryColumnRowEl)`
   color: ${COLOR_PALETTE.grey};
   font-size: 0.75rem;
+  font-weight: bold;
 `;
 
 const FullHistoryBtnEl = styled(BasicButton)`
@@ -154,16 +156,18 @@ const HistoryItem = ({
       }}
     >
       <HistoryColumnEl>
-        <TimestampEl>
-          {new Date(Date.parse(createdAt)).toLocaleString()}
-        </TimestampEl>
+        <HistoryColumnRowEl>
+          <TimestampEl>
+            {new Date(Date.parse(createdAt)).toLocaleString()}
+            {operationCount > 1 && !isPaymentOperation
+              ? ` • ${operationCount - 1} ops`
+              : null}
+          </TimestampEl>
+        </HistoryColumnRowEl>
         <HistoryColumnRowEl>
           {isPaymentOperation
             ? `${isRecipient ? "Received" : "Sent"} ${operationString}`
             : operationString}
-          {operationCount > 1 && !isPaymentOperation
-            ? ` + ${operationCount - 1} ops`
-            : null}
         </HistoryColumnRowEl>
       </HistoryColumnEl>
       <PaymentColumnEl>{renderPaymentComponent()}</PaymentColumnEl>
