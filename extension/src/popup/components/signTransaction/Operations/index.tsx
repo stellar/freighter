@@ -7,7 +7,7 @@ import {
   OPERATION_TYPES,
   TRANSACTION_WARNING,
 } from "constants/transaction";
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 
 import { FlaggedKeys } from "types/transactions";
 
@@ -18,6 +18,8 @@ import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import IconExclamation from "popup/assets/icon-exclamation.svg";
+
+import "./styles.scss";
 
 interface Path {
   code: string;
@@ -93,21 +95,6 @@ interface TransactionInfoResponse {
 const OperationBoxEl = styled.div`
   overflow: hidden;
   text-align: left;
-`;
-
-const OperationBoxHeaderEl = styled.h4`
-  color: ${COLOR_PALETTE.primary};
-  font-size: 1.25rem;
-  font-weight: ${FONT_WEIGHT.normal};
-  margin: 0;
-  padding: 0;
-  padding-top: 1.875rem;
-  padding-bottom: 0.625rem;
-  padding-left: 0.43rem;
-
-  strong {
-    font-weight: ${FONT_WEIGHT.bold};
-  }
 `;
 
 const PathListItem = styled.li`
@@ -325,7 +312,7 @@ export const Operations = ({
   isMemoRequired: boolean;
   operations: Array<TransactionInfoResponse>;
 }) => (
-  <>
+  <div className="Operations">
     {operations.map(
       (
         {
@@ -372,9 +359,9 @@ export const Operations = ({
         const operationIndex = i + 1;
         return (
           <OperationBoxEl key={operationIndex}>
-            <OperationBoxHeaderEl>
+            <div className="Operations--header">
               {operationIndex}. {OPERATION_TYPES[type] || type}
-            </OperationBoxHeaderEl>
+            </div>
             <OperationsListEl>
               {account ? (
                 <KeyValueWithPublicKey
@@ -656,5 +643,5 @@ export const Operations = ({
         );
       },
     )}
-  </>
+  </div>
 );
