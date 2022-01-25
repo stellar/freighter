@@ -1,3 +1,8 @@
+#v1.2.0 **Bug Fixes:**
+
+- Fix multi line operations in Account History
+- Add Lumenswap logo to footer
+
 # v1.1.5
 
 **Bug Fixes:**
