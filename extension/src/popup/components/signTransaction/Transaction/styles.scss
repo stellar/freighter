@@ -1,0 +1,9 @@
+.Transaction {
+  &--title {
+    border-bottom: 1px solid var(--pal-border-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    text-transform: uppercase;
+  }
+}

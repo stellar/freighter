@@ -16,6 +16,7 @@ export const getTransactionInfo = (search: string) => {
     transaction,
     isDomainListedAllowed,
     flaggedKeys,
+    tab: { title = "" },
   } = transactionInfo;
   const hostname = getUrlHostname(url);
   const { _operations = [] } = transaction;
@@ -26,6 +27,7 @@ export const getTransactionInfo = (search: string) => {
   return {
     transaction,
     domain: hostname,
+    domainTitle: title,
     operations: _operations,
     operationTypes,
     isDomainListedAllowed,
