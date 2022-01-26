@@ -11,7 +11,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { Button } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
-import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
+import { FirstTimeWarningMessage } from "popup/components/WarningMessages";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import { Header } from "popup/components/Header";

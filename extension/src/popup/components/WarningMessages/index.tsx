@@ -1,12 +1,27 @@
 import React from "react";
-import WarningExclamationIcon from "popup/assets/icon-warning-exclamation.svg";
-import WarningShieldIcon from "popup/assets/icon-warning-shield.svg";
-import { WarningMessage } from "../WarningMessage";
+import { InfoBlock } from "@stellar/design-system";
+
+import "./styles.scss";
 
 const DirectoryLink = () => (
   <a href="https://stellar.expert/directory" target="_blank" rel="noreferrer">
     stellar.expert's directory
   </a>
+);
+
+interface WarningMessageProps {
+  header: string;
+  children: React.ReactNode;
+}
+
+export const WarningMessage = ({ header, children }: WarningMessageProps) => (
+  <div className="WarningMessage">
+    <InfoBlock variant={InfoBlock.variant.warning}>
+      <p className="WarningMessage--header">{header}</p>
+
+      {children}
+    </InfoBlock>
+  </div>
 );
 
 const DangerousAccountWarning = ({
@@ -18,11 +33,7 @@ const DangerousAccountWarning = ({
 }) => {
   if (isMalicious) {
     return (
-      <WarningMessage
-        isHighAlert
-        icon={WarningExclamationIcon}
-        subheader="Malicious account detected"
-      >
+      <WarningMessage header="Malicious account detected">
         <p>
           An account you’re interacting with is tagged as malicious on{" "}
           <DirectoryLink />.
@@ -33,10 +44,7 @@ const DangerousAccountWarning = ({
   }
   if (isUnsafe) {
     return (
-      <WarningMessage
-        icon={WarningShieldIcon}
-        subheader="Warning: unsafe account"
-      >
+      <WarningMessage header="Warning: unsafe account">
         <p>
           An account you’re interacting with is tagged as unsafe on{" "}
           <DirectoryLink />. Please proceed with caution.
@@ -50,11 +58,7 @@ const DangerousAccountWarning = ({
 
 const MemoWarningMessage = ({ isMemoRequired }: { isMemoRequired: boolean }) =>
   isMemoRequired ? (
-    <WarningMessage
-      isHighAlert
-      icon={WarningExclamationIcon}
-      subheader="Memo is required"
-    >
+    <WarningMessage header="Memo is required">
       <p>
         A destination account requires the use of the memo field which is not
         present in the transaction you’re about to sign. Freighter automatically
@@ -83,4 +87,35 @@ export const FlaggedWarningMessage = ({
     <DangerousAccountWarning isUnsafe={isUnsafe} isMalicious={isMalicious} />
     <MemoWarningMessage isMemoRequired={isMemoRequired} />
   </>
+);
+
+export const FirstTimeWarningMessage = () => (
+  <WarningMessage
+    header="        This is the first time you have interacted with this domain.
+  "
+  >
+    <p>
+      If you believe you have interacted with this domain before, it is possible
+      that scammers have copied the original site and/or made small changes to
+      the domain name, and that this site is a scam.
+    </p>
+    <p>
+      Double check the domain name. If it is incorrect in any way, do not share
+      your public key and contact the site administrator via a verified email or
+      social media account to confirm that this domain is correct.
+    </p>
+  </WarningMessage>
+);
+
+export const BackupPhraseWarningMessage = () => (
+  <WarningMessage header="Keep your backup phrase in a safe and secure place.">
+    <p>
+      Your backup phrase is the only way to recover your account. We cannot help
+      you recover your account.
+    </p>
+    <p>
+      Anyone who has access to this phrase has access to your account and to the
+      funds in it, so save it in a safe and secure place.
+    </p>
+  </WarningMessage>
 );

@@ -18,10 +18,12 @@ import { SubmitButton, ModalWrapper } from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
-import { FlaggedWarningMessage } from "popup/components/warningMessages/FlaggedWarningMessage";
 import { ModalInfo } from "popup/components/ModalInfo";
-import { WarningMessage } from "popup/components/WarningMessage";
+import {
+  WarningMessage,
+  FirstTimeWarningMessage,
+  FlaggedWarningMessage,
+} from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
 
@@ -102,7 +104,7 @@ export const SignTransaction = () => {
 
   const NetworkMismatchWarning = () => (
     <>
-      <WarningMessage subheader={`Freighter is currently on ${networkName}`}>
+      <WarningMessage header={`Freighter is currently on ${networkName}`}>
         <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
         <p>Signing this transaction is not possible at the moment.</p>
       </WarningMessage>
@@ -120,21 +122,9 @@ export const SignTransaction = () => {
 
   return (
     <ModalWrapper>
-      <ModalInfo
-        domain={domain}
-        domainTitle={domainTitle}
-        subject={`This website is requesting a signature to the following${" "}
-            ${isFeeBump ? "fee bump " : ""}transaction:`}
-        title="Confirm Transaction"
-      >
-        <TransactionHeader
-          _fee={_fee}
-          _sequence={_sequence}
-          source={source}
-          isFeeBump={isFeeBump}
-          isMemoRequired={isMemoRequired}
-        />
-      </ModalInfo>
+      <p className="ModalWrapper--header">
+        <strong>Confirm Transaction</strong>
+      </p>
       {flaggedKeyValues.length ? (
         <FlaggedWarningMessage
           isUnsafe={isUnsafe}
@@ -145,6 +135,20 @@ export const SignTransaction = () => {
       {!isDomainListedAllowed && !isSubmitDisabled ? (
         <FirstTimeWarningMessage />
       ) : null}
+      <ModalInfo
+        domain={domain}
+        domainTitle={domainTitle}
+        subject={`This website is requesting a signature to the following${" "}
+            ${isFeeBump ? "fee bump " : ""}transaction:`}
+      >
+        <TransactionHeader
+          _fee={_fee}
+          _sequence={_sequence}
+          source={source}
+          isFeeBump={isFeeBump}
+          isMemoRequired={isMemoRequired}
+        />
+      </ModalInfo>
 
       {isFeeBump ? (
         <InnerTransactionWrapper>

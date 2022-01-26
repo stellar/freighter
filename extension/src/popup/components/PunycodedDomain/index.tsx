@@ -24,7 +24,9 @@ export const PunycodedDomain = ({
         <img src={favicon} alt="Site favicon" />
       </div>
       <div className="PunycodedDomain--domain">
-        {isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`}
+        <strong>
+          {isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`}
+        </strong>
       </div>
       <div className="PunycodedDomain--title">{domainTitle}</div>
     </div>
