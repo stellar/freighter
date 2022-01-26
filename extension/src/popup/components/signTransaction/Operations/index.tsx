@@ -1,5 +1,4 @@
 import React from "react";
-import styled from "styled-components";
 
 import {
   CLAIM_PREDICATES,
@@ -7,13 +6,12 @@ import {
   OPERATION_TYPES,
   TRANSACTION_WARNING,
 } from "constants/transaction";
-import { COLOR_PALETTE } from "popup/constants/styles";
 
 import { FlaggedKeys } from "types/transactions";
 
 import { truncatedPoolId, truncatedPublicKey } from "helpers/stellar";
 
-import { IconWithLabel, TransactionList } from "popup/basics/TransactionList";
+import { IconWithLabel } from "popup/basics/TransactionList";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
@@ -92,66 +90,6 @@ interface TransactionInfoResponse {
   type: keyof typeof OPERATION_TYPES;
 }
 
-const OperationBoxEl = styled.div`
-  overflow: hidden;
-  text-align: left;
-`;
-
-const PathListItem = styled.li`
-  display: block;
-  flex-direction: column;
-`;
-
-const OperationsListEl = styled(TransactionList)`
-  padding-left: 1.25rem;
-
-  li {
-    & > div {
-      width: 50%;
-
-      &:first-child {
-        color: ${COLOR_PALETTE.text};
-        overflow: hidden;
-        padding: 0;
-        text-overflow: ellipsis;
-      }
-    }
-  }
-
-  ${PathListItem} {
-    align-items: start;
-    margin-bottom: 1rem;
-  }
-`;
-
-const OperationKey = styled.div`
-  text-transform: capitalize;
-`;
-
-const OperationRow = styled.li`
-  margin-bottom: 0.5rem;
-`;
-
-const SubHeaderEl = styled.h5`
-  color: ${COLOR_PALETTE.primary};
-  font-size: 1rem;
-`;
-
-const PathWrapperEl = styled.div`
-  font-size: 0.75rem;
-  flex-direction: column;
-`;
-
-const PathNumberEl = styled.h6`
-  color: ${COLOR_PALETTE.primary};
-  font-size: 0.875rem;
-  margin: 0;
-`;
-
-const OpertionValueExtraEl = styled.div`
-  margin-top: 0.5rem;
-`;
-
 const KeyValueList = ({
   operationKey,
   operationValue,
@@ -159,13 +97,13 @@ const KeyValueList = ({
   operationKey: string;
   operationValue: string | number | React.ReactNode;
 }) => (
-  <OperationRow>
-    <OperationKey>
+  <div className="Operations--pair">
+    <div>
       {operationKey}
       {operationKey ? ":" : null}
-    </OperationKey>
+    </div>
     <div>{operationValue}</div>
-  </OperationRow>
+  </div>
 );
 
 const KeyValueWithPublicKey = ({
@@ -177,28 +115,26 @@ const KeyValueWithPublicKey = ({
 }) => (
   <KeyValueList
     operationKey={operationKey}
-    operationValue={<KeyIdenticon publicKey={operationValue} />}
+    operationValue={<KeyIdenticon publicKey={operationValue} isSmall />}
   />
 );
 
 const PathList = ({ paths }: { paths: [Path] }) => (
-  <PathListItem>
-    <SubHeaderEl>Paths: </SubHeaderEl>
+  <>
+    <div>Paths: </div>
     {paths.map(({ code, issuer }, i) => (
-      <PathWrapperEl key={`${code} ${i + 1}`}>
-        <PathNumberEl>#{i + 1}</PathNumberEl>
-        <ul>
-          <KeyValueList operationKey="Asset Code" operationValue={code} />
-          {issuer ? (
-            <KeyValueList
-              operationKey="Issuer"
-              operationValue={truncatedPublicKey(issuer)}
-            />
-          ) : null}
-        </ul>
-      </PathWrapperEl>
+      <div className="Operations--list--item" key={`${code} ${i + 1}`}>
+        <div>#{i + 1}</div>
+        <KeyValueList operationKey="Asset Code" operationValue={code} />
+        {issuer ? (
+          <KeyValueList
+            operationKey="Issuer"
+            operationValue={<KeyIdenticon publicKey={issuer} isSmall />}
+          />
+        ) : null}
+      </div>
     ))}
-  </PathListItem>
+  </>
 );
 
 const FlagList = ({ flags }: { flags: FLAGS }) => (
@@ -225,15 +161,13 @@ const UnsafeMaliciousWarning = ({
     <KeyValueList
       operationKey=""
       operationValue={
-        <OpertionValueExtraEl>
-          <IconWithLabel
-            isHighAlert={isDestMalicious}
-            alt="exclamation icon"
-            icon={IconExclamation}
-          >
-            {isDestMalicious ? "Malicious" : "Unsafe"} account
-          </IconWithLabel>
-        </OpertionValueExtraEl>
+        <IconWithLabel
+          isHighAlert={isDestMalicious}
+          alt="exclamation icon"
+          icon={IconExclamation}
+        >
+          {isDestMalicious ? "Malicious" : "Unsafe"} account
+        </IconWithLabel>
       }
     />
   ) : null;
@@ -247,15 +181,13 @@ const MemoRequiredWarning = ({
     <KeyValueList
       operationKey=""
       operationValue={
-        <OpertionValueExtraEl>
-          <IconWithLabel
-            isHighAlert
-            alt="exclamation icon"
-            icon={IconExclamation}
-          >
-            Memo required
-          </IconWithLabel>
-        </OpertionValueExtraEl>
+        <IconWithLabel
+          isHighAlert
+          alt="exclamation icon"
+          icon={IconExclamation}
+        >
+          Memo required
+        </IconWithLabel>
       }
     />
   ) : null;
@@ -358,11 +290,13 @@ export const Operations = ({
       ) => {
         const operationIndex = i + 1;
         return (
-          <OperationBoxEl key={operationIndex}>
+          <div className="Operations--wrapper" key={operationIndex}>
             <div className="Operations--header">
-              {operationIndex}. {OPERATION_TYPES[type] || type}
+              <strong>
+                {operationIndex}. {OPERATION_TYPES[type] || type}
+              </strong>
             </div>
-            <OperationsListEl>
+            <div className="Operations--item">
               {account ? (
                 <KeyValueWithPublicKey
                   operationKey="Account"
@@ -408,9 +342,12 @@ export const Operations = ({
               {claimants && claimants.length
                 ? claimants.map(({ _destination }, index) => (
                     /* eslint-disable react/no-array-index-key */
-                    <div key={`${_destination}${index}`}>
+                    <div
+                      className="Operations--list--item"
+                      key={`${_destination}${index}`}
+                    >
                       {/* eslint-enable */}
-                      <SubHeaderEl>Claimant {index + 1}</SubHeaderEl>
+                      <div>Claimant {index + 1}</div>
                       <KeyValueWithPublicKey
                         operationKey="Destination"
                         operationValue={_destination}
@@ -628,18 +565,14 @@ export const Operations = ({
               ) : null}
 
               {Object.entries(rest).map(([k, v]) => (
-                <div key={k}>
-                  <KeyValueList
-                    key={k}
-                    operationKey={k}
-                    operationValue={
-                      typeof v === "string" ? v : JSON.stringify(v)
-                    }
-                  />
-                </div>
+                <KeyValueList
+                  key={k}
+                  operationKey={k}
+                  operationValue={typeof v === "string" ? v : JSON.stringify(v)}
+                />
               ))}
-            </OperationsListEl>
-          </OperationBoxEl>
+            </div>
+          </div>
         );
       },
     )}

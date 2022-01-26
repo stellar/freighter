@@ -17,7 +17,7 @@ import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 
 import { Toast } from "popup/components/Toast";
 import { ActionButton } from "popup/components/mnemonicPhrase/ActionButton";
-import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
+import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
 
 import DownloadColorIcon from "popup/assets/download-color.svg";
 import CopyColorIcon from "popup/assets/copy-color.svg";

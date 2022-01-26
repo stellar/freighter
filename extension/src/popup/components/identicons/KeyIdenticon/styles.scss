@@ -1,0 +1,18 @@
+.KeyIdenticon {
+  --Icon-padding: 0.25rem;
+  --Icon-dimension: 2rem;
+
+  align-items: center;
+  display: flex;
+
+  &--icon {
+    background: var(--pal-info-on);
+    border: 1px solid var(--pal-text-secondary);
+    border-radius: 2rem;
+    display: flex;
+    margin-right: 0.5rem;
+    padding: var(--Icon-padding);
+    height: var(--Icon-dimension);
+    width: var(--Icon-dimension);
+  }
+}

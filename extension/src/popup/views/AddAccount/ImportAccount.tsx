@@ -27,8 +27,7 @@ import {
   authErrorSelector,
 } from "popup/ducks/accountServices";
 
-import { WarningMessage } from "popup/components/WarningMessage";
-import IconOrangeLock from "popup/assets/icon-orange-lock.svg";
+import { WarningMessage } from "popup/components/WarningMessages";
 
 export const ImportAccount = () => {
   interface FormValues {
@@ -73,10 +72,7 @@ export const ImportAccount = () => {
     <>
       <SubviewWrapper>
         <SubviewHeader headerText="Import Stellar secret key" />
-        <WarningMessage
-          icon={IconOrangeLock}
-          subheader="Read before importing your key"
-        >
+        <WarningMessage header="Read before importing your key">
           <ul>
             <li>
               Freighter <strong>can’t recover</strong> your imported secret key
