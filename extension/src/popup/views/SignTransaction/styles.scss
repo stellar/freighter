@@ -1,6 +1,7 @@
 .SignTransaction {
   &--button-container {
     display: flex;
+    gap: 0.75rem;
     justify-content: space-around;
     padding-top: 3rem;
     padding-bottom: 1.5rem;
