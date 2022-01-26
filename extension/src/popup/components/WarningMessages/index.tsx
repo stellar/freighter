@@ -90,10 +90,7 @@ export const FlaggedWarningMessage = ({
 );
 
 export const FirstTimeWarningMessage = () => (
-  <WarningMessage
-    header="        This is the first time you have interacted with this domain.
-  "
-  >
+  <WarningMessage header="This is the first time you have interacted with this domain.">
     <p>
       If you believe you have interacted with this domain before, it is possible
       that scammers have copied the original site and/or made small changes to
