@@ -33,10 +33,7 @@ export const KeyIdenticon = ({
 
   return (
     <div className="KeyIdenticon">
-      <div
-        className="KeyIdenticon--icon KeyIdenticon--icon"
-        style={customStyle}
-      >
+      <div className="KeyIdenticon--icon" style={customStyle}>
         <IdenticonImg publicKey={publicKey} />
       </div>
       <span {...props}>{shortPublicKey}</span>
