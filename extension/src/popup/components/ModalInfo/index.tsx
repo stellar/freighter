@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Card } from "popup/basics/Card";
+import { Card } from "@stellar/design-system";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import "./styles.scss";

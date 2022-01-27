@@ -168,6 +168,7 @@ export const SignTransaction = () => {
 
       <div className="SignTransaction--button-container">
         <Button
+          fullWidth
           variant={Button.variant.tertiary}
           onClick={() => rejectAndClose()}
         >
@@ -175,6 +176,7 @@ export const SignTransaction = () => {
         </Button>
         <Button
           disabled={isSubmitDisabled}
+          fullWidth
           isLoading={isConfirming}
           onClick={() => signAndClose()}
         >
