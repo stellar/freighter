@@ -102,28 +102,22 @@ export const SignTransaction = () => {
     settingsNetworkDetailsSelector,
   );
 
-  const NetworkMismatchWarning = () => (
-    <>
-      <WarningMessage header={`Freighter is currently on ${networkName}`}>
-        <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
-        <p>Signing this transaction is not possible at the moment.</p>
-      </WarningMessage>
-      <div className="SignTransaction--button-container">
-        <Button
-          fullWidth
-          variant={Button.variant.tertiary}
-          onClick={() => window.close()}
-        >
-          Close
-        </Button>
-      </div>
-    </>
-  );
-
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <ModalWrapper>
-        <NetworkMismatchWarning />
+        <WarningMessage header={`Freighter is currently on ${networkName}`}>
+          <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
+          <p>Signing this transaction is not possible at the moment.</p>
+        </WarningMessage>
+        <div className="SignTransaction--close-button-container">
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => window.close()}
+          >
+            Close
+          </Button>
+        </div>
       </ModalWrapper>
     );
   }
