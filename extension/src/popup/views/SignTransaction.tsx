@@ -14,7 +14,12 @@ import { decodeMemo } from "popup/helpers/decodeMemo";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-import { ModalWrapper } from "popup/basics/Modal";
+import {
+  ButtonsContainer,
+  ModalHeader,
+  ModalWrapper,
+  SingleButtonContainer,
+} from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -26,8 +31,6 @@ import {
 } from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
-
-import "./styles.scss";
 
 const InnerTransactionWrapper = styled.div`
   border: 1px solid ${COLOR_PALETTE.primary};
@@ -109,7 +112,7 @@ export const SignTransaction = () => {
           <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
           <p>Signing this transaction is not possible at the moment.</p>
         </WarningMessage>
-        <div className="SignTransaction--close-button-container">
+        <SingleButtonContainer>
           <Button
             fullWidth
             variant={Button.variant.tertiary}
@@ -117,16 +120,16 @@ export const SignTransaction = () => {
           >
             Close
           </Button>
-        </div>
+        </SingleButtonContainer>
       </ModalWrapper>
     );
   }
 
   return (
     <ModalWrapper>
-      <p className="ModalWrapper--header">
+      <ModalHeader>
         <strong>Confirm Transaction</strong>
-      </p>
+      </ModalHeader>
       {flaggedKeyValues.length ? (
         <FlaggedWarningMessage
           isUnsafe={isUnsafe}
@@ -168,7 +171,7 @@ export const SignTransaction = () => {
         />
       )}
 
-      <div className="SignTransaction--button-container">
+      <ButtonsContainer>
         <Button
           fullWidth
           variant={Button.variant.tertiary}
@@ -184,7 +187,7 @@ export const SignTransaction = () => {
         >
           Sign Transaction
         </Button>
-      </div>
+      </ButtonsContainer>
     </ModalWrapper>
   );
 };

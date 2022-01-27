@@ -11,12 +11,10 @@ interface IdenticonWrapperElProps {
 }
 
 interface KeyIdenticonProps extends IdenticonWrapperElProps {
-  color?: string;
   publicKey: string;
 }
 
 export const KeyIdenticon = ({
-  color = "",
   publicKey = "",
   isSmall = false,
   ...props
