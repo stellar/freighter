@@ -16,9 +16,9 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import {
   ButtonsContainer,
-  LowButtonContainer,
   ModalHeader,
   ModalWrapper,
+  SingleButtonContainer,
 } from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -112,7 +112,7 @@ export const SignTransaction = () => {
           <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
           <p>Signing this transaction is not possible at the moment.</p>
         </WarningMessage>
-        <LowButtonContainer>
+        <SingleButtonContainer>
           <Button
             fullWidth
             variant={Button.variant.tertiary}
@@ -120,7 +120,7 @@ export const SignTransaction = () => {
           >
             Close
           </Button>
-        </LowButtonContainer>
+        </SingleButtonContainer>
       </ModalWrapper>
     );
   }

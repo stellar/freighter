@@ -10,9 +10,9 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 
 import {
   ButtonsContainer,
-  LowButtonContainer,
   ModalHeader,
   ModalWrapper,
+  SingleButtonContainer,
 } from "popup/basics/Modal";
 
 import { ModalInfo } from "popup/components/ModalInfo";
@@ -59,7 +59,7 @@ export const GrantAccess = () => {
       >
         <KeyIdenticon publicKey={publicKey} />
       </ModalInfo>
-      <LowButtonContainer>
+      <SingleButtonContainer>
         <ButtonsContainer>
           <Button
             fullWidth
@@ -76,7 +76,7 @@ export const GrantAccess = () => {
             Share
           </Button>
         </ButtonsContainer>
-      </LowButtonContainer>
+      </SingleButtonContainer>
     </ModalWrapper>
   );
 };

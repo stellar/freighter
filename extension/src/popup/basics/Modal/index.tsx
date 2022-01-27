@@ -26,10 +26,12 @@ export const ButtonsContainer = ({ children }: ButtonsContainerProps) => (
   <div className="ModalWrapper--buttons-container">{children}</div>
 );
 
-interface LowButtonContainerProps {
+interface SingleButtonContainerProps {
   children: React.ReactNode;
 }
 
-export const LowButtonContainer = ({ children }: LowButtonContainerProps) => (
-  <div className="ModalWrapper--low-button-container">{children}</div>
+export const SingleButtonContainer = ({
+  children,
+}: SingleButtonContainerProps) => (
+  <div className="ModalWrapper--single-button-container">{children}</div>
 );
