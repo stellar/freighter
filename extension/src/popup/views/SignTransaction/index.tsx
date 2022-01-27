@@ -14,7 +14,7 @@ import { decodeMemo } from "popup/helpers/decodeMemo";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-import { SubmitButton, ModalWrapper } from "popup/basics/Modal";
+import { ModalWrapper } from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -102,22 +102,24 @@ export const SignTransaction = () => {
     settingsNetworkDetailsSelector,
   );
 
-  const NetworkMismatchWarning = () => (
-    <>
-      <WarningMessage header={`Freighter is currently on ${networkName}`}>
-        <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
-        <p>Signing this transaction is not possible at the moment.</p>
-      </WarningMessage>
-      <div className="SignTransaction--button-container">
-        <SubmitButton size="small" onClick={() => window.close()}>
-          Close
-        </SubmitButton>
-      </div>
-    </>
-  );
-
   if (_networkPassphrase !== networkPassphrase) {
-    return <NetworkMismatchWarning />;
+    return (
+      <ModalWrapper>
+        <WarningMessage header={`Freighter is currently on ${networkName}`}>
+          <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
+          <p>Signing this transaction is not possible at the moment.</p>
+        </WarningMessage>
+        <div className="SignTransaction--close-button-container">
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => window.close()}
+          >
+            Close
+          </Button>
+        </div>
+      </ModalWrapper>
+    );
   }
 
   return (
