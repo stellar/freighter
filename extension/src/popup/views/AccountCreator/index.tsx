@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, FieldProps, Formik } from "formik";
 import { object as YupObject } from "yup";
@@ -22,41 +21,12 @@ import { Form, FormRow, SubmitButton } from "popup/basics/Forms";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
-import { HEADER_HEIGHT } from "constants/dimensions";
-
 import { Header } from "popup/components/Header";
-import { HalfScreen } from "popup/components/Onboarding";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 import { Input, Checkbox, TextLink } from "@stellar/design-system";
 
-const HeaderEl = styled.div`
-  font-size: 2.125rem;
-  line-height: 1.2rem;
-  font-weight: normal;
-  color: var(--pal-text-primary);
-  text-align: center;
-`;
-
-const ButtonRowEl = styled.div`
-  padding: 1.5rem;
-`;
-
-const Screen = styled.section`
-  display: flex;
-  flex-flow: column wrap;
-  align-content: center;
-  justify-content: center;
-  height: calc(100vh - ${HEADER_HEIGHT}px);
-  max-height: 40rem;
-  max-width: 57rem;
-  width: 100%;
-  margin: auto;
-`;
-
-const ModifiedHalfScreenEl = styled(HalfScreen)`
-  padding-left: 1.55rem;
-`;
+import "./styles.scss";
 
 export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
@@ -95,8 +65,8 @@ export const AccountCreator = () => {
     <>
       <Header />
       <FullscreenStyle />
-      <Screen>
-        <HeaderEl>Create a password</HeaderEl>
+      <section className="AccountCreator--screen">
+        <div className="AccountCreator--header">Create a password</div>
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}
@@ -104,7 +74,7 @@ export const AccountCreator = () => {
         >
           {({ isValid, dirty, isSubmitting, errors, touched }) => (
             <Form>
-              <ModifiedHalfScreenEl>
+              <section className="AccountCreator--half-screen">
                 <FormRow>
                   <Field name="password">
                     {({ field }: FieldProps) => (
@@ -142,7 +112,6 @@ export const AccountCreator = () => {
                     )}
                   </Field>
                 </FormRow>
-
                 <PasswordRequirements />
                 <FormRow>
                   <Field name="termsOfUse">
@@ -170,7 +139,7 @@ export const AccountCreator = () => {
                 {errors.termsOfUse && touched.termsOfUse
                   ? errors.termsOfUse
                   : null}
-                <ButtonRowEl>
+                <div className="AccountCreator--button-row">
                   <SubmitButton
                     dirty={dirty}
                     isSubmitting={isSubmitting}
@@ -178,12 +147,12 @@ export const AccountCreator = () => {
                   >
                     CONFIRM
                   </SubmitButton>
-                </ButtonRowEl>
-              </ModifiedHalfScreenEl>
+                </div>
+              </section>
             </Form>
           )}
         </Formik>
-      </Screen>
+      </section>
     </>
   );
 };
