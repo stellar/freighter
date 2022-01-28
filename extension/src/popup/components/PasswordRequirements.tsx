@@ -7,7 +7,6 @@ const El = styled.div`
 
 const ListEl = styled.ul`
   color: var(--pal-text-primary);
-  opacity: 0.8;
   list-style-type: disc;
   list-style-position: inside;
   font-size: 1rem;
