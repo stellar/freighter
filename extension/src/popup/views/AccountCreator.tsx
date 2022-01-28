@@ -166,6 +166,7 @@ export const AccountCreator = () => {
                     )}
                   </Field>
                 </FormRow>
+                {/* TODO - add error to Checkbox in SDS */}
                 {errors.termsOfUse && touched.termsOfUse
                   ? errors.termsOfUse
                   : null}
