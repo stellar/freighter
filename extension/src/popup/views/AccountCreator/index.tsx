@@ -17,14 +17,14 @@ import {
   authErrorSelector,
 } from "popup/ducks/accountServices";
 
-import { Form, FormRow, SubmitButton } from "popup/basics/Forms";
+import { Form, FormRow } from "popup/basics/Forms";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
-import { Input, Checkbox, TextLink } from "@stellar/design-system";
+import { Input, Checkbox, TextLink, Button } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -140,13 +140,13 @@ export const AccountCreator = () => {
                   ? errors.termsOfUse
                   : null}
                 <div className="AccountCreator--button-row">
-                  <SubmitButton
-                    dirty={dirty}
-                    isSubmitting={isSubmitting}
-                    isValid={isValid}
+                  <Button
+                    fullWidth
+                    isLoading={isSubmitting}
+                    disabled={!(dirty && isValid)}
                   >
                     CONFIRM
-                  </SubmitButton>
+                  </Button>
                 </div>
               </section>
             </Form>
