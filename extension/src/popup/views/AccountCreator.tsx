@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
-import { Formik } from "formik";
+import { Field, FieldProps, Formik } from "formik";
 import { object as YupObject } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
@@ -12,30 +12,47 @@ import {
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import { createAccount, publicKeySelector } from "popup/ducks/accountServices";
-
 import {
-  Form,
-  SubmitButton,
-  Error,
-  FormRow,
-  CheckboxField,
-  TextField,
-} from "popup/basics/Forms";
+  createAccount,
+  publicKeySelector,
+  authErrorSelector,
+} from "popup/ducks/accountServices";
+
+import { Form, FormRow, SubmitButton } from "popup/basics/Forms";
+
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
+
+import { HEADER_HEIGHT } from "constants/dimensions";
 
 import { Header } from "popup/components/Header";
-import { Onboarding, HalfScreen } from "popup/components/Onboarding";
+import { HalfScreen } from "popup/components/Onboarding";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
-import CreatePasswordIllo from "popup/assets/illo-create-password.svg";
+import { Input, Checkbox, TextLink } from "@stellar/design-system";
 
-const IconImgEl = styled.img`
-  height: 6.25rem;
+const HeaderEl = styled.div`
+  font-size: 2.125rem;
+  line-height: 1.2rem;
+  font-weight: normal;
+  color: var(--pal-text-primary);
+  text-align: center;
 `;
 
-const IconEl = () => (
-  <IconImgEl src={CreatePasswordIllo} alt="Create Password" />
-);
+const ButtonRowEl = styled.div`
+  padding: 1.5rem;
+`;
+
+const Screen = styled.section`
+  display: flex;
+  flex-flow: column wrap;
+  align-content: center;
+  justify-content: center;
+  height: calc(100vh - ${HEADER_HEIGHT}px);
+  max-height: 40rem;
+  max-width: 57rem;
+  width: 100%;
+  margin: auto;
+`;
 
 const ModifiedHalfScreenEl = styled(HalfScreen)`
   padding-left: 1.55rem;
@@ -44,6 +61,7 @@ const ModifiedHalfScreenEl = styled(HalfScreen)`
 export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
   const dispatch = useDispatch();
+  const authError = useSelector(authErrorSelector);
 
   interface FormValues {
     password: string;
@@ -76,70 +94,95 @@ export const AccountCreator = () => {
   return (
     <>
       <Header />
-      <Onboarding
-        header="Create a password"
-        icon={<IconEl />}
-        goBack={() => navigateTo(ROUTES.welcome)}
-      >
+      <FullscreenStyle />
+      <Screen>
+        <HeaderEl>Create a password</HeaderEl>
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}
           validationSchema={AccountCreatorSchema}
         >
-          {({ dirty, isSubmitting, isValid }) => (
+          {({ isValid, dirty, isSubmitting, errors, touched }) => (
             <Form>
               <ModifiedHalfScreenEl>
                 <FormRow>
-                  <TextField
-                    autoComplete="off"
-                    name="password"
-                    placeholder="New password"
-                    type="password"
-                  />
-                  <Error name="password" />
+                  <Field name="password">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        autoComplete="off"
+                        id="new-password-input"
+                        placeholder="New password"
+                        type="password"
+                        error={
+                          authError || (errors.password && touched.password)
+                            ? errors.password
+                            : ""
+                        }
+                        {...field}
+                      />
+                    )}
+                  </Field>
                 </FormRow>
                 <FormRow>
-                  <TextField
-                    autoComplete="off"
-                    name="confirmPassword"
-                    placeholder="Confirm password"
-                    type="password"
-                  />
-                  <Error name="confirmPassword" />
+                  <Field name="confirmPassword">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        autoComplete="off"
+                        id="confirm-password-input"
+                        placeholder="Confirm password"
+                        type="password"
+                        error={
+                          authError ||
+                          (errors.confirmPassword && touched.confirmPassword)
+                            ? errors.confirmPassword
+                            : null
+                        }
+                        {...field}
+                      />
+                    )}
+                  </Field>
                 </FormRow>
+
                 <PasswordRequirements />
                 <FormRow>
-                  <CheckboxField
-                    name="termsOfUse"
-                    label={
-                      <span>
-                        I have read and agree to{" "}
-                        <a href="https://stellar.org/terms-of-service">
-                          Terms of Use
-                        </a>{" "}
-                        and{" "}
-                        <a href="https://stellar.org/privacy-policy">
-                          Privacy Policy
-                        </a>
-                      </span>
-                    }
-                  />
-                  <Error name="termsOfUse" />
+                  <Field name="termsOfUse">
+                    {({ field }: FieldProps) => (
+                      <Checkbox
+                        autoComplete="off"
+                        id="termsOfUse-input"
+                        label={
+                          <span>
+                            I have read and agree to{" "}
+                            <TextLink
+                              variant={TextLink.variant.secondary}
+                              href="https://stellar.org/terms-of-service"
+                            >
+                              Terms of Use
+                            </TextLink>
+                          </span>
+                        }
+                        {...field}
+                      />
+                    )}
+                  </Field>
                 </FormRow>
-                <FormRow>
+                {errors.termsOfUse && touched.termsOfUse
+                  ? errors.termsOfUse
+                  : null}
+                <ButtonRowEl>
                   <SubmitButton
                     dirty={dirty}
                     isSubmitting={isSubmitting}
                     isValid={isValid}
                   >
-                    Next
+                    CONFIRM
                   </SubmitButton>
-                </FormRow>
+                </ButtonRowEl>
               </ModifiedHalfScreenEl>
             </Form>
           )}
         </Formik>
-      </Onboarding>
+      </Screen>
     </>
   );
 };

@@ -1,28 +1,30 @@
 import React from "react";
 import styled from "styled-components";
 
-import { COLOR_PALETTE } from "popup/constants/styles";
-
 const El = styled.div`
   padding: 1.25rem 0 2.5rem;
 `;
 
 const ListEl = styled.ul`
-  color: ${COLOR_PALETTE.secondaryText};
+  color: var(--pal-text-primary);
+  opacity: 0.8;
   list-style-type: disc;
   list-style-position: inside;
-  font-size: 0.9rem;
+  font-size: 1rem;
   padding: 0;
   margin: 0;
+
+  // TODO reconcile with SDS
+  li::before {
+    content: none;
+  }
 `;
 
 export const PasswordRequirements = () => (
   <El>
     <ListEl>
-      <li>Min 10 characters</li>
+      <li>Min 8 characters</li>
       <li>At least one uppercase letter</li>
-      <li>At least one lowercase letter</li>
-      <li>At least one one number</li>
     </ListEl>
   </El>
 );
