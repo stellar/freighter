@@ -1,20 +1,14 @@
 import React from "react";
-import styled from "styled-components";
-
-import { SubmitButton as BasicSubmitButton } from "../Forms";
 
 import "./styles.scss";
 
-export const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-around;
-  padding-top: 3rem;
-  padding-bottom: 1.5rem;
-`;
+interface ModalHeaderProps {
+  children: React.ReactNode;
+}
 
-export const SubmitButton = styled(BasicSubmitButton)`
-  width: 12.43rem;
-`;
+export const ModalHeader = ({ children }: ModalHeaderProps) => (
+  <section className="ModalWrapper--header">{children}</section>
+);
 
 interface ModalWrapperProps {
   children: React.ReactNode;
@@ -22,4 +16,22 @@ interface ModalWrapperProps {
 
 export const ModalWrapper = ({ children }: ModalWrapperProps) => (
   <section className="ModalWrapper">{children}</section>
+);
+
+interface ButtonsContainerProps {
+  children: React.ReactNode;
+}
+
+export const ButtonsContainer = ({ children }: ButtonsContainerProps) => (
+  <div className="ModalWrapper--buttons-container">{children}</div>
+);
+
+interface SingleButtonContainerProps {
+  children: React.ReactNode;
+}
+
+export const SingleButtonContainer = ({
+  children,
+}: SingleButtonContainerProps) => (
+  <div className="ModalWrapper--single-button-container">{children}</div>
 );

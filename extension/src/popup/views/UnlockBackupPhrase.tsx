@@ -19,7 +19,7 @@ import {
   TextField,
 } from "popup/basics/Forms";
 
-import { BackupPhraseWarningMessage } from "popup/components/warningMessages/BackupPhraseWarningMessage";
+import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
 
 const CustomFormTextFieldEl = styled(TextField)`
   padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};

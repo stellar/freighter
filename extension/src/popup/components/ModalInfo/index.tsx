@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Card } from "popup/basics/Card";
+import { Card } from "@stellar/design-system";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 
 import "./styles.scss";
@@ -10,7 +10,6 @@ interface ModalInfoProps {
   domain: string;
   domainTitle: string;
   subject: string;
-  title: string;
 }
 
 export const ModalInfo = ({
@@ -18,14 +17,8 @@ export const ModalInfo = ({
   domain,
   domainTitle,
   subject,
-  title,
 }: ModalInfoProps) => (
   <>
-    <div className="ModalInfo--header">
-      <p>
-        <strong>{title}</strong>
-      </p>
-    </div>
     <div className="ModalInfo--card">
       <Card variant={Card.variant.highlight}>
         <PunycodedDomain domain={domain} domainTitle={domainTitle} />

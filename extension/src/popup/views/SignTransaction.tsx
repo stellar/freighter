@@ -14,18 +14,23 @@ import { decodeMemo } from "popup/helpers/decodeMemo";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-import { SubmitButton, ModalWrapper } from "popup/basics/Modal";
+import {
+  ButtonsContainer,
+  ModalHeader,
+  ModalWrapper,
+  SingleButtonContainer,
+} from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
-import { FlaggedWarningMessage } from "popup/components/warningMessages/FlaggedWarningMessage";
 import { ModalInfo } from "popup/components/ModalInfo";
-import { WarningMessage } from "popup/components/WarningMessage";
+import {
+  WarningMessage,
+  FirstTimeWarningMessage,
+  FlaggedWarningMessage,
+} from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
-
-import "./styles.scss";
 
 const InnerTransactionWrapper = styled.div`
   border: 1px solid ${COLOR_PALETTE.primary};
@@ -100,41 +105,31 @@ export const SignTransaction = () => {
     settingsNetworkDetailsSelector,
   );
 
-  const NetworkMismatchWarning = () => (
-    <>
-      <WarningMessage subheader={`Freighter is currently on ${networkName}`}>
-        <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
-        <p>Signing this transaction is not possible at the moment.</p>
-      </WarningMessage>
-      <div className="SignTransaction--button-container">
-        <SubmitButton size="small" onClick={() => window.close()}>
-          Close
-        </SubmitButton>
-      </div>
-    </>
-  );
-
   if (_networkPassphrase !== networkPassphrase) {
-    return <NetworkMismatchWarning />;
+    return (
+      <ModalWrapper>
+        <WarningMessage header={`Freighter is currently on ${networkName}`}>
+          <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
+          <p>Signing this transaction is not possible at the moment.</p>
+        </WarningMessage>
+        <SingleButtonContainer>
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => window.close()}
+          >
+            Close
+          </Button>
+        </SingleButtonContainer>
+      </ModalWrapper>
+    );
   }
 
   return (
     <ModalWrapper>
-      <ModalInfo
-        domain={domain}
-        domainTitle={domainTitle}
-        subject={`This website is requesting a signature to the following${" "}
-            ${isFeeBump ? "fee bump " : ""}transaction:`}
-        title="Confirm Transaction"
-      >
-        <TransactionHeader
-          _fee={_fee}
-          _sequence={_sequence}
-          source={source}
-          isFeeBump={isFeeBump}
-          isMemoRequired={isMemoRequired}
-        />
-      </ModalInfo>
+      <ModalHeader>
+        <strong>Confirm Transaction</strong>
+      </ModalHeader>
       {flaggedKeyValues.length ? (
         <FlaggedWarningMessage
           isUnsafe={isUnsafe}
@@ -145,6 +140,20 @@ export const SignTransaction = () => {
       {!isDomainListedAllowed && !isSubmitDisabled ? (
         <FirstTimeWarningMessage />
       ) : null}
+      <ModalInfo
+        domain={domain}
+        domainTitle={domainTitle}
+        subject={`This website is requesting a signature to the following${" "}
+            ${isFeeBump ? "fee bump " : ""}transaction:`}
+      >
+        <TransactionHeader
+          _fee={_fee}
+          _sequence={_sequence}
+          source={source}
+          isFeeBump={isFeeBump}
+          isMemoRequired={isMemoRequired}
+        />
+      </ModalInfo>
 
       {isFeeBump ? (
         <InnerTransactionWrapper>
@@ -162,8 +171,9 @@ export const SignTransaction = () => {
         />
       )}
 
-      <div className="SignTransaction--button-container">
+      <ButtonsContainer>
         <Button
+          fullWidth
           variant={Button.variant.tertiary}
           onClick={() => rejectAndClose()}
         >
@@ -171,12 +181,13 @@ export const SignTransaction = () => {
         </Button>
         <Button
           disabled={isSubmitDisabled}
+          fullWidth
           isLoading={isConfirming}
           onClick={() => signAndClose()}
         >
           Sign Transaction
         </Button>
-      </div>
+      </ButtonsContainer>
     </ModalWrapper>
   );
 };
