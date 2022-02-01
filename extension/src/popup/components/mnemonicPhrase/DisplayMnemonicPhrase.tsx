@@ -7,11 +7,10 @@ import DownloadIcon from "popup/assets/download.svg";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { download } from "popup/helpers/download";
-import { SubmitButton } from "popup/basics/Forms";
 
 import { ActionButton } from "./ActionButton";
 
-import { InfoBlock, CopyText } from "@stellar/design-system";
+import { InfoBlock, CopyText, TextLink, Button } from "@stellar/design-system";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
@@ -73,9 +72,25 @@ const Screen = styled.div`
 const HalfScreen = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: start;
   padding: 2rem 0 2rem 1.55rem;
   width: 27rem;
+`;
+
+const Header = styled.div`
+  font-size: 2.5rem;
+  line-height: 3rem;
+  font-weight: var(--font-weight-normal);
+  color: var(--pal-text-primary);
+  text-align: left;
+`;
+
+const Content = styled.div`
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: var(--font-weight-normal);
+  color: var(--pal-text-tertiary);
 `;
 
 export const DisplayMnemonicPhrase = ({
@@ -90,15 +105,18 @@ export const DisplayMnemonicPhrase = ({
       <FullscreenStyle />
       <Screen>
         <HalfScreen>
-          Secret Recovery phrase
-          <p>
-            Your recovery phrase gives you access to your account and is the{" "}
-            <strong>only way to access it in a new browser</strong>. Keep it in
-            a safe place.
-          </p>
-          <p>
-            For your security, we'll check if you got it right in the next step.
-          </p>
+          <Header>Secret Recovery phrase</Header>
+          <Content>
+            <p>
+              Your recovery phrase gives you access to your account and is the{" "}
+              <strong>only way to access it in a new browser</strong>. Keep it
+              in a safe place.
+            </p>
+            <p>
+              For your security, we'll check if you got it right in the next
+              step.
+            </p>
+          </Content>
         </HalfScreen>
         <HalfScreen data-testid="display-mnemonic-phrase">
           <InfoBlock variant={InfoBlock.variant.warning}>
@@ -114,6 +132,7 @@ export const DisplayMnemonicPhrase = ({
               ))}
             </OrderedList>
           </MnemonicDisplayEl>
+          {/* TODO - use DownloadButton from SDS */}
           <DisplayButtonsEl>
             <ActionButton
               data-testid="download"
@@ -125,21 +144,21 @@ export const DisplayMnemonicPhrase = ({
                 emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
               }}
             >
-              Download
+              <TextLink>DOWNLOAD</TextLink>
               <img src={DownloadIcon} alt="download button" />
             </ActionButton>
             <CopyText textToCopy={mnemonicPhrase} showCopyIcon showTooltip>
-              COPY
+              <TextLink>COPY</TextLink>
             </CopyText>
           </DisplayButtonsEl>
-          <SubmitButton
-            data-testid="confirm"
+          <Button
+            fullWidth
             onClick={() => {
               setReadyToConfirm(true);
             }}
           >
             Next
-          </SubmitButton>
+          </Button>
         </HalfScreen>
       </Screen>
     </>
