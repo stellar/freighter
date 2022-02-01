@@ -1,44 +1,48 @@
-import React, { useState } from "react";
-import CopyToClipboard from "react-copy-to-clipboard";
+import React from "react";
 import styled from "styled-components";
 
 import { emitMetric } from "helpers/metrics";
 
 import DownloadIcon from "popup/assets/download.svg";
-import CopyIcon from "popup/assets/copy.svg";
-import { COLOR_PALETTE } from "popup/constants/styles";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { download } from "popup/helpers/download";
-import { BasicButton } from "popup/basics/Buttons";
 import { SubmitButton } from "popup/basics/Forms";
 
-import { HalfScreen } from "popup/components/Onboarding";
-import { Toast } from "popup/components/Toast";
 import { ActionButton } from "./ActionButton";
 
+import { InfoBlock, CopyText } from "@stellar/design-system";
+
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
+
+// ALEC TODO - make card?
 const MnemonicDisplayEl = styled.div`
-  background: ${COLOR_PALETTE.primaryGradient};
-  border-radius: 30px;
-  color: ${({ isBlurred }: { isBlurred: boolean }) =>
-    isBlurred ? "transparent" : "#fff"};
+  background: var(--pal-background-secondary);
+  border-radius: 8px;
+  color: var(--pal-text-primary)
   font-size: 1.125rem;
   margin: 2rem 0 1rem;
   padding: 1.68rem 2.31rem;
   position: relative;
   text-align: center;
-  text-shadow: ${({ isBlurred }: { isBlurred: boolean }) =>
-    isBlurred ? "0 0 5px rgba(0, 0, 0, 0.5)" : "none"};
 `;
 
-const DisplayTooltipEl = styled(BasicButton)`
-  color: ${COLOR_PALETTE.white};
-  font-size: 1rem;
-  position: absolute;
-  text-shadow: none;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+const OrderedList = styled.ol`
+  columns: 2;
+  text-align: start;
+  counter-reset: item;
+  list-style-type: none;
+
+  li {
+    padding-left: 1rem;
+  }
+
+  li::before {
+    color: var(--pal-text-tertiary);
+    content: none;
+    counter-increment: item;
+    content: counter(item);
+  }
 `;
 
 const DisplayButtonsEl = styled.div`
@@ -51,9 +55,27 @@ const DisplayButtonsEl = styled.div`
     margin-left: 0.5rem;
   }
 `;
-const CopiedToastWrapperEl = styled.div`
-  right: 15.625rem;
-  position: absolute;
+
+const Screen = styled.div`
+  display: flex;
+  flex-flow: row wrap;
+  align-content: center;
+  justify-content: space-between;
+  // TODO - use HEADER_HEIGHT constant
+  height: calc(100vh - 119px);
+  max-height: 40rem;
+  max-width: 57rem;
+  width: 100%;
+  margin: auto;
+`;
+
+// ALEC TODO - move to scss file
+const HalfScreen = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 0 2rem 1.55rem;
+  width: 27rem;
 `;
 
 export const DisplayMnemonicPhrase = ({
@@ -63,80 +85,63 @@ export const DisplayMnemonicPhrase = ({
   mnemonicPhrase: string;
   setReadyToConfirm: (readyState: boolean) => void;
 }) => {
-  const [isCopied, setIsCopied] = useState(false);
-  const [isBlurred, setIsBlurred] = useState(true);
-
   return (
-    <HalfScreen data-testid="display-mnemonic-phrase">
-      <p>
-        Your backup phrase gives you access to your account and is the only way
-        to restore it in a new browser. We do not store and cannot help you
-        recover your backup phrase or get you access to your account, so please
-        keep your backup phrase in a safe and secure place and don't share it
-        with anyone. If you lose your backup phrase, you will permanently lose
-        access to your account.
-      </p>
-      <p>
-        For your security, we will ask you to confirm your backup phrase in the
-        next step.
-      </p>
-      <MnemonicDisplayEl isBlurred={isBlurred}>
-        {isBlurred ? (
-          <DisplayTooltipEl
-            data-testid="show"
+    <>
+      <FullscreenStyle />
+      <Screen>
+        <HalfScreen>
+          Secret Recovery phrase
+          <p>
+            Your recovery phrase gives you access to your account and is the{" "}
+            <strong>only way to access it in a new browser</strong>. Keep it in
+            a safe place.
+          </p>
+          <p>
+            For your security, we'll check if you got it right in the next step.
+          </p>
+        </HalfScreen>
+        <HalfScreen data-testid="display-mnemonic-phrase">
+          <InfoBlock variant={InfoBlock.variant.warning}>
+            <strong>Important Warning</strong>
+            <p>Never disclose your recovery phrase!</p>
+          </InfoBlock>
+          <MnemonicDisplayEl>
+            <OrderedList>
+              {mnemonicPhrase.split(" ").map((word: string) => (
+                <li>
+                  <strong>{word}</strong>
+                </li>
+              ))}
+            </OrderedList>
+          </MnemonicDisplayEl>
+          <DisplayButtonsEl>
+            <ActionButton
+              data-testid="download"
+              onClick={() => {
+                download({
+                  filename: "freighterMnemonicPhrase.txt",
+                  content: mnemonicPhrase,
+                });
+                emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
+              }}
+            >
+              Download
+              <img src={DownloadIcon} alt="download button" />
+            </ActionButton>
+            <CopyText textToCopy={mnemonicPhrase} showCopyIcon showTooltip>
+              COPY
+            </CopyText>
+          </DisplayButtonsEl>
+          <SubmitButton
+            data-testid="confirm"
             onClick={() => {
-              setIsBlurred(false);
-              emitMetric(METRIC_NAMES.accountCreatorMnemonicViewPhrase);
+              setReadyToConfirm(true);
             }}
           >
-            Show backup phrase
-          </DisplayTooltipEl>
-        ) : null}
-        {mnemonicPhrase}
-      </MnemonicDisplayEl>
-      <DisplayButtonsEl>
-        <ActionButton
-          data-testid="download"
-          onClick={() => {
-            download({
-              filename: "freighterMnemonicPhrase.txt",
-              content: mnemonicPhrase,
-            });
-            emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
-          }}
-        >
-          Download
-          <img src={DownloadIcon} alt="download button" />
-        </ActionButton>
-        <CopyToClipboard
-          data-testid="copy"
-          text={mnemonicPhrase}
-          onCopy={() => {
-            setIsCopied(true);
-            emitMetric(METRIC_NAMES.accountCreatorMnemonicCopyPhrase);
-          }}
-        >
-          <ActionButton>
-            Copy
-            <img src={CopyIcon} alt="copy button" />
-          </ActionButton>
-        </CopyToClipboard>
-        <CopiedToastWrapperEl>
-          <Toast
-            message="Copied to your clipboard 👌"
-            isShowing={isCopied}
-            setIsShowing={setIsCopied}
-          />
-        </CopiedToastWrapperEl>
-      </DisplayButtonsEl>
-      <SubmitButton
-        data-testid="confirm"
-        onClick={() => {
-          setReadyToConfirm(true);
-        }}
-      >
-        Next
-      </SubmitButton>
-    </HalfScreen>
+            Next
+          </SubmitButton>
+        </HalfScreen>
+      </Screen>
+    </>
   );
 };
