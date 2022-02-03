@@ -1,0 +1,21 @@
+.ButtonLabel {
+  border: 1px solid var(--pal-background-secondary);
+  border-radius: 6.25rem;
+  color: var(--pal-text-primary);
+  cursor: pointer;
+  display: inline-block;
+  font-weight: var(--font-weight-medium);
+  font-size: 0.875rem;
+  margin: 3px;
+  padding: 0.25rem 1rem;
+  text-transform: none;
+}
+
+.CheckButton {
+  display: none;
+
+  &:checked + label {
+    background: var(--pal-background-secondary);
+    color: white;
+  }
+}
