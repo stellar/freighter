@@ -53,7 +53,7 @@ export const DisplayMnemonicPhrase = ({
           <Card variant={Card.variant.highlight}>
             <ol className="DisplayMnemonicPhrase--ordered-list">
               {mnemonicPhrase.split(" ").map((word: string) => (
-                <li>
+                <li key={word}>
                   <strong>{word}</strong>
                 </li>
               ))}
