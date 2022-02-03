@@ -1,7 +1,6 @@
 import React from "react";
 import styled from "styled-components";
 import { Field } from "formik";
-import { COLOR_PALETTE } from "popup/constants/styles";
 
 type CheckButtonProps = {
   onChange: (e: any) => void;
@@ -9,22 +8,23 @@ type CheckButtonProps = {
   word: string;
 };
 const ButtonLabelEl = styled.label`
-  border: 1px solid ${COLOR_PALETTE.primary};
-  border-radius: 1rem;
-  color: ${COLOR_PALETTE.primary};
+  border: 1px solid var(--pal-background-secondary);
+  border-radius: 6.25rem;
+  color: var(--pal-text-primary);
   cursor: pointer;
   display: inline-block;
-  font-weight: 800;
-  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  font-size: 0.875rem;
   margin: 3px;
-  padding: 0.7rem 1.75rem;
+  padding: 0.25rem 1rem;
+  text-transform: none;
 `;
 
 const CheckBoxEl = styled(Field)`
   display: none;
 
   &:checked + ${ButtonLabelEl} {
-    background: ${COLOR_PALETTE.primary};
+    background: var(--pal-background-secondary);
     color: white;
   }
 `;
