@@ -1,5 +1,5 @@
 .ConfirmMnemonicPhrase {
-  &--screen {
+  &__screen {
     display: flex;
     width: 31rem;
     flex-flow: column wrap;
@@ -13,7 +13,7 @@
     margin: auto;
   }
 
-  &--header {
+  &__header {
     font-size: 2.5rem;
     line-height: 3rem;
     font-weight: var(--font-weight-normal);
@@ -21,7 +21,7 @@
     text-align: center;
   }
 
-  &--content {
+  &__content {
     margin: 1.5rem 0;
     font-size: 1rem;
     line-height: 1.5rem;
@@ -39,19 +39,19 @@
     margin: 0 auto;
   }
 
-  &--selected-words-wrapper {
+  &__selected-words-wrapper {
     height: 7.5rem;
     width: 100%;
   }
 
-  &--selected-words-text {
+  &__selected-words-text {
     font-weight: var(--font-weight-medium);
     font-size: 1rem;
     line-height: 1.5rem;
     color: var(--pal-text-primary);
   }
 
-  &--word-bubble-wrapper {
+  &__word-bubble-wrapper {
     display: flex;
     flex-flow: row wrap;
     justify-content: center;

@@ -67,26 +67,26 @@ export const ConfirmMnemonicPhrase = ({
   return (
     <>
       <FullscreenStyle />
-      <div className="ConfirmMnemonicPhrase--screen">
-        <div className="ConfirmMnemonicPhrase--header">
+      <div className="ConfirmMnemonicPhrase__screen">
+        <div className="ConfirmMnemonicPhrase__header">
           Confirm your recovery phrase{" "}
         </div>
-        <div className="ConfirmMnemonicPhrase--content">
+        <div className="ConfirmMnemonicPhrase__content">
           <p>Please select each word in the same order you have</p>
           <p>them noted to confirm you go them right</p>
         </div>
         <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
           {({ dirty, isSubmitting, handleChange }) => (
             <Form className="ConfirmMnemonicPhrase--form-wrapper">
-              <div className="ConfirmMnemonicPhrase--selected-words-wrapper">
+              <div className="ConfirmMnemonicPhrase__selected-words-wrapper">
                 <Card variant={Card.variant.highlight}>
-                  <span className="ConfirmMnemonicPhrase--selected-words-text">
+                  <span className="ConfirmMnemonicPhrase__selected-words-text">
                     {displaySelectedWords()}
                   </span>
                 </Card>
               </div>
               <ApiErrorMessage error={authError}></ApiErrorMessage>
-              <div className="ConfirmMnemonicPhrase--word-bubble-wrapper">
+              <div className="ConfirmMnemonicPhrase__word-bubble-wrapper">
                 {wordStateArr.map(([wordKey]) => (
                   <CheckButton
                     key={wordKey}
