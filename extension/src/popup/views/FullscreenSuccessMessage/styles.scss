@@ -1,0 +1,28 @@
+.InfoBlock {
+  &__header {
+    color: var(--pal-text-primary);
+    display: inline-block;
+    font-weight: var(--font-weight-bold);
+    font-size: 1.1rem;
+    padding-left: 0.65rem;
+    margin: 0;
+  }
+
+  &__content {
+    text-align: left;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+  li {
+    margin-top: 1rem;
+  }
+
+  li::before {
+    // color: var(--pal-text-tertiary);
+    content: none;
+    // counter-increment: item;
+    // content: counter(item);
+  }
+}
