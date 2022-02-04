@@ -3,6 +3,41 @@
 }
 
 .RecoverAccount {
+  &__header {
+    font-size: 2.5rem;
+    line-height: 3rem;
+    font-weight: var(--font-weight-normal);
+    color: var(--pal-text-primary);
+    text-align: left;
+    margin-bottom: 2rem;
+  }
+
+  &__screen {
+    display: flex;
+    flex-flow: row wrap;
+    align-content: center;
+    justify-content: space-between;
+    // TODO - use HEADER_HEIGHT constant
+    height: calc(100vh - 119px);
+    max-height: 40rem;
+    max-width: 57rem;
+    width: 100%;
+    margin: auto;
+  }
+
+  &__half-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    padding: 2rem 0 2rem 1.55rem;
+    width: 27rem;
+  }
+
+  &__mnemonic-input {
+    height: 10rem;
+    width: 24rem;
+  }
+
   &__button-row {
     padding: 1.5rem;
   }

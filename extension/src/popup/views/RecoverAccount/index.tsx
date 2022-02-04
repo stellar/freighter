@@ -1,16 +1,10 @@
 import React, { useEffect } from "react";
-import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
 
-// import { HEADER_HEIGHT } from "constants/dimensions";
-
-// ALEC TODO - why is this needed here but not in MnemonicPhrase.tsx?
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
-
 import { ROUTES } from "popup/constants/routes";
-
 import { navigateTo } from "popup/helpers/navigate";
 import {
   password as passwordValidator,
@@ -23,48 +17,11 @@ import {
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/accountServices";
-
 import { FormRow, Form } from "popup/basics/Forms";
-
 import { Header } from "popup/components/Header";
-import { HalfScreen } from "popup/components/Onboarding";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 import { Input, Button, Checkbox, TextLink } from "@stellar/design-system";
-
-const HalfScreenEl = styled(HalfScreen)`
-  display: flex;
-  flex-direction: column;
-  justify-content: start;
-  padding: 2rem 0 2rem 1.55rem;
-  width: 27rem;
-`;
-
-const Screen = styled.div`
-  display: flex;
-  flex-flow: row wrap;
-  align-content: center;
-  justify-content: space-between;
-  // TODO - use HEADER_HEIGHT constant
-  height: calc(100vh - 119px);
-  max-height: 40rem;
-  max-width: 57rem;
-  width: 100%;
-  margin: auto;
-`;
-const TextHeader = styled.div`
-  font-size: 2.5rem;
-  line-height: 3rem;
-  font-weight: var(--font-weight-normal);
-  color: var(--pal-text-primary);
-  text-align: left;
-  margin-bottom: 2rem;
-`;
-
-const MnemonicPhrase = styled.div`
-  height: 10rem;
-  width: 24rem;
-`;
 
 import "./styles.scss";
 
@@ -124,12 +81,14 @@ export const RecoverAccount = () => {
       >
         {({ dirty, touched, isSubmitting, isValid, errors }) => (
           <Form>
-            <Screen>
-              <HalfScreenEl>
-                <TextHeader>Import wallet from recovery phrase</TextHeader>
+            <div className="RecoverAccount__screen">
+              <div className="RecoverAccount__half-screen">
+                <div className="RecoverAccount__header">
+                  Import wallet from recovery phrase
+                </div>
                 <FormRow>
-                  <MnemonicPhrase>
-                    <Field name="mnemonic-input">
+                  <div className="RecoverAccount__mnemonic-input">
+                    <Field name="mnemonicPhrase">
                       {({ field }: FieldProps) => (
                         <>
                           <textarea
@@ -139,15 +98,18 @@ export const RecoverAccount = () => {
                             placeholder="Enter your 12 word phrase to restore your wallet"
                             {...field}
                           />
-                          {/* ALEC TODO - do something */}
-                          {authError}
+                          {/* TODO - add textarea to SDS */}
+                          {authError ||
+                          (errors.mnemonicPhrase && touched.mnemonicPhrase)
+                            ? errors.mnemonicPhrase
+                            : ""}
                         </>
                       )}
                     </Field>
-                  </MnemonicPhrase>
+                  </div>
                 </FormRow>
-              </HalfScreenEl>
-              <HalfScreenEl>
+              </div>
+              <div className="RecoverAccount__half-screen">
                 <FormRow>
                   <Field name="password">
                     {({ field }: FieldProps) => (
@@ -155,7 +117,7 @@ export const RecoverAccount = () => {
                         autoComplete="off"
                         id="password-input"
                         placeholder="New password"
-                        type="text"
+                        type="password"
                         error={
                           authError || (errors.password && touched.password)
                             ? errors.password
@@ -173,7 +135,7 @@ export const RecoverAccount = () => {
                         autoComplete="off"
                         id="confirm-password-input"
                         placeholder="Confirm password"
-                        type="text"
+                        type="password"
                         error={
                           authError ||
                           (errors.confirmPassword && touched.confirmPassword)
@@ -223,8 +185,8 @@ export const RecoverAccount = () => {
                     </Button>
                   </div>
                 </FormRow>
-              </HalfScreenEl>
-            </Screen>
+              </div>
+            </div>
           </Form>
         )}
       </Formik>
