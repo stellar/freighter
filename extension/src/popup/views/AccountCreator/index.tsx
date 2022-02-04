@@ -4,7 +4,6 @@ import { Field, FieldProps, Formik } from "formik";
 import { object as YupObject } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
-
 import { navigateTo } from "popup/helpers/navigate";
 import {
   password as passwordValidator,
@@ -16,11 +15,8 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-
 import { Form, FormRow } from "popup/basics/Forms";
-
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
-
+import { Onboarding } from "popup/components/Onboarding";
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
@@ -64,96 +60,97 @@ export const AccountCreator = () => {
   return (
     <>
       <Header />
-      <FullscreenStyle />
-      <section className="AccountCreator--screen">
-        <div className="AccountCreator--header">Create a password</div>
-        <Formik
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          validationSchema={AccountCreatorSchema}
-        >
-          {({ isValid, dirty, isSubmitting, errors, touched }) => (
-            <Form>
-              <section className="AccountCreator--half-screen">
-                <FormRow>
-                  <Field name="password">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        autoComplete="off"
-                        id="new-password-input"
-                        placeholder="New password"
-                        type="password"
-                        error={
-                          authError || (errors.password && touched.password)
-                            ? errors.password
-                            : ""
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-                </FormRow>
-                <FormRow>
-                  <Field name="confirmPassword">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        autoComplete="off"
-                        id="confirm-password-input"
-                        placeholder="Confirm password"
-                        type="password"
-                        error={
-                          authError ||
-                          (errors.confirmPassword && touched.confirmPassword)
-                            ? errors.confirmPassword
-                            : null
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-                </FormRow>
-                <PasswordRequirements />
-                <FormRow>
-                  <Field name="termsOfUse">
-                    {({ field }: FieldProps) => (
-                      <Checkbox
-                        autoComplete="off"
-                        id="termsOfUse-input"
-                        label={
-                          <span>
-                            I have read and agree to{" "}
-                            <TextLink
-                              variant={TextLink.variant.secondary}
-                              href="https://stellar.org/terms-of-service"
-                            >
-                              Terms of Use
-                            </TextLink>
-                          </span>
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-                </FormRow>
-                {/* TODO - add error to Checkbox in SDS */}
-                {errors.termsOfUse && touched.termsOfUse
-                  ? errors.termsOfUse
-                  : null}
-                <div className="AccountCreator--button-row">
-                  <Button
-                    fullWidth
-                    type="submit"
-                    isLoading={isSubmitting}
-                    disabled={!(dirty && isValid)}
-                  >
-                    CONFIRM
-                  </Button>
-                </div>
-              </section>
-            </Form>
-          )}
-        </Formik>
-      </section>
+      <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
+        <section className="AccountCreator--screen">
+          <div className="AccountCreator--header">Create a password</div>
+          <Formik
+            initialValues={initialValues}
+            onSubmit={handleSubmit}
+            validationSchema={AccountCreatorSchema}
+          >
+            {({ isValid, dirty, isSubmitting, errors, touched }) => (
+              <Form>
+                <section className="AccountCreator--half-screen">
+                  <FormRow>
+                    <Field name="password">
+                      {({ field }: FieldProps) => (
+                        <Input
+                          autoComplete="off"
+                          id="new-password-input"
+                          placeholder="New password"
+                          type="password"
+                          error={
+                            authError || (errors.password && touched.password)
+                              ? errors.password
+                              : ""
+                          }
+                          {...field}
+                        />
+                      )}
+                    </Field>
+                  </FormRow>
+                  <FormRow>
+                    <Field name="confirmPassword">
+                      {({ field }: FieldProps) => (
+                        <Input
+                          autoComplete="off"
+                          id="confirm-password-input"
+                          placeholder="Confirm password"
+                          type="password"
+                          error={
+                            authError ||
+                            (errors.confirmPassword && touched.confirmPassword)
+                              ? errors.confirmPassword
+                              : null
+                          }
+                          {...field}
+                        />
+                      )}
+                    </Field>
+                  </FormRow>
+                  <PasswordRequirements />
+                  <FormRow>
+                    <Field name="termsOfUse">
+                      {({ field }: FieldProps) => (
+                        <Checkbox
+                          autoComplete="off"
+                          id="termsOfUse-input"
+                          label={
+                            <span>
+                              I have read and agree to{" "}
+                              <TextLink
+                                variant={TextLink.variant.secondary}
+                                href="https://stellar.org/terms-of-service"
+                              >
+                                Terms of Use
+                              </TextLink>
+                            </span>
+                          }
+                          {...field}
+                        />
+                      )}
+                    </Field>
+                  </FormRow>
+                  {/* TODO - add error to Checkbox in SDS */}
+                  {errors.termsOfUse && touched.termsOfUse
+                    ? errors.termsOfUse
+                    : null}
+                  <div className="AccountCreator--button-row">
+                    <Button
+                      fullWidth
+                      type="submit"
+                      isLoading={isSubmitting}
+                      disabled={!(dirty && isValid)}
+                    >
+                      CONFIRM
+                    </Button>
+                  </div>
+                </section>
+              </Form>
+            )}
+          </Formik>
+        </section>
+      </Onboarding>
     </>
   );
 };
