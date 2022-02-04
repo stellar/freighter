@@ -6,20 +6,14 @@ import { emitMetric } from "helpers/metrics";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import {
-  COLOR_PALETTE,
-  // FONT_WEIGHT,
-  // ROUNDED_CORNERS,
-} from "popup/constants/styles";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
-import { SubmitButton } from "popup/basics/Forms";
 
-// import WhiteLockIcon from "popup/assets/icon-white-lock.svg";
-// import SuccessIllo from "popup/assets/illo-success-screen.svg";
+import SuccessIllo from "popup/assets/illo-success-screen.svg";
+import ExtensionIllo from "popup/assets/illo-extension.png";
 
-import { InfoBlock } from "@stellar/design-system";
+import { Button, InfoBlock } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -31,63 +25,49 @@ const HeaderEl = styled.h1`
 `;
 
 const WrapperEl = styled.div`
-  background: ${COLOR_PALETTE.primary};
   display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  height: 100%;
+  flex-flow: column wrap;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 119px);
+  width: 100%;
 `;
 
 const ContentWrapperEl = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: start;
   padding: 0 0 2rem 0;
-  text-align: center;
-  margin: 0 auto;
-  color: ${COLOR_PALETTE.white};
-  max-width: 39.5rem;
+  color: var(--pal-text-primary);
+  max-width: 24rem;
+  > div {
+    margin-bottom: 1rem;
+  }
 `;
 
 const CopyEl = styled.div`
-  margin: auto;
-  max-width: 24.375rem;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: var(--font-weight-normal);
+  margin-bottom: 1.5rem;
 `;
 
-const FinishButtonEl = styled(SubmitButton)`
-  background: ${COLOR_PALETTE.secondary};
-  margin: 2.5rem auto 0;
+const IlloContainerEl = styled.div`
+  position: relative;
+  padding: 1rem 0;
 `;
 
-// const IlloContainerEl = styled.div`
-//   position: relative;
-//   padding: 1rem 0;
-// `;
+const SuccessImageEl = styled.img`
+  height: 4.25rem;
+`;
 
-// const MessageEl = styled.div`
-//   border-radius: ${ROUNDED_CORNERS};
-//   background-color: #563bf1;
-//   padding: 1.75rem 1.5rem;
-//   text-align: left;
-//   font-size: 0.93rem;
-//   margin: 1.25rem 0 0;
-// `;
-
-// const IconEl = styled.img`
-//   display: inline-block;
-//   margin-top: -0.4rem;
-//   max-width: 1.875rem;
-//   max-height: 1.875rem;
-//   vertical-align: middle;
-// `;
-
-// const SuccessImgEl = styled.img`
-//   height: 7.5rem;
-// `;
+const ExtensionImgEl = styled.img`
+  height: 3.5rem;
+`;
 
 const MnemonicPhraseConfirmedMessage = () => (
   <>
-    <HeaderEl>Woo, you're in!</HeaderEl>
     <CopyEl>
       <p>
         Awesome, you passed the test. Keep your recovery <br />
@@ -115,21 +95,40 @@ const MnemonicPhraseConfirmedMessage = () => (
         </ul>
       </div>
     </InfoBlock>
+    <Button
+      fullWidth
+      onClick={() => {
+        emitMetric(METRIC_NAMES.accountCreatorFinished);
+        window.close();
+      }}
+    >
+      GOT IT
+    </Button>
   </>
 );
 
 const RecoverAccountSuccessMessage = () => (
   <>
-    <HeaderEl>Woo, you're in!</HeaderEl>
     <CopyEl>
-      <p>You successfully imported your account.</p>
       <p>
-        <strong>
-          Check your account details by clicking on the Freighter icon on your
-          browser.
-        </strong>
+        You successfully imported your account. <br />
+        <br />
+        Check your account details by clicking on the Freighter icon on your
+        browser.
       </p>
     </CopyEl>
+    <IlloContainerEl>
+      <ExtensionImgEl src={ExtensionIllo} alt="Extension" />
+    </IlloContainerEl>
+    <Button
+      fullWidth
+      onClick={() => {
+        emitMetric(METRIC_NAMES.recoverAccountFinished);
+        window.close();
+      }}
+    >
+      ALL DONE
+    </Button>
   </>
 );
 
@@ -139,29 +138,21 @@ export const FullscreenSuccessMessage = () => {
   const IS_MNEMONIC_PHRASE_STATE =
     location.pathname === ROUTES.mnemonicPhraseConfirmed;
 
-  const finishButtonMetric = IS_MNEMONIC_PHRASE_STATE
-    ? METRIC_NAMES.accountCreatorFinished
-    : METRIC_NAMES.recoverAccountFinished;
-
   return (
     <>
       <Header />
+      <FullscreenStyle />
       <WrapperEl>
-        <FullscreenStyle />
+        <IlloContainerEl>
+          <SuccessImageEl src={SuccessIllo} alt="Success" />
+        </IlloContainerEl>
+        <HeaderEl>Woo, you're in!</HeaderEl>
         <ContentWrapperEl>
           {IS_MNEMONIC_PHRASE_STATE ? (
             <MnemonicPhraseConfirmedMessage />
           ) : (
             <RecoverAccountSuccessMessage />
           )}
-          <FinishButtonEl
-            onClick={() => {
-              emitMetric(finishButtonMetric);
-              window.close();
-            }}
-          >
-            Got it!
-          </FinishButtonEl>
         </ContentWrapperEl>
       </WrapperEl>
     </>

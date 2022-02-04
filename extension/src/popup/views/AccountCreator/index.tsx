@@ -142,6 +142,7 @@ export const AccountCreator = () => {
                 <div className="AccountCreator--button-row">
                   <Button
                     fullWidth
+                    type="submit"
                     isLoading={isSubmitting}
                     disabled={!(dirty && isValid)}
                   >

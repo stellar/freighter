@@ -17,12 +17,10 @@
   }
   li {
     margin-top: 1rem;
+    line-height: 1.5rem;
   }
 
   li::before {
-    // color: var(--pal-text-tertiary);
     content: none;
-    // counter-increment: item;
-    // content: counter(item);
   }
 }
