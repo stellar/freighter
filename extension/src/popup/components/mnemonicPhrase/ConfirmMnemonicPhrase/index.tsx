@@ -12,6 +12,7 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { Form, ApiErrorMessage, FormRow } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
+import { BackButton } from "popup/basics/Buttons";
 
 import { Button, Card } from "@stellar/design-system";
 
@@ -23,8 +24,10 @@ const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
 
 export const ConfirmMnemonicPhrase = ({
   words = [""],
+  setReadyToConfirm,
 }: {
   words: string[];
+  setReadyToConfirm: (readyState: boolean) => void;
 }) => {
   const dispatch = useDispatch();
 
@@ -57,6 +60,10 @@ export const ConfirmMnemonicPhrase = ({
     await dispatch(confirmMnemonicPhrase(displaySelectedWords()));
   };
 
+  const goBack = () => {
+    setReadyToConfirm(false);
+  };
+
   const displaySelectedWords = () =>
     selectedWords.map((word) => convertToWord(word)).join(" ");
 
@@ -67,6 +74,7 @@ export const ConfirmMnemonicPhrase = ({
   return (
     <>
       <FullscreenStyle />
+      <BackButton onClick={goBack} />
       <div className="ConfirmMnemonicPhrase__screen">
         <div className="ConfirmMnemonicPhrase__header">
           Confirm your recovery phrase{" "}

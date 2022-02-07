@@ -1,0 +1,77 @@
+.InfoBlock {
+  &__header {
+    color: var(--pal-text-primary);
+    display: inline-block;
+    font-weight: var(--font-weight-bold);
+    font-size: 1.1rem;
+    padding-left: 0.65rem;
+    margin: 0;
+  }
+
+  &__content {
+    text-align: left;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+  li {
+    margin-top: 1rem;
+    line-height: 1.5rem;
+  }
+
+  li::before {
+    content: none;
+  }
+}
+
+.FullscreenSuccessMessage {
+  &__wrapper {
+    display: flex;
+    flex-flow: column wrap;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 119px);
+    width: 100%;
+  }
+
+  &__header {
+    font-weight: 200;
+    font-size: 2.6rem;
+    line-height: 2.75rem;
+    margin: 2.5rem 0 3rem;
+  }
+
+  &__content-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    padding: 0 0 2rem 0;
+    color: var(--pal-text-primary);
+    max-width: 24rem;
+    > div {
+      margin-bottom: 1rem;
+    }
+  }
+
+  &__illo-container {
+    position: relative;
+    padding: 1rem 0;
+  }
+
+  &__success-image {
+    height: 4.25rem;
+  }
+
+  &__extension-image {
+    height: 3.5rem;
+  }
+
+  &__copy {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: var(--font-weight-normal);
+    margin-bottom: 1.5rem;
+  }
+}

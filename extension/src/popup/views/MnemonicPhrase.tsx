@@ -16,7 +16,10 @@ export const MnemonicPhrase = () => {
       <>
         <Header />
         {readyToConfirm ? (
-          <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />
+          <ConfirmMnemonicPhrase
+            words={shuffle(mnemonicPhrase.split(" "))}
+            setReadyToConfirm={setReadyToConfirm}
+          />
         ) : (
           <DisplayMnemonicPhrase
             mnemonicPhrase={mnemonicPhrase}
