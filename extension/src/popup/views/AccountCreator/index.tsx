@@ -61,8 +61,8 @@ export const AccountCreator = () => {
     <>
       <Header />
       <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
-        <section className="AccountCreator--screen">
-          <div className="AccountCreator--header">Create a password</div>
+        <section className="AccountCreator__screen">
+          <div className="AccountCreator__header">Create a password</div>
           <Formik
             initialValues={initialValues}
             onSubmit={handleSubmit}
@@ -70,7 +70,7 @@ export const AccountCreator = () => {
           >
             {({ isValid, dirty, isSubmitting, errors, touched }) => (
               <Form>
-                <section className="AccountCreator--half-screen">
+                <section className="AccountCreator__half-screen">
                   <FormRow>
                     <Field name="password">
                       {({ field }: FieldProps) => (
@@ -135,7 +135,7 @@ export const AccountCreator = () => {
                   {errors.termsOfUse && touched.termsOfUse
                     ? errors.termsOfUse
                     : null}
-                  <div className="AccountCreator--button-row">
+                  <div className="AccountCreator__button-row">
                     <Button
                       fullWidth
                       type="submit"
