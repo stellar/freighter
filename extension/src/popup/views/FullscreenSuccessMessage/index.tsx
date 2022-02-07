@@ -1,5 +1,4 @@
 import React from "react";
-import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 
 import { emitMetric } from "helpers/metrics";
@@ -17,63 +16,14 @@ import { Button, InfoBlock } from "@stellar/design-system";
 
 import "./styles.scss";
 
-const HeaderEl = styled.h1`
-  font-weight: 200;
-  font-size: 2.6rem;
-  line-height: 2.75rem;
-  margin: 2.5rem 0 3rem;
-`;
-
-const WrapperEl = styled.div`
-  display: flex;
-  flex-flow: column wrap;
-  align-items: center;
-  justify-content: center;
-  height: calc(100vh - 119px);
-  width: 100%;
-`;
-
-const ContentWrapperEl = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: start;
-  padding: 0 0 2rem 0;
-  color: var(--pal-text-primary);
-  max-width: 24rem;
-  > div {
-    margin-bottom: 1rem;
-  }
-`;
-
-const CopyEl = styled.div`
-  text-align: center;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  font-weight: var(--font-weight-normal);
-  margin-bottom: 1.5rem;
-`;
-
-const IlloContainerEl = styled.div`
-  position: relative;
-  padding: 1rem 0;
-`;
-
-const SuccessImageEl = styled.img`
-  height: 4.25rem;
-`;
-
-const ExtensionImgEl = styled.img`
-  height: 3.5rem;
-`;
-
 const MnemonicPhraseConfirmedMessage = () => (
   <>
-    <CopyEl>
+    <div className="FullscreenSuccessMessage__copy">
       <p>
         Awesome, you passed the test. Keep your recovery <br />
         phrase safe, it's your responsibility.
       </p>
-    </CopyEl>
+    </div>
     <InfoBlock variant={InfoBlock.variant.warning}>
       <div className="InfoBlock__content">
         <div className="InfoBlock__header">
@@ -109,17 +59,21 @@ const MnemonicPhraseConfirmedMessage = () => (
 
 const RecoverAccountSuccessMessage = () => (
   <>
-    <CopyEl>
+    <div className="FullscreenSuccessMessage__copy">
       <p>
         You successfully imported your account. <br />
         <br />
         Check your account details by clicking on the Freighter icon on your
         browser.
       </p>
-    </CopyEl>
-    <IlloContainerEl>
-      <ExtensionImgEl src={ExtensionIllo} alt="Extension" />
-    </IlloContainerEl>
+    </div>
+    <div className="FullscreenSuccessMessage__illo-container">
+      <img
+        className="FullscreenSuccessMessage__extension-image"
+        src={ExtensionIllo}
+        alt="Extension"
+      />
+    </div>
     <Button
       fullWidth
       onClick={() => {
@@ -142,19 +96,23 @@ export const FullscreenSuccessMessage = () => {
     <>
       <Header />
       <FullscreenStyle />
-      <WrapperEl>
-        <IlloContainerEl>
-          <SuccessImageEl src={SuccessIllo} alt="Success" />
-        </IlloContainerEl>
-        <HeaderEl>Woo, you're in!</HeaderEl>
-        <ContentWrapperEl>
+      <div className="FullscreenSuccessMessage__wrapper">
+        <div className="FullscreenSuccessMessage__illo-container">
+          <img
+            className="FullscreenSuccessMessage__success-image"
+            src={SuccessIllo}
+            alt="Success"
+          />
+        </div>
+        <h1 className="FullscreenSuccessMessage__header">Woo, you're in!</h1>
+        <div className="FullscreenSuccessMessage__content-wrapper">
           {IS_MNEMONIC_PHRASE_STATE ? (
             <MnemonicPhraseConfirmedMessage />
           ) : (
             <RecoverAccountSuccessMessage />
           )}
-        </ContentWrapperEl>
-      </WrapperEl>
+        </div>
+      </div>
     </>
   );
 };
