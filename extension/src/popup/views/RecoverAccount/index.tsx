@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Field, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
 
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
+import { Onboarding } from "popup/components/Onboarding";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import {
@@ -73,123 +73,124 @@ export const RecoverAccount = () => {
   return (
     <>
       <Header />
-      <FullscreenStyle />
-      <Formik
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        validationSchema={RecoverAccountSchema}
-      >
-        {({ dirty, touched, isSubmitting, isValid, errors }) => (
-          <Form>
-            <div className="RecoverAccount__screen">
-              <div className="RecoverAccount__half-screen">
-                <div className="RecoverAccount__header">
-                  Import wallet from recovery phrase
+      <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          validationSchema={RecoverAccountSchema}
+        >
+          {({ dirty, touched, isSubmitting, isValid, errors }) => (
+            <Form>
+              <div className="RecoverAccount__screen">
+                <div className="RecoverAccount__half-screen">
+                  <div className="RecoverAccount__header">
+                    Import wallet from recovery phrase
+                  </div>
+                  <FormRow>
+                    <div className="RecoverAccount__mnemonic-input">
+                      <Field name="mnemonicPhrase">
+                        {({ field }: FieldProps) => (
+                          <>
+                            <textarea
+                              className="TextArea Card Card--highlight"
+                              autoComplete="off"
+                              id="mnemonic-input"
+                              placeholder="Enter your 12 word phrase to restore your wallet"
+                              {...field}
+                            />
+                            {/* TODO - add textarea to SDS */}
+                            {authError ||
+                            (errors.mnemonicPhrase && touched.mnemonicPhrase)
+                              ? errors.mnemonicPhrase
+                              : ""}
+                          </>
+                        )}
+                      </Field>
+                    </div>
+                  </FormRow>
                 </div>
-                <FormRow>
-                  <div className="RecoverAccount__mnemonic-input">
-                    <Field name="mnemonicPhrase">
+                <div className="RecoverAccount__half-screen">
+                  <FormRow>
+                    <Field name="password">
                       {({ field }: FieldProps) => (
-                        <>
-                          <textarea
-                            className="TextArea Card Card--highlight"
-                            autoComplete="off"
-                            id="mnemonic-input"
-                            placeholder="Enter your 12 word phrase to restore your wallet"
-                            {...field}
-                          />
-                          {/* TODO - add textarea to SDS */}
-                          {authError ||
-                          (errors.mnemonicPhrase && touched.mnemonicPhrase)
-                            ? errors.mnemonicPhrase
-                            : ""}
-                        </>
+                        <Input
+                          autoComplete="off"
+                          id="password-input"
+                          placeholder="New password"
+                          type="password"
+                          error={
+                            authError || (errors.password && touched.password)
+                              ? errors.password
+                              : ""
+                          }
+                          {...field}
+                        />
                       )}
                     </Field>
-                  </div>
-                </FormRow>
+                  </FormRow>
+                  <FormRow>
+                    <Field name="confirmPassword">
+                      {({ field }: FieldProps) => (
+                        <Input
+                          autoComplete="off"
+                          id="confirm-password-input"
+                          placeholder="Confirm password"
+                          type="password"
+                          error={
+                            authError ||
+                            (errors.confirmPassword && touched.confirmPassword)
+                              ? errors.confirmPassword
+                              : null
+                          }
+                          {...field}
+                        />
+                      )}
+                    </Field>
+                  </FormRow>
+                  <PasswordRequirements />
+                  <FormRow>
+                    <Field name="termsOfUse">
+                      {({ field }: FieldProps) => (
+                        <Checkbox
+                          autoComplete="off"
+                          id="termsOfUse-input"
+                          label={
+                            <span>
+                              I have read and agree to{" "}
+                              <TextLink
+                                variant={TextLink.variant.secondary}
+                                href="https://stellar.org/terms-of-service"
+                              >
+                                Terms of Use
+                              </TextLink>
+                            </span>
+                          }
+                          {...field}
+                        />
+                      )}
+                    </Field>
+                  </FormRow>
+                  {/* TODO - add error to Checkbox in SDS */}
+                  {errors.termsOfUse && touched.termsOfUse
+                    ? errors.termsOfUse
+                    : null}
+                  <FormRow>
+                    <div className="RecoverAccount__button-row">
+                      <Button
+                        fullWidth
+                        isLoading={isSubmitting}
+                        disabled={!(dirty && isValid)}
+                      >
+                        IMPORT
+                      </Button>
+                    </div>
+                  </FormRow>
+                </div>
               </div>
-              <div className="RecoverAccount__half-screen">
-                <FormRow>
-                  <Field name="password">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        autoComplete="off"
-                        id="password-input"
-                        placeholder="New password"
-                        type="password"
-                        error={
-                          authError || (errors.password && touched.password)
-                            ? errors.password
-                            : ""
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-                </FormRow>
-                <FormRow>
-                  <Field name="confirmPassword">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        autoComplete="off"
-                        id="confirm-password-input"
-                        placeholder="Confirm password"
-                        type="password"
-                        error={
-                          authError ||
-                          (errors.confirmPassword && touched.confirmPassword)
-                            ? errors.confirmPassword
-                            : null
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-                </FormRow>
-                <PasswordRequirements />
-                <FormRow>
-                  <Field name="termsOfUse">
-                    {({ field }: FieldProps) => (
-                      <Checkbox
-                        autoComplete="off"
-                        id="termsOfUse-input"
-                        label={
-                          <span>
-                            I have read and agree to{" "}
-                            <TextLink
-                              variant={TextLink.variant.secondary}
-                              href="https://stellar.org/terms-of-service"
-                            >
-                              Terms of Use
-                            </TextLink>
-                          </span>
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-                </FormRow>
-                {/* TODO - add error to Checkbox in SDS */}
-                {errors.termsOfUse && touched.termsOfUse
-                  ? errors.termsOfUse
-                  : null}
-                <FormRow>
-                  <div className="RecoverAccount__button-row">
-                    <Button
-                      fullWidth
-                      isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
-                    >
-                      IMPORT
-                    </Button>
-                  </div>
-                </FormRow>
-              </div>
-            </div>
-          </Form>
-        )}
-      </Formik>
+            </Form>
+          )}
+        </Formik>
+      </Onboarding>
     </>
   );
 };
