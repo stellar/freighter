@@ -1,0 +1,22 @@
+.UnlockAccount {
+  &__header {
+    padding: 5rem 0 3rem;
+    font-size: 2rem;
+    line-height: 2.4rem;
+    color: var(--pal-text-primary);
+    max-width: 17rem;
+  }
+
+  &__button-row {
+    padding: 1rem 0;
+  }
+
+  &__import-account {
+    margin-top: 3rem;
+    width: 100%;
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: var(--font-weight-normal);
+  }
+}

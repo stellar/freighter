@@ -100,9 +100,9 @@ export const RecoverAccount = () => {
                             />
                             {/* TODO - add textarea to SDS */}
                             {authError ||
-                            (errors.mnemonicPhrase && touched.mnemonicPhrase)
-                              ? errors.mnemonicPhrase
-                              : ""}
+                              (errors.mnemonicPhrase && touched.mnemonicPhrase
+                                ? errors.mnemonicPhrase
+                                : "")}
                           </>
                         )}
                       </Field>
@@ -119,9 +119,10 @@ export const RecoverAccount = () => {
                           placeholder="New password"
                           type="password"
                           error={
-                            authError || (errors.password && touched.password)
+                            authError ||
+                            (errors.password && touched.password
                               ? errors.password
-                              : ""
+                              : "")
                           }
                           {...field}
                         />
@@ -138,9 +139,9 @@ export const RecoverAccount = () => {
                           type="password"
                           error={
                             authError ||
-                            (errors.confirmPassword && touched.confirmPassword)
+                            (errors.confirmPassword && touched.confirmPassword
                               ? errors.confirmPassword
-                              : null
+                              : null)
                           }
                           {...field}
                         />
