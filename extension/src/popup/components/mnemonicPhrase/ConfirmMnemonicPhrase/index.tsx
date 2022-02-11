@@ -110,6 +110,7 @@ export const ConfirmMnemonicPhrase = ({
               <FormRow>
                 <Button
                   fullWidth
+                  type="submit"
                   disabled={!dirty && !!displaySelectedWords().length}
                   isLoading={isSubmitting}
                 >

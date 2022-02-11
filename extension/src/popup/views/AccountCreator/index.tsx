@@ -80,9 +80,10 @@ export const AccountCreator = () => {
                           placeholder="New password"
                           type="password"
                           error={
-                            authError || (errors.password && touched.password)
+                            authError ||
+                            (errors.password && touched.password
                               ? errors.password
-                              : ""
+                              : "")
                           }
                           {...field}
                         />
@@ -99,9 +100,9 @@ export const AccountCreator = () => {
                           type="password"
                           error={
                             authError ||
-                            (errors.confirmPassword && touched.confirmPassword)
+                            (errors.confirmPassword && touched.confirmPassword
                               ? errors.confirmPassword
-                              : null
+                              : null)
                           }
                           {...field}
                         />

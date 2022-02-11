@@ -20,8 +20,8 @@ const MnemonicPhraseConfirmedMessage = () => (
   <>
     <div className="FullscreenSuccessMessage__copy">
       <p>
-        Awesome, you passed the test. Keep your recovery <br />
-        phrase safe, it's your responsibility.
+        Awesome, you passed the test. Keep your recovery phrase safe, it's your
+        responsibility.
       </p>
     </div>
     <InfoBlock variant={InfoBlock.variant.warning}>
@@ -60,9 +60,8 @@ const MnemonicPhraseConfirmedMessage = () => (
 const RecoverAccountSuccessMessage = () => (
   <>
     <div className="FullscreenSuccessMessage__copy">
+      <p>You successfully imported your account.</p>
       <p>
-        You successfully imported your account. <br />
-        <br />
         Check your account details by clicking on the Freighter icon on your
         browser.
       </p>
