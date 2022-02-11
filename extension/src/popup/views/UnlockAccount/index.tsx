@@ -45,8 +45,7 @@ export const UnlockAccount = () => {
       <Header />
       <SubviewWrapper>
         <div className="UnlockAccount__header">
-          A <strong>Stellar</strong> wallet for <br />
-          every website
+          A <strong>Stellar</strong> wallet for every website
         </div>
         <Formik onSubmit={handleSubmit} initialValues={initialValues}>
           {({ dirty, isSubmitting, isValid, errors, touched }) => (

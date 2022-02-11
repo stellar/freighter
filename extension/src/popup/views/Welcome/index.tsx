@@ -20,6 +20,7 @@ const LargeHeadingEl = styled.div`
   line-height: 3rem;
   margin-bottom: 2.5rem;
   text-align: center;
+  max-width: 36rem;
 `;
 
 const HeadingEl = styled.h3`
@@ -51,6 +52,7 @@ const CenteredRowScreenEl = styled.div`
   display: flex;
   justify-content: space-between;
   flex-direction: column;
+  align-items: center;
 `;
 
 const RowScreenEl = styled.div`
@@ -75,8 +77,7 @@ export const Welcome = () => (
     <ColumnScreenEl>
       <CenteredRowScreenEl>
         <LargeHeadingEl>
-          Welcome! Is this your first <br />
-          time using Freighter?
+          Welcome! Is this your first time using Freighter?
         </LargeHeadingEl>
       </CenteredRowScreenEl>
       <RowScreenEl>
