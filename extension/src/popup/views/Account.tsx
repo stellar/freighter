@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import styled, { css } from "styled-components";
 import { useSelector } from "react-redux";
@@ -10,6 +10,8 @@ import {
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getAccountDetails } from "@shared/api/internal";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { POPUP_WIDTH } from "constants/dimensions";
@@ -27,6 +29,8 @@ import { Menu } from "popup/components/Menu";
 
 import CopyColorIcon from "popup/assets/copy-color.svg";
 import QrCode from "popup/assets/qr-code.png";
+
+import { AccountDetailsInterface } from "@shared/api/types";
 
 import "popup/metrics/authServices";
 
@@ -89,13 +93,56 @@ const CopiedToastWrapperEl = styled.div`
   right: 15rem;
 `;
 
+const defaultAccountDetails = {
+  balances: null,
+  isFunded: null,
+  operations: [],
+} as AccountDetailsInterface;
+
 export const Account = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [accountDetails, setAccountDetails] = useState(defaultAccountDetails);
+  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
+    false,
+  );
+  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
+
   const publicKey = useSelector(publicKeySelector);
   const allAccounts = useSelector(allAccountsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const accountDropDownRef = useRef<HTMLDivElement>(null);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  const { balances } = accountDetails;
+
+  useEffect(() => {
+    const fetchAccountDetails = async () => {
+      try {
+        const res = await getAccountDetails({ publicKey, networkDetails });
+        setAccountDetails(res);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    fetchAccountDetails();
+  }, [publicKey, networkDetails, isAccountFriendbotFunded]);
+
+  useEffect(() => {
+    const collection = [] as Array<any>;
+    if (!balances) return;
+
+    // put XLM at the top of the balance list
+    Object.entries(balances).forEach(([k, v]) => {
+      if (k === "native") {
+        collection.unshift(v);
+      } else if (!k.includes(":lp")) {
+        collection.push(v);
+      }
+    });
+    setSortedBalances(collection);
+  }, [balances, networkDetails]);
 
   const closeDropdown = (e: React.ChangeEvent<any>) => {
     if (
@@ -143,7 +190,11 @@ export const Account = () => {
         </DetailsLink>
       </AccountHeaderEl>
       <AccountEl>
-        <AccountDetails />
+        <AccountDetails
+          accountDetails={accountDetails}
+          sortedBalances={sortedBalances}
+          setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+        />
       </AccountEl>
     </section>
   );

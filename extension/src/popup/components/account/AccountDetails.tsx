@@ -9,13 +9,13 @@ import { ScrollingView } from "popup/basics/AccountSubview";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import {
-  getAccountDetails,
-  getAssetIcons,
-  retryAssetIcon,
-} from "@shared/api/internal";
+import { getAssetIcons, retryAssetIcon } from "@shared/api/internal";
 
-import { AccountDetailsInterface, AssetIcons } from "@shared/api/types";
+import {
+  AccountDetailsInterface,
+  AssetIcons,
+  Balances,
+} from "@shared/api/types";
 
 import { AccountAssets } from "./AccountAssets";
 import { AccountHistory } from "./AccountHistory";
@@ -53,52 +53,27 @@ const AccountToggleBtnEl = styled(BasicButton)`
   }
 `;
 
-const defaultAccountDetails = {
-  balances: null,
-  isFunded: null,
-  operations: [],
-} as AccountDetailsInterface;
+interface AccountDetailsProps {
+  accountDetails: AccountDetailsInterface;
+  sortedBalances: Balances[];
+  setIsAccountFriendbotFunded: (fundedStatus: boolean) => void;
+}
 
-export const AccountDetails = () => {
+export const AccountDetails = ({
+  accountDetails,
+  sortedBalances,
+  setIsAccountFriendbotFunded,
+}: AccountDetailsProps) => {
   const [isAccountAssetsActive, setIsAccountAssetsActive] = useState(true);
-  const [accountDetails, setAccountDetails] = useState(defaultAccountDetails);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
-  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
-    false,
-  );
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  const { isFunded, balances, operations } = accountDetails;
+  const { balances, isFunded, operations } = accountDetails;
 
   useEffect(() => {
-    const fetchAccountDetails = async () => {
-      try {
-        const res = await getAccountDetails({ publicKey, networkDetails });
-        setAccountDetails(res);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
-    fetchAccountDetails();
-  }, [publicKey, networkDetails, isAccountFriendbotFunded]);
-
-  useEffect(() => {
-    const collection = [] as Array<any>;
     if (!balances) return;
-
-    // put XLM at the top of the balance list
-    Object.entries(balances).forEach(([k, v]) => {
-      if (k === "native") {
-        collection.unshift(v);
-      } else if (!k.includes(":lp")) {
-        collection.push(v);
-      }
-    });
-    setSortedBalances(collection);
 
     // get each asset's icon
     const fetchAssetIcons = async () => {
@@ -164,8 +139,8 @@ export const AccountDetails = () => {
       <AccountBodyEl>
         {isAccountAssetsActive ? (
           <AccountAssets
-            sortedBalances={sortedBalances}
             assetIcons={assetIcons}
+            sortedBalances={sortedBalances}
             retryAssetIconFetch={retryAssetIconFetch}
           />
         ) : (
