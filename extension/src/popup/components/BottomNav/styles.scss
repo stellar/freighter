@@ -1,0 +1,15 @@
+.BottomNav {
+  margin-top: 1rem;
+  border-top: solid 0.125rem var(--pal-background-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  // TODO - move to constants
+  height: 72px;
+  top: 528px;
+  position: absolute;
+
+  img {
+    margin: 1rem 2rem;
+  }
+}
