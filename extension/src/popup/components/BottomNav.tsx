@@ -1,18 +1,29 @@
 import React from "react";
-// import styled from "styled-components";
+import styled from "styled-components";
 
-import { Icon } from "@stellar/design-system";
+import HistoryIcon from "popup/assets/icon-history.svg";
+import SwapIcon from "popup/assets/icon-swap.svg";
+import WalletIcon from "popup/assets/icon-wallet.svg";
+import SettingsIcon from "popup/assets/icon-settings.svg";
 
-export const BottomNav = () => {
-  // ALEC TODO - remove
-  console.log("bottom nav load");
-  return (
-    <div>
-      {/* TODO - use wallet when added to SDS */}
-      <Icon.CreditCard />
-      <Icon.Clock />
-      <Icon.RefreshCw />
-      <Icon.Settings />
-    </div>
-  );
-};
+const BottomNavWrapper = styled.div`
+  margin-top: 1rem;
+  border-top: solid 0.125rem var(--pal-background-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  bottom: 0;
+
+  img {
+    margin: 1rem 2rem;
+  }
+`;
+
+export const BottomNav = () => (
+  <BottomNavWrapper>
+    <img src={WalletIcon} alt="wallet icon" />
+    <img src={HistoryIcon} alt="history icon" />
+    <img src={SwapIcon} alt="swap icon" />
+    <img src={SettingsIcon} alt="settings icon" />
+  </BottomNavWrapper>
+);

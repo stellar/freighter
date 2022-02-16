@@ -10,24 +10,20 @@ import { AccountListIdenticon } from "popup/components/identicons/AccountListIde
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { Account } from "@shared/api/types";
-import AccountHeaderIcon from "popup/assets/icon-dropdown-arrow.svg";
 import CreateNewIcon from "popup/assets/create-new.svg";
 import ImportNewIcon from "popup/assets/import-new.svg";
 
-const AccountHeaderButtonEl = styled.div`
-  align-items: center;
-  border: 1px solid ${COLOR_PALETTE.greyFaded};
-  border-radius: 5rem;
-  cursor: pointer;
+const AccountHeaderSection = styled.div`
   display: flex;
-  margin: 0.875rem 0;
-  max-height: 3.8125rem;
-  max-width: 15.5rem;
-  padding: 0.75rem;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  height: 5rem;
 `;
 
-const AccountHeaderArrowEl = styled.img`
-  margin: 0 0.75rem 0 3rem;
+const AccountHeaderButtonEl = styled.div`
+  cursor: pointer;
+  display: flex;
 `;
 
 interface AccountHeaderOptionsProps {
@@ -86,25 +82,33 @@ const AccountHeaderOptionIconEl = styled.div`
   text-align: center;
 `;
 
-const RightSectionEl = styled.div`
-  align-items: flex-end;
+// const RightSectionEl = styled.div`
+//   align-items: flex-end;
+//   display: flex;
+//   flex-direction: column;
+// `;
+
+const NetworkWrapperEl = styled.div`
+  width: 6rem;
   display: flex;
-  flex-direction: column;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: right;
 `;
 
-const NetworkWrapperEl = styled.div``;
 const NetworkIconEl = styled.div`
   background: ${({ isTestnet }: { isTestnet: boolean }) =>
-    isTestnet
-      ? COLOR_PALETTE.testNetworkIcon
-      : COLOR_PALETTE.publicNetworkIcon};
+    isTestnet ? "var(--pal-brand-primary)" : "var(--pal-success)"};
   border-radius: 2rem;
-  height: 0.6875rem;
   margin-right: 0.5rem;
-  position: relative;
-  width: 0.6875rem;
+  height: 0.5rem;
+  width: 0.5rem;
 `;
-const NetworkEl = styled.div``;
+const NetworkEl = styled.div`
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  font-weight: var(--font-weight-medium);
+`;
 
 const ImportedTagEl = () => <AccountTagEl>IMPORTED</AccountTagEl>;
 
@@ -125,12 +129,11 @@ export const AccountHeader = ({
   setIsDropdownOpen,
   publicKey,
 }: AccountHeaderProps) => {
-  const { isTestnet, networkName } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
+  const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
+
   return (
     <>
-      <section ref={accountDropDownRef}>
+      <AccountHeaderSection ref={accountDropDownRef}>
         <AccountHeaderButtonEl
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         >
@@ -139,8 +142,11 @@ export const AccountHeader = ({
             accountName={currentAccountName}
             publicKey={publicKey}
           />
-          <AccountHeaderArrowEl src={AccountHeaderIcon} alt="dropdown icon" />
         </AccountHeaderButtonEl>
+        <NetworkWrapperEl>
+          <NetworkIconEl isTestnet={isTestnet} />
+          <NetworkEl>{isTestnet ? "TEST NET" : "MAIN NET"}</NetworkEl>
+        </NetworkWrapperEl>
         <AccountHeaderOptionsEl
           dropdownCount={allAccounts.length}
           isDropdownOpen={isDropdownOpen}
@@ -159,7 +165,6 @@ export const AccountHeader = ({
                     <AccountListIdenticon
                       accountName={accountName}
                       active={isSelected}
-                      checked={isSelected}
                       publicKey={accountPublicKey}
                       setIsDropdownOpen={setIsDropdownOpen}
                     />
@@ -193,13 +198,7 @@ export const AccountHeader = ({
             </AccountHeaderOptionLinkEl>
           </AccountHeaderOptionEl>
         </AccountHeaderOptionsEl>
-      </section>
-      <RightSectionEl>
-        <NetworkWrapperEl>
-          <NetworkIconEl isTestnet={isTestnet} />
-          <NetworkEl>{networkName}</NetworkEl>
-        </NetworkWrapperEl>
-      </RightSectionEl>
+      </AccountHeaderSection>
     </>
   );
 };

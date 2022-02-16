@@ -2,25 +2,27 @@ import React from "react";
 import styled from "styled-components";
 import { BigNumber } from "bignumber.js";
 
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
+import { COLOR_PALETTE } from "popup/constants/styles";
 import { AssetIcons } from "@shared/api/types";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 const AssetWrapper = styled.div`
-  padding-left: 0.75rem;
+  color: var(--pal-text-primary);
+  font-size: 1rem;
+  line-height: 1.5rem;
 `;
 
 const AssetEl = styled.div`
   align-items: center;
-  border-bottom: 1px solid ${COLOR_PALETTE.greyFaded};
+  justify-content: space-between;
   display: flex;
-  padding: 0 1rem;
+  margin: 2rem 0;
 `;
 
 const AssetLogoEl = styled.img`
-  margin-right: 0.75rem;
-  width: 1.625rem;
+  margin-right: 1rem;
+  width: 2rem;
 `;
 
 const AssetBulletEl = styled.div`
@@ -31,14 +33,16 @@ const AssetBulletEl = styled.div`
   width: 0.5rem;
 `;
 
-const LumenBalanceEl = styled.h2`
-  font-size: 1.56rem;
-  font-weight: ${FONT_WEIGHT.normal};
+const LumenBalanceEl = styled.div``;
+
+const LeftText = styled.div`
+  align-items: center;
+  display: flex;
+  font-weight: var(--font-weight-medium);
 `;
 
-const AssetTypeEl = styled.span`
-  color: ${COLOR_PALETTE.lightText};
-  font-size: 1.25rem;
+const RightText = styled.div`
+  font-weight: var(--font-weight-normal);
 `;
 
 const AssetIcon = ({
@@ -76,15 +80,20 @@ export const AccountAssets = ({
   <AssetWrapper>
     {sortedBalances.map(({ token: { issuer, code }, total }) => (
       <AssetEl key={code}>
-        <AssetIcon
-          assetIcons={assetIcons}
-          code={code}
-          issuerKey={issuer?.key}
-          retryAssetIconFetch={retryAssetIconFetch}
-        />
-        <LumenBalanceEl>
-          {new BigNumber(total).toString()} <AssetTypeEl>{code}</AssetTypeEl>
-        </LumenBalanceEl>
+        <LeftText>
+          <AssetIcon
+            assetIcons={assetIcons}
+            code={code}
+            issuerKey={issuer?.key}
+            retryAssetIconFetch={retryAssetIconFetch}
+          />
+          <span>{code}</span>
+        </LeftText>
+        <RightText>
+          <LumenBalanceEl>
+            {new BigNumber(total).toString()} <span>{code}</span>
+          </LumenBalanceEl>
+        </RightText>
       </AssetEl>
     ))}
   </AssetWrapper>
