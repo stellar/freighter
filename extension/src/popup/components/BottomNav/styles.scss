@@ -8,8 +8,17 @@
   height: 72px;
   top: 528px;
   position: absolute;
+  width: 100%;
 
   img {
     margin: 1rem 2rem;
+  }
+
+  &--link {
+    filter: brightness(0.24);
+
+    &--active {
+      filter: brightness(1);
+    }
   }
 }

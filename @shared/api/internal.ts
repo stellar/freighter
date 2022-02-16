@@ -2,7 +2,8 @@ import StellarSdk from "stellar-sdk";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
   Account,
-  AccountDetailsInterface,
+  AccountBalancesInterface,
+  AccountHistoryInterface,
   Balances,
   HorizonOperation,
   Settings,
@@ -202,13 +203,13 @@ export const confirmPassword = async (
   return response;
 };
 
-export const getAccountDetails = async ({
+export const getAccountBalances = async ({
   publicKey,
   networkDetails,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<AccountDetailsInterface> => {
+}): Promise<AccountBalancesInterface> => {
   const { networkUrl, networkPassphrase } = networkDetails;
 
   const dataProvider = new DataProvider({
@@ -219,7 +220,6 @@ export const getAccountDetails = async ({
 
   let balances = null;
   let isFunded = null;
-  let operations = [] as Array<HorizonOperation>;
 
   try {
     ({ balances } = await dataProvider.fetchAccountDetails());
@@ -229,9 +229,25 @@ export const getAccountDetails = async ({
     return {
       balances,
       isFunded: false,
-      operations,
     };
   }
+
+  return {
+    balances,
+    isFunded,
+  };
+};
+
+export const getAccountHistory = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountHistoryInterface> => {
+  const { networkUrl } = networkDetails;
+
+  let operations = [] as Array<HorizonOperation>;
 
   try {
     const server = new StellarSdk.Server(networkUrl);
@@ -249,8 +265,6 @@ export const getAccountDetails = async ({
   }
 
   return {
-    balances,
-    isFunded,
     operations,
   };
 };

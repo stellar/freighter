@@ -68,9 +68,12 @@ export type HorizonOperation = Horizon.PaymentOperationResponse & {
 };
 /* eslint-enable camelcase */
 
-export interface AccountDetailsInterface {
+export interface AccountBalancesInterface {
   balances: Balances;
   isFunded: boolean | null;
+}
+
+export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];
 }
 

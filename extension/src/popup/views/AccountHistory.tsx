@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { camelCase } from "lodash";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
@@ -7,12 +7,15 @@ import { BasicButton } from "popup/basics/Buttons";
 
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { OPERATION_TYPES } from "constants/transaction";
-import { HorizonOperation } from "@shared/api/types";
+import { AccountHistoryInterface, HorizonOperation } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+
+import { getAccountHistory } from "@shared/api/internal";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
 
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -176,18 +179,32 @@ const HistoryItem = ({
   );
 };
 
-export const AccountHistory = ({
-  publicKey,
-  operations,
-}: {
-  publicKey: string;
-  operations: Array<HorizonOperation>;
-}) => {
-  const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
+const defaultAccountHistory = {
+  operations: [],
+} as AccountHistoryInterface;
+
+export const AccountHistory = () => {
+  const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [accountHistory, setAccountHistory] = useState(defaultAccountHistory);
 
   const STELLAR_EXPERT_URL = `https://stellar.expert/explorer/${
-    isTestnet ? "testnet" : "public"
+    networkDetails.isTestnet ? "testnet" : "public"
   }`;
+  const { operations } = accountHistory;
+
+  useEffect(() => {
+    const fetchAccountHistory = async () => {
+      try {
+        const res = await getAccountHistory({ publicKey, networkDetails });
+        setAccountHistory(res);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchAccountHistory();
+  }, [publicKey, networkDetails]);
+
   return (
     <>
       <HistoryListEl>
