@@ -1,0 +1,12 @@
+.BottomNav {
+  margin-top: 1rem;
+  border-top: solid 0.125rem var(--pal-background-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  bottom: 0;
+
+  img {
+    margin: 1rem 2rem;
+  }
+}
