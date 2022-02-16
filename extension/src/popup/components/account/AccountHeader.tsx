@@ -82,12 +82,6 @@ const AccountHeaderOptionIconEl = styled.div`
   text-align: center;
 `;
 
-// const RightSectionEl = styled.div`
-//   align-items: flex-end;
-//   display: flex;
-//   flex-direction: column;
-// `;
-
 const NetworkWrapperEl = styled.div`
   width: 6rem;
   display: flex;
