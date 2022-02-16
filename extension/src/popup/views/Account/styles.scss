@@ -1,0 +1,56 @@
+.AccountView {
+  padding: 1.5rem;
+
+  &__account-actions {
+    align-items: center;
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+  }
+
+  &__name-key-display {
+    flex-direction: row;
+    width: 67%;
+  }
+
+  &__send-receive-display {
+    display: flex;
+    justify-content: right;
+
+    > div {
+      margin-left: 1rem;
+    }
+  }
+
+  &__send-receive-button {
+    cursor: pointer;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 2.5rem;
+    border: solid 0.125rem var(--pal-border-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    div {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  &__account-name {
+    color: var(--pal-text-primary);
+    width: 100%;
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__account-num {
+    color: var(--pay-text-tertiary);
+    width: 100%;
+  }
+}
