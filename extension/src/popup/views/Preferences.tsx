@@ -47,7 +47,7 @@ const SettingsCheckboxFieldEl = styled(CheckboxField)`
   align-items: flex-start;
 `;
 
-export const Settings = () => {
+export const Preferences = () => {
   const dispatch = useDispatch();
   const {
     isDataSharingAllowed,

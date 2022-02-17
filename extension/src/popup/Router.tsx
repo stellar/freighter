@@ -30,6 +30,7 @@ import {
 import { navigate } from "popup/ducks/views";
 
 import { Account } from "popup/views/Account";
+import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
@@ -47,6 +48,7 @@ import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
+import { Preferences } from "popup/views/Preferences";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -214,6 +216,9 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.account}>
           <Account />
         </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.accountHistory}>
+          <AccountHistory />
+        </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.addAccount}>
           <AddAccount />
         </PublicKeyRoute>
@@ -240,6 +245,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.settings}>
           <Settings />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.preferences}>
+          <Preferences />
         </PublicKeyRoute>
         <UnlockAccountRoute path={ROUTES.unlockAccount}>
           <UnlockAccount />

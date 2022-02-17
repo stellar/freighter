@@ -16,6 +16,8 @@ import { reducer as settings } from "popup/ducks/settings";
 
 import { Router } from "./Router";
 
+import "./styles.scss";
+
 const GlobalStyle = createGlobalStyle`
   body {
     overscroll-behavior: none;

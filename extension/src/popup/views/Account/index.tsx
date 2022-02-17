@@ -8,9 +8,9 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 
-import { AccountDetailsInterface, AssetIcons } from "@shared/api/types";
+import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
 import {
-  getAccountDetails,
+  getAccountBalances,
   getAssetIcons,
   retryAssetIcon,
 } from "@shared/api/internal";
@@ -29,14 +29,15 @@ import "popup/metrics/authServices";
 
 import "./styles.scss";
 
-const defaultAccountDetails = {
+const defaultAccountBalances = {
   balances: null,
   isFunded: null,
-  operations: [],
-} as AccountDetailsInterface;
+} as AccountBalancesInterface;
 
 export const Account = () => {
-  const [accountDetails, setAccountDetails] = useState(defaultAccountDetails);
+  const [accountBalances, setAccountBalances] = useState(
+    defaultAccountBalances,
+  );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -51,18 +52,18 @@ export const Account = () => {
   const allAccounts = useSelector(allAccountsSelector);
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
-  const { balances, isFunded } = accountDetails;
+  const { balances, isFunded } = accountBalances;
 
   useEffect(() => {
-    const fetchAccountDetails = async () => {
+    const fetchAccountBalances = async () => {
       try {
-        const res = await getAccountDetails({ publicKey, networkDetails });
-        setAccountDetails(res);
+        const res = await getAccountBalances({ publicKey, networkDetails });
+        setAccountBalances(res);
       } catch (e) {
         console.error(e);
       }
     };
-    fetchAccountDetails();
+    fetchAccountBalances();
   }, [publicKey, networkDetails, isAccountFriendbotFunded]);
 
   useEffect(() => {
