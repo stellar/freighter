@@ -2,6 +2,7 @@ export const METRIC_NAMES = {
   viewDebug: "loaded screen: debug",
   viewWelcome: "loaded screen: welcome",
   viewAccount: "loaded screen: account",
+  viewAccountHistory: "loaded screen: account history",
   viewAccountCreator: "loaded screen: account creator",
   viewAddAccount: "loaded screen: add account",
   viewImportAccount: "loaded screen: import account",
@@ -17,6 +18,7 @@ export const METRIC_NAMES = {
   viewDisplayBackupPhrase: "loaded screen: display backup phrase",
   viewPublicKey: "loaded screen: view public key generator",
   viewSettings: "loaded screen: settings",
+  viewPreferences: "loaded screen: preferences",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",

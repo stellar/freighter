@@ -2,6 +2,7 @@ export enum ROUTES {
   debug = "/debug",
   welcome = "/",
   account = "/account",
+  accountHistory = "/account-history",
   addAccount = "/add-account",
   importAccount = "/import-account",
   signTransaction = "/sign-transaction",
@@ -16,4 +17,5 @@ export enum ROUTES {
   displayBackupPhrase = "/display-backup-phrase",
   viewPublicKey = "/view-public-key",
   settings = "/settings",
+  preferences = "/preferences",
 }

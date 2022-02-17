@@ -11,6 +11,7 @@ import { ROUTES } from "popup/constants/routes";
 const routeToEventName = {
   [ROUTES.welcome]: METRIC_NAMES.viewWelcome,
   [ROUTES.account]: METRIC_NAMES.viewAccount,
+  [ROUTES.accountHistory]: METRIC_NAMES.viewAccountHistory,
   [ROUTES.addAccount]: METRIC_NAMES.viewAddAccount,
   [ROUTES.importAccount]: METRIC_NAMES.viewImportAccount,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
@@ -26,6 +27,7 @@ const routeToEventName = {
   [ROUTES.unlockBackupPhrase]: METRIC_NAMES.viewUnlockBackupPhrase,
   [ROUTES.displayBackupPhrase]: METRIC_NAMES.viewDisplayBackupPhrase,
   [ROUTES.settings]: METRIC_NAMES.viewSettings,
+  [ROUTES.preferences]: METRIC_NAMES.viewPreferences,
   [ROUTES.viewPublicKey]: METRIC_NAMES.viewPublicKey,
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
 };
