@@ -35,7 +35,7 @@ export const Settings = () => {
           </div>
         </div>
         <div className="Settings--nav-link">
-          <Link to={ROUTES.settings}>
+          <Link to={ROUTES.preferences}>
             Preferences <Icon.ChevronRight />
           </Link>
         </div>
