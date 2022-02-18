@@ -1,0 +1,130 @@
+$account-row-height: 5rem;
+// TODO - import from views/Account
+$account-view-padding-left: 1.5rem;
+
+.AccountHeader {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  height: $account-row-height;
+
+  &__icon-btn {
+    cursor: pointer;
+    display: flex;
+  }
+
+  &__network-wrapper {
+    width: 6rem;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: right;
+  }
+
+  &__network-icon {
+    border-radius: 2rem;
+    margin-right: 0.5rem;
+    height: 0.5rem;
+    width: 0.5rem;
+
+    &.testnet {
+      background: var(--pal-brand-primary);
+    }
+
+    &.mainnet {
+      background: var(--pal-success);
+    }
+  }
+
+  &__network-copy {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__options-list {
+    margin-top: 1.5rem;
+    padding: 0 0 0 $account-view-padding-left;
+    width: 100%;
+    border-radius: 0.5rem;
+    background: var(--pal-background-primary);
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 999;
+
+    li::before {
+      content: none;
+    }
+
+    &.closed {
+      max-height: 0;
+      transition: max-height 0.3s ease-out;
+    }
+
+    &.open {
+      max-height: 20rem;
+      transition: max-height 0.3s ease-out;
+    }
+  }
+
+  &__option-list-item {
+    padding-bottom: 1rem;
+  }
+
+  &__option-link {
+    color: var(--pal-text-secondary);
+    display: flex;
+    align-items: center;
+  }
+
+  &__option-link-copy {
+    margin-left: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+
+  &__option-icon {
+    display: flex;
+    align-items: center;
+    width: 2rem;
+    height: 2rem;
+    justify-content: center;
+    margin: 0.25rem;
+  }
+
+  &__account-list-item {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: $account-row-height;
+    align-items: center;
+
+    > div {
+      max-width: 10rem;
+    }
+  }
+
+  &--option-tag {
+    color: var(--pay-text-tertiary);
+    flex: 1;
+    text-align: left;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    padding-top: 1.1875rem;
+  }
+
+  &--option-check {
+    padding-right: 1rem;
+  }
+
+  &--list-divider {
+    border: none;
+    height: 2px;
+    background: var(--pal-border-secondary);
+    border-radius: 1rem;
+    margin: 0 $account-view-padding-left 1rem 0;
+  }
+}
