@@ -1,6 +1,4 @@
 $account-row-height: 5rem;
-// TODO - import from views/Account
-$account-view-padding-left: 1.5rem;
 
 .AccountHeader {
   display: flex;
@@ -129,6 +127,6 @@ $account-view-padding-left: 1.5rem;
     height: 2px;
     background: var(--pal-border-secondary);
     border-radius: 1rem;
-    margin: 0 $account-view-padding-left 1rem 0;
+    margin: 0 var(--account-view-padding-left) 1rem 0;
   }
 }

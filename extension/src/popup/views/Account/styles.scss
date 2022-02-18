@@ -1,7 +1,9 @@
-$account-view-padding-left: 1.5rem;
+:root {
+  --account-view-padding-left: 1.5rem;
+}
 
 .AccountView {
-  padding: $account-view-padding-left;
+  padding: var(--account-view-padding-left);
 
   &__account-actions {
     align-items: center;
