@@ -58,7 +58,7 @@ export const AccountHeader = ({
           </div>
         </div>
         <ul
-          className={`AccountHeader__options-list ${
+          className={`AccountHeader__options-dropdown ${
             isDropdownOpen ? "open" : "closed"
           }`}
         >
@@ -120,6 +120,11 @@ export const AccountHeader = ({
             </Link>
           </li>
         </ul>
+        <div
+          className={`AccountHeader__dropdown-background ${
+            isDropdownOpen ? "activate" : null
+          }`}
+        ></div>
       </div>
     </>
   );

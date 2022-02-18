@@ -43,10 +43,10 @@ $account-view-padding-left: 1.5rem;
     font-weight: var(--font-weight-medium);
   }
 
-  &__options-list {
-    margin-top: 1.5rem;
-    padding: 0 0 0 $account-view-padding-left;
-    width: 100%;
+  &__options-dropdown {
+    width: calc(100% - 2rem);
+    margin: 1.5rem 1rem;
+    padding: 0 0.5rem;
     border-radius: 0.5rem;
     background: var(--pal-background-primary);
     overflow: hidden;
@@ -67,6 +67,19 @@ $account-view-padding-left: 1.5rem;
     &.open {
       max-height: 20rem;
       transition: max-height 0.3s ease-out;
+    }
+  }
+
+  &__dropdown-background {
+    position: absolute;
+
+    &.activate {
+      position: absolute;
+      background-color: rgba(var(--pal-shadow-rbg), 0.6);
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
     }
   }
 
