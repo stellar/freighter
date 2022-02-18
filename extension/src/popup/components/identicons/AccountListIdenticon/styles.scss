@@ -1,0 +1,50 @@
+.AccountListIdenticon {
+  align-items: center;
+  display: flex;
+
+  &__active-wrapper {
+    background: none;
+    border-radius: 2rem;
+
+    &.active {
+      border: 0.125rem solid var(--pal-success-border);
+    }
+  }
+
+  &__identicon-wrapper {
+    background: var(--pal-brand-primary-on);
+    border-radius: 2rem;
+    height: 2rem;
+    width: 2rem;
+    margin: 0.125rem;
+    padding: 0.25rem;
+  }
+
+  &__identicon-button {
+    background: none;
+    border: 0;
+    margin-left: 1rem;
+    text-align: left;
+    width: 100%;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    display: flex;
+    flex-flow: row wrap;
+    cursor: pointer;
+  }
+
+  &__account-name {
+    color: var(--pal-text-primary);
+    margin: 0 0 0.1875rem 0;
+    max-height: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__account-num {
+    color: var(--pay-text-tertiary);
+    width: 100%;
+  }
+}
