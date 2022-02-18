@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
@@ -34,6 +34,16 @@ export const AccountHeader = ({
 }: AccountHeaderProps) => {
   const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
 
+  const dropdownRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (dropdownRef.current != null) {
+      dropdownRef.current.style.maxHeight = isDropdownOpen
+        ? `${(allAccounts.length + 2) * 6}rem`
+        : "0";
+    }
+  }, [allAccounts, isDropdownOpen]);
+
   return (
     <>
       <div className="AccountHeader" ref={accountDropDownRef}>
@@ -57,11 +67,7 @@ export const AccountHeader = ({
             {isTestnet ? "TEST NET" : "MAIN NET"}
           </div>
         </div>
-        <ul
-          className={`AccountHeader__options-dropdown ${
-            isDropdownOpen ? "open" : "closed"
-          }`}
-        >
+        <ul ref={dropdownRef} className="AccountHeader__options-dropdown">
           {allAccounts.map(
             ({ publicKey: accountPublicKey, name: accountName, imported }) => {
               const isSelected = publicKey === accountPublicKey;
