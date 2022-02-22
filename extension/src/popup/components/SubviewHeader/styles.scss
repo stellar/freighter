@@ -1,0 +1,21 @@
+.SubviewHeader {
+  align-items: center;
+  display: flex;
+  margin: 2rem 0 1.5rem 0;
+  padding: 0 1.5rem;
+
+  &--back-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: absolute;
+  }
+
+  &--title {
+    flex-grow: 1;
+    font-weight: var(--font-weight-medium);
+    margin-left: -1.5rem;
+    text-align: center;
+  }
+}
