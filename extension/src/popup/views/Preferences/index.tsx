@@ -89,8 +89,8 @@ export const Preferences = () => {
 
   return (
     <>
-      <SubviewHeader title="Preferences" />
       <PopupWrapper>
+        <SubviewHeader title="Preferences" />
         <div className="Preferences">
           <Formik
             initialValues={initialValues}

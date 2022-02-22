@@ -14,7 +14,7 @@ export interface AutoSaveFieldsProps {
 
 export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
   const formik = useFormikContext();
-  const [isSaveSuccessful, setIsSaveSuccessful] = useState(false);
+  const [didSaveFail, setDidSaveFail] = useState(false);
 
   const debouncedSubmit = useCallback(
     debounce(async (ctx: typeof formik) => {
@@ -22,9 +22,8 @@ export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
         await ctx.submitForm();
       } catch (e) {
         console.error(e);
+        setDidSaveFail(true);
       }
-
-      setIsSaveSuccessful(true);
     }, debounceMs),
     [formik.submitForm, debounceMs],
   );
@@ -43,20 +42,20 @@ export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
   ]);
 
   useEffect(() => {
-    if (isSaveSuccessful) {
+    if (didSaveFail) {
       setTimeout(() => {
-        setIsSaveSuccessful(false);
+        setDidSaveFail(false);
       }, 750);
     }
-  }, [isSaveSuccessful]);
+  }, [didSaveFail]);
 
   return (
     <div
       className={`AutoSave--status ${
-        isSaveSuccessful ? "AutoSave--status--successful" : ""
+        didSaveFail ? "AutoSave--status--failed" : ""
       }`}
     >
-      <StatusBar variant={StatusBar.variant.success}>Saved</StatusBar>
+      <StatusBar variant={StatusBar.variant.error}>Save failed!</StatusBar>
     </div>
   );
 };

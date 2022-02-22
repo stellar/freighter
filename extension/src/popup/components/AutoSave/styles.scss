@@ -8,8 +8,9 @@
     width: 100%;
     transition: opacity var(--anim-transition-default);
 
-    &--successful {
+    &--failed {
       opacity: 1;
+      z-index: var(--z-index--banner);
     }
   }
 }
