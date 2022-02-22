@@ -41,9 +41,8 @@ export const Toggle: React.FC<ToggleProps> & ToggleComponent = ({
     " ",
   );
 
-  const renderLabel = () => (
-    <span>{checked ? labelOn : labelOff ?? labelOn}</span>
-  );
+  const renderLabel = () =>
+    labelOn ? <span>{checked ? labelOn : labelOff ?? labelOn}</span> : null;
 
   const baseInputProps = {
     className: "Toggle__input",

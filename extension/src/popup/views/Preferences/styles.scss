@@ -1,4 +1,6 @@
 .Preferences {
+  font-size: 0.875rem;
+
   &--section {
     display: flex;
     flex-direction: column;
@@ -11,6 +13,10 @@
     }
     margin-bottom: 2rem;
   }
+  &--label {
+    cursor: pointer;
+    text-transform: none;
+  }
 
   &--radio {
     &-check {
@@ -18,11 +24,8 @@
     }
     &-label {
       align-items: center;
-      cursor: pointer;
       display: flex;
       justify-content: space-between;
-      font-size: 1rem;
-      text-transform: none;
     }
 
     &-field {
@@ -35,14 +38,11 @@
   }
 
   &--toggle {
-    label {
-      display: flex;
-      justify-content: space-between;
-    }
+    display: flex;
+    justify-content: space-between;
 
-    .Toggle span {
-      color: var(--pal-brand-primary-on);
-      max-width: 22rem;
+    label {
+      max-width: 21rem;
     }
   }
 }

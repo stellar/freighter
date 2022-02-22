@@ -32,7 +32,7 @@ interface RadioCheckProps {
 }
 
 const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
-  <label className="Preferences--radio-label">
+  <label className="Preferences--label Preferences--radio-label">
     {title}
     <Field
       className="Preferences--radio-field"
@@ -117,20 +117,30 @@ export const Preferences = () => {
                   Verification with stellar.expert
                 </div>
                 <div className="Preferences--toggle">
+                  <label
+                    htmlFor="isValidatingMemoValue"
+                    className="Preferences--label"
+                  >
+                    Validate addresses that require a memo
+                  </label>
                   <Toggle
                     checked={initialValues.isValidatingMemoValue}
                     customInput={<Field />}
                     id="isValidatingMemoValue"
-                    labelOn="Validate addresses that require a memo"
                   />
                 </div>
 
                 <div className="Preferences--toggle">
+                  <label
+                    htmlFor="isValidatingSafetyValue"
+                    className="Preferences--label"
+                  >
+                    Block malicious or unsafe addresses and domains
+                  </label>
                   <Toggle
                     checked={initialValues.isValidatingSafetyValue}
                     customInput={<Field />}
                     id="isValidatingSafetyValue"
-                    labelOn="Block malicious or unsafe addresses and domains"
                   />
                 </div>
               </div>
@@ -140,14 +150,19 @@ export const Preferences = () => {
                 </div>
 
                 <div className="Preferences--toggle">
+                  <label
+                    htmlFor="isDataSharingAllowedValue"
+                    className="Preferences--label"
+                  >
+                    Allow Freighter to collect anonymous information about
+                    usage. Freighter will never collect your personal
+                    information such as IP address, keys, balance or transaction
+                    amounts.
+                  </label>
                   <Toggle
                     checked={initialValues.isDataSharingAllowedValue}
                     customInput={<Field />}
                     id="isDataSharingAllowedValue"
-                    labelOn="Allow Freighter to collect anonymous information about
-                usage. Freighter will never collect your personal
-                information such as IP address, keys, balance or transaction
-                amounts."
                   />
                 </div>
               </div>
