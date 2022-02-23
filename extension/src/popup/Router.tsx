@@ -243,7 +243,7 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.unlockBackupPhrase}>
           <UnlockBackupPhrase />
         </PublicKeyRoute>
-        <PublicKeyRoute path={ROUTES.settings}>
+        <PublicKeyRoute path={ROUTES.settings} exact>
           <Settings />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.preferences}>
