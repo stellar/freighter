@@ -1,12 +1,11 @@
 .BottomNav {
-  margin-top: 1rem;
+  background: var(--pal-background-primary);
   border-top: solid 0.125rem var(--pal-background-secondary);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // TODO - move to constants
-  height: 72px;
-  top: 528px;
+  height: var(--bottom-nav--height);
+  top: calc(var(--popup--height) - var(--bottom-nav--height));
   position: absolute;
   width: 100%;
 
