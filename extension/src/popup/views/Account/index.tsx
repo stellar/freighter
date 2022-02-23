@@ -147,7 +147,10 @@ export const Account = () => {
             <Icon.QrCode />
           </div>
           {/* TODO - link to new sendFunds page */}
-          <div className="AccountView__send-receive-button">
+          <div
+            className="AccountView__send-receive-button"
+            onClick={() => navigateTo(ROUTES.sendPayment)}
+          >
             <Icon.Send />
           </div>
         </div>

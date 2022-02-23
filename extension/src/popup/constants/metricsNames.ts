@@ -19,6 +19,12 @@ export const METRIC_NAMES = {
   viewPublicKey: "loaded screen: view public key generator",
   viewSettings: "loaded screen: settings",
   viewPreferences: "loaded screen: preferences",
+  viewSendPayment: "loaded screen: send payment",
+
+  // ALEC TODO move? rename?
+  sendPaymentTo: "loaded screen: send payment to",
+  sendPaymentSettings: "loaded screen: send payment settings",
+  sendPaymentConfirm: "loaded screen: send payment confirm",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",

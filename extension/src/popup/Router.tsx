@@ -49,11 +49,12 @@ import { Debug } from "popup/views/Debug";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
+import { SendPayment } from "popup/views/SendPayment";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 
-const PublicKeyRoute = (props: RouteProps) => {
+export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -263,6 +264,9 @@ export const Router = () => {
         </Route>
         <PublicKeyRoute path={ROUTES.recoverAccountSuccess}>
           <FullscreenSuccessMessage />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.sendPayment}>
+          <SendPayment />
         </PublicKeyRoute>
         <HomeRoute />
         {DEV_SERVER && (

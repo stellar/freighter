@@ -18,4 +18,11 @@ export enum ROUTES {
   viewPublicKey = "/view-public-key",
   settings = "/settings",
   preferences = "/preferences",
+  sendPayment = "/sendPayment",
+
+  // ALEC TODO - move somewhere?
+  // payment nested routes
+  sendPaymentTo = "/sendPayment/to",
+  sendPaymentSettings = "/sendPayment/settings",
+  sendPaymentConfirm = "/sendPayment/confirm",
 }
