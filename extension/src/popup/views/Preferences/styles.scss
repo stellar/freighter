@@ -1,0 +1,48 @@
+.Preferences {
+  font-size: 0.875rem;
+
+  &--section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    &--title {
+      color: var(--pal-text-tertiary);
+      font-weight: var(--font-weight-medium);
+      text-transform: uppercase;
+    }
+    margin-bottom: 2rem;
+  }
+  &--label {
+    cursor: pointer;
+    text-transform: none;
+  }
+
+  &--radio {
+    &-check {
+      visibility: hidden;
+    }
+    &-label {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &-field {
+      visibility: hidden;
+
+      &:checked ~ .Preferences--radio-check {
+        visibility: visible;
+      }
+    }
+  }
+
+  &--toggle {
+    display: flex;
+    justify-content: space-between;
+
+    label {
+      max-width: 21rem;
+    }
+  }
+}

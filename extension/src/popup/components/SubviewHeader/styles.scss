@@ -1,0 +1,25 @@
+$button-width: 1.5rem;
+
+.SubviewHeader {
+  align-items: center;
+  display: flex;
+  margin-bottom: 2rem;
+  position: relative;
+
+  &--back-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: absolute;
+    width: $button-width;
+    z-index: 2;
+  }
+
+  &--title {
+    flex-grow: 1;
+    font-weight: var(--font-weight-medium);
+    margin-left: -$button-width;
+    text-align: center;
+  }
+}
