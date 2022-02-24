@@ -360,6 +360,21 @@ export const signTransaction = async ({
   }
 };
 
+export const submitTransaction = async ({
+  transaction,
+}: {
+  transaction: {};
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      transaction,
+      type: SERVICE_TYPES.SUBMIT_TRANSACTION_INTERNAL,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signOut = async (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;

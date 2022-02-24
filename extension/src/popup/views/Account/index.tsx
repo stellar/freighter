@@ -29,7 +29,7 @@ import "popup/metrics/authServices";
 
 import "./styles.scss";
 
-const defaultAccountBalances = {
+export const defaultAccountBalances = {
   balances: null,
   isFunded: null,
 } as AccountBalancesInterface;

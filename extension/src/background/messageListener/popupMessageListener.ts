@@ -536,6 +536,37 @@ export const popupMessageListener = (request: Request) => {
     return { error: "Session timed out" };
   };
 
+  const submitTransaction = () => {
+    // ALEC TODO - remove
+    console.log(
+      "in background/messageListenener/popupMessageListener submitTransaction",
+    );
+
+    // const privateKey = privateKeySelector(store.getState());
+
+    // if (privateKey.length) {
+    //   const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+
+    //   let response;
+
+    //   const transactionToSign = transactionQueue.pop();
+
+    //   if (transactionToSign) {
+    //     transactionToSign.sign(sourceKeys);
+    //     response = transactionToSign.toXDR();
+    //   }
+
+    //   const transactionResponse = responseQueue.pop();
+
+    //   if (typeof transactionResponse === "function") {
+    //     transactionResponse(response);
+    //     return {};
+    //   }
+    // }
+
+    return { error: "Session timed out" };
+  };
+
   const rejectTransaction = () => {
     transactionQueue.pop();
     const response = responseQueue.pop();
@@ -630,6 +661,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
+    [SERVICE_TYPES.SUBMIT_TRANSACTION_INTERNAL]: submitTransaction,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,
