@@ -1,7 +1,13 @@
-// ALEC TODO - capitalize file
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
+import StellarSdk, { Asset } from "stellar-sdk";
+import { Types } from "@stellar/wallet-sdk";
 
 import { AccountBalancesInterface } from "@shared/api/types";
+import { signTransactionXDR } from "popup/ducks/access";
+import { AppDispatch } from "popup/App";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -12,6 +18,13 @@ import { BackButton } from "popup/basics/Buttons";
 
 import "./styles.scss";
 
+interface CodeBalanceInterface {
+  code: string;
+  canonical: string;
+  // TODO - use BigNumber for balance
+  balance: any;
+}
+
 export const SendAmount = ({
   amount,
   setAmount,
@@ -20,52 +33,50 @@ export const SendAmount = ({
   accountBalances,
 }: {
   amount: string;
-  // ALEC TODO - any
-  setAmount: any;
+  setAmount: (state: string) => void;
   asset: string;
-  // ALEC TODO - any
-  setAsset: any;
+  setAsset: (state: string) => void;
   accountBalances: AccountBalancesInterface;
 }) => {
-  // ALEC TODO - remove
-  console.log(amount);
-  console.log("asset:", asset);
-  console.log(accountBalances);
-
-  const [sortedBalances, setSortedBalances] = useState<
-    // ALEC TODO - any
-    Array<{ code: string; balance: any }>
+  const [filteredBalances, setFilteredBalances] = useState<
+    Array<CodeBalanceInterface>
   >([]);
+  const [selectedAsset, setSelectedAsset] = useState({
+    code: "",
+    balance: "0",
+    canonical: "",
+  });
 
-  // ALEC TODO - figure out why not working
-  // current asset always at the top
   useEffect(() => {
-    setSortedBalances([{ code: asset, balance: 2500 }]);
-    // const balances = Object.entries(accountBalances?.balances || {});
-    // balances.forEach(([_, v]) => {
-    //   if (v.token.code === asset) {
-    //     sortedBalances.unshift({ code: v.token.code, balance: v.total });
-    //   } else {
-    //     sortedBalances.push({ code: v.token.code, balance: v.total });
-    //   }
-    // });
-    // setSortedBalances(sortedBalances);
-  }, [asset]);
+    const filtered: Array<CodeBalanceInterface> = [];
+    if (accountBalances.balances) {
+      const balances = Object.entries(accountBalances.balances);
+      balances.forEach(([k, v]) => {
+        if (k === asset) {
+          setSelectedAsset({
+            code: v.token.code,
+            balance: v.total.toString(),
+            canonical: k,
+          });
+        }
+        filtered.push({
+          code: v.token.code,
+          balance: v.total.toString(),
+          canonical: k,
+        });
+      });
+    }
+    setFilteredBalances(filtered);
+  }, [asset, accountBalances]);
 
   return (
     <PopupWrapper>
       <div className="SendAmount">
         <BackButton isPopup onClick={() => navigateTo(ROUTES.account)} />
-        {/* ALEC TODO - support non xlm assets */}
-        <div className="SendAmount__header">Send XLM</div>
+        <div className="SendAmount__header">Send {selectedAsset.code}</div>
         <div className="SendAmount__asset-copy">
-          {sortedBalances[0] && (
-            <>
-              <span>{sortedBalances[0].balance}</span>{" "}
-              <span>{sortedBalances[0].code}</span>
-            </>
-          )}{" "}
-          available
+          <span>{selectedAsset.balance.toString()}</span>{" "}
+          <span>{selectedAsset.code}</span> available
         </div>
         <button>set max</button>
         <input
@@ -73,18 +84,23 @@ export const SendAmount = ({
           type="text"
           placeholder="0.00"
           value={amount}
-          // ALEC TODO - any
-          onChange={(e: any) => setAmount(e.target.value)}
+          onChange={(e: React.ChangeEvent<any>) => setAmount(e.target.value)}
         />
-        <div className="SendAmount__asset-copy">{asset}</div>
-        <select onChange={(e: any) => setAsset(e.target.value)}>
-          {sortedBalances.map(({ code }) => (
-            <option value={code}>{code}</option>
+        <div className="SendAmount__asset-copy">{selectedAsset.code}</div>
+        <select
+          onChange={(e: React.ChangeEvent<any>) => setAsset(e.target.value)}
+        >
+          {filteredBalances.map(({ code, canonical }) => (
+            <option
+              key={canonical}
+              selected={canonical === asset}
+              value={canonical}
+            >
+              {code}
+            </option>
           ))}
         </select>
-        {/* ALEC TODO move to constants */}
-
-        <button onClick={() => navigateTo("/sendPayment/to" as ROUTES)}>
+        <button onClick={() => navigateTo(ROUTES.sendPaymentTo)}>
           continue
         </button>
       </div>
@@ -97,21 +113,19 @@ export const SendTo = ({
   setDestination,
 }: {
   destination: string;
-  setDestination: any;
+  setDestination: (state: string) => void;
 }) => (
   <PopupWrapper>
     <div className="SendTo">
-      <BackButton
-        isPopup
-        onClick={() => navigateTo("/sendPayment" as ROUTES)}
-      />
+      <BackButton isPopup onClick={() => navigateTo(ROUTES.sendPayment)} />
       <div className="header">Send To</div>
       <input
+        className="SendTo__input"
         value={destination}
-        onChange={(e: any) => setDestination(e.target.value)}
+        onChange={(e: React.ChangeEvent<any>) => setDestination(e.target.value)}
       />
       <div>Recent</div>
-      <button onClick={() => navigateTo("/sendPayment/settings" as ROUTES)}>
+      <button onClick={() => navigateTo(ROUTES.sendPaymentSettings)}>
         continue
       </button>
     </div>
@@ -125,28 +139,29 @@ export const SendSettings = ({
   setMemo,
 }: {
   transactionFee: string;
-  setTransactionFee: any;
+  setTransactionFee: (state: string) => void;
   memo: string;
-  setMemo: any;
+  setMemo: (state: string) => void;
 }) => (
   <PopupWrapper>
     <div className="SendSettings">
       <div className="header">Send Settings</div>
-      <BackButton
-        isPopup
-        onClick={() => navigateTo("/sendPayment/to" as ROUTES)}
-      />
+      <BackButton isPopup onClick={() => navigateTo(ROUTES.sendPaymentTo)} />
       <input
+        className="SendTo__input"
         value={transactionFee}
         placeholder="transaction fee"
-        onChange={(e: any) => setTransactionFee(e.target.value)}
+        onChange={(e: React.ChangeEvent<any>) =>
+          setTransactionFee(e.target.value)
+        }
       ></input>
       <input
+        className="SendTo__input"
         value={memo}
         placeholder="memo"
-        onChange={(e: any) => setMemo(e.target.value)}
+        onChange={(e: React.ChangeEvent<any>) => setMemo(e.target.value)}
       ></input>
-      <button onClick={() => navigateTo("/sendPayment/confirm" as ROUTES)}>
+      <button onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}>
         continue
       </button>
     </div>
@@ -154,12 +169,14 @@ export const SendSettings = ({
 );
 
 export const SendConfirm = ({
+  publicKey,
   amount,
   asset,
   destination,
   transactionFee,
   memo,
 }: {
+  publicKey: string;
   amount: string;
   asset: string;
   destination: string;
@@ -171,12 +188,76 @@ export const SendConfirm = ({
   console.log("destination:", destination);
   console.log("transactionFee:", transactionFee);
   console.log("memo:", memo);
+
+  const dispatch: AppDispatch = useDispatch();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  // TODO - loading and success page
+  const [isSuccessful, setIsSuccessful] = useState(false);
+
+  const handleSend = async () => {
+    const server = new StellarSdk.Server(networkDetails.networkUrl);
+
+    let horizonAsset: Asset;
+    if (asset === "native") {
+      horizonAsset = StellarSdk.Asset.native();
+    } else {
+      horizonAsset = new StellarSdk.Asset(
+        asset.split(":")[0],
+        asset.split(":")[1],
+      );
+    }
+
+    const transactionXDR = await server
+      .loadAccount(publicKey)
+      .then((sourceAccount: Types.Account) => {
+        const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+          fee: transactionFee,
+          networkPassphrase: networkDetails.networkPassphrase,
+        })
+          .addOperation(
+            StellarSdk.Operation.payment({
+              destination,
+              asset: horizonAsset,
+              amount,
+            }),
+          )
+          .addMemo(StellarSdk.Memo.text(memo))
+          .setTimeout(180)
+          .build();
+
+        return transaction.toXDR();
+      });
+
+    const res = await dispatch(
+      signTransactionXDR({
+        transactionXDR,
+        network: networkDetails.networkPassphrase,
+      }),
+    );
+
+    if (signTransactionXDR.fulfilled.match(res)) {
+      const signed = StellarSdk.TransactionBuilder.fromXDR(
+        res.payload.signedTransaction,
+        networkDetails.networkPassphrase,
+      );
+
+      const submitRes = await server.submitTransaction(signed);
+      console.log(submitRes);
+      setIsSuccessful(true);
+      return;
+    }
+
+    // TODO - error page
+    console.error("send failed");
+  };
+
   return (
     <PopupWrapper>
       <div className="SendConfirm">
         <BackButton
           isPopup
-          onClick={() => navigateTo("/sendPayment/settings" as ROUTES)}
+          onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
         />
         <div className="header">Send Confirm</div>
         <div>amount: {amount}</div>
@@ -185,8 +266,9 @@ export const SendConfirm = ({
         <div>transactionFee: {transactionFee}</div>
         <div>memo: {memo}</div>
         <button>cancel</button>
-        <button>send</button>
+        <button onClick={handleSend}>send</button>
       </div>
+      <span>{isSuccessful && "success"}</span>
     </PopupWrapper>
   );
 };

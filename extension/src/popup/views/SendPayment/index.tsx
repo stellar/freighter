@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 
 import { Switch } from "react-router-dom";
 import { PublicKeyRoute } from "popup/Router";
+import { ROUTES } from "popup/constants/routes";
 
 import {
   SendAmount,
@@ -15,14 +16,12 @@ import { getAccountBalances } from "@shared/api/internal";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
-// ALEC TODO - move somewhere else?
 import { defaultAccountBalances } from "popup/views/Account";
 
-// ALEC TODO - right name?
 export const SendPayment = () => {
   // keep state separate for now, combine later if needed
   const [amount, setAmount] = useState("");
-  const [asset, setAsset] = useState("XLM");
+  const [asset, setAsset] = useState("native");
   const [destination, setDestination] = useState("");
   const [transactionFee, setTransactionFee] = useState("");
   const [memo, setMemo] = useState("");
@@ -32,12 +31,6 @@ export const SendPayment = () => {
   const [accountBalances, setAccountBalances] = useState(
     defaultAccountBalances,
   );
-
-  // ALEC TODO - remove
-  useEffect(() => {
-    console.log("updated amount:", amount);
-    console.log("updated asset:", asset);
-  }, [amount, asset]);
 
   useEffect(() => {
     const fetchAccountBalances = async () => {
@@ -54,11 +47,11 @@ export const SendPayment = () => {
     fetchAccountBalances();
   }, [publicKey, networkDetails]);
 
+  // TODO - enforce can't move to next route data not given
   return (
     <>
       <Switch>
-        {/* ALEC TODO - move to constants, need "exact"? */}
-        <PublicKeyRoute exact path="/sendPayment">
+        <PublicKeyRoute exact path={ROUTES.sendPayment}>
           <SendAmount
             amount={amount}
             setAmount={setAmount}
@@ -67,10 +60,10 @@ export const SendPayment = () => {
             accountBalances={accountBalances}
           />
         </PublicKeyRoute>
-        <PublicKeyRoute exact path="/sendPayment/to">
+        <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
           <SendTo destination={destination} setDestination={setDestination} />
         </PublicKeyRoute>
-        <PublicKeyRoute exact path="/sendPayment/settings">
+        <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
           <SendSettings
             transactionFee={transactionFee}
             setTransactionFee={setTransactionFee}
@@ -78,8 +71,9 @@ export const SendPayment = () => {
             setMemo={setMemo}
           />
         </PublicKeyRoute>
-        <PublicKeyRoute exact path="/sendPayment/confirm">
+        <PublicKeyRoute exact path={ROUTES.sendPaymentConfirm}>
           <SendConfirm
+            publicKey={publicKey}
             amount={amount}
             asset={asset}
             destination={destination}

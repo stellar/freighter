@@ -19,9 +19,6 @@ export enum ROUTES {
   settings = "/settings",
   preferences = "/settings/preferences",
   sendPayment = "/sendPayment",
-
-  // ALEC TODO - move somewhere?
-  // payment nested routes
   sendPaymentTo = "/sendPayment/to",
   sendPaymentSettings = "/sendPayment/settings",
   sendPaymentConfirm = "/sendPayment/confirm",

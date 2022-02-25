@@ -21,7 +21,6 @@ export const METRIC_NAMES = {
   viewPreferences: "loaded screen: preferences",
   viewSendPayment: "loaded screen: send payment",
 
-  // ALEC TODO move? rename?
   sendPaymentTo: "loaded screen: send payment to",
   sendPaymentSettings: "loaded screen: send payment settings",
   sendPaymentConfirm: "loaded screen: send payment confirm",

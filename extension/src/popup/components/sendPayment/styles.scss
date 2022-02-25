@@ -24,6 +24,10 @@
   flex-direction: column;
 
   text-align: center;
+
+  &__input {
+    color: black;
+  }
 }
 
 .SendSettings {
@@ -31,6 +35,9 @@
   flex-direction: column;
 
   text-align: center;
+  &__input {
+    color: black;
+  }
 }
 
 .SendConfirm {
@@ -38,6 +45,9 @@
   flex-direction: column;
 
   text-align: center;
+  &__input {
+    color: black;
+  }
 }
 
 .header {

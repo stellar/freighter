@@ -360,18 +360,23 @@ export const signTransaction = async ({
   }
 };
 
-export const submitTransaction = async ({
-  transaction,
+export const signTransactionXDR = async ({
+  transactionXDR,
+  network,
 }: {
-  transaction: {};
-}): Promise<void> => {
+  transactionXDR: string;
+  network: string;
+}): Promise<{ signedTransaction: string }> => {
   try {
-    await sendMessageToBackground({
-      transaction,
-      type: SERVICE_TYPES.SUBMIT_TRANSACTION_INTERNAL,
+    const { signedTransaction } = await sendMessageToBackground({
+      transactionXDR,
+      network,
+      type: SERVICE_TYPES.SIGN_TRANSACTION_XDR,
     });
+    return { signedTransaction };
   } catch (e) {
     console.error(e);
+    return e;
   }
 };
 
