@@ -4,7 +4,7 @@ import {
   rejectAccess as internalRejectAccess,
   grantAccess as internalGrantAccess,
   signTransaction as internalSignTransaction,
-  signTransactionXDR as internalSignTransactionXDR,
+  signFreighterTransaction as internalSignFreighterTransaction,
 } from "@shared/api/internal";
 
 import { ErrorMessage } from "@shared/api/types";
@@ -27,13 +27,16 @@ export const rejectTransaction = createAsyncThunk(
   internalRejectAccess,
 );
 
-export const signTransactionXDR = createAsyncThunk<
+export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
   { transactionXDR: string; network: string },
   { rejectValue: ErrorMessage }
->("signTransactionXDR", async ({ transactionXDR, network }, thunkApi) => {
+>("signFreighterTransaction", async ({ transactionXDR, network }, thunkApi) => {
   try {
-    const res = await internalSignTransactionXDR({ transactionXDR, network });
+    const res = await internalSignFreighterTransaction({
+      transactionXDR,
+      network,
+    });
     return res;
   } catch (e) {
     console.error("Failed to submit transaction", e.message);

@@ -544,7 +544,7 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
-  const signTransactionXDR = () => {
+  const signFreighterTransaction = () => {
     const { transactionXDR, network } = request;
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
       transactionXDR,
@@ -647,7 +647,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
-    [SERVICE_TYPES.SIGN_TRANSACTION_XDR]: signTransactionXDR,
+    [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,

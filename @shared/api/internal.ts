@@ -360,7 +360,7 @@ export const signTransaction = async ({
   }
 };
 
-export const signTransactionXDR = async ({
+export const signFreighterTransaction = async ({
   transactionXDR,
   network,
 }: {
@@ -371,7 +371,7 @@ export const signTransactionXDR = async ({
     const { signedTransaction } = await sendMessageToBackground({
       transactionXDR,
       network,
-      type: SERVICE_TYPES.SIGN_TRANSACTION_XDR,
+      type: SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION,
     });
     return { signedTransaction };
   } catch (e) {

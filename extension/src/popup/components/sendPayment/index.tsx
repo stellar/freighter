@@ -5,7 +5,7 @@ import StellarSdk, { Asset } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 
 import { AccountBalancesInterface } from "@shared/api/types";
-import { signTransactionXDR } from "popup/ducks/access";
+import { signFreighterTransaction } from "popup/ducks/access";
 import { AppDispatch } from "popup/App";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -211,13 +211,13 @@ export const SendConfirm = ({
       });
 
     const res = await dispatch(
-      signTransactionXDR({
+      signFreighterTransaction({
         transactionXDR,
         network: networkDetails.networkPassphrase,
       }),
     );
 
-    if (signTransactionXDR.fulfilled.match(res)) {
+    if (signFreighterTransaction.fulfilled.match(res)) {
       const signed = StellarSdk.TransactionBuilder.fromXDR(
         res.payload.signedTransaction,
         networkDetails.networkPassphrase,
