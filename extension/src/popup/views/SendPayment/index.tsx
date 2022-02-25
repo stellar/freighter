@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
+import get from "lodash/get";
 
-import { Switch } from "react-router-dom";
+import { Switch, useLocation } from "react-router-dom";
 import { PublicKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
@@ -12,11 +13,7 @@ import {
   SendConfirm,
 } from "popup/components/sendPayment";
 
-import { getAccountBalances } from "@shared/api/internal";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
-
-import { defaultAccountBalances } from "popup/views/Account";
 
 export const SendPayment = () => {
   // keep state separate for now, combine later if needed
@@ -26,26 +23,11 @@ export const SendPayment = () => {
   const [transactionFee, setTransactionFee] = useState("");
   const [memo, setMemo] = useState("");
 
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [accountBalances, setAccountBalances] = useState(
-    defaultAccountBalances,
+  const location = useLocation();
+  const accountBalances = JSON.parse(
+    get(location, "state.accountBalances", "[]"),
   );
-
-  useEffect(() => {
-    const fetchAccountBalances = async () => {
-      try {
-        const res = await getAccountBalances({
-          publicKey,
-          networkDetails,
-        });
-        setAccountBalances(res);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAccountBalances();
-  }, [publicKey, networkDetails]);
+  const publicKey = useSelector(publicKeySelector);
 
   // TODO - enforce can't move to next route data not given
   return (
