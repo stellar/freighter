@@ -18,13 +18,6 @@ import { BackButton } from "popup/basics/Buttons";
 
 import "./styles.scss";
 
-interface CodeBalanceInterface {
-  code: string;
-  canonical: string;
-  // TODO - use BigNumber for balance
-  balance: any;
-}
-
 export const SendAmount = ({
   amount,
   setAmount,
@@ -38,9 +31,6 @@ export const SendAmount = ({
   setAsset: (state: string) => void;
   accountBalances: AccountBalancesInterface;
 }) => {
-  const [filteredBalances, setFilteredBalances] = useState<
-    Array<CodeBalanceInterface>
-  >([]);
   const [selectedAsset, setSelectedAsset] = useState({
     code: "",
     balance: "0",
@@ -48,25 +38,19 @@ export const SendAmount = ({
   });
 
   useEffect(() => {
-    const filtered: Array<CodeBalanceInterface> = [];
     if (accountBalances.balances) {
-      const balances = Object.entries(accountBalances.balances);
-      balances.forEach(([k, v]) => {
-        if (k === asset) {
-          setSelectedAsset({
-            code: v.token.code,
-            balance: v.total.toString(),
-            canonical: k,
-          });
-        }
-        filtered.push({
-          code: v.token.code,
-          balance: v.total.toString(),
-          canonical: k,
-        });
+      setSelectedAsset({
+        code: accountBalances.balances[asset].token.code,
+        balance: accountBalances.balances[asset].total.toString(),
+        canonical: asset,
+      });
+    } else {
+      setSelectedAsset({
+        code: "XLM",
+        balance: "0",
+        canonical: "native",
       });
     }
-    setFilteredBalances(filtered);
   }, [asset, accountBalances]);
 
   return (
@@ -90,15 +74,12 @@ export const SendAmount = ({
         <select
           onChange={(e: React.ChangeEvent<any>) => setAsset(e.target.value)}
         >
-          {filteredBalances.map(({ code, canonical }) => (
-            <option
-              key={canonical}
-              selected={canonical === asset}
-              value={canonical}
-            >
-              {code}
-            </option>
-          ))}
+          {accountBalances.balances &&
+            Object.entries(accountBalances.balances).map(([k, v]) => (
+              <option key={k} selected={k === asset} value={k}>
+                {v.token.code}
+              </option>
+            ))}
         </select>
         <button onClick={() => navigateTo(ROUTES.sendPaymentTo)}>
           continue
