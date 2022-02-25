@@ -54,7 +54,7 @@ import { SendPayment } from "popup/views/SendPayment";
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 
-export const PublicKeyRoute = (props: RouteProps) => {
+const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -91,7 +91,7 @@ export const PublicKeyRoute = (props: RouteProps) => {
   return <Route {...props} />;
 };
 
-const PrivateKeyRoute = (props: RouteProps) => {
+export const PrivateKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);

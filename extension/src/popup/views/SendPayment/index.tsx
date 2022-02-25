@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import get from "lodash/get";
 
 import { Switch, useLocation } from "react-router-dom";
-import { PublicKeyRoute } from "popup/Router";
+import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 import {
@@ -33,7 +33,7 @@ export const SendPayment = () => {
   return (
     <>
       <Switch>
-        <PublicKeyRoute exact path={ROUTES.sendPayment}>
+        <PrivateKeyRoute exact path={ROUTES.sendPayment}>
           <SendAmount
             amount={amount}
             setAmount={setAmount}
@@ -41,19 +41,19 @@ export const SendPayment = () => {
             setAsset={setAsset}
             accountBalances={accountBalances}
           />
-        </PublicKeyRoute>
-        <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
+        </PrivateKeyRoute>
+        <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
           <SendTo destination={destination} setDestination={setDestination} />
-        </PublicKeyRoute>
-        <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
+        </PrivateKeyRoute>
+        <PrivateKeyRoute exact path={ROUTES.sendPaymentSettings}>
           <SendSettings
             transactionFee={transactionFee}
             setTransactionFee={setTransactionFee}
             memo={memo}
             setMemo={setMemo}
           />
-        </PublicKeyRoute>
-        <PublicKeyRoute exact path={ROUTES.sendPaymentConfirm}>
+        </PrivateKeyRoute>
+        <PrivateKeyRoute exact path={ROUTES.sendPaymentConfirm}>
           <SendConfirm
             publicKey={publicKey}
             amount={amount}
@@ -62,7 +62,7 @@ export const SendPayment = () => {
             transactionFee={transactionFee}
             memo={memo}
           />
-        </PublicKeyRoute>
+        </PrivateKeyRoute>
       </Switch>
     </>
   );
