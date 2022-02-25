@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { Formik } from "formik";
+import { Input } from "@stellar/design-system";
+import { Field, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
 
@@ -10,20 +11,19 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
 
-import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
+import { BottomNav } from "popup/components/BottomNav";
+import { SubviewHeader } from "popup/components/SubviewHeader";
+
 import {
   Form,
   SubmitButton,
   FormRow,
   ApiErrorMessage,
-  TextField,
 } from "popup/basics/Forms";
+import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
 
-const CustomFormTextFieldEl = styled(TextField)`
-  padding-right: ${(props) => (props.error ? "6rem" : "2.2rem")};
-`;
 const ButtonRowEl = styled.div`
   padding: 1.5rem 0;
 `;
@@ -60,34 +60,38 @@ export const UnlockBackupPhrase = () => {
   };
 
   return (
-    <SubviewWrapper>
-      <SubviewHeader headerText="Show backup phrase" />
-      <BackupPhraseWarningMessage />
-      <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-        {({ dirty, isSubmitting, isValid }) => (
-          <Form>
-            <FormRowEl>
-              <CustomFormTextFieldEl
-                autoComplete="off"
-                type="password"
-                name="password"
-                placeholder="Enter your password"
-                error={errorMessage}
-              />
-            </FormRowEl>
-            <ApiErrorMessage error={errorMessage} />
-            <ButtonRowEl>
-              <SubmitButton
-                dirty={dirty}
-                isSubmitting={isSubmitting}
-                isValid={isValid}
-              >
-                Show my backup phrase
-              </SubmitButton>
-            </ButtonRowEl>
-          </Form>
-        )}
-      </Formik>
-    </SubviewWrapper>
+    <>
+      <PopupWrapper>
+        <SubviewHeader title="Show backup phrase" />
+        <BackupPhraseWarningMessage />
+        <Formik onSubmit={handleSubmit} initialValues={initialValues}>
+          {({ dirty, isSubmitting, isValid }) => (
+            <Form>
+              <FormRowEl>
+                <Input
+                  id="password"
+                  autoComplete="off"
+                  customInput={<Field />}
+                  type="password"
+                  name="password"
+                  placeholder="Enter your password"
+                />
+              </FormRowEl>
+              <ApiErrorMessage error={errorMessage} />
+              <ButtonRowEl>
+                <SubmitButton
+                  dirty={dirty}
+                  isSubmitting={isSubmitting}
+                  isValid={isValid}
+                >
+                  Show my backup phrase
+                </SubmitButton>
+              </ButtonRowEl>
+            </Form>
+          )}
+        </Formik>
+      </PopupWrapper>
+      <BottomNav />
+    </>
   );
 };

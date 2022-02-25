@@ -19,6 +19,7 @@ export const METRIC_NAMES = {
   viewPublicKey: "loaded screen: view public key generator",
   viewSettings: "loaded screen: settings",
   viewPreferences: "loaded screen: preferences",
+  viewSecurity: "loaded screen: security",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
