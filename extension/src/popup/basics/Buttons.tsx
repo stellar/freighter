@@ -78,7 +78,7 @@ interface BackButtonProps {
 
 const BackButtonEl = styled(BasicButton)<BackButtonProps>`
   position: absolute;
-  // top: ${(props) => (props.isPopup ? 0 : `calc(${HEADER_HEIGHT}px + 1rem)`)};
+  top: ${(props) => (props.isPopup ? 0 : `calc(${HEADER_HEIGHT}px + 1rem)`)};
   left: 1rem;
   display: flex;
   flex-direction: row;
