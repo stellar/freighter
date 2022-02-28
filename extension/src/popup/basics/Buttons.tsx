@@ -73,11 +73,12 @@ export const Button = ({ size, children, onClick, ...props }: ButtonProps) => (
 /* Back Button */
 interface BackButtonProps {
   onClick: () => void;
+  isPopup?: boolean;
 }
 
-const BackButtonEl = styled(BasicButton)`
+const BackButtonEl = styled(BasicButton)<BackButtonProps>`
   position: absolute;
-  top: calc(${HEADER_HEIGHT}px + 1rem);
+  top: ${(props) => (props.isPopup ? 0 : `calc(${HEADER_HEIGHT}px + 1rem)`)};
   left: 1rem;
   display: flex;
   flex-direction: row;
@@ -94,8 +95,12 @@ const BackButtonEl = styled(BasicButton)`
   }
 `;
 
-export const BackButton = ({ onClick, ...props }: BackButtonProps) => (
-  <BackButtonEl onClick={onClick} {...props}>
-    <Icon.ArrowLeft /> BACK
+export const BackButton = ({
+  onClick,
+  isPopup = false,
+  ...props
+}: BackButtonProps) => (
+  <BackButtonEl onClick={onClick} isPopup={isPopup} {...props}>
+    <Icon.ArrowLeft /> {!isPopup && "BACK"}
   </BackButtonEl>
 );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -29,7 +30,7 @@ import "popup/metrics/authServices";
 
 import "./styles.scss";
 
-const defaultAccountBalances = {
+export const defaultAccountBalances = {
   balances: null,
   isFunded: null,
 } as AccountBalancesInterface;
@@ -146,9 +147,16 @@ export const Account = () => {
           >
             <Icon.QrCode />
           </div>
-          {/* TODO - link to new sendFunds page */}
+
           <div className="AccountView__send-receive-button">
-            <Icon.Send />
+            <Link
+              to={{
+                pathname: ROUTES.sendPayment,
+                state: { accountBalances: JSON.stringify(accountBalances) },
+              }}
+            >
+              <Icon.Send />
+            </Link>
           </div>
         </div>
       </div>
