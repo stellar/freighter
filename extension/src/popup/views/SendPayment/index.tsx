@@ -5,6 +5,7 @@ import get from "lodash/get";
 import { Switch, useLocation } from "react-router-dom";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
+import { BottomNav } from "popup/components/BottomNav";
 
 import {
   SendAmount,
@@ -64,6 +65,7 @@ export const SendPayment = () => {
           />
         </PrivateKeyRoute>
       </Switch>
+      <BottomNav />
     </>
   );
 };

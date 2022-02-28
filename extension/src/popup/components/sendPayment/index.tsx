@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import StellarSdk, { Asset } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 
+import { Button, Select } from "@stellar/design-system";
+
 import { AccountBalancesInterface } from "@shared/api/types";
 import { signFreighterTransaction } from "popup/ducks/access";
 import { AppDispatch } from "popup/App";
@@ -62,16 +64,18 @@ export const SendAmount = ({
           <span>{selectedAsset.balance.toString()}</span>{" "}
           <span>{selectedAsset.code}</span> available
         </div>
-        <button>set max</button>
+        <div className="SendAmount__btn-set-max">
+          <Button variant={Button.variant.tertiary}>SET MAX</Button>
+        </div>
+        {/* ALEC TODO - add asset code unit */}
         <input
-          className="SendAmount__amount-input"
+          className="SendAmount__input-amount"
           type="text"
           placeholder="0.00"
           value={amount}
           onChange={(e: React.ChangeEvent<any>) => setAmount(e.target.value)}
         />
-        <div className="SendAmount__asset-copy">{selectedAsset.code}</div>
-        <select
+        <Select
           onChange={(e: React.ChangeEvent<any>) => setAsset(e.target.value)}
         >
           {accountBalances.balances &&
@@ -80,10 +84,17 @@ export const SendAmount = ({
                 {v.token.code}
               </option>
             ))}
-        </select>
-        <button onClick={() => navigateTo(ROUTES.sendPaymentTo)}>
-          continue
-        </button>
+        </Select>
+        {/* ALEC TODO - use same for all payment pages? */}
+        <div className="SendAmount__btn-continue">
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => navigateTo(ROUTES.sendPaymentTo)}
+          >
+            Continue
+          </Button>
+        </div>
       </div>
     </PopupWrapper>
   );

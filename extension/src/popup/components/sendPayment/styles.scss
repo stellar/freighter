@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
 
-  text-align: center;
+  align-items: center;
 
   &__asset-copy {
     font-size: 0.875rem;
@@ -10,12 +10,28 @@
     color: var(--pal-text-tertiary);
   }
 
-  &__amount-input {
+  &__btn-set-max {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+
+  &__input-amount {
     font-size: 3rem;
     line-height: 4.5rem;
     font-weight: var(--font-weight-light);
-    color: black;
-    // color: var(--pal-text-tertiary);
+    color: var(--pal-text-primary);
+    background: none;
+    border: none;
+    text-align: center;
+    margin: 2.75rem 0 8.5rem 0;
+  }
+
+  &__btn-continue {
+    width: 100%;
+    margin-top: 1rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
   }
 }
 
