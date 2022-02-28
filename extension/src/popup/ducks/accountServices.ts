@@ -17,11 +17,7 @@ import {
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
 } from "@shared/api/internal";
-import { Account } from "@shared/api/types";
-
-interface ErrorMessage {
-  errorMessage: string;
-}
+import { Account, ErrorMessage } from "@shared/api/types";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },

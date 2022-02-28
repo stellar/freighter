@@ -360,6 +360,26 @@ export const signTransaction = async ({
   }
 };
 
+export const signFreighterTransaction = async ({
+  transactionXDR,
+  network,
+}: {
+  transactionXDR: string;
+  network: string;
+}): Promise<{ signedTransaction: string }> => {
+  try {
+    const { signedTransaction } = await sendMessageToBackground({
+      transactionXDR,
+      network,
+      type: SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION,
+    });
+    return { signedTransaction };
+  } catch (e) {
+    console.error(e);
+    return e;
+  }
+};
+
 export const signOut = async (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;

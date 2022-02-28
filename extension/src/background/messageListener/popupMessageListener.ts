@@ -544,6 +544,23 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const signFreighterTransaction = () => {
+    const { transactionXDR, network } = request;
+    const transaction = StellarSdk.TransactionBuilder.fromXDR(
+      transactionXDR,
+      network,
+    );
+
+    const privateKey = privateKeySelector(store.getState());
+    if (privateKey.length) {
+      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      transaction.sign(sourceKeys);
+      return { signedTransaction: transaction.toXDR() };
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const signOut = () => {
     store.dispatch(logOut());
 
@@ -630,6 +647,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,

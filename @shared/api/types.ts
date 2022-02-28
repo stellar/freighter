@@ -21,6 +21,7 @@ export interface Response {
   transaction: {
     sign: (sourceKeys: {}) => void;
   };
+  transactionXDR: string;
   signedTransaction: string;
   source: string;
   type: SERVICE_TYPES;
@@ -75,6 +76,10 @@ export interface AccountBalancesInterface {
 
 export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];
+}
+
+export interface ErrorMessage {
+  errorMessage: string;
 }
 
 declare global {
