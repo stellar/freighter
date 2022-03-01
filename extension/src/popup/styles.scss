@@ -6,4 +6,8 @@
   --popup--height: 600px;
 
   --bottom-nav--height: 72px;
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }

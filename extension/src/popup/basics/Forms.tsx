@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "@stellar/design-system";
 import PropTypes from "prop-types";
 import styled, { css } from "styled-components";
 import { Form as FormikForm, ErrorMessage, Field } from "formik";
@@ -9,7 +10,6 @@ import {
   ANIMATION_TIMES,
   ROUNDED_CORNERS,
 } from "popup/constants/styles";
-import { Button } from "popup/basics/Buttons";
 
 import CheckIcon from "popup/assets/check.svg";
 
@@ -27,14 +27,11 @@ export const Form = ({ children, className }: FormProps) => (
   <StyledFormEl className={className}>{children}</StyledFormEl>
 );
 
-interface SubmitButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface SubmitButtonProps {
   children: React.ReactNode;
   dirty?: boolean;
   isSubmitting?: boolean;
   isValid?: boolean;
-  size?: string;
-  onClick?: () => void;
 }
 
 export const SubmitButton = ({
@@ -42,20 +39,16 @@ export const SubmitButton = ({
   dirty = true,
   isSubmitting = false,
   isValid = true,
-  onClick = () => {},
-  size,
   ...props
 }: SubmitButtonProps) => {
   const isFormCompleteAndValid = isValid && dirty;
   return (
     <Button
       {...props}
-      onClick={onClick}
-      size={size}
       type="submit"
       disabled={isSubmitting || !isFormCompleteAndValid}
     >
-      {isSubmitting ? "Loading..." : children}
+      {children}
     </Button>
   );
 };
