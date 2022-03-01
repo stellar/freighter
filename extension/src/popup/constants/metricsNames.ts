@@ -21,6 +21,11 @@ export const METRIC_NAMES = {
   viewPreferences: "loaded screen: preferences",
   viewSecurity: "loaded screen: security",
 
+  viewSendPayment: "loaded screen: send payment",
+  sendPaymentTo: "loaded screen: send payment to",
+  sendPaymentSettings: "loaded screen: send payment settings",
+  sendPaymentConfirm: "loaded screen: send payment confirm",
+
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
 

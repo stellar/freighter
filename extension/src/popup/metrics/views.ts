@@ -31,6 +31,10 @@ const routeToEventName = {
   [ROUTES.security]: METRIC_NAMES.viewSecurity,
   [ROUTES.viewPublicKey]: METRIC_NAMES.viewPublicKey,
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
+  [ROUTES.sendPayment]: METRIC_NAMES.viewSendPayment,
+  [ROUTES.sendPaymentTo]: METRIC_NAMES.sendPaymentTo,
+  [ROUTES.sendPaymentSettings]: METRIC_NAMES.sendPaymentSettings,
+  [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

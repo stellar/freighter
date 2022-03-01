@@ -19,4 +19,8 @@ export enum ROUTES {
   settings = "/settings",
   preferences = "/settings/preferences",
   security = "/settings/security",
+  sendPayment = "/sendPayment",
+  sendPaymentTo = "/sendPayment/to",
+  sendPaymentSettings = "/sendPayment/settings",
+  sendPaymentConfirm = "/sendPayment/confirm",
 }
