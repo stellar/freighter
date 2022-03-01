@@ -26,13 +26,13 @@
     text-align: center;
     margin: 2.75rem 0 8.5rem 0;
   }
+}
 
-  &__btn-continue {
-    width: 100%;
-    margin-top: 1rem;
-    font-size: 1rem;
-    line-height: 1.5rem;
-  }
+.btn-continue {
+  width: 100%;
+  margin-top: 1rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 .SendTo {
@@ -49,10 +49,37 @@
 .SendSettings {
   display: flex;
   flex-direction: column;
+  align-items: center;
 
-  text-align: center;
   &__input {
     color: black;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    width: 100%;
+  }
+
+  &__row-right {
+    display: flex;
+    align-items: center;
+  }
+
+  &__row-left {
+    display: flex;
+    align-items: center;
+
+    button {
+      margin-left: 0.5rem;
+      width: 1rem;
+    }
+  }
+
+  &__input-textarea {
+    width: 100%;
+    margin-top: 1rem;
   }
 }
 

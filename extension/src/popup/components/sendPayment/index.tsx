@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import StellarSdk, { Asset } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 
-import { Button, Select } from "@stellar/design-system";
+import { Button, Select, IconButton, Icon } from "@stellar/design-system";
 
 import { AccountBalancesInterface } from "@shared/api/types";
 import { signFreighterTransaction } from "popup/ducks/access";
@@ -86,8 +86,7 @@ export const SendAmount = ({
               </option>
             ))}
         </Select>
-        {/* ALEC TODO - use same for all payment pages? */}
-        <div className="SendAmount__btn-continue">
+        <div className="btn-continue">
           <Button
             fullWidth
             variant={Button.variant.tertiary}
@@ -140,6 +139,37 @@ export const SendSettings = ({
     <div className="SendSettings">
       <div className="header">Send Settings</div>
       <BackButton isPopup onClick={() => navigateTo(ROUTES.sendPaymentTo)} />
+      <div className="SendSettings__row">
+        <div className="SendSettings__row-left">
+          <span>Transaction fee</span>
+          <IconButton altText="info" icon={<Icon.Info />} />
+        </div>
+        <div className="SendSettings__row-right">
+          <span>{transactionFee}</span>
+          <div>
+            <Icon.ChevronRight />
+          </div>
+        </div>
+      </div>
+      {/* ALEC TODO - allowed slippage page? */}
+      <div className="SendSettings__row">
+        <div className="SendSettings__row-left">
+          <span>Memo</span> <IconButton altText="info" icon={<Icon.Info />} />
+        </div>
+        <div className="SendSettings__row-right">
+          <span></span>
+        </div>
+      </div>
+      <div className="SendSettings__input-textarea">
+        <textarea
+          className="TextArea Card Card--highlight"
+          autoComplete="off"
+          id="mnemonic-input"
+          placeholder="Memo (optional)"
+          // ALEC TODO - on change
+          // onChange={}
+        />
+      </div>
       <input
         className="SendTo__input"
         value={transactionFee}
@@ -154,9 +184,15 @@ export const SendSettings = ({
         placeholder="memo"
         onChange={(e: React.ChangeEvent<any>) => setMemo(e.target.value)}
       ></input>
-      <button onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}>
-        continue
-      </button>
+      <div className="btn-continue">
+        <Button
+          fullWidth
+          variant={Button.variant.tertiary}
+          onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
+        >
+          Review Send
+        </Button>
+      </div>
     </div>
   </PopupWrapper>
 );
@@ -186,6 +222,7 @@ export const SendConfirm = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   // TODO - loading and success page
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccessful, setIsSuccessful] = useState(false);
 
   const handleSend = async () => {
@@ -201,67 +238,90 @@ export const SendConfirm = ({
       );
     }
 
-    const transactionXDR = await server
-      .loadAccount(publicKey)
-      .then((sourceAccount: Types.Account) => {
-        const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-          fee: transactionFee,
-          networkPassphrase: networkDetails.networkPassphrase,
-        })
-          .addOperation(
-            StellarSdk.Operation.payment({
-              destination,
-              asset: horizonAsset,
-              amount,
-            }),
-          )
-          .addMemo(StellarSdk.Memo.text(memo))
-          .setTimeout(180)
-          .build();
+    setIsProcessing(true);
 
-        return transaction.toXDR();
-      });
+    try {
+      const transactionXDR = await server
+        .loadAccount(publicKey)
+        .then((sourceAccount: Types.Account) => {
+          const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+            fee: transactionFee,
+            networkPassphrase: networkDetails.networkPassphrase,
+          })
+            .addOperation(
+              StellarSdk.Operation.payment({
+                destination,
+                asset: horizonAsset,
+                amount,
+              }),
+            )
+            .addMemo(StellarSdk.Memo.text(memo))
+            .setTimeout(180)
+            .build();
 
-    const res = await dispatch(
-      signFreighterTransaction({
-        transactionXDR,
-        network: networkDetails.networkPassphrase,
-      }),
-    );
+          return transaction.toXDR();
+        });
 
-    if (signFreighterTransaction.fulfilled.match(res)) {
-      const signed = StellarSdk.TransactionBuilder.fromXDR(
-        res.payload.signedTransaction,
-        networkDetails.networkPassphrase,
+      const res = await dispatch(
+        signFreighterTransaction({
+          transactionXDR,
+          network: networkDetails.networkPassphrase,
+        }),
       );
 
-      const submitRes = await server.submitTransaction(signed);
-      console.log(submitRes);
-      setIsSuccessful(true);
-      return;
-    }
+      if (signFreighterTransaction.fulfilled.match(res)) {
+        const signed = StellarSdk.TransactionBuilder.fromXDR(
+          res.payload.signedTransaction,
+          networkDetails.networkPassphrase,
+        );
 
-    // TODO - error page
-    console.error("send failed");
+        const submitRes = await server.submitTransaction(signed);
+        // ALEC TODO - remove
+        console.log(submitRes);
+        setIsSuccessful(true);
+        return;
+      }
+    } catch (e) {
+      setIsProcessing(false);
+      setIsSuccessful(false);
+      // TODO - error page
+      console.error("send failed");
+    }
   };
+
+  const ConfirmationDetails = (
+    <div className="SendConfirm__confirmation-details">
+      {/* ALEC TODO - asset code: */}
+      <div className="header">{isSuccessful ? "Sent" : "Send"}</div>
+      <div>amount: {amount}</div>
+      <div>asset: {asset}</div>
+      <div>destination: {destination}</div>
+      <div>transactionFee: {transactionFee}</div>
+      <div>memo: {memo}</div>
+    </div>
+  );
 
   return (
     <PopupWrapper>
-      <div className="SendConfirm">
-        <BackButton
-          isPopup
-          onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
-        />
-        <div className="header">Send Confirm</div>
-        <div>amount: {amount}</div>
-        <div>asset: {asset}</div>
-        <div>destination: {destination}</div>
-        <div>transactionFee: {transactionFee}</div>
-        <div>memo: {memo}</div>
-        <button>cancel</button>
-        <button onClick={handleSend}>send</button>
-      </div>
-      <span>{isSuccessful && "success"}</span>
+      <BackButton
+        isPopup
+        onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
+      />
+      {ConfirmationDetails}
+      {isSuccessful ? (
+        <div>
+          {/* ALEC ODO - links for these */}
+          <Button variant={Button.variant.tertiary}>Done</Button>
+          <Button variant={Button.variant.tertiary}>View</Button>
+        </div>
+      ) : (
+        <div>
+          <Button variant={Button.variant.tertiary}>Cancel</Button>
+          <Button isLoading={isProcessing} onClick={handleSend}>
+            Send
+          </Button>
+        </div>
+      )}
     </PopupWrapper>
   );
 };
