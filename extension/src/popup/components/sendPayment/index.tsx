@@ -76,6 +76,7 @@ export const SendAmount = ({
           onChange={(e: React.ChangeEvent<any>) => setAmount(e.target.value)}
         />
         <Select
+          id="asset-select"
           onChange={(e: React.ChangeEvent<any>) => setAsset(e.target.value)}
         >
           {accountBalances.balances &&

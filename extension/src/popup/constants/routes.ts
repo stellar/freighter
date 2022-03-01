@@ -18,8 +18,8 @@ export enum ROUTES {
   viewPublicKey = "/view-public-key",
   settings = "/settings",
   preferences = "/settings/preferences",
-  sendPayment = "/sendPayment",
-  sendPaymentTo = "/sendPayment/to",
-  sendPaymentSettings = "/sendPayment/settings",
-  sendPaymentConfirm = "/sendPayment/confirm",
+  sendPayment = "/account/sendPayment",
+  sendPaymentTo = "/account/sendPayment/to",
+  sendPaymentSettings = "/account/sendPayment/settings",
+  sendPaymentConfirm = "/account/sendPayment/confirm",
 }
