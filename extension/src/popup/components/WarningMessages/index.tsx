@@ -107,10 +107,6 @@ export const FirstTimeWarningMessage = () => (
 export const BackupPhraseWarningMessage = () => (
   <WarningMessage header="Keep your backup phrase in a safe and secure place.">
     <p>
-      Your backup phrase is the only way to recover your account. We cannot help
-      you recover your account.
-    </p>
-    <p>
       Anyone who has access to this phrase has access to your account and to the
       funds in it, so save it in a safe and secure place.
     </p>

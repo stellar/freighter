@@ -43,12 +43,12 @@ import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { Loading } from "popup/views/Loading";
 import { AppError } from "popup/views/AppError";
-import { UnlockBackupPhrase } from "popup/views/UnlockBackupPhrase";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
+import { Security } from "popup/views/Security";
 import { SendPayment } from "popup/views/SendPayment";
 
 import "popup/metrics/views";
@@ -241,14 +241,14 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
           <MnemonicPhrase />
         </PublicKeyRoute>
-        <PublicKeyRoute path={ROUTES.unlockBackupPhrase}>
-          <UnlockBackupPhrase />
-        </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.settings} exact>
           <Settings />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.preferences}>
           <Preferences />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.security}>
+          <Security />
         </PublicKeyRoute>
         <UnlockAccountRoute path={ROUTES.unlockAccount}>
           <UnlockAccount />

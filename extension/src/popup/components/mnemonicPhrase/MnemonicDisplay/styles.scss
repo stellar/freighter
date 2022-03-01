@@ -1,0 +1,28 @@
+.MnemonicDisplay {
+  margin: 2rem 0 1rem;
+  position: relative;
+  text-align: center;
+
+  &--ordered-list {
+    columns: 2;
+    text-align: start;
+    counter-reset: item;
+    list-style-type: none;
+
+    li {
+      padding-left: 1rem;
+    }
+
+    li::before {
+      color: var(--pal-text-tertiary);
+      content: none;
+      counter-increment: item;
+      content: counter(item);
+    }
+
+    &--popup-view {
+      column-gap: 3rem;
+      padding: 0 1rem;
+    }
+  }
+}
