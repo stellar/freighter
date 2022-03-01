@@ -16,7 +16,7 @@ export const Security = () => (
       TODO: Add Change Password
       <ListNavLink href="/">Change Password</ListNavLink> 
       */}
-      <ListNavLink href={ROUTES.unlockBackupPhrase}>
+      <ListNavLink href={ROUTES.displayBackupPhrase}>
         Show recovery phrase
       </ListNavLink>
     </PopupWrapper>

@@ -14,7 +14,6 @@ export enum ROUTES {
   recoverAccount = "/recover-account",
   recoverAccountSuccess = "/recover-account-success",
   viewPublicKey = "/view-public-key",
-  unlockBackupPhrase = "/settings/unlock-backup-phrase",
   displayBackupPhrase = "/settings/display-backup-phrase",
   settings = "/settings",
   preferences = "/settings/preferences",

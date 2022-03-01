@@ -1,6 +1,6 @@
 .PopupWrapper {
   max-height: calc(var(--popup--height) - var(--bottom-nav--height));
   max-width: var(--popup--width);
-  overflow-y: scroll;
+  overflow-y: overlay;
   padding: 2rem 1.5rem;
 }
