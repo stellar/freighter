@@ -37,10 +37,11 @@ export const Settings = () => {
           </div>
           <ListNavLink href={ROUTES.preferences}>Preferences</ListNavLink>
           <ListNavLink href={ROUTES.security}>Security</ListNavLink>
-          <ListNavLink href="http://freighter.app/help">Help</ListNavLink>
+          <ListNavLink href="http://freighter.app/help">Support</ListNavLink>
           <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
             Leave Feedback
           </ListNavLink>
+          <ListNavLink href={ROUTES.about}>About</ListNavLink>
           <div className="Settings--logout">
             <Button
               fullWidth
