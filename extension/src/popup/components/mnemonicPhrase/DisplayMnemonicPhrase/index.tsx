@@ -1,4 +1,5 @@
 import React from "react";
+import { InfoBlock, CopyText, TextLink, Button } from "@stellar/design-system";
 
 import { emitMetric } from "helpers/metrics";
 
@@ -7,15 +8,8 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { download } from "popup/helpers/download";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
-import {
-  InfoBlock,
-  CopyText,
-  TextLink,
-  Button,
-  Card,
-} from "@stellar/design-system";
-
 import { ActionButton } from "../ActionButton";
+import { MnemonicDisplay } from "../MnemonicDisplay";
 
 import "./styles.scss";
 
@@ -49,17 +43,8 @@ export const DisplayMnemonicPhrase = ({
           <strong>IMPORTANT WARNING</strong>
           <p>Never disclose your recovery phrase!</p>
         </InfoBlock>
-        <div className="DisplayMnemonicPhrase--mnemonic-display">
-          <Card variant={Card.variant.highlight}>
-            <ol className="DisplayMnemonicPhrase--ordered-list">
-              {mnemonicPhrase.split(" ").map((word: string) => (
-                <li key={word}>
-                  <strong>{word}</strong>
-                </li>
-              ))}
-            </ol>
-          </Card>
-        </div>
+        <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} />
+
         {/* TODO - use Custom Button from SDS when added */}
         <div className="DisplayMnemonicPhrase--display-buttons">
           <ActionButton

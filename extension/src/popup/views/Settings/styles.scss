@@ -10,17 +10,6 @@
     font-size: 0.875rem;
   }
 
-  &--nav-link {
-    line-height: 1.5rem;
-    padding: 1rem 0;
-
-    a {
-      color: var(--pal-text-primary);
-      display: flex;
-      justify-content: space-between;
-    }
-  }
-
   &--logout {
     margin-top: 7rem;
   }

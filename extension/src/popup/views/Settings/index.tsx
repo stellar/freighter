@@ -1,24 +1,22 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Button, Icon, Heading5 } from "@stellar/design-system";
-import { Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { Button, Heading5 } from "@stellar/design-system";
 
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
 
 import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { ListNavLink } from "popup/basics/ListNavLink";
 
 import { BottomNav } from "popup/components/BottomNav";
 
-import { applicationStateSelector, signOut } from "popup/ducks/accountServices";
+import { signOut } from "popup/ducks/accountServices";
 
 import "./styles.scss";
 
 export const Settings = () => {
   const dispatch = useDispatch();
-  const applicationState = useSelector(applicationStateSelector);
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +24,7 @@ export const Settings = () => {
     navigateTo(ROUTES.welcome);
   };
 
-  return applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ? (
+  return (
     <>
       <PopupWrapper>
         <nav className="Settings">
@@ -37,37 +35,12 @@ export const Settings = () => {
               v2.0.0
             </div>
           </div>
-          <div className="Settings--nav-link">
-            <Link to={ROUTES.preferences}>
-              Preferences <Icon.ChevronRight />
-            </Link>
-          </div>
-          <div className="Settings--nav-link">
-            <Link to={ROUTES.unlockBackupPhrase}>
-              Show backup phrase <Icon.ChevronRight />
-            </Link>
-          </div>
-
-          <div className="Settings--nav-link">
-            <a
-              rel="noreferrer"
-              target="_blank"
-              href="http://freighter.app/help"
-            >
-              Help
-              <Icon.ChevronRight />
-            </a>
-          </div>
-          <div className="Settings--nav-link">
-            <a
-              rel="noreferrer"
-              target="_blank"
-              href="https://stellarform.typeform.com/to/r4FiNpX1"
-            >
-              Leave Feedback
-              <Icon.ChevronRight />
-            </a>
-          </div>
+          <ListNavLink href={ROUTES.preferences}>Preferences</ListNavLink>
+          <ListNavLink href={ROUTES.security}>Security</ListNavLink>
+          <ListNavLink href="http://freighter.app/help">Help</ListNavLink>
+          <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
+            Leave Feedback
+          </ListNavLink>
           <div className="Settings--logout">
             <Button
               fullWidth
@@ -81,5 +54,5 @@ export const Settings = () => {
       </PopupWrapper>
       <BottomNav />
     </>
-  ) : null;
+  );
 };
