@@ -162,11 +162,19 @@ export const Account = () => {
       </div>
       <div>
         {isFunded ? (
-          <AccountAssets
-            sortedBalances={sortedBalances}
-            assetIcons={assetIcons}
-            retryAssetIconFetch={retryAssetIconFetch}
-          />
+          <>
+            <AccountAssets
+              sortedBalances={sortedBalances}
+              assetIcons={assetIcons}
+              retryAssetIconFetch={retryAssetIconFetch}
+            />
+            <div>
+              {/* TODO - handle click */}
+              <Button fullWidth variant={Button.variant.tertiary}>
+                Manage Assets
+              </Button>
+            </div>
+          </>
         ) : (
           <NotFundedMessage
             isTestnet={networkDetails.isTestnet}
@@ -174,12 +182,6 @@ export const Account = () => {
             publicKey={publicKey}
           />
         )}
-      </div>
-      <div>
-        {/* TODO - handle click */}
-        <Button fullWidth variant={Button.variant.tertiary}>
-          Manage Assets
-        </Button>
       </div>
       <BottomNav />
     </div>
