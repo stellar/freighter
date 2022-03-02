@@ -57,6 +57,7 @@ export const ViewPublicKey = () => {
   return (
     <PopupWrapper>
       <div className="ViewPublicKey">
+        {/* TODO - use better back button and format nicely */}
         <BackButton isPopup onClick={() => navigateTo(ROUTES.account)} />
         <div className="ViewPublicKey__header">
           {isEditingName ? (
