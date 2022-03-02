@@ -41,63 +41,61 @@ export const UnlockAccount = () => {
   };
 
   return (
-    <>
-      <Header />
-      <SubviewWrapper>
-        <div className="UnlockAccount__header">
-          A <strong>Stellar</strong> wallet for every website
-        </div>
-        <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-          {({ dirty, isSubmitting, isValid, errors, touched }) => (
-            <Form>
-              <div>
-                <FormRow>
-                  <Field name="password">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        autoComplete="off"
-                        id="password-input"
-                        placeholder="Enter Password"
-                        type="password"
-                        error={
-                          authError ||
-                          (errors.password && touched.password
-                            ? errors.password
-                            : "")
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-                </FormRow>
-                <div className="UnlockAccount__button-row">
-                  <Button
-                    fullWidth
-                    type="submit"
-                    isLoading={isSubmitting}
-                    disabled={!(dirty && isValid)}
-                  >
-                    LOG IN
-                  </Button>
-                </div>
+    <SubviewWrapper>
+      <Header isPopupView />
+      <div className="UnlockAccount__header">
+        A <strong>Stellar</strong> wallet for every website
+      </div>
+      <Formik onSubmit={handleSubmit} initialValues={initialValues}>
+        {({ dirty, isSubmitting, isValid, errors, touched }) => (
+          <Form>
+            <div>
+              <FormRow>
+                <Field name="password">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      autoComplete="off"
+                      id="password-input"
+                      placeholder="Enter Password"
+                      type="password"
+                      error={
+                        authError ||
+                        (errors.password && touched.password
+                          ? errors.password
+                          : "")
+                      }
+                      {...field}
+                    />
+                  )}
+                </Field>
+              </FormRow>
+              <div className="UnlockAccount__button-row">
+                <Button
+                  fullWidth
+                  type="submit"
+                  isLoading={isSubmitting}
+                  disabled={!(dirty && isValid)}
+                >
+                  LOG IN
+                </Button>
               </div>
-            </Form>
-          )}
-        </Formik>
-        <div className="UnlockAccount__import-account">
-          <div>Want to add another account?</div>
-          <div>
-            <TextLink
-              variant={TextLink.variant.secondary}
-              onClick={() => {
-                openTab(newTabHref(ROUTES.recoverAccount));
-              }}
-            >
-              Import using account seed phrase
-            </TextLink>
-          </div>
+            </div>
+          </Form>
+        )}
+      </Formik>
+      <div className="UnlockAccount__import-account">
+        <div>Want to add another account?</div>
+        <div>
+          <TextLink
+            variant={TextLink.variant.secondary}
+            onClick={() => {
+              openTab(newTabHref(ROUTES.recoverAccount));
+            }}
+          >
+            Import using account seed phrase
+          </TextLink>
         </div>
-      </SubviewWrapper>
-    </>
+      </div>
+    </SubviewWrapper>
   );
 };
