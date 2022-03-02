@@ -1,0 +1,88 @@
+.ViewPublicKey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__header {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--pal-text-primary);
+    font-weight: var(--font-weight-medium);
+    width: 60%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__form {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: space-between;
+
+    > .Input {
+      width: 70%;
+    }
+
+    * {
+      text-align: center;
+    }
+  }
+
+  &__account-name-display {
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    text-align: center;
+  }
+
+  &--account-name-div {
+    width: 1rem;
+
+    > button {
+      background: none;
+      color: inherit;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      // position: absolute;
+      // right: 1.5rem;
+    }
+
+    svg {
+      width: 1rem;
+    }
+  }
+
+  &__qr-code {
+    height: 11.5rem;
+    width: 11.5rem;
+    background: var(--pal-brand-primary-on);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 3rem;
+  }
+
+  &__address-copy-label {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--pal-text-tertiary);
+    margin-top: 2rem;
+  }
+
+  &__address-copy {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--pal-text-primary);
+  }
+
+  &__copy-btn {
+    margin-top: 1rem;
+  }
+
+  &__external-link {
+    margin-top: 3rem;
+  }
+}
