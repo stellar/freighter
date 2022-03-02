@@ -145,7 +145,9 @@ export const Account = () => {
             className="AccountView__send-receive-button"
             onClick={() => navigateTo(ROUTES.viewPublicKey)}
           >
-            <Icon.QrCode />
+            <span className="AccountView__qr-icon">
+              <Icon.QrCode />
+            </span>
           </div>
 
           <div className="AccountView__send-receive-button">
@@ -155,18 +157,28 @@ export const Account = () => {
                 state: { accountBalances: JSON.stringify(accountBalances) },
               }}
             >
-              <Icon.Send />
+              <span className="AccountView__send-icon">
+                <Icon.Send />
+              </span>
             </Link>
           </div>
         </div>
       </div>
       <div>
         {isFunded ? (
-          <AccountAssets
-            sortedBalances={sortedBalances}
-            assetIcons={assetIcons}
-            retryAssetIconFetch={retryAssetIconFetch}
-          />
+          <>
+            <AccountAssets
+              sortedBalances={sortedBalances}
+              assetIcons={assetIcons}
+              retryAssetIconFetch={retryAssetIconFetch}
+            />
+            <div>
+              {/* TODO - handle click */}
+              <Button fullWidth variant={Button.variant.tertiary}>
+                Manage Assets
+              </Button>
+            </div>
+          </>
         ) : (
           <NotFundedMessage
             isTestnet={networkDetails.isTestnet}
@@ -174,12 +186,6 @@ export const Account = () => {
             publicKey={publicKey}
           />
         )}
-      </div>
-      <div>
-        {/* TODO - handle click */}
-        <Button fullWidth variant={Button.variant.tertiary}>
-          Manage Assets
-        </Button>
       </div>
       <BottomNav />
     </div>
