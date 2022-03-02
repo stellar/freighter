@@ -10,13 +10,19 @@
     font-weight: var(--font-weight-medium);
     width: 60%;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
   }
 
   &__form {
-    flex-flow: row wrap !important;
+    display: flex;
+    flex-flow: row wrap;
     align-items: center;
+    justify-content: space-between;
+
+    > .Input {
+      width: 70%;
+    }
 
     * {
       text-align: center;
@@ -27,16 +33,21 @@
     height: 2.75rem;
     display: flex;
     align-items: center;
+    text-align: center;
   }
 
-  &--account-name-btn {
-    background: none;
-    color: inherit;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    position: absolute;
-    right: 1.5rem;
+  &--account-name-div {
+    width: 1rem;
+
+    > button {
+      background: none;
+      color: inherit;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      // position: absolute;
+      // right: 1.5rem;
+    }
 
     svg {
       width: 1rem;

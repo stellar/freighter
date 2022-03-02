@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import QrCode from "qrcode.react";
-import { Formik, Field, FieldProps } from "formik";
+import { Formik, Field, FieldProps, Form } from "formik";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 
-import { Form } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo, openTab } from "popup/helpers/navigate";
@@ -63,6 +62,7 @@ export const ViewPublicKey = () => {
           {isEditingName ? (
             <Formik initialValues={initialValues} onSubmit={handleSubmit}>
               <Form className="ViewPublicKey__form">
+                <div className="ViewPublicKey--account-name-div"></div>
                 <Field name="accountName">
                   {({ field }: FieldProps) => (
                     <Input
@@ -73,25 +73,24 @@ export const ViewPublicKey = () => {
                     />
                   )}
                 </Field>
-                <button
-                  className="ViewPublicKey--account-name-btn"
-                  type="submit"
-                >
-                  <Icon.Check />
-                </button>
+                <div className="ViewPublicKey--account-name-div">
+                  <button type="submit">
+                    <Icon.Check />
+                  </button>
+                </div>
               </Form>
             </Formik>
           ) : (
             <>
+              <div className="ViewPublicKey--account-name-div"></div>
               <div className="ViewPublicKey__account-name-display">
                 {accountName}
               </div>
-              <button
-                className="ViewPublicKey--account-name-btn"
-                onClick={() => setIsEditingName(true)}
-              >
-                <Icon.Edit />
-              </button>
+              <div className="ViewPublicKey--account-name-div">
+                <button onClick={() => setIsEditingName(true)}>
+                  <Icon.Edit />
+                </button>
+              </div>
             </>
           )}
         </div>
