@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import QrCode from "qrcode.react";
-import CopyToClipboard from "react-copy-to-clipboard";
 import { Formik, Field, FieldProps } from "formik";
 
 import { emitMetric } from "helpers/metrics";
@@ -21,14 +20,19 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-import { Button, TextLink, Icon, Input } from "@stellar/design-system";
+import {
+  Button,
+  TextLink,
+  Icon,
+  Input,
+  CopyText,
+} from "@stellar/design-system";
 
 import "./styles.scss";
 
 export const ViewPublicKey = () => {
   const publicKey = useSelector(publicKeySelector);
   const accountName = useSelector(accountNameSelector);
-  const [isCopied, setIsCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const { network } = useSelector(settingsNetworkDetailsSelector);
 
@@ -49,16 +53,6 @@ export const ViewPublicKey = () => {
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
     }
     setIsEditingName(false);
-  };
-
-  const handleCopy = () => {
-    setIsCopied(true);
-    emitMetric(METRIC_NAMES.viewPublicKeyCopy);
-
-    const t = setTimeout(() => {
-      setIsCopied(false);
-      clearTimeout(t);
-    }, 1000);
   };
 
   return (
@@ -114,11 +108,9 @@ export const ViewPublicKey = () => {
           {truncatedPublicKey(publicKey)}
         </div>
         <div className="ViewPublicKey__copy-btn">
-          <CopyToClipboard text={publicKey} onCopy={() => handleCopy()}>
-            <Button disabled={isCopied} variant={Button.variant.tertiary}>
-              {isCopied ? "ADDRESS COPIED" : "COPY"}
-            </Button>
-          </CopyToClipboard>
+          <CopyText textToCopy={publicKey} doneLabel="ADDRESS COPIED">
+            <Button variant={Button.variant.tertiary}>COPY</Button>
+          </CopyText>
         </div>
         <div className="ViewPublicKey__external-link">
           <TextLink
