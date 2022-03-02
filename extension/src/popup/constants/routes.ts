@@ -16,6 +16,7 @@ export enum ROUTES {
   viewPublicKey = "/view-public-key",
   displayBackupPhrase = "/settings/display-backup-phrase",
   settings = "/settings",
+  about = "/settings/about",
   preferences = "/settings/preferences",
   security = "/settings/security",
   sendPayment = "/sendPayment",
