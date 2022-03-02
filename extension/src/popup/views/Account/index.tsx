@@ -145,7 +145,9 @@ export const Account = () => {
             className="AccountView__send-receive-button"
             onClick={() => navigateTo(ROUTES.viewPublicKey)}
           >
-            <Icon.QrCode />
+            <span className="AccountView__qr-icon">
+              <Icon.QrCode />
+            </span>
           </div>
 
           <div className="AccountView__send-receive-button">
@@ -155,7 +157,9 @@ export const Account = () => {
                 state: { accountBalances: JSON.stringify(accountBalances) },
               }}
             >
-              <Icon.Send />
+              <span className="AccountView__send-icon">
+                <Icon.Send />
+              </span>
             </Link>
           </div>
         </div>
