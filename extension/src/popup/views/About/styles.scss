@@ -1,0 +1,32 @@
+.About {
+  font-size: 0.875rem;
+
+  &--info {
+    color: var(--pal-brand-primary-on);
+    margin-top: 1rem;
+  }
+
+  &--links-header {
+    color: var(--pal-border-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &--link {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+
+    a {
+      color: var(--pal-brand-primary-on);
+    }
+
+    &:not(:last-child) {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &--copyright {
+    color: var(--pal-border-secondary);
+    margin-top: 3rem;
+  }
+}

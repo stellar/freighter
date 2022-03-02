@@ -49,6 +49,7 @@ import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
+import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
 
 import "popup/metrics/views";
@@ -249,6 +250,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.security}>
           <Security />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.about}>
+          <About />
         </PublicKeyRoute>
         <UnlockAccountRoute path={ROUTES.unlockAccount}>
           <UnlockAccount />
