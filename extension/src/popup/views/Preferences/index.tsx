@@ -1,5 +1,5 @@
 import React from "react";
-import { Icon } from "@stellar/design-system";
+import { Icon, Toggle } from "@stellar/design-system";
 import { Field, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 
@@ -14,12 +14,10 @@ import {
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 
-import { SubviewHeader } from "popup/components/SubviewHeader";
-
 import { Form } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { Toggle } from "popup/basics/Toggle";
 
+import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
 import { BottomNav } from "popup/components/BottomNav";
 
