@@ -17,6 +17,16 @@
   &__form {
     flex-flow: row wrap !important;
     align-items: center;
+
+    * {
+      text-align: center;
+    }
+  }
+
+  &__account-name-display {
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
   }
 
   &--account-name-btn {

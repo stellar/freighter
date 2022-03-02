@@ -83,7 +83,9 @@ export const ViewPublicKey = () => {
             </Formik>
           ) : (
             <>
-              <div>{accountName}</div>
+              <div className="ViewPublicKey__account-name-display">
+                {accountName}
+              </div>
               <button
                 className="ViewPublicKey--account-name-btn"
                 onClick={() => setIsEditingName(true)}
