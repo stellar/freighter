@@ -1,13 +1,19 @@
 .Header {
-  align-items: center;
   border-bottom: 1px solid var(--pal-border-primary);
-  display: flex;
-  justify-content: space-between;
-  padding: 1.5rem 7.5rem;
+  padding: 1.5rem 0;
 
   &--popup {
+    max-width: 0;
     padding: 0;
     border: none;
+  }
+
+  &--fullscreen {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 auto;
+    max-width: var(--fullscreen--max-width);
   }
 
   &--network {
