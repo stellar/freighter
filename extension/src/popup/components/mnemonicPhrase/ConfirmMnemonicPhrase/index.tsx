@@ -10,7 +10,7 @@ import {
   applicationStateSelector,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
-import { Form, FormError, FormRow } from "popup/basics/Forms";
+import { Form, FormError, SubmitButtonWrapper } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { BackButton } from "popup/basics/Buttons";
 
@@ -107,7 +107,7 @@ export const ConfirmMnemonicPhrase = ({
                   />
                 ))}
               </div>
-              <FormRow>
+              <SubmitButtonWrapper>
                 <Button
                   fullWidth
                   type="submit"
@@ -116,7 +116,7 @@ export const ConfirmMnemonicPhrase = ({
                 >
                   NEXT
                 </Button>
-              </FormRow>
+              </SubmitButtonWrapper>
             </Form>
           )}
         </Formik>
