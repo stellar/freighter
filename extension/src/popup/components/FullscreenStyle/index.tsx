@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 
+import "./styles.scss";
+
 const fullscreenClassname = "Fullscreen";
 
 export const FullscreenStyle = () => {
