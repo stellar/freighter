@@ -1,0 +1,24 @@
+.ImportAccount {
+  &__warning-block {
+    margin-bottom: 1rem;
+  }
+
+  &__warning-header {
+    text-transform: uppercase;
+    font-size: 1rem;
+    line-height: 1.375rem;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 0.75rem;
+  }
+
+  &__warning-copy {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  &__btn-row {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-around;
+  }
+}
