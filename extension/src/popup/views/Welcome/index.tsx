@@ -9,7 +9,7 @@ import { Card } from "popup/basics/Card";
 import { Button } from "@stellar/design-system";
 
 import "./styles.scss";
-import "popup/styles/fullScreen.scss";
+// import "popup/styles/fullScreen.scss";
 
 export const Welcome = () => (
   <>
