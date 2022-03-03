@@ -37,16 +37,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
 
-    div {
-      width: 1rem;
-      height: 1rem;
+  &__qr-icon svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    &[data-color="fill"] {
+      fill: var(--pal-brand-primary-on);
     }
+  }
 
-    svg {
-      width: 1rem;
-      height: 1rem;
-    }
+  &__send-icon svg {
+    width: 1rem;
+    height: 1rem;
+    stroke: var(--pal-brand-primary-on);
   }
 
   &__account-name {

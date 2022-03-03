@@ -20,8 +20,7 @@
     flex-flow: row wrap;
     align-content: center;
     justify-content: space-between;
-    // TODO - use HEADER_HEIGHT constant
-    height: calc(100vh - 119px);
+    height: calc(100vh - var(--header--height));
     max-height: 40rem;
     max-width: 57rem;
     width: 100%;
@@ -34,30 +33,6 @@
     justify-content: start;
     padding: 2rem 0 2rem 1.55rem;
     width: 27rem;
-  }
-
-  &--mnemonic-display {
-    margin: 2rem 0 1rem;
-    position: relative;
-    text-align: center;
-  }
-
-  &--ordered-list {
-    columns: 2;
-    text-align: start;
-    counter-reset: item;
-    list-style-type: none;
-
-    li {
-      padding-left: 1rem;
-    }
-
-    li::before {
-      color: var(--pal-text-tertiary);
-      content: none;
-      counter-increment: item;
-      content: counter(item);
-    }
   }
 
   &--display-buttons {

@@ -1,8 +1,9 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
 
-import { BackButton } from "popup/basics/Buttons";
-import { FullscreenStyle } from "./FullscreenStyle";
+import { BackButton } from "popup/basics/BackButton";
+
+import "./styles.scss";
 
 export const Onboarding = ({
   goBack,
@@ -15,10 +16,9 @@ export const Onboarding = ({
   const isNewTabSession = history.length === 1;
 
   return (
-    <>
-      <FullscreenStyle />
-      {goBack && !isNewTabSession ? <BackButton onClick={goBack} /> : null}
+    <div className="Onboarding">
+      {goBack && !isNewTabSession ? <BackButton hasBackCopy /> : null}
       {children}
-    </>
+    </div>
   );
 };

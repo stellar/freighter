@@ -10,6 +10,7 @@
   }
 
   &__buttow-row {
+    margin-top: 1.5rem;
     padding: 1.5rem;
   }
 
@@ -18,8 +19,7 @@
     flex-flow: column wrap;
     align-content: center;
     justify-content: center;
-    // TODO - use HEADER_HEIGHT constant
-    height: calc(100vh - 119px);
+    height: calc(100vh - var(--header--height));
     max-height: 40rem;
     max-width: 57rem;
     width: 100%;
