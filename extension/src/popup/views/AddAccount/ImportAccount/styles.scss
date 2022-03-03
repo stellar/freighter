@@ -7,8 +7,18 @@
     margin-bottom: 0.75rem;
   }
 
-  &__warning_copy {
+  &__warning-copy {
     font-size: 0.875rem;
     line-height: 1.375rem;
+  }
+
+  &__form-row {
+    margin-top: 1rem;
+  }
+
+  &__btn-row {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-around;
   }
 }

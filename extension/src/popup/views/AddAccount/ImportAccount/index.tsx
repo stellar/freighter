@@ -11,6 +11,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 
 import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { BottomNav } from "popup/components/BottomNav";
 
 // import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 // import {
@@ -37,18 +38,20 @@ import "./styles.scss";
 
 export const ImportAccount = () => {
   interface FormValues {
-    // password: string;
+    password: string;
     privateKey: string;
+    // authorization: boolean;
   }
 
   const initialValues: FormValues = {
-    // password: "",
+    password: "",
     privateKey: "",
+    // authorization: false,
   };
 
   const ImportAccountSchema = YupObject().shape({
     privateKey: YupString().required(),
-    // password: YupString().required(),
+    password: YupString().required(),
     authorization: YupBool().required(),
   });
 
@@ -56,11 +59,8 @@ export const ImportAccount = () => {
   const authError = useSelector(authErrorSelector);
 
   const handleSubmit = async (values: FormValues) => {
-    // const { password, privateKey } = values;
-    const { privateKey } = values;
-
-    // ALEC TODO - remove
-    const password = "";
+    const { password, privateKey } = values;
+    // const { privateKey } = values;
 
     const res = await dispatch(importAccount({ password, privateKey }));
 
@@ -79,71 +79,93 @@ export const ImportAccount = () => {
   // };
 
   return (
-    <PopupWrapper>
-      <div className="ImportAccount">
-        <InfoBlock variant={InfoBlock.variant.warning}>
-          <div className="ImportAccount__warning-header">
-            read before importing your key
-          </div>
-          <div className="ImportAccount__warning-copy">
-            <p>
-              Freighter can't recover your imported secret key using your backup
-              phrase. Storing your secret key is your responsability.{" "}
-            </p>
-            <p>
-              Freighter will never ask for your secret key outside of the
-              extension.
-            </p>
-          </div>
-        </InfoBlock>
-        <Formik
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          validationSchema={ImportAccountSchema}
-        >
-          {({ dirty, isSubmitting, isValid }) => (
-            <Form>
-              <div>
-                <Field name="privateKey">
-                  {({ field }: FieldProps) => (
-                    <Input
-                      autoComplete="off"
-                      id="privateKey-input"
-                      type="password"
-                      placeholder="Your Stellar secret key"
-                      error={authError}
-                      {...field}
-                    />
-                  )}
-                </Field>
-              </div>
-              <div>
-                <Field name="authorization">
-                  {({ field }: FieldProps) => (
-                    <Checkbox
-                      autoComplete="off"
-                      id="authorization-input"
-                      label="I’m aware Freighter can’t recover the imported  secret key"
-                      // TODO - checkbox error
-                      {...field}
-                    />
-                  )}
-                </Field>
-              </div>
-              <div>
-                <Button variant={Button.variant.tertiary}>Cancel</Button>
-                <Button
-                  type="submit"
-                  isLoading={isSubmitting}
-                  disabled={!(dirty && isValid)}
-                >
-                  Import
-                </Button>
-              </div>
-            </Form>
-          )}
-        </Formik>
-      </div>
-    </PopupWrapper>
+    <>
+      <PopupWrapper>
+        <div className="ImportAccount">
+          <InfoBlock variant={InfoBlock.variant.warning}>
+            <div className="ImportAccount__warning-header">
+              read before importing your key
+            </div>
+            <div className="ImportAccount__warning-copy">
+              <p>
+                Freighter can't recover your imported secret key using your
+                backup phrase. Storing your secret key is your responsability.{" "}
+              </p>
+              <p>
+                Freighter will never ask for your secret key outside of the
+                extension.
+              </p>
+            </div>
+          </InfoBlock>
+          <Formik
+            initialValues={initialValues}
+            onSubmit={handleSubmit}
+            validationSchema={ImportAccountSchema}
+          >
+            {({ dirty, isSubmitting, isValid }) => (
+              <Form>
+                <div className="ImportAccount__form-row">
+                  <Field name="privateKey">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        autoComplete="off"
+                        id="privateKey-input"
+                        type="password"
+                        placeholder="Your Stellar secret key"
+                        error={authError}
+                        {...field}
+                      />
+                    )}
+                  </Field>
+                </div>
+                <div className="ImportAccount__form-row">
+                  <Field name="password">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        autoComplete="off"
+                        id="password-input"
+                        type="password"
+                        placeholder="Enter password"
+                        error={authError}
+                        {...field}
+                      />
+                    )}
+                  </Field>
+                </div>
+                <div className="ImportAccount__form-row">
+                  <Field name="authorization">
+                    {({ field }: FieldProps) => (
+                      <Checkbox
+                        autoComplete="off"
+                        id="authorization-input"
+                        label="I’m aware Freighter can’t recover the imported  secret key"
+                        // ALEC TODO - figure out error
+                        {...field}
+                      />
+                    )}
+                  </Field>
+                </div>
+                <div className="ImportAccount__btn-row">
+                  <Button
+                    variant={Button.variant.tertiary}
+                    onClick={() => navigateTo(ROUTES.account)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    isLoading={isSubmitting}
+                    disabled={!(dirty && isValid)}
+                  >
+                    Import
+                  </Button>
+                </div>
+              </Form>
+            )}
+          </Formik>
+        </div>
+      </PopupWrapper>
+      <BottomNav />
+    </>
   );
 };
