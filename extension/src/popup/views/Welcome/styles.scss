@@ -1,11 +1,11 @@
 .Welcome {
-  &--button-container {
+  &__button-container {
     display: flex;
     justify-content: space-around;
     padding-top: 1rem;
   }
 
-  &--column {
+  &__column {
     display: flex;
     flex-direction: column;
     align-content: center;
@@ -16,14 +16,14 @@
     margin: auto;
   }
 
-  &--centered-screen {
+  &__centered-screen {
     display: flex;
     justify-content: space-between;
     flex-direction: column;
     align-items: center;
   }
 
-  &--heading {
+  &__heading {
     &--large {
       color: var(--pal-text-primary);
       font-size: 2.5rem;
@@ -41,12 +41,12 @@
     }
   }
 
-  &--row-screen {
+  &__row-screen {
     display: flex;
     justify-content: space-between;
   }
 
-  &--half-screen {
+  &__half-screen {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -56,7 +56,7 @@
     height: 12.25rem;
   }
 
-  &--text {
+  &__text {
     font-size: 1rem;
     line-height: 1.5rem;
     margin-bottom: 2rem;
