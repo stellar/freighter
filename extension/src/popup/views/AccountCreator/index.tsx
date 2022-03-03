@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Input, Checkbox, TextLink, Button } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 
@@ -16,11 +17,11 @@ import {
   authErrorSelector,
 } from "popup/ducks/accountServices";
 import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
+
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Onboarding } from "popup/components/Onboarding";
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
-
-import { Input, Checkbox, TextLink, Button } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -59,6 +60,7 @@ export const AccountCreator = () => {
 
   return (
     <>
+      <FullscreenStyle />
       <Header />
       <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
         <section className="AccountCreator__screen">

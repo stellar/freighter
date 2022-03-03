@@ -1,8 +1,17 @@
-import { createGlobalStyle } from "styled-components";
+import { useEffect } from "react";
 
-export const FullscreenStyle = createGlobalStyle`
-  body, html {
-    height: 100% !important;
-    width: 100% !important;
-  }
-`;
+const fullscreenClassname = "Fullscreen";
+
+export const FullscreenStyle = () => {
+  useEffect(() => {
+    const bodyHtmlSelector = document.querySelectorAll("body, html");
+
+    if (bodyHtmlSelector) {
+      bodyHtmlSelector.forEach((el) => el.classList.add(fullscreenClassname));
+    }
+
+    return () => document.body.classList.remove(fullscreenClassname);
+  }, []);
+
+  return null;
+};
