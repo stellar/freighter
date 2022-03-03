@@ -1,3 +1,4 @@
+// width of Back Button
 $button-width: 1.5rem;
 
 .SubviewHeader {
@@ -6,16 +7,6 @@ $button-width: 1.5rem;
   display: flex;
   margin-bottom: 2rem;
   position: relative;
-
-  &--back-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    position: absolute;
-    width: $button-width;
-    z-index: 2;
-  }
 
   &--title {
     flex-grow: 1;

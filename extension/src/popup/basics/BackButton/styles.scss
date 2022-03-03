@@ -1,0 +1,14 @@
+.BackButton {
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+  position: absolute;
+  z-index: 2;
+
+  &--copy {
+    margin-left: 0.5rem;
+  }
+}
