@@ -5,34 +5,14 @@ import { bool as YupBool, object as YupObject, string as YupString } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
-
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { BottomNav } from "popup/components/BottomNav";
-
-// import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
-// import {
-//   ApiErrorMessage,
-//   Error,
-//   Form,
-//   FormRow,
-//   CheckboxField,
-//   TextField,
-//   SubmitButton,
-// } from "popup/basics/Forms";
-
-import {
-  // clearApiError,
-  importAccount,
-  authErrorSelector,
-} from "popup/ducks/accountServices";
+import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 
 import { Button, Checkbox, Input, InfoBlock } from "@stellar/design-system";
-
-// import { WarningMessage } from "popup/components/WarningMessages";
 
 import "./styles.scss";
 
@@ -40,19 +20,19 @@ export const ImportAccount = () => {
   interface FormValues {
     password: string;
     privateKey: string;
-    // authorization: boolean;
+    authorization: boolean;
   }
 
   const initialValues: FormValues = {
     password: "",
     privateKey: "",
-    // authorization: false,
+    authorization: false,
   };
 
   const ImportAccountSchema = YupObject().shape({
     privateKey: YupString().required(),
     password: YupString().required(),
-    authorization: YupBool().required(),
+    authorization: YupBool().oneOf([true], "required"),
   });
 
   const dispatch: AppDispatch = useDispatch();
@@ -60,7 +40,6 @@ export const ImportAccount = () => {
 
   const handleSubmit = async (values: FormValues) => {
     const { password, privateKey } = values;
-    // const { privateKey } = values;
 
     const res = await dispatch(importAccount({ password, privateKey }));
 
@@ -71,12 +50,6 @@ export const ImportAccount = () => {
       navigateTo(ROUTES.account);
     }
   };
-
-  // const clearImportAccountError = (e: React.ChangeEvent<any>) => {
-  //   if (authError && e.target.value === "") {
-  //     dispatch(clearApiError());
-  //   }
-  // };
 
   return (
     <>
@@ -139,7 +112,6 @@ export const ImportAccount = () => {
                         autoComplete="off"
                         id="authorization-input"
                         label="I’m aware Freighter can’t recover the imported  secret key"
-                        // ALEC TODO - figure out error
                         {...field}
                       />
                     )}
