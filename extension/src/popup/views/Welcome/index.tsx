@@ -1,103 +1,47 @@
 import React from "react";
-import styled from "styled-components";
 
-import { HEADER_HEIGHT } from "constants/dimensions";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { Header } from "popup/components/Header";
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
 
 import { Card } from "popup/basics/Card";
 import { Button } from "@stellar/design-system";
 
 import "./styles.scss";
-
-const LargeHeadingEl = styled.div`
-  color: var(--pal-text-primary);
-  font-size: 2.5rem;
-  font-weight: 400;
-  line-height: 3rem;
-  margin-bottom: 2.5rem;
-  text-align: center;
-  max-width: 36rem;
-`;
-
-const HeadingEl = styled.h3`
-  font-size: 1.125rem;
-  font-weight: 500;
-  line-height: 3rem;
-`;
-
-const TextEl = styled.div`
-  color: var(--pal-text-primary);
-  opacity: 0.8;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  font-weight: 400;
-`;
-
-const ColumnScreenEl = styled.section`
-  display: flex;
-  flex-direction: column;
-  align-content: center;
-  justify-content: center;
-  max-width: 49rem;
-  height: calc(100vh - ${HEADER_HEIGHT}px);
-  width: 100%;
-  margin: auto;
-`;
-
-const CenteredRowScreenEl = styled.div`
-  display: flex;
-  justify-content: space-between;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const RowScreenEl = styled.div`
-  display: flex;
-  justify-content: space-between;
-`;
-
-const HalfScreenEl = styled.section`
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0;
-  width: 24rem;
-  height: 12.25rem;
-`;
+// import "popup/styles/fullScreen.scss";
 
 export const Welcome = () => (
   <>
-    <FullscreenStyle />
     <Header />
-    <ColumnScreenEl>
-      <CenteredRowScreenEl>
-        <LargeHeadingEl>
+    <div className="Welcome__column">
+      <div className="Welcome__centered-screen">
+        <div className="Welcome__heading--large">
           Welcome! Is this your first time using Freighter?
-        </LargeHeadingEl>
-      </CenteredRowScreenEl>
-      <RowScreenEl>
-        <HalfScreenEl>
+        </div>
+      </div>
+      <div className="Welcome__row-screen">
+        <div className="Welcome__half-screen">
           <Card variant={Card.variant.highlight}>
-            <HeadingEl>I’m new!</HeadingEl>
-            <TextEl>I’m going to need a seed phrase</TextEl>
-            <div className="Welcome--button-container">
-              <Button onClick={() => navigateTo(ROUTES.accountCreator)}>
+            <div className="Welcome__heading--small">I’m new!</div>
+            <div className="Welcome__text">I’m going to need a seed phrase</div>
+            <div className="Welcome__button-container">
+              <Button
+                fullWidth
+                onClick={() => navigateTo(ROUTES.accountCreator)}
+              >
                 CREATE WALLET
               </Button>
             </div>
           </Card>
-        </HalfScreenEl>
-        <HalfScreenEl>
+        </div>
+        <div className="Welcome__half-screen">
           <Card>
-            <HeadingEl>I’ve done this before</HeadingEl>
-            <TextEl>I have my 12 word seed phrase</TextEl>
-            <div className="Welcome--button-container">
+            <div className="Welcome__heading--small">I’ve done this before</div>
+            <div className="Welcome__text">I have my 12 word seed phrase</div>
+            <div className="Welcome__button-container">
               <Button
+                fullWidth
                 variant={Button.variant.tertiary}
                 onClick={() => navigateTo(ROUTES.recoverAccount)}
               >
@@ -105,8 +49,8 @@ export const Welcome = () => (
               </Button>
             </div>
           </Card>
-        </HalfScreenEl>
-      </RowScreenEl>
-    </ColumnScreenEl>
+        </div>
+      </div>
+    </div>
   </>
 );
