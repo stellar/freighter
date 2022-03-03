@@ -4,7 +4,6 @@ import { useHistory } from "react-router-dom";
 import { BackButton } from "popup/basics/BackButton";
 
 import "./styles.scss";
-import "popup/styles/fullScreen.scss";
 
 export const Onboarding = ({
   goBack,
