@@ -133,7 +133,7 @@ export const AccountCreator = () => {
                     </Field>
                   </div>
                   {/* TODO - add error to Checkbox in SDS */}
-                  {errors.termsOfUse && touched.termsOfUse ? (
+                  {touched.termsOfUse ? (
                     <FormError>{errors.termsOfUse}</FormError>
                   ) : null}
                   <SubmitButtonWrapper>
