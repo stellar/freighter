@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Field, FieldProps, Formik } from "formik";
+import { Input, Checkbox, TextLink, Button } from "@stellar/design-system";
+import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
@@ -15,12 +16,12 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import { Form, FormRow } from "popup/basics/Forms";
+import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
+
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Onboarding } from "popup/components/Onboarding";
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
-
-import { Input, Checkbox, TextLink, Button } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -59,6 +60,7 @@ export const AccountCreator = () => {
 
   return (
     <>
+      <FullscreenStyle />
       <Header />
       <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
         <section className="AccountCreator__screen">
@@ -71,7 +73,7 @@ export const AccountCreator = () => {
             {({ isValid, dirty, isSubmitting, errors, touched }) => (
               <Form>
                 <section className="AccountCreator__half-screen">
-                  <FormRow>
+                  <FormRows>
                     <Field name="password">
                       {({ field }: FieldProps) => (
                         <Input
@@ -89,8 +91,6 @@ export const AccountCreator = () => {
                         />
                       )}
                     </Field>
-                  </FormRow>
-                  <FormRow>
                     <Field name="confirmPassword">
                       {({ field }: FieldProps) => (
                         <Input
@@ -108,9 +108,9 @@ export const AccountCreator = () => {
                         />
                       )}
                     </Field>
-                  </FormRow>
+                  </FormRows>
                   <PasswordRequirements />
-                  <FormRow>
+                  <div>
                     <Field name="termsOfUse">
                       {({ field }: FieldProps) => (
                         <Checkbox
@@ -131,12 +131,12 @@ export const AccountCreator = () => {
                         />
                       )}
                     </Field>
-                  </FormRow>
+                  </div>
                   {/* TODO - add error to Checkbox in SDS */}
-                  {errors.termsOfUse && touched.termsOfUse
-                    ? errors.termsOfUse
-                    : null}
-                  <div className="AccountCreator__button-row">
+                  {touched.termsOfUse ? (
+                    <FormError>{errors.termsOfUse}</FormError>
+                  ) : null}
+                  <SubmitButtonWrapper>
                     <Button
                       fullWidth
                       type="submit"
@@ -145,7 +145,7 @@ export const AccountCreator = () => {
                     >
                       CONFIRM
                     </Button>
-                  </div>
+                  </SubmitButtonWrapper>
                 </section>
               </Form>
             )}

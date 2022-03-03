@@ -17,17 +17,19 @@ export const Header = ({ isPopupView = false }: HeaderProps) => {
   );
   return (
     <header className={`Header ${isPopupView ? "Header--popup" : ""}`}>
-      <img alt="Freighter logo" src={FreighterLogoLockup} />
-      {isPopupView ? null : (
-        <div className="Header--network">
-          <div
-            className={`Header--network--icon ${
-              isTestnet ? "Header--network--icon--testnet" : ""
-            }`}
-          />
-          <div className="Header--network--name">{networkName}</div>
-        </div>
-      )}
+      <div className={isPopupView ? "" : "Header--fullscreen"}>
+        <img alt="Freighter logo" src={FreighterLogoLockup} />
+        {isPopupView ? null : (
+          <div className="Header__network">
+            <div
+              className={`Header__network__icon ${
+                isTestnet ? "Header__network__icon--testnet" : ""
+              }`}
+            />
+            <div className="Header__network__name">{networkName}</div>
+          </div>
+        )}
+      </div>
     </header>
   );
 };

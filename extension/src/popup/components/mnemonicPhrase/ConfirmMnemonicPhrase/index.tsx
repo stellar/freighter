@@ -10,7 +10,7 @@ import {
   applicationStateSelector,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
-import { Form, ApiErrorMessage, FormRow } from "popup/basics/Forms";
+import { Form, FormError, FormRow } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { BackButton } from "popup/basics/Buttons";
 
@@ -93,7 +93,7 @@ export const ConfirmMnemonicPhrase = ({
                   </span>
                 </Card>
               </div>
-              <ApiErrorMessage error={authError}></ApiErrorMessage>
+              <FormError>{authError}</FormError>
               <div className="ConfirmMnemonicPhrase__word-bubble-wrapper">
                 {wordStateArr.map(([wordKey]) => (
                   <CheckButton

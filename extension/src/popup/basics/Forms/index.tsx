@@ -13,6 +13,8 @@ import { Button } from "popup/basics/Buttons";
 
 import CheckIcon from "popup/assets/check.svg";
 
+import "./styles.scss";
+
 interface FormProps {
   children: React.ReactNode;
   className?: string;
@@ -61,9 +63,6 @@ export const SubmitButton = ({
 };
 
 /* Form */
-interface ErrorMessageProps {
-  error: React.ReactNode;
-}
 
 const FormErrorEl = styled.div`
   color: ${COLOR_PALETTE.error};
@@ -72,9 +71,6 @@ const FormErrorEl = styled.div`
   text-align: center;
   line-height: 1;
 `;
-
-export const ApiErrorMessage = ({ error }: ErrorMessageProps) =>
-  error ? <FormErrorEl>{error}</FormErrorEl> : null;
 
 export const FormRow = styled.div`
   position: relative;
@@ -212,4 +208,27 @@ export const RadioField = ({
     <RadioFieldEl {...props} id={name} name={name} />
     {label}
   </CheckAndRadioWrapperEl>
+);
+
+// CSS Form Basic
+
+interface FormRowsProps {
+  children: React.ReactNode;
+}
+export const FormRows = ({ children }: FormRowsProps) => (
+  <div className="FormRows">{children}</div>
+);
+
+interface SubmitButtonWrapperProps {
+  children: React.ReactNode;
+}
+export const SubmitButtonWrapper = ({ children }: SubmitButtonWrapperProps) => (
+  <div className="SubmitButtonWrapper">{children}</div>
+);
+
+interface ErrorMessageProps {
+  children: React.ReactNode;
+}
+export const FormError = ({ children }: ErrorMessageProps) => (
+  <div className="FormError">{children}</div>
 );
