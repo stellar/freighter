@@ -1,0 +1,16 @@
+.FormRows {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.SubmitButtonWrapper {
+  margin-top: 1.5rem;
+}
+
+.FormError {
+  color: var(--pal-error);
+  font-size: 0.8125rem;
+  padding: 0.25rem 0 0.75rem;
+  line-height: 1;
+}

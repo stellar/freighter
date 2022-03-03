@@ -12,7 +12,7 @@ import { emitMetric } from "helpers/metrics";
 import { SubviewHeader, SubviewWrapper } from "popup/basics/AccountSubview";
 
 import {
-  ApiErrorMessage,
+  FormError,
   Error,
   Form,
   FormRow,
@@ -76,7 +76,7 @@ export const AddAccount = () => {
                   type="password"
                 />
                 <Error name="password" />
-                <ApiErrorMessage error={authError}></ApiErrorMessage>
+                <FormError>{authError}</FormError>
               </FormRow>
               <FormRow>
                 <SubmitButton
