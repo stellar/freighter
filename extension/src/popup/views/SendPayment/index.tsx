@@ -7,12 +7,11 @@ import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { BottomNav } from "popup/components/BottomNav";
 
-import {
-  SendAmount,
-  SendTo,
-  SendSettings,
-  SendConfirm,
-} from "popup/components/sendPayment";
+// ALEC TODO - combine imports?
+import { SendAmount } from "popup/components/sendPayment/SendAmount";
+import { SendTo } from "popup/components/sendPayment/SendTo";
+import { SendSettings } from "popup/components/sendPayment/SendSettings";
+import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 
