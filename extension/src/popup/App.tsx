@@ -17,7 +17,6 @@ import { reducer as settings } from "popup/ducks/settings";
 import { Router } from "./Router";
 
 import "./styles/global.scss";
-import "./styles/fullScreen.scss";
 
 const GlobalStyle = createGlobalStyle`
   body {

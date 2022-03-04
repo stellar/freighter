@@ -73,7 +73,7 @@ export const RecoverAccount = () => {
   return (
     <>
       <Header />
-      <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
+      <Onboarding hasGoBackBtn>
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}

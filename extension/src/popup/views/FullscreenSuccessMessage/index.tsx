@@ -6,8 +6,11 @@ import { emitMetric } from "helpers/metrics";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
+import { SubmitButtonWrapper } from "popup/basics/Forms";
+
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
+import { OnboardingHeader } from "popup/components/Onboarding";
 
 import SuccessIllo from "popup/assets/illo-success-screen.svg";
 import ExtensionIllo from "popup/assets/illo-extension.png";
@@ -45,15 +48,17 @@ const MnemonicPhraseConfirmedMessage = () => (
         </ul>
       </div>
     </InfoBlock>
-    <Button
-      fullWidth
-      onClick={() => {
-        emitMetric(METRIC_NAMES.accountCreatorFinished);
-        window.close();
-      }}
-    >
-      GOT IT
-    </Button>
+    <SubmitButtonWrapper>
+      <Button
+        fullWidth
+        onClick={() => {
+          emitMetric(METRIC_NAMES.accountCreatorFinished);
+          window.close();
+        }}
+      >
+        GOT IT
+      </Button>
+    </SubmitButtonWrapper>
   </>
 );
 
@@ -73,15 +78,17 @@ const RecoverAccountSuccessMessage = () => (
         alt="Extension"
       />
     </div>
-    <Button
-      fullWidth
-      onClick={() => {
-        emitMetric(METRIC_NAMES.recoverAccountFinished);
-        window.close();
-      }}
-    >
-      ALL DONE
-    </Button>
+    <SubmitButtonWrapper>
+      <Button
+        fullWidth
+        onClick={() => {
+          emitMetric(METRIC_NAMES.recoverAccountFinished);
+          window.close();
+        }}
+      >
+        ALL DONE
+      </Button>
+    </SubmitButtonWrapper>
   </>
 );
 
@@ -103,7 +110,9 @@ export const FullscreenSuccessMessage = () => {
             alt="Success"
           />
         </div>
-        <h1 className="FullscreenSuccessMessage__header">Woo, you're in!</h1>
+        <OnboardingHeader className="FullscreenSuccessMessage__header">
+          Woo, you're in!
+        </OnboardingHeader>
         <div className="FullscreenSuccessMessage__content-wrapper">
           {IS_MNEMONIC_PHRASE_STATE ? (
             <MnemonicPhraseConfirmedMessage />
