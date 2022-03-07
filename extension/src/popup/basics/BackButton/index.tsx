@@ -12,7 +12,12 @@ export const BackButton = ({ hasBackCopy }: BackButtonProps) => {
   const history = useHistory();
 
   return (
-    <button className="BackButton" onClick={() => history.goBack()}>
+    <button
+      className="BackButton"
+      onClick={() => {
+        history.goBack();
+      }}
+    >
       <Icon.ArrowLeft />
       {hasBackCopy ? <div className="BackButton--copy">Back</div> : null}
     </button>
