@@ -2,10 +2,6 @@
   margin-bottom: 1rem;
 
   &__header {
-    font-size: 2.125rem;
-    line-height: 1.2rem;
-    font-weight: var(--font-weight-normal);
-    color: var(--pal-text-primary);
     text-align: center;
   }
 
@@ -15,22 +11,13 @@
   }
 
   &__screen {
-    display: flex;
     flex-flow: column wrap;
     align-content: center;
     justify-content: center;
-    height: calc(100vh - var(--header--height));
-    max-height: 40rem;
-    max-width: 57rem;
-    width: 100%;
-    margin: auto;
   }
 
   &__half-screen {
-    display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 2rem 0 2rem 1.55rem;
-    width: 27rem;
   }
 }

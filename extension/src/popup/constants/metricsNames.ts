@@ -9,6 +9,7 @@ export const METRIC_NAMES = {
   viewGrantAccess: "loaded screen: grant access",
   viewLoading: "loaded screen: loading",
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
+  viewMnemonicPhraseConfirm: "loaded screen: confirm mnemonic phrase",
   viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
   viewRecoverAccount: "loaded screen: recover account",
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
