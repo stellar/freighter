@@ -5,16 +5,14 @@ import { useHistory } from "react-router-dom";
 import "./styles.scss";
 
 interface BackButtonProps {
-  goBack?: () => void;
   hasBackCopy?: boolean;
 }
 
-export const BackButton = ({ goBack, hasBackCopy }: BackButtonProps) => {
+export const BackButton = ({ hasBackCopy }: BackButtonProps) => {
   const history = useHistory();
-  const handleClick = goBack || history.goBack;
 
   return (
-    <button className="BackButton" onClick={handleClick}>
+    <button className="BackButton" onClick={() => history.goBack()}>
       <Icon.ArrowLeft />
       {hasBackCopy ? <div className="BackButton--copy">Back</div> : null}
     </button>
