@@ -9,7 +9,9 @@ import {
 
 import { emitMetric } from "helpers/metrics";
 
+import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { navigateTo } from "popup/helpers/navigate";
 import { download } from "popup/helpers/download";
 
 import {
@@ -24,10 +26,8 @@ import "./styles.scss";
 
 export const DisplayMnemonicPhrase = ({
   mnemonicPhrase,
-  setReadyToConfirm,
 }: {
   mnemonicPhrase: string;
-  setReadyToConfirm: (readyState: boolean) => void;
 }) => (
   <>
     <OnboardingScreen className="DisplayMnemonicPhrase__screen">
@@ -75,7 +75,7 @@ export const DisplayMnemonicPhrase = ({
         <Button
           fullWidth
           onClick={() => {
-            setReadyToConfirm(true);
+            navigateTo(ROUTES.mnemonicPhraseConfirm);
           }}
         >
           Next

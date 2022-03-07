@@ -6,11 +6,9 @@ import { BackButton } from "popup/basics/BackButton";
 import "./styles.scss";
 
 export const Onboarding = ({
-  goBack,
   hasGoBackBtn,
   children,
 }: {
-  goBack?: () => void;
   hasGoBackBtn?: boolean;
   children: React.ReactNode;
 }) => {
@@ -19,9 +17,7 @@ export const Onboarding = ({
 
   return (
     <div className="Onboarding">
-      {hasGoBackBtn && !isNewTabSession ? (
-        <BackButton goBack={goBack} hasBackCopy />
-      ) : null}
+      {hasGoBackBtn && !isNewTabSession ? <BackButton hasBackCopy /> : null}
       {children}
     </div>
   );
