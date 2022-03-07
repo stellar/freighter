@@ -32,6 +32,7 @@ const routeToEventName = {
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
   [ROUTES.sendPayment]: METRIC_NAMES.viewSendPayment,
   [ROUTES.sendPaymentTo]: METRIC_NAMES.sendPaymentTo,
+  [ROUTES.sendPaymentAmount]: METRIC_NAMES.sendPaymentAmount,
   [ROUTES.sendPaymentSettings]: METRIC_NAMES.sendPaymentSettings,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
 };

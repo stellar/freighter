@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import get from "lodash/get";
 
-import { Switch, useLocation } from "react-router-dom";
+import { Switch, useLocation, Redirect } from "react-router-dom";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
@@ -24,9 +24,10 @@ export const SendPayment = () => {
   const [memo, setMemo] = useState("");
 
   const location = useLocation();
-  const accountBalances = JSON.parse(
-    get(location, "state.accountBalances", "[]"),
+  const [accountBalances] = useState(
+    JSON.parse(get(location, "state.accountBalances", "[]")),
   );
+
   const publicKey = useSelector(publicKeySelector);
 
   // TODO - enforce can't move to next route data not given
@@ -34,6 +35,12 @@ export const SendPayment = () => {
     <>
       <Switch>
         <PrivateKeyRoute exact path={ROUTES.sendPayment}>
+          <Redirect to={ROUTES.sendPaymentTo} />
+        </PrivateKeyRoute>
+        <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
+          <SendTo destination={destination} setDestination={setDestination} />
+        </PrivateKeyRoute>
+        <PrivateKeyRoute exact path={ROUTES.sendPaymentAmount}>
           <SendAmount
             amount={amount}
             setAmount={setAmount}
@@ -41,9 +48,6 @@ export const SendPayment = () => {
             setAsset={setAsset}
             accountBalances={accountBalances}
           />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
-          <SendTo destination={destination} setDestination={setDestination} />
         </PrivateKeyRoute>
         <PrivateKeyRoute exact path={ROUTES.sendPaymentSettings}>
           <SendSettings
