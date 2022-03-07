@@ -1,22 +1,10 @@
 .ConfirmMnemonicPhrase {
   &__screen {
-    display: flex;
-    width: 31rem;
     flex-flow: column wrap;
-    align-content: center;
-    justify-content: center;
-    height: calc(100vh - var(--header--height));
-    max-height: 40rem;
-    max-width: 57rem;
-    width: 100%;
-    margin: auto;
+    justify-content: start;
   }
 
   &__header {
-    font-size: 2.5rem;
-    line-height: 3rem;
-    font-weight: var(--font-weight-normal);
-    color: var(--pal-text-primary);
     text-align: center;
   }
 

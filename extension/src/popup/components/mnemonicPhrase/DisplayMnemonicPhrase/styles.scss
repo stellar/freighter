@@ -1,13 +1,9 @@
 .DisplayMnemonicPhrase {
-  &--header {
-    font-size: 2.5rem;
-    line-height: 3rem;
-    font-weight: var(--font-weight-normal);
-    color: var(--pal-text-primary);
+  &__header {
     text-align: left;
   }
 
-  &--content {
+  &__content {
     margin-top: 1.5rem;
     font-size: 1rem;
     line-height: 1.5rem;
@@ -15,27 +11,17 @@
     color: var(--pal-text-tertiary);
   }
 
-  &--screen {
-    display: flex;
+  &__screen {
     flex-flow: row wrap;
-    align-content: center;
     justify-content: space-between;
-    height: calc(100vh - var(--header--height));
-    max-height: 40rem;
-    max-width: 57rem;
-    width: 100%;
-    margin: auto;
   }
 
-  &--half-screen {
-    display: flex;
+  &__half-screen {
     flex-direction: column;
     justify-content: start;
-    padding: 2rem 0 2rem 1.55rem;
-    width: 27rem;
   }
 
-  &--display-buttons {
+  &__display-buttons {
     margin-bottom: 2.5rem;
     margin-right: 1rem;
     position: relative;
@@ -43,6 +29,20 @@
 
     img {
       margin-left: 0.5rem;
+    }
+  }
+
+  &__download-button {
+    background: none;
+    border: none;
+    margin-right: 1.5rem;
+  }
+
+  .CopyText {
+    @media (hover: hover) {
+      &:hover {
+        opacity: 1;
+      }
     }
   }
 }

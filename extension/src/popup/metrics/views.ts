@@ -17,6 +17,7 @@ const routeToEventName = {
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
+  [ROUTES.mnemonicPhraseConfirm]: METRIC_NAMES.viewMnemonicPhraseConfirm,
   [ROUTES.unlockAccount]: METRIC_NAMES.viewUnlockAccount,
   [ROUTES.mnemonicPhraseConfirmed]: METRIC_NAMES.viewMnemonicPhraseConfirmed,
   [ROUTES.accountCreator]: METRIC_NAMES.viewAccountCreator,

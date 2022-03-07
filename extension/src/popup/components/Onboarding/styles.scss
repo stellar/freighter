@@ -2,3 +2,25 @@
   margin: 4.5rem auto 0;
   max-width: var(--fullscreen--max-width);
 }
+
+.OnboardingHeader {
+  font-size: 2.5rem;
+  line-height: 120%;
+  color: var(--pal-text-primary);
+}
+
+.OnboardingScreen {
+  display: flex;
+  align-content: center;
+  height: calc(100vh - var(--header--height));
+  max-height: 40rem;
+  max-width: 57rem;
+  width: 100%;
+  margin: auto;
+}
+
+.OnboardingHalfScreen {
+  display: flex;
+  padding: 2rem 0 2rem 1.55rem;
+  width: 27rem;
+}
