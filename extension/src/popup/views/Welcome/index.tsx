@@ -1,13 +1,11 @@
 import React from "react";
-import { Button } from "@stellar/design-system";
+import { Button, Card } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
-
-import { Card } from "popup/basics/Card";
 
 import "./styles.scss";
 
