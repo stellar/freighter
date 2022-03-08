@@ -9,6 +9,7 @@ export enum ROUTES {
   sendPaymentTo = "/account/sendPayment/to",
   sendPaymentAmount = "/account/sendPayment/amount",
   sendPaymentSettings = "/account/sendPayment/settings",
+  sendPaymentSettingsFee = "/account/sendPayment/settings/fee",
   sendPaymentConfirm = "/account/sendPayment/confirm",
   addAccount = "/add-account",
   signTransaction = "/sign-transaction",

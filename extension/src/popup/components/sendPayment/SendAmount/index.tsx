@@ -11,7 +11,6 @@ import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { BackButton } from "popup/basics/BackButton";
 
-// ALEC TODO - divide styles for each component
 import "../styles.scss";
 
 export const SendAmount = ({
@@ -61,7 +60,7 @@ export const SendAmount = ({
         <div className="SendAmount__btn-set-max">
           <Button variant={Button.variant.tertiary}>SET MAX</Button>
         </div>
-        {/* ALEC TODO - add asset code unit */}
+        {/* TODO - add asset code unit */}
         <input
           className="SendAmount__input-amount"
           type="text"

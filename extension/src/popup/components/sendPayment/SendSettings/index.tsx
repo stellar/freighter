@@ -13,19 +13,17 @@ import "../styles.scss";
 
 export const SendSettings = ({
   transactionFee,
-  setTransactionFee,
   memo,
   setMemo,
 }: {
   transactionFee: string;
-  setTransactionFee: (state: string) => void;
   memo: string;
   setMemo: (state: string) => void;
 }) => (
   <PopupWrapper>
+    <BackButton hasBackCopy />
     <div className="SendSettings">
       <div className="header">Send Settings</div>
-      <BackButton hasBackCopy />
       <div className="SendSettings__row">
         <div className="SendSettings__row-left">
           <span>Transaction fee</span>
@@ -34,7 +32,12 @@ export const SendSettings = ({
         <div className="SendSettings__row-right">
           <span>{transactionFee}</span>
           <div>
-            <Icon.ChevronRight />
+            <div
+              className="SendSettings__nav-btn"
+              onClick={() => navigateTo(ROUTES.sendPaymentSettingsFee)}
+            >
+              <Icon.ChevronRight />
+            </div>
           </div>
         </div>
       </div>
@@ -52,24 +55,10 @@ export const SendSettings = ({
           autoComplete="off"
           id="mnemonic-input"
           placeholder="Memo (optional)"
-          // ALEC TODO - on change
-          // onChange={}
+          value={memo}
+          onChange={(e: React.ChangeEvent<any>) => setMemo(e.target.value)}
         />
       </div>
-      <input
-        className="SendTo__input"
-        value={transactionFee}
-        placeholder="transaction fee"
-        onChange={(e: React.ChangeEvent<any>) =>
-          setTransactionFee(e.target.value)
-        }
-      ></input>
-      <input
-        className="SendTo__input"
-        value={memo}
-        placeholder="memo"
-        onChange={(e: React.ChangeEvent<any>) => setMemo(e.target.value)}
-      ></input>
       <div className="btn-continue">
         <Button
           fullWidth

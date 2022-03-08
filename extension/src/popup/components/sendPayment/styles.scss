@@ -1,3 +1,4 @@
+// TODO - separate style sheet
 .SendAmount {
   display: flex;
   flex-direction: column;
@@ -14,8 +15,7 @@
     font-size: 3rem;
     line-height: 4.5rem;
     font-weight: var(--font-weight-light);
-    color: black;
-    // color: var(--pal-text-tertiary);
+    color: var(--pal-text-tertiary);
   }
 }
 
@@ -38,10 +38,41 @@
 .SendSettings {
   display: flex;
   flex-direction: column;
+  align-items: center;
 
-  text-align: center;
   &__input {
     color: black;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    width: 100%;
+  }
+
+  &__row-right {
+    display: flex;
+    align-items: center;
+  }
+
+  &__row-left {
+    display: flex;
+    align-items: center;
+
+    button {
+      margin-left: 0.5rem;
+      width: 1rem;
+    }
+  }
+
+  &__nav-btn {
+    cursor: pointer;
+  }
+
+  &__input-textarea {
+    width: 100%;
+    margin-top: 1rem;
   }
 }
 
