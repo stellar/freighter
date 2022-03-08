@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
-
+import debounce from "lodash/debounce";
 import { StrKey } from "stellar-sdk";
+
+import { getAccountBalances } from "@shared/api/internal";
+import { truncatedPublicKey } from "helpers/stellar";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
-
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
 import { BackButton } from "popup/basics/BackButton";
 import { BottomNav } from "popup/components/BottomNav";
-
-import { getAccountBalances } from "@shared/api/internal";
-// ALEC TODO - move to somewhere else?
 import { defaultAccountBalances } from "popup/views/Account";
 
 import { Loader } from "@stellar/design-system";
@@ -28,43 +26,48 @@ export const SendTo = ({
   setDestination: (state: string) => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isValidAddress, setIsValidAddress] = useState(true);
+  const [isValidAddress, setIsValidAddress] = useState(false);
   const [destinationBalances, setDestinationBalances] = useState(
     defaultAccountBalances,
   );
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  // ALEC TODO - add debounce stuff
-  useEffect(() => {
-    if (destination.startsWith("M")) {
+  const validatePublicKey = (publicKey: string) => {
+    if (publicKey.startsWith("M")) {
       // TODO: remove when type is added to stellar-sdk
       // @ts-ignore
-      if (!StrKey.isValidMed25519PublicKey(destination)) {
+      if (!StrKey.isValidMed25519PublicKey(publicKey)) {
         setIsValidAddress(false);
       }
-    } else if (!StrKey.isValidEd25519PublicKey(destination)) {
+    } else if (!StrKey.isValidEd25519PublicKey(publicKey)) {
       setIsValidAddress(false);
+    } else {
+      setIsValidAddress(true);
     }
+  };
 
-    const fetchDestinationBalances = async () => {
+  const debounceValidate = useCallback(
+    debounce(async (addressInput: string) => {
+      validatePublicKey(addressInput);
+
       try {
-        setIsLoading(true);
         const res = await getAccountBalances({
-          publicKey: destination,
+          publicKey: addressInput,
           networkDetails,
         });
         setDestinationBalances(res);
       } catch (e) {
         console.error(e);
       }
-
       setIsLoading(false);
-    };
-    fetchDestinationBalances();
-  }, [destination, networkDetails]);
+    }, 2000),
+    [],
+  );
 
-  // ALEC TODO - remove
-  console.log(destinationBalances);
+  useEffect(() => {
+    setIsLoading(true);
+    debounceValidate(destination);
+  }, [destination, networkDetails, debounceValidate]);
 
   return (
     <PopupWrapper>
@@ -78,11 +81,20 @@ export const SendTo = ({
             setDestination(e.target.value)
           }
         />
-        {!isValidAddress && <span>Invalid Stellar Address</span>}
-        {isLoading && (
+        {/* TODO - use form validation */}
+        {!isValidAddress && !isLoading && destination !== "" && (
+          <span>Invalid Stellar Address</span>
+        )}
+        {isLoading && destination !== "" && (
           <div>
             <Loader />
           </div>
+        )}
+        {!isLoading && destination !== "" && !destinationBalances.isFunded && (
+          <span>Account doesn't exist</span>
+        )}
+        {!isLoading && destination !== "" && destinationBalances.isFunded && (
+          <div>Address: {truncatedPublicKey(destination)}</div>
         )}
         <button onClick={() => navigateTo(ROUTES.sendPaymentAmount)}>
           continue
