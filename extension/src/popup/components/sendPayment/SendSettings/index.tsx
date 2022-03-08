@@ -7,7 +7,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
-import { BackButton } from "popup/basics/Buttons";
+import { BackButton } from "popup/basics/BackButton";
 
 import "../styles.scss";
 
@@ -25,10 +25,7 @@ export const SendSettings = ({
   <PopupWrapper>
     <div className="SendSettings">
       <div className="header">Send Settings</div>
-      <BackButton
-        isPopup
-        onClick={() => navigateTo(ROUTES.sendPaymentAmount)}
-      />
+      <BackButton hasBackCopy />
       <div className="SendSettings__row">
         <div className="SendSettings__row-left">
           <span>Transaction fee</span>
@@ -41,7 +38,6 @@ export const SendSettings = ({
           </div>
         </div>
       </div>
-      {/* ALEC TODO - allowed slippage page? */}
       <div className="SendSettings__row">
         <div className="SendSettings__row-left">
           <span>Memo</span> <IconButton altText="info" icon={<Icon.Info />} />
