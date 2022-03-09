@@ -1,12 +1,17 @@
-import React, { useReducer } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import StellarSdk, { Horizon, Asset } from "stellar-sdk";
+import StellarSdk, { Asset } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
-import { signFreighterTransaction } from "popup/ducks/access";
+import {
+  signFreighterTransaction,
+  submitFreighterTransaction,
+  ActionStatus,
+  transactionSubmissionSelector,
+} from "popup/ducks/internalTransaction";
 import { AppDispatch } from "popup/App";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -16,56 +21,6 @@ import { BackButton } from "popup/basics/BackButton";
 import { SubmitFail, SubmitPending, SubmitSuccess } from "./SubmitResult";
 
 import "../styles.scss";
-
-const SUBMIT_STATE = {
-  idle: "idle",
-  pending: "pending",
-  success: "success",
-  fail: "failed",
-  view: "view",
-};
-enum ACTIONS {
-  submit = "submit",
-  success = "success",
-  fail = "fail",
-  view = "view",
-}
-const initialState = {
-  state: SUBMIT_STATE.idle,
-  response: null,
-  error: null,
-};
-
-const reducer = (
-  state: any,
-  action: { type: ACTIONS; payload?: Horizon.SubmitTransactionResponse },
-) => {
-  switch (action.type) {
-    case ACTIONS.submit:
-      return { ...initialState, state: SUBMIT_STATE.pending };
-    case ACTIONS.success:
-      return {
-        ...state,
-        error: null,
-        response: action.payload,
-        state: SUBMIT_STATE.success,
-      };
-    case ACTIONS.fail:
-      return {
-        ...state,
-        response: null,
-        error: action.payload,
-        state: SUBMIT_STATE.fail,
-      };
-    case ACTIONS.view:
-      return {
-        ...state,
-        state: SUBMIT_STATE.view,
-      };
-    default:
-      return state;
-  }
-};
 
 export const SendConfirm = ({
   publicKey,
@@ -84,12 +39,11 @@ export const SendConfirm = ({
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-
-  const [submission, reducerDispatch] = useReducer(reducer, initialState);
+  const submission = useSelector(transactionSubmissionSelector);
+  const [isViewOnly, setIsViewOnly] = useState(false);
 
   // handles signing and submitting
   const handleSend = async () => {
-    reducerDispatch({ type: ACTIONS.submit });
     const server = new StellarSdk.Server(networkDetails.networkUrl);
 
     let horizonAsset: Asset;
@@ -131,27 +85,23 @@ export const SendConfirm = ({
     );
 
     if (signFreighterTransaction.fulfilled.match(res)) {
-      const signed = StellarSdk.TransactionBuilder.fromXDR(
+      const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
         res.payload.signedTransaction,
         networkDetails.networkPassphrase,
       );
 
-      try {
-        const submitRes = await server.submitTransaction(signed);
-        reducerDispatch({ type: ACTIONS.success, payload: submitRes });
-      } catch (e) {
-        reducerDispatch({ type: ACTIONS.fail, payload: e });
-      }
-    } else {
-      reducerDispatch({
-        type: ACTIONS.fail,
-      });
+      await dispatch(
+        submitFreighterTransaction({
+          signedXDR,
+          networkUrl: networkDetails.networkUrl,
+        }),
+      );
     }
   };
 
   const TransactionDetails = () => (
     <div className="SendConfirm">
-      {submission.state === SUBMIT_STATE.view ? (
+      {isViewOnly ? (
         <button onClick={() => navigateTo(ROUTES.account)}>Close</button>
       ) : (
         <BackButton hasBackCopy />
@@ -162,7 +112,7 @@ export const SendConfirm = ({
       <div>destination: {destination}</div>
       <div>transactionFee: {transactionFee}</div>
       <div>memo: {memo}</div>
-      {submission.state === SUBMIT_STATE.view ? (
+      {isViewOnly ? (
         <button>View on Stellar.expert</button>
       ) : (
         <>
@@ -174,24 +124,25 @@ export const SendConfirm = ({
   );
 
   const render = () => {
-    switch (submission.state) {
-      case SUBMIT_STATE.idle:
+    if (isViewOnly) {
+      return <TransactionDetails />;
+    }
+    switch (submission.status) {
+      case ActionStatus.IDLE:
         return <TransactionDetails />;
-      case SUBMIT_STATE.pending:
+      case ActionStatus.PENDING:
         return <SubmitPending />;
-      case SUBMIT_STATE.success:
+      case ActionStatus.SUCCESS:
         return (
           <SubmitSuccess
             amount={amount}
             asset={asset}
             destination={destination}
-            viewDetails={() => reducerDispatch({ type: ACTIONS.view })}
+            viewDetails={() => setIsViewOnly(true)}
           />
         );
-      case SUBMIT_STATE.fail:
+      case ActionStatus.ERROR:
         return <SubmitFail destination={destination} />;
-      case SUBMIT_STATE.view:
-        return <TransactionDetails />;
       default:
         return <TransactionDetails />;
     }
