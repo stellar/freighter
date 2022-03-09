@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
@@ -16,11 +16,9 @@ const ImportedTagEl = () => (
 );
 
 interface AccountHeaderProps {
-  accountDropDownRef: React.Ref<HTMLDivElement>;
+  accountDropDownRef: React.RefObject<HTMLDivElement>;
   allAccounts: Array<Account>;
   currentAccountName: string;
-  isDropdownOpen: boolean;
-  setIsDropdownOpen: (state: boolean) => void;
   publicKey: string;
 }
 
@@ -28,11 +26,10 @@ export const AccountHeader = ({
   accountDropDownRef,
   allAccounts,
   currentAccountName,
-  isDropdownOpen,
-  setIsDropdownOpen,
   publicKey,
 }: AccountHeaderProps) => {
   const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLUListElement>(null);
 
@@ -127,6 +124,7 @@ export const AccountHeader = ({
           </li>
         </ul>
         <div
+          onClick={() => setIsDropdownOpen(false)}
           className={`AccountHeader__dropdown-background ${
             isDropdownOpen ? "activate" : null
           }`}
