@@ -1,5 +1,5 @@
 $account-row-height: 5rem;
-$dropdown-animation: 0.2s ease-out;
+$dropdown-animation: 0.3s ease-out;
 
 .AccountHeader {
   display: flex;
@@ -63,15 +63,18 @@ $dropdown-animation: 0.2s ease-out;
   &__dropdown-background {
     opacity: 0;
     position: absolute;
-    transition: opacity $dropdown-animation;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    transition: all $dropdown-animation;
+    transition-delay: 0.1s;
 
     &.activate {
       background-color: rgba(var(--pal-shadow-rbg), 0.6);
       opacity: 1;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
+
       z-index: 1;
     }
   }
