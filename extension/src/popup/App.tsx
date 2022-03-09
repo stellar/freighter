@@ -13,6 +13,7 @@ import { metricsMiddleware } from "helpers/metrics";
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
+import { reducer as transactionSubmission } from "popup/ducks/internalTransaction";
 
 import { Router } from "./Router";
 
@@ -54,6 +55,7 @@ const RouteWrapperEl = styled.div`
 const rootReducer = combineReducers({
   auth,
   settings,
+  transactionSubmission,
 });
 export type AppState = ReturnType<typeof rootReducer>;
 export const store = configureStore({
