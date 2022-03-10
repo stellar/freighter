@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Input } from "@stellar/design-system";
-import { Field, Formik, FieldProps } from "formik";
+import { Field, Form, Formik, FieldProps } from "formik";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -10,7 +10,7 @@ import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 
-import { Form, FormRow, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { BottomNav } from "popup/components/BottomNav";
@@ -52,7 +52,7 @@ export const AddAccount = () => {
         <Formik initialValues={initialValues} onSubmit={handleSubmit}>
           {({ dirty, isSubmitting, isValid, errors, touched }) => (
             <Form>
-              <FormRow>
+              <FormRows>
                 <Field name="password">
                   {({ field }: FieldProps) => (
                     <Input
@@ -70,8 +70,6 @@ export const AddAccount = () => {
                     />
                   )}
                 </Field>
-              </FormRow>
-              <FormRow>
                 <SubmitButtonWrapper>
                   <Button
                     fullWidth
@@ -82,7 +80,7 @@ export const AddAccount = () => {
                     Add New Address
                   </Button>
                 </SubmitButtonWrapper>
-              </FormRow>
+              </FormRows>
             </Form>
           )}
         </Formik>

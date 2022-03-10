@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Redirect } from "react-router-dom";
-import { Formik } from "formik";
+import { Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { Button, Card } from "@stellar/design-system";
 
@@ -11,7 +11,7 @@ import {
   applicationStateSelector,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
-import { Form, FormError, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FormError, SubmitButtonWrapper } from "popup/basics/Forms";
 
 import {
   OnboardingScreen,
