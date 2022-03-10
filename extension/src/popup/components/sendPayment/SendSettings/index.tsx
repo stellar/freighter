@@ -13,12 +13,10 @@ import "../styles.scss";
 
 export const SendSettings = ({
   transactionFee,
-  setTransactionFee,
   memo,
   setMemo,
 }: {
   transactionFee: string;
-  setTransactionFee: (state: string) => void;
   memo: string;
   setMemo: (state: string) => void;
 }) => (
