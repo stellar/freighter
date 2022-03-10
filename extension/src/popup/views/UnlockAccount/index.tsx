@@ -40,8 +40,6 @@ export const UnlockAccount = () => {
     navigateTo(destination, queryParams);
   };
 
-  console.log(authError);
-
   return (
     <PopupWrapper>
       <Header isPopupView />
