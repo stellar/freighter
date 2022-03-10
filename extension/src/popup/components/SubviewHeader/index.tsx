@@ -15,7 +15,7 @@ export const SubviewHeader = ({
 }: SubviewHeaderProps) => (
   <header className="SubviewHeader">
     {hasBackButton ? <BackButton /> : null}
-
     <div className="SubviewHeader--title">{title}</div>
+    <div className="SubviewHeader--spacer"></div>
   </header>
 );
