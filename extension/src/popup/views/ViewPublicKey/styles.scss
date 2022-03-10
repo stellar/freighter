@@ -8,7 +8,7 @@
     line-height: 1.5rem;
     color: var(--pal-text-primary);
     font-weight: var(--font-weight-medium);
-    width: 60%;
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -19,10 +19,6 @@
     flex-flow: row wrap;
     align-items: center;
     justify-content: space-between;
-
-    > .Input {
-      width: 70%;
-    }
 
     * {
       text-align: center;
@@ -37,16 +33,12 @@
   }
 
   &--account-name-div {
-    width: 1rem;
-
     > button {
       background: none;
       color: inherit;
       border: none;
       padding: 0;
       cursor: pointer;
-      // position: absolute;
-      // right: 1.5rem;
     }
 
     svg {
