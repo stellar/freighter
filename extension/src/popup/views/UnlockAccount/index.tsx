@@ -8,8 +8,8 @@ import { Input, Button, TextLink } from "@stellar/design-system";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Form, FormRow } from "popup/basics/Forms";
-import { SubviewWrapper } from "popup/basics/AccountSubview";
+import { Form, FormRow, SubmitButtonWrapper } from "popup/basics/Forms";
+import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { Header } from "popup/components/Header";
 import {
   confirmPassword,
@@ -41,7 +41,7 @@ export const UnlockAccount = () => {
   };
 
   return (
-    <SubviewWrapper>
+    <PopupWrapper>
       <Header isPopupView />
       <div className="UnlockAccount__header">
         A <strong>Stellar</strong> wallet for every website
@@ -69,7 +69,7 @@ export const UnlockAccount = () => {
                   )}
                 </Field>
               </FormRow>
-              <div className="UnlockAccount__button-row">
+              <SubmitButtonWrapper>
                 <Button
                   fullWidth
                   type="submit"
@@ -78,7 +78,7 @@ export const UnlockAccount = () => {
                 >
                   LOG IN
                 </Button>
-              </div>
+              </SubmitButtonWrapper>
             </div>
           </Form>
         )}
@@ -96,6 +96,6 @@ export const UnlockAccount = () => {
           </TextLink>
         </div>
       </div>
-    </SubviewWrapper>
+    </PopupWrapper>
   );
 };
