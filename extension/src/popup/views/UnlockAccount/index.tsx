@@ -2,13 +2,13 @@ import React from "react";
 import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Field, Formik, FieldProps } from "formik";
+import { Field, Form, Formik, FieldProps } from "formik";
 import { Input, Button, TextLink } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Form, FormRow, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { Header } from "popup/components/Header";
 import {
@@ -50,7 +50,7 @@ export const UnlockAccount = () => {
         {({ dirty, isSubmitting, isValid, errors, touched }) => (
           <Form>
             <div>
-              <FormRow>
+              <FormRows>
                 <Field name="password">
                   {({ field }: FieldProps) => (
                     <Input
@@ -68,7 +68,7 @@ export const UnlockAccount = () => {
                     />
                   )}
                 </Field>
-              </FormRow>
+              </FormRows>
               <SubmitButtonWrapper>
                 <Button
                   fullWidth

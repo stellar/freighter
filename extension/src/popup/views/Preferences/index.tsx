@@ -1,6 +1,6 @@
 import React from "react";
 import { Icon, Toggle } from "@stellar/design-system";
-import { Field, Formik } from "formik";
+import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 
 import {
@@ -14,7 +14,6 @@ import {
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 
-import { Form } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
