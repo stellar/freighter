@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Input, CopyText, TextLink } from "@stellar/design-system";
 
-import { Field, Formik } from "formik";
+import { Field, Form, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
 
@@ -17,7 +17,6 @@ import { BottomNav } from "popup/components/BottomNav";
 import { MnemonicDisplay } from "popup/components/mnemonicPhrase/MnemonicDisplay";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
-import { Form } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";

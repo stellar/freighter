@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Field, Formik, FieldProps } from "formik";
+import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
 
 import { Onboarding } from "popup/components/Onboarding";
@@ -17,7 +17,7 @@ import {
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/accountServices";
-import { FormRow, Form } from "popup/basics/Forms";
+import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
@@ -88,7 +88,7 @@ export const RecoverAccount = () => {
                   <div className="RecoverAccount__header">
                     Import wallet from recovery phrase
                   </div>
-                  <FormRow>
+                  <FormRows>
                     <div className="RecoverAccount__mnemonic-input">
                       <Field name="mnemonicPhrase">
                         {({ field }: FieldProps) => (
@@ -102,17 +102,22 @@ export const RecoverAccount = () => {
                             />
                             {/* TODO - add textarea to SDS */}
                             {authError ||
-                              (errors.mnemonicPhrase && touched.mnemonicPhrase
-                                ? errors.mnemonicPhrase
-                                : "")}
+                              (errors.mnemonicPhrase &&
+                              touched.mnemonicPhrase ? (
+                                <FormError>
+                                  {authError || errors.mnemonicPhrase}
+                                </FormError>
+                              ) : (
+                                ""
+                              ))}
                           </>
                         )}
                       </Field>
                     </div>
-                  </FormRow>
+                  </FormRows>
                 </div>
                 <div className="RecoverAccount__half-screen">
-                  <FormRow>
+                  <FormRows>
                     <Field name="password">
                       {({ field }: FieldProps) => (
                         <Input
@@ -130,8 +135,6 @@ export const RecoverAccount = () => {
                         />
                       )}
                     </Field>
-                  </FormRow>
-                  <FormRow>
                     <Field name="confirmPassword">
                       {({ field }: FieldProps) => (
                         <Input
@@ -149,9 +152,7 @@ export const RecoverAccount = () => {
                         />
                       )}
                     </Field>
-                  </FormRow>
-                  <PasswordRequirements />
-                  <FormRow>
+                    <PasswordRequirements />
                     <Field name="termsOfUse">
                       {({ field }: FieldProps) => (
                         <Checkbox
@@ -172,22 +173,20 @@ export const RecoverAccount = () => {
                         />
                       )}
                     </Field>
-                  </FormRow>
+                  </FormRows>
                   {/* TODO - add error to Checkbox in SDS */}
-                  {errors.termsOfUse && touched.termsOfUse
-                    ? errors.termsOfUse
-                    : null}
-                  <FormRow>
-                    <div className="RecoverAccount__button-row">
-                      <Button
-                        fullWidth
-                        isLoading={isSubmitting}
-                        disabled={!(dirty && isValid)}
-                      >
-                        IMPORT
-                      </Button>
-                    </div>
-                  </FormRow>
+                  {errors.termsOfUse && touched.termsOfUse ? (
+                    <FormError>{errors.termsOfUse}</FormError>
+                  ) : null}
+                  <SubmitButtonWrapper>
+                    <Button
+                      fullWidth
+                      isLoading={isSubmitting}
+                      disabled={!(dirty && isValid)}
+                    >
+                      IMPORT
+                    </Button>
+                  </SubmitButtonWrapper>
                 </div>
               </div>
             </Form>
