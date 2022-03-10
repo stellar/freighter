@@ -93,7 +93,6 @@ export const ViewPublicKey = () => {
                 </>
               ) : (
                 <>
-                  <div className="ViewPublicKey--account-name-div"></div>
                   <div className="ViewPublicKey__account-name-display">
                     {accountName}
                   </div>
