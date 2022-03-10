@@ -3,8 +3,6 @@ import { camelCase } from "lodash";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
 
-import { BasicButton } from "popup/basics/Buttons";
-
 import { COLOR_PALETTE } from "popup/constants/styles";
 import { OPERATION_TYPES } from "constants/transaction";
 import { AccountHistoryInterface, HorizonOperation } from "@shared/api/types";
@@ -75,7 +73,7 @@ const TimestampEl = styled(HistoryColumnRowEl)`
   font-weight: bold;
 `;
 
-const FullHistoryBtnEl = styled(BasicButton)`
+const FullHistoryBtnEl = styled.button`
   color: ${COLOR_PALETTE.primary};
   display: block;
   font-size: 1rem;

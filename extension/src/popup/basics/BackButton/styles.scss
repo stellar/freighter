@@ -4,8 +4,9 @@
   border: none;
   cursor: pointer;
   display: flex;
+  height: var(--back--button-dimension);
   padding: 0;
-  position: absolute;
+  width: var(--back--button-dimension);
   z-index: 2;
 
   &--copy {
