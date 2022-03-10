@@ -18,6 +18,7 @@ import {
   recoverAccount,
 } from "popup/ducks/accountServices";
 import { FormRow, Form } from "popup/basics/Forms";
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
@@ -73,7 +74,8 @@ export const RecoverAccount = () => {
   return (
     <>
       <Header />
-      <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
+      <FullscreenStyle />
+      <Onboarding hasGoBackBtn>
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}

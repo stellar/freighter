@@ -31,14 +31,11 @@
     flex-flow: column wrap;
     align-items: center;
     justify-content: center;
-    height: calc(100vh - 119px);
+    height: calc(100vh - var(--header--height));
     width: 100%;
   }
 
   &__header {
-    font-weight: 200;
-    font-size: 2.6rem;
-    line-height: 2.75rem;
     margin: 2.5rem 0 3rem;
   }
 

@@ -49,7 +49,6 @@ export const Account = () => {
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const allAccounts = useSelector(allAccountsSelector);
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
@@ -117,77 +116,79 @@ export const Account = () => {
   };
 
   return (
-    <div className="AccountView">
-      <AccountHeader
-        accountDropDownRef={accountDropDownRef}
-        allAccounts={allAccounts}
-        currentAccountName={currentAccountName}
-        isDropdownOpen={isDropdownOpen}
-        setIsDropdownOpen={setIsDropdownOpen}
-        publicKey={publicKey}
-      />
-      <div className="AccountView__account-actions">
-        <div className="AccountView__name-key-display">
-          <div className="AccountView__account-name">{currentAccountName}</div>
-          <CopyText
-            textToCopy={publicKey}
-            showCopyIcon
-            showTooltip
-            tooltipPosition={CopyText.tooltipPosition.RIGHT}
-          >
-            <div className="AccountView__account-num">
-              {truncatedPublicKey(publicKey)}
+    <>
+      <div className="AccountView">
+        <AccountHeader
+          accountDropDownRef={accountDropDownRef}
+          allAccounts={allAccounts}
+          currentAccountName={currentAccountName}
+          publicKey={publicKey}
+        />
+        <div className="AccountView__account-actions">
+          <div className="AccountView__name-key-display">
+            <div className="AccountView__account-name">
+              {currentAccountName}
             </div>
-          </CopyText>
-        </div>
-        <div className="AccountView__send-receive-display">
-          <div
-            className="AccountView__send-receive-button"
-            onClick={() => navigateTo(ROUTES.viewPublicKey)}
-          >
-            <span className="AccountView__qr-icon">
-              <Icon.QrCode />
-            </span>
-          </div>
-
-          <div className="AccountView__send-receive-button">
-            <Link
-              to={{
-                pathname: ROUTES.sendPayment,
-                state: { accountBalances: JSON.stringify(accountBalances) },
-              }}
+            <CopyText
+              textToCopy={publicKey}
+              showCopyIcon
+              showTooltip
+              tooltipPosition={CopyText.tooltipPosition.RIGHT}
             >
-              <span className="AccountView__send-icon">
-                <Icon.Send />
+              <div className="AccountView__account-num">
+                {truncatedPublicKey(publicKey)}
+              </div>
+            </CopyText>
+          </div>
+          <div className="AccountView__send-receive-display">
+            <div
+              className="AccountView__send-receive-button"
+              onClick={() => navigateTo(ROUTES.viewPublicKey)}
+            >
+              <span className="AccountView__qr-icon">
+                <Icon.QrCode />
               </span>
-            </Link>
+            </div>
+
+            <div className="AccountView__send-receive-button">
+              <Link
+                to={{
+                  pathname: ROUTES.sendPayment,
+                  state: { accountBalances: JSON.stringify(accountBalances) },
+                }}
+              >
+                <span className="AccountView__send-icon">
+                  <Icon.Send />
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
-      <div>
-        {isFunded ? (
-          <>
-            <AccountAssets
-              sortedBalances={sortedBalances}
-              assetIcons={assetIcons}
-              retryAssetIconFetch={retryAssetIconFetch}
+        <div>
+          {isFunded ? (
+            <>
+              <AccountAssets
+                sortedBalances={sortedBalances}
+                assetIcons={assetIcons}
+                retryAssetIconFetch={retryAssetIconFetch}
+              />
+              <div>
+                {/* TODO - handle click */}
+                <Button fullWidth variant={Button.variant.tertiary}>
+                  Manage Assets
+                </Button>
+              </div>
+            </>
+          ) : (
+            <NotFundedMessage
+              isTestnet={networkDetails.isTestnet}
+              setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+              publicKey={publicKey}
             />
-            <div>
-              {/* TODO - handle click */}
-              <Button fullWidth variant={Button.variant.tertiary}>
-                Manage Assets
-              </Button>
-            </div>
-          </>
-        ) : (
-          <NotFundedMessage
-            isTestnet={networkDetails.isTestnet}
-            setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-            publicKey={publicKey}
-          />
-        )}
+          )}
+        </div>
       </div>
       <BottomNav />
-    </div>
+    </>
   );
 };

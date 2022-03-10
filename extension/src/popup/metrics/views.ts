@@ -17,6 +17,7 @@ const routeToEventName = {
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
+  [ROUTES.mnemonicPhraseConfirm]: METRIC_NAMES.viewMnemonicPhraseConfirm,
   [ROUTES.unlockAccount]: METRIC_NAMES.viewUnlockAccount,
   [ROUTES.mnemonicPhraseConfirmed]: METRIC_NAMES.viewMnemonicPhraseConfirmed,
   [ROUTES.accountCreator]: METRIC_NAMES.viewAccountCreator,
@@ -31,7 +32,9 @@ const routeToEventName = {
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
   [ROUTES.sendPayment]: METRIC_NAMES.viewSendPayment,
   [ROUTES.sendPaymentTo]: METRIC_NAMES.sendPaymentTo,
+  [ROUTES.sendPaymentAmount]: METRIC_NAMES.sendPaymentAmount,
   [ROUTES.sendPaymentSettings]: METRIC_NAMES.sendPaymentSettings,
+  [ROUTES.sendPaymentSettingsFee]: METRIC_NAMES.sendPaymentSettingsFee,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
 };
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Redirect } from "react-router-dom";
 import { Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
+import { Button, Card } from "@stellar/design-system";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
@@ -10,11 +11,12 @@ import {
   applicationStateSelector,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
-import { Form, FormError, FormRow } from "popup/basics/Forms";
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { BackButton } from "popup/basics/Buttons";
+import { Form, FormError, SubmitButtonWrapper } from "popup/basics/Forms";
 
-import { Button, Card } from "@stellar/design-system";
+import {
+  OnboardingScreen,
+  OnboardingHeader,
+} from "popup/components/Onboarding";
 
 import { CheckButton } from "../CheckButton";
 
@@ -24,10 +26,8 @@ const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
 
 export const ConfirmMnemonicPhrase = ({
   words = [""],
-  setReadyToConfirm,
 }: {
   words: string[];
-  setReadyToConfirm: (readyState: boolean) => void;
 }) => {
   const dispatch = useDispatch();
 
@@ -60,10 +60,6 @@ export const ConfirmMnemonicPhrase = ({
     await dispatch(confirmMnemonicPhrase(displaySelectedWords()));
   };
 
-  const goBack = () => {
-    setReadyToConfirm(false);
-  };
-
   const displaySelectedWords = () =>
     selectedWords.map((word) => convertToWord(word)).join(" ");
 
@@ -73,12 +69,10 @@ export const ConfirmMnemonicPhrase = ({
 
   return (
     <>
-      <FullscreenStyle />
-      <BackButton onClick={goBack} />
-      <div className="ConfirmMnemonicPhrase__screen">
-        <div className="ConfirmMnemonicPhrase__header">
-          Confirm your recovery phrase{" "}
-        </div>
+      <OnboardingScreen className="ConfirmMnemonicPhrase__screen">
+        <OnboardingHeader className="ConfirmMnemonicPhrase__header">
+          Confirm your recovery phrase
+        </OnboardingHeader>
         <div className="ConfirmMnemonicPhrase__content">
           <p>Please select each word in the same order you have</p>
           <p>them noted to confirm you go them right</p>
@@ -107,7 +101,7 @@ export const ConfirmMnemonicPhrase = ({
                   />
                 ))}
               </div>
-              <FormRow>
+              <SubmitButtonWrapper>
                 <Button
                   fullWidth
                   type="submit"
@@ -116,11 +110,11 @@ export const ConfirmMnemonicPhrase = ({
                 >
                   NEXT
                 </Button>
-              </FormRow>
+              </SubmitButtonWrapper>
             </Form>
           )}
         </Formik>
-      </div>
+      </OnboardingScreen>
     </>
   );
 };

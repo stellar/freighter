@@ -9,9 +9,8 @@ import { ROUTES } from "popup/constants/routes";
 
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
-import { BackButton } from "popup/basics/Buttons";
+import { BackButton } from "popup/basics/BackButton";
 
-// ALEC TODO - divide styles for each component
 import "../styles.scss";
 
 export const SendAmount = ({
@@ -52,7 +51,7 @@ export const SendAmount = ({
   return (
     <PopupWrapper>
       <div className="SendAmount">
-        <BackButton isPopup onClick={() => navigateTo(ROUTES.account)} />
+        <BackButton hasBackCopy />
         <div className="SendAmount__header">Send {selectedAsset.code}</div>
         <div className="SendAmount__asset-copy">
           <span>{selectedAsset.balance.toString()}</span>{" "}
@@ -61,7 +60,7 @@ export const SendAmount = ({
         <div className="SendAmount__btn-set-max">
           <Button variant={Button.variant.tertiary}>SET MAX</Button>
         </div>
-        {/* ALEC TODO - add asset code unit */}
+        {/* TODO - add asset code unit */}
         <input
           className="SendAmount__input-amount"
           type="text"
@@ -84,7 +83,7 @@ export const SendAmount = ({
           <Button
             fullWidth
             variant={Button.variant.tertiary}
-            onClick={() => navigateTo(ROUTES.sendPaymentTo)}
+            onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
           >
             Continue
           </Button>

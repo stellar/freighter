@@ -367,17 +367,23 @@ export const signFreighterTransaction = async ({
   transactionXDR: string;
   network: string;
 }): Promise<{ signedTransaction: string }> => {
-  try {
-    const { signedTransaction } = await sendMessageToBackground({
-      transactionXDR,
-      network,
-      type: SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION,
-    });
-    return { signedTransaction };
-  } catch (e) {
-    console.error(e);
-    return e;
-  }
+  const { signedTransaction } = await sendMessageToBackground({
+    transactionXDR,
+    network,
+    type: SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION,
+  });
+  return { signedTransaction };
+};
+
+export const submitFreighterTransaction = async ({
+  signedXDR,
+  networkUrl,
+}: {
+  signedXDR: string;
+  networkUrl: string;
+}) => {
+  const server = new StellarSdk.Server(networkUrl);
+  return await server.submitTransaction(signedXDR);
 };
 
 export const signOut = async (): Promise<{

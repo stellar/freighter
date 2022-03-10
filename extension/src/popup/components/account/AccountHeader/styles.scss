@@ -1,4 +1,5 @@
 $account-row-height: 5rem;
+$dropdown-animation: 0.3s ease-out;
 
 .AccountHeader {
   display: flex;
@@ -51,8 +52,8 @@ $account-row-height: 5rem;
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 999;
-    transition: max-height 0.3s ease-out;
+    z-index: calc(var(--z-index-tooltip) + 1);
+    transition: max-height $dropdown-animation;
 
     li::before {
       content: none;
@@ -60,15 +61,20 @@ $account-row-height: 5rem;
   }
 
   &__dropdown-background {
+    opacity: 0;
     position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    transition: all $dropdown-animation;
+    transition-delay: 0.1s;
 
     &.activate {
-      position: absolute;
       background-color: rgba(var(--pal-shadow-rbg), 0.6);
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      opacity: 1;
+      z-index: 1;
     }
   }
 

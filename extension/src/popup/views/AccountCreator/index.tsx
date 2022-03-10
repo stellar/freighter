@@ -19,7 +19,12 @@ import {
 import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { Onboarding } from "popup/components/Onboarding";
+import {
+  Onboarding,
+  OnboardingScreen,
+  OnboardingHalfScreen,
+  OnboardingHeader,
+} from "popup/components/Onboarding";
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
@@ -62,9 +67,11 @@ export const AccountCreator = () => {
     <>
       <FullscreenStyle />
       <Header />
-      <Onboarding goBack={() => navigateTo(ROUTES.welcome)}>
-        <section className="AccountCreator__screen">
-          <div className="AccountCreator__header">Create a password</div>
+      <Onboarding hasGoBackBtn>
+        <OnboardingScreen className="AccountCreator__screen">
+          <OnboardingHeader className="AccountCreator__header">
+            Create a password
+          </OnboardingHeader>
           <Formik
             initialValues={initialValues}
             onSubmit={handleSubmit}
@@ -72,7 +79,7 @@ export const AccountCreator = () => {
           >
             {({ isValid, dirty, isSubmitting, errors, touched }) => (
               <Form>
-                <section className="AccountCreator__half-screen">
+                <OnboardingHalfScreen className="AccountCreator__half-screen">
                   <FormRows>
                     <Field name="password">
                       {({ field }: FieldProps) => (
@@ -146,11 +153,11 @@ export const AccountCreator = () => {
                       CONFIRM
                     </Button>
                   </SubmitButtonWrapper>
-                </section>
+                </OnboardingHalfScreen>
               </Form>
             )}
           </Formik>
-        </section>
+        </OnboardingScreen>
       </Onboarding>
     </>
   );
