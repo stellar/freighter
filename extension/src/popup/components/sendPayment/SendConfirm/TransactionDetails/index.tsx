@@ -11,7 +11,7 @@ import { ROUTES } from "popup/constants/routes";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
-} from "popup/ducks/internalTransaction";
+} from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { BackButton } from "popup/basics/BackButton";
