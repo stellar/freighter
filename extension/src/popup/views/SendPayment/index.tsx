@@ -18,12 +18,10 @@ import { transactionDataSelector } from "popup/ducks/transactionData";
 export const SendPayment = () => {
   const transactionData = useSelector(transactionDataSelector);
 
-  // ALEC TODO - remove
-  console.log({ transactionData });
-
+  // TODO - load in the child components
   const [amount, setAmount] = useState(transactionData.amount);
   const [asset, setAsset] = useState(transactionData.asset);
-  const [destination, setDestination] = useState(transactionData.destination);
+  const [destination] = useState(transactionData.destination);
   const [transactionFee, setTransactionFee] = useState(
     transactionData.transactionFee,
   );
@@ -44,7 +42,7 @@ export const SendPayment = () => {
           <Redirect to={ROUTES.sendPaymentTo} />
         </PrivateKeyRoute>
         <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
-          <SendTo destination={destination} setDestination={setDestination} />
+          <SendTo />
         </PrivateKeyRoute>
         <PrivateKeyRoute exact path={ROUTES.sendPaymentAmount}>
           <SendAmount

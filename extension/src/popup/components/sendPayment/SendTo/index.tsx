@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
 import { StrKey } from "stellar-sdk";
+import { Formik, Form, Field, FieldProps } from "formik";
 
 import { getAccountBalances } from "@shared/api/internal";
 import { truncatedPublicKey } from "helpers/stellar";
 
+import { FormRows } from "popup/basics/Forms";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
@@ -13,13 +15,18 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { BackButton } from "popup/basics/BackButton";
 import { BottomNav } from "popup/components/BottomNav";
 import { defaultAccountBalances } from "popup/views/Account";
-import { saveDestination } from "popup/ducks/transactionData";
+import {
+  saveDestination,
+  transactionDataSelector,
+} from "popup/ducks/transactionData";
 
-import { Loader } from "@stellar/design-system";
+import { Input, Loader } from "@stellar/design-system";
 
 import "../styles.scss";
 
-export const SendTo = ({ destination }: { destination: string }) => {
+export const SendTo = () => {
+  const { destination } = useSelector(transactionDataSelector);
+
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [isValidAddress, setIsValidAddress] = useState(false);
@@ -65,8 +72,8 @@ export const SendTo = ({ destination }: { destination: string }) => {
     debounceValidate(destination);
   }, [destination, networkDetails, debounceValidate]);
 
-  const handleContinue = () => {
-    dispatch(saveDestination(destination));
+  const handleContinue = (values: { destination: string }) => {
+    dispatch(saveDestination(values.destination));
     navigateTo(ROUTES.sendPaymentAmount);
   };
 
@@ -75,13 +82,26 @@ export const SendTo = ({ destination }: { destination: string }) => {
       <BackButton hasBackCopy />
       <div className="SendTo">
         <div className="header">Send To</div>
-        <input
-          className="SendTo__input"
-          value={destination}
-          onChange={(e: React.ChangeEvent<any>) =>
-            setDestination(e.target.value)
-          }
-        />
+        <Formik initialValues={{ destination }} onSubmit={handleContinue}>
+          {() => (
+            <>
+              <Form>
+                <FormRows>
+                  <Field name="destination">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        id="destination-input"
+                        placeholder="Recipient Stellar address"
+                        {...field}
+                      />
+                    )}
+                  </Field>
+                </FormRows>
+                <button type="submit">continue</button>
+              </Form>
+            </>
+          )}
+        </Formik>
         {/* TODO - use form validation */}
         {!isValidAddress && !isLoading && destination !== "" && (
           <span>Invalid Stellar Address</span>
@@ -97,7 +117,6 @@ export const SendTo = ({ destination }: { destination: string }) => {
         {!isLoading && destination !== "" && destinationBalances.isFunded && (
           <div>Address: {truncatedPublicKey(destination)}</div>
         )}
-        <button onClick={() => handleContinue()}>continue</button>
       </div>
       <BottomNav />
     </PopupWrapper>
