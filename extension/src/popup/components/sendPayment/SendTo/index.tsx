@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
 import { StrKey } from "stellar-sdk";
 
@@ -13,18 +13,14 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { BackButton } from "popup/basics/BackButton";
 import { BottomNav } from "popup/components/BottomNav";
 import { defaultAccountBalances } from "popup/views/Account";
+import { saveDestination } from "popup/ducks/transactionData";
 
 import { Loader } from "@stellar/design-system";
 
 import "../styles.scss";
 
-export const SendTo = ({
-  destination,
-  setDestination,
-}: {
-  destination: string;
-  setDestination: (state: string) => void;
-}) => {
+export const SendTo = ({ destination }: { destination: string }) => {
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [isValidAddress, setIsValidAddress] = useState(false);
   const [destinationBalances, setDestinationBalances] = useState(
@@ -69,6 +65,11 @@ export const SendTo = ({
     debounceValidate(destination);
   }, [destination, networkDetails, debounceValidate]);
 
+  const handleContinue = () => {
+    dispatch(saveDestination(destination));
+    navigateTo(ROUTES.sendPaymentAmount);
+  };
+
   return (
     <PopupWrapper>
       <BackButton hasBackCopy />
@@ -96,9 +97,7 @@ export const SendTo = ({
         {!isLoading && destination !== "" && destinationBalances.isFunded && (
           <div>Address: {truncatedPublicKey(destination)}</div>
         )}
-        <button onClick={() => navigateTo(ROUTES.sendPaymentAmount)}>
-          continue
-        </button>
+        <button onClick={() => handleContinue()}>continue</button>
       </div>
       <BottomNav />
     </PopupWrapper>

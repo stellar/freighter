@@ -13,15 +13,21 @@ import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/Trans
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { transactionDataSelector } from "popup/ducks/transactionData";
 
 export const SendPayment = () => {
-  // keep state separate for now, combine later if needed
-  const [amount, setAmount] = useState("");
-  const [asset, setAsset] = useState("native");
-  const [destination, setDestination] = useState("");
-  // TODO - use lumens instead of stroops
-  const [transactionFee, setTransactionFee] = useState("100");
-  const [memo, setMemo] = useState("");
+  const transactionData = useSelector(transactionDataSelector);
+
+  // ALEC TODO - remove
+  console.log({ transactionData });
+
+  const [amount, setAmount] = useState(transactionData.amount);
+  const [asset, setAsset] = useState(transactionData.asset);
+  const [destination, setDestination] = useState(transactionData.destination);
+  const [transactionFee, setTransactionFee] = useState(
+    transactionData.transactionFee,
+  );
+  const [memo, setMemo] = useState(transactionData.memo);
 
   const location = useLocation();
   const [accountBalances] = useState(
