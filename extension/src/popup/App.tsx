@@ -14,7 +14,6 @@ import { COLOR_PALETTE } from "popup/constants/styles";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
-import { reducer as transactionData } from "popup/ducks/transactionData";
 
 import { Router } from "./Router";
 
@@ -57,7 +56,6 @@ const rootReducer = combineReducers({
   auth,
   settings,
   transactionSubmission,
-  transactionData,
 });
 export type AppState = ReturnType<typeof rootReducer>;
 export const store = configureStore({

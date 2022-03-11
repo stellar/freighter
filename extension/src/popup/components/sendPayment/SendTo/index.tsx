@@ -19,7 +19,7 @@ import { defaultAccountBalances } from "popup/views/Account";
 import {
   saveDestination,
   transactionDataSelector,
-} from "popup/ducks/transactionData";
+} from "popup/ducks/transactionSubmission";
 
 import {
   Input,

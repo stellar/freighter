@@ -14,7 +14,7 @@ import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/Trans
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { transactionDataSelector } from "popup/ducks/transactionData";
+import { transactionDataSelector } from "popup/ducks/transactionSubmission";
 
 export const SendPayment = () => {
   const transactionData = useSelector(transactionDataSelector);

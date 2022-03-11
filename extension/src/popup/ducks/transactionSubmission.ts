@@ -49,29 +49,51 @@ export enum ActionStatus {
   ERROR = "ERROR",
 }
 
+interface TransactionData {
+  amount: string;
+  asset: string;
+  destination: string;
+  transactionFee: string;
+  memo: string;
+}
+
 interface InitialState {
   status: string;
-  data: Horizon.TransactionResponse | null;
+  response: Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
+  transactionData: TransactionData;
 }
 
 const initialState: InitialState = {
   status: ActionStatus.IDLE,
-  data: null,
+  response: null,
   error: undefined,
+  transactionData: {
+    amount: "",
+    asset: "native",
+    destination: "",
+    // TODO - use lumens instead of stroops
+    transactionFee: "100",
+    memo: "",
+  },
 };
 
 const transactionSubmissionSlice = createSlice({
   name: "transactionSubmission",
   initialState,
-  reducers: {},
+  reducers: {
+    saveDestination: (state, action) => {
+      state.transactionData.destination = action.payload;
+    },
+    // TODO - add for each field
+  },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
       state.status = ActionStatus.PENDING;
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.status = ActionStatus.SUCCESS;
-      state.data = action.payload;
+      state.response = action.payload;
     });
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
       state.status = ActionStatus.ERROR;
@@ -84,8 +106,13 @@ const transactionSubmissionSlice = createSlice({
   },
 });
 
+export const { saveDestination } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
 export const transactionSubmissionSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission;
+
+export const transactionDataSelector = (state: {
+  transactionSubmission: InitialState;
+}) => state.transactionSubmission.transactionData;
