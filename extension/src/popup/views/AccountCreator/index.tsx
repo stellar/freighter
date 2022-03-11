@@ -16,7 +16,7 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import {
@@ -122,6 +122,7 @@ export const AccountCreator = () => {
                       {({ field }: FieldProps) => (
                         <Checkbox
                           autoComplete="off"
+                          error={touched.termsOfUse ? errors.termsOfUse : null}
                           id="termsOfUse-input"
                           label={
                             <span>
@@ -139,10 +140,6 @@ export const AccountCreator = () => {
                       )}
                     </Field>
                   </div>
-                  {/* TODO - add error to Checkbox in SDS */}
-                  {touched.termsOfUse ? (
-                    <FormError>{errors.termsOfUse}</FormError>
-                  ) : null}
                   <SubmitButtonWrapper>
                     <Button
                       fullWidth

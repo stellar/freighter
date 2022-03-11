@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { CopyText, Icon, Button } from "@stellar/design-system";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -23,8 +24,6 @@ import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
-
-import { CopyText, Icon, Button } from "@stellar/design-system";
 
 import "popup/metrics/authServices";
 
@@ -131,12 +130,12 @@ export const Account = () => {
             </div>
             <CopyText
               textToCopy={publicKey}
-              showCopyIcon
               showTooltip
               tooltipPosition={CopyText.tooltipPosition.RIGHT}
             >
               <div className="AccountView__account-num">
                 {truncatedPublicKey(publicKey)}
+                <Icon.Copy />
               </div>
             </CopyText>
           </div>

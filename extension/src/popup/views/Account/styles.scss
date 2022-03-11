@@ -60,7 +60,14 @@
   }
 
   &__account-num {
+    align-items: center;
     color: var(--pay-text-tertiary);
+    gap: 0.5rem;
+    display: flex;
     width: 100%;
+
+    svg {
+      width: 1rem;
+    }
   }
 }
