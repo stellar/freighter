@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Input, CopyText, TextLink } from "@stellar/design-system";
+import { Button, IconButton, Input, CopyText } from "@stellar/design-system";
 
 import { Field, Form, Formik } from "formik";
 
@@ -71,12 +71,14 @@ export const DisplayBackupPhrase = () => {
             </p>
             <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
             <CopyText
-              showCopyIcon
               showTooltip
               textToCopy={mnemonicPhrase}
               tooltipPosition={CopyText.tooltipPosition.LEFT}
             >
-              <TextLink>Copy</TextLink>
+              <IconButton
+                preset={IconButton.preset.copy}
+                variant={IconButton.variant.highlight}
+              />
             </CopyText>
             <div className="DisplayBackupPhrase--submit">
               <Button fullWidth onClick={() => navigateTo(ROUTES.account)}>

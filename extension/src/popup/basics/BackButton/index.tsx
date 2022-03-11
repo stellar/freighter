@@ -13,13 +13,13 @@ export const BackButton = ({ hasBackCopy }: BackButtonProps) => {
 
   return (
     <button
-      className="BackButton"
+      className={`BackButton ${hasBackCopy ? "BackButton--has-copy" : ""}`}
       onClick={() => {
         history.goBack();
       }}
     >
       <Icon.ArrowLeft />
-      {hasBackCopy ? <div className="BackButton--copy">Back</div> : null}
+      {hasBackCopy ? <div className="BackButton__copy">Back</div> : null}
     </button>
   );
 };
