@@ -1,4 +1,5 @@
 import React from "react";
+import { Icon, IconButton } from "@stellar/design-system";
 
 import {
   CLAIM_PREDICATES,
@@ -11,11 +12,7 @@ import { FlaggedKeys } from "types/transactions";
 
 import { truncatedPoolId, truncatedPublicKey } from "helpers/stellar";
 
-import { IconWithLabel } from "popup/basics/TransactionList";
-
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-
-import IconExclamation from "popup/assets/icon-exclamation.svg";
 
 import "./styles.scss";
 
@@ -161,13 +158,12 @@ const UnsafeMaliciousWarning = ({
     <KeyValueList
       operationKey=""
       operationValue={
-        <IconWithLabel
-          isHighAlert={isDestMalicious}
-          alt="exclamation icon"
-          icon={IconExclamation}
-        >
-          {isDestMalicious ? "Malicious" : "Unsafe"} account
-        </IconWithLabel>
+        <IconButton
+          label={`${isDestMalicious ? "Malicious" : "Unsafe"} account`}
+          altText="Error"
+          icon={<Icon.Info />}
+          variant={IconButton.variant.error}
+        />
       }
     />
   ) : null;
@@ -181,13 +177,12 @@ const MemoRequiredWarning = ({
     <KeyValueList
       operationKey=""
       operationValue={
-        <IconWithLabel
-          isHighAlert
-          alt="exclamation icon"
-          icon={IconExclamation}
-        >
-          Memo required
-        </IconWithLabel>
+        <IconButton
+          label="Memo required"
+          altText="Error"
+          icon={<Icon.Info />}
+          variant={IconButton.variant.error}
+        />
       }
     />
   ) : null;

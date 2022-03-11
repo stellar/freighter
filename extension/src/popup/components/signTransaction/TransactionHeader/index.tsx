@@ -1,12 +1,9 @@
 import React from "react";
-
-import { IconWithLabel } from "popup/basics/TransactionList";
+import { Icon, IconButton } from "@stellar/design-system";
 
 import { stroopToXlm } from "helpers/stellar";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-
-import IconExcalamtion from "popup/assets/icon-exclamation.svg";
 
 import "./styles.scss";
 
@@ -19,9 +16,12 @@ const getMemoDisplay = ({
 }) => {
   if (isMemoRequired) {
     return (
-      <IconWithLabel isHighAlert alt="exclamation icon" icon={IconExcalamtion}>
-        Not defined
-      </IconWithLabel>
+      <IconButton
+        label="Not defined"
+        altText="Error"
+        icon={<Icon.Info />}
+        variant={IconButton.variant.error}
+      />
     );
   }
   if (memo) {

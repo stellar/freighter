@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Button } from "@stellar/design-system";
-import styled from "styled-components";
 
-import { COLOR_PALETTE, ROUNDED_CORNERS } from "popup/constants/styles";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
@@ -32,15 +30,7 @@ import {
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
 
-const InnerTransactionWrapper = styled.div`
-  border: 1px solid ${COLOR_PALETTE.primary};
-  border-radius: ${ROUNDED_CORNERS};
-  height: 10rem;
-  opacity: 0.7;
-  overflow: scroll;
-  padding: 1rem 2rem;
-  zoom: 0.7;
-`;
+import "./styles.scss";
 
 export const SignTransaction = () => {
   const location = useLocation();
@@ -156,13 +146,13 @@ export const SignTransaction = () => {
       </ModalInfo>
 
       {isFeeBump ? (
-        <InnerTransactionWrapper>
+        <div className="SignTransaction__inner-transaction">
           <Transaction
             flaggedKeys={flaggedKeys}
             isMemoRequired={isMemoRequired}
             transaction={_innerTransaction}
           />
-        </InnerTransactionWrapper>
+        </div>
       ) : (
         <Transaction
           flaggedKeys={flaggedKeys}
