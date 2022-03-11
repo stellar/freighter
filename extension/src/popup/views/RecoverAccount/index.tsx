@@ -2,6 +2,13 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
+import {
+  Input,
+  Button,
+  Checkbox,
+  Textarea,
+  TextLink,
+} from "@stellar/design-system";
 
 import { Onboarding } from "popup/components/Onboarding";
 import { ROUTES } from "popup/constants/routes";
@@ -17,12 +24,10 @@ import {
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/accountServices";
-import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
-
-import { Input, Button, Checkbox, TextLink } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -88,76 +93,67 @@ export const RecoverAccount = () => {
                   <div className="RecoverAccount__header">
                     Import wallet from recovery phrase
                   </div>
-                  <FormRows>
-                    <div className="RecoverAccount__mnemonic-input">
-                      <Field name="mnemonicPhrase">
-                        {({ field }: FieldProps) => (
-                          <>
-                            <textarea
-                              className="TextArea Card Card--highlight"
-                              autoComplete="off"
-                              id="mnemonic-input"
-                              placeholder="Enter your 12 word phrase to restore your wallet"
-                              {...field}
-                            />
-                            {/* TODO - add textarea to SDS */}
-                            {authError ||
-                              (errors.mnemonicPhrase &&
-                              touched.mnemonicPhrase ? (
-                                <FormError>
-                                  {authError || errors.mnemonicPhrase}
-                                </FormError>
-                              ) : (
-                                ""
-                              ))}
-                          </>
-                        )}
-                      </Field>
-                    </div>
-                  </FormRows>
+                  <div className="RecoverAccount__mnemonic-input">
+                    <Field name="mnemonicPhrase">
+                      {({ field }: FieldProps) => (
+                        <Textarea
+                          className="TextArea Card Card--highlight"
+                          autoComplete="off"
+                          id="mnemonic-input"
+                          name="mnemonicPhrase"
+                          placeholder="Enter your 12 word phrase to restore your wallet"
+                          rows={5}
+                          error={
+                            authError ||
+                            (errors.mnemonicPhrase && touched.mnemonicPhrase
+                              ? authError || errors.mnemonicPhrase
+                              : null)
+                          }
+                          customTextarea={<textarea {...field} />}
+                        />
+                      )}
+                    </Field>
+                  </div>
                 </div>
                 <div className="RecoverAccount__half-screen">
                   <FormRows>
-                    <Field name="password">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          autoComplete="off"
-                          id="password-input"
-                          placeholder="New password"
-                          type="password"
-                          error={
-                            authError ||
-                            (errors.password && touched.password
-                              ? errors.password
-                              : "")
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                    <Field name="confirmPassword">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          autoComplete="off"
-                          id="confirm-password-input"
-                          placeholder="Confirm password"
-                          type="password"
-                          error={
-                            authError ||
-                            (errors.confirmPassword && touched.confirmPassword
-                              ? errors.confirmPassword
-                              : null)
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
+                    <Input
+                      autoComplete="off"
+                      customInput={<Field />}
+                      id="password-input"
+                      name="password"
+                      placeholder="New password"
+                      type="password"
+                      error={
+                        errors.password && touched.password
+                          ? errors.password
+                          : ""
+                      }
+                    />
+                    <Input
+                      autoComplete="off"
+                      customInput={<Field />}
+                      id="confirm-password-input"
+                      name="confirmPassword"
+                      placeholder="Confirm password"
+                      type="password"
+                      error={
+                        errors.confirmPassword && touched.confirmPassword
+                          ? errors.confirmPassword
+                          : null
+                      }
+                    />
                     <PasswordRequirements />
                     <Field name="termsOfUse">
                       {({ field }: FieldProps) => (
                         <Checkbox
                           autoComplete="off"
                           id="termsOfUse-input"
+                          error={
+                            errors.termsOfUse && touched.termsOfUse
+                              ? errors.termsOfUse
+                              : null
+                          }
                           label={
                             <span>
                               I have read and agree to{" "}
@@ -174,10 +170,6 @@ export const RecoverAccount = () => {
                       )}
                     </Field>
                   </FormRows>
-                  {/* TODO - add error to Checkbox in SDS */}
-                  {errors.termsOfUse && touched.termsOfUse ? (
-                    <FormError>{errors.termsOfUse}</FormError>
-                  ) : null}
                   <SubmitButtonWrapper>
                     <Button
                       fullWidth

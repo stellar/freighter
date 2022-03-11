@@ -9,7 +9,12 @@
   width: var(--back--button-dimension);
   z-index: 2;
 
-  &--copy {
+  &--has-copy {
+    width: 3.5rem;
+  }
+
+  &__copy {
+    font-size: 0.875rem;
     margin-left: 0.5rem;
   }
 }

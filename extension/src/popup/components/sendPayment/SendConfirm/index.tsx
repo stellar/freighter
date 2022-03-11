@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import {
   ActionStatus,
   transactionSubmissionSelector,
-} from "popup/ducks/internalTransaction";
+} from "popup/ducks/transactionSubmission";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { SubmitFail, SubmitPending, SubmitSuccess } from "./SubmitResult";

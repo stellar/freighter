@@ -1,9 +1,8 @@
 import React from "react";
 import {
-  Icon,
+  IconButton,
   InfoBlock,
   CopyText,
-  TextLink,
   Button,
 } from "@stellar/design-system";
 
@@ -66,10 +65,16 @@ export const DisplayMnemonicPhrase = ({
               emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
             }}
           >
-            <TextLink iconRight={<Icon.Download />}>DOWNLOAD</TextLink>
+            <IconButton
+              preset={IconButton.preset.download}
+              variant={IconButton.variant.highlight}
+            />
           </button>
-          <CopyText textToCopy={mnemonicPhrase} showCopyIcon showTooltip>
-            <TextLink>COPY</TextLink>
+          <CopyText textToCopy={mnemonicPhrase} showTooltip>
+            <IconButton
+              preset={IconButton.preset.copy}
+              variant={IconButton.variant.highlight}
+            />
           </CopyText>
         </div>
         <Button
