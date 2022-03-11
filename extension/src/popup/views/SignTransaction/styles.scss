@@ -1,0 +1,11 @@
+.SignTransaction {
+  &__inner-transaction {
+    border: 1px solid var(--pal-border-primary);
+    border-radius: 0.5rem;
+    height: 10rem;
+    opacity: 0.7;
+    overflow: scroll;
+    padding: 1rem 2rem;
+    zoom: 0.7;
+  }
+}
