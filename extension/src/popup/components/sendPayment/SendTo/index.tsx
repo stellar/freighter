@@ -18,7 +18,6 @@ import { defaultAccountBalances } from "popup/views/Account";
 import {
   saveDestination,
   transactionDataSelector,
-  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 
 import {
@@ -34,9 +33,6 @@ import "../styles.scss";
 export const SendTo = () => {
   const { destination } = useSelector(transactionDataSelector);
 
-  // ALEC TODO - move to background storage
-  const { recentDestinations } = useSelector(transactionSubmissionSelector);
-
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [destinationBalances, setDestinationBalances] = useState(
@@ -51,7 +47,7 @@ export const SendTo = () => {
   };
 
   const formik = useFormik({
-    initialValues: { destination: "" },
+    initialValues: { destination },
     onSubmit: handleContinue,
     validateOnChange: false,
     validate: (values) => {
@@ -62,13 +58,7 @@ export const SendTo = () => {
     },
   });
 
-  // ALEC TODO - remove
-  console.log({ destination });
-  // // ALEC TODO - figure out how to reload and be "dirty"
-  // useEffect(() => {
-  //   formik.setFieldValue("destination", destination, true);
-  // }, [formik, destination]);
-
+  // TODO - handle federation address and muxed accounts
   const validPublicKey = (publicKey: string) => {
     if (publicKey.startsWith("M")) {
       // TODO: remove when type is added to stellar-sdk
@@ -104,12 +94,12 @@ export const SendTo = () => {
     db(formik.values.destination);
   }, [db, formik.values.destination]);
 
-  // // ALEC TODO - remove
-  // const recentAccounts = [
-  //   "GBMPTWD752SEBXPN4OF6A6WEDVNB4CJY4PR63J5L6OOYR3ISMG3TA6JZ",
-  //   "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II",
-  //   "GB4SFZUZIWKAUAJW2JR7CMBHZ2KNKGF3FMGMO7IF5P3EYXFA6NHI352W",
-  // ];
+  // TODO - remove, keeping for UI purposes until pulled from background
+  const recentDestinations = [
+    "GBMPTWD752SEBXPN4OF6A6WEDVNB4CJY4PR63J5L6OOYR3ISMG3TA6JZ",
+    "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II",
+    "GB4SFZUZIWKAUAJW2JR7CMBHZ2KNKGF3FMGMO7IF5P3EYXFA6NHI352W",
+  ];
 
   const InvalidAddressWarning = () => (
     <div className="SendTo__info-block">
@@ -160,26 +150,7 @@ export const SendTo = () => {
           </div>
         ) : (
           <div>
-            {formik.dirty ? (
-              <div>
-                {formik.isValid ? (
-                  <>
-                    {!destinationBalances.isFunded && (
-                      <AccountDoesntExistWarning />
-                    )}
-                    <div className="SendTo__subheading">Address</div>
-                    <div className="SendTo__subheading-identicon">
-                      <IdenticonImg publicKey={formik.values.destination} />
-                      <span>
-                        {truncatedPublicKey(formik.values.destination)}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <InvalidAddressWarning />
-                )}
-              </div>
-            ) : (
+            {formik.values.destination === "" ? (
               <>
                 {recentDestinations.length > 0 && (
                   <div className="SendTo__subheading">RECENT</div>
@@ -191,7 +162,7 @@ export const SendTo = () => {
                         onClick={() =>
                           formik.setFieldValue("destination", pubKey, true)
                         }
-                        className="SendTo__subheading-identicon btn"
+                        className="SendTo__subheading-identicon"
                       >
                         <IdenticonImg publicKey={pubKey} />
                         <span>{truncatedPublicKey(pubKey)}</span>
@@ -200,18 +171,33 @@ export const SendTo = () => {
                   ))}
                 </ul>
               </>
+            ) : (
+              <div>
+                {formik.isValid ? (
+                  <>
+                    <AccountDoesntExistWarning />
+                    <div className="SendTo__subheading">Address</div>
+                    <div className="SendTo__subheading-identicon">
+                      <IdenticonImg publicKey={formik.values.destination} />
+                      <span>
+                        {truncatedPublicKey(formik.values.destination)}
+                      </span>
+                    </div>
+                    <div className="btn-continue">
+                      <Button
+                        fullWidth
+                        variant={Button.variant.tertiary}
+                        onClick={formik.submitForm}
+                      >
+                        continue
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <InvalidAddressWarning />
+                )}
+              </div>
             )}
-          </div>
-        )}
-        {formik.isValid && formik.dirty && (
-          <div className="btn-continue">
-            <Button
-              fullWidth
-              variant={Button.variant.tertiary}
-              onClick={formik.submitForm}
-            >
-              continue
-            </Button>
           </div>
         )}
       </div>

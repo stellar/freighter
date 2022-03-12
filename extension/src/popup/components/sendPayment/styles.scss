@@ -70,6 +70,10 @@
     li::before {
       content: none;
     }
+
+    button {
+      cursor: pointer;
+    }
   }
 
   &__subheading-identicon {
@@ -95,10 +99,6 @@
     span {
       margin-left: 1rem;
     }
-  }
-
-  .btn {
-    cursor: pointer;
   }
 
   &__info-block {
