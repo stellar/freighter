@@ -127,11 +127,6 @@ export const SendTo = () => {
     </div>
   );
 
-  const handleContinue = (values: { destination: string }) => {
-    dispatch(saveDestination(values.destination));
-    navigateTo(ROUTES.sendPaymentAmount);
-  };
-
   return (
     <PopupWrapper>
       <BackButton />
