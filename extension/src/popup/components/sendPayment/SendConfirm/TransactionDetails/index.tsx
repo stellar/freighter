@@ -11,6 +11,7 @@ import { ROUTES } from "popup/constants/routes";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
+  addRecentDestination,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -84,12 +85,15 @@ export const TransactionDetails = ({
         networkDetails.networkPassphrase,
       );
 
-      await dispatch(
+      const submitRes = await dispatch(
         submitFreighterTransaction({
           signedXDR,
           networkUrl: networkDetails.networkUrl,
         }),
       );
+      if (submitFreighterTransaction.fulfilled.match(submitRes)) {
+        dispatch(addRecentDestination(publicKey));
+      }
     }
   };
 
