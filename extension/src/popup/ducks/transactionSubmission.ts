@@ -62,7 +62,6 @@ interface InitialState {
   response: Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
-  recentDestinations: string[];
 }
 
 const initialState: InitialState = {
@@ -77,20 +76,16 @@ const initialState: InitialState = {
     transactionFee: "100",
     memo: "",
   },
-  recentDestinations: [],
 };
 
 const transactionSubmissionSlice = createSlice({
   name: "transactionSubmission",
   initialState,
   reducers: {
-    // TODO - add for each field
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
-    addRecentDestination: (state, action) => {
-      state.recentDestinations.push(action.payload);
-    },
+    // TODO - add for each field
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -111,10 +106,7 @@ const transactionSubmissionSlice = createSlice({
   },
 });
 
-export const {
-  saveDestination,
-  addRecentDestination,
-} = transactionSubmissionSlice.actions;
+export const { saveDestination } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
 export const transactionSubmissionSelector = (state: {

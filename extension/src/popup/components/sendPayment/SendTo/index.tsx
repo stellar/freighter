@@ -175,7 +175,9 @@ export const SendTo = () => {
               <div>
                 {formik.isValid ? (
                   <>
-                    <AccountDoesntExistWarning />
+                    {!destinationBalances.isFunded && (
+                      <AccountDoesntExistWarning />
+                    )}
                     <div className="SendTo__subheading">Address</div>
                     <div className="SendTo__subheading-identicon">
                       <IdenticonImg publicKey={formik.values.destination} />
