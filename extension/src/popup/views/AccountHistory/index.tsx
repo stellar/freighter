@@ -15,7 +15,6 @@ import { getAccountHistory } from "@shared/api/internal";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { truncatedPublicKey } from "helpers/stellar";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -38,7 +37,6 @@ const HistoryItem = ({
     created_at: createdAt,
     id,
     to,
-    from,
     type,
     transaction_attr: { operation_count: operationCount },
   },
@@ -57,9 +55,9 @@ const HistoryItem = ({
     .split(" ")
     .slice(1, 3)
     .join(" ");
+  const operationAssetCode = assetCode || "XLM";
 
   let isRecipient;
-  let otherAccount = "";
   let IconComponent = (
     <Icon.Shuffle className="AccountHistory__icon--default" />
   );
@@ -67,11 +65,10 @@ const HistoryItem = ({
 
   if (isPaymentOperation) {
     isRecipient = to === publicKey;
-    otherAccount = isRecipient ? from : to;
     PaymentComponent = (
       <>
         {isRecipient ? "+" : "-"}
-        {new BigNumber(amount).toFixed(2).toString()} {assetCode || "XLM"}
+        {new BigNumber(amount).toFixed(2).toString()} {operationAssetCode}
       </>
     );
     IconComponent = isRecipient ? (
@@ -94,9 +91,7 @@ const HistoryItem = ({
       <div className="AccountHistory__row">
         <div className="AccountHistory__icon">{renderIcon()}</div>
         <div className="AccountHistory__operation">
-          {isPaymentOperation
-            ? truncatedPublicKey(otherAccount)
-            : operationString}
+          {isPaymentOperation ? operationAssetCode : operationString}
           {operationCount > 1 && !isPaymentOperation
             ? ` + ${operationCount - 1} ops`
             : null}
