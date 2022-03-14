@@ -1,0 +1,70 @@
+.AccountHistory {
+  &__header {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__selector {
+    border-bottom: 1px solid var(--pal-border-primary);
+    display: flex;
+    gap: 1rem;
+    margin: 0.5rem 0 1.5rem;
+
+    &__item {
+      color: var(--pal-border-secondary);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+      padding: 0.5rem 0;
+      text-transform: uppercase;
+
+      &--active {
+        border-bottom: 2px solid var(--pal-brand-primary);
+        color: var(--pal-brand-primary-on);
+      }
+    }
+  }
+
+  &__list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__row {
+    display: flex;
+  }
+
+  &__icon {
+    border: 1px solid var(--pal-border-primary);
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    margin-right: 1rem;
+    width: 2rem;
+
+    &--default {
+      width: 0.875rem;
+    }
+
+    &--received,
+    &--sent {
+      width: 1.2rem;
+    }
+
+    &--received {
+      color: var(--pal-success);
+    }
+  }
+
+  &__operation {
+    flex-grow: 2;
+  }
+
+  &__date {
+    color: var(--pal-border-secondary);
+    font-size: 0.875rem;
+  }
+}
