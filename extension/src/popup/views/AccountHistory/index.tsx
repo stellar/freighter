@@ -134,29 +134,29 @@ export const AccountHistory = () => {
   }`;
 
   useEffect(() => {
-    const createPaymentSegments = (operations: HorizonOperation[]) => {
-      const paymentObjs = {
+    const createRemainingSegments = (operations: HorizonOperation[]) => {
+      const segments = {
         [SELECTOR_OPTIONS.SENT]: [] as HorizonOperation[],
         [SELECTOR_OPTIONS.RECEIVED]: [] as HorizonOperation[],
       };
       operations.forEach((operation) => {
         if (isPayment(operation.type)) {
           if (operation.source_account === publicKey) {
-            paymentObjs[SELECTOR_OPTIONS.SENT].push(operation);
+            segments[SELECTOR_OPTIONS.SENT].push(operation);
           }
           if (operation.to === publicKey) {
-            paymentObjs[SELECTOR_OPTIONS.RECEIVED].push(operation);
+            segments[SELECTOR_OPTIONS.RECEIVED].push(operation);
           }
         }
       });
 
-      return paymentObjs;
+      return segments;
     };
 
     const fetchAccountHistory = async () => {
       try {
         const res = await getAccountHistory({ publicKey, networkDetails });
-        const paymentSegments = createPaymentSegments(res.operations);
+        const paymentSegments = createRemainingSegments(res.operations);
         setHistorySegments({
           [SELECTOR_OPTIONS.ALL]: res.operations,
           ...paymentSegments,
