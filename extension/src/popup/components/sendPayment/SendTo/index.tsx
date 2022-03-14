@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { StrKey } from "stellar-sdk";
+import { StrKey, MuxedAccount } from "stellar-sdk";
 import { useFormik } from "formik";
 
 import { getAccountBalances } from "@shared/api/internal";
@@ -32,12 +32,21 @@ import "../styles.scss";
 
 export const SendTo = () => {
   const { destination } = useSelector(transactionDataSelector);
+  // ALEC TODO - rename to validatedPubKey?
+  const [validPublicKey, setValidPublicKey] = useState("");
+  const [muxedID, setMuxedID] = useState("");
+
+  // ALEC TODO - remove
+  console.log({ validPublicKey });
+  console.log({ muxedID });
 
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [destinationBalances, setDestinationBalances] = useState(
     defaultAccountBalances,
   );
+  // ALEC TODO - remove
+  console.log({ destinationBalances });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleContinue = (values: { destination: string }) => {
@@ -73,26 +82,73 @@ export const SendTo = () => {
   };
 
   const db = useCallback(
-    debounce(async (publicKey) => {
-      formik.validateForm();
-      try {
-        const res = await getAccountBalances({
-          publicKey,
-          networkDetails,
-        });
-        setDestinationBalances(res);
-      } catch (e) {
-        console.error(e);
+    // // ALEC TODO - diff param name?
+    debounce(async (inputDest) => {
+      const errors = await formik.validateForm();
+      if (Object.keys(errors).length !== 0) {
+        setIsLoading(false);
+        return;
       }
+      if (inputDest.startsWith("M")) {
+        // ALEC TODO - remove
+        console.log("starts with M");
+        const mAccount = MuxedAccount.fromAddress(inputDest, "0");
+        setValidPublicKey(mAccount.baseAccount().accountId());
+        setMuxedID(mAccount.id());
+      }
+      // else if federation address ...
+      // else, a reg pubKey
+      else {
+        setValidPublicKey(inputDest);
+      }
+
       setIsLoading(false);
     }, 2000),
     [],
   );
 
   useEffect(() => {
+    // reset
     setIsLoading(true);
+    setValidPublicKey("");
+    setMuxedID("");
     db(formik.values.destination);
   }, [db, formik.values.destination]);
+
+  // ALEC TODO - dont call on first run?
+  useEffect(() => {
+    if (!validPublicKey) return;
+    (async () => {
+      try {
+        const res = await getAccountBalances({
+          publicKey: validPublicKey,
+          networkDetails,
+        });
+        setDestinationBalances(res);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [validPublicKey, networkDetails]);
+
+  // // ALEC TODO - move
+  // const parseMuxedAccount = (mAccount) => {
+  //   try {
+  //     const mAccount = new MuxedAccount.fromAddress(mAccount, "0");
+  //     const gAccount = mAccount.baseAccount().accountID();
+  //     setPublicKey(gAccount);
+  //     setMuxedID(mAccount.id());
+  //   } catch () {
+  //     // ALEC TODO - handle
+
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   if (formik.values.destination.startsWith("M")) {
+  //     parseMuxedAccount(formik.values.destination);
+  //   }
+  // }, [formik.values.destination]);
 
   // TODO - remove, keeping for UI purposes until pulled from background
   const recentDestinations = [
@@ -180,11 +236,15 @@ export const SendTo = () => {
                     )}
                     <div className="SendTo__subheading">Address</div>
                     <div className="SendTo__subheading-identicon">
-                      <IdenticonImg publicKey={formik.values.destination} />
-                      <span>
-                        {truncatedPublicKey(formik.values.destination)}
-                      </span>
+                      <IdenticonImg publicKey={validPublicKey} />
+                      <span>{truncatedPublicKey(validPublicKey)}</span>
                     </div>
+                    {muxedID && (
+                      <>
+                        <div className="SendTo__subheading">ID</div>
+                        <div className="SendTo__subsection-copy">{muxedID}</div>
+                      </>
+                    )}
                     <div className="btn-continue">
                       <Button
                         fullWidth
