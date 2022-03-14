@@ -23,7 +23,9 @@ import { BottomNav } from "popup/components/BottomNav";
 
 import "./styles.scss";
 
-const isPayment = (type: Horizon.OperationResponseType) =>
+type HistoryOperation = HorizonOperation & { isPayment?: boolean };
+
+const getIsPayment = (type: Horizon.OperationResponseType) =>
   [
     Horizon.OperationResponseType.payment,
     Horizon.OperationResponseType.pathPayment,
@@ -39,17 +41,17 @@ const HistoryItem = ({
     to,
     type,
     transaction_attr: { operation_count: operationCount },
+    isPayment,
   },
   publicKey,
   url,
 }: {
-  operation: HorizonOperation;
+  operation: HistoryOperation;
   publicKey: string;
   url: string;
 }) => {
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const operationString = OPERATION_TYPES[operationType];
-  const isPaymentOperation = isPayment(type);
   const date = new Date(Date.parse(createdAt))
     .toDateString()
     .split(" ")
@@ -63,7 +65,7 @@ const HistoryItem = ({
   );
   let PaymentComponent = null as React.ReactElement | null;
 
-  if (isPaymentOperation) {
+  if (isPayment) {
     isRecipient = to === publicKey;
     PaymentComponent = (
       <>
@@ -91,8 +93,8 @@ const HistoryItem = ({
       <div className="AccountHistory__row">
         <div className="AccountHistory__icon">{renderIcon()}</div>
         <div className="AccountHistory__operation">
-          {isPaymentOperation ? operationAssetCode : operationString}
-          {operationCount > 1 && !isPaymentOperation
+          {isPayment ? operationAssetCode : operationString}
+          {operationCount > 1 && !isPayment
             ? ` + ${operationCount - 1} ops`
             : null}
           <div className="AccountHistory__date">
@@ -113,7 +115,7 @@ enum SELECTOR_OPTIONS {
 }
 
 type HistorySegments = {
-  [key in SELECTOR_OPTIONS]: HorizonOperation[] | [];
+  [key in SELECTOR_OPTIONS]: HistoryOperation[] | [];
 };
 
 export const AccountHistory = () => {
@@ -129,20 +131,25 @@ export const AccountHistory = () => {
   }`;
 
   useEffect(() => {
-    const createRemainingSegments = (operations: HorizonOperation[]) => {
+    const createSegments = (operations: HistoryOperation[]) => {
       const segments = {
-        [SELECTOR_OPTIONS.SENT]: [] as HorizonOperation[],
-        [SELECTOR_OPTIONS.RECEIVED]: [] as HorizonOperation[],
+        [SELECTOR_OPTIONS.ALL]: [] as HistoryOperation[],
+        [SELECTOR_OPTIONS.SENT]: [] as HistoryOperation[],
+        [SELECTOR_OPTIONS.RECEIVED]: [] as HistoryOperation[],
       };
       operations.forEach((operation) => {
-        if (isPayment(operation.type)) {
+        const isPayment = getIsPayment(operation.type);
+        const historyOperation = { ...operation, isPayment };
+        if (isPayment) {
           if (operation.source_account === publicKey) {
-            segments[SELECTOR_OPTIONS.SENT].push(operation);
+            segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
           }
           if (operation.to === publicKey) {
-            segments[SELECTOR_OPTIONS.RECEIVED].push(operation);
+            segments[SELECTOR_OPTIONS.RECEIVED].push(historyOperation);
           }
         }
+
+        segments[SELECTOR_OPTIONS.ALL].push(historyOperation);
       });
 
       return segments;
@@ -151,11 +158,7 @@ export const AccountHistory = () => {
     const fetchAccountHistory = async () => {
       try {
         const res = await getAccountHistory({ publicKey, networkDetails });
-        const paymentSegments = createRemainingSegments(res.operations);
-        setHistorySegments({
-          [SELECTOR_OPTIONS.ALL]: res.operations,
-          ...paymentSegments,
-        });
+        setHistorySegments(createSegments(res.operations));
       } catch (e) {
         console.error(e);
       }
@@ -184,7 +187,7 @@ export const AccountHistory = () => {
         </div>
         <ul className="AccountHistory__list">
           {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-            (operation: HorizonOperation) => (
+            (operation: HistoryOperation) => (
               <HistoryItem
                 key={operation.id}
                 operation={operation}
