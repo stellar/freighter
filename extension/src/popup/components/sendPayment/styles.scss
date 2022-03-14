@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
 
-  text-align: center;
+  align-items: center;
 
   &__asset-copy {
     font-size: 0.875rem;
@@ -11,27 +11,98 @@
     color: var(--pal-text-tertiary);
   }
 
-  &__amount-input {
+  &__btn-set-max {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+
+  &__input-amount {
     font-size: 3rem;
     line-height: 4.5rem;
     font-weight: var(--font-weight-light);
-    color: var(--pal-text-tertiary);
+    color: var(--pal-text-primary);
+    background: none;
+    border: none;
+    text-align: center;
+    margin: 2.75rem 0 8.5rem 0;
   }
 }
 
+.btn-continue {
+  position: absolute;
+  top: calc(var(--popup--height) - 2 * var(--bottom-nav--height));
+  width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+}
+
 .SendTo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  text-align: center;
-
-  &__input {
-    color: black;
+  &__header {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--pal-text-primary);
+    margin-bottom: 1.5rem;
   }
 
-  button {
-    margin-top: 5rem;
+  &__address-wrapper {
+    margin-top: 1rem;
+  }
+
+  &__loader {
+    height: 8.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: end;
+  }
+
+  &__subheading {
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--pal-text-tertiary);
+  }
+
+  &__recent-accts-ul {
+    padding: 0;
+
+    li::before {
+      content: none;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  }
+
+  &__subheading-identicon {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--pal-text-primary);
+    font-weight: var(--font-weight-medium);
+    background: none;
+    border: 0;
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    margin: 0.75rem 0 0 0;
+    align-items: center;
+
+    img {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 1rem;
+      background: var(--pal-brand-primary-on);
+    }
+
+    span {
+      margin-left: 1rem;
+    }
+  }
+
+  &__info-block {
+    font-size: 0.875rem;
   }
 }
 
