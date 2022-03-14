@@ -51,7 +51,7 @@ export const SendTo = () => {
     onSubmit: handleContinue,
     validateOnChange: false,
     validate: (values) => {
-      if (validPublicKey(values.destination)) {
+      if (isValidPublicKey(values.destination)) {
         return {};
       }
       return { destination: "invalid public key" };
@@ -59,7 +59,7 @@ export const SendTo = () => {
   });
 
   // TODO - handle federation address and muxed accounts
-  const validPublicKey = (publicKey: string) => {
+  const isValidPublicKey = (publicKey: string) => {
     if (publicKey.startsWith("M")) {
       // TODO: remove when type is added to stellar-sdk
       // @ts-ignore
