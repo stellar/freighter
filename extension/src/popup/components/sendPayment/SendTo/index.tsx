@@ -90,8 +90,6 @@ export const SendTo = () => {
         return;
       }
       if (inputDest.startsWith("M")) {
-        // ALEC TODO - remove
-        console.log("starts with M");
         const mAccount = MuxedAccount.fromAddress(inputDest, "0");
         setValidPublicKey(mAccount.baseAccount().accountId());
         setMuxedID(mAccount.id());
@@ -130,25 +128,6 @@ export const SendTo = () => {
       }
     })();
   }, [validPublicKey, networkDetails]);
-
-  // // ALEC TODO - move
-  // const parseMuxedAccount = (mAccount) => {
-  //   try {
-  //     const mAccount = new MuxedAccount.fromAddress(mAccount, "0");
-  //     const gAccount = mAccount.baseAccount().accountID();
-  //     setPublicKey(gAccount);
-  //     setMuxedID(mAccount.id());
-  //   } catch () {
-  //     // ALEC TODO - handle
-
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (formik.values.destination.startsWith("M")) {
-  //     parseMuxedAccount(formik.values.destination);
-  //   }
-  // }, [formik.values.destination]);
 
   // TODO - remove, keeping for UI purposes until pulled from background
   const recentDestinations = [
