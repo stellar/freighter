@@ -7,6 +7,7 @@ import { useFormik } from "formik";
 import { getAccountBalances } from "@shared/api/internal";
 import { truncatedPublicKey } from "helpers/stellar";
 
+import { AppDispatch } from "popup/App";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { navigateTo } from "popup/helpers/navigate";
@@ -18,6 +19,7 @@ import { defaultAccountBalances } from "popup/views/Account";
 import {
   saveDestination,
   transactionDataSelector,
+  loadRecentAddresses,
 } from "popup/ducks/transactionSubmission";
 
 import {
@@ -32,10 +34,11 @@ import "../styles.scss";
 
 export const SendTo = () => {
   const { destination } = useSelector(transactionDataSelector);
+  const [recentAddresses, setRecentAddresses] = useState<Array<string>>([]);
   const [validatedPubKey, setValidatedPubKey] = useState("");
   const [muxedID, setMuxedID] = useState("");
 
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [destinationBalances, setDestinationBalances] = useState(
     defaultAccountBalances,
@@ -95,7 +98,6 @@ export const SendTo = () => {
         try {
           const fedResp = await FederationServer.resolve(inputDest);
           setValidatedPubKey(fedResp.account_id);
-          // ALEC TODO - need to check for memo?
         } catch (e) {
           formik.setErrors({ destination: "invalid federation address" });
         }
@@ -132,12 +134,14 @@ export const SendTo = () => {
     })();
   }, [validatedPubKey, networkDetails]);
 
-  // TODO - remove, keeping for UI purposes until pulled from background
-  const recentDestinations = [
-    "GBMPTWD752SEBXPN4OF6A6WEDVNB4CJY4PR63J5L6OOYR3ISMG3TA6JZ",
-    "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II",
-    "GB4SFZUZIWKAUAJW2JR7CMBHZ2KNKGF3FMGMO7IF5P3EYXFA6NHI352W",
-  ];
+  useEffect(() => {
+    (async () => {
+      const res = await dispatch(loadRecentAddresses());
+      if (loadRecentAddresses.fulfilled.match(res)) {
+        setRecentAddresses(res.payload.recentAddresses);
+      }
+    })();
+  }, [dispatch]);
 
   const InvalidAddressWarning = () => (
     <div className="SendTo__info-block">
@@ -190,11 +194,11 @@ export const SendTo = () => {
           <div>
             {formik.values.destination === "" ? (
               <>
-                {recentDestinations.length > 0 && (
+                {recentAddresses.length > 0 && (
                   <div className="SendTo__subheading">RECENT</div>
                 )}
                 <ul className="SendTo__recent-accts-ul">
-                  {recentDestinations.map((pubKey) => (
+                  {recentAddresses.map((pubKey) => (
                     <li key={pubKey}>
                       <button
                         onClick={() =>
