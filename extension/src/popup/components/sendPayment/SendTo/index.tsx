@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { StrKey, MuxedAccount } from "stellar-sdk";
+import { StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
 import { useFormik } from "formik";
 
 import { getAccountBalances } from "@shared/api/internal";
@@ -32,21 +32,14 @@ import "../styles.scss";
 
 export const SendTo = () => {
   const { destination } = useSelector(transactionDataSelector);
-  // ALEC TODO - rename to validatedPubKey?
-  const [validPublicKey, setValidPublicKey] = useState("");
+  const [validatedPubKey, setValidatedPubKey] = useState("");
   const [muxedID, setMuxedID] = useState("");
-
-  // ALEC TODO - remove
-  console.log({ validPublicKey });
-  console.log({ muxedID });
 
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [destinationBalances, setDestinationBalances] = useState(
     defaultAccountBalances,
   );
-  // ALEC TODO - remove
-  console.log({ destinationBalances });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleContinue = (values: { destination: string }) => {
@@ -67,39 +60,50 @@ export const SendTo = () => {
     },
   });
 
-  // TODO - handle federation address and muxed accounts
+  const isFederationAddress = (address: string) => address.includes("*");
+
   const isValidPublicKey = (publicKey: string) => {
     if (publicKey.startsWith("M")) {
       // TODO: remove when type is added to stellar-sdk
       // @ts-ignore
-      if (!StrKey.isValidMed25519PublicKey(publicKey)) {
-        return false;
+      if (StrKey.isValidMed25519PublicKey(publicKey)) {
+        return true;
       }
-    } else if (!StrKey.isValidEd25519PublicKey(publicKey)) {
-      return false;
+    } else if (isFederationAddress(publicKey)) {
+      return true;
+    } else if (StrKey.isValidEd25519PublicKey(publicKey)) {
+      return true;
     }
-    return true;
+    return false;
   };
 
   const db = useCallback(
-    // // ALEC TODO - diff param name?
     debounce(async (inputDest) => {
       const errors = await formik.validateForm();
       if (Object.keys(errors).length !== 0) {
         setIsLoading(false);
         return;
       }
+      // muxed account
       if (inputDest.startsWith("M")) {
         const mAccount = MuxedAccount.fromAddress(inputDest, "0");
-        setValidPublicKey(mAccount.baseAccount().accountId());
+        setValidatedPubKey(mAccount.baseAccount().accountId());
         setMuxedID(mAccount.id());
       }
-      // else if federation address ...
-      // else, a reg pubKey
-      else {
-        setValidPublicKey(inputDest);
+      // federation address
+      else if (isFederationAddress(inputDest)) {
+        try {
+          const fedResp = await FederationServer.resolve(inputDest);
+          setValidatedPubKey(fedResp.account_id);
+          // ALEC TODO - need to check for memo?
+        } catch (e) {
+          formik.setErrors({ destination: "invalid federation address" });
+        }
       }
-
+      // else, a regular account
+      else {
+        setValidatedPubKey(inputDest);
+      }
       setIsLoading(false);
     }, 2000),
     [],
@@ -108,18 +112,17 @@ export const SendTo = () => {
   useEffect(() => {
     // reset
     setIsLoading(true);
-    setValidPublicKey("");
+    setValidatedPubKey("");
     setMuxedID("");
     db(formik.values.destination);
   }, [db, formik.values.destination]);
 
-  // ALEC TODO - dont call on first run?
   useEffect(() => {
-    if (!validPublicKey) return;
+    if (!validatedPubKey) return;
     (async () => {
       try {
         const res = await getAccountBalances({
-          publicKey: validPublicKey,
+          publicKey: validatedPubKey,
           networkDetails,
         });
         setDestinationBalances(res);
@@ -127,7 +130,7 @@ export const SendTo = () => {
         console.error(e);
       }
     })();
-  }, [validPublicKey, networkDetails]);
+  }, [validatedPubKey, networkDetails]);
 
   // TODO - remove, keeping for UI purposes until pulled from background
   const recentDestinations = [
@@ -192,7 +195,7 @@ export const SendTo = () => {
                 )}
                 <ul className="SendTo__recent-accts-ul">
                   {recentDestinations.map((pubKey) => (
-                    <li>
+                    <li key={pubKey}>
                       <button
                         onClick={() =>
                           formik.setFieldValue("destination", pubKey, true)
@@ -215,8 +218,8 @@ export const SendTo = () => {
                     )}
                     <div className="SendTo__subheading">Address</div>
                     <div className="SendTo__subheading-identicon">
-                      <IdenticonImg publicKey={validPublicKey} />
-                      <span>{truncatedPublicKey(validPublicKey)}</span>
+                      <IdenticonImg publicKey={validatedPubKey} />
+                      <span>{truncatedPublicKey(validatedPubKey)}</span>
                     </div>
                     {muxedID && (
                       <>
