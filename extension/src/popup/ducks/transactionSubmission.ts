@@ -4,6 +4,8 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
+  addRecentAddress as internalAddRecentAddress,
+  loadRecentAddresses as internalLoadRecentAddresses,
 } from "@shared/api/internal";
 
 import { ErrorMessage } from "@shared/api/types";
@@ -37,6 +39,30 @@ export const submitFreighterTransaction = createAsyncThunk<
       networkUrl,
     });
     return res;
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
+export const addRecentAddress = createAsyncThunk<
+  { recentAddresses: Array<string> },
+  { publicKey: string },
+  { rejectValue: ErrorMessage }
+>("addRecentAddress", async ({ publicKey }, thunkApi) => {
+  try {
+    return await internalAddRecentAddress({ publicKey });
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
+export const loadRecentAddresses = createAsyncThunk<
+  { recentAddresses: Array<string> },
+  undefined,
+  { rejectValue: ErrorMessage }
+>("loadRecentAddresses", async (_: any, thunkApi) => {
+  try {
+    return await internalLoadRecentAddresses();
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e });
   }

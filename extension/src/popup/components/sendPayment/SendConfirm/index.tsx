@@ -16,14 +16,12 @@ export const SendConfirm = ({
   publicKey,
   amount,
   asset,
-  destination,
   transactionFee,
   memo,
 }: {
   publicKey: string;
   amount: string;
   asset: string;
-  destination: string;
   transactionFee: string;
   memo: string;
 }) => {
@@ -35,7 +33,6 @@ export const SendConfirm = ({
       publicKey,
       amount,
       asset,
-      destination,
       transactionFee,
       memo,
       isSendComplete,
@@ -54,12 +51,11 @@ export const SendConfirm = ({
           <SubmitSuccess
             amount={amount}
             asset={asset}
-            destination={destination}
             viewDetails={() => setIsSendComplete(true)}
           />
         );
       case ActionStatus.ERROR:
-        return <SubmitFail destination={destination} />;
+        return <SubmitFail />;
       default:
         return <TransactionDetails {...transactionDetailsProps} />;
     }

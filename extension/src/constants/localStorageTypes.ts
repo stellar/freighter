@@ -11,3 +11,4 @@ export const CACHED_ASSET_ICONS_ID = "cachedAssetIconsId";
 export const IS_TESTNET_ID = "isTestnet";
 export const IS_VALIDATING_MEMO_ID = "isValidatingMemo";
 export const IS_VALIDATING_SAFETY_ID = "isValidatingSafety";
+export const RECENT_ADDRESSES = "recentAddresses";
