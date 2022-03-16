@@ -46,7 +46,7 @@ export const SendTo = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleContinue = (values: { destination: string }) => {
-    dispatch(saveDestination(values.destination));
+    dispatch(saveDestination(validatedPubKey));
     formik.resetForm({ values });
     navigateTo(ROUTES.sendPaymentAmount);
   };
