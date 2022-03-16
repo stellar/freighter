@@ -64,6 +64,13 @@
     color: var(--pal-text-tertiary);
   }
 
+  &__subsection-copy {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    margin-top: 0.75rem;
+    color: var(--pal-text-primary);
+  }
+
   &__recent-accts-ul {
     padding: 0;
 
