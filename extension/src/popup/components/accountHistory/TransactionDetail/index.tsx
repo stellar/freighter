@@ -119,12 +119,14 @@ export const TransactionDetail = ({
             </div>
           </div>
           <div className="TransactionDetail__info">
-            <div className="TransactionDetail__info__row">
-              <div>From</div>
-              <div>
-                <Identicon publicAddress={from} shortenAddress size="1rem" />
+            {from ? (
+              <div className="TransactionDetail__info__row">
+                <div>From</div>
+                <div>
+                  <Identicon publicAddress={from} shortenAddress size="1rem" />
+                </div>
               </div>
-            </div>
+            ) : null}
             <div className="TransactionDetail__info__row">
               <div>Date</div>
               <div>
