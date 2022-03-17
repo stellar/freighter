@@ -36,6 +36,7 @@ export interface Response {
   assetCode: string;
   iconUrl: string;
   network: string;
+  recentAddresses: Array<string>;
 }
 
 export interface ExternalRequest {

@@ -11,6 +11,8 @@ import { ROUTES } from "popup/constants/routes";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
+  addRecentAddress,
+  transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -20,7 +22,6 @@ export const TransactionDetails = ({
   publicKey,
   amount,
   asset,
-  destination,
   transactionFee,
   memo,
   isSendComplete,
@@ -28,12 +29,12 @@ export const TransactionDetails = ({
   publicKey: string;
   amount: string;
   asset: string;
-  destination: string;
   transactionFee: string;
   memo: string;
   isSendComplete: boolean;
 }) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { destination } = useSelector(transactionDataSelector);
   const dispatch: AppDispatch = useDispatch();
 
   // handles signing and submitting
@@ -84,12 +85,16 @@ export const TransactionDetails = ({
         networkDetails.networkPassphrase,
       );
 
-      await dispatch(
+      const submitResp = await dispatch(
         submitFreighterTransaction({
           signedXDR,
           networkUrl: networkDetails.networkUrl,
         }),
       );
+
+      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        await dispatch(addRecentAddress({ publicKey: destination }));
+      }
     }
   };
 

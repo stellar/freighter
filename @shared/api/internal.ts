@@ -386,6 +386,25 @@ export const submitFreighterTransaction = async ({
   return await server.submitTransaction(signedXDR);
 };
 
+export const addRecentAddress = async ({
+  publicKey,
+}: {
+  publicKey: string;
+}): Promise<{ recentAddresses: Array<string> }> => {
+  return await sendMessageToBackground({
+    publicKey,
+    type: SERVICE_TYPES.ADD_RECENT_ADDRESS,
+  });
+};
+
+export const loadRecentAddresses = async (): Promise<{
+  recentAddresses: Array<string>;
+}> => {
+  return await sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_RECENT_ADDRESSES,
+  });
+};
+
 export const signOut = async (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;

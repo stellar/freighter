@@ -22,7 +22,6 @@ export const SendPayment = () => {
   // TODO - load from redux in the child components
   const [amount, setAmount] = useState(transactionData.amount);
   const [asset, setAsset] = useState(transactionData.asset);
-  const [destination] = useState(transactionData.destination);
   const [transactionFee, setTransactionFee] = useState(
     transactionData.transactionFee,
   );
@@ -72,7 +71,6 @@ export const SendPayment = () => {
             publicKey={publicKey}
             amount={amount}
             asset={asset}
-            destination={destination}
             transactionFee={transactionFee}
             memo={memo}
           />
