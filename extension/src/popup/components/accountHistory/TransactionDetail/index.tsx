@@ -133,16 +133,13 @@ export const TransactionDetail = ({
                 {createdAtTime} &bull; {createdAtDateStr}
               </div>
             </div>
-            {memo ? (
-              <div className="TransactionDetail__info__row">
-                <div>Memo</div>
-                <div>{memo}</div>
-              </div>
-            ) : null}
-
+            <div className="TransactionDetail__info__row">
+              <div>Memo</div>
+              <div>{memo || `None`}</div>
+            </div>
             <div className="TransactionDetail__info__row">
               <div>Fee</div>
-              <div>{stroopToXlm(Number(feeCharged))}</div>
+              <div>{stroopToXlm(Number(feeCharged))} XLM</div>
             </div>
           </div>
         </div>
