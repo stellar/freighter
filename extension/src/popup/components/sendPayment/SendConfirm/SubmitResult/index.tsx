@@ -9,16 +9,8 @@ import { transactionDataSelector } from "popup/ducks/transactionSubmission";
 import "./styles.scss";
 
 // TODO - helper for asset names
-export const SubmitSuccess = ({
-  amount,
-  asset,
-  viewDetails,
-}: {
-  amount: string;
-  asset: string;
-  viewDetails: () => void;
-}) => {
-  const { destination } = useSelector(transactionDataSelector);
+export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
+  const { destination, amount, asset } = useSelector(transactionDataSelector);
   return (
     <div className="SubmitSuccess">
       <div>Successfuly sent</div>

@@ -4,7 +4,6 @@ import debounce from "lodash/debounce";
 import { StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
 import { useFormik } from "formik";
 
-import { getAccountBalances } from "@shared/api/internal";
 import { truncatedPublicKey } from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
@@ -15,11 +14,12 @@ import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { BackButton } from "popup/basics/BackButton";
-import { defaultAccountBalances } from "popup/views/Account";
 import {
   saveDestination,
   transactionDataSelector,
   loadRecentAddresses,
+  transactionSubmissionSelector,
+  getDestinationBalances,
 } from "popup/ducks/transactionSubmission";
 
 import {
@@ -32,18 +32,42 @@ import {
 
 import "../styles.scss";
 
+export const AccountDoesntExistWarning = () => (
+  <div className="SendTo__info-block">
+    <InfoBlock className="SendTo__info-block">
+      The destination account doesn’t exist. Send at least 1 XLM to create
+      account.{" "}
+      <TextLink
+        variant={TextLink.variant.secondary}
+        href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+        rel="noreferrer"
+        target="_blank"
+      >
+        Learn more about account creation
+      </TextLink>
+    </InfoBlock>
+  </div>
+);
+
+const InvalidAddressWarning = () => (
+  <div className="SendTo__info-block">
+    <InfoBlock variant={InfoBlock.variant.warning}>
+      <strong>INVALID STELLAR ADDRESS</strong>
+      <p>Addresses are uppercase and begin with letters “G“ or “M“.</p>
+    </InfoBlock>
+  </div>
+);
+
 export const SendTo = () => {
+  const dispatch: AppDispatch = useDispatch();
   const { destination } = useSelector(transactionDataSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { destinationBalances } = useSelector(transactionSubmissionSelector);
+
   const [recentAddresses, setRecentAddresses] = useState<Array<string>>([]);
   const [validatedPubKey, setValidatedPubKey] = useState("");
   const [muxedID, setMuxedID] = useState("");
-
-  const dispatch: AppDispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const [destinationBalances, setDestinationBalances] = useState(
-    defaultAccountBalances,
-  );
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleContinue = (values: { destination: string }) => {
     dispatch(saveDestination(validatedPubKey));
@@ -112,8 +136,10 @@ export const SendTo = () => {
   );
 
   useEffect(() => {
+    if (formik.values.destination !== "") {
+      setIsLoading(true);
+    }
     // reset
-    setIsLoading(true);
     setValidatedPubKey("");
     setMuxedID("");
     db(formik.values.destination);
@@ -121,18 +147,13 @@ export const SendTo = () => {
 
   useEffect(() => {
     if (!validatedPubKey) return;
-    (async () => {
-      try {
-        const res = await getAccountBalances({
-          publicKey: validatedPubKey,
-          networkDetails,
-        });
-        setDestinationBalances(res);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  }, [validatedPubKey, networkDetails]);
+    dispatch(
+      getDestinationBalances({
+        publicKey: validatedPubKey,
+        networkDetails,
+      }),
+    );
+  }, [dispatch, validatedPubKey, networkDetails]);
 
   useEffect(() => {
     (async () => {
@@ -143,37 +164,11 @@ export const SendTo = () => {
     })();
   }, [dispatch]);
 
-  const InvalidAddressWarning = () => (
-    <div className="SendTo__info-block">
-      <InfoBlock variant={InfoBlock.variant.warning}>
-        <strong>INVALID STELLAR ADDRESS</strong>
-        <p>Addresses are uppercase and begin with letters "G" or "M".</p>
-      </InfoBlock>
-    </div>
-  );
-
-  const AccountDoesntExistWarning = () => (
-    <div className="SendTo__info-block">
-      <InfoBlock className="SendTo__info-block">
-        The destination account doesn't exist. Send at least 1 XLM to create
-        account.{" "}
-        <TextLink
-          variant={TextLink.variant.secondary}
-          href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
-          rel="noreferrer"
-          target="_blank"
-        >
-          Learn more about account creation
-        </TextLink>
-      </InfoBlock>
-    </div>
-  );
-
   return (
     <PopupWrapper>
       <BackButton />
-      <div className="SendTo__header">Send To</div>
-      <form>
+      <div className="header">Send To</div>
+      <form className="SendTo__form">
         <FormRows>
           <Input
             autoComplete="off"
@@ -237,7 +232,7 @@ export const SendTo = () => {
                         variant={Button.variant.tertiary}
                         onClick={formik.submitForm}
                       >
-                        continue
+                        Continue
                       </Button>
                     </div>
                   </>
