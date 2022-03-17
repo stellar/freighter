@@ -136,10 +136,10 @@ export const SendTo = () => {
   );
 
   useEffect(() => {
-    // reset
     if (formik.values.destination !== "") {
       setIsLoading(true);
     }
+    // reset
     setValidatedPubKey("");
     setMuxedID("");
     db(formik.values.destination);
