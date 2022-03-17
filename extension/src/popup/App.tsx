@@ -1,7 +1,7 @@
 import React from "react";
 import {
   configureStore,
-  // isPlain,
+  isPlain,
   getDefaultMiddleware,
 } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
@@ -9,7 +9,7 @@ import { Provider } from "react-redux";
 import styled, { createGlobalStyle } from "styled-components";
 import * as Sentry from "@sentry/browser";
 import { Integrations } from "@sentry/tracing";
-// import { BigNumber } from "bignumber.js";
+import { BigNumber } from "bignumber.js";
 
 import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 
@@ -57,17 +57,10 @@ const RouteWrapperEl = styled.div`
   height: 100%;
 `;
 
-// ALEC TODO - remove
-const loggerMiddleware = (storeVal: any) => (next: any) => (action: any) => {
-  console.log("Dispatching: ", action.type);
-  const dispatchedAction = next(action);
-  console.log("NEW STATE: ", storeVal.getState());
-  return dispatchedAction;
-};
-
-// ALEC TODO - figure out why this isn't working
-// const isSerializable = (value: any) => BigNumber.isBigNumber(value) || isPlain(value);
-const isSerializable = () => true;
+// .isBigNumber() not catching correctly, so checking .isBigNumber
+// property as well
+const isSerializable = (value: any) =>
+  value?.isBigNumber || BigNumber.isBigNumber(value) || isPlain(value);
 
 const rootReducer = combineReducers({
   auth,
@@ -84,7 +77,7 @@ export const store = configureStore({
         isSerializable,
       },
     }),
-  ].concat(metricsMiddleware<AppState>(), loggerMiddleware),
+  ].concat(metricsMiddleware<AppState>()),
 });
 export type AppDispatch = typeof store.dispatch;
 

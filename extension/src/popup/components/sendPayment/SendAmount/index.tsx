@@ -118,7 +118,6 @@ export const SendAmount = () => {
                       <div className="SendAmount__input-select">
                         <Select
                           id="asset-select"
-                          defaultValue={Asset.native().toString()}
                           {...field}
                           onChange={(e) => {
                             handleAssetSelect(e);
