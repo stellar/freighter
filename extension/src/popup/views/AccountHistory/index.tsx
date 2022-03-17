@@ -1,29 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { camelCase } from "lodash";
 import { useSelector } from "react-redux";
-import { Icon } from "@stellar/design-system";
-import { BigNumber } from "bignumber.js";
 import { Horizon } from "stellar-sdk";
 
-import { OPERATION_TYPES } from "constants/transaction";
 import { HorizonOperation } from "@shared/api/types";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { getAccountHistory } from "@shared/api/internal";
 
-import { emitMetric } from "helpers/metrics";
-import { openTab } from "popup/helpers/navigate";
-
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
+import {
+  HistoryItem,
+  HistoryItemOperation,
+} from "popup/components/accountHistory/HistoryItem";
+import {
+  TransactionDetail,
+  TransactionDetailProps,
+} from "popup/components/accountHistory/TransactionDetail";
 import { BottomNav } from "popup/components/BottomNav";
 
 import "./styles.scss";
-
-type HistoryOperation = HorizonOperation & { isPayment?: boolean };
 
 const getIsPayment = (type: Horizon.OperationResponseType) =>
   [
@@ -32,82 +30,6 @@ const getIsPayment = (type: Horizon.OperationResponseType) =>
     Horizon.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
 
-const HistoryItem = ({
-  operation: {
-    amount,
-    asset_code: assetCode,
-    created_at: createdAt,
-    id,
-    to,
-    type,
-    transaction_attr: { operation_count: operationCount },
-    isPayment,
-  },
-  publicKey,
-  url,
-}: {
-  operation: HistoryOperation;
-  publicKey: string;
-  url: string;
-}) => {
-  const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
-  const operationString = OPERATION_TYPES[operationType];
-  const date = new Date(Date.parse(createdAt))
-    .toDateString()
-    .split(" ")
-    .slice(1, 3)
-    .join(" ");
-  const operationAssetCode = assetCode || "XLM";
-
-  let isRecipient;
-  let IconComponent = (
-    <Icon.Shuffle className="AccountHistory__icon--default" />
-  );
-  let PaymentComponent = null as React.ReactElement | null;
-
-  if (isPayment) {
-    isRecipient = to === publicKey;
-    PaymentComponent = (
-      <>
-        {isRecipient ? "+" : "-"}
-        {new BigNumber(amount).toFixed(2).toString()} {operationAssetCode}
-      </>
-    );
-    IconComponent = isRecipient ? (
-      <Icon.ArrowDown className="AccountHistory__icon--received" />
-    ) : (
-      <Icon.ArrowUp className="AccountHistory__icon--sent" />
-    );
-  }
-
-  const renderPaymentComponent = () => PaymentComponent;
-  const renderIcon = () => IconComponent;
-
-  return (
-    <div
-      onClick={() => {
-        emitMetric(METRIC_NAMES.historyOpenItem);
-        openTab(`${url}/op/${id}`);
-      }}
-    >
-      <div className="AccountHistory__row">
-        <div className="AccountHistory__icon">{renderIcon()}</div>
-        <div className="AccountHistory__operation">
-          {isPayment ? operationAssetCode : operationString}
-          {operationCount > 1 && !isPayment
-            ? ` + ${operationCount - 1} ops`
-            : null}
-          <div className="AccountHistory__date">
-            {isRecipient ? "Received" : "Sent"} • {date}
-          </div>
-        </div>
-
-        <div>{renderPaymentComponent()}</div>
-      </div>
-    </div>
-  );
-};
-
 enum SELECTOR_OPTIONS {
   ALL = "ALL",
   SENT = "SENT",
@@ -115,7 +37,7 @@ enum SELECTOR_OPTIONS {
 }
 
 type HistorySegments = {
-  [key in SELECTOR_OPTIONS]: HistoryOperation[] | [];
+  [key in SELECTOR_OPTIONS]: HistoryItemOperation[] | [];
 };
 
 export const AccountHistory = () => {
@@ -125,17 +47,30 @@ export const AccountHistory = () => {
   const [historySegments, setHistorySegments] = useState({
     [SELECTOR_OPTIONS.ALL]: [],
   } as HistorySegments);
+  const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
+
+  const defaultDetailViewProps: TransactionDetailProps = {
+    operation: {} as HorizonOperation,
+    headerTitle: "",
+    isRecipient: false,
+    operationText: "",
+    externalUrl: "",
+    setIsDetailViewShowing,
+  };
+  const [detailViewProps, setDetailViewProps] = useState(
+    defaultDetailViewProps,
+  );
 
   const STELLAR_EXPERT_URL = `https://stellar.expert/explorer/${
     networkDetails.isTestnet ? "testnet" : "public"
   }`;
 
   useEffect(() => {
-    const createSegments = (operations: HistoryOperation[]) => {
+    const createSegments = (operations: HistoryItemOperation[]) => {
       const segments = {
-        [SELECTOR_OPTIONS.ALL]: [] as HistoryOperation[],
-        [SELECTOR_OPTIONS.SENT]: [] as HistoryOperation[],
-        [SELECTOR_OPTIONS.RECEIVED]: [] as HistoryOperation[],
+        [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
+        [SELECTOR_OPTIONS.SENT]: [] as HistoryItemOperation[],
+        [SELECTOR_OPTIONS.RECEIVED]: [] as HistoryItemOperation[],
       };
       operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
@@ -166,7 +101,9 @@ export const AccountHistory = () => {
     fetchAccountHistory();
   }, [publicKey, networkDetails]);
 
-  return (
+  return isDetailViewShowing ? (
+    <TransactionDetail {...detailViewProps} />
+  ) : (
     <div className="AccountHistory">
       <PopupWrapper>
         <header className="AccountHistory__header">Transactions</header>
@@ -187,12 +124,14 @@ export const AccountHistory = () => {
         </div>
         <ul className="AccountHistory__list">
           {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-            (operation: HistoryOperation) => (
+            (operation: HistoryItemOperation) => (
               <HistoryItem
                 key={operation.id}
                 operation={operation}
                 publicKey={publicKey}
                 url={STELLAR_EXPERT_URL}
+                setDetailViewProps={setDetailViewProps}
+                setIsDetailViewShowing={setIsDetailViewShowing}
               />
             ),
           )}

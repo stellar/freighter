@@ -1,0 +1,56 @@
+$icon-dimension: 0.875rem;
+
+.TransactionDetail {
+  height: 100%;
+
+  &__header {
+    border-bottom: 1px solid var(--pal-border-secondary);
+    color: var(--pal-brand-primary-on);
+    font-size: 2rem;
+    font-weight: var(--font-weight-light);
+    padding-bottom: 1.5rem;
+    text-align: center;
+
+    &__network {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      margin-top: 0.75rem;
+
+      &__icon {
+        background: var(--pal-brand-primary);
+        border-radius: 10rem;
+        height: $icon-dimension;
+        width: $icon-dimension;
+      }
+
+      img {
+        height: $icon-dimension;
+        width: $icon-dimension;
+      }
+    }
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: 9.75rem;
+    padding-top: 1.5rem;
+
+    &__row {
+      display: flex;
+      height: 1.5rem;
+      justify-content: space-between;
+
+      div:nth-child(2) {
+        color: var(--pal-success-on);
+      }
+    }
+  }
+
+  &__external-button {
+    margin: 0 1.5rem;
+  }
+}
