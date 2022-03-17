@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CopyText, Icon, Button } from "@stellar/design-system";
+
+import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
+import { getAssetIcons, retryAssetIcon } from "@shared/api/internal";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -9,14 +12,10 @@ import {
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
-
-import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
 import {
   getAccountBalances,
-  getAssetIcons,
-  retryAssetIcon,
-} from "@shared/api/internal";
-
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
@@ -35,9 +34,8 @@ export const defaultAccountBalances = {
 } as AccountBalancesInterface;
 
 export const Account = () => {
-  const [accountBalances, setAccountBalances] = useState(
-    defaultAccountBalances,
-  );
+  const dispatch = useDispatch();
+  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -54,16 +52,13 @@ export const Account = () => {
   const { balances, isFunded } = accountBalances;
 
   useEffect(() => {
-    const fetchAccountBalances = async () => {
-      try {
-        const res = await getAccountBalances({ publicKey, networkDetails });
-        setAccountBalances(res);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAccountBalances();
-  }, [publicKey, networkDetails, isAccountFriendbotFunded]);
+    dispatch(
+      getAccountBalances({
+        publicKey,
+        networkDetails,
+      }),
+    );
+  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
     const collection = [] as Array<any>;

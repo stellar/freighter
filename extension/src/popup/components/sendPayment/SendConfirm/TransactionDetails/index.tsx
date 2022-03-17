@@ -20,21 +20,17 @@ import { BackButton } from "popup/basics/BackButton";
 
 export const TransactionDetails = ({
   publicKey,
-  amount,
-  asset,
   transactionFee,
   memo,
   isSendComplete,
 }: {
   publicKey: string;
-  amount: string;
-  asset: string;
   transactionFee: string;
   memo: string;
   isSendComplete: boolean;
 }) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { destination } = useSelector(transactionDataSelector);
+  const { destination, amount, asset } = useSelector(transactionDataSelector);
   const dispatch: AppDispatch = useDispatch();
 
   // handles signing and submitting
