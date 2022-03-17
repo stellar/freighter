@@ -137,7 +137,9 @@ export const SendTo = () => {
 
   useEffect(() => {
     // reset
-    setIsLoading(true);
+    if (formik.values.destination !== "") {
+      setIsLoading(true);
+    }
     setValidatedPubKey("");
     setMuxedID("");
     db(formik.values.destination);
@@ -230,7 +232,7 @@ export const SendTo = () => {
                         variant={Button.variant.tertiary}
                         onClick={formik.submitForm}
                       >
-                        continue
+                        Continue
                       </Button>
                     </div>
                   </>
