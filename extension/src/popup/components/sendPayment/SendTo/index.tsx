@@ -35,7 +35,7 @@ import "../styles.scss";
 export const AccountDoesntExistWarning = () => (
   <div className="SendTo__info-block">
     <InfoBlock className="SendTo__info-block">
-      The destination account doesn't exist. Send at least 1 XLM to create
+      The destination account doesn’t exist. Send at least 1 XLM to create
       account.{" "}
       <TextLink
         variant={TextLink.variant.secondary}
