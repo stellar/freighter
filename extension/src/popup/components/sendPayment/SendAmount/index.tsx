@@ -51,7 +51,7 @@ export const SendAmount = () => {
     navigateTo(ROUTES.sendPaymentSettings);
   };
 
-  const handleAssetSelect = (e: React.ChangeEvent<any>) => {
+  const handleAssetSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = e.target.value;
     if (accountBalances.balances) {
       setAssetInfo({
