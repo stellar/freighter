@@ -64,8 +64,9 @@ export const SendAmount = () => {
 
   // if unfunded warn needs at least base reserve of XLM
   const shouldShowWarning = (val: string) =>
-    (!destinationBalances.isFunded && new BigNumber(val) < baseReserve) ||
-    assetInfo.canonical !== Asset.native().toString();
+    !destinationBalances.isFunded &&
+    (new BigNumber(val) < baseReserve ||
+      assetInfo.canonical !== Asset.native().toString());
 
   return (
     <PopupWrapper>
