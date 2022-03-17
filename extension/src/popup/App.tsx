@@ -1,10 +1,15 @@
 import React from "react";
-import { configureStore } from "@reduxjs/toolkit";
+import {
+  configureStore,
+  // isPlain,
+  getDefaultMiddleware,
+} from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 import styled, { createGlobalStyle } from "styled-components";
 import * as Sentry from "@sentry/browser";
 import { Integrations } from "@sentry/tracing";
+// import { BigNumber } from "bignumber.js";
 
 import { POPUP_WIDTH, POPUP_HEIGHT } from "constants/dimensions";
 
@@ -52,6 +57,18 @@ const RouteWrapperEl = styled.div`
   height: 100%;
 `;
 
+// ALEC TODO - remove
+const loggerMiddleware = (storeVal: any) => (next: any) => (action: any) => {
+  console.log("Dispatching: ", action.type);
+  const dispatchedAction = next(action);
+  console.log("NEW STATE: ", storeVal.getState());
+  return dispatchedAction;
+};
+
+// ALEC TODO - figure out why this isn't working
+// const isSerializable = (value: any) => BigNumber.isBigNumber(value) || isPlain(value);
+const isSerializable = () => true;
+
 const rootReducer = combineReducers({
   auth,
   settings,
@@ -60,8 +77,14 @@ const rootReducer = combineReducers({
 export type AppState = ReturnType<typeof rootReducer>;
 export const store = configureStore({
   reducer: rootReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(metricsMiddleware<AppState>()),
+
+  middleware: [
+    ...getDefaultMiddleware({
+      serializableCheck: {
+        isSerializable,
+      },
+    }),
+  ].concat(metricsMiddleware<AppState>(), loggerMiddleware),
 });
 export type AppDispatch = typeof store.dispatch;
 

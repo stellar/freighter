@@ -6,9 +6,12 @@ import {
   submitFreighterTransaction as internalSubmitFreighterTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
+  getAccountBalances as internalGetAccountBalances,
 } from "@shared/api/internal";
 
-import { ErrorMessage } from "@shared/api/types";
+import { AccountBalancesInterface, ErrorMessage } from "@shared/api/types";
+
+import { NetworkDetails } from "@shared/helpers/stellar";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -68,6 +71,30 @@ export const loadRecentAddresses = createAsyncThunk<
   }
 });
 
+export const getAccountBalances = createAsyncThunk<
+  AccountBalancesInterface,
+  { publicKey: string; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    return await internalGetAccountBalances({ publicKey, networkDetails });
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
+export const getDestinationBalances = createAsyncThunk<
+  AccountBalancesInterface,
+  { publicKey: string; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    return await internalGetAccountBalances({ publicKey, networkDetails });
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -88,6 +115,8 @@ interface InitialState {
   response: Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
+  accountBalances: AccountBalancesInterface;
+  destinationBalances: AccountBalancesInterface;
 }
 
 const initialState: InitialState = {
@@ -102,6 +131,14 @@ const initialState: InitialState = {
     transactionFee: "100",
     memo: "",
   },
+  accountBalances: {
+    balances: null,
+    isFunded: false,
+  },
+  destinationBalances: {
+    balances: null,
+    isFunded: false,
+  },
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -110,6 +147,12 @@ const transactionSubmissionSlice = createSlice({
   reducers: {
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
+    },
+    saveAmount: (state, action) => {
+      state.transactionData.amount = action.payload;
+    },
+    saveAsset: (state, action) => {
+      state.transactionData.asset = action.payload;
     },
     // TODO - add for each field
   },
@@ -129,10 +172,20 @@ const transactionSubmissionSlice = createSlice({
       state.status = ActionStatus.ERROR;
       state.error = action.payload;
     });
+    builder.addCase(getAccountBalances.fulfilled, (state, action) => {
+      state.accountBalances = action.payload;
+    });
+    builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
+      state.destinationBalances = action.payload;
+    });
   },
 });
 
-export const { saveDestination } = transactionSubmissionSlice.actions;
+export const {
+  saveDestination,
+  saveAmount,
+  saveAsset,
+} = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
 export const transactionSubmissionSelector = (state: {

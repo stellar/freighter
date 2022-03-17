@@ -14,14 +14,10 @@ import "../styles.scss";
 
 export const SendConfirm = ({
   publicKey,
-  amount,
-  asset,
   transactionFee,
   memo,
 }: {
   publicKey: string;
-  amount: string;
-  asset: string;
   transactionFee: string;
   memo: string;
 }) => {
@@ -31,8 +27,6 @@ export const SendConfirm = ({
   const render = () => {
     const transactionDetailsProps = {
       publicKey,
-      amount,
-      asset,
       transactionFee,
       memo,
       isSendComplete,
@@ -47,13 +41,7 @@ export const SendConfirm = ({
       case ActionStatus.PENDING:
         return <SubmitPending />;
       case ActionStatus.SUCCESS:
-        return (
-          <SubmitSuccess
-            amount={amount}
-            asset={asset}
-            viewDetails={() => setIsSendComplete(true)}
-          />
-        );
+        return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;
       case ActionStatus.ERROR:
         return <SubmitFail />;
       default:
