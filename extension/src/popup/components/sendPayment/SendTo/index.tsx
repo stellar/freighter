@@ -53,7 +53,7 @@ const InvalidAddressWarning = () => (
   <div className="SendTo__info-block">
     <InfoBlock variant={InfoBlock.variant.warning}>
       <strong>INVALID STELLAR ADDRESS</strong>
-      <p>Addresses are uppercase and begin with letters "G" or "M".</p>
+      <p>Addresses are uppercase and begin with letters “G“ or “M“.</p>
     </InfoBlock>
   </div>
 );
