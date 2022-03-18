@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
-import BigNumber from "bignumber.js";
 
 import StellarSdk from "stellar-sdk";
 import {
@@ -11,6 +10,7 @@ import {
   TextLink,
   DetailsTooltip,
 } from "@stellar/design-system";
+import { stroopToXlm } from "helpers/stellar";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -30,13 +30,6 @@ enum NetworkCongestion {
   HIGH = "High",
 }
 
-const lumensFromStroops = (stroops: BigNumber | string): BigNumber => {
-  if (stroops instanceof BigNumber) {
-    return stroops.dividedBy(1e7);
-  }
-  return new BigNumber(Number(stroops) / 1e7);
-};
-
 export const SendSettingsFee = () => {
   const dispatch = useDispatch();
   const { transactionFee } = useSelector(transactionDataSelector);
@@ -52,7 +45,7 @@ export const SendSettingsFee = () => {
           fee_charged: feeCharged,
           ledger_capacity_usage: ledgerCapacityUsage,
         } = await server.feeStats();
-        setRecommendedFee(lumensFromStroops(feeCharged.mode).toString());
+        setRecommendedFee(stroopToXlm(feeCharged.mode).toString());
         if (ledgerCapacityUsage > 0.5 && ledgerCapacityUsage <= 0.75) {
           setNetworkCongestion(NetworkCongestion.MEDIUM);
         } else if (ledgerCapacityUsage > 0.75) {
