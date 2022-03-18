@@ -63,7 +63,7 @@ export const TransactionHeader = ({
         <div>
           <strong>Base fee:</strong>
         </div>
-        <div> {stroopToXlm(_fee)} XLM</div>
+        <div> {stroopToXlm(_fee).toString()} XLM</div>
       </div>
     ) : null}
     {memo ? (

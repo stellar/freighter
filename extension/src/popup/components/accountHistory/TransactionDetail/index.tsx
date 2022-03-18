@@ -139,7 +139,7 @@ export const TransactionDetail = ({
             </div>
             <div className="TransactionDetail__info__row">
               <div>Fee</div>
-              <div>{stroopToXlm(Number(feeCharged))} XLM</div>
+              <div>{stroopToXlm(feeCharged).toString()} XLM</div>
             </div>
           </div>
         </div>

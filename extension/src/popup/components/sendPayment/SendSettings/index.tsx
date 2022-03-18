@@ -1,73 +1,105 @@
 import React from "react";
+import { useSelector, useDispatch } from "react-redux";
 
-import { Button, IconButton, Icon } from "@stellar/design-system";
+import { Button, Icon, Textarea, DetailsTooltip } from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
-
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-
 import { BackButton } from "popup/basics/BackButton";
+import { FormRows } from "popup/basics/Forms";
+import {
+  saveMemo,
+  transactionDataSelector,
+} from "popup/ducks/transactionSubmission";
+
+import { Formik, Form, Field, FieldProps } from "formik";
 
 import "../styles.scss";
 
-export const SendSettings = ({
-  transactionFee,
-  memo,
-  setMemo,
-}: {
-  transactionFee: string;
-  memo: string;
-  setMemo: (state: string) => void;
-}) => (
-  <PopupWrapper>
-    <BackButton hasBackCopy />
-    <div className="SendSettings">
-      <div className="header">Send Settings</div>
-      <div className="SendSettings__row">
-        <div className="SendSettings__row-left">
-          <span>Transaction fee</span>
-          <IconButton altText="info" icon={<Icon.Info />} />
-        </div>
-        <div className="SendSettings__row-right">
-          <span>{transactionFee}</span>
-          <div>
-            <div
-              className="SendSettings__nav-btn"
-              onClick={() => navigateTo(ROUTES.sendPaymentSettingsFee)}
-            >
-              <Icon.ChevronRight />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="SendSettings__row">
-        <div className="SendSettings__row-left">
-          <span>Memo</span> <IconButton altText="info" icon={<Icon.Info />} />
-        </div>
-        <div className="SendSettings__row-right">
-          <span></span>
-        </div>
-      </div>
-      <div className="SendSettings__input-textarea">
-        <textarea
-          className="TextArea Card Card--highlight"
-          autoComplete="off"
-          id="mnemonic-input"
-          placeholder="Memo (optional)"
-          value={memo}
-          onChange={(e: React.ChangeEvent<any>) => setMemo(e.target.value)}
-        />
-      </div>
-      <div className="btn-continue">
-        <Button
-          fullWidth
-          variant={Button.variant.tertiary}
-          onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
+export const SendSettings = () => {
+  const dispatch = useDispatch();
+  const { transactionFee, memo } = useSelector(transactionDataSelector);
+
+  return (
+    <PopupWrapper>
+      <BackButton />
+      <div className="SendSettings">
+        <div className="header">Send Settings</div>
+        <Formik
+          initialValues={{ memo }}
+          onSubmit={(values) => {
+            dispatch(saveMemo(values.memo));
+          }}
         >
-          Review Send
-        </Button>
+          {({ submitForm }) => (
+            <Form>
+              <FormRows>
+                <div className="SendSettings__row">
+                  <div className="SendSettings__row__left">
+                    <span className="SendSettings__row__title">
+                      Transaction fee
+                    </span>
+                    {/* TODO - add copy */}
+                    <DetailsTooltip details="">
+                      <span></span>
+                    </DetailsTooltip>
+                  </div>
+                  <div className="SendSettings__row__right">
+                    <span>{transactionFee} XLM</span>
+                    <div>
+                      <div
+                        className="SendSettings__nav-btn"
+                        onClick={() => {
+                          submitForm();
+                          navigateTo(ROUTES.sendPaymentSettingsFee);
+                        }}
+                      >
+                        <Icon.ChevronRight />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="SendSettings__row">
+                  <div className="SendSettings__row__left">
+                    <span className="SendSettings__row__title">Memo</span>{" "}
+                    {/* TODO - add copy */}
+                    <DetailsTooltip details="">
+                      <span></span>
+                    </DetailsTooltip>
+                  </div>
+                  <div className="SendSettings__row__right">
+                    <span></span>
+                  </div>
+                </div>
+                <Field name="memo">
+                  {({ field }: FieldProps) => (
+                    <div className="SendSettings__input-textarea">
+                      <Textarea
+                        // className="TextArea Card Card--highlight"
+                        // autoComplete="off"
+                        id="mnemonic-input"
+                        placeholder="Memo (optional)"
+                        {...field}
+                      />
+                    </div>
+                  )}
+                </Field>
+                <div className="btn-continue">
+                  <Button
+                    fullWidth
+                    type="submit"
+                    variant={Button.variant.tertiary}
+                    onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
+                  >
+                    Review Send
+                  </Button>
+                </div>
+              </FormRows>
+            </Form>
+          )}
+        </Formik>
       </div>
-    </div>
-  </PopupWrapper>
-);
+    </PopupWrapper>
+  );
+};
