@@ -145,20 +145,24 @@
     justify-content: space-between;
     margin-top: 1rem;
     width: 100%;
-  }
 
-  &__row-right {
-    display: flex;
-    align-items: center;
-  }
+    &__title {
+      color: var(--pal-text-primary);
+    }
 
-  &__row-left {
-    display: flex;
-    align-items: center;
+    &__right {
+      display: flex;
+      align-items: center;
+    }
 
-    button {
-      margin-left: 0.5rem;
-      width: 1rem;
+    &__left {
+      display: flex;
+      align-items: center;
+
+      button {
+        margin-left: 0.5rem;
+        width: 1rem;
+      }
     }
   }
 

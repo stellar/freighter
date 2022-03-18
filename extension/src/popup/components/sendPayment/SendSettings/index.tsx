@@ -32,69 +32,74 @@ export const SendSettings = () => {
             dispatch(saveMemo(values.memo));
           }}
         >
-          <Form>
-            <FormRows>
-              <div className="SendSettings__row">
-                <div className="SendSettings__row-left">
-                  <span>Transaction fee</span>
-                  <IconButton
-                    type="button"
-                    altText="info"
-                    icon={<Icon.Info />}
-                  />
-                </div>
-                <div className="SendSettings__row-right">
-                  <span>{transactionFee}</span>
-                  <div>
-                    <button
-                      className="SendSettings__nav-btn"
-                      type="submit"
-                      onClick={() => navigateTo(ROUTES.sendPaymentSettingsFee)}
-                    >
-                      <Icon.ChevronRight />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="SendSettings__row">
-                <div className="SendSettings__row-left">
-                  <span>Memo</span>{" "}
-                  <IconButton
-                    type="button"
-                    altText="info"
-                    icon={<Icon.Info />}
-                  />
-                </div>
-                <div className="SendSettings__row-right">
-                  <span></span>
-                </div>
-              </div>
-
-              <Field name="memo">
-                {({ field }: FieldProps) => (
-                  <div className="SendSettings__input-textarea">
-                    <Textarea
-                      // className="TextArea Card Card--highlight"
-                      // autoComplete="off"
-                      id="mnemonic-input"
-                      placeholder="Memo (optional)"
-                      {...field}
+          {({ submitForm }) => (
+            <Form>
+              <FormRows>
+                <div className="SendSettings__row">
+                  <div className="SendSettings__row__left">
+                    <span className="SendSettings__row__title">
+                      Transaction fee
+                    </span>
+                    <IconButton
+                      type="button"
+                      altText="info"
+                      icon={<Icon.Info />}
                     />
                   </div>
-                )}
-              </Field>
-              <div className="btn-continue">
-                <Button
-                  fullWidth
-                  type="submit"
-                  variant={Button.variant.tertiary}
-                  onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
-                >
-                  Review Send
-                </Button>
-              </div>
-            </FormRows>
-          </Form>
+                  <div className="SendSettings__row__right">
+                    <span>{transactionFee} XLM</span>
+                    <div>
+                      <div
+                        className="SendSettings__nav-btn"
+                        onClick={() => {
+                          submitForm();
+                          navigateTo(ROUTES.sendPaymentSettingsFee);
+                        }}
+                      >
+                        <Icon.ChevronRight />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="SendSettings__row">
+                  <div className="SendSettings__row__left">
+                    <span className="SendSettings__row__title">Memo</span>{" "}
+                    <IconButton
+                      type="button"
+                      altText="info"
+                      icon={<Icon.Info />}
+                    />
+                  </div>
+                  <div className="SendSettings__row__right">
+                    <span></span>
+                  </div>
+                </div>
+                <Field name="memo">
+                  {({ field }: FieldProps) => (
+                    <div className="SendSettings__input-textarea">
+                      <Textarea
+                        // className="TextArea Card Card--highlight"
+                        // autoComplete="off"
+                        id="mnemonic-input"
+                        placeholder="Memo (optional)"
+                        {...field}
+                      />
+                    </div>
+                  )}
+                </Field>
+                <div className="btn-continue">
+                  <Button
+                    fullWidth
+                    type="submit"
+                    variant={Button.variant.tertiary}
+                    onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
+                  >
+                    Review Send
+                  </Button>
+                </div>
+              </FormRows>
+            </Form>
+          )}
         </Formik>
       </div>
     </PopupWrapper>

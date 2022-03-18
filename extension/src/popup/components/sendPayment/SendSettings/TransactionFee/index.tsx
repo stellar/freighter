@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import BigNumber from "bignumber.js";
 
 import StellarSdk from "stellar-sdk";
-import { Button, Input, Icon, TextLink } from "@stellar/design-system";
+import {
+  Button,
+  Input,
+  Icon,
+  TextLink,
+  IconButton,
+} from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { transactionDataSelector } from "popup/ducks/transactionSubmission";
+import { FormRows } from "popup/basics/Forms";
+import {
+  saveTransactionFee,
+  transactionDataSelector,
+} from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "./styles.scss";
@@ -28,6 +38,7 @@ const lumensFromStroops = (stroops: BigNumber | string): BigNumber => {
 };
 
 export const SendSettingsFee = () => {
+  const dispatch = useDispatch();
   const { transactionFee } = useSelector(transactionDataSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [recommendedFee, setRecommendedFee] = useState("");
@@ -57,38 +68,60 @@ export const SendSettingsFee = () => {
 
   return (
     <PopupWrapper>
-      <div onClick={() => navigateTo(ROUTES.sendPaymentSettings)}>
+      <div
+        className="TransactionFee__top__left"
+        onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
+      >
         <Icon.X />
+      </div>
+      {/* TODO add icon tooltip copy */}
+      <div className="TransactionFee__top__right">
+        <IconButton altText="Default" icon={<Icon.Info />} />
       </div>
       <div className="TransactionFee">
         <div className="header">Transaction Fee</div>
-        <Formik initialValues={{ transactionFee }} onSubmit={() => {}}>
+        <Formik
+          initialValues={{ transactionFee }}
+          onSubmit={(values) => {
+            dispatch(saveTransactionFee(values.transactionFee));
+            navigateTo(ROUTES.sendPaymentSettings);
+          }}
+        >
           {({ setFieldValue }) => (
             <Form>
-              <Field name="transactionFee">
-                {({ field }: FieldProps) => (
-                  <Input
-                    id="transaction-fee-input"
-                    className="SendTo__input"
-                    {...field}
-                  ></Input>
-                )}
-              </Field>
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
-                onClick={() => setFieldValue("transactionFee", recommendedFee)}
-              >
-                Set default
-              </TextLink>
-              <div>{networkCongestion} congestion</div>
-              <Button
-                fullWidth
-                variant={Button.variant.tertiary}
-                onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
-              >
-                Done
-              </Button>
+              <FormRows>
+                <Field name="transactionFee">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      id="transaction-fee-input"
+                      className="SendTo__input"
+                      type="number"
+                      {...field}
+                    ></Input>
+                  )}
+                </Field>
+                <div className="TransactionFee__row">
+                  <TextLink
+                    underline
+                    variant={TextLink.variant.secondary}
+                    onClick={() =>
+                      setFieldValue("transactionFee", recommendedFee)
+                    }
+                  >
+                    Set default
+                  </TextLink>
+                  <span>{networkCongestion} congestion</span>
+                </div>
+              </FormRows>
+              <div className="btn-continue">
+                <Button
+                  fullWidth
+                  variant={Button.variant.tertiary}
+                  type="submit"
+                >
+                  Done
+                </Button>
+              </div>
             </Form>
           )}
         </Formik>
