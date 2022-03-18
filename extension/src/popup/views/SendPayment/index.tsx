@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Switch, Redirect } from "react-router-dom";
-import { PrivateKeyRoute } from "popup/Router";
+import { PublicKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 import { SendTo } from "popup/components/sendPayment/SendTo";
@@ -13,23 +13,24 @@ import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 // TODO - enforce can't move to next route data not given
 export const SendPayment = () => (
   <Switch>
-    <PrivateKeyRoute exact path={ROUTES.sendPayment}>
+    {/* ALEC TODO - switch to private */}
+    <PublicKeyRoute exact path={ROUTES.sendPayment}>
       <Redirect to={ROUTES.sendPaymentTo} />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
       <SendTo />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentAmount}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentAmount}>
       <SendAmount />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentSettings}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
       <SendSettings />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
       <SendSettingsFee />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentConfirm}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentConfirm}>
       <SendConfirm />
-    </PrivateKeyRoute>
+    </PublicKeyRoute>
   </Switch>
 );

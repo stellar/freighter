@@ -4,41 +4,58 @@ import { useDispatch, useSelector } from "react-redux";
 
 import StellarSdk, { Asset } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
+import { Loader } from "@stellar/design-system";
 
+import { xlmToStroop } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
-import { navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
 import {
+  ActionStatus,
   signFreighterTransaction,
   submitFreighterTransaction,
   addRecentAddress,
-  transactionDataSelector,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { openTab } from "popup/helpers/navigate";
 import { BackButton } from "popup/basics/BackButton";
 
 export const TransactionDetails = ({
-  publicKey,
-  transactionFee,
-  memo,
-  isSendComplete,
+  isSendComplete = false,
 }: {
-  publicKey: string;
-  transactionFee: string;
-  memo: string;
-  isSendComplete: boolean;
+  isSendComplete?: boolean;
 }) => {
+  const submission = useSelector(transactionSubmissionSelector);
+  const {
+    destination,
+    amount,
+    asset,
+    memo,
+    transactionFee,
+  } = submission.transactionData;
+  const transactionHash = submission.response?.hash;
+  const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { destination, amount, asset } = useSelector(transactionDataSelector);
+  // ALEC TODO - move to helper? (used in views/AccountHistory as well)
+  const stellarExpertURL = `https://stellar.expert/explorer/${
+    networkDetails.isTestnet ? "testnet" : "public"
+  }/tx/${transactionHash}`;
+
   const dispatch: AppDispatch = useDispatch();
 
   // handles signing and submitting
   const handleSend = async () => {
+    // ALEC TODO - remove
+    console.log({ destination });
+    console.log({ amount });
+    console.log({ asset });
+    console.log({ memo });
+    console.log({ transactionFee });
+
     const server = new StellarSdk.Server(networkDetails.networkUrl);
 
     let horizonAsset: Asset;
-    if (asset === "native") {
+    if (asset === StellarSdk.Asset.native().toString()) {
       horizonAsset = StellarSdk.Asset.native();
     } else {
       horizonAsset = new StellarSdk.Asset(
@@ -47,60 +64,76 @@ export const TransactionDetails = ({
       );
     }
 
-    const transactionXDR = await server
-      .loadAccount(publicKey)
-      .then((sourceAccount: Types.Account) => {
-        const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-          fee: transactionFee,
-          networkPassphrase: networkDetails.networkPassphrase,
-        })
-          .addOperation(
-            StellarSdk.Operation.payment({
-              destination,
-              asset: horizonAsset,
-              amount,
-            }),
-          )
-          .addMemo(StellarSdk.Memo.text(memo))
-          .setTimeout(180)
-          .build();
+    try {
+      const transactionXDR = await server
+        .loadAccount(publicKey)
+        .then((sourceAccount: Types.Account) => {
+          const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+            fee: xlmToStroop(transactionFee).toString(),
+            networkPassphrase: networkDetails.networkPassphrase,
+          })
+            .addOperation(
+              StellarSdk.Operation.payment({
+                destination,
+                asset: horizonAsset,
+                amount,
+              }),
+            )
+            .addMemo(StellarSdk.Memo.text(memo))
+            .setTimeout(180)
+            .build();
 
-        return transaction.toXDR();
-      });
+          return transaction.toXDR();
+        });
 
-    const res = await dispatch(
-      signFreighterTransaction({
-        transactionXDR,
-        network: networkDetails.networkPassphrase,
-      }),
-    );
+      // ALEC TODO - remove
+      console.log({ transactionXDR });
 
-    if (signFreighterTransaction.fulfilled.match(res)) {
-      const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
-        res.payload.signedTransaction,
-        networkDetails.networkPassphrase,
-      );
-
-      const submitResp = await dispatch(
-        submitFreighterTransaction({
-          signedXDR,
-          networkUrl: networkDetails.networkUrl,
+      const res = await dispatch(
+        signFreighterTransaction({
+          transactionXDR,
+          network: networkDetails.networkPassphrase,
         }),
       );
 
-      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        await dispatch(addRecentAddress({ publicKey: destination }));
+      // ALEC TODO - remove
+      console.log({ res });
+
+      // ALEC TODO - what to do when payload.signedTransaction comes back null
+      if (
+        signFreighterTransaction.fulfilled.match(res) &&
+        res.payload.signedTransaction
+      ) {
+        const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
+          res.payload.signedTransaction,
+          networkDetails.networkPassphrase,
+        );
+
+        const submitResp = await dispatch(
+          submitFreighterTransaction({
+            signedXDR,
+            networkUrl: networkDetails.networkUrl,
+          }),
+        );
+
+        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+          await dispatch(addRecentAddress({ publicKey: destination }));
+        }
       }
+    } catch (e) {
+      // ALEC TODO - figure out what to do with error
+      console.error(e);
     }
   };
 
   return (
     <div className="SendConfirm">
-      {isSendComplete ? (
-        <button onClick={() => navigateTo(ROUTES.account)}>Close</button>
-      ) : (
-        <BackButton hasBackCopy />
+      {submission.status === ActionStatus.PENDING && (
+        <div className="SendConfirm__proccessing">
+          <Loader /> <span>Processing transaction</span>
+        </div>
       )}
+      <BackButton />
       <div className="header">Send Confirm</div>
       <div>amount: {amount}</div>
       <div>asset: {asset}</div>
@@ -108,7 +141,9 @@ export const TransactionDetails = ({
       <div>transactionFee: {transactionFee}</div>
       <div>memo: {memo}</div>
       {isSendComplete ? (
-        <button>View on Stellar.expert</button>
+        <button onClick={() => openTab(stellarExpertURL)}>
+          View on Stellar.expert
+        </button>
       ) : (
         <>
           <button>cancel</button>
