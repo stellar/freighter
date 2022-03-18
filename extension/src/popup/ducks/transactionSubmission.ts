@@ -127,8 +127,7 @@ const initialState: InitialState = {
     amount: "",
     asset: "native",
     destination: "",
-    // TODO - use lumens instead of stroops
-    transactionFee: "100",
+    transactionFee: "0.00001",
     memo: "",
   },
   accountBalances: {
@@ -154,7 +153,12 @@ const transactionSubmissionSlice = createSlice({
     saveAsset: (state, action) => {
       state.transactionData.asset = action.payload;
     },
-    // TODO - add for each field
+    saveTransactionFee: (state, action) => {
+      state.transactionData.transactionFee = action.payload;
+    },
+    saveMemo: (state, action) => {
+      state.transactionData.memo = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -185,6 +189,8 @@ export const {
   saveDestination,
   saveAmount,
   saveAsset,
+  saveTransactionFee,
+  saveMemo,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
