@@ -1,7 +1,7 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-import { Button, IconButton, Icon, Textarea } from "@stellar/design-system";
+import { Button, Icon, Textarea, DetailsTooltip } from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -40,11 +40,10 @@ export const SendSettings = () => {
                     <span className="SendSettings__row__title">
                       Transaction fee
                     </span>
-                    <IconButton
-                      type="button"
-                      altText="info"
-                      icon={<Icon.Info />}
-                    />
+                    {/* TODO - add copy */}
+                    <DetailsTooltip details="">
+                      <span></span>
+                    </DetailsTooltip>
                   </div>
                   <div className="SendSettings__row__right">
                     <span>{transactionFee} XLM</span>
@@ -64,11 +63,10 @@ export const SendSettings = () => {
                 <div className="SendSettings__row">
                   <div className="SendSettings__row__left">
                     <span className="SendSettings__row__title">Memo</span>{" "}
-                    <IconButton
-                      type="button"
-                      altText="info"
-                      icon={<Icon.Info />}
-                    />
+                    {/* TODO - add copy */}
+                    <DetailsTooltip details="">
+                      <span></span>
+                    </DetailsTooltip>
                   </div>
                   <div className="SendSettings__row__right">
                     <span></span>

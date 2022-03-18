@@ -9,7 +9,7 @@ import {
   Input,
   Icon,
   TextLink,
-  IconButton,
+  DetailsTooltip,
 } from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
@@ -74,9 +74,13 @@ export const SendSettingsFee = () => {
       >
         <Icon.X />
       </div>
-      {/* TODO add icon tooltip copy */}
       <div className="TransactionFee__top__right">
-        <IconButton altText="Default" icon={<Icon.Info />} />
+        <DetailsTooltip
+          // TODO - add copy
+          details=""
+        >
+          <span></span>
+        </DetailsTooltip>
       </div>
       <div className="TransactionFee">
         <div className="header">Transaction Fee</div>
