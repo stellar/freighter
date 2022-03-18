@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { Asset } from "stellar-sdk";
 
-import { Button, Select } from "@stellar/design-system";
+import { Button, Select, InfoBlock } from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -62,11 +62,25 @@ export const SendAmount = () => {
     }
   };
 
-  // if unfunded warn needs at least base reserve of XLM
-  const shouldShowWarning = (val: string) =>
-    !destinationBalances.isFunded &&
-    (new BigNumber(val) < baseReserve ||
-      assetInfo.canonical !== Asset.native().toString());
+  const decideWarning = (val: string) => {
+    // unfunded destination
+    if (
+      !destinationBalances.isFunded &&
+      (new BigNumber(val).lt(baseReserve) ||
+        assetInfo.canonical !== Asset.native().toString())
+    ) {
+      return <AccountDoesntExistWarning />;
+    }
+    // amount too high
+    if (new BigNumber(val).gt(new BigNumber(assetInfo.balance))) {
+      return (
+        <InfoBlock variant={InfoBlock.variant.error}>
+          Entered amount is higher than your balance
+        </InfoBlock>
+      );
+    }
+    return null;
+  };
 
   return (
     <PopupWrapper>
@@ -108,9 +122,7 @@ export const SendAmount = () => {
                           placeholder="0.00"
                           {...field}
                         />
-                        {shouldShowWarning(field.value || "0") && (
-                          <AccountDoesntExistWarning />
-                        )}
+                        {decideWarning(field.value || "0")}
                       </>
                     )}
                   </Field>

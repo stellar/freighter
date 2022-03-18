@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useSelector } from "react-redux";
 
 import { Switch, Redirect } from "react-router-dom";
-import { PrivateKeyRoute } from "popup/Router";
+import { PublicKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 import { SendTo } from "popup/components/sendPayment/SendTo";
@@ -29,35 +29,36 @@ export const SendPayment = () => {
   return (
     <>
       <Switch>
-        <PrivateKeyRoute exact path={ROUTES.sendPayment}>
+        {/* ALEC TODO - change back to Private */}
+        <PublicKeyRoute exact path={ROUTES.sendPayment}>
           <Redirect to={ROUTES.sendPaymentTo} />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
+        </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
           <SendTo />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.sendPaymentAmount}>
+        </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.sendPaymentAmount}>
           <SendAmount />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.sendPaymentSettings}>
+        </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
           <SendSettings
             transactionFee={transactionFee}
             memo={memo}
             setMemo={setMemo}
           />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
+        </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
           <SendSettingsFee
             transactionFee={transactionFee}
             setTransactionFee={setTransactionFee}
           />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.sendPaymentConfirm}>
+        </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.sendPaymentConfirm}>
           <SendConfirm
             publicKey={publicKey}
             transactionFee={transactionFee}
             memo={memo}
           />
-        </PrivateKeyRoute>
+        </PublicKeyRoute>
       </Switch>
     </>
   );
