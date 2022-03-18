@@ -127,7 +127,7 @@ const initialState: InitialState = {
     amount: "",
     asset: "native",
     destination: "",
-    transactionFee: ".00001",
+    transactionFee: "0.00001",
     memo: "",
   },
   accountBalances: {
