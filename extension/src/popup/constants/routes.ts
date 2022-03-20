@@ -26,4 +26,6 @@ export enum ROUTES {
   about = "/settings/about",
   preferences = "/settings/preferences",
   security = "/settings/security",
+  manageAssets = "/manage-assets",
+  addAsset = "/manage-assets/add-asset",
 }

@@ -1,0 +1,27 @@
+.AddAsset {
+  &__bottom {
+    margin: 11.125rem 1.5rem 0;
+
+    &__buttons {
+      margin-top: 1rem;
+    }
+  }
+
+  &__currencies {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &__icon {
+      width: 2rem;
+    }
+    &__bullet {
+      background: var(--pal-brand-primary);
+      height: 1.5rem;
+      width: 1.5rem;
+    }
+    &__code {
+      flex-grow: 1;
+    }
+  }
+}

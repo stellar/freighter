@@ -1,21 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { CopyText, Icon, Button } from "@stellar/design-system";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
+  getAccountBalances,
+  accountBalancesSelector,
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
 
 import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
-import {
-  getAccountBalances,
-  getAssetIcons,
-  retryAssetIcon,
-} from "@shared/api/internal";
+import { getAssetIcons, retryAssetIcon } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
 import { truncatedPublicKey } from "helpers/stellar";
@@ -35,35 +33,27 @@ export const defaultAccountBalances = {
 } as AccountBalancesInterface;
 
 export const Account = () => {
-  const [accountBalances, setAccountBalances] = useState(
-    defaultAccountBalances,
-  );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
+  const allAccounts = useSelector(allAccountsSelector);
+  const accountBalances = useSelector(accountBalancesSelector);
+
   const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
-  const allAccounts = useSelector(allAccountsSelector);
   const accountDropDownRef = useRef<HTMLDivElement>(null);
+  const dispatch = useDispatch();
 
   const { balances, isFunded } = accountBalances;
 
   useEffect(() => {
-    const fetchAccountBalances = async () => {
-      try {
-        const res = await getAccountBalances({ publicKey, networkDetails });
-        setAccountBalances(res);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAccountBalances();
-  }, [publicKey, networkDetails, isAccountFriendbotFunded]);
+    dispatch(getAccountBalances({ publicKey, networkDetails }));
+  }, [dispatch, publicKey, networkDetails, isAccountFriendbotFunded]);
 
   useEffect(() => {
     const collection = [] as Array<any>;
@@ -171,12 +161,11 @@ export const Account = () => {
                 assetIcons={assetIcons}
                 retryAssetIconFetch={retryAssetIconFetch}
               />
-              <div>
-                {/* TODO - handle click */}
+              <Link to={ROUTES.manageAssets}>
                 <Button fullWidth variant={Button.variant.tertiary}>
                   Manage Assets
                 </Button>
-              </div>
+              </Link>
             </>
           ) : (
             <NotFundedMessage

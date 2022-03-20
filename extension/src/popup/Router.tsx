@@ -51,6 +51,7 @@ import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
 import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
+import { ManageAssets } from "popup/views/ManageAssets";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -271,6 +272,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.sendPayment}>
           <SendPayment />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.manageAssets}>
+          <ManageAssets />
         </PublicKeyRoute>
         <HomeRoute />
         {DEV_SERVER && (

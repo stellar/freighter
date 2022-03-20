@@ -16,8 +16,14 @@ import {
   loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
+  getAccountBalances as getAccountBalancesService,
 } from "@shared/api/internal";
-import { Account, ErrorMessage } from "@shared/api/types";
+import {
+  Account,
+  ErrorMessage,
+  AccountBalancesInterface,
+} from "@shared/api/types";
+import { NetworkDetails } from "@shared/helpers/stellar";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },
@@ -221,12 +227,24 @@ export const signOut = createAsyncThunk<
   return res?.applicationState;
 });
 
+export const getAccountBalances = createAsyncThunk(
+  "auth/getAccountBalances",
+  ({
+    publicKey,
+    networkDetails,
+  }: {
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => getAccountBalancesService({ publicKey, networkDetails }),
+);
+
 interface InitialState {
   allAccounts: Array<Account>;
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
   error: string;
+  accountBalances: AccountBalancesInterface;
 }
 
 const initialState: InitialState = {
@@ -235,6 +253,7 @@ const initialState: InitialState = {
   publicKey: "",
   error: "",
   hasPrivateKey: false,
+  accountBalances: {} as AccountBalancesInterface,
 };
 
 const authSlice = createSlice({
@@ -459,6 +478,13 @@ const authSlice = createSlice({
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
       };
     });
+    builder.addCase(getAccountBalances.fulfilled, (_state, action) => {
+      const accountBalances = action.payload || {};
+      return {
+        ...initialState,
+        accountBalances,
+      };
+    });
   },
 });
 
@@ -495,6 +521,10 @@ export const accountNameSelector = createSelector(
 
     return name;
   },
+);
+export const accountBalancesSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.accountBalances,
 );
 
 export const { clearApiError } = authSlice.actions;
