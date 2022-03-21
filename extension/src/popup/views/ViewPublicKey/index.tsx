@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import QrCode from "qrcode.react";
 import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
+import { Button, Icon, Input, CopyText } from "@stellar/design-system";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
@@ -10,21 +11,12 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
 import { BackButton } from "popup/basics/BackButton";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { BottomNav } from "popup/components/BottomNav";
 import {
   accountNameSelector,
   publicKeySelector,
   updateAccountName,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
-import {
-  Button,
-  TextLink,
-  Icon,
-  Input,
-  CopyText,
-} from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -124,23 +116,22 @@ export const ViewPublicKey = () => {
               <Button variant={Button.variant.tertiary}>COPY</Button>
             </CopyText>
           </div>
-          <div className="ViewPublicKey__external-link">
-            <TextLink
-              variant={TextLink.variant.secondary}
-              iconRight={<Icon.ExternalLink />}
-              onClick={() => {
-                openTab(
-                  `https://stellar.expert/explorer/${network.toLowerCase()}/account/${publicKey}`,
-                );
-                emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
-              }}
-            >
-              VIEW ON STELLAR.EXPERT
-            </TextLink>
-          </div>
         </div>
       </PopupWrapper>
-      <BottomNav />
+      <div className="ViewPublicKey__external-link">
+        <Button
+          fullWidth
+          variant={Button.variant.tertiary}
+          onClick={() => {
+            openTab(
+              `https://stellar.expert/explorer/${network.toLowerCase()}/account/${publicKey}`,
+            );
+            emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
+          }}
+        >
+          VIEW ON STELLAR.EXPERT
+        </Button>
+      </div>
     </>
   );
 };
