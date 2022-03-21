@@ -103,7 +103,7 @@ const Currencies = ({
     <>
       <div>Assets found in this domain</div>
       {currencies.map(({ code, image, issuer }) => (
-        <div className="AddAsset__currencies">
+        <div className="AddAsset__currencies" key={code}>
           {image ? (
             <img
               className="AddAsset__currencies__icon"
