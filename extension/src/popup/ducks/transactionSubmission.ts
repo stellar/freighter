@@ -19,15 +19,12 @@ export const signFreighterTransaction = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("signFreighterTransaction", async ({ transactionXDR, network }, thunkApi) => {
   try {
-    const res = await internalSignFreighterTransaction({
+    return await internalSignFreighterTransaction({
       transactionXDR,
       network,
     });
-    return res;
   } catch (e) {
-    return thunkApi.rejectWithValue({
-      errorMessage: e,
-    });
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
   }
 });
 
@@ -37,13 +34,12 @@ export const submitFreighterTransaction = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
   try {
-    const res = await internalSubmitFreighterTransaction({
+    return await internalSubmitFreighterTransaction({
       signedXDR,
       networkUrl,
     });
-    return res;
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
   }
 });
 

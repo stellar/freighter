@@ -86,9 +86,6 @@ export const TransactionDetails = ({
           return transaction.toXDR();
         });
 
-      // ALEC TODO - remove
-      console.log({ transactionXDR });
-
       const res = await dispatch(
         signFreighterTransaction({
           transactionXDR,
@@ -96,10 +93,6 @@ export const TransactionDetails = ({
         }),
       );
 
-      // ALEC TODO - remove
-      console.log({ res });
-
-      // ALEC TODO - what to do when payload.signedTransaction comes back null
       if (
         signFreighterTransaction.fulfilled.match(res) &&
         res.payload.signedTransaction
