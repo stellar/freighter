@@ -13,7 +13,7 @@ import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 // TODO - enforce can't move to next route data not given
 export const SendPayment = () => (
   <Switch>
-    {/* ALEC TODO - switch to private */}
+    {/* ALEC TODO - change back to Private */}
     <PublicKeyRoute exact path={ROUTES.sendPayment}>
       <Redirect to={ROUTES.sendPaymentTo} />
     </PublicKeyRoute>

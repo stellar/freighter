@@ -162,9 +162,8 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(submitFreighterTransaction.pending, (state) => {
       state.status = ActionStatus.PENDING;
     });
-    builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
-      state.status = ActionStatus.SUCCESS;
-      state.response = action.payload;
+    builder.addCase(signFreighterTransaction.pending, (state) => {
+      state.status = ActionStatus.PENDING;
     });
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
       state.status = ActionStatus.ERROR;
@@ -173,6 +172,10 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(signFreighterTransaction.rejected, (state, action) => {
       state.status = ActionStatus.ERROR;
       state.error = action.payload;
+    });
+    builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
+      state.status = ActionStatus.SUCCESS;
+      state.response = action.payload;
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
