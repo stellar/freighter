@@ -149,11 +149,7 @@ export const TransactionDetails = ({
       </div>
       <div className="TransactionDetails__card">
         <Card>
-          <AccountAssets
-            assetIcons={assetIcons}
-            // TODO: uncouple AccountAssets from sortedBalances
-            sortedBalances={assetTotals}
-          />
+          <AccountAssets assetIcons={assetIcons} sortedBalances={assetTotals} />
         </Card>
       </div>
       <div className="TransactionDetails__row">
