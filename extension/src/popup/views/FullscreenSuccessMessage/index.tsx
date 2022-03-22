@@ -23,7 +23,7 @@ const MnemonicPhraseConfirmedMessage = () => (
   <>
     <div className="FullscreenSuccessMessage__copy">
       <p>
-        Awesome, you passed the test. Keep your recovery phrase safe, it's your
+        Awesome, you passed the test. Keep your recovery phrase safe, it’s your
         responsibility.
       </p>
     </div>
@@ -39,7 +39,7 @@ const MnemonicPhraseConfirmedMessage = () => (
             on an external website.
           </li>
           <li>
-            Always check the domain of websites you're using Freighter with
+            Always check the domain of websites you’re using Freighter with
           </li>
           <li>
             Freighter cannot recover your account if you lose your recovery
@@ -111,7 +111,7 @@ export const FullscreenSuccessMessage = () => {
           />
         </div>
         <OnboardingHeader className="FullscreenSuccessMessage__header">
-          Woo, you're in!
+          Woo, you’re in!
         </OnboardingHeader>
         <div className="FullscreenSuccessMessage__content-wrapper">
           {IS_MNEMONIC_PHRASE_STATE ? (

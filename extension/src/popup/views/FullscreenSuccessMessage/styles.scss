@@ -31,12 +31,12 @@
     flex-flow: column wrap;
     align-items: center;
     justify-content: center;
-    height: calc(100vh - var(--header--height));
+    margin-top: 4.5rem;
     width: 100%;
   }
 
   &__header {
-    margin: 2.5rem 0 3rem;
+    margin: 1.5rem 0 2rem;
   }
 
   &__content-wrapper {
@@ -53,7 +53,6 @@
 
   &__illo-container {
     position: relative;
-    padding: 1rem 0;
   }
 
   &__success-image {

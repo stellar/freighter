@@ -17,7 +17,11 @@ export const Onboarding = ({
 
   return (
     <div className="Onboarding">
-      {hasGoBackBtn && !isNewTabSession ? <BackButton hasBackCopy /> : null}
+      {hasGoBackBtn && !isNewTabSession ? (
+        <div className="Onboarding--back">
+          <BackButton hasBackCopy />
+        </div>
+      ) : null}
       {children}
     </div>
   );

@@ -1,6 +1,10 @@
 .Onboarding {
   margin: 4.5rem auto 0;
   max-width: var(--fullscreen--max-width);
+
+  &--back {
+    margin-bottom: -1.3rem;
+  }
 }
 
 .OnboardingHeader {
@@ -11,7 +15,6 @@
 
 .OnboardingScreen {
   display: flex;
-  align-content: center;
   height: calc(100vh - var(--header--height));
   max-height: 40rem;
   max-width: 57rem;

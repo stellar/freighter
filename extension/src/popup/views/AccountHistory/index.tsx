@@ -122,7 +122,7 @@ export const AccountHistory = () => {
             </div>
           ))}
         </div>
-        <ul className="AccountHistory__list">
+        <div className="AccountHistory__list">
           {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
             (operation: HistoryItemOperation) => (
               <HistoryItem
@@ -135,7 +135,7 @@ export const AccountHistory = () => {
               />
             ),
           )}
-        </ul>
+        </div>
       </PopupWrapper>
       <BottomNav />
     </div>
