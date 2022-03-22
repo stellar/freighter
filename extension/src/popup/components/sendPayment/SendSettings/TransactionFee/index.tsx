@@ -80,7 +80,7 @@ export const SendSettingsFee = () => {
         <Formik
           initialValues={{ transactionFee }}
           onSubmit={(values) => {
-            dispatch(saveTransactionFee(values.transactionFee));
+            dispatch(saveTransactionFee(String(values.transactionFee)));
             navigateTo(ROUTES.sendPaymentSettings);
           }}
         >

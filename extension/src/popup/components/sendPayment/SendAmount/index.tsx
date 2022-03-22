@@ -46,7 +46,7 @@ export const SendAmount = () => {
   }, [asset, accountBalances]);
 
   const handleContinue = (values: { amount: string }) => {
-    dispatch(saveAmount(values.amount));
+    dispatch(saveAmount(String(values.amount)));
     dispatch(saveAsset(assetInfo.canonical));
     navigateTo(ROUTES.sendPaymentSettings);
   };

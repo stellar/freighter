@@ -1,13 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
+
 import { BigNumber } from "bignumber.js";
 
 import { AssetIcons } from "@shared/api/types";
+import { retryAssetIcon } from "@shared/api/internal";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "./styles.scss";
 
-const AssetIcon = ({
+export const AssetIcon = ({
   assetIcons,
   code,
   issuerKey,
@@ -20,7 +24,7 @@ const AssetIcon = ({
 }) =>
   assetIcons[code] || code === "XLM" ? (
     <img
-      className="AssetWrapper--asset-logo"
+      className="AccountAssets--asset-logo"
       alt={`${code} logo`}
       src={code === "XLM" ? StellarLogo : assetIcons[code] || ""}
       onError={() => {
@@ -28,36 +32,63 @@ const AssetIcon = ({
       }}
     />
   ) : (
-    <div className="AssetWrapper__asset-bullet" />
+    <div className="AccountAssets__asset-bullet" />
   );
 
 export const AccountAssets = ({
-  assetIcons,
+  assetIcons: inputAssetIcons,
   sortedBalances,
-  retryAssetIconFetch,
 }: {
   assetIcons: AssetIcons;
   sortedBalances: Array<any>;
-  retryAssetIconFetch: (arg: { key: string; code: string }) => void;
-}) => (
-  <div className="AssetWrapper">
-    {sortedBalances.map(({ token: { issuer, code }, total }) => (
-      <div className="AssetWrapper__asset" key={code}>
-        <div className="AssetWrapper__copy-left">
-          <AssetIcon
-            assetIcons={assetIcons}
-            code={code}
-            issuerKey={issuer?.key}
-            retryAssetIconFetch={retryAssetIconFetch}
-          />
-          <span>{code}</span>
-        </div>
-        <div className="AssetWrapper__copy-right">
-          <div>
-            {new BigNumber(total).toString()} <span>{code}</span>
+}) => {
+  const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
+
+  const retryAssetIconFetch = async ({
+    key,
+    code,
+  }: {
+    key: string;
+    code: string;
+  }) => {
+    /* if we retried the toml and their link is still bad, just give up here */
+    if (hasIconFetchRetried) return;
+    try {
+      const res = await retryAssetIcon({
+        key,
+        code,
+        assetIcons,
+        networkDetails,
+      });
+      setAssetIcons(res);
+      setHasIconFetchRetried(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <>
+      {sortedBalances.map(({ token: { issuer, code }, total }) => (
+        <div className="AccountAssets__asset" key={code}>
+          <div className="AccountAssets__copy-left">
+            <AssetIcon
+              assetIcons={assetIcons}
+              code={code}
+              issuerKey={issuer?.key}
+              retryAssetIconFetch={retryAssetIconFetch}
+            />
+            <span>{code}</span>
+          </div>
+          <div className="AccountAssets__copy-right">
+            <div>
+              {new BigNumber(total).toString()} <span>{code}</span>
+            </div>
           </div>
         </div>
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </>
+  );
+};

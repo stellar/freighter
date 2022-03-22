@@ -1,15 +1,19 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { truncatedPublicKey } from "helpers/stellar";
 
-import { Button, Loader } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
-import { transactionDataSelector } from "popup/ducks/transactionSubmission";
+import {
+  resetSubmission,
+  transactionDataSelector,
+} from "popup/ducks/transactionSubmission";
 import "./styles.scss";
 
 // TODO - helper for asset names
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
+  const dispatch = useDispatch();
   const { destination, amount, asset } = useSelector(transactionDataSelector);
   return (
     <div className="SubmitSuccess">
@@ -23,7 +27,10 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       </Button>
       <Button
         variant={Button.variant.tertiary}
-        onClick={() => navigateTo(ROUTES.account)}
+        onClick={() => {
+          dispatch(resetSubmission());
+          navigateTo(ROUTES.account);
+        }}
       >
         Done
       </Button>
@@ -31,19 +38,22 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   );
 };
 
-export const SubmitPending = () => (
-  <div className="SendConfirm">
-    <Loader /> <span>Processing transaction</span>
-  </div>
-);
-
 export const SubmitFail = () => {
+  const dispatch = useDispatch();
   const { destination } = useSelector(transactionDataSelector);
   return (
     <div>
       <div>Transaction failed</div>
       <div>{destination}</div>
-      <Button variant={Button.variant.tertiary}>Got it</Button>
+      <Button
+        variant={Button.variant.tertiary}
+        onClick={() => {
+          dispatch(resetSubmission());
+          navigateTo(ROUTES.account);
+        }}
+      >
+        Got it
+      </Button>
     </div>
   );
 };

@@ -44,3 +44,11 @@ export const stroopToXlm = (
   }
   return new BigNumber(Number(stroops) / 1e7);
 };
+
+export const xlmToStroop = (lumens: BigNumber | string): BigNumber => {
+  if (lumens instanceof BigNumber) {
+    return lumens.times(1e7);
+  }
+  // round to nearest stroop
+  return new BigNumber(Math.round(Number(lumens) * 1e7));
+};

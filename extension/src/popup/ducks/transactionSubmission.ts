@@ -19,15 +19,12 @@ export const signFreighterTransaction = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("signFreighterTransaction", async ({ transactionXDR, network }, thunkApi) => {
   try {
-    const res = await internalSignFreighterTransaction({
+    return await internalSignFreighterTransaction({
       transactionXDR,
       network,
     });
-    return res;
   } catch (e) {
-    return thunkApi.rejectWithValue({
-      errorMessage: e,
-    });
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
   }
 });
 
@@ -37,13 +34,12 @@ export const submitFreighterTransaction = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
   try {
-    const res = await internalSubmitFreighterTransaction({
+    return await internalSubmitFreighterTransaction({
       signedXDR,
       networkUrl,
     });
-    return res;
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
   }
 });
 
@@ -144,6 +140,7 @@ const transactionSubmissionSlice = createSlice({
   name: "transactionSubmission",
   initialState,
   reducers: {
+    resetSubmission: () => initialState,
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
@@ -164,9 +161,8 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(submitFreighterTransaction.pending, (state) => {
       state.status = ActionStatus.PENDING;
     });
-    builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
-      state.status = ActionStatus.SUCCESS;
-      state.response = action.payload;
+    builder.addCase(signFreighterTransaction.pending, (state) => {
+      state.status = ActionStatus.PENDING;
     });
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
       state.status = ActionStatus.ERROR;
@@ -175,6 +171,10 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(signFreighterTransaction.rejected, (state, action) => {
       state.status = ActionStatus.ERROR;
       state.error = action.payload;
+    });
+    builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
+      state.status = ActionStatus.SUCCESS;
+      state.response = action.payload;
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
@@ -191,6 +191,7 @@ export const {
   saveAsset,
   saveTransactionFee,
   saveMemo,
+  resetSubmission,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
