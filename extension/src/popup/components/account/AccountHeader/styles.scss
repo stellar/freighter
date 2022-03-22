@@ -1,4 +1,4 @@
-$account-row-height: 5rem;
+$account-row-height: 4.25rem;
 $dropdown-animation: 0.3s ease-out;
 
 .AccountHeader {
@@ -44,8 +44,8 @@ $dropdown-animation: 0.3s ease-out;
 
   &__options-dropdown {
     width: calc(100% - 2rem);
-    margin: 1.5rem 1rem;
-    padding: 0 0.5rem;
+    margin: 0.5rem 1rem;
+    padding: 0.25rem 1rem;
     border-radius: 0.5rem;
     background: var(--pal-background-primary);
     overflow: hidden;
@@ -79,7 +79,7 @@ $dropdown-animation: 0.3s ease-out;
   }
 
   &__option-list-item {
-    padding-bottom: 1rem;
+    padding-bottom: 0.5rem;
   }
 
   &__option-link {
@@ -89,7 +89,7 @@ $dropdown-animation: 0.3s ease-out;
   }
 
   &__option-link-copy {
-    margin-left: 1rem;
+    margin-left: 0.75rem;
     font-size: 0.875rem;
     line-height: 1.5rem;
   }
@@ -128,11 +128,11 @@ $dropdown-animation: 0.3s ease-out;
     padding-right: 1rem;
   }
 
-  &--list-divider {
+  &__list-divider {
     border: none;
     height: 2px;
     background: var(--pal-border-secondary);
     border-radius: 1rem;
-    margin: 0 var(--account-view-padding-left) 1rem 0;
+    margin: 1.2rem 0;
   }
 }

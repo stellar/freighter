@@ -1,4 +1,6 @@
 .UnlockAccount {
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
   &__header {
     padding: 5rem 0 3rem;
     font-size: 2rem;
@@ -8,7 +10,7 @@
   }
 
   &__import-account {
-    margin-top: 3rem;
+    margin-top: 7.25rem;
     width: 100%;
     text-align: center;
     font-size: 1rem;
