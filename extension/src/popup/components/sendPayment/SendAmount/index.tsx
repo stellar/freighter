@@ -22,7 +22,7 @@ import "../styles.scss";
 
 const baseReserve = new BigNumber(1);
 
-export const SendAmount = () => {
+export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
   const { accountBalances, destinationBalances, transactionData } = useSelector(
     transactionSubmissionSelector,
@@ -85,7 +85,7 @@ export const SendAmount = () => {
   return (
     <PopupWrapper>
       {/* TODO - add payment type icon */}
-      <BackButton />
+      <BackButton customBackAction={() => navigateTo(previous)} />
       <div className="SendAmount">
         <div className="header">Send {assetInfo.code}</div>
         <div className="SendAmount__asset-copy">

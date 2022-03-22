@@ -58,7 +58,7 @@ const InvalidAddressWarning = () => (
   </div>
 );
 
-export const SendTo = () => {
+export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const dispatch: AppDispatch = useDispatch();
   const { destination } = useSelector(transactionDataSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -166,7 +166,7 @@ export const SendTo = () => {
 
   return (
     <PopupWrapper>
-      <BackButton />
+      <BackButton customBackAction={() => navigateTo(previous)} />
       <div className="header">Send To</div>
       <form className="SendTo__form">
         <FormRows>

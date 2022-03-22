@@ -30,8 +30,10 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import "./styles.scss";
 
 export const TransactionDetails = ({
+  goBack,
   isSendComplete = false,
 }: {
+  goBack: () => void;
   isSendComplete?: boolean;
 }) => {
   const dispatch: AppDispatch = useDispatch();
@@ -139,7 +141,7 @@ export const TransactionDetails = ({
           <Loader /> <span>Processing transaction</span>
         </div>
       )}
-      <BackButton />
+      <BackButton customBackAction={goBack} />
       <div className="header">
         {isSendComplete ? (
           <span>Sent {horizonAsset.code}</span>

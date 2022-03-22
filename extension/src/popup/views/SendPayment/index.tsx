@@ -17,19 +17,19 @@ export const SendPayment = () => (
       <Redirect to={ROUTES.sendPaymentTo} />
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
-      <SendTo />
+      <SendTo previous={ROUTES.account} />
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentAmount}>
-      <SendAmount />
+      <SendAmount previous={ROUTES.sendPaymentTo} />
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentSettings}>
-      <SendSettings />
+      <SendSettings previous={ROUTES.sendPaymentAmount} />
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
       <SendSettingsFee />
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentConfirm}>
-      <SendConfirm />
+      <SendConfirm previous={ROUTES.sendPaymentSettings} />
     </PrivateKeyRoute>
   </Switch>
 );
