@@ -14,3 +14,37 @@
 
   --back--button-dimension: 1rem;
 }
+
+body {
+  overscroll-behavior: none;
+  margin: 0;
+  padding: 0;
+}
+
+body,
+html {
+  height: var(--popup--height);
+  width: var(--popup--width);
+}
+
+a {
+  text-decoration: none;
+}
+
+#root {
+  position: relative;
+}
+
+* {
+  scrollbar-color: rgba(var(--pal-shadow-rbg), 0.25)
+    var(--pal-background-primary);
+
+  &::-webkit-scrollbar {
+    background-color: var(--pal-background-primary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(var(--pal-shadow-rbg), 0.25);
+    border-radius: 0.5rem;
+  }
+}
