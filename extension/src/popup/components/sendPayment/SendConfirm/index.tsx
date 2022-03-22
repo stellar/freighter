@@ -24,7 +24,6 @@ export const SendConfirm = () => {
       case ActionStatus.IDLE:
         return <TransactionDetails />;
       case ActionStatus.PENDING:
-        // ALEC TODO - load submission status, and if pending then do overlay
         return <TransactionDetails />;
       case ActionStatus.SUCCESS:
         return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;

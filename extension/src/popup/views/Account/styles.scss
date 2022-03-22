@@ -70,4 +70,10 @@
       width: 1rem;
     }
   }
+
+  &__assets-wrapper {
+    > div {
+      margin: 2rem 0;
+    }
+  }
 }

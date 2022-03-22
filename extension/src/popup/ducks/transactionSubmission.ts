@@ -140,7 +140,6 @@ const transactionSubmissionSlice = createSlice({
   name: "transactionSubmission",
   initialState,
   reducers: {
-    // ALEC tODO - make sure safe to reset accoutn and dest balances
     resetSubmission: () => initialState,
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;

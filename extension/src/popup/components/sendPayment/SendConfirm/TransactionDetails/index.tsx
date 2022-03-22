@@ -1,30 +1,40 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 
-import StellarSdk, { Asset } from "stellar-sdk";
+import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
-import { Loader } from "@stellar/design-system";
+import { Button, Card, Loader } from "@stellar/design-system";
 
-import { xlmToStroop } from "helpers/stellar";
+import { truncatedPublicKey, xlmToStroop } from "helpers/stellar";
+import { AssetIcons } from "@shared/api/types";
+import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+
 import { AppDispatch } from "popup/App";
+import { ROUTES } from "popup/constants/routes";
 import {
   ActionStatus,
   signFreighterTransaction,
   submitFreighterTransaction,
-  addRecentAddress,
   transactionSubmissionSelector,
+  addRecentAddress,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { openTab } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { BackButton } from "popup/basics/BackButton";
+import { AccountAssets } from "popup/components/account/AccountAssets";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+
+import "./styles.scss";
 
 export const TransactionDetails = ({
   isSendComplete = false,
 }: {
   isSendComplete?: boolean;
 }) => {
+  const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
     destination,
@@ -33,36 +43,40 @@ export const TransactionDetails = ({
     memo,
     transactionFee,
   } = submission.transactionData;
+
   const transactionHash = submission.response?.hash;
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  // ALEC TODO - move to helper? (used in views/AccountHistory as well)
-  const stellarExpertURL = `https://stellar.expert/explorer/${
-    networkDetails.isTestnet ? "testnet" : "public"
-  }/tx/${transactionHash}`;
+  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
-  const dispatch: AppDispatch = useDispatch();
+  let horizonAsset = StellarSdk.Asset.native();
+  if (asset.includes(":")) {
+    horizonAsset = new StellarSdk.Asset(
+      asset.split(":")[0],
+      asset.split(":")[1],
+    );
+  }
+  const assetTotals = [
+    {
+      token: { issuer: horizonAsset.issuer, code: horizonAsset.code },
+      total: amount || "0",
+    },
+  ];
+
+  useEffect(() => {
+    (async () => {
+      const iconURL = await getIconUrlFromIssuer({
+        key: horizonAsset.issuer,
+        code: horizonAsset.code,
+        networkDetails,
+      });
+      setAssetIcons({ [horizonAsset.code]: iconURL });
+    })();
+  }, [horizonAsset.code, horizonAsset.issuer, networkDetails]);
 
   // handles signing and submitting
   const handleSend = async () => {
-    // ALEC TODO - remove
-    console.log({ destination });
-    console.log({ amount });
-    console.log({ asset });
-    console.log({ memo });
-    console.log({ transactionFee });
-
     const server = new StellarSdk.Server(networkDetails.networkUrl);
-
-    let horizonAsset: Asset;
-    if (asset === StellarSdk.Asset.native().toString()) {
-      horizonAsset = StellarSdk.Asset.native();
-    } else {
-      horizonAsset = new StellarSdk.Asset(
-        asset.split(":")[0],
-        asset.split(":")[1],
-      );
-    }
 
     try {
       const transactionXDR = await server
@@ -114,35 +128,82 @@ export const TransactionDetails = ({
         }
       }
     } catch (e) {
-      // ALEC TODO - figure out what to do with error
       console.error(e);
     }
   };
 
   return (
-    <div className="SendConfirm">
+    <div className="TransactionDetails">
       {submission.status === ActionStatus.PENDING && (
         <div className="SendConfirm__proccessing">
           <Loader /> <span>Processing transaction</span>
         </div>
       )}
       <BackButton />
-      <div className="header">Send Confirm</div>
-      <div>amount: {amount}</div>
-      <div>asset: {asset}</div>
-      <div>destination: {destination}</div>
-      <div>transactionFee: {transactionFee}</div>
-      <div>memo: {memo}</div>
-      {isSendComplete ? (
-        <button onClick={() => openTab(stellarExpertURL)}>
-          View on Stellar.expert
-        </button>
-      ) : (
-        <>
-          <button>cancel</button>
-          <button onClick={handleSend}>send</button>
-        </>
-      )}
+      <div className="header">
+        {isSendComplete ? (
+          <span>Sent {horizonAsset.code}</span>
+        ) : (
+          <span>Confirm Send</span>
+        )}
+      </div>
+      <div className="TransactionDetails__card">
+        <Card>
+          <AccountAssets
+            assetIcons={assetIcons}
+            // TODO: uncouple AccountAssets from sortedBalances
+            sortedBalances={assetTotals}
+          />
+        </Card>
+      </div>
+      <div className="TransactionDetails__row">
+        <div>Sending to </div>
+        <div className="TransactionDetails__row__right">
+          <div className="TransactionDetails__identicon">
+            <IdenticonImg publicKey={destination} />
+            <span>{truncatedPublicKey(destination)}</span>
+          </div>
+        </div>
+      </div>
+      <div className="TransactionDetails__row">
+        <div>Memo</div>
+        <div className="TransactionDetails__row__right">{memo || "None"}</div>
+      </div>
+      <div className="TransactionDetails__row">
+        <div>Network Fee </div>
+        <div className="TransactionDetails__row__right">
+          {transactionFee} {horizonAsset.code}
+        </div>
+      </div>
+      <div className="TransactionDetails__buttons-row">
+        {isSendComplete ? (
+          <Button
+            variant={Button.variant.tertiary}
+            onClick={() =>
+              openTab(
+                `https://stellar.expert/explorer/${
+                  networkDetails.isTestnet ? "testnet" : "public"
+                }/tx/${transactionHash}`,
+              )
+            }
+          >
+            View on Stellar.expert
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant={Button.variant.tertiary}
+              onClick={() => {
+                dispatch(resetSubmission());
+                navigateTo(ROUTES.account);
+              }}
+            >
+              cancel
+            </Button>
+            <Button onClick={handleSend}>send</Button>
+          </>
+        )}
+      </div>
     </div>
   );
 };

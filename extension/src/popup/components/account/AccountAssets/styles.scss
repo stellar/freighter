@@ -1,18 +1,17 @@
-.AssetWrapper {
-  color: var(--pal-text-primary);
-  font-size: 1rem;
-  line-height: 1.5rem;
-
+.AccountAssets {
   &__asset {
     align-items: center;
     justify-content: space-between;
     display: flex;
-    margin: 2rem 0;
+    color: var(--pal-text-primary);
+    font-size: 1rem;
+    line-height: 1.5rem;
   }
 
   &--asset-logo {
     margin-right: 1rem;
     width: 2rem;
+    height: 2rem;
   }
 
   &__asset-bullet {
