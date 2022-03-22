@@ -31,10 +31,12 @@
 
   &__operation {
     flex-grow: 2;
+    line-height: 1.5rem;
   }
 
   &__date {
     color: var(--pal-border-secondary);
     font-size: 0.875rem;
+    line-height: 1.375rem;
   }
 }

@@ -9,7 +9,6 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { Header } from "popup/components/Header";
 import {
   confirmPassword,
@@ -41,7 +40,7 @@ export const UnlockAccount = () => {
   };
 
   return (
-    <PopupWrapper>
+    <div className="UnlockAccount">
       <Header isPopupView />
       <div className="UnlockAccount__header">
         A <strong>Stellar</strong> wallet for every website
@@ -96,6 +95,6 @@ export const UnlockAccount = () => {
           </TextLink>
         </div>
       </div>
-    </PopupWrapper>
+    </div>
   );
 };
