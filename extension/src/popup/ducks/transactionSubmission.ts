@@ -116,7 +116,9 @@ interface InitialState {
 }
 
 const initialState: InitialState = {
-  status: ActionStatus.IDLE,
+  status: ActionStatus.SUCCESS,
+  // ALEC TODO - change back
+  // status: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
