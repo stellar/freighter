@@ -135,7 +135,7 @@ export const TransactionDetails = ({
   return (
     <div className="TransactionDetails">
       {submission.status === ActionStatus.PENDING && (
-        <div className="SendConfirm__proccessing">
+        <div className="TransactionDetails__processing">
           <Loader /> <span>Processing transaction</span>
         </div>
       )}
