@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
+import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
 import { useFormik } from "formik";
+import BigNumber from "bignumber.js";
 
 import { truncatedPublicKey } from "helpers/stellar";
 
@@ -32,6 +33,17 @@ import {
 
 import "../styles.scss";
 
+const baseReserve = new BigNumber(1);
+
+export const shouldAccountDoesntExistWarning = (
+  isFunded: boolean,
+  assetID: string,
+  amount: string,
+) =>
+  !isFunded &&
+  (new BigNumber(amount).lt(baseReserve) ||
+    assetID !== Asset.native().toString());
+
 export const AccountDoesntExistWarning = () => (
   <div className="SendTo__info-block">
     <InfoBlock className="SendTo__info-block">
@@ -58,7 +70,7 @@ const InvalidAddressWarning = () => (
   </div>
 );
 
-export const SendTo = () => {
+export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const dispatch: AppDispatch = useDispatch();
   const { destination } = useSelector(transactionDataSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -166,8 +178,8 @@ export const SendTo = () => {
 
   return (
     <PopupWrapper>
-      <BackButton />
-      <div className="header">Send To</div>
+      <BackButton customBackAction={() => navigateTo(previous)} />
+      <div className="SendPayment__header">Send To</div>
       <form className="SendTo__form">
         <FormRows>
           <Input
@@ -226,7 +238,7 @@ export const SendTo = () => {
                         <div className="SendTo__subsection-copy">{muxedID}</div>
                       </>
                     )}
-                    <div className="btn-continue">
+                    <div className="SendPayment__btn-continue">
                       <Button
                         fullWidth
                         variant={Button.variant.tertiary}

@@ -31,7 +31,12 @@ export const signFreighterTransaction = createAsyncThunk<
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
   { signedXDR: string; networkUrl: string },
-  { rejectValue: ErrorMessage }
+  {
+    rejectValue: {
+      errorMessage: string;
+      response: Horizon.TransactionResponse;
+    };
+  }
 >("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
   try {
     return await internalSubmitFreighterTransaction({
@@ -39,7 +44,10 @@ export const submitFreighterTransaction = createAsyncThunk<
       networkUrl,
     });
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+    return thunkApi.rejectWithValue({
+      errorMessage: e.message || e,
+      response: e.response?.data,
+    });
   }
 });
 

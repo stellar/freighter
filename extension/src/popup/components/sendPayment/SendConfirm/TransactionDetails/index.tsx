@@ -6,7 +6,11 @@ import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 import { Button, Card, Loader } from "@stellar/design-system";
 
-import { truncatedPublicKey, xlmToStroop } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  truncatedPublicKey,
+  xlmToStroop,
+} from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -30,32 +34,25 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import "./styles.scss";
 
 export const TransactionDetails = ({
+  goBack,
   isSendComplete = false,
 }: {
+  goBack: () => void;
   isSendComplete?: boolean;
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
-    destination,
-    amount,
-    asset,
-    memo,
-    transactionFee,
-  } = submission.transactionData;
+    destinationBalances,
+    transactionData: { destination, amount, asset, memo, transactionFee },
+  } = submission;
 
   const transactionHash = submission.response?.hash;
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
-  let horizonAsset = StellarSdk.Asset.native();
-  if (asset.includes(":")) {
-    horizonAsset = new StellarSdk.Asset(
-      asset.split(":")[0],
-      asset.split(":")[1],
-    );
-  }
+  const horizonAsset = getAssetFromCanonical(asset);
   const assetTotals = [
     {
       token: { issuer: horizonAsset.issuer, code: horizonAsset.code },
@@ -74,6 +71,26 @@ export const TransactionDetails = ({
     })();
   }, [horizonAsset.code, horizonAsset.issuer, networkDetails]);
 
+  const getOperation = () => {
+    // default to payment
+    let op = StellarSdk.Operation.payment({
+      destination,
+      asset: horizonAsset,
+      amount,
+    });
+    // create account if unfunded and sending xlm
+    if (
+      !destinationBalances.isFunded &&
+      asset === StellarSdk.Asset.native().toString()
+    ) {
+      op = StellarSdk.Operation.createAccount({
+        destination,
+        startingBalance: amount,
+      });
+    }
+    return op;
+  };
+
   // handles signing and submitting
   const handleSend = async () => {
     const server = new StellarSdk.Server(networkDetails.networkUrl);
@@ -86,13 +103,7 @@ export const TransactionDetails = ({
             fee: xlmToStroop(transactionFee).toString(),
             networkPassphrase: networkDetails.networkPassphrase,
           })
-            .addOperation(
-              StellarSdk.Operation.payment({
-                destination,
-                asset: horizonAsset,
-                amount,
-              }),
-            )
+            .addOperation(getOperation())
             .addMemo(StellarSdk.Memo.text(memo))
             .setTimeout(180)
             .build();
@@ -135,12 +146,12 @@ export const TransactionDetails = ({
   return (
     <div className="TransactionDetails">
       {submission.status === ActionStatus.PENDING && (
-        <div className="SendConfirm__proccessing">
+        <div className="TransactionDetails__processing">
           <Loader /> <span>Processing transaction</span>
         </div>
       )}
-      <BackButton />
-      <div className="header">
+      <BackButton customBackAction={goBack} />
+      <div className="SendPayment__header">
         {isSendComplete ? (
           <span>Sent {horizonAsset.code}</span>
         ) : (

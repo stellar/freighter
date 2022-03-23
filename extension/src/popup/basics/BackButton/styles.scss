@@ -7,7 +7,7 @@
   height: var(--back--button-dimension);
   padding: 0;
   width: var(--back--button-dimension);
-  z-index: 2;
+  z-index: var(--back--button-z-index);
 
   &--has-copy {
     width: 3.5rem;
