@@ -1,0 +1,40 @@
+.TransactionDetails {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+
+  &__card {
+    margin: 1.5rem 0;
+  }
+
+  &__row {
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+
+    &__right {
+      color: var(--pal-text-primary);
+    }
+  }
+
+  &__identicon {
+    display: flex;
+    align-items: center;
+    img {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 1rem;
+      background: var(--pal-brand-primary-on);
+      margin-right: 0.5rem;
+    }
+  }
+
+  &__buttons-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    position: absolute;
+    top: calc(var(--popup--height) - 2 * var(--bottom-nav--height));
+    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+  }
+}

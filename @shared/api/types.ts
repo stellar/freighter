@@ -21,6 +21,7 @@ export interface Response {
   transaction: {
     sign: (sourceKeys: {}) => void;
   };
+  transactionXDR: string;
   signedTransaction: string;
   source: string;
   type: SERVICE_TYPES;
@@ -35,6 +36,7 @@ export interface Response {
   assetCode: string;
   iconUrl: string;
   network: string;
+  recentAddresses: Array<string>;
 }
 
 export interface ExternalRequest {
@@ -68,10 +70,17 @@ export type HorizonOperation = Horizon.PaymentOperationResponse & {
 };
 /* eslint-enable camelcase */
 
-export interface AccountDetailsInterface {
+export interface AccountBalancesInterface {
   balances: Balances;
   isFunded: boolean | null;
+}
+
+export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];
+}
+
+export interface ErrorMessage {
+  errorMessage: string;
 }
 
 declare global {

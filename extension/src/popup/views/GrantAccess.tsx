@@ -1,58 +1,36 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import styled from "styled-components";
 import { useLocation } from "react-router-dom";
+import { Button } from "@stellar/design-system";
 
 import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 
-import { COLOR_PALETTE, FONT_WEIGHT } from "popup/constants/styles";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
-import { Button } from "popup/basics/Buttons";
-import { SubmitButton } from "popup/basics/Forms";
-import { FirstTimeWarningMessage } from "popup/components/warningMessages/FirstTimeWarningMessage";
-import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import {
+  ButtonsContainer,
+  ModalHeader,
+  ModalWrapper,
+  SingleButtonContainer,
+} from "popup/basics/Modal";
 
-import { Header } from "popup/components/Header";
+import { ModalInfo } from "popup/components/ModalInfo";
+import { FirstTimeWarningMessage } from "popup/components/WarningMessages";
+
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import "popup/metrics/access";
-
-const GrantAccessEl = styled.div`
-  padding: 1.5rem 1.875rem;
-`;
-const HeaderEl = styled.h1`
-  color: ${COLOR_PALETTE.primary}};
-  font-weight: ${FONT_WEIGHT.light};
-  margin: 0;
-`;
-const SubheaderEl = styled.h3`
-  font-weight: ${FONT_WEIGHT.bold};
-  font-size: 0.95rem;
-  letter-spacing: 0.1px;
-  color: ${COLOR_PALETTE.primary}};
-`;
-const ButtonContainerEl = styled.div`
-  display: flex;
-  justify-content: space-around;
-  padding: 3rem 0;
-  flex-direction: row;
-`;
-const RejectButtonEl = styled(Button)`
-  background: ${COLOR_PALETTE.text};
-  width: 9.75rem;
-`;
-const SharePublicKeyButtonEl = styled(SubmitButton)`
-  width: 12.25rem;
-`;
 
 export const GrantAccess = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const [isGranting, setIsGranting] = useState(false);
 
-  const { url } = parsedSearchParam(location.search);
+  const {
+    tab: { title = "" },
+    url,
+  } = parsedSearchParam(location.search);
 
   const domain = getUrlHostname(url);
   const publicKey = useSelector(publicKeySelector);
@@ -69,27 +47,36 @@ export const GrantAccess = () => {
   };
 
   return (
-    <>
-      <Header />
-      <GrantAccessEl>
-        <HeaderEl>Share public key</HeaderEl>
-        <FirstTimeWarningMessage />
-        <PunycodedDomain domain={domain} />
-        <SubheaderEl>This website wants to know your public key:</SubheaderEl>
-        <KeyIdenticon color={COLOR_PALETTE.primary} publicKey={publicKey} />
-        <ButtonContainerEl>
-          <RejectButtonEl size="small" onClick={rejectAndClose}>
+    <ModalWrapper>
+      <ModalHeader>
+        <strong>Share Public Key</strong>
+      </ModalHeader>
+      <FirstTimeWarningMessage />
+      <ModalInfo
+        domain={domain}
+        domainTitle={title}
+        subject="This website wants to know your public key:"
+      >
+        <KeyIdenticon publicKey={publicKey} />
+      </ModalInfo>
+      <SingleButtonContainer>
+        <ButtonsContainer>
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={rejectAndClose}
+          >
             Reject
-          </RejectButtonEl>
-          <SharePublicKeyButtonEl
-            isSubmitting={isGranting}
-            size="small"
+          </Button>
+          <Button
+            fullWidth
+            isLoading={isGranting}
             onClick={() => grantAndClose()}
           >
-            Share public key
-          </SharePublicKeyButtonEl>
-        </ButtonContainerEl>
-      </GrantAccessEl>
-    </>
+            Share
+          </Button>
+        </ButtonsContainer>
+      </SingleButtonContainer>
+    </ModalWrapper>
   );
 };

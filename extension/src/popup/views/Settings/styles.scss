@@ -1,0 +1,16 @@
+.Settings {
+  padding: 2rem 1.5rem;
+
+  &--header {
+    margin-bottom: 2rem;
+  }
+
+  &--version {
+    color: var(--pal-text-tertiary);
+    font-size: 0.875rem;
+  }
+
+  &--logout {
+    margin-top: 7rem;
+  }
+}

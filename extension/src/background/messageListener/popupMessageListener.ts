@@ -20,6 +20,7 @@ import {
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
+  RECENT_ADDRESSES,
 } from "constants/localStorageTypes";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
@@ -544,6 +545,41 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const signFreighterTransaction = () => {
+    const { transactionXDR, network } = request;
+    const transaction = StellarSdk.TransactionBuilder.fromXDR(
+      transactionXDR,
+      network,
+    );
+
+    const privateKey = privateKeySelector(store.getState());
+    if (privateKey.length) {
+      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      transaction.sign(sourceKeys);
+      return { signedTransaction: transaction.toXDR() };
+    }
+
+    return { error: "Session timed out" };
+  };
+
+  const addRecentAddress = () => {
+    const { publicKey } = request;
+    const storedJSON = localStorage.getItem(RECENT_ADDRESSES) || "[]";
+    const recentAddresses = JSON.parse(storedJSON);
+    if (recentAddresses.indexOf(publicKey) === -1) {
+      recentAddresses.push(publicKey);
+    }
+    localStorage.setItem(RECENT_ADDRESSES, JSON.stringify(recentAddresses));
+
+    return { recentAddresses };
+  };
+
+  const loadRecentAddresses = () => {
+    const storedJSON = localStorage.getItem(RECENT_ADDRESSES) || "[]";
+    const recentAddresses = JSON.parse(storedJSON);
+    return { recentAddresses };
+  };
+
   const signOut = () => {
     store.dispatch(logOut());
 
@@ -630,6 +666,9 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
+    [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
+    [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,

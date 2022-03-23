@@ -1,0 +1,33 @@
+.AccountHistory {
+  &__header {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__selector {
+    border-bottom: 1px solid var(--pal-border-primary);
+    display: flex;
+    gap: 1rem;
+    margin: 0.5rem 0 1.5rem;
+
+    &__item {
+      color: var(--pal-border-secondary);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+      padding: 0.5rem 0;
+      text-transform: uppercase;
+
+      &--active {
+        border-bottom: 2px solid var(--pal-brand-primary);
+        color: var(--pal-brand-primary-on);
+      }
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}

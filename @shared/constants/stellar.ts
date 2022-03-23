@@ -1,6 +1,6 @@
 export enum NETWORK_NAMES {
-  TESTNET = "Test network",
-  PUBNET = "Public network",
+  TESTNET = "Testnet",
+  PUBNET = "Main Net",
 }
 
 export enum NETWORKS {

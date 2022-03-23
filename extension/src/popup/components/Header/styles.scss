@@ -1,0 +1,45 @@
+.Header {
+  border-bottom: 1px solid var(--pal-border-primary);
+  padding: 1.5rem 0;
+
+  &--popup {
+    max-width: 0;
+    padding: 0;
+    border: none;
+  }
+
+  &--fullscreen {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 auto;
+    max-width: var(--fullscreen--max-width);
+  }
+
+  &__network {
+    background: var(--pal-background-secondary);
+    border-radius: 8rem;
+    align-items: center;
+    display: flex;
+    padding: 0.5rem 0.875rem;
+
+    &__icon {
+      background: var(--pal-success);
+      border-radius: 2rem;
+      height: 0.6875rem;
+      margin-right: 0.5rem;
+      position: relative;
+      width: 0.6875rem;
+
+      &--testnet {
+        background: var(--pal-warning);
+      }
+    }
+
+    &__name {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+      text-transform: uppercase;
+    }
+  }
+}

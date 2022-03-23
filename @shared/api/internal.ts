@@ -2,7 +2,8 @@ import StellarSdk from "stellar-sdk";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
   Account,
-  AccountDetailsInterface,
+  AccountBalancesInterface,
+  AccountHistoryInterface,
   Balances,
   HorizonOperation,
   Settings,
@@ -202,13 +203,13 @@ export const confirmPassword = async (
   return response;
 };
 
-export const getAccountDetails = async ({
+export const getAccountBalances = async ({
   publicKey,
   networkDetails,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<AccountDetailsInterface> => {
+}): Promise<AccountBalancesInterface> => {
   const { networkUrl, networkPassphrase } = networkDetails;
 
   const dataProvider = new DataProvider({
@@ -219,7 +220,6 @@ export const getAccountDetails = async ({
 
   let balances = null;
   let isFunded = null;
-  let operations = [] as Array<HorizonOperation>;
 
   try {
     ({ balances } = await dataProvider.fetchAccountDetails());
@@ -229,9 +229,25 @@ export const getAccountDetails = async ({
     return {
       balances,
       isFunded: false,
-      operations,
     };
   }
+
+  return {
+    balances,
+    isFunded,
+  };
+};
+
+export const getAccountHistory = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountHistoryInterface> => {
+  const { networkUrl } = networkDetails;
+
+  let operations = [] as Array<HorizonOperation>;
 
   try {
     const server = new StellarSdk.Server(networkUrl);
@@ -249,8 +265,6 @@ export const getAccountDetails = async ({
   }
 
   return {
-    balances,
-    isFunded,
     operations,
   };
 };
@@ -344,6 +358,56 @@ export const signTransaction = async ({
   } catch (e) {
     console.error(e);
   }
+};
+
+export const signFreighterTransaction = async ({
+  transactionXDR,
+  network,
+}: {
+  transactionXDR: string;
+  network: string;
+}): Promise<{ signedTransaction: string }> => {
+  const { signedTransaction, error } = await sendMessageToBackground({
+    transactionXDR,
+    network,
+    type: SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION,
+  });
+
+  if (error || !signedTransaction) {
+    throw new Error(error);
+  }
+
+  return { signedTransaction };
+};
+
+export const submitFreighterTransaction = async ({
+  signedXDR,
+  networkUrl,
+}: {
+  signedXDR: string;
+  networkUrl: string;
+}) => {
+  const server = new StellarSdk.Server(networkUrl);
+  return await server.submitTransaction(signedXDR);
+};
+
+export const addRecentAddress = async ({
+  publicKey,
+}: {
+  publicKey: string;
+}): Promise<{ recentAddresses: Array<string> }> => {
+  return await sendMessageToBackground({
+    publicKey,
+    type: SERVICE_TYPES.ADD_RECENT_ADDRESS,
+  });
+};
+
+export const loadRecentAddresses = async (): Promise<{
+  recentAddresses: Array<string>;
+}> => {
+  return await sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_RECENT_ADDRESSES,
+  });
 };
 
 export const signOut = async (): Promise<{

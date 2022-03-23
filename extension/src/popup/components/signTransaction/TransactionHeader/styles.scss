@@ -1,0 +1,15 @@
+.TransactionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  & > div {
+    color: var(--pal-text-tertiary);
+    line-height: 1.5rem;
+
+    & > :nth-child(2) {
+      color: var(--pal-text-primary);
+      margin-top: 0.25rem;
+    }
+  }
+}

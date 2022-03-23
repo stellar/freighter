@@ -1,0 +1,22 @@
+.BackButton {
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  height: var(--back--button-dimension);
+  padding: 0;
+  width: var(--back--button-dimension);
+  z-index: 2;
+
+  &--has-copy {
+    width: 3.5rem;
+  }
+
+  &__copy {
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    margin-left: 0.5rem;
+    text-transform: uppercase;
+  }
+}

@@ -1,0 +1,23 @@
+.BottomNav {
+  background: var(--pal-background-primary);
+  border-top: solid 0.125rem var(--pal-background-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--bottom-nav--height);
+  top: calc(var(--popup--height) - var(--bottom-nav--height));
+  position: absolute;
+  width: 100%;
+
+  img {
+    margin: 1rem 2rem;
+  }
+
+  &--link {
+    filter: brightness(0.24);
+
+    &--active {
+      filter: brightness(1);
+    }
+  }
+}

@@ -1,0 +1,34 @@
+.AccountAssets {
+  &__asset {
+    align-items: center;
+    justify-content: space-between;
+    display: flex;
+    color: var(--pal-text-primary);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  &--asset-logo {
+    margin-right: 1rem;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  &__asset-bullet {
+    background: var(--pal-brand-primary);
+    border-radius: 10rem;
+    height: 0.5rem;
+    margin: 0 1.375rem 0 0.5rem;
+    width: 0.5rem;
+  }
+
+  &__copy-left {
+    align-items: center;
+    display: flex;
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__copy-right {
+    font-weight: var(--font-weight-normal);
+  }
+}
