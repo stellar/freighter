@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import "./styles.scss";
 
@@ -14,9 +14,17 @@ interface ModalWrapperProps {
   children: React.ReactNode;
 }
 
-export const ModalWrapper = ({ children }: ModalWrapperProps) => (
-  <section className="ModalWrapper">{children}</section>
-);
+export const ModalWrapper = ({ children }: ModalWrapperProps) => {
+  useEffect(() => {
+    const disableScrollXClass = "ModalWrapper--disable-scroll-x";
+    document.querySelector("body")?.classList.add(disableScrollXClass);
+
+    return () =>
+      document.querySelector("body")?.classList.remove(disableScrollXClass);
+  }, []);
+
+  return <section className="ModalWrapper">{children}</section>;
+};
 
 interface ButtonsContainerProps {
   children: React.ReactNode;

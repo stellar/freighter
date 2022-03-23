@@ -1,5 +1,6 @@
 :root {
   --z-index--banner: 10;
+  --z-index--loader: -1;
 
   // popup dimensions
   --popup--width: 360px;
@@ -14,4 +15,38 @@
 
   --back--button-dimension: 1rem;
   --back--button-z-index: 2;
+}
+
+body {
+  overscroll-behavior: none;
+  margin: 0;
+  padding: 0;
+}
+
+body,
+html {
+  height: var(--popup--height);
+  width: var(--popup--width);
+}
+
+a {
+  text-decoration: none;
+}
+
+#root {
+  position: relative;
+}
+
+* {
+  scrollbar-color: rgba(var(--pal-shadow-rbg), 0.25)
+    var(--pal-background-primary);
+
+  &::-webkit-scrollbar {
+    background-color: var(--pal-background-primary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(var(--pal-shadow-rbg), 0.25);
+    border-radius: 0.5rem;
+  }
 }
