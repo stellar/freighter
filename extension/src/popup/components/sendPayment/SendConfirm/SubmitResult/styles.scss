@@ -50,14 +50,18 @@
   }
 
   &__button-rows {
-    position: absolute;
-    // ALEC TODO - better way of doing?
-    bottom: 0;
-    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-    margin-bottom: 1.5rem;
-
-    button:not(:first-child) {
-      margin-top: 1rem;
+    &__success {
+      position: absolute;
+      top: calc(var(--popup--height) - 2 * var(--sds-btn-height) - 2.5rem);
+      width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+      button:not(:first-child) {
+        margin-top: 1rem;
+      }
+    }
+    &__fail {
+      position: absolute;
+      top: calc(var(--popup--height) - 1 * var(--sds-btn-height) - 1.5rem);
+      width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
     }
   }
 }

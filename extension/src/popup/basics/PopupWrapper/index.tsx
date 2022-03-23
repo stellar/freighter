@@ -7,8 +7,8 @@ interface PopupWrapperProps {
 }
 
 export const PopupWrapper = ({ children }: PopupWrapperProps) => (
-  <div className="PopupWrapper">
-    {/* ALEC TODO - remove? */}
-    <div className="PopupWrapper__absolute-anchor">{children}</div>
+  // ALEC TODO - remove
+  <div className="PopupWrapper__deleteme">
+    <div className="PopupWrapper">{children}</div>
   </div>
 );

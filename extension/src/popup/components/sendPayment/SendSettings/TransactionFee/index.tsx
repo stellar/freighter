@@ -61,13 +61,13 @@ export const SendSettingsFee = () => {
 
   return (
     <PopupWrapper>
-      <div
-        className="TransactionFee__top__left"
-        onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
-      >
-        <Icon.X />
-      </div>
-      <div className="TransactionFee__top__right">
+      <div className="TransactionFee__top-btns">
+        <div
+          className="TransactionFee__top-btns__exit"
+          onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
+        >
+          <Icon.X />
+        </div>
         <DetailsTooltip
           // TODO - add copy
           details=""

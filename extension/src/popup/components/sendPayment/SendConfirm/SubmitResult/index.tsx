@@ -32,7 +32,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         <IdenticonImg publicKey={destination} />
         <span>{truncatedPublicKey(destination)}</span>
       </div>
-      <div className="SubmitResult__button-rows">
+      <div className="SubmitResult__button-rows__success">
         <Button fullWidth onClick={() => viewDetails()}>
           Transaction Details
         </Button>
@@ -66,7 +66,7 @@ export const SubmitFail = () => {
         <IdenticonImg publicKey={destination} />
         <span>{truncatedPublicKey(destination)}</span>
       </div>
-      <div className="SubmitResult__button-rows">
+      <div className="SubmitResult__button-rows__fail">
         <Button
           fullWidth
           variant={Button.variant.tertiary}

@@ -1,3 +1,8 @@
+// ALEC TODO - okay to put this here?
+:root {
+  --bottom-btn-margin: 24px;
+}
+
 // TODO - separate style sheet
 .SendAmount {
   display: flex;
@@ -13,7 +18,7 @@
   }
 
   &__form {
-    margin-top: 2rem;
+    margin-top: 3.75rem;
     width: 100%;
   }
 
@@ -35,15 +40,22 @@
 
   &__input-select {
     position: absolute;
-    top: calc(var(--popup--height) - 3 * var(--bottom-nav--height) + 1.2rem);
+    top: calc(
+      var(--popup--height) - 2 * var(--sds-btn-height) -
+        var(--bottom-btn-margin) - 1rem
+    );
     width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+    left: var(--popup--side-padding);
   }
 }
 
 .btn-continue {
   position: absolute;
-  top: calc(var(--popup--height) - 2 * var(--bottom-nav--height));
+  top: calc(
+    var(--popup--height) - var(--sds-btn-height) - var(--bottom-btn-margin)
+  );
   width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+  left: var(--popup--side-padding);
 }
 
 .header {
