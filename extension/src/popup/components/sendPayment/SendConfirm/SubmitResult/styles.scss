@@ -1,4 +1,4 @@
-.SubmitSuccess {
+.SubmitResult {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -56,8 +56,8 @@
     width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
     margin-bottom: 1.5rem;
 
-    button:first-child {
-      margin-bottom: 1rem;
+    button:not(:first-child) {
+      margin-top: 1rem;
     }
   }
 }

@@ -6,7 +6,11 @@ import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 import { Button, Card, Loader } from "@stellar/design-system";
 
-import { truncatedPublicKey, xlmToStroop } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  truncatedPublicKey,
+  xlmToStroop,
+} from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -51,13 +55,7 @@ export const TransactionDetails = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
-  let horizonAsset = StellarSdk.Asset.native();
-  if (asset.includes(":")) {
-    horizonAsset = new StellarSdk.Asset(
-      asset.split(":")[0],
-      asset.split(":")[1],
-    );
-  }
+  const horizonAsset = getAssetFromCanonical(asset);
   const assetTotals = [
     {
       token: { issuer: horizonAsset.issuer, code: horizonAsset.code },
