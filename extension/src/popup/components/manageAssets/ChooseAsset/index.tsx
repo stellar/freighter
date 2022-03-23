@@ -6,7 +6,13 @@ import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
-export const PreapprovedAssets = () => {
+import { PopupWrapper } from "popup/basics/PopupWrapper";
+
+import { SubviewHeader } from "popup/components/SubviewHeader";
+
+import "./styles.scss";
+
+export const ChooseAsset = () => {
   const { accountBalances } = useSelector(transactionSubmissionSelector);
   console.log(accountBalances);
 
@@ -24,10 +30,16 @@ export const PreapprovedAssets = () => {
   console.log(balances);
 
   return (
-    <div>
-      {balances.map(({ token: { code } }) => (
-        <div key={code}>{code}</div>
-      ))}
+    <div className="ChooseAsset">
+      <PopupWrapper>
+        <SubviewHeader title="Choose Asset" />
+        {balances.map(({ token: { code } }) => (
+          <div className="ChooseAsset__row">
+            <div key={code}>{code}</div>
+            <div className="ChooseAsset__row__button">REMOVE</div>
+          </div>
+        ))}
+      </PopupWrapper>
     </div>
   );
 };

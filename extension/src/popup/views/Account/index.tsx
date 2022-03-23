@@ -3,8 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CopyText, Icon, Button } from "@stellar/design-system";
 
-import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
-import { getAssetIcons } from "@shared/api/internal";
+import { AccountBalancesInterface } from "@shared/api/types";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -17,7 +16,6 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
-import { sortBalances } from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
@@ -43,8 +41,6 @@ export const Account = () => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
-  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
   const allAccounts = useSelector(allAccountsSelector);
   const accountDropDownRef = useRef<HTMLDivElement>(null);
@@ -59,23 +55,6 @@ export const Account = () => {
       }),
     );
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
-
-  useEffect(() => {
-    if (!balances) return;
-
-    setSortedBalances(sortBalances(balances));
-
-    // get each asset's icon
-    const fetchAssetIcons = async () => {
-      try {
-        const res = await getAssetIcons({ balances, networkDetails });
-        setAssetIcons(res);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAssetIcons();
-  }, [balances, networkDetails]);
 
   return (
     <>
@@ -129,10 +108,7 @@ export const Account = () => {
         <div className="AccountView__assets-wrapper">
           {isFunded ? (
             <>
-              <AccountAssets
-                sortedBalances={sortedBalances}
-                assetIcons={assetIcons}
-              />
+              <AccountAssets balances={balances} />
               <div>
                 <Button
                   fullWidth
