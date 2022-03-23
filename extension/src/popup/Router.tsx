@@ -29,6 +29,9 @@ import {
 } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
+import { AppError } from "popup/components/AppError";
+import { Loading } from "popup/components/Loading";
+
 import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
@@ -41,8 +44,6 @@ import { RecoverAccount } from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
-import { Loading } from "popup/views/Loading";
-import { AppError } from "popup/views/AppError";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";

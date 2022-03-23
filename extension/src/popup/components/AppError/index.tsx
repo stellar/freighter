@@ -1,18 +1,12 @@
 import React from "react";
-import styled from "styled-components";
 
-const El = styled.div`
-  display: flex;
-  height: 100vh;
-  justify-content: center;
-  align-items: center;
-`;
+import "./styles.scss";
 
 export const AppError = ({ children }: { children: React.ReactNode }) => (
-  <El>
+  <div className="AppError">
     <div>
       <h1>An error occurred</h1>
       <p>{children}</p>
     </div>
-  </El>
+  </div>
 );
