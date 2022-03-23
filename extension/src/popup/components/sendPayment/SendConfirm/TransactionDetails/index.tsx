@@ -43,12 +43,9 @@ export const TransactionDetails = ({
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
-    destination,
-    amount,
-    asset,
-    memo,
-    transactionFee,
-  } = submission.transactionData;
+    destinationBalances,
+    transactionData: { destination, amount, asset, memo, transactionFee },
+  } = submission;
 
   const transactionHash = submission.response?.hash;
   const publicKey = useSelector(publicKeySelector);
@@ -74,6 +71,26 @@ export const TransactionDetails = ({
     })();
   }, [horizonAsset.code, horizonAsset.issuer, networkDetails]);
 
+  const getOperation = () => {
+    // default to payment
+    let op = StellarSdk.Operation.payment({
+      destination,
+      asset: horizonAsset,
+      amount,
+    });
+    // create account if unfunded and sending xlm
+    if (
+      !destinationBalances.isFunded &&
+      asset === StellarSdk.Asset.native().toString()
+    ) {
+      op = StellarSdk.Operation.createAccount({
+        destination,
+        startingBalance: amount,
+      });
+    }
+    return op;
+  };
+
   // handles signing and submitting
   const handleSend = async () => {
     const server = new StellarSdk.Server(networkDetails.networkUrl);
@@ -86,13 +103,7 @@ export const TransactionDetails = ({
             fee: xlmToStroop(transactionFee).toString(),
             networkPassphrase: networkDetails.networkPassphrase,
           })
-            .addOperation(
-              StellarSdk.Operation.payment({
-                destination,
-                asset: horizonAsset,
-                amount,
-              }),
-            )
+            .addOperation(getOperation())
             .addMemo(StellarSdk.Memo.text(memo))
             .setTimeout(180)
             .build();

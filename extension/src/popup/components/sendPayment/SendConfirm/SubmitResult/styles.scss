@@ -64,4 +64,9 @@
       width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
     }
   }
+
+  &__error-block {
+    margin-top: 2rem;
+    font-size: 0.875rem;
+  }
 }
