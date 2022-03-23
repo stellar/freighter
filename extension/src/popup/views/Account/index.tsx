@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { CopyText, Icon, Button } from "@stellar/design-system";
 
 import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
-import { getAssetIcons, retryAssetIcon } from "@shared/api/internal";
+import { getAssetIcons } from "@shared/api/internal";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -44,7 +44,6 @@ export const Account = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
-  const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
   const allAccounts = useSelector(allAccountsSelector);
@@ -77,29 +76,6 @@ export const Account = () => {
     };
     fetchAssetIcons();
   }, [balances, networkDetails]);
-
-  const retryAssetIconFetch = async ({
-    key,
-    code,
-  }: {
-    key: string;
-    code: string;
-  }) => {
-    /* if we retried the toml and their link is still bad, just give up here */
-    if (hasIconFetchRetried) return;
-    try {
-      const res = await retryAssetIcon({
-        key,
-        code,
-        assetIcons,
-        networkDetails,
-      });
-      setAssetIcons(res);
-      setHasIconFetchRetried(true);
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   return (
     <>
@@ -150,13 +126,12 @@ export const Account = () => {
             </div>
           </div>
         </div>
-        <div>
+        <div className="AccountView__assets-wrapper">
           {isFunded ? (
             <>
               <AccountAssets
                 sortedBalances={sortedBalances}
                 assetIcons={assetIcons}
-                retryAssetIconFetch={retryAssetIconFetch}
               />
               <div>
                 <Button
