@@ -52,7 +52,7 @@
   &__button-rows {
     &__success {
       position: absolute;
-      top: calc(var(--popup--height) - 2 * var(--sds-btn-height) - 2.5rem);
+      top: calc(var(--popup--height) - 2 * var(--continue-btn-height) - 2.5rem);
       width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
       button:not(:first-child) {
         margin-top: 1rem;
@@ -60,7 +60,7 @@
     }
     &__fail {
       position: absolute;
-      top: calc(var(--popup--height) - 1 * var(--sds-btn-height) - 1.5rem);
+      top: calc(var(--popup--height) - 1 * var(--continue-btn-height) - 1.5rem);
       width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
     }
   }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
+import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
 import { useFormik } from "formik";
+import BigNumber from "bignumber.js";
 
 import { truncatedPublicKey } from "helpers/stellar";
 
@@ -31,6 +32,23 @@ import {
 } from "@stellar/design-system";
 
 import "../styles.scss";
+
+const baseReserve = new BigNumber(1);
+
+export const shouldAccountDoesntExistWarning = (
+  isFunded: boolean,
+  assetID: string,
+  amount: string,
+) => {
+  if (
+    !isFunded &&
+    (new BigNumber(amount).lt(baseReserve) ||
+      assetID !== Asset.native().toString())
+  ) {
+    return true;
+  }
+  return false;
+};
 
 export const AccountDoesntExistWarning = () => (
   <div className="SendTo__info-block">

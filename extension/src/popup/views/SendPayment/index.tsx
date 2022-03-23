@@ -10,7 +10,6 @@ import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 
-// TODO - enforce can't move to next route data not given
 export const SendPayment = () => (
   <Switch>
     <PrivateKeyRoute exact path={ROUTES.sendPayment}>

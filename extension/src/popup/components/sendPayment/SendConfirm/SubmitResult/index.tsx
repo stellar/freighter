@@ -13,8 +13,10 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import { AccountDoesntExistWarning } from "popup/components/sendPayment/SendTo";
-import { shouldAccountDoesntExistWarning } from "popup/components/sendPayment/SendAmount";
+import {
+  AccountDoesntExistWarning,
+  shouldAccountDoesntExistWarning,
+} from "popup/components/sendPayment/SendTo";
 
 import "./styles.scss";
 
@@ -62,32 +64,6 @@ export const SubmitFail = () => {
     destinationBalances,
     transactionData: { destination, amount, asset },
   } = useSelector(transactionSubmissionSelector);
-
-  // ALEC TODO - remove
-  // const hug = "HUG:GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
-  // // const amount = "100";
-  // const amount = "0.75";
-  // const destination =
-  //   "GB4SFZUZIWKAUAJW2JR7CMBHZ2KNKGF3FMGMO7IF5P3EYXFA6NHI352W";
-  // const asset = hug;
-  // // const asset = "native";
-
-  // const destinationBalances = {
-  //   balances: {
-  //     native: { token: { type: "native", code: "xlm" } },
-  //     [hug]: {
-  //       token: {
-  //         type: "credit_alphanum4",
-  //         code: "HUG",
-  //         issuer: {
-  //           key: "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II",
-  //         },
-  //       },
-  //     },
-  //   },
-  //   isFunded: true,
-  //   // isFunded: false,
-  // };
 
   const horizonAsset = getAssetFromCanonical(asset);
 

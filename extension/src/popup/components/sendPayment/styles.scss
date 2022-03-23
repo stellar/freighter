@@ -1,9 +1,26 @@
-// ALEC TODO - okay to put this here?
 :root {
   --bottom-btn-margin: 24px;
+
+  --continue-btn-height: 2.9rem;
 }
 
-// TODO - separate style sheet
+.btn-continue {
+  position: absolute;
+  top: calc(
+    var(--popup--height) - var(--continue-btn-height) - var(--bottom-btn-margin)
+  );
+  width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+  left: var(--popup--side-padding);
+}
+
+.header {
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--pal-text-primary);
+}
+
 .SendAmount {
   display: flex;
   flex-direction: column;
@@ -41,29 +58,12 @@
   &__input-select {
     position: absolute;
     top: calc(
-      var(--popup--height) - 2 * var(--sds-btn-height) -
+      var(--popup--height) - 2 * var(--continue-btn-height) -
         var(--bottom-btn-margin) - 1rem
     );
     width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
     left: var(--popup--side-padding);
   }
-}
-
-.btn-continue {
-  position: absolute;
-  top: calc(
-    var(--popup--height) - var(--sds-btn-height) - var(--bottom-btn-margin)
-  );
-  width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-  left: var(--popup--side-padding);
-}
-
-.header {
-  text-align: center;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  font-weight: var(--font-weight-medium);
-  color: var(--pal-text-primary);
 }
 
 .SendTo {

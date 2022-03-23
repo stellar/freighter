@@ -16,27 +16,12 @@ import {
   saveAmount,
   saveAsset,
 } from "popup/ducks/transactionSubmission";
-import { AccountDoesntExistWarning } from "popup/components/sendPayment/SendTo";
+import {
+  AccountDoesntExistWarning,
+  shouldAccountDoesntExistWarning,
+} from "popup/components/sendPayment/SendTo";
 
 import "../styles.scss";
-
-// ALEC TODO - move somewhere
-export const baseReserve = new BigNumber(1);
-
-export const shouldAccountDoesntExistWarning = (
-  isFunded: boolean,
-  assetID: string,
-  amount: string,
-) => {
-  if (
-    !isFunded &&
-    (new BigNumber(amount).lt(baseReserve) ||
-      assetID !== Asset.native().toString())
-  ) {
-    return true;
-  }
-  return false;
-};
 
 export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();

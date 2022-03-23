@@ -4,14 +4,4 @@
   max-width: var(--popup--width);
   overflow-y: scroll;
   padding: var(--popup-vertical-padding) var(--popup--side-padding);
-
-  // ALEC TODO - remove
-  &__deleteme {
-    height: var(--popup--height);
-    width: var(--popup--width);
-    position: absolute;
-    top: 0;
-    left: 0;
-    border: 1px solid red;
-  }
 }
