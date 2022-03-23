@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { CopyText, Icon, Button } from "@stellar/design-system";
+import { CopyText, Icon, Button, NavButton } from "@stellar/design-system";
 
 import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
 import { getAssetIcons } from "@shared/api/internal";
@@ -111,26 +110,23 @@ export const Account = () => {
             </CopyText>
           </div>
           <div className="AccountView__send-receive-display">
-            <div
-              className="AccountView__send-receive-button"
-              onClick={() => navigateTo(ROUTES.viewPublicKey)}
-            >
-              <span className="AccountView__qr-icon">
-                <Icon.QrCode />
-              </span>
-            </div>
-
             <div className="AccountView__send-receive-button">
-              <Link
-                to={{
-                  pathname: ROUTES.sendPayment,
-                  state: { accountBalances: JSON.stringify(accountBalances) },
-                }}
-              >
-                <span className="AccountView__send-icon">
-                  <Icon.Send />
-                </span>
-              </Link>
+              <NavButton
+                showBorder
+                title="qr-nav"
+                id="nav-btn-qr"
+                icon={<Icon.QrCode />}
+                onClick={() => navigateTo(ROUTES.viewPublicKey)}
+              />
+            </div>
+            <div className="AccountView__send-receive-button">
+              <NavButton
+                showBorder
+                title="send-nav"
+                id="nav-btn-send"
+                icon={<Icon.Send />}
+                onClick={() => navigateTo(ROUTES.sendPayment)}
+              />
             </div>
           </div>
         </div>

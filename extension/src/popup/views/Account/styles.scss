@@ -29,28 +29,19 @@
   }
 
   &__send-receive-button {
-    cursor: pointer;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 2.5rem;
-    border: solid 0.125rem var(--pal-border-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-  }
 
-  &__qr-icon svg {
-    width: 0.75rem;
-    height: 0.75rem;
-    &[data-color="fill"] {
-      fill: var(--pal-brand-primary-on);
+    button {
+      width: 2.5rem;
+      height: 2.5rem;
+
+      svg {
+        width: 1rem;
+        height: 1rem;
+      }
     }
-  }
-
-  &__send-icon svg {
-    width: 1rem;
-    height: 1rem;
-    stroke: var(--pal-brand-primary-on);
   }
 
   &__account-name {
