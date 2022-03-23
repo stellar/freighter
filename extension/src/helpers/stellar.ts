@@ -1,4 +1,6 @@
 import BigNumber from "bignumber.js";
+import StellarSdk from "stellar-sdk";
+
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
 const truncateString = (str: string) =>
@@ -34,6 +36,19 @@ export const getTransactionInfo = (search: string) => {
     isDomainListedAllowed,
     flaggedKeys,
   };
+};
+
+export const getAssetFromCanonical = (canonical: string) => {
+  if (canonical === "native") {
+    return StellarSdk.Asset.native();
+  }
+  if (canonical.includes(":")) {
+    return new StellarSdk.Asset(
+      canonical.split(":")[0],
+      canonical.split(":")[1],
+    );
+  }
+  throw new Error(`invalid asset canonical id: ${canonical}`);
 };
 
 export const stroopToXlm = (

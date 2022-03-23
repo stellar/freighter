@@ -1,4 +1,29 @@
-// TODO - separate style sheet
+:root {
+  --bottom-btn-margin: 24px;
+
+  --continue-btn-height: 2.9rem;
+}
+
+.SendPayment {
+  &__btn-continue {
+    position: absolute;
+    top: calc(
+      var(--popup--height) - var(--continue-btn-height) -
+        var(--bottom-btn-margin)
+    );
+    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+    left: var(--popup--side-padding);
+  }
+
+  &__header {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--pal-text-primary);
+  }
+}
+
 .SendAmount {
   display: flex;
   flex-direction: column;
@@ -13,7 +38,7 @@
   }
 
   &__form {
-    margin-top: 2rem;
+    margin-top: 3.75rem;
     width: 100%;
   }
 
@@ -35,23 +60,13 @@
 
   &__input-select {
     position: absolute;
-    top: calc(var(--popup--height) - 3 * var(--bottom-nav--height) + 1.2rem);
+    top: calc(
+      var(--popup--height) - 2 * var(--continue-btn-height) -
+        var(--bottom-btn-margin) - 1rem
+    );
     width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+    left: var(--popup--side-padding);
   }
-}
-
-.btn-continue {
-  position: absolute;
-  top: calc(var(--popup--height) - 2 * var(--bottom-nav--height));
-  width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-}
-
-.header {
-  text-align: center;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  font-weight: var(--font-weight-medium);
-  color: var(--pal-text-primary);
 }
 
 .SendTo {

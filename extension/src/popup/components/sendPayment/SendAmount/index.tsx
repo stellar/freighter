@@ -16,13 +16,14 @@ import {
   saveAmount,
   saveAsset,
 } from "popup/ducks/transactionSubmission";
-import { AccountDoesntExistWarning } from "../SendTo";
+import {
+  AccountDoesntExistWarning,
+  shouldAccountDoesntExistWarning,
+} from "popup/components/sendPayment/SendTo";
 
 import "../styles.scss";
 
-const baseReserve = new BigNumber(1);
-
-export const SendAmount = () => {
+export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
   const { accountBalances, destinationBalances, transactionData } = useSelector(
     transactionSubmissionSelector,
@@ -65,9 +66,11 @@ export const SendAmount = () => {
   const decideWarning = (val: string) => {
     // unfunded destination
     if (
-      !destinationBalances.isFunded &&
-      (new BigNumber(val).lt(baseReserve) ||
-        assetInfo.canonical !== Asset.native().toString())
+      shouldAccountDoesntExistWarning(
+        destinationBalances.isFunded || false,
+        asset,
+        val,
+      )
     ) {
       return <AccountDoesntExistWarning />;
     }
@@ -85,9 +88,9 @@ export const SendAmount = () => {
   return (
     <PopupWrapper>
       {/* TODO - add payment type icon */}
-      <BackButton />
+      <BackButton customBackAction={() => navigateTo(previous)} />
       <div className="SendAmount">
-        <div className="header">Send {assetInfo.code}</div>
+        <div className="SendPayment__header">Send {assetInfo.code}</div>
         <div className="SendAmount__asset-copy">
           <span>{assetInfo.balance.toString()}</span>{" "}
           <span>{assetInfo.code}</span> available
@@ -150,7 +153,7 @@ export const SendAmount = () => {
                     )}
                   </Field>
                 </FormRows>
-                <div className="btn-continue">
+                <div className="SendPayment__btn-continue">
                   <Button
                     fullWidth
                     variant={Button.variant.tertiary}

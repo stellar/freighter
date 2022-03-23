@@ -61,13 +61,13 @@ export const SendSettingsFee = () => {
 
   return (
     <PopupWrapper>
-      <div
-        className="TransactionFee__top__left"
-        onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
-      >
-        <Icon.X />
-      </div>
-      <div className="TransactionFee__top__right">
+      <div className="TransactionFee__top-btns">
+        <div
+          className="TransactionFee__top-btns__exit"
+          onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
+        >
+          <Icon.X />
+        </div>
         <DetailsTooltip
           // TODO - add copy
           details=""
@@ -76,7 +76,7 @@ export const SendSettingsFee = () => {
         </DetailsTooltip>
       </div>
       <div className="TransactionFee">
-        <div className="header">Transaction Fee</div>
+        <div className="SendPayment__header">Transaction Fee</div>
         <Formik
           initialValues={{ transactionFee }}
           onSubmit={(values) => {
@@ -110,7 +110,7 @@ export const SendSettingsFee = () => {
                   <span>{networkCongestion} congestion</span>
                 </div>
               </FormRows>
-              <div className="btn-continue">
+              <div className="SendPayment__btn-continue">
                 <Button
                   fullWidth
                   variant={Button.variant.tertiary}
