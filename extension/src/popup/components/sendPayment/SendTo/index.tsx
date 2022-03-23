@@ -39,16 +39,10 @@ export const shouldAccountDoesntExistWarning = (
   isFunded: boolean,
   assetID: string,
   amount: string,
-) => {
-  if (
-    !isFunded &&
-    (new BigNumber(amount).lt(baseReserve) ||
-      assetID !== Asset.native().toString())
-  ) {
-    return true;
-  }
-  return false;
-};
+) =>
+  !isFunded &&
+  (new BigNumber(amount).lt(baseReserve) ||
+    assetID !== Asset.native().toString());
 
 export const AccountDoesntExistWarning = () => (
   <div className="SendTo__info-block">
