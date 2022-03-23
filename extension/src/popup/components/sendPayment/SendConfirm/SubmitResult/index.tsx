@@ -81,13 +81,8 @@ export const SubmitFail = () => {
 
     // no trustline
     if (asset !== Asset.native().toString()) {
-      let found = false;
-      Object.keys(destinationBalances.balances || {}).forEach((key) => {
-        if (asset === key) {
-          found = true;
-        }
-      });
-      if (!found) {
+      const keys = Object.keys(destinationBalances.balances || {});
+      if (!keys.some((key) => key === asset)) {
         return (
           <InfoBlock variant={InfoBlock.variant.error}>
             <strong>NO TRUSTLINE TO SENT ASSET</strong>
