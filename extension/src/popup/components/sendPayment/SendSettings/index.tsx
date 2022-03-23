@@ -25,7 +25,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
     <PopupWrapper>
       <BackButton customBackAction={() => navigateTo(previous)} />
       <div className="SendSettings">
-        <div className="header">Send Settings</div>
+        <div className="SendPayment__header">Send Settings</div>
         <Formik
           initialValues={{ memo }}
           onSubmit={(values) => {
@@ -85,7 +85,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     </div>
                   )}
                 </Field>
-                <div className="btn-continue">
+                <div className="SendPayment__btn-continue">
                   <Button
                     fullWidth
                     type="submit"

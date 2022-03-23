@@ -90,7 +90,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
       {/* TODO - add payment type icon */}
       <BackButton customBackAction={() => navigateTo(previous)} />
       <div className="SendAmount">
-        <div className="header">Send {assetInfo.code}</div>
+        <div className="SendPayment__header">Send {assetInfo.code}</div>
         <div className="SendAmount__asset-copy">
           <span>{assetInfo.balance.toString()}</span>{" "}
           <span>{assetInfo.code}</span> available
@@ -153,7 +153,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                     )}
                   </Field>
                 </FormRows>
-                <div className="btn-continue">
+                <div className="SendPayment__btn-continue">
                   <Button
                     fullWidth
                     variant={Button.variant.tertiary}

@@ -151,7 +151,7 @@ export const TransactionDetails = ({
         </div>
       )}
       <BackButton customBackAction={goBack} />
-      <div className="header">
+      <div className="SendPayment__header">
         {isSendComplete ? (
           <span>Sent {horizonAsset.code}</span>
         ) : (

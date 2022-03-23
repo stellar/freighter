@@ -4,21 +4,24 @@
   --continue-btn-height: 2.9rem;
 }
 
-.btn-continue {
-  position: absolute;
-  top: calc(
-    var(--popup--height) - var(--continue-btn-height) - var(--bottom-btn-margin)
-  );
-  width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-  left: var(--popup--side-padding);
-}
+.SendPayment {
+  &__btn-continue {
+    position: absolute;
+    top: calc(
+      var(--popup--height) - var(--continue-btn-height) -
+        var(--bottom-btn-margin)
+    );
+    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+    left: var(--popup--side-padding);
+  }
 
-.header {
-  text-align: center;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  font-weight: var(--font-weight-medium);
-  color: var(--pal-text-primary);
+  &__header {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--pal-text-primary);
+  }
 }
 
 .SendAmount {

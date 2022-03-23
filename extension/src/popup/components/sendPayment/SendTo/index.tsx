@@ -179,7 +179,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   return (
     <PopupWrapper>
       <BackButton customBackAction={() => navigateTo(previous)} />
-      <div className="header">Send To</div>
+      <div className="SendPayment__header">Send To</div>
       <form className="SendTo__form">
         <FormRows>
           <Input
@@ -238,7 +238,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                         <div className="SendTo__subsection-copy">{muxedID}</div>
                       </>
                     )}
-                    <div className="btn-continue">
+                    <div className="SendPayment__btn-continue">
                       <Button
                         fullWidth
                         variant={Button.variant.tertiary}
