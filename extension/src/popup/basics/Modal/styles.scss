@@ -2,6 +2,10 @@
   padding: 1.5rem 1.875rem;
   box-sizing: border-box;
 
+  &--disable-scroll-x {
+    overflow-x: hidden;
+  }
+
   &--header {
     margin: 0 2rem 1.5rem;
     text-align: center;
