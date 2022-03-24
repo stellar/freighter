@@ -22,7 +22,9 @@ import "./styles.scss";
 
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const dispatch = useDispatch();
-  const { destination, amount, asset } = useSelector(transactionDataSelector);
+  const { destination, federationAddress, amount, asset } = useSelector(
+    transactionDataSelector,
+  );
 
   const horizonAsset = getAssetFromCanonical(asset);
 
@@ -35,10 +37,16 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       <div className="SubmitResult__icon">
         <Icon.ArrowDownCircle />
       </div>
-      <div className="SubmitResult__identicon">
-        <IdenticonImg publicKey={destination} />
-        <span>{truncatedPublicKey(destination)}</span>
-      </div>
+      {federationAddress ? (
+        <div>
+          <span>{federationAddress}</span>
+        </div>
+      ) : (
+        <div className="SubmitResult__identicon">
+          <IdenticonImg publicKey={destination} />
+          <span>{truncatedPublicKey(destination)}</span>
+        </div>
+      )}
       <div className="SubmitResult__button-rows__success">
         <Button fullWidth onClick={() => viewDetails()}>
           Transaction Details
@@ -62,7 +70,7 @@ export const SubmitFail = () => {
   const dispatch = useDispatch();
   const {
     destinationBalances,
-    transactionData: { destination, amount, asset },
+    transactionData: { destination, federationAddress, amount, asset },
   } = useSelector(transactionSubmissionSelector);
 
   const horizonAsset = getAssetFromCanonical(asset);
@@ -113,10 +121,16 @@ export const SubmitFail = () => {
       <div className="SubmitResult__icon">
         <Icon.XCircle />
       </div>
-      <div className="SubmitResult__identicon">
-        <IdenticonImg publicKey={destination} />
-        <span>{truncatedPublicKey(destination)}</span>
-      </div>
+      {federationAddress ? (
+        <div>
+          <span>{federationAddress}</span>
+        </div>
+      ) : (
+        <div className="SubmitResult__identicon">
+          <IdenticonImg publicKey={destination} />
+          <span>{truncatedPublicKey(destination)}</span>
+        </div>
+      )}
       <div className="SubmitResult__error-block">{decideError()}</div>
       <div className="SubmitResult__button-rows__fail">
         <Button

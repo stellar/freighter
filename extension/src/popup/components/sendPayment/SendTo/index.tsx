@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
+import { Asset, StrKey, FederationServer, MuxedAccount } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
 
@@ -17,6 +17,7 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { BackButton } from "popup/basics/BackButton";
 import {
   saveDestination,
+  saveFederationAddress,
   transactionDataSelector,
   loadRecentAddresses,
   transactionSubmissionSelector,
@@ -78,11 +79,14 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
   const [recentAddresses, setRecentAddresses] = useState<Array<string>>([]);
   const [validatedPubKey, setValidatedPubKey] = useState("");
-  const [muxedID, setMuxedID] = useState("");
+  const [fedAddress, setFedAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleContinue = (values: { destination: string }) => {
     dispatch(saveDestination(validatedPubKey));
+    if (fedAddress) {
+      dispatch(saveFederationAddress(fedAddress));
+    }
     formik.resetForm({ values });
     navigateTo(ROUTES.sendPaymentAmount);
   };
@@ -116,6 +120,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     return false;
   };
 
+  // calls form validation and then saves destination
   const db = useCallback(
     debounce(async (inputDest) => {
       const errors = await formik.validateForm();
@@ -125,15 +130,14 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       }
       // muxed account
       if (inputDest.startsWith("M")) {
-        const mAccount = MuxedAccount.fromAddress(inputDest, "0");
-        setValidatedPubKey(mAccount.baseAccount().accountId());
-        setMuxedID(mAccount.id());
+        setValidatedPubKey(inputDest);
       }
       // federation address
       else if (isFederationAddress(inputDest)) {
         try {
           const fedResp = await FederationServer.resolve(inputDest);
           setValidatedPubKey(fedResp.account_id);
+          setFedAddress(inputDest);
         } catch (e) {
           formik.setErrors({ destination: "invalid federation address" });
         }
@@ -147,26 +151,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     [],
   );
 
-  useEffect(() => {
-    if (formik.values.destination !== "") {
-      setIsLoading(true);
-    }
-    // reset
-    setValidatedPubKey("");
-    setMuxedID("");
-    db(formik.values.destination);
-  }, [db, formik.values.destination]);
-
-  useEffect(() => {
-    if (!validatedPubKey) return;
-    dispatch(
-      getDestinationBalances({
-        publicKey: validatedPubKey,
-        networkDetails,
-      }),
-    );
-  }, [dispatch, validatedPubKey, networkDetails]);
-
+  // load recent addresses
   useEffect(() => {
     (async () => {
       const res = await dispatch(loadRecentAddresses());
@@ -175,6 +160,35 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       }
     })();
   }, [dispatch]);
+
+  // on input reset destination and trigger debounce
+  useEffect(() => {
+    if (formik.values.destination !== "") {
+      setIsLoading(true);
+    }
+    // reset
+    setValidatedPubKey("");
+    setFedAddress("");
+    db(formik.values.destination);
+  }, [db, formik.values.destination]);
+
+  // on valid input get destination balances
+  useEffect(() => {
+    if (!validatedPubKey) return;
+
+    // TODO - remove once wallet-sdk can handle muxed
+    let publicKey = validatedPubKey;
+    if (validatedPubKey.startsWith("M")) {
+      const mAccount = MuxedAccount.fromAddress(validatedPubKey, "0");
+      publicKey = mAccount.baseAccount().accountId();
+    }
+    dispatch(
+      getDestinationBalances({
+        publicKey,
+        networkDetails,
+      }),
+    );
+  }, [dispatch, validatedPubKey, networkDetails]);
 
   return (
     <PopupWrapper>
@@ -214,7 +228,11 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                         className="SendTo__subheading-identicon"
                       >
                         <IdenticonImg publicKey={pubKey} />
-                        <span>{truncatedPublicKey(pubKey)}</span>
+                        <span>
+                          {isFederationAddress(pubKey)
+                            ? pubKey
+                            : truncatedPublicKey(pubKey)}
+                        </span>
                       </button>
                     </li>
                   ))}
@@ -227,17 +245,22 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                     {!destinationBalances.isFunded && (
                       <AccountDoesntExistWarning />
                     )}
+                    {isFederationAddress(formik.values.destination) && (
+                      <>
+                        <div className="SendTo__subheading">
+                          FEDERATION ADDRESS
+                        </div>
+                        <div className="SendTo__subsection-copy">
+                          {formik.values.destination}
+                        </div>
+                      </>
+                    )}
                     <div className="SendTo__subheading">Address</div>
                     <div className="SendTo__subheading-identicon">
                       <IdenticonImg publicKey={validatedPubKey} />
                       <span>{truncatedPublicKey(validatedPubKey)}</span>
                     </div>
-                    {muxedID && (
-                      <>
-                        <div className="SendTo__subheading">ID</div>
-                        <div className="SendTo__subsection-copy">{muxedID}</div>
-                      </>
-                    )}
+
                     <div className="SendPayment__btn-continue">
                       <Button
                         fullWidth

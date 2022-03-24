@@ -19,7 +19,9 @@ import "../styles.scss";
 
 export const SendSettings = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
-  const { transactionFee, memo } = useSelector(transactionDataSelector);
+  const { destination, transactionFee, memo } = useSelector(
+    transactionDataSelector,
+  );
 
   return (
     <PopupWrapper>
@@ -60,31 +62,36 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     </div>
                   </div>
                 </div>
-                <div className="SendSettings__row">
-                  <div className="SendSettings__row__left">
-                    <span className="SendSettings__row__title">Memo</span>{" "}
-                    {/* TODO - add copy */}
-                    <DetailsTooltip details="">
-                      <span></span>
-                    </DetailsTooltip>
-                  </div>
-                  <div className="SendSettings__row__right">
-                    <span></span>
-                  </div>
-                </div>
-                <Field name="memo">
-                  {({ field }: FieldProps) => (
-                    <div className="SendSettings__input-textarea">
-                      <Textarea
-                        // className="TextArea Card Card--highlight"
-                        // autoComplete="off"
-                        id="mnemonic-input"
-                        placeholder="Memo (optional)"
-                        {...field}
-                      />
+                {!destination.startsWith("M") && (
+                  <>
+                    <div className="SendSettings__row">
+                      <div className="SendSettings__row__left">
+                        <span className="SendSettings__row__title">Memo</span>{" "}
+                        {/* TODO - add copy */}
+                        <DetailsTooltip details="">
+                          <span></span>
+                        </DetailsTooltip>
+                      </div>
+                      <div className="SendSettings__row__right">
+                        <span></span>
+                      </div>
                     </div>
-                  )}
-                </Field>
+                    <Field name="memo">
+                      {({ field }: FieldProps) => (
+                        <div className="SendSettings__input-textarea">
+                          <Textarea
+                            // className="TextArea Card Card--highlight"
+                            // autoComplete="off"
+                            id="mnemonic-input"
+                            placeholder="Memo (optional)"
+                            {...field}
+                          />
+                        </div>
+                      )}
+                    </Field>
+                  </>
+                )}
+
                 <div className="SendPayment__btn-continue">
                   <Button
                     fullWidth

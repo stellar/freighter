@@ -44,7 +44,14 @@ export const TransactionDetails = ({
   const submission = useSelector(transactionSubmissionSelector);
   const {
     destinationBalances,
-    transactionData: { destination, amount, asset, memo, transactionFee },
+    transactionData: {
+      destination,
+      federationAddress,
+      amount,
+      asset,
+      memo,
+      transactionFee,
+    },
   } = submission;
 
   const transactionHash = submission.response?.hash;
@@ -135,7 +142,9 @@ export const TransactionDetails = ({
         );
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          await dispatch(addRecentAddress({ publicKey: destination }));
+          await dispatch(
+            addRecentAddress({ publicKey: federationAddress || destination }),
+          );
         }
       }
     } catch (e) {
@@ -166,16 +175,24 @@ export const TransactionDetails = ({
       <div className="TransactionDetails__row">
         <div>Sending to </div>
         <div className="TransactionDetails__row__right">
-          <div className="TransactionDetails__identicon">
-            <IdenticonImg publicKey={destination} />
-            <span>{truncatedPublicKey(destination)}</span>
-          </div>
+          {federationAddress ? (
+            <div>
+              <span>{federationAddress}</span>
+            </div>
+          ) : (
+            <div className="TransactionDetails__identicon">
+              <IdenticonImg publicKey={destination} />
+              <span>{truncatedPublicKey(destination)}</span>
+            </div>
+          )}
         </div>
       </div>
-      <div className="TransactionDetails__row">
-        <div>Memo</div>
-        <div className="TransactionDetails__row__right">{memo || "None"}</div>
-      </div>
+      {!destination.startsWith("M") && (
+        <div className="TransactionDetails__row">
+          <div>Memo</div>
+          <div className="TransactionDetails__row__right">{memo || "None"}</div>
+        </div>
+      )}
       <div className="TransactionDetails__row">
         <div>Network Fee </div>
         <div className="TransactionDetails__row__right">
