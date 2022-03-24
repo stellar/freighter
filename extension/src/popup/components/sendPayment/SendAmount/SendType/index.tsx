@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
-import { Button, Icon } from "@stellar/design-system";
+import { Button, DetailsTooltip, Icon } from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -19,17 +19,31 @@ import "./styles.scss";
 interface RadioCheckProps {
   name: string;
   title: string;
-  value: boolean;
+  value: string;
 }
 
+// ALEC TODO - figure out tooltop styling
 const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
-  <label className="">
-    {title}
-    <Field className="" name={name} type="radio" value={value} />
-    <div className="">
-      <Icon.Check />
-    </div>
-  </label>
+  <>
+    <label className="SendType--label SendType--radio-label">
+      {title}
+      <Field
+        className="SendType--radio-field"
+        name={name}
+        type="radio"
+        value={value}
+      />
+      <div className="SendType--radio-check">
+        <Icon.Check />
+      </div>
+    </label>
+    <DetailsTooltip
+      // TODO - add copy
+      details=""
+    >
+      <span></span>
+    </DetailsTooltip>
+  </>
 );
 
 export const SendType = () => {
@@ -47,34 +61,37 @@ export const SendType = () => {
 
       {/* ALEC TODO - need enableReinitialize ? */}
       <Formik
-        initialValues={{ isPathPayment }}
+        initialValues={{ isPathPayment: String(isPathPayment) }}
         onSubmit={(values) => {
-          dispatch(saveIsPathPayment(values.isPathPayment));
-          navigateTo(ROUTES.sendPaymentAmount);
+          dispatch(saveIsPathPayment(values.isPathPayment === "true"));
         }}
         enableReinitialize
       >
         <Form>
           <AutoSaveFields />
           <RadioCheck
-            name="paymentTypeSelected"
+            name="isPathPayment"
             // ALEC TODO - need to add icon and subtitle
             title="Same source and destination asset"
             // ALEC TODO - constant
-            value={false}
+            value="false"
           />
           <RadioCheck
-            name="paymentTypeSelected"
+            name="isPathPayment"
             // ALEC TODO - need to add icon and subtitle
             title="Different source and destination assets"
             // ALEC TODO - constant
-            value={true}
+            value="true"
           />
         </Form>
       </Formik>
-
       <div className="SendPayment__btn-continue">
-        <Button fullWidth variant={Button.variant.tertiary} type="submit">
+        <Button
+          fullWidth
+          variant={Button.variant.tertiary}
+          type="submit"
+          onClick={() => navigateTo(ROUTES.sendPaymentAmount)}
+        >
           Done
         </Button>
       </div>

@@ -6,4 +6,29 @@
     z-index: var(--back--button-z-index);
     cursor: pointer;
   }
+
+  &--label {
+    cursor: pointer;
+    text-transform: none;
+  }
+
+  &--radio {
+    &-field {
+      visibility: hidden;
+
+      &:checked ~ .SendType--radio-check {
+        visibility: visible;
+      }
+    }
+
+    &-label {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &-check {
+      visibility: hidden;
+    }
+  }
 }
