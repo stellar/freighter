@@ -2,7 +2,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
 
-import { getAssetFromCanonical, truncatedPublicKey } from "helpers/stellar";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 import { Button, Icon, InfoBlock, TextLink } from "@stellar/design-system";
 import { navigateTo } from "popup/helpers/navigate";
@@ -12,17 +12,19 @@ import {
   transactionDataSelector,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
+import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 
 import "./styles.scss";
 
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const dispatch = useDispatch();
-  const { destination, amount, asset } = useSelector(transactionDataSelector);
+  const { destination, federationAddress, amount, asset } = useSelector(
+    transactionDataSelector,
+  );
 
   const horizonAsset = getAssetFromCanonical(asset);
 
@@ -36,8 +38,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         <Icon.ArrowDownCircle />
       </div>
       <div className="SubmitResult__identicon">
-        <IdenticonImg publicKey={destination} />
-        <span>{truncatedPublicKey(destination)}</span>
+        <FedOrGAddress fedAddress={federationAddress} gAddress={destination} />
       </div>
       <div className="SubmitResult__button-rows__success">
         <Button fullWidth onClick={() => viewDetails()}>
@@ -62,7 +63,7 @@ export const SubmitFail = () => {
   const dispatch = useDispatch();
   const {
     destinationBalances,
-    transactionData: { destination, amount, asset },
+    transactionData: { destination, federationAddress, amount, asset },
   } = useSelector(transactionSubmissionSelector);
 
   const horizonAsset = getAssetFromCanonical(asset);
@@ -114,8 +115,7 @@ export const SubmitFail = () => {
         <Icon.XCircle />
       </div>
       <div className="SubmitResult__identicon">
-        <IdenticonImg publicKey={destination} />
-        <span>{truncatedPublicKey(destination)}</span>
+        <FedOrGAddress fedAddress={federationAddress} gAddress={destination} />
       </div>
       <div className="SubmitResult__error-block">{decideError()}</div>
       <div className="SubmitResult__button-rows__fail">

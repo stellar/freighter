@@ -110,6 +110,7 @@ interface TransactionData {
   amount: string;
   asset: string;
   destination: string;
+  federationAddress: string;
   transactionFee: string;
   memo: string;
   isPathPayment: boolean;
@@ -134,6 +135,7 @@ const initialState: InitialState = {
     amount: "",
     asset: "native",
     destination: "",
+    federationAddress: "",
     transactionFee: "0.00001",
     memo: "",
     isPathPayment: false,
@@ -157,6 +159,9 @@ const transactionSubmissionSlice = createSlice({
     resetSubmission: () => initialState,
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
+    },
+    saveFederationAddress: (state, action) => {
+      state.transactionData.federationAddress = action.payload;
     },
     saveAmount: (state, action) => {
       state.transactionData.amount = action.payload;
@@ -205,6 +210,7 @@ const transactionSubmissionSlice = createSlice({
 export const {
   resetSubmission,
   saveDestination,
+  saveFederationAddress,
   saveAmount,
   saveAsset,
   saveTransactionFee,
