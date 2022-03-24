@@ -27,8 +27,23 @@
 .SendAmount {
   display: flex;
   flex-direction: column;
-
   align-items: center;
+
+  &__top-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &__slider {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      padding: 0;
+      width: var(--back--button-dimension);
+      z-index: var(--back--button-z-index);
+    }
+  }
 
   &__asset-copy {
     margin-top: 0.25rem;

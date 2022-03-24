@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { Asset } from "stellar-sdk";
 
-import { Button, Select, InfoBlock } from "@stellar/design-system";
+import { Button, Select, Icon, InfoBlock } from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -87,8 +87,15 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
 
   return (
     <PopupWrapper>
-      {/* TODO - add payment type icon */}
-      <BackButton customBackAction={() => navigateTo(previous)} />
+      <div className="SendAmount__top-btns">
+        <BackButton customBackAction={() => navigateTo(previous)} />
+        <button
+          onClick={() => navigateTo(ROUTES.sendPaymentType)}
+          className="SendAmount__top-btns__slider"
+        >
+          <Icon.Sliders />
+        </button>
+      </div>
       <div className="SendAmount">
         <div className="SendPayment__header">Send {assetInfo.code}</div>
         <div className="SendAmount__asset-copy">

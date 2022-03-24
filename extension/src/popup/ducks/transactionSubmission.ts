@@ -112,6 +112,9 @@ interface TransactionData {
   destination: string;
   transactionFee: string;
   memo: string;
+  isPathPayment: boolean;
+  destinationAsset: string;
+  conversionRate: string;
 }
 
 interface InitialState {
@@ -133,6 +136,9 @@ const initialState: InitialState = {
     destination: "",
     transactionFee: "0.00001",
     memo: "",
+    isPathPayment: false,
+    destinationAsset: "",
+    conversionRate: "",
   },
   accountBalances: {
     balances: null,
@@ -164,6 +170,9 @@ const transactionSubmissionSlice = createSlice({
     saveMemo: (state, action) => {
       state.transactionData.memo = action.payload;
     },
+    saveIsPathPayment: (state, action) => {
+      state.transactionData.isPathPayment = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -194,12 +203,13 @@ const transactionSubmissionSlice = createSlice({
 });
 
 export const {
+  resetSubmission,
   saveDestination,
   saveAmount,
   saveAsset,
   saveTransactionFee,
   saveMemo,
-  resetSubmission,
+  saveIsPathPayment,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
