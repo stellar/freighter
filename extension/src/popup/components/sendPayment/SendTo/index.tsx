@@ -73,7 +73,9 @@ const InvalidAddressWarning = () => (
 
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { destination } = useSelector(transactionDataSelector);
+  const { destination, federationAddress } = useSelector(
+    transactionDataSelector,
+  );
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { destinationBalances } = useSelector(transactionSubmissionSelector);
 
@@ -92,7 +94,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   };
 
   const formik = useFormik({
-    initialValues: { destination },
+    initialValues: { destination: federationAddress || destination },
     onSubmit: handleContinue,
     validateOnChange: false,
     validate: (values) => {
@@ -106,15 +108,13 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const isFederationAddress = (address: string) => address.includes("*");
 
   const isValidPublicKey = (publicKey: string) => {
-    if (publicKey.startsWith("M")) {
-      // TODO: remove when type is added to stellar-sdk
-      // @ts-ignore
-      if (StrKey.isValidMed25519PublicKey(publicKey)) {
-        return true;
-      }
-    } else if (isFederationAddress(publicKey)) {
+    if (StrKey.isValidMed25519PublicKey(publicKey)) {
       return true;
-    } else if (StrKey.isValidEd25519PublicKey(publicKey)) {
+    }
+    if (isFederationAddress(publicKey)) {
+      return true;
+    }
+    if (StrKey.isValidEd25519PublicKey(publicKey)) {
       return true;
     }
     return false;
