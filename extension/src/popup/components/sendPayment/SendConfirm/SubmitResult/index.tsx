@@ -2,7 +2,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
 
-import { getAssetFromCanonical, truncatedPublicKey } from "helpers/stellar";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 import { Button, Icon, InfoBlock, TextLink } from "@stellar/design-system";
 import { navigateTo } from "popup/helpers/navigate";
@@ -12,11 +12,11 @@ import {
   transactionDataSelector,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
+import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 
 import "./styles.scss";
 
@@ -37,16 +37,9 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       <div className="SubmitResult__icon">
         <Icon.ArrowDownCircle />
       </div>
-      {federationAddress ? (
-        <div>
-          <span>{federationAddress}</span>
-        </div>
-      ) : (
-        <div className="SubmitResult__identicon">
-          <IdenticonImg publicKey={destination} />
-          <span>{truncatedPublicKey(destination)}</span>
-        </div>
-      )}
+      <div className="SubmitResult__identicon">
+        <FedOrGAddress fedAddress={federationAddress} gAddress={destination} />
+      </div>
       <div className="SubmitResult__button-rows__success">
         <Button fullWidth onClick={() => viewDetails()}>
           Transaction Details
@@ -121,16 +114,9 @@ export const SubmitFail = () => {
       <div className="SubmitResult__icon">
         <Icon.XCircle />
       </div>
-      {federationAddress ? (
-        <div>
-          <span>{federationAddress}</span>
-        </div>
-      ) : (
-        <div className="SubmitResult__identicon">
-          <IdenticonImg publicKey={destination} />
-          <span>{truncatedPublicKey(destination)}</span>
-        </div>
-      )}
+      <div className="SubmitResult__identicon">
+        <FedOrGAddress fedAddress={federationAddress} gAddress={destination} />
+      </div>
       <div className="SubmitResult__error-block">{decideError()}</div>
       <div className="SubmitResult__button-rows__fail">
         <Button

@@ -6,11 +6,7 @@ import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 import { Button, Card, Loader } from "@stellar/design-system";
 
-import {
-  getAssetFromCanonical,
-  truncatedPublicKey,
-  xlmToStroop,
-} from "helpers/stellar";
+import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -28,8 +24,8 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { BackButton } from "popup/basics/BackButton";
+import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { AccountAssets } from "popup/components/account/AccountAssets";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import "./styles.scss";
 
@@ -175,16 +171,12 @@ export const TransactionDetails = ({
       <div className="TransactionDetails__row">
         <div>Sending to </div>
         <div className="TransactionDetails__row__right">
-          {federationAddress ? (
-            <div>
-              <span>{federationAddress}</span>
-            </div>
-          ) : (
-            <div className="TransactionDetails__identicon">
-              <IdenticonImg publicKey={destination} />
-              <span>{truncatedPublicKey(destination)}</span>
-            </div>
-          )}
+          <div className="TransactionDetails__identicon">
+            <FedOrGAddress
+              fedAddress={federationAddress}
+              gAddress={destination}
+            />
+          </div>
         </div>
       </div>
       {!destination.startsWith("M") && (
