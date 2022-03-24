@@ -80,8 +80,6 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                       {({ field }: FieldProps) => (
                         <div className="SendSettings__input-textarea">
                           <Textarea
-                            // className="TextArea Card Card--highlight"
-                            // autoComplete="off"
                             id="mnemonic-input"
                             placeholder="Memo (optional)"
                             {...field}

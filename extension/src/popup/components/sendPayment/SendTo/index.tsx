@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { Asset, StrKey, FederationServer, MuxedAccount } from "stellar-sdk";
+import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
 
