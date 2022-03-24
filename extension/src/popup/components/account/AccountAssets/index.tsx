@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 
 import { BigNumber } from "bignumber.js";
 
-import { AssetIcons, Balances } from "@shared/api/types";
-import { getAssetIcons, retryAssetIcon } from "@shared/api/internal";
+import { AssetIcons } from "@shared/api/types";
+import { retryAssetIcon } from "@shared/api/internal";
 
-import { sortBalances } from "popup/helpers/account";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -36,28 +35,16 @@ export const AssetIcon = ({
     <div className="AccountAssets__asset-bullet" />
   );
 
-export const AccountAssets = ({ balances }: { balances: Balances }) => {
-  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
-  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
+export const AccountAssets = ({
+  assetIcons: inputAssetIcons,
+  sortedBalances,
+}: {
+  assetIcons: AssetIcons;
+  sortedBalances: Array<any>;
+}) => {
+  const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
-
-  useEffect(() => {
-    if (!balances) return;
-
-    setSortedBalances(sortBalances(balances));
-
-    // get each asset's icon
-    const fetchAssetIcons = async () => {
-      try {
-        const res = await getAssetIcons({ balances, networkDetails });
-        setAssetIcons(res);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAssetIcons();
-  }, [balances, networkDetails]);
 
   const retryAssetIconFetch = async ({
     key,

@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CopyText, Icon, Button } from "@stellar/design-system";
 
-import { AccountBalancesInterface } from "@shared/api/types";
+import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
+import { getAssetIcons } from "@shared/api/internal";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -41,6 +42,8 @@ export const Account = () => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
+  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
+  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
 
   const allAccounts = useSelector(allAccountsSelector);
   const accountDropDownRef = useRef<HTMLDivElement>(null);
@@ -55,6 +58,32 @@ export const Account = () => {
       }),
     );
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+
+  useEffect(() => {
+    const collection = [] as Array<any>;
+    if (!balances) return;
+
+    // put XLM at the top of the balance list
+    Object.entries(balances).forEach(([k, v]) => {
+      if (k === "native") {
+        collection.unshift(v);
+      } else if (!k.includes(":lp")) {
+        collection.push(v);
+      }
+    });
+    setSortedBalances(collection);
+
+    // get each asset's icon
+    const fetchAssetIcons = async () => {
+      try {
+        const res = await getAssetIcons({ balances, networkDetails });
+        setAssetIcons(res);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchAssetIcons();
+  }, [balances, networkDetails]);
 
   return (
     <>
@@ -108,13 +137,13 @@ export const Account = () => {
         <div className="AccountView__assets-wrapper">
           {isFunded ? (
             <>
-              <AccountAssets balances={balances} />
+              <AccountAssets
+                sortedBalances={sortedBalances}
+                assetIcons={assetIcons}
+              />
               <div>
-                <Button
-                  fullWidth
-                  variant={Button.variant.tertiary}
-                  onClick={() => navigateTo(ROUTES.manageAssets)}
-                >
+                {/* TODO - handle click */}
+                <Button fullWidth variant={Button.variant.tertiary}>
                   Manage Assets
                 </Button>
               </div>
