@@ -15,17 +15,14 @@
     margin-top: 1.5rem;
   }
 
-  &__top {
-    &__left {
-      position: absolute;
-      top: var(--popup-vertical-padding);
-      left: var(--popup--side-padding);
+  &__top-btns {
+    display: flex;
+    justify-content: space-between;
+    height: var(--back--button-dimension);
+    z-index: var(--back--button-z-index);
+
+    &__exit {
       cursor: pointer;
-    }
-    &__right {
-      position: absolute;
-      top: var(--popup-vertical-padding);
-      right: var(--popup--side-padding);
     }
   }
 }

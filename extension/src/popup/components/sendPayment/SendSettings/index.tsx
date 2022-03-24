@@ -17,15 +17,15 @@ import { Formik, Form, Field, FieldProps } from "formik";
 
 import "../styles.scss";
 
-export const SendSettings = () => {
+export const SendSettings = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
   const { transactionFee, memo } = useSelector(transactionDataSelector);
 
   return (
     <PopupWrapper>
-      <BackButton />
+      <BackButton customBackAction={() => navigateTo(previous)} />
       <div className="SendSettings">
-        <div className="header">Send Settings</div>
+        <div className="SendPayment__header">Send Settings</div>
         <Formik
           initialValues={{ memo }}
           onSubmit={(values) => {
@@ -85,7 +85,7 @@ export const SendSettings = () => {
                     </div>
                   )}
                 </Field>
-                <div className="btn-continue">
+                <div className="SendPayment__btn-continue">
                   <Button
                     fullWidth
                     type="submit"
