@@ -6,11 +6,7 @@ import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 import { Button, Card, Loader } from "@stellar/design-system";
 
-import {
-  getAssetFromCanonical,
-  truncatedPublicKey,
-  xlmToStroop,
-} from "helpers/stellar";
+import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -28,8 +24,8 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { BackButton } from "popup/basics/BackButton";
+import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { AccountAssets } from "popup/components/account/AccountAssets";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import "./styles.scss";
 
@@ -44,7 +40,14 @@ export const TransactionDetails = ({
   const submission = useSelector(transactionSubmissionSelector);
   const {
     destinationBalances,
-    transactionData: { destination, amount, asset, memo, transactionFee },
+    transactionData: {
+      destination,
+      federationAddress,
+      amount,
+      asset,
+      memo,
+      transactionFee,
+    },
   } = submission;
 
   const transactionHash = submission.response?.hash;
@@ -135,7 +138,9 @@ export const TransactionDetails = ({
         );
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          await dispatch(addRecentAddress({ publicKey: destination }));
+          await dispatch(
+            addRecentAddress({ publicKey: federationAddress || destination }),
+          );
         }
       }
     } catch (e) {
@@ -167,15 +172,19 @@ export const TransactionDetails = ({
         <div>Sending to </div>
         <div className="TransactionDetails__row__right">
           <div className="TransactionDetails__identicon">
-            <IdenticonImg publicKey={destination} />
-            <span>{truncatedPublicKey(destination)}</span>
+            <FedOrGAddress
+              fedAddress={federationAddress}
+              gAddress={destination}
+            />
           </div>
         </div>
       </div>
-      <div className="TransactionDetails__row">
-        <div>Memo</div>
-        <div className="TransactionDetails__row__right">{memo || "None"}</div>
-      </div>
+      {!destination.startsWith("M") && (
+        <div className="TransactionDetails__row">
+          <div>Memo</div>
+          <div className="TransactionDetails__row__right">{memo || "None"}</div>
+        </div>
+      )}
       <div className="TransactionDetails__row">
         <div>Network Fee </div>
         <div className="TransactionDetails__row__right">
