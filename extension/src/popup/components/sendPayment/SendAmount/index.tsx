@@ -49,13 +49,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     canonical: Asset.native().toString(),
   });
 
-  // // ALEC TODO - better way of handling with assetInfo together?
-  // const [destinationAssetInfo, setDestinationAssetInfo] = useState({
-  //   code: Asset.native().code,
-  //   balance: "0",
-  //   canonical: Asset.native().toString(),
-  // });
-
   useEffect(() => {
     if (accountBalances.balances) {
       setAssetInfo({
@@ -91,21 +84,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     }
   };
 
-  // ALEC TODO - need?
-  // // ALEC TODO combine with other asset select handler
-  // const handleDestinationAssetSelect = (
-  //   e: React.ChangeEvent<HTMLSelectElement>,
-  // ) => {
-  //   const selected = e.target.value;
-  //   if (destinationBalances.balances) {
-  //     setDestinationAssetInfo({
-  //       code: destinationBalances.balances[selected].token.code,
-  //       balance: destinationBalances.balances[selected].total.toString(),
-  //       canonical: selected,
-  //     });
-  //   }
-  // };
-
   const decideWarning = (val: string) => {
     // unfunded destination
     if (
@@ -128,7 +106,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     return null;
   };
 
-  // ALEC TODO move
   // get conversion rate
   useEffect(() => {
     if (!destinationAsset) return;
@@ -257,8 +234,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                           </div>
                         )}
                       </Field>
-                      {/* ALEC TODO - remove */}
-                      {/* destination asset: {destinationAssetInfo.code} */}
                     </>
                   )}
                 </FormRows>
