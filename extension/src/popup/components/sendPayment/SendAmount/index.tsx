@@ -2,19 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { Field, Form, Formik, FieldProps } from "formik";
-import { Asset } from "stellar-sdk";
+import { Asset, Server } from "stellar-sdk";
 
 import { Button, Select, Icon, InfoBlock } from "@stellar/design-system";
 
+import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { FormRows } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { BackButton } from "popup/basics/BackButton";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   transactionSubmissionSelector,
   saveAmount,
   saveAsset,
+  saveDestinationAsset,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -25,16 +28,33 @@ import "../styles.scss";
 
 export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
   const { accountBalances, destinationBalances, transactionData } = useSelector(
     transactionSubmissionSelector,
   );
-  const { amount, asset } = transactionData;
+  // const { amount, asset, destinationAsset } = transactionData;
+
+  // ALEC TODO - remove
+  console.log({ transactionData });
+  const amount = "100";
+  const asset = "native";
+  // const destinationAsset = "native";
+  const destinationAsset =
+    "HUG:GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
 
   const [assetInfo, setAssetInfo] = useState({
     code: Asset.native().code,
     balance: "0",
     canonical: Asset.native().toString(),
   });
+
+  // // ALEC TODO - better way of handling with assetInfo together?
+  // const [destinationAssetInfo, setDestinationAssetInfo] = useState({
+  //   code: Asset.native().code,
+  //   balance: "0",
+  //   canonical: Asset.native().toString(),
+  // });
 
   useEffect(() => {
     if (accountBalances.balances) {
@@ -46,9 +66,17 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     }
   }, [asset, accountBalances]);
 
-  const handleContinue = (values: { amount: string }) => {
+  const handleContinue = (values: {
+    amount: string;
+    asset: string;
+    destinationAsset: string;
+  }) => {
     dispatch(saveAmount(String(values.amount)));
-    dispatch(saveAsset(assetInfo.canonical));
+    // ALEC TODO - changed from using assetInfo, make sure not broken
+    dispatch(saveAsset(values.asset));
+    if (values.destinationAsset) {
+      dispatch(saveDestinationAsset(values.destinationAsset));
+    }
     navigateTo(ROUTES.sendPaymentSettings);
   };
 
@@ -62,6 +90,21 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
       });
     }
   };
+
+  // ALEC TODO - need?
+  // // ALEC TODO combine with other asset select handler
+  // const handleDestinationAssetSelect = (
+  //   e: React.ChangeEvent<HTMLSelectElement>,
+  // ) => {
+  //   const selected = e.target.value;
+  //   if (destinationBalances.balances) {
+  //     setDestinationAssetInfo({
+  //       code: destinationBalances.balances[selected].token.code,
+  //       balance: destinationBalances.balances[selected].total.toString(),
+  //       canonical: selected,
+  //     });
+  //   }
+  // };
 
   const decideWarning = (val: string) => {
     // unfunded destination
@@ -85,6 +128,26 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     return null;
   };
 
+  // ALEC TODO move
+  // get conversion rate
+  useEffect(() => {
+    if (!destinationAsset) return;
+    (async () => {
+      const server = new Server(networkDetails.networkUrl);
+      const builder = server.strictSendPaths(
+        getAssetFromCanonical(asset),
+        amount,
+        [getAssetFromCanonical(destinationAsset)],
+      );
+      // ALEC TODO - remove
+      console.log({ builder });
+
+      const paths = await builder.call();
+      // ALEC TODO - remove
+      console.log({ paths });
+    })();
+  }, [networkDetails, asset, amount, destinationAsset]);
+
   return (
     <PopupWrapper>
       <div className="SendAmount__top-btns">
@@ -103,7 +166,10 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
           <span>{assetInfo.code}</span> available
         </div>
 
-        <Formik initialValues={{ amount, asset }} onSubmit={handleContinue}>
+        <Formik
+          initialValues={{ amount, asset, destinationAsset }}
+          onSubmit={handleContinue}
+        >
           {({ setFieldValue, values }) => (
             <>
               <div className="SendAmount__btn-set-max">
@@ -138,27 +204,63 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                   </Field>
                   <Field name="asset">
                     {({ field }: FieldProps) => (
-                      <div className="SendAmount__input-select">
-                        <Select
-                          id="asset-select"
-                          {...field}
-                          onChange={(e) => {
-                            handleAssetSelect(e);
-                            setFieldValue("asset", e.target.value);
-                          }}
-                        >
-                          {accountBalances.balances &&
-                            Object.entries(accountBalances.balances).map(
-                              ([k, v]) => (
-                                <option key={k} value={k}>
-                                  {v.token.code}
-                                </option>
-                              ),
-                            )}
-                        </Select>
-                      </div>
+                      <>
+                        {/* ALEC TODO - figure out styling */}
+                        {/* <div className="SendAmount__input-select"> */}
+                        <div>
+                          <Select
+                            id="asset-select"
+                            {...field}
+                            onChange={(e) => {
+                              handleAssetSelect(e);
+                              setFieldValue("asset", e.target.value);
+                            }}
+                          >
+                            {accountBalances.balances &&
+                              Object.entries(accountBalances.balances).map(
+                                ([k, v]) => (
+                                  <option key={k} value={k}>
+                                    {v.token.code}
+                                  </option>
+                                ),
+                              )}
+                          </Select>
+                        </div>
+                      </>
                     )}
                   </Field>
+                  {destinationAsset && (
+                    <>
+                      <Field name="destinationAsset">
+                        {({ field }: FieldProps) => (
+                          <div className="">
+                            <Select
+                              id="destAsset-select"
+                              {...field}
+                              onChange={(e) => {
+                                // handleDestinationAssetSelect(e);
+                                setFieldValue(
+                                  "destinationAsset",
+                                  e.target.value,
+                                );
+                              }}
+                            >
+                              {destinationBalances.balances &&
+                                Object.entries(
+                                  destinationBalances.balances,
+                                ).map(([k, v]) => (
+                                  <option key={k} value={k}>
+                                    {v.token.code}
+                                  </option>
+                                ))}
+                            </Select>
+                          </div>
+                        )}
+                      </Field>
+                      {/* ALEC TODO - remove */}
+                      {/* destination asset: {destinationAssetInfo.code} */}
+                    </>
+                  )}
                 </FormRows>
                 <div className="SendPayment__btn-continue">
                   <Button

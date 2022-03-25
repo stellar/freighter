@@ -8,7 +8,7 @@ import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { AutoSaveFields } from "popup/components/AutoSave";
 import {
-  saveIsPathPayment,
+  saveDestinationAsset,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 
@@ -48,7 +48,7 @@ const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
 
 export const SendType = () => {
   const dispatch = useDispatch();
-  const { isPathPayment } = useSelector(transactionDataSelector);
+  const { destinationAsset } = useSelector(transactionDataSelector);
   return (
     <PopupWrapper>
       <div
@@ -58,29 +58,26 @@ export const SendType = () => {
         <Icon.X />
       </div>
       <div className="SendPayment__header">SendType</div>
-
-      {/* ALEC TODO - need enableReinitialize ? */}
       <Formik
-        initialValues={{ isPathPayment: String(isPathPayment) }}
+        initialValues={{ isPathPayment: String(destinationAsset !== "") }}
         onSubmit={(values) => {
-          dispatch(saveIsPathPayment(values.isPathPayment === "true"));
+          dispatch(
+            saveDestinationAsset(
+              values.isPathPayment === "true" ? "native" : "",
+            ),
+          );
         }}
-        enableReinitialize
       >
         <Form>
           <AutoSaveFields />
           <RadioCheck
             name="isPathPayment"
-            // ALEC TODO - need to add icon and subtitle
             title="Same source and destination asset"
-            // ALEC TODO - constant
             value="false"
           />
           <RadioCheck
             name="isPathPayment"
-            // ALEC TODO - need to add icon and subtitle
             title="Different source and destination assets"
-            // ALEC TODO - constant
             value="true"
           />
         </Form>

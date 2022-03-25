@@ -113,7 +113,6 @@ interface TransactionData {
   federationAddress: string;
   transactionFee: string;
   memo: string;
-  isPathPayment: boolean;
   destinationAsset: string;
   conversionRate: string;
 }
@@ -138,7 +137,8 @@ const initialState: InitialState = {
     federationAddress: "",
     transactionFee: "0.00001",
     memo: "",
-    isPathPayment: false,
+    // ALEC TODO - remove
+    // isPathPayment: false,
     destinationAsset: "",
     conversionRate: "",
   },
@@ -175,8 +175,8 @@ const transactionSubmissionSlice = createSlice({
     saveMemo: (state, action) => {
       state.transactionData.memo = action.payload;
     },
-    saveIsPathPayment: (state, action) => {
-      state.transactionData.isPathPayment = action.payload;
+    saveDestinationAsset: (state, action) => {
+      state.transactionData.destinationAsset = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -215,7 +215,7 @@ export const {
   saveAsset,
   saveTransactionFee,
   saveMemo,
-  saveIsPathPayment,
+  saveDestinationAsset,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
