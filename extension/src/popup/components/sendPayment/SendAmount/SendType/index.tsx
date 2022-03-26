@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
-import { Button, DetailsTooltip, Icon } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -12,21 +12,23 @@ import {
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 
-// ALEC TODO - how are the SendPayment styles being uploaded?
 import "./styles.scss";
 
-// ALEC TODO - move to basic bc reused?
 interface RadioCheckProps {
   name: string;
   title: string;
+  subtext: string;
   value: string;
 }
 
-// ALEC TODO - figure out tooltop styling
-const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
+const RadioCheck = ({ name, title, subtext, value }: RadioCheckProps) => (
   <>
     <label className="SendType--label SendType--radio-label">
-      {title}
+      <div className="SendType__title">
+        {/* TODO - tooltip copy */}
+        {title}
+        {subtext && <span className="SendType__title__subtext">{subtext}</span>}
+      </div>
       <Field
         className="SendType--radio-field"
         name={name}
@@ -37,12 +39,6 @@ const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
         <Icon.Check />
       </div>
     </label>
-    <DetailsTooltip
-      // TODO - add copy
-      details=""
-    >
-      <span></span>
-    </DetailsTooltip>
   </>
 );
 
@@ -68,17 +64,19 @@ export const SendType = () => {
           );
         }}
       >
-        <Form>
+        <Form className="SendType__form">
           <AutoSaveFields />
           <RadioCheck
             name="isPathPayment"
             title="Same source and destination asset"
             value="false"
+            subtext="Most common"
           />
           <RadioCheck
             name="isPathPayment"
             title="Different source and destination assets"
             value="true"
+            subtext="Less common"
           />
         </Form>
       </Formik>

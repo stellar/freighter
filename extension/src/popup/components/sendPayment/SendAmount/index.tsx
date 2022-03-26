@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { Field, Form, Formik, FieldProps } from "formik";
-import { Asset, Server } from "stellar-sdk";
 
-import { Button, Select, Icon, InfoBlock } from "@stellar/design-system";
+import {
+  Button,
+  Select,
+  Icon,
+  InfoBlock,
+  Loader,
+} from "@stellar/design-system";
 
 import { getAssetFromCanonical } from "helpers/stellar";
+import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
-import { FormRows } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { BackButton } from "popup/basics/BackButton";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -18,6 +24,8 @@ import {
   saveAmount,
   saveAsset,
   saveDestinationAsset,
+  getConversionRate,
+  saveConversionRate,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -26,38 +34,75 @@ import {
 
 import "../styles.scss";
 
+const ConversionRate = ({
+  source,
+  dest,
+  rate,
+  loading,
+}: {
+  source: string;
+  dest: string;
+  rate: string;
+  loading: boolean;
+}) => (
+  <div className="SendAmount__row__rate">
+    {loading ? (
+      <Loader />
+    ) : (
+      <>
+        {rate ? (
+          <span>
+            1 {source} ≈ {rate} {dest}
+          </span>
+        ) : (
+          <span>no path found</span>
+        )}
+      </>
+    )}
+  </div>
+);
+
 export const SendAmount = ({ previous }: { previous: ROUTES }) => {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const { accountBalances, destinationBalances, transactionData } = useSelector(
     transactionSubmissionSelector,
   );
-  // const { amount, asset, destinationAsset } = transactionData;
-
-  // ALEC TODO - remove
-  console.log({ transactionData });
-  const amount = "100";
-  const asset = "native";
-  // const destinationAsset = "native";
-  const destinationAsset =
-    "HUG:GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
+  const { amount, asset, destinationAsset } = transactionData;
 
   const [assetInfo, setAssetInfo] = useState({
-    code: Asset.native().code,
-    balance: "0",
-    canonical: Asset.native().toString(),
+    code: accountBalances.balances
+      ? accountBalances.balances[asset].token.code
+      : "XLM",
+    balance: accountBalances.balances
+      ? accountBalances.balances[asset].total.toString()
+      : "0",
+    canonical: asset || "native",
   });
+  const [selectedDestAsset, setSelectedDestAsset] = useState(destinationAsset);
+  const [conversionRate, setConversionRate] = useState("");
+  const [loadingRate, setLoadingRate] = useState(false);
 
+  const db = useCallback(
+    debounce(async (sourceAsset, destAsset) => {
+      const resp = await dispatch(
+        getConversionRate({ sourceAsset, destAsset, networkDetails }),
+      );
+      if (getConversionRate.fulfilled.match(resp)) {
+        setConversionRate(resp.payload);
+      }
+      setLoadingRate(false);
+    }, 2000),
+    [],
+  );
+
+  // on asset select get conversion rate
   useEffect(() => {
-    if (accountBalances.balances) {
-      setAssetInfo({
-        code: accountBalances.balances[asset].token.code,
-        balance: accountBalances.balances[asset].total.toString(),
-        canonical: asset,
-      });
-    }
-  }, [asset, accountBalances]);
+    if (!destinationAsset) return;
+    setLoadingRate(true);
+    db(assetInfo.canonical, selectedDestAsset);
+  }, [db, networkDetails, assetInfo, selectedDestAsset, destinationAsset]);
 
   const handleContinue = (values: {
     amount: string;
@@ -65,10 +110,10 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     destinationAsset: string;
   }) => {
     dispatch(saveAmount(String(values.amount)));
-    // ALEC TODO - changed from using assetInfo, make sure not broken
     dispatch(saveAsset(values.asset));
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
+      dispatch(saveConversionRate(conversionRate));
     }
     navigateTo(ROUTES.sendPaymentSettings);
   };
@@ -105,25 +150,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     }
     return null;
   };
-
-  // get conversion rate
-  useEffect(() => {
-    if (!destinationAsset) return;
-    (async () => {
-      const server = new Server(networkDetails.networkUrl);
-      const builder = server.strictSendPaths(
-        getAssetFromCanonical(asset),
-        amount,
-        [getAssetFromCanonical(destinationAsset)],
-      );
-      // ALEC TODO - remove
-      console.log({ builder });
-
-      const paths = await builder.call();
-      // ALEC TODO - remove
-      console.log({ paths });
-    })();
-  }, [networkDetails, asset, amount, destinationAsset]);
 
   return (
     <PopupWrapper>
@@ -165,36 +191,75 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                 </Button>
               </div>
               <Form className="SendAmount__form">
-                <FormRows>
-                  <Field name="amount">
-                    {({ field }: FieldProps) => (
-                      <>
-                        <input
-                          className="SendAmount__input-amount"
-                          type="number"
-                          placeholder="0.00"
-                          {...field}
+                <Field name="amount">
+                  {({ field }: FieldProps) => (
+                    <>
+                      <input
+                        className="SendAmount__input-amount"
+                        type="number"
+                        placeholder="0.00"
+                        {...field}
+                      />
+                      {destinationAsset && (
+                        <ConversionRate
+                          loading={loadingRate}
+                          source={assetInfo.code}
+                          dest={getAssetFromCanonical(selectedDestAsset).code}
+                          rate={conversionRate}
                         />
+                      )}
+                      <div
+                        className={`SendAmount__amount-warning${
+                          destinationAsset ? "__path-payment" : ""
+                        }`}
+                      >
                         {decideWarning(field.value || "0")}
-                      </>
-                    )}
-                  </Field>
-                  <Field name="asset">
-                    {({ field }: FieldProps) => (
-                      <>
-                        {/* ALEC TODO - figure out styling */}
-                        {/* <div className="SendAmount__input-select"> */}
+                      </div>
+                    </>
+                  )}
+                </Field>
+
+                <Field name="asset">
+                  {({ field }: FieldProps) => (
+                    <div>
+                      <Select
+                        id="asset-select"
+                        {...field}
+                        onChange={(e) => {
+                          handleAssetSelect(e);
+                          setFieldValue("asset", e.target.value);
+                        }}
+                      >
+                        {accountBalances.balances &&
+                          Object.entries(accountBalances.balances).map(
+                            ([k, v]) => (
+                              <option key={k} value={k}>
+                                {v.token.code}
+                              </option>
+                            ),
+                          )}
+                      </Select>
+                    </div>
+                  )}
+                </Field>
+                {destinationAsset && (
+                  <>
+                    <div className="SendAmount__row__icon">
+                      <Icon.ArrowDownCircle />
+                    </div>
+                    <Field name="destinationAsset">
+                      {({ field }: FieldProps) => (
                         <div>
                           <Select
-                            id="asset-select"
+                            id="destAsset-select"
                             {...field}
                             onChange={(e) => {
-                              handleAssetSelect(e);
-                              setFieldValue("asset", e.target.value);
+                              setSelectedDestAsset(e.target.value);
+                              setFieldValue("destinationAsset", e.target.value);
                             }}
                           >
-                            {accountBalances.balances &&
-                              Object.entries(accountBalances.balances).map(
+                            {destinationBalances.balances &&
+                              Object.entries(destinationBalances.balances).map(
                                 ([k, v]) => (
                                   <option key={k} value={k}>
                                     {v.token.code}
@@ -203,40 +268,10 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                               )}
                           </Select>
                         </div>
-                      </>
-                    )}
-                  </Field>
-                  {destinationAsset && (
-                    <>
-                      <Field name="destinationAsset">
-                        {({ field }: FieldProps) => (
-                          <div className="">
-                            <Select
-                              id="destAsset-select"
-                              {...field}
-                              onChange={(e) => {
-                                // handleDestinationAssetSelect(e);
-                                setFieldValue(
-                                  "destinationAsset",
-                                  e.target.value,
-                                );
-                              }}
-                            >
-                              {destinationBalances.balances &&
-                                Object.entries(
-                                  destinationBalances.balances,
-                                ).map(([k, v]) => (
-                                  <option key={k} value={k}>
-                                    {v.token.code}
-                                  </option>
-                                ))}
-                            </Select>
-                          </div>
-                        )}
-                      </Field>
-                    </>
-                  )}
-                </FormRows>
+                      )}
+                    </Field>
+                  </>
+                )}
                 <div className="SendPayment__btn-continue">
                   <Button
                     fullWidth
