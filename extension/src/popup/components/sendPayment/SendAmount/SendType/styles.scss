@@ -1,0 +1,51 @@
+.SendType {
+  &__btn-exit {
+    display: flex;
+    justify-content: start;
+    height: var(--back--button-dimension);
+    z-index: var(--back--button-z-index);
+    cursor: pointer;
+  }
+
+  &__form {
+    margin-top: 1.5rem;
+  }
+
+  &--label {
+    cursor: pointer;
+    text-transform: none;
+  }
+
+  &__title {
+    display: flex;
+    flex-direction: column;
+    svg {
+      width: 1rem;
+    }
+
+    &__subtext {
+      color: var(--pal-text-tertiary);
+    }
+  }
+
+  &--radio {
+    &-field {
+      visibility: hidden;
+      width: 0;
+
+      &:checked ~ .SendType--radio-check {
+        visibility: visible;
+      }
+    }
+
+    &-label {
+      align-items: start;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &-check {
+      visibility: hidden;
+    }
+  }
+}
