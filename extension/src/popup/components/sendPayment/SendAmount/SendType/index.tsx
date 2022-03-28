@@ -14,6 +14,11 @@ import {
 
 import "./styles.scss";
 
+enum PAYMENT_TYPES {
+  REGULAR = "REGULAR",
+  PATH_PAYMENT = "PATH_PAYMENT",
+}
+
 interface RadioCheckProps {
   name: string;
   title: string;
@@ -55,11 +60,17 @@ export const SendType = () => {
       </div>
       <div className="SendPayment__header">SendType</div>
       <Formik
-        initialValues={{ isPathPayment: String(destinationAsset !== "") }}
+        initialValues={{
+          paymentType:
+            destinationAsset === ""
+              ? PAYMENT_TYPES.REGULAR
+              : PAYMENT_TYPES.PATH_PAYMENT,
+        }}
         onSubmit={(values) => {
+          // path payment flag is a non empty string in redux destinationAsset
           dispatch(
             saveDestinationAsset(
-              values.isPathPayment === "true" ? "native" : "",
+              values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
             ),
           );
         }}
@@ -67,15 +78,15 @@ export const SendType = () => {
         <Form className="SendType__form">
           <AutoSaveFields />
           <RadioCheck
-            name="isPathPayment"
+            name="paymentType"
             title="Same source and destination asset"
-            value="false"
+            value={PAYMENT_TYPES.REGULAR}
             subtext="Most common"
           />
           <RadioCheck
-            name="isPathPayment"
+            name="paymentType"
             title="Different source and destination assets"
-            value="true"
+            value={PAYMENT_TYPES.PATH_PAYMENT}
             subtext="Less common"
           />
         </Form>

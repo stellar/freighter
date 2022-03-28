@@ -274,6 +274,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                 )}
                 <div className="SendPayment__btn-continue">
                   <Button
+                    disabled={loadingRate}
                     fullWidth
                     variant={Button.variant.tertiary}
                     type="submit"
