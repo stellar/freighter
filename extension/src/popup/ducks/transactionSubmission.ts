@@ -1,4 +1,4 @@
-import { Horizon } from "stellar-sdk";
+import { Horizon, Server } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -18,6 +18,8 @@ import {
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/helpers/stellar";
+
+import { getAssetFromCanonical } from "helpers/stellar";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -117,6 +119,31 @@ export const getAssetIcons = createAsyncThunk<
   }) => getAssetIconsService({ balances, networkDetails }),
 );
 
+export const getConversionRate = createAsyncThunk<
+  string,
+  { sourceAsset: string; destAsset: string; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>(
+  "getConversionRate",
+  async ({ sourceAsset, destAsset, networkDetails }, thunkApi) => {
+    try {
+      const server = new Server(networkDetails.networkUrl);
+      const builder = server.strictSendPaths(
+        getAssetFromCanonical(sourceAsset),
+        "1",
+        [getAssetFromCanonical(destAsset)],
+      );
+
+      const paths = await builder.call();
+      if (paths.records.length === 0) return "";
+
+      return paths.records[0].destination_amount;
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e });
+    }
+  },
+);
+
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -128,8 +155,11 @@ interface TransactionData {
   amount: string;
   asset: string;
   destination: string;
+  federationAddress: string;
   transactionFee: string;
   memo: string;
+  destinationAsset: string;
+  conversionRate: string;
 }
 
 interface InitialState {
@@ -150,8 +180,11 @@ const initialState: InitialState = {
     amount: "",
     asset: "native",
     destination: "",
+    federationAddress: "",
     transactionFee: "0.00001",
     memo: "",
+    destinationAsset: "",
+    conversionRate: "",
   },
   accountBalances: {
     balances: null,
@@ -172,6 +205,9 @@ const transactionSubmissionSlice = createSlice({
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
+    saveFederationAddress: (state, action) => {
+      state.transactionData.federationAddress = action.payload;
+    },
     saveAmount: (state, action) => {
       state.transactionData.amount = action.payload;
     },
@@ -183,6 +219,12 @@ const transactionSubmissionSlice = createSlice({
     },
     saveMemo: (state, action) => {
       state.transactionData.memo = action.payload;
+    },
+    saveDestinationAsset: (state, action) => {
+      state.transactionData.destinationAsset = action.payload;
+    },
+    saveConversionRate: (state, action) => {
+      state.transactionData.conversionRate = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -222,12 +264,15 @@ const transactionSubmissionSlice = createSlice({
 });
 
 export const {
+  resetSubmission,
   saveDestination,
+  saveFederationAddress,
   saveAmount,
   saveAsset,
   saveTransactionFee,
   saveMemo,
-  resetSubmission,
+  saveDestinationAsset,
+  saveConversionRate,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

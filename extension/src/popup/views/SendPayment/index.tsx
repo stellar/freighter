@@ -6,6 +6,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import { SendTo } from "popup/components/sendPayment/SendTo";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
+import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
@@ -20,6 +21,9 @@ export const SendPayment = () => (
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentAmount}>
       <SendAmount previous={ROUTES.sendPaymentTo} />
+    </PrivateKeyRoute>
+    <PrivateKeyRoute exact path={ROUTES.sendPaymentType}>
+      <SendType />
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentSettings}>
       <SendSettings previous={ROUTES.sendPaymentAmount} />

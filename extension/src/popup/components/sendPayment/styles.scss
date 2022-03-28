@@ -27,8 +27,23 @@
 .SendAmount {
   display: flex;
   flex-direction: column;
-
   align-items: center;
+
+  &__top-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &__slider {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      padding: 0;
+      width: var(--back--button-dimension);
+      z-index: var(--back--button-z-index);
+    }
+  }
 
   &__asset-copy {
     margin-top: 0.25rem;
@@ -40,6 +55,18 @@
   &__form {
     margin-top: 3.75rem;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__amount-warning {
+    margin: 1rem 0;
+    min-height: 7rem;
+
+    &__path-payment {
+      margin: 1rem 0;
+      min-height: 1rem;
+    }
   }
 
   &__btn-set-max {
@@ -58,14 +85,19 @@
     text-align: center;
   }
 
-  &__input-select {
-    position: absolute;
-    top: calc(
-      var(--popup--height) - 2 * var(--continue-btn-height) -
-        var(--bottom-btn-margin) - 1rem
-    );
-    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-    left: var(--popup--side-padding);
+  &__row {
+    &__icon {
+      display: flex;
+      justify-content: center;
+      margin: 0.5rem 0;
+    }
+
+    &__rate {
+      display: flex;
+      justify-content: center;
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+    }
   }
 }
 
