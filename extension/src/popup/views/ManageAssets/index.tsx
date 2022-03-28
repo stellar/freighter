@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { Redirect, Route, Switch } from "react-router-dom";
 
@@ -13,6 +13,7 @@ import { ROUTES } from "popup/constants/routes";
 
 export const ManageAssets = () => {
   const { accountBalances } = useSelector(transactionSubmissionSelector);
+  const [errorAsset, setErrorAsset] = useState("");
 
   const { balances } = accountBalances;
 
@@ -30,13 +31,13 @@ export const ManageAssets = () => {
     <>
       <Switch>
         <PrivateKeyRoute exact path={ROUTES.manageAssets}>
-          <ChooseAsset balances={balances} />
+          <ChooseAsset balances={balances} setErrorAsset={setErrorAsset} />
         </PrivateKeyRoute>
         <PrivateKeyRoute exact path={ROUTES.addAsset}>
-          <AddAsset />
+          <AddAsset setErrorAsset={setErrorAsset} />
         </PrivateKeyRoute>
         <Route exact path={ROUTES.trustlineError}>
-          <TrustlineError />
+          <TrustlineError balances={balances} errorAsset={errorAsset} />
         </Route>
       </Switch>
     </>

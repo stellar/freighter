@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, Button, NavButton } from "@stellar/design-system";
+import { Link } from "react-router-dom";
 
 import { AccountBalancesInterface } from "@shared/api/types";
 
@@ -126,17 +127,10 @@ export const Account = () => {
         </div>
         <div className="AccountView__assets-wrapper">
           {isFunded ? (
-            <>
-              <AccountAssets
-                sortedBalances={sortedBalances}
-                assetIcons={assetIcons}
-              />
-              <Link to={ROUTES.manageAssets}>
-                <Button fullWidth variant={Button.variant.tertiary}>
-                  Manage Assets
-                </Button>
-              </Link>
-            </>
+            <AccountAssets
+              sortedBalances={sortedBalances}
+              assetIcons={assetIcons}
+            />
           ) : (
             <NotFundedMessage
               isTestnet={networkDetails.isTestnet}
@@ -145,6 +139,13 @@ export const Account = () => {
             />
           )}
         </div>
+        {isFunded ? (
+          <Link to={ROUTES.manageAssets}>
+            <Button fullWidth variant={Button.variant.tertiary}>
+              Manage Assets
+            </Button>
+          </Link>
+        ) : null}
       </div>
       <BottomNav />
     </>

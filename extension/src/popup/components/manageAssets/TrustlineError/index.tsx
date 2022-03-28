@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button, InfoBlock } from "@stellar/design-system";
 import { useHistory, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+import BigNumber from "bignumber.js";
 
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
 import { getResultCode, RESULT_CODES } from "popup/helpers/parseTransaction";
+
+import { Balances } from "@shared/api/types";
 
 import "./styles.scss";
 
@@ -27,7 +30,10 @@ const mapErrorToErrorState = (operations: string[]) => {
   return TRUSTLINE_ERROR_STATES.UNKOWN_ERROR;
 };
 
-const renderError = (errorState: TRUSTLINE_ERROR_STATES) => {
+const renderError = (
+  errorState: TRUSTLINE_ERROR_STATES,
+  assetBalance: string,
+) => {
   switch (errorState) {
     case TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS:
       return (
@@ -52,8 +58,9 @@ const renderError = (errorState: TRUSTLINE_ERROR_STATES) => {
             <p className="TrustlineError__title">This asset has a balance</p>
           </InfoBlock>
           <p className="TrustlineError__subtitle">
-            This asset has a balance of <strong>2500 XLM</strong>. You must have
-            a balance of <strong>0</strong> in order to remove an asset.
+            This asset has a balance of <strong>{assetBalance}</strong>. You
+            must have a balance of <strong>0</strong> in order to remove an
+            asset.
           </p>
         </>
       );
@@ -67,9 +74,27 @@ const renderError = (errorState: TRUSTLINE_ERROR_STATES) => {
   }
 };
 
-export const TrustlineError = () => {
+interface TrustlineErrorProps {
+  balances: Balances;
+  errorAsset: string;
+}
+
+export const TrustlineError = ({
+  balances,
+  errorAsset,
+}: TrustlineErrorProps) => {
   const history = useHistory();
   const { error } = useSelector(transactionSubmissionSelector);
+  const [assetBalance, setAssetBalance] = useState("");
+
+  useEffect(() => {
+    if (balances) {
+      const balance = balances[errorAsset];
+      setAssetBalance(
+        `${new BigNumber(balance.available).toString()} ${balance.token.code}`,
+      );
+    }
+  }, [balances, errorAsset]);
 
   const errorState: TRUSTLINE_ERROR_STATES = error
     ? mapErrorToErrorState(getResultCode(error))
@@ -77,7 +102,9 @@ export const TrustlineError = () => {
 
   return (
     <div className="TrustlineError">
-      <div className="TrustlineError__body">{renderError(errorState)}</div>
+      <div className="TrustlineError__body">
+        {renderError(errorState, assetBalance)}
+      </div>
       <div className="TrustlineError__button">
         <Button fullWidth onClick={() => history.goBack()}>
           Got it

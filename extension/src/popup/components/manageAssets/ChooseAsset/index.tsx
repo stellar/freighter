@@ -19,9 +19,10 @@ import "./styles.scss";
 
 interface ChooseAssetProps {
   balances: Balances;
+  setErrorAsset: (errorAsset: string) => void;
 }
 
-export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
+export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -31,6 +32,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
       const collection = [] as ManageAssetCurrency[];
       const sortedBalances = sortBalances(balances);
 
+      // TODO: cache home domain when getting asset icon
+      // https://github.com/stellar/freighter/issues/410
       for (let i = 0; i < sortedBalances.length; i += 1) {
         const {
           token: { code, issuer },
@@ -67,7 +70,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
       <SubviewHeader title="Choose Asset" />
       <div className="ChooseAsset__wrapper">
         <div className="ChooseAsset__assets">
-          <ManageAssetRows assetRows={assetRows} />
+          <ManageAssetRows
+            assetRows={assetRows}
+            setErrorAsset={setErrorAsset}
+          />
         </div>
         <div className="ChooseAsset__button">
           <Link to={ROUTES.addAsset}>

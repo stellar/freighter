@@ -27,11 +27,15 @@ import "./styles.scss";
 
 export type ManageAssetCurrency = CURRENCY & { domain: string };
 
+interface ManageAssetRowsProps {
+  assetRows: ManageAssetCurrency[];
+  setErrorAsset: (errorAsset: string) => void;
+}
+
 export const ManageAssetRows = ({
   assetRows,
-}: {
-  assetRows: ManageAssetCurrency[];
-}) => {
+  setErrorAsset,
+}: ManageAssetRowsProps) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
@@ -50,7 +54,9 @@ export const ManageAssetRows = ({
   ) => {
     const changeParams = addTrustline ? {} : { limit: "0" };
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    setSubmitting(`${assetCode}:${assetIssuer}`);
+    const codeIssuerStr = `${assetCode}:${assetIssuer}`;
+
+    setSubmitting(codeIssuerStr);
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: StellarSdk.BASE_FEE,
@@ -97,6 +103,7 @@ export const ManageAssetRows = ({
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
+        setErrorAsset(codeIssuerStr);
         navigateTo(ROUTES.trustlineError);
       }
     }
