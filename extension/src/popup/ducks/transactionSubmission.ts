@@ -1,4 +1,4 @@
-import { Horizon } from "stellar-sdk";
+import { Horizon, Server } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -8,10 +8,10 @@ import {
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
 } from "@shared/api/internal";
-
 import { AccountBalancesInterface, ErrorMessage } from "@shared/api/types";
-
 import { NetworkDetails } from "@shared/helpers/stellar";
+
+import { getAssetFromCanonical } from "helpers/stellar";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -99,6 +99,31 @@ export const getDestinationBalances = createAsyncThunk<
   }
 });
 
+export const getConversionRate = createAsyncThunk<
+  string,
+  { sourceAsset: string; destAsset: string; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>(
+  "getConversionRate",
+  async ({ sourceAsset, destAsset, networkDetails }, thunkApi) => {
+    try {
+      const server = new Server(networkDetails.networkUrl);
+      const builder = server.strictSendPaths(
+        getAssetFromCanonical(sourceAsset),
+        "1",
+        [getAssetFromCanonical(destAsset)],
+      );
+
+      const paths = await builder.call();
+      if (paths.records.length === 0) return "";
+
+      return paths.records[0].destination_amount;
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e });
+    }
+  },
+);
+
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -113,6 +138,8 @@ interface TransactionData {
   federationAddress: string;
   transactionFee: string;
   memo: string;
+  destinationAsset: string;
+  conversionRate: string;
 }
 
 interface InitialState {
@@ -135,6 +162,8 @@ const initialState: InitialState = {
     federationAddress: "",
     transactionFee: "0.00001",
     memo: "",
+    destinationAsset: "",
+    conversionRate: "",
   },
   accountBalances: {
     balances: null,
@@ -169,6 +198,12 @@ const transactionSubmissionSlice = createSlice({
     saveMemo: (state, action) => {
       state.transactionData.memo = action.payload;
     },
+    saveDestinationAsset: (state, action) => {
+      state.transactionData.destinationAsset = action.payload;
+    },
+    saveConversionRate: (state, action) => {
+      state.transactionData.conversionRate = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -199,13 +234,15 @@ const transactionSubmissionSlice = createSlice({
 });
 
 export const {
+  resetSubmission,
   saveDestination,
   saveFederationAddress,
   saveAmount,
   saveAsset,
   saveTransactionFee,
   saveMemo,
-  resetSubmission,
+  saveDestinationAsset,
+  saveConversionRate,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

@@ -26,6 +26,7 @@ export const METRIC_NAMES = {
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
   sendPaymentAmount: "loaded screen: send payment amount",
+  sendPaymentType: "loaded screen: send payment type",
   sendPaymentSettings: "loaded screen: send payment settings",
   sendPaymentSettingsFee: "loaded screen: send payment settings fee",
   sendPaymentConfirm: "loaded screen: send payment confirm",
