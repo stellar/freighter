@@ -1,5 +1,19 @@
 .ChooseAsset {
-  &__row {
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__wrapper {
     display: flex;
+    flex-direction: column;
+  }
+
+  &__assets {
+    flex-grow: 1;
+    height: 28.5rem;
+  }
+
+  &__button {
+    a {
+      color: var(--pal-text-primary);
+    }
   }
 }

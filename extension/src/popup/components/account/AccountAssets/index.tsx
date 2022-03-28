@@ -20,19 +20,21 @@ export const AssetIcon = ({
   assetIcons: AssetIcons;
   code: string;
   issuerKey: string;
-  retryAssetIconFetch: (arg: { key: string; code: string }) => void;
+  retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
 }) =>
   assetIcons[code] || code === "XLM" ? (
     <img
-      className="AccountAssets--asset-logo"
+      className="AccountAssets__asset--logo"
       alt={`${code} logo`}
       src={code === "XLM" ? StellarLogo : assetIcons[code] || ""}
       onError={() => {
-        retryAssetIconFetch({ key: issuerKey, code });
+        if (retryAssetIconFetch) {
+          retryAssetIconFetch({ key: issuerKey, code });
+        }
       }}
     />
   ) : (
-    <div className="AccountAssets__asset-bullet" />
+    <div className="AccountAssets__asset--bullet" />
   );
 
 export const AccountAssets = ({

@@ -1,27 +1,16 @@
 .AddAsset {
-  &__bottom {
-    margin: 11.125rem 1.5rem 0;
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
 
-    &__buttons {
-      margin-top: 1rem;
-    }
+  &__title {
+    font-size: var(--font-size-secondary);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5rem;
+    margin: 0.5rem 0 1rem 0;
+    text-transform: uppercase;
   }
 
-  &__currencies {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    &__icon {
-      width: 2rem;
-    }
-    &__bullet {
-      background: var(--pal-brand-primary);
-      height: 1.5rem;
-      width: 1.5rem;
-    }
-    &__code {
-      flex-grow: 1;
-    }
+  &__results {
+    flex-grow: 1;
+    height: 23.75rem;
   }
 }

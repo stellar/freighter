@@ -38,6 +38,7 @@ const routeToEventName = {
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
   [ROUTES.addAsset]: METRIC_NAMES.viewManageAssets,
+  [ROUTES.trustlineError]: METRIC_NAMES.viewTrustlineError,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

@@ -636,7 +636,7 @@ export const popupMessageListener = (request: Request) => {
     );
 
     return {
-      iconUrl: assetIconCache[assetCode],
+      iconUrl: assetIconCache[assetCode] || "",
     };
   };
 
