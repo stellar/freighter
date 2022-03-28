@@ -140,6 +140,7 @@ interface TransactionData {
   memo: string;
   destinationAsset: string;
   conversionRate: string;
+  allowedSlippage: string;
 }
 
 interface InitialState {
@@ -164,6 +165,7 @@ const initialState: InitialState = {
     memo: "",
     destinationAsset: "",
     conversionRate: "",
+    allowedSlippage: "1",
   },
   accountBalances: {
     balances: null,
@@ -204,6 +206,9 @@ const transactionSubmissionSlice = createSlice({
     saveConversionRate: (state, action) => {
       state.transactionData.conversionRate = action.payload;
     },
+    saveAllowedSlippage: (state, action) => {
+      state.transactionData.allowedSlippage = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -243,6 +248,7 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveConversionRate,
+  saveAllowedSlippage,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
@@ -253,3 +259,7 @@ export const transactionSubmissionSelector = (state: {
 export const transactionDataSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData;
+
+export const isPathPaymentSelector = (state: {
+  transactionSubmission: InitialState;
+}) => state.transactionSubmission.transactionData.destinationAsset !== "";

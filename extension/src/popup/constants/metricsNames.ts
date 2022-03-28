@@ -29,6 +29,7 @@ export const METRIC_NAMES = {
   sendPaymentType: "loaded screen: send payment type",
   sendPaymentSettings: "loaded screen: send payment settings",
   sendPaymentSettingsFee: "loaded screen: send payment settings fee",
+  sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
   sendPaymentConfirm: "loaded screen: send payment confirm",
 
   accountCreatorSuccess: "account creator: create password: success",

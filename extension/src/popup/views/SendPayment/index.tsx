@@ -9,6 +9,7 @@ import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
+import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 
 export const SendPayment = () => (
@@ -30,6 +31,9 @@ export const SendPayment = () => (
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
       <SendSettingsFee />
+    </PrivateKeyRoute>
+    <PrivateKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
+      <SendSettingsSlippage />
     </PrivateKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentConfirm}>
       <SendConfirm previous={ROUTES.sendPaymentSettings} />

@@ -36,6 +36,8 @@ const routeToEventName = {
   [ROUTES.sendPaymentType]: METRIC_NAMES.sendPaymentType,
   [ROUTES.sendPaymentSettings]: METRIC_NAMES.sendPaymentSettings,
   [ROUTES.sendPaymentSettingsFee]: METRIC_NAMES.sendPaymentSettingsFee,
+  [ROUTES.sendPaymentSettingsSlippage]:
+    METRIC_NAMES.sendPaymentSettingsSlippage,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
 };
 
