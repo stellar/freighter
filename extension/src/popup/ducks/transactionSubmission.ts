@@ -7,8 +7,16 @@ import {
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
+  getAssetIcons as getAssetIconsService,
 } from "@shared/api/internal";
-import { AccountBalancesInterface, ErrorMessage } from "@shared/api/types";
+
+import {
+  AccountBalancesInterface,
+  AssetIcons,
+  Balances,
+  ErrorMessage,
+} from "@shared/api/types";
+
 import { NetworkDetails } from "@shared/helpers/stellar";
 
 import { getAssetFromCanonical } from "helpers/stellar";
@@ -32,10 +40,7 @@ export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
   { signedXDR: string; networkUrl: string },
   {
-    rejectValue: {
-      errorMessage: string;
-      response: Horizon.TransactionResponse;
-    };
+    rejectValue: ErrorMessage;
   }
 >("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
   try {
@@ -99,6 +104,21 @@ export const getDestinationBalances = createAsyncThunk<
   }
 });
 
+export const getAssetIcons = createAsyncThunk<
+  AssetIcons,
+  { balances: Balances; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/getAssetIcons",
+  ({
+    balances,
+    networkDetails,
+  }: {
+    balances: Balances;
+    networkDetails: NetworkDetails;
+  }) => getAssetIconsService({ balances, networkDetails }),
+);
+
 export const getConversionRate = createAsyncThunk<
   string,
   { sourceAsset: string; destAsset: string; networkDetails: NetworkDetails },
@@ -150,6 +170,7 @@ interface InitialState {
   transactionData: TransactionData;
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
+  assetIcons: AssetIcons;
 }
 
 const initialState: InitialState = {
@@ -175,6 +196,7 @@ const initialState: InitialState = {
     balances: null,
     isFunded: false,
   },
+  assetIcons: {},
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -234,6 +256,14 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
+    });
+    builder.addCase(getAssetIcons.fulfilled, (state, action) => {
+      const assetIcons = action.payload || {};
+
+      return {
+        ...state,
+        assetIcons,
+      };
     });
   },
 });

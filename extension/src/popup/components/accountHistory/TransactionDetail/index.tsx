@@ -73,6 +73,7 @@ export const TransactionDetail = ({
 
       // TODO: Combine these 2 into 1 call. getIconUrlFromIssuer load's the issuer account from Horizon.
       // Find a way to get the icon and the home domain in one call even when icon is cached
+      // https://github.com/stellar/freighter/issues/410
       try {
         ({ home_domain: assetDomain } = await server.loadAccount(assetIssuer));
       } catch (e) {

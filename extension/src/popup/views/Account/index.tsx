@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, Button, NavButton } from "@stellar/design-system";
+import { Link } from "react-router-dom";
 
-import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
-import { getAssetIcons } from "@shared/api/internal";
+import { AccountBalancesInterface } from "@shared/api/types";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -13,9 +13,11 @@ import {
 } from "popup/ducks/accountServices";
 import {
   getAccountBalances,
+  getAssetIcons,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
+import { sortBalances } from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
@@ -34,17 +36,18 @@ export const defaultAccountBalances = {
 
 export const Account = () => {
   const dispatch = useDispatch();
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, assetIcons } = useSelector(
+    transactionSubmissionSelector,
+  );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
-  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
-
   const allAccounts = useSelector(allAccountsSelector);
+  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
+
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
   const { balances, isFunded } = accountBalances;
@@ -59,30 +62,12 @@ export const Account = () => {
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
-    const collection = [] as Array<any>;
     if (!balances) return;
 
-    // put XLM at the top of the balance list
-    Object.entries(balances).forEach(([k, v]) => {
-      if (k === "native") {
-        collection.unshift(v);
-      } else if (!k.includes(":lp")) {
-        collection.push(v);
-      }
-    });
-    setSortedBalances(collection);
+    setSortedBalances(sortBalances(balances));
 
-    // get each asset's icon
-    const fetchAssetIcons = async () => {
-      try {
-        const res = await getAssetIcons({ balances, networkDetails });
-        setAssetIcons(res);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAssetIcons();
-  }, [balances, networkDetails]);
+    dispatch(getAssetIcons({ balances, networkDetails }));
+  }, [balances, networkDetails, dispatch]);
 
   return (
     <>
@@ -132,18 +117,10 @@ export const Account = () => {
         </div>
         <div className="AccountView__assets-wrapper">
           {isFunded ? (
-            <>
-              <AccountAssets
-                sortedBalances={sortedBalances}
-                assetIcons={assetIcons}
-              />
-              <div>
-                {/* TODO - handle click */}
-                <Button fullWidth variant={Button.variant.tertiary}>
-                  Manage Assets
-                </Button>
-              </div>
-            </>
+            <AccountAssets
+              sortedBalances={sortedBalances}
+              assetIcons={assetIcons}
+            />
           ) : (
             <NotFundedMessage
               isTestnet={networkDetails.isTestnet}
@@ -152,6 +129,13 @@ export const Account = () => {
             />
           )}
         </div>
+        {isFunded ? (
+          <Link to={ROUTES.manageAssets}>
+            <Button fullWidth variant={Button.variant.tertiary}>
+              Manage Assets
+            </Button>
+          </Link>
+        ) : null}
       </div>
       <BottomNav />
     </>

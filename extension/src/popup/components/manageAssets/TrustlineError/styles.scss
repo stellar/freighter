@@ -1,0 +1,38 @@
+.TrustlineError {
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__body {
+    flex-grow: 1;
+  }
+
+  &__button {
+    margin-top: 1rem;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: var(--font-size-secondary);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.75rem;
+    text-transform: uppercase;
+  }
+
+  &__body {
+    p:not(.TrustlineError__title) {
+      font-size: var(--font-size-secondary);
+      line-height: 1.375rem;
+    }
+
+    a {
+      color: var(--pal-text-primary);
+      text-decoration: underline;
+    }
+  }
+
+  &__subtitle {
+    margin-top: 1.5rem;
+  }
+}

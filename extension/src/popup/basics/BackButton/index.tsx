@@ -16,7 +16,7 @@ export const BackButton = ({
   const history = useHistory();
 
   return (
-    <button
+    <div
       className={`BackButton ${hasBackCopy ? "BackButton--has-copy" : ""}`}
       onClick={() => {
         if (customBackAction) {
@@ -28,6 +28,6 @@ export const BackButton = ({
     >
       <Icon.ArrowLeft />
       {hasBackCopy ? <div className="BackButton__copy">Back</div> : null}
-    </button>
+    </div>
   );
 };

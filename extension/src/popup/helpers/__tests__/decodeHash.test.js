@@ -1,5 +1,5 @@
 import { MEMO_TYPES } from "popup/constants/memoTypes";
-import { decodeMemo } from "../decodeMemo";
+import { decodeMemo } from "../parseTransaction";
 
 describe("decodeMemo", () => {
   it("should return a memo id", () => {

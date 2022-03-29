@@ -81,6 +81,7 @@ export interface AccountHistoryInterface {
 
 export interface ErrorMessage {
   errorMessage: string;
+  response?: Horizon.ErrorResponseData.TransactionFailed;
 }
 
 declare global {
@@ -89,3 +90,5 @@ declare global {
     freighterApi: { [key: string]: any };
   }
 }
+
+export type CURRENCY = { code: string; issuer: string; image: string };
