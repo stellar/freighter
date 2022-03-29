@@ -88,8 +88,10 @@ export const TrustlineError = ({
   const [assetBalance, setAssetBalance] = useState("");
 
   useEffect(() => {
-    if (balances) {
-      const balance = balances[errorAsset];
+    if (!balances) return;
+    const balance = balances[errorAsset];
+
+    if (balance) {
       setAssetBalance(
         `${new BigNumber(balance.available).toString()} ${balance.token.code}`,
       );

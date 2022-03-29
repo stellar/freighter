@@ -103,6 +103,7 @@ export const ManageAssetRows = ({
             networkDetails,
           }),
         );
+        navigateTo(ROUTES.account);
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {

@@ -78,7 +78,7 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
         <div className="ChooseAsset__button">
           <Link to={ROUTES.addAsset}>
             <Button fullWidth variant={Button.variant.tertiary}>
-              Add another asst
+              Add another asset
             </Button>
           </Link>
         </div>
