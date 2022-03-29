@@ -19,6 +19,7 @@ import {
   transactionSubmissionSelector,
   addRecentAddress,
   resetSubmission,
+  isPathPaymentSelector,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -47,10 +48,13 @@ export const TransactionDetails = ({
       asset,
       memo,
       transactionFee,
+      destinationAsset,
+      conversionRate,
     },
   } = submission;
 
   const transactionHash = submission.response?.hash;
+  const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
@@ -59,6 +63,20 @@ export const TransactionDetails = ({
   const assetTotals = [
     {
       token: { issuer: horizonAsset.issuer, code: horizonAsset.code },
+      total: amount || "0",
+    },
+  ];
+
+  // ALEC TODO - change name?
+  const horizonDestinationAsset = getAssetFromCanonical(
+    destinationAsset || "native",
+  );
+  const destinationAssetTotals = [
+    {
+      token: {
+        issuer: horizonDestinationAsset.issuer,
+        code: horizonDestinationAsset.code,
+      },
       total: amount || "0",
     },
   ];
@@ -168,6 +186,14 @@ export const TransactionDetails = ({
           <AccountAssets assetIcons={assetIcons} sortedBalances={assetTotals} />
         </Card>
       </div>
+      <div className="TransactionDetails__card">
+        <Card>
+          <AccountAssets
+            assetIcons={assetIcons}
+            sortedBalances={destinationAssetTotals}
+          />
+        </Card>
+      </div>
       <div className="TransactionDetails__row">
         <div>Sending to </div>
         <div className="TransactionDetails__row__right">
@@ -183,6 +209,16 @@ export const TransactionDetails = ({
         <div className="TransactionDetails__row">
           <div>Memo</div>
           <div className="TransactionDetails__row__right">{memo || "None"}</div>
+        </div>
+      )}
+      {isPathPayment && (
+        <div className="TransactionDetails__row">
+          <div>Conversion rate </div>
+          <div className="TransactionDetails__row__right">
+            1 {getAssetFromCanonical(asset).code} /{" "}
+            {parseFloat(conversionRate).toFixed(2)}{" "}
+            {getAssetFromCanonical(destinationAsset).code}
+          </div>
         </div>
       )}
       <div className="TransactionDetails__row">
