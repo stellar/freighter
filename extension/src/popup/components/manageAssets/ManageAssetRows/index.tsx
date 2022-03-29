@@ -71,7 +71,7 @@ export const ManageAssetRows = ({
           ...changeParams,
         }),
       )
-      .setTimeout(0)
+      .setTimeout(180)
       .build()
       .toXDR();
 
