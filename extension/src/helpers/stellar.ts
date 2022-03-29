@@ -51,6 +51,16 @@ export const getAssetFromCanonical = (canonical: string) => {
   throw new Error(`invalid asset canonical id: ${canonical}`);
 };
 
+export const getCanonicalFromAsset = (
+  assetCode: string,
+  assetIssuer: string,
+) => {
+  if (assetCode === "XLM" && !assetIssuer) {
+    return "native";
+  }
+  return `${assetCode}:${assetIssuer}`;
+};
+
 export const stroopToXlm = (
   stroops: BigNumber | string | number,
 ): BigNumber => {

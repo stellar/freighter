@@ -7,7 +7,7 @@ import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
 import { getTransactionInfo } from "helpers/stellar";
-import { decodeMemo } from "popup/helpers/decodeMemo";
+import { decodeMemo } from "popup/helpers/parseTransaction";
 
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";

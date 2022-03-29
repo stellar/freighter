@@ -3,6 +3,8 @@ import { get } from "lodash";
 
 import { MEMO_TYPES } from "popup/constants/memoTypes";
 
+import { ErrorMessage } from "@shared/api/types";
+
 export const decodeMemo = (memo: {}) => {
   const memoType = get(memo, "_switch.name", "");
 
@@ -14,3 +16,13 @@ export const decodeMemo = (memo: {}) => {
     decodeMethod,
   );
 };
+
+/*  eslint-disable camelcase  */
+export enum RESULT_CODES {
+  op_invalid_limit = "op_invalid_limit",
+  op_low_reserve = "op_low_reserve",
+}
+/*  eslint-enable camelcase  */
+
+export const getResultCode = (error: ErrorMessage) =>
+  error?.response?.extras?.result_codes?.operations || [];
