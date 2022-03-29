@@ -32,6 +32,9 @@ interface ManageAssetRowsProps {
   setErrorAsset: (errorAsset: string) => void;
 }
 
+const getCodeIssuerStr = (assetCode: string, assetIssuer: string) =>
+  `${assetCode}:${assetIssuer}`;
+
 export const ManageAssetRows = ({
   assetRows,
   setErrorAsset,
@@ -42,7 +45,7 @@ export const ManageAssetRows = ({
     accountBalances: { balances = {} },
     status,
   } = useSelector(transactionSubmissionSelector);
-  const [assetSubmitting, setSubmitting] = useState("");
+  const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
 
   const server = new StellarSdk.Server(networkDetails.networkUrl);
@@ -54,9 +57,9 @@ export const ManageAssetRows = ({
   ) => {
     const changeParams = addTrustline ? {} : { limit: "0" };
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    const codeIssuerStr = `${assetCode}:${assetIssuer}`;
+    const codeIssuerStr = getCodeIssuerStr(assetCode, assetIssuer);
 
-    setSubmitting(codeIssuerStr);
+    setAssetSubmitting(codeIssuerStr);
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: StellarSdk.BASE_FEE,
@@ -93,7 +96,7 @@ export const ManageAssetRows = ({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        setSubmitting("");
+        setAssetSubmitting("");
         dispatch(
           getAccountBalances({
             publicKey,
@@ -103,7 +106,7 @@ export const ManageAssetRows = ({
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setErrorAsset(codeIssuerStr);
+        setErrorAsset(codeIssuerStr === "XLM:" ? "native" : codeIssuerStr);
         navigateTo(ROUTES.trustlineError);
       }
     }
@@ -113,7 +116,7 @@ export const ManageAssetRows = ({
     <div className="ManageAssetRows">
       {assetRows.map(({ code, domain, image, issuer }) => {
         if (!balances) return null;
-        const asset = `${code}:${issuer}`;
+        const asset = getCodeIssuerStr(code, issuer);
         const isSubmitting =
           status === ActionStatus.PENDING && assetSubmitting === asset;
         const isTrustlineActive = Object.keys(balances).some(
