@@ -13,7 +13,7 @@ import { Balances } from "@shared/api/types";
 import "./styles.scss";
 
 export enum TRUSTLINE_ERROR_STATES {
-  UNKOWN_ERROR = "UNKNOWN_ERROR",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
   NOT_ENOUGH_LUMENS = "NOT_ENOUGH_LUMENS",
   ASSET_HAS_BALANCE = "ASSET_HAS_BALANCE",
 }
@@ -27,7 +27,7 @@ const mapErrorToErrorState = (operations: string[]) => {
     return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
   }
 
-  return TRUSTLINE_ERROR_STATES.UNKOWN_ERROR;
+  return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 };
 
 const renderError = (
@@ -64,7 +64,7 @@ const renderError = (
           </p>
         </>
       );
-    case TRUSTLINE_ERROR_STATES.UNKOWN_ERROR:
+    case TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR:
     default:
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
@@ -100,7 +100,7 @@ export const TrustlineError = ({
 
   const errorState: TRUSTLINE_ERROR_STATES = error
     ? mapErrorToErrorState(getResultCode(error))
-    : TRUSTLINE_ERROR_STATES.UNKOWN_ERROR;
+    : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return (
     <div className="TrustlineError">

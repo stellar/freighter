@@ -17,6 +17,7 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
+import { sortBalances } from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
@@ -61,23 +62,12 @@ export const Account = () => {
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
-    const collection = [] as Array<any>;
     if (!balances) return;
 
-    // put XLM at the top of the balance list
-    Object.entries(balances).forEach(([k, v]) => {
-      if (k === "native") {
-        collection.unshift(v);
-      } else if (!k.includes(":lp")) {
-        collection.push(v);
-      }
-    });
-    setSortedBalances(collection);
+    setSortedBalances(sortBalances(balances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
   }, [balances, networkDetails, dispatch]);
-
-  console.log(assetIcons);
 
   return (
     <>

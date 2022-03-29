@@ -6,6 +6,7 @@ import { Loader } from "@stellar/design-system";
 import { AppDispatch } from "popup/App";
 
 import { navigateTo } from "popup/helpers/navigate";
+import { getCanonicalFromAsset } from "helpers/stellar";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -32,9 +33,6 @@ interface ManageAssetRowsProps {
   setErrorAsset: (errorAsset: string) => void;
 }
 
-const getCodeIssuerStr = (assetCode: string, assetIssuer: string) =>
-  `${assetCode}:${assetIssuer}`;
-
 export const ManageAssetRows = ({
   assetRows,
   setErrorAsset,
@@ -57,9 +55,9 @@ export const ManageAssetRows = ({
   ) => {
     const changeParams = addTrustline ? {} : { limit: "0" };
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    const codeIssuerStr = getCodeIssuerStr(assetCode, assetIssuer);
+    const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
 
-    setAssetSubmitting(codeIssuerStr);
+    setAssetSubmitting(canonicalAsset);
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: StellarSdk.BASE_FEE,
@@ -107,7 +105,7 @@ export const ManageAssetRows = ({
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setErrorAsset(codeIssuerStr === "XLM:" ? "native" : codeIssuerStr);
+        setErrorAsset(canonicalAsset);
         navigateTo(ROUTES.trustlineError);
       }
     }
@@ -117,12 +115,11 @@ export const ManageAssetRows = ({
     <div className="ManageAssetRows">
       {assetRows.map(({ code, domain, image, issuer }) => {
         if (!balances) return null;
-        const asset = getCodeIssuerStr(code, issuer);
+        const canonicalAsset = getCanonicalFromAsset(code, issuer);
         const isSubmitting =
-          status === ActionStatus.PENDING && assetSubmitting === asset;
+          status === ActionStatus.PENDING && assetSubmitting === canonicalAsset;
         const isTrustlineActive = Object.keys(balances).some(
-          (balance) =>
-            balance === asset || (code === "XLM" && balance === "native"),
+          (balance) => balance === canonicalAsset,
         );
 
         return (
