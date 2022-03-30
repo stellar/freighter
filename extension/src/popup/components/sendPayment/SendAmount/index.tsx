@@ -277,7 +277,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         </form>
         <div className="SendPayment__btn-continue">
           <Button
-            disabled={loadingRate}
+            disabled={loadingRate || !formik.values.amount}
             fullWidth
             variant={Button.variant.tertiary}
             onClick={formik.submitForm}
