@@ -3,8 +3,16 @@
   flex-direction: column;
   text-align: center;
 
-  &__card {
+  &__cards {
     margin: 1.5rem 0;
+    row-gap: 0.3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .Card {
+      padding: 1rem;
+    }
   }
 
   &__row {

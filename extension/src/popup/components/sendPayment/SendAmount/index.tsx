@@ -12,7 +12,7 @@ import {
   Loader,
 } from "@stellar/design-system";
 
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, getConversionRate } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -24,8 +24,7 @@ import {
   saveAmount,
   saveAsset,
   saveDestinationAsset,
-  getConversionRate,
-  saveConversionRate,
+  getBestPath,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -69,7 +68,12 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const { accountBalances, destinationBalances, transactionData } = useSelector(
     transactionSubmissionSelector,
   );
-  const { amount, asset, destinationAsset } = transactionData;
+  const {
+    amount,
+    asset,
+    destinationAmount,
+    destinationAsset,
+  } = transactionData;
 
   const [assetInfo, setAssetInfo] = useState({
     code: accountBalances.balances
@@ -81,17 +85,14 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     canonical: asset || "native",
   });
   const [selectedDestAsset, setSelectedDestAsset] = useState(destinationAsset);
-  const [conversionRate, setConversionRate] = useState("");
+  // ALEC TODO - remove
+  // const [conversionRate, setConversionRate] = useState("");
   const [loadingRate, setLoadingRate] = useState(false);
 
   const db = useCallback(
     debounce(async (sourceAsset, destAsset) => {
-      const resp = await dispatch(
-        getConversionRate({ sourceAsset, destAsset, networkDetails }),
-      );
-      if (getConversionRate.fulfilled.match(resp)) {
-        setConversionRate(resp.payload);
-      }
+      await dispatch(getBestPath({ sourceAsset, destAsset, networkDetails }));
+      // ALEC TODO - need to handle error case?
       setLoadingRate(false);
     }, 2000),
     [],
@@ -113,7 +114,8 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     dispatch(saveAsset(values.asset));
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
-      dispatch(saveConversionRate(conversionRate));
+      // ALEC TODO - remove?
+      // dispatch(saveConversionRate(conversionRate));
     }
     navigateTo(ROUTES.sendPaymentSettings);
   };
@@ -205,7 +207,10 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                           loading={loadingRate}
                           source={assetInfo.code}
                           dest={getAssetFromCanonical(selectedDestAsset).code}
-                          rate={conversionRate}
+                          rate={getConversionRate(
+                            amount || "1",
+                            destinationAmount,
+                          ).toString()}
                         />
                       )}
                       <div

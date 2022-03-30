@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
-
+import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
-import { Button, Card, Loader } from "@stellar/design-system";
+import { Button, Card, Loader, Icon } from "@stellar/design-system";
 
-import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  xlmToStroop,
+  getConversionRate,
+} from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -48,16 +52,22 @@ export const TransactionDetails = ({
       asset,
       memo,
       transactionFee,
+      allowedSlippage,
       destinationAsset,
-      conversionRate,
+      destinationAmount,
+      path,
     },
+    assetIcons,
   } = submission;
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
+  // ALEC TODO - def change these names
+  const [destinationAssetIcons, setDestinationAssetIcons] = useState(
+    {} as AssetIcons,
+  );
 
   const horizonAsset = getAssetFromCanonical(asset);
   const assetTotals = [
@@ -77,20 +87,26 @@ export const TransactionDetails = ({
         issuer: horizonDestinationAsset.issuer,
         code: horizonDestinationAsset.code,
       },
+      // ALEC TODO - this needs to be the destination amount
       total: amount || "0",
     },
   ];
 
+  // load destination asset icons
   useEffect(() => {
     (async () => {
       const iconURL = await getIconUrlFromIssuer({
-        key: horizonAsset.issuer,
-        code: horizonAsset.code,
+        key: horizonDestinationAsset.issuer,
+        code: horizonDestinationAsset.code,
         networkDetails,
       });
-      setAssetIcons({ [horizonAsset.code]: iconURL });
+      setDestinationAssetIcons({ [horizonDestinationAsset.code]: iconURL });
     })();
-  }, [horizonAsset.code, horizonAsset.issuer, networkDetails]);
+  }, [
+    horizonDestinationAsset.code,
+    horizonDestinationAsset.issuer,
+    networkDetails,
+  ]);
 
   const getOperation = () => {
     // default to payment
@@ -107,6 +123,22 @@ export const TransactionDetails = ({
       op = StellarSdk.Operation.createAccount({
         destination,
         startingBalance: amount,
+      });
+    }
+    // ALEC TODO - change to if else?
+    // path payment
+    if (isPathPayment) {
+      const mult = 1 - parseFloat(allowedSlippage) / 100;
+      const destMin = new BigNumber(destinationAmount).times(
+        new BigNumber(mult),
+      );
+      op = StellarSdk.Operation.pathPaymentStrictSend({
+        sendAsset: getAssetFromCanonical(asset),
+        sendAmount: amount,
+        destination,
+        destAsset: getAssetFromCanonical(destinationAsset),
+        destMin: destMin.toFixed(7),
+        path,
       });
     }
     return op;
@@ -181,18 +213,21 @@ export const TransactionDetails = ({
           <span>Confirm Send</span>
         )}
       </div>
-      <div className="TransactionDetails__card">
+      <div className="TransactionDetails__cards">
         <Card>
           <AccountAssets assetIcons={assetIcons} sortedBalances={assetTotals} />
         </Card>
-      </div>
-      <div className="TransactionDetails__card">
-        <Card>
-          <AccountAssets
-            assetIcons={assetIcons}
-            sortedBalances={destinationAssetTotals}
-          />
-        </Card>
+        {isPathPayment && (
+          <>
+            <Icon.ArrowDownCircle />
+            <Card>
+              <AccountAssets
+                assetIcons={destinationAssetIcons}
+                sortedBalances={destinationAssetTotals}
+              />
+            </Card>
+          </>
+        )}
       </div>
       <div className="TransactionDetails__row">
         <div>Sending to </div>
@@ -216,7 +251,7 @@ export const TransactionDetails = ({
           <div>Conversion rate </div>
           <div className="TransactionDetails__row__right">
             1 {getAssetFromCanonical(asset).code} /{" "}
-            {parseFloat(conversionRate).toFixed(2)}{" "}
+            {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
             {getAssetFromCanonical(destinationAsset).code}
           </div>
         </div>

@@ -119,8 +119,10 @@ export const getAssetIcons = createAsyncThunk<
   }) => getAssetIconsService({ balances, networkDetails }),
 );
 
-export const getConversionRate = createAsyncThunk<
-  string,
+// returns the full record so can save the best path and its rate
+export const getBestPath = createAsyncThunk<
+  // ALEC TODO - any, it's the strictsend endpoint record?
+  any,
   { sourceAsset: string; destAsset: string; networkDetails: NetworkDetails },
   { rejectValue: ErrorMessage }
 >(
@@ -135,9 +137,10 @@ export const getConversionRate = createAsyncThunk<
       );
 
       const paths = await builder.call();
+      // ALEC TODO - best way to handle no path found in here
       if (paths.records.length === 0) return "";
 
-      return paths.records[0].destination_amount;
+      return paths.records[0];
     } catch (e) {
       return thunkApi.rejectWithValue({ errorMessage: e });
     }
@@ -159,7 +162,9 @@ interface TransactionData {
   transactionFee: string;
   memo: string;
   destinationAsset: string;
-  conversionRate: string;
+  destinationAmount: string;
+  // ALEC TODO - any
+  path: Array<any>;
   allowedSlippage: string;
 }
 
@@ -185,7 +190,8 @@ const initialState: InitialState = {
     transactionFee: "0.00001",
     memo: "",
     destinationAsset: "",
-    conversionRate: "",
+    destinationAmount: "",
+    path: [],
     allowedSlippage: "1",
   },
   accountBalances: {
@@ -225,9 +231,10 @@ const transactionSubmissionSlice = createSlice({
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
     },
-    saveConversionRate: (state, action) => {
-      state.transactionData.conversionRate = action.payload;
-    },
+    // ALEC TODO - remove
+    // saveConversionRate: (state, action) => {
+    //   state.transactionData.conversionRate = action.payload;
+    // },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
     },
@@ -265,6 +272,27 @@ const transactionSubmissionSlice = createSlice({
         assetIcons,
       };
     });
+    builder.addCase(getBestPath.fulfilled, (state, action) => {
+      // ALEC TODO - remove
+      console.log("action in getBestPath.fulfilled:");
+      console.log({ action });
+
+      // store in canonical form for easier use
+      const path = [];
+      for (let i = 0; i < action.payload.path.length; i += 1) {
+        const p = action.payload.path[i];
+        // ALEC TODO - remove
+        console.log({ p });
+        path.push(
+          p.asset_code === "native"
+            ? "native"
+            : `${p.asset_code}:${p.asset_issuer}`,
+        );
+      }
+      state.transactionData.path = path;
+      state.transactionData.destinationAmount =
+        action.payload.destination_amount;
+    });
   },
 });
 
@@ -277,7 +305,8 @@ export const {
   saveTransactionFee,
   saveMemo,
   saveDestinationAsset,
-  saveConversionRate,
+  // ALEC TODO - remove
+  // saveConversionRate,
   saveAllowedSlippage,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
