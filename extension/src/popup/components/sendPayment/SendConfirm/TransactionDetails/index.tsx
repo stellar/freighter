@@ -88,7 +88,7 @@ export const TransactionDetails = ({
         code: horizonDestinationAsset.code,
       },
       // ALEC TODO - this needs to be the destination amount
-      total: amount || "0",
+      total: destinationAmount || "0",
     },
   ];
 
@@ -109,6 +109,12 @@ export const TransactionDetails = ({
   ]);
 
   const getOperation = () => {
+    // ALEC TODO - remove
+    console.log("start of getOperation:");
+    console.log({ amount });
+    console.log({ asset });
+    console.log({ destinationAsset });
+
     // default to payment
     let op = StellarSdk.Operation.payment({
       destination,
@@ -132,15 +138,30 @@ export const TransactionDetails = ({
       const destMin = new BigNumber(destinationAmount).times(
         new BigNumber(mult),
       );
-      op = StellarSdk.Operation.pathPaymentStrictSend({
+
+      console.log({ mult });
+      console.log({ destMin });
+      console.log({ path });
+
+      const opParams = {
         sendAsset: getAssetFromCanonical(asset),
         sendAmount: amount,
         destination,
         destAsset: getAssetFromCanonical(destinationAsset),
         destMin: destMin.toFixed(7),
-        path,
-      });
+        path: path.map((p) => getAssetFromCanonical(p)),
+      };
+
+      // ALEC TODO - remove
+      console.log({ opParams });
+
+      op = StellarSdk.Operation.pathPaymentStrictSend(opParams);
     }
+
+    // ALEC TODO - remove
+    console.log("end of getOperation");
+    console.log({ op });
+
     return op;
   };
 
@@ -161,6 +182,9 @@ export const TransactionDetails = ({
             .setTimeout(180)
             .build();
 
+          // ALEC TODO - remove
+          console.log({ transaction });
+
           return transaction.toXDR();
         });
 
@@ -175,14 +199,17 @@ export const TransactionDetails = ({
         signFreighterTransaction.fulfilled.match(res) &&
         res.payload.signedTransaction
       ) {
-        const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
+        const signedTx = StellarSdk.TransactionBuilder.fromXDR(
           res.payload.signedTransaction,
           networkDetails.networkPassphrase,
         );
 
+        // ALEC TODO - remove
+        console.log(signedTx.toXDR());
+
         const submitResp = await dispatch(
           submitFreighterTransaction({
-            signedXDR,
+            signedTx,
             networkUrl: networkDetails.networkUrl,
           }),
         );

@@ -12,7 +12,7 @@ import {
   Loader,
 } from "@stellar/design-system";
 
-import { getAssetFromCanonical, getConversionRate } from "helpers/stellar";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -35,13 +35,15 @@ import "../styles.scss";
 
 const ConversionRate = ({
   source,
+  sourceAmount,
   dest,
-  rate,
+  destAmount,
   loading,
 }: {
   source: string;
+  sourceAmount: string;
   dest: string;
-  rate: string;
+  destAmount: string;
   loading: boolean;
 }) => (
   <div className="SendAmount__row__rate">
@@ -49,9 +51,9 @@ const ConversionRate = ({
       <Loader />
     ) : (
       <>
-        {rate ? (
+        {destAmount ? (
           <span>
-            1 {source} ≈ {rate} {dest}
+            {sourceAmount} {source} ≈ {destAmount} {dest}
           </span>
         ) : (
           <span>no path found</span>
@@ -85,13 +87,23 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     canonical: asset || "native",
   });
   const [selectedDestAsset, setSelectedDestAsset] = useState(destinationAsset);
+  // ALEC TODO - use useFormik I think...
+  const [selectedAmount, setSelectedAmount] = useState(amount);
   // ALEC TODO - remove
   // const [conversionRate, setConversionRate] = useState("");
   const [loadingRate, setLoadingRate] = useState(false);
 
   const db = useCallback(
-    debounce(async (sourceAsset, destAsset) => {
-      await dispatch(getBestPath({ sourceAsset, destAsset, networkDetails }));
+    // ALEC TODO - change name
+    debounce(async (selectedAm, sourceAsset, destAsset) => {
+      await dispatch(
+        getBestPath({
+          amount: selectedAm,
+          sourceAsset,
+          destAsset,
+          networkDetails,
+        }),
+      );
       // ALEC TODO - need to handle error case?
       setLoadingRate(false);
     }, 2000),
@@ -102,8 +114,15 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   useEffect(() => {
     if (!destinationAsset) return;
     setLoadingRate(true);
-    db(assetInfo.canonical, selectedDestAsset);
-  }, [db, networkDetails, assetInfo, selectedDestAsset, destinationAsset]);
+    db(selectedAmount || "1", assetInfo.canonical, selectedDestAsset);
+  }, [
+    db,
+    networkDetails,
+    assetInfo,
+    selectedDestAsset,
+    destinationAsset,
+    selectedAmount,
+  ]);
 
   const handleContinue = (values: {
     amount: string;
@@ -201,16 +220,19 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                         type="number"
                         placeholder="0.00"
                         {...field}
+                        onChange={(e) => {
+                          setFieldValue("amount", e.target.value);
+                          setSelectedAmount(e.target.value);
+                        }}
                       />
                       {destinationAsset && (
                         <ConversionRate
                           loading={loadingRate}
                           source={assetInfo.code}
+                          // ALEC TODO unsafe || "1" everywhere
+                          sourceAmount={selectedAmount || "1"}
                           dest={getAssetFromCanonical(selectedDestAsset).code}
-                          rate={getConversionRate(
-                            amount || "1",
-                            destinationAmount,
-                          ).toString()}
+                          destAmount={destinationAmount}
                         />
                       )}
                       <div

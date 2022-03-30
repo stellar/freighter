@@ -381,14 +381,27 @@ export const signFreighterTransaction = async ({
 };
 
 export const submitFreighterTransaction = async ({
-  signedXDR,
+  signedTx,
   networkUrl,
 }: {
-  signedXDR: string;
+  // ALEC TODO - {}
+  signedTx: {};
   networkUrl: string;
 }) => {
-  const server = new StellarSdk.Server(networkUrl);
-  return await server.submitTransaction(signedXDR);
+  try {
+    // ALEC TODO - remove
+    console.log("internal submitFreighterTransaction:");
+    console.log({ signedTx });
+    console.log({ networkUrl });
+    const server = new StellarSdk.Server(networkUrl);
+    const resp = await server.submitTransaction(signedTx);
+    return resp;
+  } catch (e) {
+    // ALEC TODO - remove
+
+    console.log({ e });
+    throw e;
+  }
 };
 
 export const addRecentAddress = async ({

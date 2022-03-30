@@ -38,17 +38,21 @@ export const signFreighterTransaction = createAsyncThunk<
 
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
-  { signedXDR: string; networkUrl: string },
+  // ALEC TODO - {}
+  { signedTx: {}; networkUrl: string },
   {
     rejectValue: ErrorMessage;
   }
->("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
+>("submitFreighterTransaction", async ({ signedTx, networkUrl }, thunkApi) => {
   try {
     return await internalSubmitFreighterTransaction({
-      signedXDR,
+      signedTx,
       networkUrl,
     });
   } catch (e) {
+    // ALEC TODO - remove
+    console.log("popup ducks submitFreighterTransaction");
+    console.log({ e });
     return thunkApi.rejectWithValue({
       errorMessage: e.message || e,
       response: e.response?.data,
@@ -123,16 +127,26 @@ export const getAssetIcons = createAsyncThunk<
 export const getBestPath = createAsyncThunk<
   // ALEC TODO - any, it's the strictsend endpoint record?
   any,
-  { sourceAsset: string; destAsset: string; networkDetails: NetworkDetails },
+  {
+    amount: string;
+    sourceAsset: string;
+    destAsset: string;
+    networkDetails: NetworkDetails;
+  },
   { rejectValue: ErrorMessage }
 >(
   "getConversionRate",
-  async ({ sourceAsset, destAsset, networkDetails }, thunkApi) => {
+  async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
     try {
+      // ALEC TODO - remove
+      console.log({ amount });
+      console.log({ sourceAsset });
+      console.log({ destAsset });
+
       const server = new Server(networkDetails.networkUrl);
       const builder = server.strictSendPaths(
         getAssetFromCanonical(sourceAsset),
-        "1",
+        amount,
         [getAssetFromCanonical(destAsset)],
       );
 
@@ -142,7 +156,10 @@ export const getBestPath = createAsyncThunk<
 
       return paths.records[0];
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message || e,
+        response: e.response?.data,
+      });
     }
   },
 );
