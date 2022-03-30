@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Switch, Redirect } from "react-router-dom";
-import { PrivateKeyRoute } from "popup/Router";
+import { PrivateKeyRoute, PublicKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 import { SendTo } from "popup/components/sendPayment/SendTo";
@@ -14,27 +14,27 @@ import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 
 export const SendPayment = () => (
   <Switch>
-    <PrivateKeyRoute exact path={ROUTES.sendPayment}>
+    <PublicKeyRoute exact path={ROUTES.sendPayment}>
       <Redirect to={ROUTES.sendPaymentTo} />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentTo}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
       <SendTo previous={ROUTES.account} />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentAmount}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentAmount}>
       <SendAmount previous={ROUTES.sendPaymentTo} />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentType}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentType}>
       <SendType />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentSettings}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
       <SendSettings previous={ROUTES.sendPaymentAmount} />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
       <SendSettingsFee />
-    </PrivateKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
       <SendSettingsSlippage />
-    </PrivateKeyRoute>
+    </PublicKeyRoute>
     <PrivateKeyRoute exact path={ROUTES.sendPaymentConfirm}>
       <SendConfirm previous={ROUTES.sendPaymentSettings} />
     </PrivateKeyRoute>

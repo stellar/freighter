@@ -46,22 +46,37 @@ export const TransactionDetails = ({
   const {
     destinationBalances,
     transactionData: {
-      destination,
+      // destination,
       federationAddress,
-      amount,
-      asset,
+      // amount,
+      // asset,
       memo,
       transactionFee,
-      allowedSlippage,
-      destinationAsset,
-      destinationAmount,
-      path,
+      // allowedSlippage,
+      // destinationAsset,
+      // destinationAmount,
+      // path,
     },
     assetIcons,
   } = submission;
 
+  // ALEC TODO - remove
+  const destination =
+    "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
+  const amount = "1";
+  const asset = "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+  const allowedSlippage = "1";
+  const destinationAsset = "native";
+  const destinationAmount = ".01";
+  const path = [
+    "NUTZ:GDPFNXAJ6R37LBQ6QYVKGBVW5ZA4QXPFJYKQUHPJSALXCUBQ7I5K6YFN",
+    "fcEURO:GA6RDH4X7D6DVLPBYPMDMCWIDVPBTX64OBDKT62ZEIRPCWXUSAWX7AIL",
+  ];
+  const isPathPayment = true;
+  console.log({ isPathPaymentSelector });
+
   const transactionHash = submission.response?.hash;
-  const isPathPayment = useSelector(isPathPaymentSelector);
+  // const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   // ALEC TODO - def change these names
