@@ -1,4 +1,4 @@
-import { Horizon, Server } from "stellar-sdk";
+import { Horizon, Server, ServerApi } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -38,21 +38,17 @@ export const signFreighterTransaction = createAsyncThunk<
 
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
-  // ALEC TODO - {}
-  { signedTx: {}; networkUrl: string },
+  { signedXDR: string; networkUrl: string },
   {
     rejectValue: ErrorMessage;
   }
->("submitFreighterTransaction", async ({ signedTx, networkUrl }, thunkApi) => {
+>("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
   try {
     return await internalSubmitFreighterTransaction({
-      signedTx,
+      signedXDR,
       networkUrl,
     });
   } catch (e) {
-    // ALEC TODO - remove
-    console.log("popup ducks submitFreighterTransaction");
-    console.log({ e });
     return thunkApi.rejectWithValue({
       errorMessage: e.message || e,
       response: e.response?.data,
@@ -125,8 +121,7 @@ export const getAssetIcons = createAsyncThunk<
 
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
-  // ALEC TODO - any, it's the strictsend endpoint record?
-  any,
+  ServerApi.PaymentPathRecord,
   {
     amount: string;
     sourceAsset: string;
@@ -135,14 +130,9 @@ export const getBestPath = createAsyncThunk<
   },
   { rejectValue: ErrorMessage }
 >(
-  "getConversionRate",
+  "getBestPath",
   async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
     try {
-      // ALEC TODO - remove
-      console.log({ amount });
-      console.log({ sourceAsset });
-      console.log({ destAsset });
-
       const server = new Server(networkDetails.networkUrl);
       const builder = server.strictSendPaths(
         getAssetFromCanonical(sourceAsset),
@@ -151,9 +141,6 @@ export const getBestPath = createAsyncThunk<
       );
 
       const paths = await builder.call();
-      // ALEC TODO - best way to handle no path found in here
-      if (paths.records.length === 0) return "";
-
       return paths.records[0];
     } catch (e) {
       return thunkApi.rejectWithValue({
@@ -180,8 +167,7 @@ interface TransactionData {
   memo: string;
   destinationAsset: string;
   destinationAmount: string;
-  // ALEC TODO - any
-  path: Array<any>;
+  path: Array<string>;
   allowedSlippage: string;
 }
 
@@ -248,10 +234,6 @@ const transactionSubmissionSlice = createSlice({
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
     },
-    // ALEC TODO - remove
-    // saveConversionRate: (state, action) => {
-    //   state.transactionData.conversionRate = action.payload;
-    // },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
     },
@@ -270,6 +252,11 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(signFreighterTransaction.rejected, (state, action) => {
       state.status = ActionStatus.ERROR;
       state.error = action.payload;
+    });
+    builder.addCase(getBestPath.rejected, (state) => {
+      state.transactionData.path = initialState.transactionData.path;
+      state.transactionData.destinationAmount =
+        initialState.transactionData.destinationAmount;
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.status = ActionStatus.SUCCESS;
@@ -290,16 +277,16 @@ const transactionSubmissionSlice = createSlice({
       };
     });
     builder.addCase(getBestPath.fulfilled, (state, action) => {
-      // ALEC TODO - remove
-      console.log("action in getBestPath.fulfilled:");
-      console.log({ action });
+      if (!action.payload) {
+        state.transactionData.path = [];
+        state.transactionData.destinationAmount = "";
+        return;
+      }
 
       // store in canonical form for easier use
       const path = [];
       for (let i = 0; i < action.payload.path.length; i += 1) {
         const p = action.payload.path[i];
-        // ALEC TODO - remove
-        console.log({ p });
         path.push(
           p.asset_code === "native"
             ? "native"
@@ -322,8 +309,6 @@ export const {
   saveTransactionFee,
   saveMemo,
   saveDestinationAsset,
-  // ALEC TODO - remove
-  // saveConversionRate,
   saveAllowedSlippage,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;

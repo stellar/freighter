@@ -21,6 +21,8 @@ import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import "./styles.scss";
 
+const defaultSlippage = "1";
+
 export const SendSettingsSlippage = () => {
   const dispatch = useDispatch();
   const { allowedSlippage } = useSelector(transactionDataSelector);
@@ -113,7 +115,6 @@ export const SendSettingsSlippage = () => {
                       placeholder="Custom %"
                       type="number"
                       {...field}
-                      // ALEC TODO - add validation for max slippage allowed (15%?)
                       onChange={(e) => {
                         setFieldValue("customSlippage", e.target.value);
                         setFieldValue("presetSlippage", "");
@@ -126,8 +127,7 @@ export const SendSettingsSlippage = () => {
                 underline
                 variant={TextLink.variant.secondary}
                 onClick={() => {
-                  // ALEC TODO - should default to 1?
-                  setFieldValue("presetSlippage", "1");
+                  setFieldValue("presetSlippage", defaultSlippage);
                   setFieldValue("customSlippage", "");
                 }}
               >

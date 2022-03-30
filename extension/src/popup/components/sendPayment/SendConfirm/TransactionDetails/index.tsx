@@ -46,138 +46,88 @@ export const TransactionDetails = ({
   const {
     destinationBalances,
     transactionData: {
-      // destination,
+      destination,
       federationAddress,
-      // amount,
-      // asset,
+      amount,
+      asset,
       memo,
       transactionFee,
-      // allowedSlippage,
-      // destinationAsset,
-      // destinationAmount,
-      // path,
+      allowedSlippage,
+      destinationAsset,
+      destinationAmount,
+      path,
     },
     assetIcons,
   } = submission;
 
   // ALEC TODO - remove
-  const destination =
-    "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
-  const amount = "1";
-  const asset = "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
-  const allowedSlippage = "1";
-  const destinationAsset = "native";
-  const destinationAmount = ".01";
-  const path = [
-    "NUTZ:GDPFNXAJ6R37LBQ6QYVKGBVW5ZA4QXPFJYKQUHPJSALXCUBQ7I5K6YFN",
-    "fcEURO:GA6RDH4X7D6DVLPBYPMDMCWIDVPBTX64OBDKT62ZEIRPCWXUSAWX7AIL",
-  ];
-  const isPathPayment = true;
-  console.log({ isPathPaymentSelector });
+  // const destination =
+  //   "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
+  // const amount = "1";
+  // const asset = "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+  // const allowedSlippage = "1";
+  // const destinationAsset = "native";
+  // const destinationAmount = ".01";
+  // const path = [
+  //   "NUTZ:GDPFNXAJ6R37LBQ6QYVKGBVW5ZA4QXPFJYKQUHPJSALXCUBQ7I5K6YFN",
+  //   "fcEURO:GA6RDH4X7D6DVLPBYPMDMCWIDVPBTX64OBDKT62ZEIRPCWXUSAWX7AIL",
+  // ];
+  // const isPathPayment = true;
+  // console.log({ isPathPaymentSelector });
 
   const transactionHash = submission.response?.hash;
-  // const isPathPayment = useSelector(isPathPaymentSelector);
+  const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  // ALEC TODO - def change these names
-  const [destinationAssetIcons, setDestinationAssetIcons] = useState(
-    {} as AssetIcons,
-  );
+  const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
 
-  const horizonAsset = getAssetFromCanonical(asset);
-  const assetTotals = [
-    {
-      token: { issuer: horizonAsset.issuer, code: horizonAsset.code },
-      total: amount || "0",
-    },
-  ];
-
-  // ALEC TODO - change name?
-  const horizonDestinationAsset = getAssetFromCanonical(
-    destinationAsset || "native",
-  );
-  const destinationAssetTotals = [
-    {
-      token: {
-        issuer: horizonDestinationAsset.issuer,
-        code: horizonDestinationAsset.code,
-      },
-      // ALEC TODO - this needs to be the destination amount
-      total: destinationAmount || "0",
-    },
-  ];
+  const sourceAsset = getAssetFromCanonical(asset);
+  const destAsset = getAssetFromCanonical(destinationAsset || "native");
 
   // load destination asset icons
   useEffect(() => {
     (async () => {
       const iconURL = await getIconUrlFromIssuer({
-        key: horizonDestinationAsset.issuer,
-        code: horizonDestinationAsset.code,
+        key: destAsset.issuer,
+        code: destAsset.code,
         networkDetails,
       });
-      setDestinationAssetIcons({ [horizonDestinationAsset.code]: iconURL });
+      setDestAssetIcons({ [destAsset.code]: iconURL });
     })();
-  }, [
-    horizonDestinationAsset.code,
-    horizonDestinationAsset.issuer,
-    networkDetails,
-  ]);
+  }, [destAsset.code, destAsset.issuer, networkDetails]);
 
   const getOperation = () => {
-    // ALEC TODO - remove
-    console.log("start of getOperation:");
-    console.log({ amount });
-    console.log({ asset });
-    console.log({ destinationAsset });
-
-    // default to payment
-    let op = StellarSdk.Operation.payment({
-      destination,
-      asset: horizonAsset,
-      amount,
-    });
-    // create account if unfunded and sending xlm
-    if (
-      !destinationBalances.isFunded &&
-      asset === StellarSdk.Asset.native().toString()
-    ) {
-      op = StellarSdk.Operation.createAccount({
-        destination,
-        startingBalance: amount,
-      });
-    }
-    // ALEC TODO - change to if else?
     // path payment
     if (isPathPayment) {
       const mult = 1 - parseFloat(allowedSlippage) / 100;
       const destMin = new BigNumber(destinationAmount).times(
         new BigNumber(mult),
       );
-
-      console.log({ mult });
-      console.log({ destMin });
-      console.log({ path });
-
-      const opParams = {
+      return StellarSdk.Operation.pathPaymentStrictSend({
         sendAsset: getAssetFromCanonical(asset),
         sendAmount: amount,
         destination,
         destAsset: getAssetFromCanonical(destinationAsset),
         destMin: destMin.toFixed(7),
         path: path.map((p) => getAssetFromCanonical(p)),
-      };
-
-      // ALEC TODO - remove
-      console.log({ opParams });
-
-      op = StellarSdk.Operation.pathPaymentStrictSend(opParams);
+      });
     }
-
-    // ALEC TODO - remove
-    console.log("end of getOperation");
-    console.log({ op });
-
-    return op;
+    // create account if unfunded and sending xlm
+    if (
+      !destinationBalances.isFunded &&
+      asset === StellarSdk.Asset.native().toString()
+    ) {
+      return StellarSdk.Operation.createAccount({
+        destination,
+        startingBalance: amount,
+      });
+    }
+    // regular payment
+    return StellarSdk.Operation.payment({
+      destination,
+      asset: sourceAsset,
+      amount,
+    });
   };
 
   // handles signing and submitting
@@ -196,10 +146,6 @@ export const TransactionDetails = ({
             .addMemo(StellarSdk.Memo.text(memo))
             .setTimeout(180)
             .build();
-
-          // ALEC TODO - remove
-          console.log({ transaction });
-
           return transaction.toXDR();
         });
 
@@ -214,17 +160,13 @@ export const TransactionDetails = ({
         signFreighterTransaction.fulfilled.match(res) &&
         res.payload.signedTransaction
       ) {
-        const signedTx = StellarSdk.TransactionBuilder.fromXDR(
+        const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
           res.payload.signedTransaction,
           networkDetails.networkPassphrase,
         );
-
-        // ALEC TODO - remove
-        console.log(signedTx.toXDR());
-
         const submitResp = await dispatch(
           submitFreighterTransaction({
-            signedTx,
+            signedXDR,
             networkUrl: networkDetails.networkUrl,
           }),
         );
@@ -250,22 +192,38 @@ export const TransactionDetails = ({
       <BackButton customBackAction={goBack} />
       <div className="SendPayment__header">
         {isSendComplete ? (
-          <span>Sent {horizonAsset.code}</span>
+          <span>Sent {sourceAsset.code}</span>
         ) : (
           <span>Confirm Send</span>
         )}
       </div>
       <div className="TransactionDetails__cards">
         <Card>
-          <AccountAssets assetIcons={assetIcons} sortedBalances={assetTotals} />
+          <AccountAssets
+            assetIcons={assetIcons}
+            sortedBalances={[
+              {
+                token: { issuer: sourceAsset.issuer, code: sourceAsset.code },
+                total: amount || "0",
+              },
+            ]}
+          />
         </Card>
         {isPathPayment && (
           <>
             <Icon.ArrowDownCircle />
             <Card>
               <AccountAssets
-                assetIcons={destinationAssetIcons}
-                sortedBalances={destinationAssetTotals}
+                assetIcons={destAssetIcons}
+                sortedBalances={[
+                  {
+                    token: {
+                      issuer: destAsset.issuer,
+                      code: destAsset.code,
+                    },
+                    total: destinationAmount || "0",
+                  },
+                ]}
               />
             </Card>
           </>
@@ -301,7 +259,7 @@ export const TransactionDetails = ({
       <div className="TransactionDetails__row">
         <div>Network Fee </div>
         <div className="TransactionDetails__row__right">
-          {transactionFee} {horizonAsset.code}
+          {transactionFee} {sourceAsset.code}
         </div>
       </div>
       <div className="TransactionDetails__buttons-row">

@@ -81,14 +81,14 @@ export const ManageAssetRows = ({
     );
 
     if (signFreighterTransaction.fulfilled.match(res)) {
-      const signedTx = StellarSdk.TransactionBuilder.fromXDR(
+      const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
         res.payload.signedTransaction,
         networkDetails.networkPassphrase,
       );
 
       const submitResp = await dispatch(
         submitFreighterTransaction({
-          signedTx,
+          signedXDR,
           networkUrl: networkDetails.networkUrl,
         }),
       );
