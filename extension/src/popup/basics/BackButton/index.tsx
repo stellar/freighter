@@ -6,11 +6,13 @@ import "./styles.scss";
 
 interface BackButtonProps {
   customBackAction?: () => void;
+  customBackIcon?: React.ReactNode;
   hasBackCopy?: boolean;
 }
 
 export const BackButton = ({
   customBackAction,
+  customBackIcon,
   hasBackCopy,
 }: BackButtonProps) => {
   const history = useHistory();
@@ -26,7 +28,7 @@ export const BackButton = ({
         }
       }}
     >
-      <Icon.ArrowLeft />
+      {customBackIcon || <Icon.ArrowLeft />}
       {hasBackCopy ? <div className="BackButton__copy">Back</div> : null}
     </div>
   );
