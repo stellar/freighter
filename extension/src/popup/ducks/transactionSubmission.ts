@@ -19,7 +19,7 @@ import {
 
 import { NetworkDetails } from "@shared/helpers/stellar";
 
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -287,11 +287,7 @@ const transactionSubmissionSlice = createSlice({
       const path = [];
       for (let i = 0; i < action.payload.path.length; i += 1) {
         const p = action.payload.path[i];
-        path.push(
-          p.asset_code === "native"
-            ? "native"
-            : `${p.asset_code}:${p.asset_issuer}`,
-        );
+        path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
       }
       state.transactionData.path = path;
       state.transactionData.destinationAmount =
