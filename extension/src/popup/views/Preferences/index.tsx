@@ -14,11 +14,8 @@ import {
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 
-import { PopupWrapper } from "popup/basics/PopupWrapper";
-
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
-import { BottomNav } from "popup/components/BottomNav";
 
 import "./styles.scss";
 
@@ -85,89 +82,83 @@ export const Preferences = () => {
   };
 
   return (
-    <>
-      <PopupWrapper>
-        <SubviewHeader title="Preferences" />
-        <div className="Preferences">
-          <Formik
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            enableReinitialize
-          >
-            <Form>
-              <AutoSaveFields />
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">Network</div>
-                <RadioCheck
-                  name="networkSelected"
-                  title="Public Network"
-                  value={MAINNET_NETWORK_DETAILS.network}
-                />
-                <RadioCheck
-                  name="networkSelected"
-                  title="Test Network"
-                  value={TESTNET_NETWORK_DETAILS.network}
-                />
-              </div>
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  Verification with stellar.expert
-                </div>
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isValidatingMemoValue"
-                    className="Preferences--label"
-                  >
-                    Validate addresses that require a memo
-                  </label>
-                  <Toggle
-                    checked={initialValues.isValidatingMemoValue}
-                    customInput={<Field />}
-                    id="isValidatingMemoValue"
-                  />
-                </div>
+    <div className="Preferences">
+      <SubviewHeader title="Preferences" />
+      <Formik
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        enableReinitialize
+      >
+        <Form>
+          <AutoSaveFields />
+          <div className="Preferences--section">
+            <div className="Preferences--section--title">Network</div>
+            <RadioCheck
+              name="networkSelected"
+              title="Public Network"
+              value={MAINNET_NETWORK_DETAILS.network}
+            />
+            <RadioCheck
+              name="networkSelected"
+              title="Test Network"
+              value={TESTNET_NETWORK_DETAILS.network}
+            />
+          </div>
+          <div className="Preferences--section">
+            <div className="Preferences--section--title">
+              Verification with stellar.expert
+            </div>
+            <div className="Preferences--toggle">
+              <label
+                htmlFor="isValidatingMemoValue"
+                className="Preferences--label"
+              >
+                Validate addresses that require a memo
+              </label>
+              <Toggle
+                checked={initialValues.isValidatingMemoValue}
+                customInput={<Field />}
+                id="isValidatingMemoValue"
+              />
+            </div>
 
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isValidatingSafetyValue"
-                    className="Preferences--label"
-                  >
-                    Block malicious or unsafe addresses and domains
-                  </label>
-                  <Toggle
-                    checked={initialValues.isValidatingSafetyValue}
-                    customInput={<Field />}
-                    id="isValidatingSafetyValue"
-                  />
-                </div>
-              </div>
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  Anonymous data sharing{" "}
-                </div>
+            <div className="Preferences--toggle">
+              <label
+                htmlFor="isValidatingSafetyValue"
+                className="Preferences--label"
+              >
+                Block malicious or unsafe addresses and domains
+              </label>
+              <Toggle
+                checked={initialValues.isValidatingSafetyValue}
+                customInput={<Field />}
+                id="isValidatingSafetyValue"
+              />
+            </div>
+          </div>
+          <div className="Preferences--section">
+            <div className="Preferences--section--title">
+              Anonymous data sharing{" "}
+            </div>
 
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isDataSharingAllowedValue"
-                    className="Preferences--label"
-                  >
-                    Allow Freighter to collect anonymous information about
-                    usage. Freighter will never collect your personal
-                    information such as IP address, keys, balance or transaction
-                    amounts.
-                  </label>
-                  <Toggle
-                    checked={initialValues.isDataSharingAllowedValue}
-                    customInput={<Field />}
-                    id="isDataSharingAllowedValue"
-                  />
-                </div>
-              </div>
-            </Form>
-          </Formik>
-        </div>
-      </PopupWrapper>
-      <BottomNav />
-    </>
+            <div className="Preferences--toggle">
+              <label
+                htmlFor="isDataSharingAllowedValue"
+                className="Preferences--label"
+              >
+                Allow Freighter to collect anonymous information about usage.
+                Freighter will never collect your personal information such as
+                IP address, keys, balance or transaction amounts.
+              </label>
+              <Toggle
+                checked={initialValues.isDataSharingAllowedValue}
+                customInput={<Field />}
+                id="isDataSharingAllowedValue"
+              />
+            </div>
+          </div>
+        </Form>
+      </Formik>
+    </div>
   );
 };
