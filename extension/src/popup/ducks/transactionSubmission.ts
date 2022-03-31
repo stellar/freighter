@@ -1,4 +1,4 @@
-import { Horizon, Server } from "stellar-sdk";
+import { Horizon, Server, ServerApi } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -19,7 +19,7 @@ import {
 
 import { NetworkDetails } from "@shared/helpers/stellar";
 
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -119,27 +119,34 @@ export const getAssetIcons = createAsyncThunk<
   }) => getAssetIconsService({ balances, networkDetails }),
 );
 
-export const getConversionRate = createAsyncThunk<
-  string,
-  { sourceAsset: string; destAsset: string; networkDetails: NetworkDetails },
+// returns the full record so can save the best path and its rate
+export const getBestPath = createAsyncThunk<
+  ServerApi.PaymentPathRecord,
+  {
+    amount: string;
+    sourceAsset: string;
+    destAsset: string;
+    networkDetails: NetworkDetails;
+  },
   { rejectValue: ErrorMessage }
 >(
-  "getConversionRate",
-  async ({ sourceAsset, destAsset, networkDetails }, thunkApi) => {
+  "getBestPath",
+  async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
     try {
       const server = new Server(networkDetails.networkUrl);
       const builder = server.strictSendPaths(
         getAssetFromCanonical(sourceAsset),
-        "1",
+        amount,
         [getAssetFromCanonical(destAsset)],
       );
 
       const paths = await builder.call();
-      if (paths.records.length === 0) return "";
-
-      return paths.records[0].destination_amount;
+      return paths.records[0];
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message || e,
+        response: e.response?.data,
+      });
     }
   },
 );
@@ -159,7 +166,9 @@ interface TransactionData {
   transactionFee: string;
   memo: string;
   destinationAsset: string;
-  conversionRate: string;
+  destinationAmount: string;
+  path: Array<string>;
+  allowedSlippage: string;
 }
 
 interface InitialState {
@@ -184,7 +193,9 @@ const initialState: InitialState = {
     transactionFee: "0.00001",
     memo: "",
     destinationAsset: "",
-    conversionRate: "",
+    destinationAmount: "",
+    path: [],
+    allowedSlippage: "1",
   },
   accountBalances: {
     balances: null,
@@ -223,8 +234,8 @@ const transactionSubmissionSlice = createSlice({
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
     },
-    saveConversionRate: (state, action) => {
-      state.transactionData.conversionRate = action.payload;
+    saveAllowedSlippage: (state, action) => {
+      state.transactionData.allowedSlippage = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -241,6 +252,11 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(signFreighterTransaction.rejected, (state, action) => {
       state.status = ActionStatus.ERROR;
       state.error = action.payload;
+    });
+    builder.addCase(getBestPath.rejected, (state) => {
+      state.transactionData.path = initialState.transactionData.path;
+      state.transactionData.destinationAmount =
+        initialState.transactionData.destinationAmount;
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.status = ActionStatus.SUCCESS;
@@ -260,6 +276,23 @@ const transactionSubmissionSlice = createSlice({
         assetIcons,
       };
     });
+    builder.addCase(getBestPath.fulfilled, (state, action) => {
+      if (!action.payload) {
+        state.transactionData.path = [];
+        state.transactionData.destinationAmount = "";
+        return;
+      }
+
+      // store in canonical form for easier use
+      const path: Array<string> = [];
+      action.payload.path.forEach((p) =>
+        path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer)),
+      );
+
+      state.transactionData.path = path;
+      state.transactionData.destinationAmount =
+        action.payload.destination_amount;
+    });
   },
 });
 
@@ -272,7 +305,7 @@ export const {
   saveTransactionFee,
   saveMemo,
   saveDestinationAsset,
-  saveConversionRate,
+  saveAllowedSlippage,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
@@ -283,3 +316,7 @@ export const transactionSubmissionSelector = (state: {
 export const transactionDataSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData;
+
+export const isPathPaymentSelector = (state: {
+  transactionSubmission: InitialState;
+}) => state.transactionSubmission.transactionData.destinationAsset !== "";

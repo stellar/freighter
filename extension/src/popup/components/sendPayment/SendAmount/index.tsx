@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
-import { Field, Form, Formik, FieldProps } from "formik";
+import { useFormik } from "formik";
 
 import {
   Button,
@@ -24,8 +24,7 @@ import {
   saveAmount,
   saveAsset,
   saveDestinationAsset,
-  getConversionRate,
-  saveConversionRate,
+  getBestPath,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -36,13 +35,15 @@ import "../styles.scss";
 
 const ConversionRate = ({
   source,
+  sourceAmount,
   dest,
-  rate,
+  destAmount,
   loading,
 }: {
   source: string;
+  sourceAmount: string;
   dest: string;
-  rate: string;
+  destAmount: string;
   loading: boolean;
 }) => (
   <div className="SendAmount__row__rate">
@@ -50,9 +51,9 @@ const ConversionRate = ({
       <Loader />
     ) : (
       <>
-        {rate ? (
+        {destAmount ? (
           <span>
-            1 {source} ≈ {rate} {dest}
+            {sourceAmount} {source} ≈ {destAmount} {dest}
           </span>
         ) : (
           <span>no path found</span>
@@ -62,6 +63,9 @@ const ConversionRate = ({
   </div>
 );
 
+// default so can find a path even if user has not given input
+const defaultSourceAmount = "1";
+
 export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -69,40 +73,20 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const { accountBalances, destinationBalances, transactionData } = useSelector(
     transactionSubmissionSelector,
   );
-  const { amount, asset, destinationAsset } = transactionData;
+  const {
+    amount,
+    asset,
+    destinationAmount,
+    destinationAsset,
+  } = transactionData;
 
-  const [assetInfo, setAssetInfo] = useState({
-    code: accountBalances.balances
-      ? accountBalances.balances[asset].token.code
-      : "XLM",
-    balance: accountBalances.balances
+  const [availBalance, setAvailBalance] = useState(
+    accountBalances.balances
       ? accountBalances.balances[asset].total.toString()
       : "0",
-    canonical: asset || "native",
-  });
-  const [selectedDestAsset, setSelectedDestAsset] = useState(destinationAsset);
-  const [conversionRate, setConversionRate] = useState("");
-  const [loadingRate, setLoadingRate] = useState(false);
-
-  const db = useCallback(
-    debounce(async (sourceAsset, destAsset) => {
-      const resp = await dispatch(
-        getConversionRate({ sourceAsset, destAsset, networkDetails }),
-      );
-      if (getConversionRate.fulfilled.match(resp)) {
-        setConversionRate(resp.payload);
-      }
-      setLoadingRate(false);
-    }, 2000),
-    [],
   );
 
-  // on asset select get conversion rate
-  useEffect(() => {
-    if (!destinationAsset) return;
-    setLoadingRate(true);
-    db(assetInfo.canonical, selectedDestAsset);
-  }, [db, networkDetails, assetInfo, selectedDestAsset, destinationAsset]);
+  const [loadingRate, setLoadingRate] = useState(false);
 
   const handleContinue = (values: {
     amount: string;
@@ -113,21 +97,46 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     dispatch(saveAsset(values.asset));
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
-      dispatch(saveConversionRate(conversionRate));
     }
     navigateTo(ROUTES.sendPaymentSettings);
   };
 
-  const handleAssetSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = e.target.value;
-    if (accountBalances.balances) {
-      setAssetInfo({
-        code: accountBalances.balances[selected].token.code,
-        balance: accountBalances.balances[selected].total.toString(),
-        canonical: selected,
-      });
-    }
-  };
+  const formik = useFormik({
+    initialValues: { amount, asset, destinationAsset },
+    onSubmit: handleContinue,
+  });
+
+  const db = useCallback(
+    debounce(async (formikAm, sourceAsset, destAsset) => {
+      await dispatch(
+        getBestPath({
+          amount: formikAm,
+          sourceAsset,
+          destAsset,
+          networkDetails,
+        }),
+      );
+      setLoadingRate(false);
+    }, 2000),
+    [],
+  );
+
+  // on asset select get conversion rate
+  useEffect(() => {
+    if (!formik.values.destinationAsset) return;
+    setLoadingRate(true);
+    db(
+      formik.values.amount || defaultSourceAmount,
+      formik.values.asset,
+      formik.values.destinationAsset,
+    );
+  }, [
+    db,
+    networkDetails,
+    formik.values.asset,
+    formik.values.destinationAsset,
+    formik.values.amount,
+  ]);
 
   const decideWarning = (val: string) => {
     // unfunded destination
@@ -141,7 +150,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
       return <AccountDoesntExistWarning />;
     }
     // amount too high
-    if (new BigNumber(val).gt(new BigNumber(assetInfo.balance))) {
+    if (new BigNumber(val).gt(new BigNumber(availBalance))) {
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           Entered amount is higher than your balance
@@ -163,129 +172,119 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         </button>
       </div>
       <div className="SendAmount">
-        <div className="SendPayment__header">Send {assetInfo.code}</div>
-        <div className="SendAmount__asset-copy">
-          <span>{assetInfo.balance.toString()}</span>{" "}
-          <span>{assetInfo.code}</span> available
+        <div className="SendPayment__header">
+          Send {getAssetFromCanonical(formik.values.asset).code}
         </div>
-
-        <Formik
-          initialValues={{ amount, asset, destinationAsset }}
-          onSubmit={handleContinue}
-        >
-          {({ setFieldValue, values }) => (
+        <div className="SendAmount__asset-copy">
+          <span>{availBalance}</span>{" "}
+          <span>{getAssetFromCanonical(formik.values.asset).code}</span>{" "}
+          available
+        </div>
+        <div className="SendAmount__btn-set-max">
+          <Button
+            variant={Button.variant.tertiary}
+            onClick={() => {
+              if (accountBalances.balances) {
+                formik.setFieldValue(
+                  "amount",
+                  accountBalances.balances[
+                    formik.values.asset
+                  ].total.toString(),
+                );
+              }
+            }}
+          >
+            SET MAX
+          </Button>
+        </div>
+        <form className="SendAmount__form">
+          <>
+            <input
+              className="SendAmount__input-amount"
+              name="amount"
+              type="number"
+              placeholder="0.00"
+              value={formik.values.amount}
+              onChange={(e) => formik.setFieldValue("amount", e.target.value)}
+            />
+            {destinationAsset && (
+              <ConversionRate
+                loading={loadingRate}
+                source={getAssetFromCanonical(formik.values.asset).code}
+                sourceAmount={formik.values.amount || defaultSourceAmount}
+                dest={
+                  getAssetFromCanonical(formik.values.destinationAsset).code
+                }
+                destAmount={destinationAmount}
+              />
+            )}
+            <div
+              className={`SendAmount__amount-warning${
+                destinationAsset ? "__path-payment" : ""
+              }`}
+            >
+              {decideWarning(formik.values.amount || "0")}
+            </div>
+          </>
+          <div>
+            <Select
+              id="asset-select"
+              name="asset"
+              value={formik.values.asset}
+              onChange={(e) => {
+                if (accountBalances.balances) {
+                  setAvailBalance(
+                    accountBalances.balances[e.target.value].total.toString(),
+                  );
+                }
+                formik.setFieldValue("asset", e.target.value);
+              }}
+            >
+              {accountBalances.balances &&
+                Object.entries(accountBalances.balances).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.token.code}
+                  </option>
+                ))}
+            </Select>
+          </div>
+          {destinationAsset && (
             <>
-              <div className="SendAmount__btn-set-max">
-                <Button
-                  variant={Button.variant.tertiary}
-                  onClick={() => {
-                    if (accountBalances.balances) {
-                      setFieldValue(
-                        "amount",
-                        accountBalances.balances[values.asset].total.toString(),
-                      );
-                    }
-                  }}
-                >
-                  SET MAX
-                </Button>
+              <div className="SendAmount__row__icon">
+                <Icon.ArrowDownCircle />
               </div>
-              <Form className="SendAmount__form">
-                <Field name="amount">
-                  {({ field }: FieldProps) => (
-                    <>
-                      <input
-                        className="SendAmount__input-amount"
-                        type="number"
-                        placeholder="0.00"
-                        {...field}
-                      />
-                      {destinationAsset && (
-                        <ConversionRate
-                          loading={loadingRate}
-                          source={assetInfo.code}
-                          dest={getAssetFromCanonical(selectedDestAsset).code}
-                          rate={conversionRate}
-                        />
-                      )}
-                      <div
-                        className={`SendAmount__amount-warning${
-                          destinationAsset ? "__path-payment" : ""
-                        }`}
-                      >
-                        {decideWarning(field.value || "0")}
-                      </div>
-                    </>
-                  )}
-                </Field>
-
-                <Field name="asset">
-                  {({ field }: FieldProps) => (
-                    <div>
-                      <Select
-                        id="asset-select"
-                        {...field}
-                        onChange={(e) => {
-                          handleAssetSelect(e);
-                          setFieldValue("asset", e.target.value);
-                        }}
-                      >
-                        {accountBalances.balances &&
-                          Object.entries(accountBalances.balances).map(
-                            ([k, v]) => (
-                              <option key={k} value={k}>
-                                {v.token.code}
-                              </option>
-                            ),
-                          )}
-                      </Select>
-                    </div>
-                  )}
-                </Field>
-                {destinationAsset && (
-                  <>
-                    <div className="SendAmount__row__icon">
-                      <Icon.ArrowDownCircle />
-                    </div>
-                    <Field name="destinationAsset">
-                      {({ field }: FieldProps) => (
-                        <div>
-                          <Select
-                            id="destAsset-select"
-                            {...field}
-                            onChange={(e) => {
-                              setSelectedDestAsset(e.target.value);
-                              setFieldValue("destinationAsset", e.target.value);
-                            }}
-                          >
-                            {destinationBalances.balances &&
-                              Object.entries(destinationBalances.balances).map(
-                                ([k, v]) => (
-                                  <option key={k} value={k}>
-                                    {v.token.code}
-                                  </option>
-                                ),
-                              )}
-                          </Select>
-                        </div>
-                      )}
-                    </Field>
-                  </>
-                )}
-                <div className="SendPayment__btn-continue">
-                  <Button
-                    disabled={loadingRate}
-                    fullWidth
-                    variant={Button.variant.tertiary}
-                    type="submit"
-                  >
-                    Continue
-                  </Button>
-                </div>
-              </Form>
+              <div>
+                <Select
+                  id="destAsset-select"
+                  name="destinationAsset"
+                  value={formik.values.destinationAsset}
+                  onChange={(e) =>
+                    formik.setFieldValue("destinationAsset", e.target.value)
+                  }
+                >
+                  {destinationBalances.balances &&
+                    Object.entries(destinationBalances.balances).map(
+                      ([k, v]) => (
+                        <option key={k} value={k}>
+                          {v.token.code}
+                        </option>
+                      ),
+                    )}
+                </Select>
+              </div>
             </>
           )}
-        </Formik>
+        </form>
+        <div className="SendPayment__btn-continue">
+          <Button
+            disabled={loadingRate || !formik.values.amount}
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={formik.submitForm}
+          >
+            Continue
+          </Button>
+        </div>
       </div>
     </PopupWrapper>
   );
