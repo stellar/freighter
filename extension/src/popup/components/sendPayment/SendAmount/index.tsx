@@ -17,7 +17,7 @@ import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { BackButton } from "popup/basics/BackButton";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   transactionSubmissionSelector,
@@ -162,19 +162,19 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
 
   return (
     <PopupWrapper>
-      <div className="SendAmount__top-btns">
-        <BackButton customBackAction={() => navigateTo(previous)} />
-        <button
-          onClick={() => navigateTo(ROUTES.sendPaymentType)}
-          className="SendAmount__top-btns__slider"
-        >
-          <Icon.Sliders />
-        </button>
-      </div>
+      <SubviewHeader
+        title={`Send ${getAssetFromCanonical(formik.values.asset).code}`}
+        customBackAction={() => navigateTo(previous)}
+        rightButton={
+          <button
+            onClick={() => navigateTo(ROUTES.sendPaymentType)}
+            className="SendAmount__icon-slider"
+          >
+            <Icon.Sliders />
+          </button>
+        }
+      />
       <div className="SendAmount">
-        <div className="SendPayment__header">
-          Send {getAssetFromCanonical(formik.values.asset).code}
-        </div>
         <div className="SendAmount__asset-copy">
           <span>{availBalance}</span>{" "}
           <span>{getAssetFromCanonical(formik.values.asset).code}</span>{" "}

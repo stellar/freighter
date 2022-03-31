@@ -1,17 +1,6 @@
 .Slippage {
-  &__top-btns {
-    display: flex;
-    justify-content: space-between;
-    height: var(--back--button-dimension);
-    z-index: var(--back--button-z-index);
-
-    &__exit {
-      cursor: pointer;
-    }
-  }
-
   &__cards {
-    margin: 2rem 0 0.75rem 0;
+    margin-bottom: 0.75rem;
     display: flex;
     flex-direction: row;
     flex-shrink: 1;
