@@ -21,6 +21,7 @@ export const decodeMemo = (memo: {}) => {
 export enum RESULT_CODES {
   op_invalid_limit = "op_invalid_limit",
   op_low_reserve = "op_low_reserve",
+  op_under_dest_min = "op_under_dest_min",
 }
 /*  eslint-enable camelcase  */
 

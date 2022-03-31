@@ -6,6 +6,7 @@ import { getAssetFromCanonical } from "helpers/stellar";
 
 import { Button, Icon, InfoBlock, TextLink } from "@stellar/design-system";
 import { navigateTo } from "popup/helpers/navigate";
+import { RESULT_CODES } from "popup/helpers/parseTransaction";
 import { ROUTES } from "popup/constants/routes";
 import {
   resetSubmission,
@@ -110,7 +111,7 @@ export const SubmitFail = () => {
 
     if (isPathPayment) {
       const resultCodes = get(error, "response.extras.result_codes.operations");
-      if (resultCodes.includes("op_under_dest_min")) {
+      if (resultCodes.includes(RESULT_CODES.op_under_dest_min)) {
         return (
           <InfoBlock variant={InfoBlock.variant.error}>
             <strong>CONVERSION RATE CHANGED</strong>
