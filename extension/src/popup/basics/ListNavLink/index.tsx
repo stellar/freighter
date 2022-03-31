@@ -24,3 +24,9 @@ export const ListNavLink = ({ children, href }: ListNavLinkProps) => (
     )}
   </div>
 );
+
+export const ListNavLinkWrapper = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => <div className="ListNavLink__wrapper">{children}</div>;

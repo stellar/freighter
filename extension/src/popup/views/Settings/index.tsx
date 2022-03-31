@@ -7,7 +7,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { ListNavLink } from "popup/basics/ListNavLink";
+import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 
 import { BottomNav } from "popup/components/BottomNav";
 
@@ -35,13 +35,16 @@ export const Settings = () => {
               v2.0.0
             </div>
           </div>
-          <ListNavLink href={ROUTES.preferences}>Preferences</ListNavLink>
-          <ListNavLink href={ROUTES.security}>Security</ListNavLink>
-          <ListNavLink href="http://freighter.app/help">Support</ListNavLink>
-          <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
-            Leave Feedback
-          </ListNavLink>
-          <ListNavLink href={ROUTES.about}>About</ListNavLink>
+          <ListNavLinkWrapper>
+            <ListNavLink href={ROUTES.preferences}>Preferences</ListNavLink>
+            <ListNavLink href={ROUTES.security}>Security</ListNavLink>
+            <ListNavLink href="http://freighter.app/help">Support</ListNavLink>
+            <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
+              Leave Feedback
+            </ListNavLink>
+            <ListNavLink href={ROUTES.about}>About</ListNavLink>
+          </ListNavLinkWrapper>
+
           <div className="Settings--logout">
             <Button
               fullWidth
