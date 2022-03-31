@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
-
+import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
-import { Button, Card, Loader } from "@stellar/design-system";
+import { Button, Card, Loader, Icon } from "@stellar/design-system";
 
-import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  xlmToStroop,
+  getConversionRate,
+} from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -19,6 +23,7 @@ import {
   transactionSubmissionSelector,
   addRecentAddress,
   resetSubmission,
+  isPathPaymentSelector,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -47,51 +52,67 @@ export const TransactionDetails = ({
       asset,
       memo,
       transactionFee,
+      allowedSlippage,
+      destinationAsset,
+      destinationAmount,
+      path,
     },
+    assetIcons,
   } = submission;
 
   const transactionHash = submission.response?.hash;
+  const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [assetIcons, setAssetIcons] = useState({} as AssetIcons);
+  const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
 
-  const horizonAsset = getAssetFromCanonical(asset);
-  const assetTotals = [
-    {
-      token: { issuer: horizonAsset.issuer, code: horizonAsset.code },
-      total: amount || "0",
-    },
-  ];
+  const sourceAsset = getAssetFromCanonical(asset);
+  const destAsset = getAssetFromCanonical(destinationAsset || "native");
 
+  // load destination asset icons
   useEffect(() => {
     (async () => {
       const iconURL = await getIconUrlFromIssuer({
-        key: horizonAsset.issuer,
-        code: horizonAsset.code,
+        key: destAsset.issuer,
+        code: destAsset.code,
         networkDetails,
       });
-      setAssetIcons({ [horizonAsset.code]: iconURL });
+      setDestAssetIcons({ [destAsset.code]: iconURL });
     })();
-  }, [horizonAsset.code, horizonAsset.issuer, networkDetails]);
+  }, [destAsset.code, destAsset.issuer, networkDetails]);
 
   const getOperation = () => {
-    // default to payment
-    let op = StellarSdk.Operation.payment({
-      destination,
-      asset: horizonAsset,
-      amount,
-    });
+    // path payment
+    if (isPathPayment) {
+      const mult = 1 - parseFloat(allowedSlippage) / 100;
+      const destMin = new BigNumber(destinationAmount).times(
+        new BigNumber(mult),
+      );
+      return StellarSdk.Operation.pathPaymentStrictSend({
+        sendAsset: getAssetFromCanonical(asset),
+        sendAmount: amount,
+        destination,
+        destAsset: getAssetFromCanonical(destinationAsset),
+        destMin: destMin.toFixed(7),
+        path: path.map((p) => getAssetFromCanonical(p)),
+      });
+    }
     // create account if unfunded and sending xlm
     if (
       !destinationBalances.isFunded &&
       asset === StellarSdk.Asset.native().toString()
     ) {
-      op = StellarSdk.Operation.createAccount({
+      return StellarSdk.Operation.createAccount({
         destination,
         startingBalance: amount,
       });
     }
-    return op;
+    // regular payment
+    return StellarSdk.Operation.payment({
+      destination,
+      asset: sourceAsset,
+      amount,
+    });
   };
 
   // handles signing and submitting
@@ -110,7 +131,6 @@ export const TransactionDetails = ({
             .addMemo(StellarSdk.Memo.text(memo))
             .setTimeout(180)
             .build();
-
           return transaction.toXDR();
         });
 
@@ -129,7 +149,6 @@ export const TransactionDetails = ({
           res.payload.signedTransaction,
           networkDetails.networkPassphrase,
         );
-
         const submitResp = await dispatch(
           submitFreighterTransaction({
             signedXDR,
@@ -158,15 +177,42 @@ export const TransactionDetails = ({
       <BackButton customBackAction={goBack} />
       <div className="SendPayment__header">
         {isSendComplete ? (
-          <span>Sent {horizonAsset.code}</span>
+          <span>Sent {sourceAsset.code}</span>
         ) : (
           <span>Confirm Send</span>
         )}
       </div>
-      <div className="TransactionDetails__card">
+      <div className="TransactionDetails__cards">
         <Card>
-          <AccountAssets assetIcons={assetIcons} sortedBalances={assetTotals} />
+          <AccountAssets
+            assetIcons={assetIcons}
+            sortedBalances={[
+              {
+                token: { issuer: sourceAsset.issuer, code: sourceAsset.code },
+                total: amount || "0",
+              },
+            ]}
+          />
         </Card>
+        {isPathPayment && (
+          <>
+            <Icon.ArrowDownCircle />
+            <Card>
+              <AccountAssets
+                assetIcons={destAssetIcons}
+                sortedBalances={[
+                  {
+                    token: {
+                      issuer: destAsset.issuer,
+                      code: destAsset.code,
+                    },
+                    total: destinationAmount || "0",
+                  },
+                ]}
+              />
+            </Card>
+          </>
+        )}
       </div>
       <div className="TransactionDetails__row">
         <div>Sending to </div>
@@ -185,10 +231,20 @@ export const TransactionDetails = ({
           <div className="TransactionDetails__row__right">{memo || "None"}</div>
         </div>
       )}
+      {isPathPayment && (
+        <div className="TransactionDetails__row">
+          <div>Conversion rate </div>
+          <div className="TransactionDetails__row__right">
+            1 {getAssetFromCanonical(asset).code} /{" "}
+            {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
+            {getAssetFromCanonical(destinationAsset).code}
+          </div>
+        </div>
+      )}
       <div className="TransactionDetails__row">
         <div>Network Fee </div>
         <div className="TransactionDetails__row__right">
-          {transactionFee} {horizonAsset.code}
+          {transactionFee} {sourceAsset.code}
         </div>
       </div>
       <div className="TransactionDetails__buttons-row">

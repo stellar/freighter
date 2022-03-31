@@ -11,6 +11,7 @@ export enum ROUTES {
   sendPaymentType = "/account/sendPayment/amount/type",
   sendPaymentSettings = "/account/sendPayment/settings",
   sendPaymentSettingsFee = "/account/sendPayment/settings/fee",
+  sendPaymentSettingsSlippage = "/account/sendPayment/settings/slippage",
   sendPaymentConfirm = "/account/sendPayment/confirm",
   addAccount = "/add-account",
   signTransaction = "/sign-transaction",

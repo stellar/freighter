@@ -1,16 +1,18 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
-
+import get from "lodash/get";
 import { getAssetFromCanonical } from "helpers/stellar";
 
 import { Button, Icon, InfoBlock, TextLink } from "@stellar/design-system";
 import { navigateTo } from "popup/helpers/navigate";
+import { RESULT_CODES } from "popup/helpers/parseTransaction";
 import { ROUTES } from "popup/constants/routes";
 import {
   resetSubmission,
   transactionDataSelector,
   transactionSubmissionSelector,
+  isPathPaymentSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -63,8 +65,10 @@ export const SubmitFail = () => {
   const dispatch = useDispatch();
   const {
     destinationBalances,
+    error,
     transactionData: { destination, federationAddress, amount, asset },
   } = useSelector(transactionSubmissionSelector);
+  const isPathPayment = useSelector(isPathPaymentSelector);
 
   const horizonAsset = getAssetFromCanonical(asset);
 
@@ -81,7 +85,7 @@ export const SubmitFail = () => {
     }
 
     // no trustline
-    if (asset !== Asset.native().toString()) {
+    if (!isPathPayment && asset !== Asset.native().toString()) {
       const keys = Object.keys(destinationBalances.balances || {});
       if (!keys.some((key) => key === asset)) {
         return (
@@ -98,6 +102,29 @@ export const SubmitFail = () => {
                 target="_blank"
               >
                 Learn more about trustlines
+              </TextLink>
+            </div>
+          </InfoBlock>
+        );
+      }
+    }
+
+    if (isPathPayment) {
+      const resultCodes = get(error, "response.extras.result_codes.operations");
+      if (resultCodes.includes(RESULT_CODES.op_under_dest_min)) {
+        return (
+          <InfoBlock variant={InfoBlock.variant.error}>
+            <strong>CONVERSION RATE CHANGED</strong>
+            <div>
+              Please check the new rate and try again.{" "}
+              <TextLink
+                underline
+                variant={TextLink.variant.secondary}
+                href="https://developers.stellar.org/docs/glossary/decentralized-exchange/#cross-asset-payments"
+                rel="noreferrer"
+                target="_blank"
+              >
+                Learn more about conversion rates
               </TextLink>
             </div>
           </InfoBlock>
