@@ -28,7 +28,7 @@ import {
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
-import { BackButton } from "popup/basics/BackButton";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 
@@ -174,14 +174,10 @@ export const TransactionDetails = ({
           <Loader /> <span>Processing transaction</span>
         </div>
       )}
-      <BackButton customBackAction={goBack} />
-      <div className="SendPayment__header">
-        {isSendComplete ? (
-          <span>Sent {sourceAsset.code}</span>
-        ) : (
-          <span>Confirm Send</span>
-        )}
-      </div>
+      <SubviewHeader
+        title={isSendComplete ? `Sent ${sourceAsset.code}` : "Confirm Send"}
+        customBackAction={goBack}
+      />
       <div className="TransactionDetails__cards">
         <Card>
           <AccountAssets

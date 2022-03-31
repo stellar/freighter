@@ -7,6 +7,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { AutoSaveFields } from "popup/components/AutoSave";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveDestinationAsset,
   transactionDataSelector,
@@ -52,13 +53,11 @@ export const SendType = () => {
   const { destinationAsset } = useSelector(transactionDataSelector);
   return (
     <PopupWrapper>
-      <div
-        className="SendType__btn-exit"
-        onClick={() => navigateTo(ROUTES.sendPaymentAmount)}
-      >
-        <Icon.X />
-      </div>
-      <div className="SendPayment__header">SendType</div>
+      <SubviewHeader
+        title="Send Type"
+        customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
+        customBackIcon={<Icon.X />}
+      />
       <Formik
         initialValues={{
           paymentType:
@@ -75,7 +74,7 @@ export const SendType = () => {
           );
         }}
       >
-        <Form className="SendType__form">
+        <Form>
           <AutoSaveFields />
           <RadioCheck
             name="paymentType"
