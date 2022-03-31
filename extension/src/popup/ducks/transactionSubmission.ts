@@ -284,11 +284,11 @@ const transactionSubmissionSlice = createSlice({
       }
 
       // store in canonical form for easier use
-      const path = [];
-      for (let i = 0; i < action.payload.path.length; i += 1) {
-        const p = action.payload.path[i];
-        path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-      }
+      const path: Array<string> = [];
+      action.payload.path.forEach((p) =>
+        path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer)),
+      );
+
       state.transactionData.path = path;
       state.transactionData.destinationAmount =
         action.payload.destination_amount;
