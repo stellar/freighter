@@ -12,6 +12,7 @@ import {
   Loader,
 } from "@stellar/design-system";
 
+import { PillButton } from "popup/basics/PillButton";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
@@ -204,8 +205,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
           available
         </div>
         <div className="SendAmount__btn-set-max">
-          <Button
-            variant={Button.variant.tertiary}
+          <PillButton
             onClick={() => {
               if (accountBalances.balances) {
                 formik.setFieldValue(
@@ -218,7 +218,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
             }}
           >
             SET MAX
-          </Button>
+          </PillButton>
         </div>
         <form
           className="SendAmount__form"
