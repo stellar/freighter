@@ -33,6 +33,11 @@ import {
 
 import "../styles.scss";
 
+enum AMOUNT_ERROR {
+  TOO_HIGH = "amount too high",
+  DEC_MAX = "too many decimal digits",
+}
+
 const ConversionRate = ({
   source,
   sourceAmount,
@@ -101,9 +106,21 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     navigateTo(ROUTES.sendPaymentSettings);
   };
 
+  const validate = (values: { amount: string }) => {
+    const val = values.amount.toString();
+    if (new BigNumber(val).gt(new BigNumber(availBalance))) {
+      return { amount: AMOUNT_ERROR.TOO_HIGH };
+    }
+    if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
+      return { amount: AMOUNT_ERROR.DEC_MAX };
+    }
+    return {};
+  };
+
   const formik = useFormik({
     initialValues: { amount, asset, destinationAsset },
     onSubmit: handleContinue,
+    validate,
   });
 
   const db = useCallback(
@@ -138,22 +155,28 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     formik.values.amount,
   ]);
 
-  const decideWarning = (val: string) => {
+  const DecideWarning = () => {
     // unfunded destination
     if (
       shouldAccountDoesntExistWarning(
         destinationBalances.isFunded || false,
         asset,
-        val,
+        formik.values.amount || "0",
       )
     ) {
       return <AccountDoesntExistWarning />;
     }
-    // amount too high
-    if (new BigNumber(val).gt(new BigNumber(availBalance))) {
+    if (formik.errors.amount === AMOUNT_ERROR.TOO_HIGH) {
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           Entered amount is higher than your balance
+        </InfoBlock>
+      );
+    }
+    if (formik.errors.amount === AMOUNT_ERROR.DEC_MAX) {
+      return (
+        <InfoBlock variant={InfoBlock.variant.error}>
+          7 digits after the decimal allowed
         </InfoBlock>
       );
     }
@@ -205,7 +228,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
               type="number"
               placeholder="0.00"
               value={formik.values.amount}
-              onChange={(e) => formik.setFieldValue("amount", e.target.value)}
+              onChange={formik.handleChange}
             />
             {destinationAsset && (
               <ConversionRate
@@ -223,7 +246,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                 destinationAsset ? "__path-payment" : ""
               }`}
             >
-              {decideWarning(formik.values.amount || "0")}
+              <DecideWarning />
             </div>
           </>
           <div>
@@ -277,7 +300,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         </form>
         <div className="SendPayment__btn-continue">
           <Button
-            disabled={loadingRate || !formik.values.amount}
+            disabled={loadingRate || !formik.values.amount || !formik.isValid}
             fullWidth
             variant={Button.variant.tertiary}
             onClick={formik.submitForm}
