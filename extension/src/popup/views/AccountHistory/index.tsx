@@ -52,6 +52,7 @@ export const AccountHistory = () => {
   const defaultDetailViewProps: TransactionDetailProps = {
     operation: {} as HorizonOperation,
     headerTitle: "",
+    isPayment: false,
     isRecipient: false,
     operationText: "",
     externalUrl: "",
