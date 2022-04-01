@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   ActionStatus,
   transactionSubmissionSelector,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { ROUTES } from "popup/constants/routes";
@@ -15,6 +16,7 @@ import { TransactionDetails } from "./TransactionDetails";
 import "../styles.scss";
 
 export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
+  const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const [isSendComplete, setIsSendComplete] = useState(false);
 
@@ -22,9 +24,9 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
     if (isSendComplete) {
       return (
         <TransactionDetails
-          isSendComplete
           goBack={() => {
-            setIsSendComplete(false);
+            dispatch(resetSubmission());
+            navigateTo(ROUTES.accountHistory);
           }}
         />
       );
