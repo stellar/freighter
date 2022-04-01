@@ -220,7 +220,13 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
             SET MAX
           </Button>
         </div>
-        <form className="SendAmount__form">
+        <form
+          className="SendAmount__form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            formik.submitForm();
+          }}
+        >
           <>
             <input
               className="SendAmount__input-amount"
@@ -297,17 +303,18 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
               </div>
             </>
           )}
+
+          <div className="SendPayment__btn-continue">
+            <Button
+              disabled={loadingRate || !formik.values.amount || !formik.isValid}
+              fullWidth
+              variant={Button.variant.tertiary}
+              type="submit"
+            >
+              Continue
+            </Button>
+          </div>
         </form>
-        <div className="SendPayment__btn-continue">
-          <Button
-            disabled={loadingRate || !formik.values.amount || !formik.isValid}
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={formik.submitForm}
-          >
-            Continue
-          </Button>
-        </div>
       </div>
     </PopupWrapper>
   );
