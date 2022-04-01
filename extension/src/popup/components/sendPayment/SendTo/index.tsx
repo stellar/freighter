@@ -8,13 +8,13 @@ import BigNumber from "bignumber.js";
 import { truncatedPublicKey } from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { BackButton } from "popup/basics/BackButton";
 import {
   saveDestination,
   saveFederationAddress,
@@ -192,9 +192,11 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
   return (
     <PopupWrapper>
-      <BackButton customBackAction={() => navigateTo(previous)} />
-      <div className="SendPayment__header">Send To</div>
-      <form className="SendTo__form">
+      <SubviewHeader
+        title="Send To"
+        customBackAction={() => navigateTo(previous)}
+      />
+      <form>
         <FormRows>
           <Input
             autoComplete="off"

@@ -16,6 +16,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { FormRows } from "popup/basics/Forms";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveTransactionFee,
   transactionDataSelector,
@@ -61,22 +62,20 @@ export const SendSettingsFee = () => {
 
   return (
     <PopupWrapper>
-      <div className="TransactionFee__top-btns">
-        <div
-          className="TransactionFee__top-btns__exit"
-          onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
-        >
-          <Icon.X />
-        </div>
-        <DetailsTooltip
-          // TODO - add copy
-          details=""
-        >
-          <span></span>
-        </DetailsTooltip>
-      </div>
+      <SubviewHeader
+        title="Transaction Fee"
+        customBackAction={() => navigateTo(ROUTES.sendPaymentSettings)}
+        customBackIcon={<Icon.X />}
+        rightButton={
+          <DetailsTooltip
+            // TODO - add copy
+            details=""
+          >
+            <span></span>
+          </DetailsTooltip>
+        }
+      />
       <div className="TransactionFee">
-        <div className="SendPayment__header">Transaction Fee</div>
         <Formik
           initialValues={{ transactionFee }}
           onSubmit={(values) => {

@@ -1,16 +1,4 @@
 .SendType {
-  &__btn-exit {
-    display: flex;
-    justify-content: start;
-    height: var(--back--button-dimension);
-    z-index: var(--back--button-z-index);
-    cursor: pointer;
-  }
-
-  &__form {
-    margin-top: 1.5rem;
-  }
-
   &--label {
     cursor: pointer;
     text-transform: none;

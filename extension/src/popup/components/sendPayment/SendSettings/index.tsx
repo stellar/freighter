@@ -6,7 +6,7 @@ import { Button, Icon, Textarea, DetailsTooltip } from "@stellar/design-system";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { BackButton } from "popup/basics/BackButton";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
 import {
   saveMemo,
@@ -27,9 +27,11 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
 
   return (
     <PopupWrapper>
-      <BackButton customBackAction={() => navigateTo(previous)} />
       <div className="SendSettings">
-        <div className="SendPayment__header">Send Settings</div>
+        <SubviewHeader
+          title="Send Settings"
+          customBackAction={() => navigateTo(previous)}
+        />
         <Formik
           initialValues={{ memo }}
           onSubmit={(values) => {

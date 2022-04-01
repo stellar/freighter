@@ -18,6 +18,7 @@ import {
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import "./styles.scss";
 
@@ -37,22 +38,20 @@ export const SendSettingsSlippage = () => {
 
   return (
     <PopupWrapper>
-      <div className="Slippage__top-btns">
-        <div
-          className="Slippage__top-btns__exit"
-          onClick={() => navigateTo(ROUTES.sendPaymentSettings)}
-        >
-          <Icon.X />
-        </div>
-        <DetailsTooltip
-          // TODO - add copy
-          details=""
-        >
-          <span></span>
-        </DetailsTooltip>
-      </div>
+      <SubviewHeader
+        title="Allowed Slippage"
+        customBackAction={() => navigateTo(ROUTES.sendPaymentSettings)}
+        customBackIcon={<Icon.X />}
+        rightButton={
+          <DetailsTooltip
+            // TODO - add copy
+            details=""
+          >
+            <span></span>
+          </DetailsTooltip>
+        }
+      />
       <div className="Slippage">
-        <div className="SendPayment__header">Allowed Slippage</div>
         <Formik
           initialValues={{ presetSlippage, customSlippage }}
           onSubmit={(values) => {
