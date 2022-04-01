@@ -1,0 +1,10 @@
+.PillButton {
+  .Button {
+    background: var(--button-bg--tertiary);
+    border-color: var(--button-bg--tertiary);
+    border-radius: 10rem;
+    font-size: var(--font-size-secondary);
+    padding: 0.25rem 0.75rem;
+    text-transform: uppercase;
+  }
+}

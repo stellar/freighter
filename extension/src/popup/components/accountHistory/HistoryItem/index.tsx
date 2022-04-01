@@ -38,7 +38,7 @@ export const HistoryItem = ({
     to,
     type,
     transaction_attr: { operation_count: operationCount },
-    isPayment,
+    isPayment = false,
   } = operation;
 
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
@@ -83,9 +83,10 @@ export const HistoryItem = ({
         setDetailViewProps({
           operation,
           isRecipient,
+          isPayment,
           headerTitle: isPayment
             ? `${recipientLabel} ${operationAssetCode}`
-            : operationString,
+            : "Transaction",
           operationText: isPayment
             ? `${paymentDifference}${amount} ${operationAssetCode}`
             : operationString,
