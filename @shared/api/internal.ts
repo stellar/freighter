@@ -14,7 +14,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 
-const TRANSACTIONS_LIMIT = 15;
+const TRANSACTIONS_LIMIT = 100;
 
 export const createAccount = async (
   password: string,

@@ -15,9 +15,14 @@
 
   --back--button-dimension: 1rem;
   --back--button-z-index: 2;
+
+  // TODO: migrate to SDS
+  --background-color: #1f212a;
+  --button-bg--tertiary: #303448;
 }
 
 body {
+  background: var(--background-color) !important;
   overscroll-behavior: none;
   margin: 0;
   padding: 0;
