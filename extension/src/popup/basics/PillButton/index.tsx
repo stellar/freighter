@@ -3,12 +3,20 @@ import { Button } from "@stellar/design-system";
 
 import "./styles.scss";
 
-interface PillButtonProps {
+interface PillButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  isLoading?: boolean;
   children: React.ReactNode;
 }
 
-export const PillButton = ({ children }: PillButtonProps) => (
+export const PillButton = ({
+  children,
+  isLoading,
+  ...props
+}: PillButtonProps) => (
   <div className="PillButton">
-    <Button variant={Button.variant.tertiary}>{children}</Button>
+    <Button isLoading={isLoading} variant={Button.variant.tertiary} {...props}>
+      {children}
+    </Button>
   </div>
 );

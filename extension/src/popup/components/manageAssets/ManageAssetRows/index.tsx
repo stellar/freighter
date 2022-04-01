@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
-import { Loader } from "@stellar/design-system";
 
 import { AppDispatch } from "popup/App";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { getCanonicalFromAsset } from "helpers/stellar";
+
+import { PillButton } from "popup/basics/PillButton";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -137,19 +138,17 @@ export const ManageAssetRows = ({
                   : "Stellar Network"}
               </div>
             </div>
-            <div
-              className={`ManageAssetRows__button ${
-                isSubmitting ? "ManageAssetRows__button--submitting" : ""
-              }`}
+            <PillButton
+              isLoading={isSubmitting}
               onClick={() =>
                 isSubmitting
                   ? null
                   : changeTrustline(code, issuer, !isTrustlineActive)
               }
+              type="button"
             >
-              {isSubmitting ? <Loader /> : null}
               {isTrustlineActive ? "Remove" : "Add"}
-            </div>
+            </PillButton>
           </div>
         );
       })}
