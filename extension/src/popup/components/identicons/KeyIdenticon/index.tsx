@@ -7,6 +7,10 @@ import { IdenticonImg } from "../IdenticonImg";
 import "./styles.scss";
 
 interface IdenticonWrapperElProps {
+  customSize?: {
+    dimension: string;
+    padding: string;
+  };
   isSmall?: boolean;
 }
 
@@ -17,6 +21,7 @@ interface KeyIdenticonProps extends IdenticonWrapperElProps {
 export const KeyIdenticon = ({
   publicKey = "",
   isSmall = false,
+  customSize,
   ...props
 }: KeyIdenticonProps) => {
   const shortPublicKey = truncatedPublicKey(publicKey);
@@ -25,6 +30,12 @@ export const KeyIdenticon = ({
       ? {
           "--Icon-padding": "0.2rem",
           "--Icon-dimension": "1.5rem",
+        }
+      : {}),
+    ...(customSize
+      ? {
+          "--Icon-padding": customSize.padding,
+          "--Icon-dimension": customSize.dimension,
         }
       : {}),
   } as React.CSSProperties;

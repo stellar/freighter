@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Button, Identicon } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 import StellarSdk from "stellar-sdk";
 
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { emitMetric } from "helpers/metrics";
@@ -25,6 +26,7 @@ export interface TransactionDetailProps {
   operation: HorizonOperation;
   headerTitle: string;
   isRecipient: boolean;
+  isPayment: boolean;
   operationText: string;
   externalUrl: string;
   setIsDetailViewShowing: (isDetailViewShoing: boolean) => void;
@@ -33,6 +35,7 @@ export interface TransactionDetailProps {
 export const TransactionDetail = ({
   operation,
   headerTitle,
+  isPayment,
   isRecipient,
   operationText,
   externalUrl,
@@ -107,27 +110,48 @@ export const TransactionDetail = ({
             customBackAction={() => setIsDetailViewShowing(false)}
             title={headerTitle}
           />
-          <div className="TransactionDetail__header">
-            {operationText}
-            <div className="TransactionDetail__header__network">
-              {networkIconUrl || assetType === "native" ? (
-                <img src={networkIconUrl || StellarLogo} alt="Network icon" />
-              ) : (
-                <div className="TransactionDetail__header__network__icon" />
-              )}
+          {isPayment ? (
+            <div className="TransactionDetail__header">
+              {operationText}
+              <div className="TransactionDetail__header__network">
+                <>
+                  {networkIconUrl || assetType === "native" ? (
+                    <img
+                      src={networkIconUrl || StellarLogo}
+                      alt="Network icon"
+                    />
+                  ) : (
+                    <div className="TransactionDetail__header__network__icon" />
+                  )}
 
-              {networkDomain || "Stellar Lumens"}
-            </div>
-          </div>
-          <div className="TransactionDetail__info">
-            {from ? (
-              <div className="TransactionDetail__info__row">
-                <div>From</div>
-                <div>
-                  <Identicon publicAddress={from} shortenAddress size="1rem" />
-                </div>
+                  {networkDomain || "Stellar Lumens"}
+                </>
               </div>
-            ) : null}
+            </div>
+          ) : null}
+
+          <div className="TransactionDetail__info">
+            <div className="TransactionDetail__info__row">
+              {isPayment ? (
+                <>
+                  <div>From</div>
+                  <div>
+                    <KeyIdenticon
+                      publicKey={from}
+                      customSize={{
+                        dimension: "1rem",
+                        padding: ".1rem",
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>Action</div>
+                  <div>{operationText}</div>
+                </>
+              )}
+            </div>
             <div className="TransactionDetail__info__row">
               <div>Date</div>
               <div>

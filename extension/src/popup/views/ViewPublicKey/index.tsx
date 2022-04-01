@@ -4,6 +4,8 @@ import QrCode from "qrcode.react";
 import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
 import { Button, Icon, Input, CopyText } from "@stellar/design-system";
 
+import { PillButton } from "popup/basics/PillButton";
+
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 
@@ -113,7 +115,7 @@ export const ViewPublicKey = () => {
           </div>
           <div className="ViewPublicKey__copy-btn">
             <CopyText textToCopy={publicKey} doneLabel="ADDRESS COPIED">
-              <Button variant={Button.variant.tertiary}>COPY</Button>
+              <PillButton>COPY</PillButton>
             </CopyText>
           </div>
         </div>
