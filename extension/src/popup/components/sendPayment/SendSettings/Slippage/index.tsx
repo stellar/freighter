@@ -67,7 +67,7 @@ export const SendSettingsSlippage = () => {
             customSlippage: YupNumber().max(10, "must be below 10%"),
           })}
         >
-          {({ setFieldValue, values, errors, touched }) => (
+          {({ setFieldValue, values, errors }) => (
             <Form>
               <div className="Slippage__cards">
                 <label className="Slippage--radio-label">
@@ -122,11 +122,7 @@ export const SendSettingsSlippage = () => {
                         setFieldValue("customSlippage", e.target.value);
                         setFieldValue("presetSlippage", "");
                       }}
-                      error={
-                        errors.customSlippage && touched.customSlippage
-                          ? errors.customSlippage
-                          : null
-                      }
+                      error={errors.customSlippage}
                     />
                   )}
                 </Field>
