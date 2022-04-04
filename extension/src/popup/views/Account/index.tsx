@@ -115,7 +115,7 @@ export const Account = () => {
             </div>
           </div>
         </div>
-        <div className="AccountView__assets-wrapper">
+        <div>
           {isFunded ? (
             <AccountAssets
               sortedBalances={sortedBalances}
