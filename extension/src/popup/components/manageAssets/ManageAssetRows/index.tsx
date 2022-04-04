@@ -34,13 +34,13 @@ export type ManageAssetCurrency = CURRENCY & { domain: string };
 interface ManageAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   setErrorAsset: (errorAsset: string) => void;
-  parentRef: React.RefObject<HTMLDivElement>;
+  maxHeight: number;
 }
 
 export const ManageAssetRows = ({
   assetRows,
   setErrorAsset,
-  parentRef,
+  maxHeight,
 }: ManageAssetRowsProps) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -120,7 +120,7 @@ export const ManageAssetRows = ({
     <SimpleBar
       className="ManageAssetRows__scrollbar"
       style={{
-        maxHeight: `${parentRef.current?.clientHeight}px`,
+        maxHeight: `${maxHeight}px`,
       }}
     >
       <div className="ManageAssetRows__content">

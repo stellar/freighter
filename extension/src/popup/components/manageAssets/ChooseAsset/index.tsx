@@ -26,7 +26,7 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
-  const ManageAssetRowsWrapperRef = useRef(null);
+  const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchDomains = async () => {
@@ -74,7 +74,7 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
           <ManageAssetRows
             assetRows={assetRows}
             setErrorAsset={setErrorAsset}
-            parentRef={ManageAssetRowsWrapperRef}
+            maxHeight={ManageAssetRowsWrapperRef?.current?.clientHeight || 600}
           />
         </div>
         <div className="ChooseAsset__button">

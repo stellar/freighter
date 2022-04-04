@@ -32,7 +32,7 @@ interface AddAssetProps {
 export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isCurrencyNotFound, setIsCurrencyNotFound] = useState(false);
-  const ManageAssetRowsWrapperRef = useRef(null);
+  const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (values: FormValues) => {
     setIsCurrencyNotFound(false);
@@ -106,7 +106,10 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
                       <ManageAssetRows
                         assetRows={assetRows}
                         setErrorAsset={setErrorAsset}
-                        parentRef={ManageAssetRowsWrapperRef}
+                        maxHeight={
+                          ManageAssetRowsWrapperRef?.current?.clientHeight ||
+                          600
+                        }
                       />
                     </div>
                   </>
