@@ -196,7 +196,12 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
         title="Send To"
         customBackAction={() => navigateTo(previous)}
       />
-      <form>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          formik.submitForm();
+        }}
+      >
         <FormRows>
           <Input
             autoComplete="off"
@@ -207,80 +212,80 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
             value={formik.values.destination}
           />
         </FormRows>
-      </form>
-      <div className="SendTo__address-wrapper">
-        {isLoading ? (
-          <div className="SendTo__loader">
-            <Loader />
-          </div>
-        ) : (
-          <div>
-            {formik.values.destination === "" ? (
-              <>
-                {recentAddresses.length > 0 && (
-                  <div className="SendTo__subheading">RECENT</div>
-                )}
-                <ul className="SendTo__recent-accts-ul">
-                  {recentAddresses.map((pubKey) => (
-                    <li key={pubKey}>
-                      <button
-                        onClick={() =>
-                          formik.setFieldValue("destination", pubKey, true)
-                        }
-                        className="SendTo__subheading-identicon"
-                      >
-                        <IdenticonImg publicKey={pubKey} />
-                        <span>
-                          {isFederationAddress(pubKey)
-                            ? pubKey
-                            : truncatedPublicKey(pubKey)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <div>
-                {formik.isValid ? (
-                  <>
-                    {!destinationBalances.isFunded && (
-                      <AccountDoesntExistWarning />
-                    )}
-                    {isFederationAddress(formik.values.destination) && (
-                      <>
-                        <div className="SendTo__subheading">
-                          FEDERATION ADDRESS
-                        </div>
-                        <div className="SendTo__subsection-copy">
-                          {formik.values.destination}
-                        </div>
-                      </>
-                    )}
-                    <div className="SendTo__subheading">Address</div>
-                    <div className="SendTo__subheading-identicon">
-                      <IdenticonImg publicKey={validatedPubKey} />
-                      <span>{truncatedPublicKey(validatedPubKey)}</span>
-                    </div>
+        <div className="SendTo__address-wrapper">
+          {isLoading ? (
+            <div className="SendTo__loader">
+              <Loader />
+            </div>
+          ) : (
+            <div>
+              {formik.values.destination === "" ? (
+                <>
+                  {recentAddresses.length > 0 && (
+                    <div className="SendTo__subheading">RECENT</div>
+                  )}
+                  <ul className="SendTo__recent-accts-ul">
+                    {recentAddresses.map((pubKey) => (
+                      <li key={pubKey}>
+                        <button
+                          onClick={() =>
+                            formik.setFieldValue("destination", pubKey, true)
+                          }
+                          className="SendTo__subheading-identicon"
+                        >
+                          <IdenticonImg publicKey={pubKey} />
+                          <span>
+                            {isFederationAddress(pubKey)
+                              ? pubKey
+                              : truncatedPublicKey(pubKey)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <div>
+                  {formik.isValid ? (
+                    <>
+                      {!destinationBalances.isFunded && (
+                        <AccountDoesntExistWarning />
+                      )}
+                      {isFederationAddress(formik.values.destination) && (
+                        <>
+                          <div className="SendTo__subheading">
+                            FEDERATION ADDRESS
+                          </div>
+                          <div className="SendTo__subsection-copy">
+                            {formik.values.destination}
+                          </div>
+                        </>
+                      )}
+                      <div className="SendTo__subheading">Address</div>
+                      <div className="SendTo__subheading-identicon">
+                        <IdenticonImg publicKey={validatedPubKey} />
+                        <span>{truncatedPublicKey(validatedPubKey)}</span>
+                      </div>
 
-                    <div className="SendPayment__btn-continue">
-                      <Button
-                        fullWidth
-                        variant={Button.variant.tertiary}
-                        onClick={formik.submitForm}
-                      >
-                        Continue
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <InvalidAddressWarning />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                      <div className="SendPayment__btn-continue">
+                        <Button
+                          fullWidth
+                          type="submit"
+                          variant={Button.variant.tertiary}
+                        >
+                          Continue
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <InvalidAddressWarning />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </form>
     </PopupWrapper>
   );
 };

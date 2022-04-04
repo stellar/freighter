@@ -34,13 +34,7 @@ import { AccountAssets } from "popup/components/account/AccountAssets";
 
 import "./styles.scss";
 
-export const TransactionDetails = ({
-  goBack,
-  isSendComplete = false,
-}: {
-  goBack: () => void;
-  isSendComplete?: boolean;
-}) => {
+export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -175,7 +169,11 @@ export const TransactionDetails = ({
         </div>
       )}
       <SubviewHeader
-        title={isSendComplete ? `Sent ${sourceAsset.code}` : "Confirm Send"}
+        title={
+          submission.status === ActionStatus.SUCCESS
+            ? `Sent ${sourceAsset.code}`
+            : "Confirm Send"
+        }
         customBackAction={goBack}
       />
       <div className="TransactionDetails__cards">
@@ -244,7 +242,7 @@ export const TransactionDetails = ({
         </div>
       </div>
       <div className="TransactionDetails__buttons-row">
-        {isSendComplete ? (
+        {submission.status === ActionStatus.SUCCESS ? (
           <Button
             variant={Button.variant.tertiary}
             onClick={() =>

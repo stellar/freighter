@@ -6,7 +6,6 @@ import { Button, Icon } from "@stellar/design-system";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { AutoSaveFields } from "popup/components/AutoSave";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveDestinationAsset,
@@ -72,10 +71,10 @@ export const SendType = () => {
               values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
             ),
           );
+          navigateTo(ROUTES.sendPaymentAmount);
         }}
       >
         <Form>
-          <AutoSaveFields />
           <RadioCheck
             name="paymentType"
             title="Same source and destination asset"
@@ -88,18 +87,13 @@ export const SendType = () => {
             value={PAYMENT_TYPES.PATH_PAYMENT}
             subtext="Less common"
           />
+          <div className="SendPayment__btn-continue">
+            <Button fullWidth variant={Button.variant.tertiary} type="submit">
+              Done
+            </Button>
+          </div>
         </Form>
       </Formik>
-      <div className="SendPayment__btn-continue">
-        <Button
-          fullWidth
-          variant={Button.variant.tertiary}
-          type="submit"
-          onClick={() => navigateTo(ROUTES.sendPaymentAmount)}
-        >
-          Done
-        </Button>
-      </div>
     </PopupWrapper>
   );
 };
