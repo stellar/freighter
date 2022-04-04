@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Horizon } from "stellar-sdk";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import { HorizonOperation } from "@shared/api/types";
-
-import { PopupWrapper } from "popup/basics/PopupWrapper";
-
 import { getAccountHistory } from "@shared/api/internal";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -106,7 +105,7 @@ export const AccountHistory = () => {
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
-      <PopupWrapper>
+      <div className="AccountHistory__wrapper">
         <header className="AccountHistory__header">Transactions</header>
         <div className="AccountHistory__selector">
           {Object.values(SELECTOR_OPTIONS).map((option) => (
@@ -124,20 +123,22 @@ export const AccountHistory = () => {
           ))}
         </div>
         <div className="AccountHistory__list">
-          {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-            (operation: HistoryItemOperation) => (
-              <HistoryItem
-                key={operation.id}
-                operation={operation}
-                publicKey={publicKey}
-                url={STELLAR_EXPERT_URL}
-                setDetailViewProps={setDetailViewProps}
-                setIsDetailViewShowing={setIsDetailViewShowing}
-              />
-            ),
-          )}
+          <SimpleBar className="AccountHistory__list__scrollbar">
+            {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
+              (operation: HistoryItemOperation) => (
+                <HistoryItem
+                  key={operation.id}
+                  operation={operation}
+                  publicKey={publicKey}
+                  url={STELLAR_EXPERT_URL}
+                  setDetailViewProps={setDetailViewProps}
+                  setIsDetailViewShowing={setIsDetailViewShowing}
+                />
+              ),
+            )}
+          </SimpleBar>
         </div>
-      </PopupWrapper>
+      </div>
       <BottomNav />
     </div>
   );

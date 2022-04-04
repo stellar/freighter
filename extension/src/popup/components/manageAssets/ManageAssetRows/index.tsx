@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import { AppDispatch } from "popup/App";
 
@@ -32,11 +34,13 @@ export type ManageAssetCurrency = CURRENCY & { domain: string };
 interface ManageAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   setErrorAsset: (errorAsset: string) => void;
+  maxHeight: number;
 }
 
 export const ManageAssetRows = ({
   assetRows,
   setErrorAsset,
+  maxHeight,
 }: ManageAssetRowsProps) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -113,45 +117,55 @@ export const ManageAssetRows = ({
   };
 
   return (
-    <div className="ManageAssetRows">
-      {assetRows.map(({ code, domain, image, issuer }) => {
-        if (!balances) return null;
-        const canonicalAsset = getCanonicalFromAsset(code, issuer);
-        const isSubmitting =
-          status === ActionStatus.PENDING && assetSubmitting === canonicalAsset;
-        const isTrustlineActive = Object.keys(balances).some(
-          (balance) => balance === canonicalAsset,
-        );
+    <SimpleBar
+      className="ManageAssetRows__scrollbar"
+      style={{
+        maxHeight: `${maxHeight}px`,
+      }}
+    >
+      <div className="ManageAssetRows__content">
+        {assetRows.map(({ code, domain, image, issuer }) => {
+          if (!balances) return null;
+          const canonicalAsset = getCanonicalFromAsset(code, issuer);
+          const isSubmitting =
+            status === ActionStatus.PENDING &&
+            assetSubmitting === canonicalAsset;
+          const isTrustlineActive = Object.keys(balances).some(
+            (balance) => balance === canonicalAsset,
+          );
 
-        return (
-          <div className="ManageAssetRows__row" key={code}>
-            <AssetIcon
-              assetIcons={code !== "XLM" ? { code: image } : {}}
-              code={code}
-              issuerKey={issuer}
-            />
-            <div className="ManageAssetRows__code">
-              {code}
-              <div className="ManageAssetRows__domain">
-                {domain
-                  ? domain.replace("https://", "").replace("www.", "")
-                  : "Stellar Network"}
+          return (
+            <div className="ManageAssetRows__row" key={code}>
+              <AssetIcon
+                assetIcons={code !== "XLM" ? { [code]: image } : {}}
+                code={code}
+                issuerKey={issuer}
+              />
+              <div className="ManageAssetRows__code">
+                {code}
+                <div className="ManageAssetRows__domain">
+                  {domain
+                    ? domain.replace("https://", "").replace("www.", "")
+                    : "Stellar Network"}
+                </div>
+              </div>
+              <div className="ManageAssetRows__button">
+                <PillButton
+                  isLoading={isSubmitting}
+                  onClick={() =>
+                    isSubmitting
+                      ? null
+                      : changeTrustline(code, issuer, !isTrustlineActive)
+                  }
+                  type="button"
+                >
+                  {isTrustlineActive ? "Remove" : "Add"}
+                </PillButton>
               </div>
             </div>
-            <PillButton
-              isLoading={isSubmitting}
-              onClick={() =>
-                isSubmitting
-                  ? null
-                  : changeTrustline(code, issuer, !isTrustlineActive)
-              }
-              type="button"
-            >
-              {isTrustlineActive ? "Remove" : "Add"}
-            </PillButton>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </SimpleBar>
   );
 };

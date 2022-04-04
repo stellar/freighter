@@ -63,9 +63,14 @@
   }
 
   &__assets-wrapper {
+    // TODO: Standardize scrollbar implementation
+    //https://github.com/stellar/freighter/issues/419
+
     height: 20.375rem;
-    overflow-y: auto;
-    > div {
+    padding-right: var(--popup--side-padding);
+    width: calc(var(--popup--width) - var(--popup--side-padding));
+
+    .AccountAssets__asset {
       margin: 2rem 0;
     }
   }

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
-
 import { BigNumber } from "bignumber.js";
 
 import { AssetIcons } from "@shared/api/types";

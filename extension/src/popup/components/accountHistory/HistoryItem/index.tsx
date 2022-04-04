@@ -108,7 +108,7 @@ export const HistoryItem = ({
           </div>
         </div>
 
-        <div>{renderPaymentComponent()}</div>
+        <div className="HistoryItem__payment">{renderPaymentComponent()}</div>
       </div>
     </div>
   );
