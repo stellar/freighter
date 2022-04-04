@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
-import { Button, Card, Loader, Icon } from "@stellar/design-system";
+import { Button, Card, Loader } from "@stellar/design-system";
 
 import {
   getAssetFromCanonical,
@@ -189,23 +189,20 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           />
         </Card>
         {isPathPayment && (
-          <>
-            <Icon.ArrowDownCircle />
-            <Card>
-              <AccountAssets
-                assetIcons={destAssetIcons}
-                sortedBalances={[
-                  {
-                    token: {
-                      issuer: destAsset.issuer,
-                      code: destAsset.code,
-                    },
-                    total: destinationAmount || "0",
+          <Card>
+            <AccountAssets
+              assetIcons={destAssetIcons}
+              sortedBalances={[
+                {
+                  token: {
+                    issuer: destAsset.issuer,
+                    code: destAsset.code,
                   },
-                ]}
-              />
-            </Card>
-          </>
+                  total: destinationAmount || "0",
+                },
+              ]}
+            />
+          </Card>
         )}
       </div>
       <div className="TransactionDetails__row">
