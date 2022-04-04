@@ -1,4 +1,11 @@
 .AccountAssets {
+  // TODO: Standardize scrollbar implementation
+  //https://github.com/stellar/freighter/issues/419
+
+  height: 20.375rem;
+  padding-right: var(--popup--side-padding);
+  width: calc(var(--popup--width) - var(--popup--side-padding));
+
   &__asset {
     align-items: center;
     justify-content: space-between;
@@ -6,6 +13,7 @@
     color: var(--pal-text-primary);
     font-size: 1rem;
     line-height: 1.5rem;
+    margin: 1rem 0;
 
     &--logo {
       margin-right: 1rem;

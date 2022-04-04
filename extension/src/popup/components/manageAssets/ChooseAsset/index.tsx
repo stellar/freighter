@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import StellarSdk from "stellar-sdk";
 import { Button } from "@stellar/design-system";
@@ -26,6 +26,7 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
+  const ManageAssetRowsWrapperRef = useRef(null);
 
   useEffect(() => {
     const fetchDomains = async () => {
@@ -69,10 +70,11 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
     <div className="ChooseAsset">
       <SubviewHeader title="Choose Asset" />
       <div className="ChooseAsset__wrapper">
-        <div className="ChooseAsset__assets">
+        <div className="ChooseAsset__assets" ref={ManageAssetRowsWrapperRef}>
           <ManageAssetRows
             assetRows={assetRows}
             setErrorAsset={setErrorAsset}
+            parentRef={ManageAssetRowsWrapperRef}
           />
         </div>
         <div className="ChooseAsset__button">

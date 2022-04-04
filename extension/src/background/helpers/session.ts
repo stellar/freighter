@@ -4,7 +4,8 @@ import {
   timeoutAccountAccess,
 } from "background/ducks/session";
 
-const SESSION_LENGTH = 5;
+// 24 hours
+const SESSION_LENGTH = 60 * 24;
 
 export class SessionTimer {
   DURATION = 1000 * 60 * SESSION_LENGTH;

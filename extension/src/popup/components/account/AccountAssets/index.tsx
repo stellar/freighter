@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
-
 import { BigNumber } from "bignumber.js";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import { AssetIcons } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
@@ -72,7 +73,7 @@ export const AccountAssets = ({
   };
 
   return (
-    <>
+    <SimpleBar className="AccountAssets">
       {sortedBalances.map(({ token: { issuer, code }, total }) => (
         <div className="AccountAssets__asset" key={code}>
           <div className="AccountAssets__copy-left">
@@ -91,6 +92,6 @@ export const AccountAssets = ({
           </div>
         </div>
       ))}
-    </>
+    </SimpleBar>
   );
 };

@@ -1,4 +1,5 @@
 .HistoryItem {
+  color: var(--pal-text-primary);
   cursor: pointer;
 
   &__row {
@@ -38,5 +39,9 @@
     color: var(--pal-border-secondary);
     font-size: 0.875rem;
     line-height: 1.375rem;
+  }
+
+  &__payment {
+    line-height: 1.5rem;
   }
 }

@@ -59,6 +59,7 @@
     "redux": "^4.0.5",
     "sass": "^1.22.10",
     "sass-loader": "8.0.0",
+    "simplebar-react": "^2.3.6",
     "stellar-hd-wallet": "^0.0.10",
     "stellar-identicon-js": "^1.0.0",
     "stellar-sdk": "^10.0.1",

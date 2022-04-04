@@ -46,6 +46,7 @@ export const TransactionDetail = ({
     asset_issuer: assetIssuer,
     asset_type: assetType,
     from,
+    to,
     created_at: createdAt,
     transaction_attr: { fee_charged: feeCharged, memo },
   } = operation;
@@ -62,6 +63,10 @@ export const TransactionDetail = ({
     .split(" ")
     .slice(1)
     .join(" ");
+  const identiconDimensions = {
+    dimension: "1rem",
+    padding: ".1rem",
+  };
 
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [networkIconUrl, setNetworkIconUrl] = useState("");
@@ -134,16 +139,27 @@ export const TransactionDetail = ({
             <div className="TransactionDetail__info__row">
               {isPayment ? (
                 <>
-                  <div>From</div>
-                  <div>
-                    <KeyIdenticon
-                      publicKey={from}
-                      customSize={{
-                        dimension: "1rem",
-                        padding: ".1rem",
-                      }}
-                    />
-                  </div>
+                  {isRecipient ? (
+                    <>
+                      <div>From</div>
+                      <div>
+                        <KeyIdenticon
+                          publicKey={from}
+                          customSize={identiconDimensions}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>To</div>
+                      <div>
+                        <KeyIdenticon
+                          publicKey={to}
+                          customSize={identiconDimensions}
+                        />
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <>

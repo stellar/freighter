@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button, Input, InfoBlock } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
 import StellarSdk from "stellar-sdk";
@@ -32,6 +32,7 @@ interface AddAssetProps {
 export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isCurrencyNotFound, setIsCurrencyNotFound] = useState(false);
+  const ManageAssetRowsWrapperRef = useRef(null);
 
   const handleSubmit = async (values: FormValues) => {
     setIsCurrencyNotFound(false);
@@ -91,17 +92,23 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
               </div>
               <div className="AddAsset__results">
                 {isCurrencyNotFound ? (
-                  <InfoBlock>Currency not found</InfoBlock>
+                  <InfoBlock>Asset not found</InfoBlock>
                 ) : null}
                 {assetRows.length ? (
                   <>
                     <div className="AddAsset__title">
                       Assets found in this domain
                     </div>
-                    <ManageAssetRows
-                      assetRows={assetRows}
-                      setErrorAsset={setErrorAsset}
-                    />
+                    <div
+                      className="AddAsset__results__rows"
+                      ref={ManageAssetRowsWrapperRef}
+                    >
+                      <ManageAssetRows
+                        assetRows={assetRows}
+                        setErrorAsset={setErrorAsset}
+                        parentRef={ManageAssetRowsWrapperRef}
+                      />
+                    </div>
                   </>
                 ) : null}
               </div>
