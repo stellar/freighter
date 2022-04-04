@@ -27,6 +27,18 @@
     }
   }
 
+  &__success {
+    svg {
+      stroke: var(--pal-success);
+    }
+  }
+
+  &__fail {
+    svg {
+      stroke: var(--pal-error);
+    }
+  }
+
   &__identicon {
     display: flex;
     align-items: center;
