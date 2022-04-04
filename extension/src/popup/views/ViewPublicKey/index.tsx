@@ -70,7 +70,7 @@ export const ViewPublicKey = () => {
             initialValues={initialValues}
             onSubmit={handleSubmit}
             validationSchema={YupObject().shape({
-              accountName: YupString().max(20, "max of 20 characters allowed"),
+              accountName: YupString().max(24, "max of 24 characters allowed"),
             })}
           >
             {({ errors }) => (
