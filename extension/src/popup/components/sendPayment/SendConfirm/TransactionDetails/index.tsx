@@ -264,9 +264,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 navigateTo(ROUTES.account);
               }}
             >
-              cancel
+              Cancel
             </Button>
-            <Button onClick={handleSend}>send</Button>
+            <Button onClick={handleSend}>Send</Button>
           </>
         )}
       </div>
