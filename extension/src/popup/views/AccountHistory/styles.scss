@@ -1,4 +1,8 @@
 .AccountHistory {
+  &__wrapper {
+    padding: var(--popup-vertical-padding) var(--popup--side-padding);
+  }
+
   &__header {
     font-size: 1.25rem;
     margin-bottom: 1.5rem;
@@ -29,5 +33,11 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+
+    &__scrollbar {
+      max-height: 25rem;
+      padding-right: var(--popup--side-padding);
+      width: calc(var(--popup--width) - var(--popup--side-padding));
+    }
   }
 }

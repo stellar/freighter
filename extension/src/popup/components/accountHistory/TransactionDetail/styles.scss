@@ -1,4 +1,6 @@
-$icon-dimension: 0.875rem;
+:root {
+  --TransactionDetail--icon-dimension: 0.875rem;
+}
 
 .TransactionDetail {
   height: 100%;
@@ -21,13 +23,13 @@ $icon-dimension: 0.875rem;
       &__icon {
         background: var(--pal-brand-primary);
         border-radius: 10rem;
-        height: $icon-dimension;
-        width: $icon-dimension;
+        height: var(--TransactionDetail--icon-dimension);
+        width: var(--TransactionDetail--icon-dimension);
       }
 
       img {
-        height: $icon-dimension;
-        width: $icon-dimension;
+        height: var(--TransactionDetail--icon-dimension);
+        width: var(--TransactionDetail--icon-dimension);
       }
     }
   }
