@@ -72,7 +72,10 @@
     }
     &__fail {
       position: absolute;
-      top: calc(var(--popup--height) - 1 * var(--continue-btn-height) - 1.5rem);
+      top: calc(
+        var(--popup--height) - 1 * var(--continue-btn-height) -
+          var(--bottom-btn-margin)
+      );
       width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
     }
   }
