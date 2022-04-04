@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import QrCode from "qrcode.react";
 import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
+import { object as YupObject, string as YupString } from "yup";
 import { Button, Icon, Input, CopyText } from "@stellar/design-system";
 
 import { PillButton } from "popup/basics/PillButton";
@@ -65,37 +66,44 @@ export const ViewPublicKey = () => {
     <>
       <PopupWrapper>
         <div className="ViewPublicKey">
-          <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-            <div className="ViewPublicKey__header">
-              <BackButton />
-              {isEditingName ? (
-                <>
-                  <div className="ViewPublicKey--account-name-div"></div>
-
-                  <Form className="ViewPublicKey__form">
-                    <Field name="accountName">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          autoComplete="off"
-                          id="accountName"
-                          placeholder={accountName}
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                  </Form>
-                </>
-              ) : (
-                <>
-                  <div className="ViewPublicKey__account-name-display">
-                    {accountName}
-                  </div>
-                </>
-              )}
-              <div className="ViewPublicKey--account-name-div">
-                <EditNameButton />
+          <Formik
+            initialValues={initialValues}
+            onSubmit={handleSubmit}
+            validationSchema={YupObject().shape({
+              accountName: YupString().max(24, "max of 24 characters allowed"),
+            })}
+          >
+            {({ errors }) => (
+              <div className="ViewPublicKey__header">
+                <BackButton />
+                {isEditingName ? (
+                  <>
+                    <Form className="ViewPublicKey__form">
+                      <Field name="accountName">
+                        {({ field }: FieldProps) => (
+                          <Input
+                            autoComplete="off"
+                            id="accountName"
+                            placeholder={accountName}
+                            {...field}
+                            error={errors.accountName}
+                          />
+                        )}
+                      </Field>
+                    </Form>
+                  </>
+                ) : (
+                  <>
+                    <div className="ViewPublicKey__account-name-display">
+                      {accountName}
+                    </div>
+                  </>
+                )}
+                <div className="ViewPublicKey--account-name-div">
+                  <EditNameButton />
+                </div>
               </div>
-            </div>
+            )}
           </Formik>
 
           <div className="ViewPublicKey__qr-code">

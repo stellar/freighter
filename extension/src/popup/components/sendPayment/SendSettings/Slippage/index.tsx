@@ -1,6 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
+import { object as YupObject, number as YupNumber } from "yup";
 
 import {
   Button,
@@ -62,8 +63,11 @@ export const SendSettingsSlippage = () => {
             );
             navigateTo(ROUTES.sendPaymentSettings);
           }}
+          validationSchema={YupObject().shape({
+            customSlippage: YupNumber().max(10, "must be below 10%"),
+          })}
         >
-          {({ setFieldValue, values }) => (
+          {({ setFieldValue, values, errors }) => (
             <Form>
               <div className="Slippage__cards">
                 <label className="Slippage--radio-label">
@@ -118,6 +122,7 @@ export const SendSettingsSlippage = () => {
                         setFieldValue("customSlippage", e.target.value);
                         setFieldValue("presetSlippage", "");
                       }}
+                      error={errors.customSlippage}
                     />
                   )}
                 </Field>

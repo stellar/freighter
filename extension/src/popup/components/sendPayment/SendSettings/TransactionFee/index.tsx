@@ -104,7 +104,7 @@ export const SendSettingsFee = () => {
                       setFieldValue("transactionFee", recommendedFee)
                     }
                   >
-                    Set default
+                    Set recommended
                   </TextLink>
                   <span>{networkCongestion} congestion</span>
                 </div>
