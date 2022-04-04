@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, Button, NavButton } from "@stellar/design-system";
 import { Link } from "react-router-dom";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import { AccountBalancesInterface } from "@shared/api/types";
 
@@ -115,7 +117,7 @@ export const Account = () => {
             </div>
           </div>
         </div>
-        <div>
+        <SimpleBar className="AccountView__assets-wrapper">
           {isFunded ? (
             <AccountAssets
               sortedBalances={sortedBalances}
@@ -128,7 +130,7 @@ export const Account = () => {
               publicKey={publicKey}
             />
           )}
-        </div>
+        </SimpleBar>
         {isFunded ? (
           <Link to={ROUTES.manageAssets}>
             <Button fullWidth variant={Button.variant.tertiary}>
