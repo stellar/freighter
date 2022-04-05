@@ -43,7 +43,7 @@ export const UnlockAccount = () => {
     <div className="UnlockAccount">
       <Header isPopupView />
       <div className="UnlockAccount__header">
-        A <strong>Stellar</strong> wallet for every website
+        A Stellar wallet for every website
       </div>
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
         {({ dirty, isSubmitting, isValid, errors, touched }) => (

@@ -279,10 +279,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
           </div>
           {destinationAsset && (
             <>
-              <div className="SendAmount__row__icon">
-                <Icon.ArrowDownCircle />
-              </div>
-              <div>
+              <div className="SendAmount__path-pay__select">
                 <Select
                   id="destAsset-select"
                   name="destinationAsset"
@@ -300,6 +297,11 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                       ),
                     )}
                 </Select>
+              </div>
+              <div className="SendAmount__path-pay__copy">
+                Sending {getAssetFromCanonical(formik.values.asset).code}, they
+                will receive{" "}
+                {getAssetFromCanonical(formik.values.destinationAsset).code}
               </div>
             </>
           )}

@@ -71,17 +71,26 @@
   }
 
   &__row {
-    &__icon {
-      display: flex;
-      justify-content: center;
-      margin: 0.5rem 0;
-    }
-
     &__rate {
       display: flex;
       justify-content: center;
       font-size: 0.875rem;
       line-height: 1.375rem;
+      height: 1.375rem;
+      color: var(--pal-text-tertiary);
+    }
+  }
+
+  &__path-pay {
+    &__select {
+      margin-top: 1rem;
+    }
+    &__copy {
+      text-align: center;
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+      margin-top: 1rem;
+      color: var(--pal-text-tertiary);
     }
   }
 }
