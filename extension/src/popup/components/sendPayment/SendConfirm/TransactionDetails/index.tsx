@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
-import { Button, Card, Loader } from "@stellar/design-system";
+import { Card, Loader } from "@stellar/design-system";
 
 import {
   getAssetFromCanonical,
@@ -14,6 +14,7 @@ import {
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
+import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -241,6 +242,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       <div className="TransactionDetails__buttons-row">
         {submission.status === ActionStatus.SUCCESS ? (
           <Button
+            fullWidth
             variant={Button.variant.tertiary}
             onClick={() =>
               openTab(

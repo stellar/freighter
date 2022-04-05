@@ -4,14 +4,9 @@ import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
 
-import {
-  Button,
-  Select,
-  Icon,
-  InfoBlock,
-  Loader,
-} from "@stellar/design-system";
+import { Select, Icon, InfoBlock, Loader } from "@stellar/design-system";
 
+import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/PillButton";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { AppDispatch } from "popup/App";

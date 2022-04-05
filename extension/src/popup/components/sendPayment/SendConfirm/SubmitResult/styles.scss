@@ -67,7 +67,7 @@
       position: absolute;
       top: calc(var(--popup--height) - 2 * var(--continue-btn-height) - 2.5rem);
       width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-      button:not(:first-child) {
+      div:not(:first-child) {
         margin-top: 1rem;
       }
     }

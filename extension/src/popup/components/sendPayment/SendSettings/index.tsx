@@ -1,8 +1,9 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-import { Button, Icon, Textarea, DetailsTooltip } from "@stellar/design-system";
+import { Icon, Textarea, DetailsTooltip } from "@stellar/design-system";
 
+import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
