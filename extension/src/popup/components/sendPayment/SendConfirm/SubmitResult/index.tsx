@@ -36,7 +36,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       <div className="SubmitResult__amount">
         {amount} {horizonAsset.code}
       </div>
-      <div className="SubmitResult__icon">
+      <div className="SubmitResult__icon SubmitResult__success">
         <Icon.ArrowDownCircle />
       </div>
       <div className="SubmitResult__identicon">
@@ -138,7 +138,7 @@ export const SubmitFail = () => {
     <div className="SubmitResult">
       <div className="SubmitResult__header">Error</div>
       <div className="SubmitResult__amount">Transaction failed</div>
-      <div className="SubmitResult__icon">
+      <div className="SubmitResult__icon SubmitResult__fail">
         <Icon.XCircle />
       </div>
       <div className="SubmitResult__identicon">
