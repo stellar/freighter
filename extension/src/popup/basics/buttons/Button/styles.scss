@@ -1,22 +1,14 @@
-.BasicButton {
-  height: 100%;
-  width: 100%;
-  .Button {
-    text-transform: capitalize;
-    border-radius: 0.5rem;
-  }
+.Button.BasicButton {
+  text-transform: capitalize;
+  border-radius: 0.5rem;
 
   &--primary {
-    .Button {
-      border-color: var(--button-bg--primary);
-      background: var(--button-bg--primary);
-    }
+    border-color: var(--button-bg--primary);
+    background: var(--button-bg--primary);
   }
 
   &--tertiary {
-    .Button {
-      border-color: var(--button-bg--tertiary);
-      background: var(--button-bg--tertiary);
-    }
+    border-color: var(--button-bg--tertiary);
+    background: var(--button-bg--tertiary);
   }
 }

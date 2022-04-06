@@ -3,7 +3,7 @@ import { Button as SDSButton } from "@stellar/design-system";
 
 import "./styles.scss";
 
-// a wrapper of the SDS Button with freighter css
+// override SDS Button css with freighter design
 
 enum ButtonVariant {
   primary = SDSButton.variant.primary,
@@ -27,21 +27,25 @@ export const Button: React.FC<ButtonProps> & ButtonComponent = ({
   fullWidth,
   variant = ButtonVariant.primary,
   ...props
-}: ButtonProps) => (
-  <div className={`BasicButton BasicButton--${variant}`}>
+}: ButtonProps) => {
+  const sds = SDSButton({
+    variant:
+      variant === ButtonVariant.primary
+        ? SDSButton.variant.primary
+        : SDSButton.variant.tertiary,
+    fullWidth,
+    children,
+  });
+
+  return (
     <SDSButton
-      fullWidth={fullWidth}
+      className={`BasicButton BasicButton--${variant} ${sds?.props?.className}`}
       isLoading={isLoading}
-      variant={
-        variant === ButtonVariant.primary
-          ? SDSButton.variant.primary
-          : SDSButton.variant.tertiary
-      }
       {...props}
     >
       {children}
     </SDSButton>
-  </div>
-);
+  );
+};
 
 Button.variant = ButtonVariant;
