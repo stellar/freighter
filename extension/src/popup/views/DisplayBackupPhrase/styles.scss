@@ -1,9 +1,20 @@
 .DisplayBackupPhrase {
-  &--input {
-    margin: 6.25rem 0 1rem 0;
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
   }
 
-  &--submit {
-    margin-top: 2.375rem;
+  &__button {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: flex-end;
   }
 }

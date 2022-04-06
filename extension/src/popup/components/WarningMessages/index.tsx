@@ -1,5 +1,5 @@
 import React from "react";
-import { InfoBlock } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -16,11 +16,12 @@ interface WarningMessageProps {
 
 export const WarningMessage = ({ header, children }: WarningMessageProps) => (
   <div className="WarningMessage">
-    <InfoBlock variant={InfoBlock.variant.warning}>
-      <p className="WarningMessage--header">{header}</p>
+    <div className="WarningMessage__header">
+      <Icon.AlertTriangle className="WarningMessage__icon" />
+      <div>{header}</div>
+    </div>
 
-      {children}
-    </InfoBlock>
+    {children}
   </div>
 );
 
@@ -105,10 +106,11 @@ export const FirstTimeWarningMessage = () => (
 );
 
 export const BackupPhraseWarningMessage = () => (
-  <WarningMessage header="Keep your backup phrase in a safe and secure place.">
+  <WarningMessage header="IMPORTANT">
     <p>
-      Anyone who has access to this phrase has access to your account and to the
-      funds in it, so save it in a safe and secure place.
+      Keep your backup phrase in a safe and secure place. Anyone who has access
+      to this phrase has access to your account and to the funds in it, so save
+      it in a safe and secure place.
     </p>
   </WarningMessage>
 );

@@ -164,14 +164,14 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <div className="TransactionDetails">
-      {submission.status === ActionStatus.PENDING && (
+      {submission.submitStatus === ActionStatus.PENDING && (
         <div className="TransactionDetails__processing">
           <Loader /> <span>Processing transaction</span>
         </div>
       )}
       <SubviewHeader
         title={
-          submission.status === ActionStatus.SUCCESS
+          submission.submitStatus === ActionStatus.SUCCESS
             ? `Sent ${sourceAsset.code}`
             : "Confirm Send"
         }
@@ -240,7 +240,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         </div>
       </div>
       <div className="TransactionDetails__buttons-row">
-        {submission.status === ActionStatus.SUCCESS ? (
+        {submission.submitStatus === ActionStatus.SUCCESS ? (
           <Button
             fullWidth
             variant={Button.variant.tertiary}
