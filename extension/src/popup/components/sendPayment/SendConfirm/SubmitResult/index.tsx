@@ -4,7 +4,8 @@ import { Asset } from "stellar-sdk";
 import get from "lodash/get";
 import { getAssetFromCanonical } from "helpers/stellar";
 
-import { Button, Icon, InfoBlock, TextLink } from "@stellar/design-system";
+import { Icon, InfoBlock, TextLink } from "@stellar/design-system";
+import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES } from "popup/helpers/parseTransaction";
 import { ROUTES } from "popup/constants/routes";

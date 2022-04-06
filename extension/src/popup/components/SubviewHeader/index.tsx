@@ -1,6 +1,6 @@
 import React from "react";
 
-import { BackButton } from "popup/basics/BackButton";
+import { BackButton } from "popup/basics/buttons/BackButton";
 
 import "./styles.scss";
 

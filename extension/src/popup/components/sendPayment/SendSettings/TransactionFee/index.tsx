@@ -3,15 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 
 import StellarSdk from "stellar-sdk";
-import {
-  Button,
-  Input,
-  Icon,
-  TextLink,
-  DetailsTooltip,
-} from "@stellar/design-system";
+import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
 import { stroopToXlm } from "helpers/stellar";
 
+import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
