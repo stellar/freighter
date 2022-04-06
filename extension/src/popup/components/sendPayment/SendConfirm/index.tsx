@@ -31,7 +31,7 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
         />
       );
     }
-    switch (submission.status) {
+    switch (submission.submitStatus) {
       case ActionStatus.IDLE:
         return <TransactionDetails goBack={() => navigateTo(previous)} />;
       case ActionStatus.PENDING:

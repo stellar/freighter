@@ -123,20 +123,24 @@ export const AccountHistory = () => {
           ))}
         </div>
         <div className="AccountHistory__list">
-          <SimpleBar className="AccountHistory__list__scrollbar">
-            {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-              (operation: HistoryItemOperation) => (
-                <HistoryItem
-                  key={operation.id}
-                  operation={operation}
-                  publicKey={publicKey}
-                  url={STELLAR_EXPERT_URL}
-                  setDetailViewProps={setDetailViewProps}
-                  setIsDetailViewShowing={setIsDetailViewShowing}
-                />
-              ),
-            )}
-          </SimpleBar>
+          {historySegments[SELECTOR_OPTIONS[selectedSegment]].length ? (
+            <SimpleBar className="AccountHistory__list__scrollbar">
+              {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
+                (operation: HistoryItemOperation) => (
+                  <HistoryItem
+                    key={operation.id}
+                    operation={operation}
+                    publicKey={publicKey}
+                    url={STELLAR_EXPERT_URL}
+                    setDetailViewProps={setDetailViewProps}
+                    setIsDetailViewShowing={setIsDetailViewShowing}
+                  />
+                ),
+              )}
+            </SimpleBar>
+          ) : (
+            <div>No transactions to show</div>
+          )}
         </div>
       </div>
       <BottomNav />
