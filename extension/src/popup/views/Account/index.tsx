@@ -40,7 +40,7 @@ export const defaultAccountBalances = {
 
 export const Account = () => {
   const dispatch = useDispatch();
-  const { accountBalances, assetIcons, status } = useSelector(
+  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
@@ -73,7 +73,7 @@ export const Account = () => {
     dispatch(getAssetIcons({ balances, networkDetails }));
   }, [balances, networkDetails, dispatch]);
 
-  return status !== ActionStatus.SUCCESS ? null : (
+  return accountBalanceStatus !== ActionStatus.SUCCESS ? null : (
     <>
       <div className="AccountView">
         <AccountHeader

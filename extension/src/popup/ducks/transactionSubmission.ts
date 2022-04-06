@@ -172,7 +172,8 @@ interface TransactionData {
 }
 
 interface InitialState {
-  status: string;
+  submitStatus: ActionStatus;
+  accountBalanceStatus: ActionStatus;
   response: Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
@@ -182,7 +183,8 @@ interface InitialState {
 }
 
 const initialState: InitialState = {
-  status: ActionStatus.IDLE,
+  submitStatus: ActionStatus.IDLE,
+  accountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
@@ -240,17 +242,17 @@ const transactionSubmissionSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
-      state.status = ActionStatus.PENDING;
+      state.submitStatus = ActionStatus.PENDING;
     });
     builder.addCase(signFreighterTransaction.pending, (state) => {
-      state.status = ActionStatus.PENDING;
+      state.submitStatus = ActionStatus.PENDING;
     });
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
-      state.status = ActionStatus.ERROR;
+      state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
     });
     builder.addCase(signFreighterTransaction.rejected, (state, action) => {
-      state.status = ActionStatus.ERROR;
+      state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
     });
     builder.addCase(getBestPath.rejected, (state) => {
@@ -259,15 +261,15 @@ const transactionSubmissionSlice = createSlice({
         initialState.transactionData.destinationAmount;
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
-      state.status = ActionStatus.SUCCESS;
+      state.submitStatus = ActionStatus.SUCCESS;
       state.response = action.payload;
     });
     builder.addCase(getAccountBalances.pending, (state) => {
-      state.status = ActionStatus.PENDING;
+      state.accountBalanceStatus = ActionStatus.PENDING;
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
-      state.status = ActionStatus.SUCCESS;
+      state.accountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
