@@ -53,6 +53,7 @@ import { Security } from "popup/views/Security";
 import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
+import { VerifyAccount } from "popup/views/VerifyAccount";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -267,6 +268,9 @@ export const Router = () => {
         </Route>
         <Route path={ROUTES.recoverAccount}>
           <RecoverAccount />
+        </Route>
+        <Route path={ROUTES.verifyAccount}>
+          <VerifyAccount />
         </Route>
         <PublicKeyRoute path={ROUTES.recoverAccountSuccess}>
           <FullscreenSuccessMessage />

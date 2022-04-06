@@ -8,7 +8,7 @@ import {
   useLocation,
   RouteProps,
 } from "react-router-dom";
-import { PrivateKeyRoute, PublicKeyRoute } from "popup/Router";
+import { PublicKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 import { SendTo } from "popup/components/sendPayment/SendTo";
@@ -18,36 +18,17 @@ import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
+import { hasPrivateKeySelector } from "popup/ducks/accountServices";
 
-// ALEC TODO - possibly remove
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { AppError } from "popup/components/AppError";
-import {
-  applicationStateSelector,
-  hasPrivateKeySelector,
-  authErrorSelector,
-} from "popup/ducks/accountServices";
-
-// ALEC TODO - change name
-export const PrivateKeyRouteConfirm = (props: RouteProps) => {
+const VerifiedAccountRoute = (props: RouteProps) => {
   const location = useLocation();
-  const applicationState = useSelector(applicationStateSelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
-  const error = useSelector(authErrorSelector);
 
-  // ALEC TODO - need to check these here?
-  if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
-    return <AppError>{error}</AppError>;
-  }
-  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return null;
-  }
   if (!hasPrivateKey) {
     return (
       <Redirect
         to={{
           pathname: ROUTES.verifyAccount,
-          search: location.search,
           state: { from: location },
         }}
       />
@@ -79,8 +60,8 @@ export const SendPayment = () => (
     <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
       <SendSettingsSlippage />
     </PublicKeyRoute>
-    <PrivateKeyRoute exact path={ROUTES.sendPaymentConfirm}>
+    <VerifiedAccountRoute exact path={ROUTES.sendPaymentConfirm}>
       <SendConfirm previous={ROUTES.sendPaymentSettings} />
-    </PrivateKeyRoute>
+    </VerifiedAccountRoute>
   </Switch>
 );
