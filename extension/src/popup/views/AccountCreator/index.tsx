@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Input, Checkbox, TextLink, Button } from "@stellar/design-system";
+import { Input, Checkbox, TextLink } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 
+import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import {

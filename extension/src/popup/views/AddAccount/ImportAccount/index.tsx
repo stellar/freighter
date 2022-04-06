@@ -12,8 +12,9 @@ import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { BottomNav } from "popup/components/BottomNav";
 import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 import { FormRows } from "popup/basics/Forms";
+import { Button } from "popup/basics/buttons/Button";
 
-import { Button, Checkbox, Input, InfoBlock } from "@stellar/design-system";
+import { Checkbox, Input, InfoBlock } from "@stellar/design-system";
 
 import "./styles.scss";
 

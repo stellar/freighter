@@ -9,7 +9,7 @@ import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { getCanonicalFromAsset } from "helpers/stellar";
 
-import { PillButton } from "popup/basics/PillButton";
+import { PillButton } from "popup/basics/buttons/PillButton";
 
 import { ROUTES } from "popup/constants/routes";
 

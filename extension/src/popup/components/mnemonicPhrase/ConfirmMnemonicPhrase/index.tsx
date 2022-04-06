@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Redirect } from "react-router-dom";
 import { Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
-import { Button, Card } from "@stellar/design-system";
+import { Card } from "@stellar/design-system";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
@@ -12,6 +12,7 @@ import {
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { FormError, SubmitButtonWrapper } from "popup/basics/Forms";
+import { Button } from "popup/basics/buttons/Button";
 
 import {
   OnboardingScreen,

@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Button } from "@stellar/design-system";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
 import { getTransactionInfo } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
-
+import { Button } from "popup/basics/buttons/Button";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
