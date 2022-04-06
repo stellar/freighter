@@ -6,7 +6,6 @@ import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
 
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 
 import { BottomNav } from "popup/components/BottomNav";
@@ -26,11 +25,11 @@ export const Settings = () => {
 
   return (
     <>
-      <PopupWrapper>
-        <nav className="Settings">
-          <div className="Settings--header">
+      <nav className="Settings">
+        <div>
+          <div className="Settings__header">
             <Heading5>Settings</Heading5>
-            <div className="Settings--version">
+            <div className="Settings__version">
               {/* TODO: Make this dynamic */}
               v2.0.0
             </div>
@@ -38,24 +37,23 @@ export const Settings = () => {
           <ListNavLinkWrapper>
             <ListNavLink href={ROUTES.preferences}>Preferences</ListNavLink>
             <ListNavLink href={ROUTES.security}>Security</ListNavLink>
-            <ListNavLink href="http://freighter.app/help">Support</ListNavLink>
+            <ListNavLink href="http://freighter.app/help">Help</ListNavLink>
             <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
               Leave Feedback
             </ListNavLink>
             <ListNavLink href={ROUTES.about}>About</ListNavLink>
           </ListNavLinkWrapper>
-
-          <div className="Settings--logout">
-            <Button
-              fullWidth
-              variant={Button.variant.tertiary}
-              onClick={(e) => signOutAndClose(e)}
-            >
-              Log Out
-            </Button>
-          </div>
-        </nav>
-      </PopupWrapper>
+        </div>
+        <div className="Settings__logout">
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={(e) => signOutAndClose(e)}
+          >
+            Log Out
+          </Button>
+        </div>
+      </nav>
       <BottomNav />
     </>
   );

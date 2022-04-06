@@ -39,25 +39,28 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
         const {
           token: { code, issuer },
         } = sortedBalances[i];
-        const server = new StellarSdk.Server(networkUrl);
 
-        let domain = "";
+        if (code !== "XLM") {
+          const server = new StellarSdk.Server(networkUrl);
 
-        if (issuer?.key) {
-          try {
-            // eslint-disable-next-line no-await-in-loop
-            ({ home_domain: domain } = await server.loadAccount(issuer.key));
-          } catch (e) {
-            console.error(e);
+          let domain = "";
+
+          if (issuer?.key) {
+            try {
+              // eslint-disable-next-line no-await-in-loop
+              ({ home_domain: domain } = await server.loadAccount(issuer.key));
+            } catch (e) {
+              console.error(e);
+            }
           }
-        }
 
-        collection.push({
-          code,
-          issuer: issuer?.key || "",
-          image: assetIcons[code],
-          domain,
-        });
+          collection.push({
+            code,
+            issuer: issuer?.key || "",
+            image: assetIcons[code],
+            domain,
+          });
+        }
       }
 
       setAssetRows(collection);

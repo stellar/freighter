@@ -1,7 +1,27 @@
 .WarningMessage {
+  background: rgba(241, 165, 50, 0.32);
+  border: none;
+  border-radius: 0.5rem;
+  color: var(--pal-brand-primary-on) !important;
   margin-bottom: 1rem;
+  padding: 0.875rem;
 
-  &--header {
+  &__header {
+    align-items: center;
     font-weight: var(--font-weight-medium);
+    display: flex;
+    gap: 0.625rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__icon {
+    color: rgba(241, 165, 50, 1);
+    width: 0.875rem;
+  }
+
+  p {
+    color: var(--pal-brand-primary-on) !important;
+    font-size: var(--font-size-secondary);
+    line-height: 1.375rem;
   }
 }

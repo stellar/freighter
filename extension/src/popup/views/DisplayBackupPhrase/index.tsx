@@ -13,11 +13,8 @@ import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { BottomNav } from "popup/components/BottomNav";
 import { MnemonicDisplay } from "popup/components/mnemonicPhrase/MnemonicDisplay";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
 
@@ -61,10 +58,10 @@ export const DisplayBackupPhrase = () => {
 
   return (
     <div className="DisplayBackupPhrase">
-      <PopupWrapper>
-        <SubviewHeader title="Show recovery phrase" />
-        {isPhraseUnlocked ? (
-          <>
+      <SubviewHeader title="Show recovery phrase" />
+      {isPhraseUnlocked ? (
+        <>
+          <div>
             <p>
               Anyone who has access to this phrase has access to your account
               and to the funds in it, so save it in a safe and secure place.
@@ -80,45 +77,43 @@ export const DisplayBackupPhrase = () => {
                 variant={IconButton.variant.highlight}
               />
             </CopyText>
-            <div className="DisplayBackupPhrase--submit">
-              <Button fullWidth onClick={() => navigateTo(ROUTES.account)}>
-                Done
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <BackupPhraseWarningMessage />
-            <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-              {({ dirty, isSubmitting, isValid }) => (
-                <Form>
-                  <div className="DisplayBackupPhrase--input">
-                    <Input
-                      id="password"
-                      autoComplete="off"
-                      error={errorMessage}
-                      customInput={<Field />}
-                      type="password"
-                      name="password"
-                      placeholder="Enter your password"
-                    />
-                  </div>
+          </div>
+          <div className="DisplayBackupPhrase__button">
+            <Button fullWidth onClick={() => navigateTo(ROUTES.account)}>
+              Done
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <BackupPhraseWarningMessage />
+          <Formik onSubmit={handleSubmit} initialValues={initialValues}>
+            {({ dirty, isSubmitting, isValid }) => (
+              <Form className="DisplayBackupPhrase__form">
+                <Input
+                  id="password"
+                  autoComplete="off"
+                  error={errorMessage}
+                  customInput={<Field />}
+                  type="password"
+                  name="password"
+                  placeholder="Enter your password"
+                />
 
-                  <Button
-                    disabled={!(isValid && dirty)}
-                    fullWidth
-                    isLoading={isSubmitting}
-                    type="submit"
-                  >
-                    Show recovery phrase
-                  </Button>
-                </Form>
-              )}
-            </Formik>
-          </>
-        )}
-      </PopupWrapper>
-      <BottomNav />
+                <Button
+                  disabled={!(isValid && dirty)}
+                  fullWidth
+                  isLoading={isSubmitting}
+                  type="submit"
+                  variant={Button.variant.tertiary}
+                >
+                  Show recovery phrase
+                </Button>
+              </Form>
+            )}
+          </Formik>
+        </>
+      )}
     </div>
   );
 };

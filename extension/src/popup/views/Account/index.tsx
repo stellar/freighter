@@ -14,6 +14,7 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import {
+  ActionStatus,
   getAccountBalances,
   getAssetIcons,
   transactionSubmissionSelector,
@@ -38,7 +39,7 @@ export const defaultAccountBalances = {
 
 export const Account = () => {
   const dispatch = useDispatch();
-  const { accountBalances, assetIcons } = useSelector(
+  const { accountBalances, assetIcons, status } = useSelector(
     transactionSubmissionSelector,
   );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
@@ -71,7 +72,7 @@ export const Account = () => {
     dispatch(getAssetIcons({ balances, networkDetails }));
   }, [balances, networkDetails, dispatch]);
 
-  return (
+  return status !== ActionStatus.SUCCESS ? null : (
     <>
       <div className="AccountView">
         <AccountHeader
@@ -117,20 +118,20 @@ export const Account = () => {
             </div>
           </div>
         </div>
-        <SimpleBar className="AccountView__assets-wrapper">
-          {isFunded ? (
+        {isFunded ? (
+          <SimpleBar className="AccountView__assets-wrapper">
             <AccountAssets
               sortedBalances={sortedBalances}
               assetIcons={assetIcons}
             />
-          ) : (
-            <NotFundedMessage
-              isTestnet={networkDetails.isTestnet}
-              setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-              publicKey={publicKey}
-            />
-          )}
-        </SimpleBar>
+          </SimpleBar>
+        ) : (
+          <NotFundedMessage
+            isTestnet={networkDetails.isTestnet}
+            setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+            publicKey={publicKey}
+          />
+        )}
         {isFunded ? (
           <Link to={ROUTES.manageAssets}>
             <Button fullWidth variant={Button.variant.tertiary}>
