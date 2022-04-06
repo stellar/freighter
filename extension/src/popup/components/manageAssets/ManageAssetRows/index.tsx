@@ -46,7 +46,7 @@ export const ManageAssetRows = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
     accountBalances: { balances = {} },
-    status,
+    submitStatus,
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
@@ -128,7 +128,7 @@ export const ManageAssetRows = ({
           if (!balances) return null;
           const canonicalAsset = getCanonicalFromAsset(code, issuer);
           const isSubmitting =
-            status === ActionStatus.PENDING &&
+            submitStatus === ActionStatus.PENDING &&
             assetSubmitting === canonicalAsset;
           const isTrustlineActive = Object.keys(balances).some(
             (balance) => balance === canonicalAsset,

@@ -15,11 +15,11 @@ export const ListNavLink = ({ children, href }: ListNavLinkProps) => (
   <div className="ListNavLink">
     {Object.values(ROUTES).includes(href as ROUTES) ? (
       <Link to={href}>
-        {children} <Icon.ChevronRight />
+        {children} <Icon.ChevronRight className="ListNavLink__icon" />
       </Link>
     ) : (
       <a rel="noreferrer" target="_blank" href={href}>
-        {children} <Icon.ChevronRight />
+        {children} <Icon.ChevronRight className="ListNavLink__icon" />
       </a>
     )}
   </div>
