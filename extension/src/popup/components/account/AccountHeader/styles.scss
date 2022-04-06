@@ -55,6 +55,9 @@ $dropdown-animation: 0.3s ease-out;
     z-index: calc(var(--z-index-tooltip) + 1);
     transition: max-height $dropdown-animation;
 
+    // default max-height on page load
+    max-height: 0;
+
     li::before {
       content: none;
     }
