@@ -1,8 +1,9 @@
 import React, { useRef, useState } from "react";
-import { Button, Input, InfoBlock } from "@stellar/design-system";
+import { Input, InfoBlock } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
 import StellarSdk from "stellar-sdk";
 
+import { Button } from "popup/basics/buttons/Button";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { FormRows } from "popup/basics/Forms";

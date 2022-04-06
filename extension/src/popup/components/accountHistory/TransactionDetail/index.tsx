@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Button } from "@stellar/design-system";
 import StellarSdk from "stellar-sdk";
 
+import { Button } from "popup/basics/buttons/Button";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";

@@ -1,11 +1,11 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { Button, Heading5 } from "@stellar/design-system";
+import { Heading5 } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
-
+import { Button } from "popup/basics/buttons/Button";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 
 import { BottomNav } from "popup/components/BottomNav";

@@ -11,11 +11,11 @@ import { SubmitButtonWrapper } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { OnboardingHeader } from "popup/components/Onboarding";
-
+import { Button } from "popup/basics/buttons/Button";
 import SuccessIllo from "popup/assets/illo-success-screen.svg";
 import ExtensionIllo from "popup/assets/illo-extension.png";
 
-import { Button, InfoBlock } from "@stellar/design-system";
+import { InfoBlock } from "@stellar/design-system";
 
 import "./styles.scss";
 

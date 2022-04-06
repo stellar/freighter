@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Button, IconButton, Input, CopyText } from "@stellar/design-system";
+import { IconButton, Input, CopyText } from "@stellar/design-system";
 
 import { Field, Form, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
-
+import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";

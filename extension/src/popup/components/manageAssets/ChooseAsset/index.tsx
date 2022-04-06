@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import StellarSdk from "stellar-sdk";
-import { Button } from "@stellar/design-system";
 import { Link } from "react-router-dom";
 
+import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CopyText, Icon, Button, NavButton } from "@stellar/design-system";
+import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { Link } from "react-router-dom";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { AccountBalancesInterface } from "@shared/api/types";
 
+import { Button } from "popup/basics/buttons/Button";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   accountNameSelector,

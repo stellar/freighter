@@ -14,6 +14,7 @@ import { FormRows } from "popup/basics/Forms";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { Button } from "popup/basics/buttons/Button";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveDestination,
@@ -24,13 +25,7 @@ import {
   getDestinationBalances,
 } from "popup/ducks/transactionSubmission";
 
-import {
-  Input,
-  Loader,
-  Button,
-  TextLink,
-  InfoBlock,
-} from "@stellar/design-system";
+import { Input, Loader, TextLink, InfoBlock } from "@stellar/design-system";
 
 import "../styles.scss";
 
@@ -269,8 +264,8 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
                       <div className="SendPayment__btn-continue">
                         <Button
-                          fullWidth
                           type="submit"
+                          fullWidth
                           variant={Button.variant.tertiary}
                         >
                           Continue

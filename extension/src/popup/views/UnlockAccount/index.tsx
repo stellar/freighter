@@ -3,8 +3,9 @@ import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Field, Form, Formik, FieldProps } from "formik";
-import { Input, Button, TextLink } from "@stellar/design-system";
+import { Input, TextLink } from "@stellar/design-system";
 
+import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
