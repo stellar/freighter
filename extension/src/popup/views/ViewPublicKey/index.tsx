@@ -5,7 +5,7 @@ import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 import { Icon, Input, CopyText } from "@stellar/design-system";
 
-import { PillButton } from "popup/basics/PillButton";
+import { PillButton } from "popup/basics/buttons/PillButton";
 import { Button } from "popup/basics/buttons/Button";
 
 import { emitMetric } from "helpers/metrics";
@@ -13,7 +13,7 @@ import { truncatedPublicKey } from "helpers/stellar";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
-import { BackButton } from "popup/basics/BackButton";
+import { BackButton } from "popup/basics/buttons/BackButton";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import {
   accountNameSelector,

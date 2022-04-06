@@ -1,7 +1,7 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
 
-import { BackButton } from "popup/basics/BackButton";
+import { BackButton } from "popup/basics/buttons/BackButton";
 
 import "./styles.scss";
 

@@ -7,7 +7,7 @@ import { useFormik } from "formik";
 import { Select, Icon, InfoBlock, Loader } from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
-import { PillButton } from "popup/basics/PillButton";
+import { PillButton } from "popup/basics/buttons/PillButton";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
