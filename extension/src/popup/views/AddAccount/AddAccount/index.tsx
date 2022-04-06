@@ -1,11 +1,11 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Input } from "@stellar/design-system";
+import { Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-
+import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";

@@ -28,11 +28,12 @@ export const Button: React.FC<ButtonProps> & ButtonComponent = ({
   variant = ButtonVariant.primary,
   ...props
 }: ButtonProps) => {
+  const sdsVariant =
+    variant === ButtonVariant.primary
+      ? SDSButton.variant.primary
+      : SDSButton.variant.tertiary;
   const sds = SDSButton({
-    variant:
-      variant === ButtonVariant.primary
-        ? SDSButton.variant.primary
-        : SDSButton.variant.tertiary,
+    variant: sdsVariant,
     fullWidth,
     children,
   });
@@ -41,6 +42,8 @@ export const Button: React.FC<ButtonProps> & ButtonComponent = ({
     <SDSButton
       className={`BasicButton BasicButton--${variant} ${sds?.props?.className}`}
       isLoading={isLoading}
+      fullWidth={fullWidth}
+      variant={sdsVariant}
       {...props}
     >
       {children}

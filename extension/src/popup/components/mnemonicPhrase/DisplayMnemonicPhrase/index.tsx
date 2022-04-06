@@ -1,13 +1,9 @@
 import React from "react";
-import {
-  IconButton,
-  InfoBlock,
-  CopyText,
-  Button,
-} from "@stellar/design-system";
+import { IconButton, InfoBlock, CopyText } from "@stellar/design-system";
 
 import { emitMetric } from "helpers/metrics";
 
+import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo } from "popup/helpers/navigate";

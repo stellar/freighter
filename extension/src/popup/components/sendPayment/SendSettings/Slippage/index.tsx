@@ -4,7 +4,6 @@ import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
 
 import {
-  Button,
   Input,
   Icon,
   TextLink,
@@ -12,6 +11,7 @@ import {
   DetailsTooltip,
 } from "@stellar/design-system";
 
+import { Button } from "popup/basics/buttons/Button";
 import {
   transactionDataSelector,
   saveAllowedSlippage,

@@ -2,14 +2,9 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
-import {
-  Input,
-  Button,
-  Checkbox,
-  Textarea,
-  TextLink,
-} from "@stellar/design-system";
+import { Input, Checkbox, Textarea, TextLink } from "@stellar/design-system";
 
+import { Button } from "popup/basics/buttons/Button";
 import { Onboarding } from "popup/components/Onboarding";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";

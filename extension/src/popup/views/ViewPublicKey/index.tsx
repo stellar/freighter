@@ -3,9 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import QrCode from "qrcode.react";
 import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
 import { object as YupObject, string as YupString } from "yup";
-import { Button, Icon, Input, CopyText } from "@stellar/design-system";
+import { Icon, Input, CopyText } from "@stellar/design-system";
 
 import { PillButton } from "popup/basics/PillButton";
+import { Button } from "popup/basics/buttons/Button";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";

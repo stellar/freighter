@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Button, InfoBlock } from "@stellar/design-system";
+import { InfoBlock } from "@stellar/design-system";
 import { useHistory, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 
+import { Button } from "popup/basics/buttons/Button";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
 import { getResultCode, RESULT_CODES } from "popup/helpers/parseTransaction";

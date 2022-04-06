@@ -2,8 +2,9 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import { Formik, Form } from "formik";
 
-import { Button, TextLink, Icon } from "@stellar/design-system";
+import { TextLink, Icon } from "@stellar/design-system";
 
+import { Button } from "popup/basics/buttons/Button";
 import { fundAccount } from "popup/ducks/accountServices";
 
 import "./styles.scss";

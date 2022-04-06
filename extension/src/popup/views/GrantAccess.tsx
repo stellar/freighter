@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Button } from "@stellar/design-system";
 
 import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 
+import { Button } from "popup/basics/buttons/Button";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
