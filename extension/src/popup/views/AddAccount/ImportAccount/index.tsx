@@ -64,7 +64,7 @@ export const ImportAccount = () => {
             </div>
             <div className="ImportAccount__warning-copy">
               <p>
-                Freighter can't recover your imported secret key using your
+                Freighter can’t recover your imported secret key using your
                 backup phrase. Storing your secret key is your responsability.{" "}
               </p>
               <p>
