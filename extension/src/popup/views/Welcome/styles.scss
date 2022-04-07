@@ -9,11 +9,10 @@
     display: flex;
     flex-direction: column;
     align-content: center;
-    justify-content: center;
     max-width: 49rem;
     height: calc(100vh - var(--header--height));
     width: 100%;
-    margin: auto;
+    margin: 11.625rem auto;
   }
 
   &__centered-screen {

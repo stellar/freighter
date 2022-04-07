@@ -93,7 +93,9 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
               </div>
               <div className="AddAsset__results">
                 {isCurrencyNotFound ? (
-                  <InfoBlock>Asset not found</InfoBlock>
+                  <div className="AddAsset__infoBlock">
+                    <InfoBlock>Asset not found</InfoBlock>
+                  </div>
                 ) : null}
                 {assetRows.length ? (
                   <>

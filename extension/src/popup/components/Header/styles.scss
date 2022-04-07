@@ -2,13 +2,13 @@
   border-bottom: 1px solid var(--pal-border-primary);
   padding: 1.5rem 0;
 
-  &--popup {
+  &__popup {
     max-width: 0;
     padding: 0;
     border: none;
   }
 
-  &--fullscreen {
+  &__fullscreen {
     align-items: center;
     display: flex;
     justify-content: space-between;
