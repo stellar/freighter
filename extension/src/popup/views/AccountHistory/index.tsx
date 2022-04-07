@@ -35,17 +35,19 @@ enum SELECTOR_OPTIONS {
   RECEIVED = "RECEIVED",
 }
 
-type HistorySegments = {
-  [key in SELECTOR_OPTIONS]: HistoryItemOperation[] | [];
-};
+type HistorySegments =
+  | {
+      [key in SELECTOR_OPTIONS]: HistoryItemOperation[] | [];
+    }
+  | null;
 
 export const AccountHistory = () => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
-  const [historySegments, setHistorySegments] = useState({
-    [SELECTOR_OPTIONS.ALL]: [],
-  } as HistorySegments);
+  const [historySegments, setHistorySegments] = useState(
+    null as HistorySegments,
+  );
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
 
   const defaultDetailViewProps: TransactionDetailProps = {
@@ -64,6 +66,9 @@ export const AccountHistory = () => {
   const STELLAR_EXPERT_URL = `https://stellar.expert/explorer/${
     networkDetails.isTestnet ? "testnet" : "public"
   }`;
+
+  // differentiate between if data is still loading and if no account history results came back from Horizon
+  const isAccountHistoryLoading = historySegments === null;
 
   useEffect(() => {
     const createSegments = (operations: HistoryItemOperation[]) => {
@@ -123,23 +128,27 @@ export const AccountHistory = () => {
           ))}
         </div>
         <div className="AccountHistory__list">
-          {historySegments[SELECTOR_OPTIONS[selectedSegment]].length ? (
+          {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
             <SimpleBar className="AccountHistory__list__scrollbar">
-              {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-                (operation: HistoryItemOperation) => (
-                  <HistoryItem
-                    key={operation.id}
-                    operation={operation}
-                    publicKey={publicKey}
-                    url={STELLAR_EXPERT_URL}
-                    setDetailViewProps={setDetailViewProps}
-                    setIsDetailViewShowing={setIsDetailViewShowing}
-                  />
-                ),
-              )}
+              <div className="AccountHistory__list__items">
+                {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
+                  (operation: HistoryItemOperation) => (
+                    <HistoryItem
+                      key={operation.id}
+                      operation={operation}
+                      publicKey={publicKey}
+                      url={STELLAR_EXPERT_URL}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  ),
+                )}
+              </div>
             </SimpleBar>
           ) : (
-            <div>No transactions to show</div>
+            <div>
+              {isAccountHistoryLoading ? null : "No transactions to show"}
+            </div>
           )}
         </div>
       </div>

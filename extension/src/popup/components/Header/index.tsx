@@ -16,8 +16,8 @@ export const Header = ({ isPopupView = false }: HeaderProps) => {
     settingsNetworkDetailsSelector,
   );
   return (
-    <header className={`Header ${isPopupView ? "Header--popup" : ""}`}>
-      <div className={isPopupView ? "" : "Header--fullscreen"}>
+    <header className={`Header ${isPopupView ? "Header__popup" : ""}`}>
+      <div className={isPopupView ? "" : "Header__fullscreen"}>
         <img alt="Freighter logo" src={FreighterLogoLockup} />
         {isPopupView ? null : (
           <div className="Header__network">

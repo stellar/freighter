@@ -40,9 +40,10 @@ export const HistoryItem = ({
     transaction_attr: { operation_count: operationCount },
     isPayment = false,
   } = operation;
-
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
-  const operationString = OPERATION_TYPES[operationType];
+  const operationString = `${OPERATION_TYPES[operationType]}${
+    operationCount > 1 ? ` + ${operationCount - 1} ops` : ""
+  }`;
   const date = new Date(Date.parse(createdAt))
     .toDateString()
     .split(" ")
@@ -100,9 +101,6 @@ export const HistoryItem = ({
         <div className="HistoryItem__icon">{renderIcon()}</div>
         <div className="HistoryItem__operation">
           {isPayment ? operationAssetCode : operationString}
-          {operationCount > 1 && !isPayment
-            ? ` + ${operationCount - 1} ops`
-            : null}
           <div className="HistoryItem__date">
             {recipientLabel} • {date}
           </div>
