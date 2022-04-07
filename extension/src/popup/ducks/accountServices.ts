@@ -447,6 +447,7 @@ const authSlice = createSlice({
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
         allAccounts,
+        error: "",
       };
     });
     builder.addCase(signOut.fulfilled, (_state, action) => {

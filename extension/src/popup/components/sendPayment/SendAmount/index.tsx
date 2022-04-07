@@ -95,7 +95,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     asset: string;
     destinationAsset: string;
   }) => {
-    dispatch(saveAmount(String(values.amount)));
+    dispatch(saveAmount(cleanAmount(values.amount)));
     dispatch(saveAsset(values.asset));
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
@@ -104,7 +104,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   };
 
   const validate = (values: { amount: string }) => {
-    const val = values.amount.toString();
+    const val = cleanAmount(values.amount);
     if (new BigNumber(val).gt(new BigNumber(availBalance))) {
       return { amount: AMOUNT_ERROR.TOO_HIGH };
     }
@@ -151,6 +151,36 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     formik.values.destinationAsset,
     formik.values.amount,
   ]);
+
+  const getAmountFontSize = () => {
+    const length = formik.values.amount.length;
+    if (length <= 9) {
+      return "";
+    }
+    if (length <= 15) {
+      return "med";
+    }
+    return "small";
+  };
+
+  // remove non digits and decimal
+  const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
+
+  const formatAmount = (val: string) => {
+    const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
+    const maxDigits = 16;
+    const cleaned = cleanAmount(val);
+    // add commas to pre decimal digits
+    if (cleaned.indexOf(".") !== -1) {
+      const parts = cleaned.split(".");
+      parts[0] = decimal
+        .format(Number(parts[0].slice(0, maxDigits)))
+        .toString();
+      parts[1] = parts[1].slice(0, 7);
+      return `${parts[0]}.${parts[1]}`;
+    }
+    return decimal.format(Number(cleaned.slice(0, maxDigits))).toString();
+  };
 
   const DecideWarning = () => {
     // unfunded destination
@@ -225,13 +255,20 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         >
           <>
             <input
-              className="SendAmount__input-amount"
+              className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
               name="amount"
-              type="number"
-              placeholder="0.00"
+              type="text"
+              placeholder="0"
               value={formik.values.amount}
-              onChange={formik.handleChange}
+              onChange={(e) =>
+                formik.setFieldValue("amount", formatAmount(e.target.value))
+              }
+              autoFocus
+              autoComplete="off"
             />
+            <div className="SendAmount__input-amount__asset-copy">
+              {getAssetFromCanonical(formik.values.asset).code}
+            </div>
             {destinationAsset && (
               <ConversionRate
                 loading={loadingRate}

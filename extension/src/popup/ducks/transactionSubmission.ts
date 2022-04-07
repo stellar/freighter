@@ -188,7 +188,7 @@ const initialState: InitialState = {
   response: null,
   error: undefined,
   transactionData: {
-    amount: "",
+    amount: "0",
     asset: "native",
     destination: "",
     federationAddress: "",
