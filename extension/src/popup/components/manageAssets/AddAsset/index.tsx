@@ -1,12 +1,13 @@
 import React, { useRef, useState } from "react";
-import { Input, InfoBlock } from "@stellar/design-system";
+import { Input } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
 import StellarSdk from "stellar-sdk";
 
 import { Button } from "popup/basics/buttons/Button";
-import { SubviewHeader } from "popup/components/SubviewHeader";
-
+import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
+
+import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { CURRENCY } from "@shared/api/types";
 
@@ -93,9 +94,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
               </div>
               <div className="AddAsset__results">
                 {isCurrencyNotFound ? (
-                  <div className="AddAsset__infoBlock">
-                    <InfoBlock>Asset not found</InfoBlock>
-                  </div>
+                  <InfoBlock>Asset not found</InfoBlock>
                 ) : null}
                 {assetRows.length ? (
                   <>

@@ -1,8 +1,9 @@
 import React from "react";
-import { IconButton, InfoBlock, CopyText } from "@stellar/design-system";
+import { IconButton, CopyText } from "@stellar/design-system";
 
 import { emitMetric } from "helpers/metrics";
 
+import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -43,8 +44,10 @@ export const DisplayMnemonicPhrase = ({
       </OnboardingHalfScreen>
       <OnboardingHalfScreen className="DisplayMnemonicPhrase__half-screen">
         <InfoBlock variant={InfoBlock.variant.warning}>
-          <strong>IMPORTANT WARNING</strong>
-          <p>Never disclose your recovery phrase!</p>
+          <div>
+            <strong>IMPORTANT WARNING</strong>
+            <p>Never disclose your recovery phrase!</p>
+          </div>
         </InfoBlock>
         <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} />
 

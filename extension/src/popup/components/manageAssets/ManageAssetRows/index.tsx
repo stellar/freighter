@@ -61,6 +61,7 @@ export const ManageAssetRows = ({
     const changeParams = addTrustline ? {} : { limit: "0" };
     const sourceAccount: Account = await server.loadAccount(publicKey);
     const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
+    console.log(2);
 
     setAssetSubmitting(canonicalAsset);
 

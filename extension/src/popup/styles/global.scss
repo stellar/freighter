@@ -44,6 +44,11 @@ a {
   height: 100%;
 }
 
+// TODO: Update in SDS
+.Tooltip__content__container {
+  padding: 0.5rem !important;
+}
+
 * {
   scrollbar-color: rgba(var(--pal-shadow-rbg), 0.25)
     var(--pal-background-primary);
