@@ -119,18 +119,20 @@ export const SubmitFail = () => {
       if (resultCodes.includes(RESULT_CODES.op_under_dest_min)) {
         return (
           <InfoBlock variant={InfoBlock.variant.error}>
-            <strong>CONVERSION RATE CHANGED</strong>
             <div>
-              Please check the new rate and try again.{" "}
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
-                href="https://developers.stellar.org/docs/glossary/decentralized-exchange/#cross-asset-payments"
-                rel="noreferrer"
-                target="_blank"
-              >
-                Learn more about conversion rates
-              </TextLink>
+              <strong>CONVERSION RATE CHANGED</strong>
+              <div>
+                Please check the new rate and try again.{" "}
+                <TextLink
+                  underline
+                  variant={TextLink.variant.secondary}
+                  href="https://developers.stellar.org/docs/glossary/decentralized-exchange/#cross-asset-payments"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Learn more about conversion rates
+                </TextLink>
+              </div>
             </div>
           </InfoBlock>
         );
