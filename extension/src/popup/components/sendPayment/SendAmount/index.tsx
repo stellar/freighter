@@ -103,7 +103,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   };
 
   const validate = (values: { amount: string }) => {
-    const val = cleanAmount(values.amount.toString());
+    const val = cleanAmount(values.amount);
     if (new BigNumber(val).gt(new BigNumber(availBalance))) {
       return { amount: AMOUNT_ERROR.TOO_HIGH };
     }
@@ -152,7 +152,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   ]);
 
   const getAmountFontSize = () => {
-    const length = formik.values.amount.toString().length;
+    const length = formik.values.amount.length;
     if (length <= 9) {
       return "";
     }
