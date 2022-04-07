@@ -151,6 +151,17 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     formik.values.amount,
   ]);
 
+  const getAmountFontSize = () => {
+    const length = formik.values.amount.toString().length;
+    if (length <= 9) {
+      return "";
+    }
+    if (length <= 15) {
+      return "med";
+    }
+    return "small";
+  };
+
   const DecideWarning = () => {
     // unfunded destination
     if (
@@ -224,12 +235,16 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         >
           <>
             <input
-              className="SendAmount__input-amount"
+              className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
               name="amount"
               type="number"
-              placeholder="0.00"
+              placeholder="0"
               value={formik.values.amount}
-              onChange={formik.handleChange}
+              onChange={(e) => {
+                e.target.value = Number(e.target.value).toString();
+                formik.handleChange(e);
+              }}
+              autoFocus
             />
             {destinationAsset && (
               <ConversionRate
