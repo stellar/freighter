@@ -263,6 +263,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                 formik.setFieldValue("amount", formatAmount(e.target.value))
               }
               autoFocus
+              autoComplete="off"
             />
             <div className="SendAmount__input-amount__asset-copy">
               {getAssetFromCanonical(formik.values.asset).code}
