@@ -61,13 +61,39 @@
   }
 
   &__input-amount {
-    font-size: 3rem;
+    font-size: 2.5rem;
     line-height: 4.5rem;
     font-weight: var(--font-weight-light);
     color: var(--pal-text-primary);
     background: none;
     border: none;
     text-align: center;
+    opacity: 0.6;
+    background-color: transparent;
+    outline: none;
+    width: 100%;
+    transition: opacity 0.15s ease-in-out;
+
+    @media (hover: hover) {
+      &:hover,
+      &:focus {
+        opacity: 1;
+      }
+    }
+    &__asset-copy {
+      width: 100%;
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__small {
+    font-size: 1.6rem;
+  }
+
+  &__med {
+    font-size: 1.875rem;
   }
 
   &__row {

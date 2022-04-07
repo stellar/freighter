@@ -1,4 +1,6 @@
 .ImportAccount {
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
   &__warning-block {
     margin-bottom: 1rem;
   }

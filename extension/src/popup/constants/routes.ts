@@ -20,6 +20,7 @@ export enum ROUTES {
   mnemonicPhraseConfirm = "/mnemonic-phrase/confirm",
   mnemonicPhraseConfirmed = "/mnemonic-phrase-confirmed",
   unlockAccount = "/unlock-account",
+  verifyAccount = "/verify-account",
   accountCreator = "/account-creator",
   recoverAccount = "/recover-account",
   recoverAccountSuccess = "/recover-account-success",
