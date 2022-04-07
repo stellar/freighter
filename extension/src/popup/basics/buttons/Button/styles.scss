@@ -10,5 +10,12 @@
   &--tertiary {
     border-color: var(--button-bg--tertiary);
     background: var(--button-bg--tertiary);
+
+    @media (hover: hover) {
+      &:hover {
+        background-color: var(--background-color);
+        border: 1px var(--button-bg--tertiary);
+      }
+    }
   }
 }
