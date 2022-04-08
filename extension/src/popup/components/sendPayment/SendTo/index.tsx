@@ -4,12 +4,14 @@ import debounce from "lodash/debounce";
 import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
+import { Input, Loader, TextLink } from "@stellar/design-system";
 
 import { truncatedPublicKey } from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -24,8 +26,6 @@ import {
   transactionSubmissionSelector,
   getDestinationBalances,
 } from "popup/ducks/transactionSubmission";
-
-import { Input, Loader, TextLink, InfoBlock } from "@stellar/design-system";
 
 import "../styles.scss";
 
@@ -43,16 +43,18 @@ export const shouldAccountDoesntExistWarning = (
 export const AccountDoesntExistWarning = () => (
   <div className="SendTo__info-block">
     <InfoBlock className="SendTo__info-block">
-      The destination account doesn’t exist. Send at least 1 XLM to create
-      account.{" "}
-      <TextLink
-        variant={TextLink.variant.secondary}
-        href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
-        rel="noreferrer"
-        target="_blank"
-      >
-        Learn more about account creation
-      </TextLink>
+      <div>
+        The destination account doesn’t exist. Send at least 1 XLM to create
+        account.{" "}
+        <TextLink
+          variant={TextLink.variant.secondary}
+          href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+          rel="noreferrer"
+          target="_blank"
+        >
+          Learn more about account creation
+        </TextLink>
+      </div>
     </InfoBlock>
   </div>
 );
@@ -60,8 +62,10 @@ export const AccountDoesntExistWarning = () => (
 const InvalidAddressWarning = () => (
   <div className="SendTo__info-block">
     <InfoBlock variant={InfoBlock.variant.warning}>
-      <strong>INVALID STELLAR ADDRESS</strong>
-      <p>Addresses are uppercase and begin with letters “G“ or “M“.</p>
+      <div>
+        <strong>INVALID STELLAR ADDRESS</strong>
+        <p>Addresses are uppercase and begin with letters “G“ or “M“.</p>
+      </div>
     </InfoBlock>
   </div>
 );
