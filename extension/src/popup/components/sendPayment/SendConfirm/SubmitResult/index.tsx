@@ -2,10 +2,12 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
 import get from "lodash/get";
-import { getAssetFromCanonical } from "helpers/stellar";
+import { Icon, TextLink } from "@stellar/design-system";
 
-import { Icon, InfoBlock, TextLink } from "@stellar/design-system";
+import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
+
+import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES } from "popup/helpers/parseTransaction";
 import { ROUTES } from "popup/constants/routes";
@@ -91,19 +93,21 @@ export const SubmitFail = () => {
       if (!keys.some((key) => key === asset)) {
         return (
           <InfoBlock variant={InfoBlock.variant.error}>
-            <strong>NO TRUSTLINE TO SENT ASSET</strong>
             <div>
-              The receiving account doesn’t have a trustline to the sent asset:{" "}
-              <strong>{horizonAsset.code}</strong>.
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
-                href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines"
-                rel="noreferrer"
-                target="_blank"
-              >
-                Learn more about trustlines
-              </TextLink>
+              <strong>NO TRUSTLINE TO SENT ASSET</strong>
+              <div>
+                The receiving account doesn’t have a trustline to the sent
+                asset: <strong>{horizonAsset.code}</strong>.
+                <TextLink
+                  underline
+                  variant={TextLink.variant.secondary}
+                  href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Learn more about trustlines
+                </TextLink>
+              </div>
             </div>
           </InfoBlock>
         );
@@ -115,18 +119,20 @@ export const SubmitFail = () => {
       if (resultCodes.includes(RESULT_CODES.op_under_dest_min)) {
         return (
           <InfoBlock variant={InfoBlock.variant.error}>
-            <strong>CONVERSION RATE CHANGED</strong>
             <div>
-              Please check the new rate and try again.{" "}
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
-                href="https://developers.stellar.org/docs/glossary/decentralized-exchange/#cross-asset-payments"
-                rel="noreferrer"
-                target="_blank"
-              >
-                Learn more about conversion rates
-              </TextLink>
+              <strong>CONVERSION RATE CHANGED</strong>
+              <div>
+                Please check the new rate and try again.{" "}
+                <TextLink
+                  underline
+                  variant={TextLink.variant.secondary}
+                  href="https://developers.stellar.org/docs/glossary/decentralized-exchange/#cross-asset-payments"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Learn more about conversion rates
+                </TextLink>
+              </div>
             </div>
           </InfoBlock>
         );

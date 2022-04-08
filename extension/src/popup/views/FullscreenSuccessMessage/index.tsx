@@ -6,6 +6,7 @@ import { emitMetric } from "helpers/metrics";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
+import { InfoBlock } from "popup/basics/InfoBlock";
 import { SubmitButtonWrapper } from "popup/basics/Forms";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
@@ -14,8 +15,6 @@ import { OnboardingHeader } from "popup/components/Onboarding";
 import { Button } from "popup/basics/buttons/Button";
 import SuccessIllo from "popup/assets/illo-success-screen.svg";
 import ExtensionIllo from "popup/assets/illo-extension.png";
-
-import { InfoBlock } from "@stellar/design-system";
 
 import "./styles.scss";
 

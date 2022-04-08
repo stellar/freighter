@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { InfoBlock } from "@stellar/design-system";
 import { useHistory, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 
 import { Button } from "popup/basics/buttons/Button";
+import { InfoBlock } from "popup/basics/InfoBlock";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
 import { getResultCode, RESULT_CODES } from "popup/helpers/parseTransaction";
@@ -39,17 +39,19 @@ const renderError = (
     case TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS:
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
-          <p className="TrustlineError__title">Not enough lumens</p>
-          <p>0.500001 XLM are required to add a new asset.</p>
-          <p className="TrustlineError__links">
-            <Link to="https://developers.stellar.org/docs/glossary/minimum-balance/#changes-to-transaction-fees-and-minimum-balances">
-              Learn more about transaction fees
-            </Link>
-            <br />
-            <Link to="https://developers.stellar.org/docs/glossary/accounts/#liabilities">
-              Learn more about account reserves
-            </Link>
-          </p>
+          <div>
+            <p className="TrustlineError__title">Not enough lumens</p>
+            <p>0.500001 XLM are required to add a new asset.</p>
+            <p className="TrustlineError__links">
+              <Link to="https://developers.stellar.org/docs/glossary/minimum-balance/#changes-to-transaction-fees-and-minimum-balances">
+                Learn more about transaction fees
+              </Link>
+              <br />
+              <Link to="https://developers.stellar.org/docs/glossary/accounts/#liabilities">
+                Learn more about account reserves
+              </Link>
+            </p>
+          </div>
         </InfoBlock>
       );
     case TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE:
