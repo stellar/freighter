@@ -1,7 +1,12 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-
-import { Icon, Textarea, DetailsTooltip } from "@stellar/design-system";
+import { Formik, Form, Field, FieldProps } from "formik";
+import {
+  Icon,
+  Textarea,
+  DetailsTooltip,
+  TextLink,
+} from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
@@ -14,8 +19,6 @@ import {
   transactionDataSelector,
   isPathPaymentSelector,
 } from "popup/ducks/transactionSubmission";
-
-import { Formik, Form, Field, FieldProps } from "formik";
 
 import "../styles.scss";
 
@@ -47,8 +50,22 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     <span className="SendSettings__row__title">
                       Transaction fee
                     </span>
-                    {/* TODO - add copy */}
-                    <DetailsTooltip details="">
+                    <DetailsTooltip
+                      tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
+                      details={
+                        <span>
+                          Maximum network transaction fee to be paid{" "}
+                          <TextLink
+                            variant={TextLink.variant.secondary}
+                            href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            Learn more
+                          </TextLink>
+                        </span>
+                      }
+                    >
                       <span></span>
                     </DetailsTooltip>
                   </div>
@@ -73,8 +90,11 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                       <span className="SendSettings__row__title">
                         Allowed slippage
                       </span>
-                      {/* TODO - add copy */}
-                      <DetailsTooltip details="">
+                      {/* TODO - link to FAQ when added */}
+                      <DetailsTooltip
+                        tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
+                        details="Allowed downward variation in the destination amount"
+                      >
                         <span></span>
                       </DetailsTooltip>
                     </div>
@@ -99,8 +119,24 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     <div className="SendSettings__row">
                       <div className="SendSettings__row__left">
                         <span className="SendSettings__row__title">Memo</span>{" "}
-                        {/* TODO - add copy */}
-                        <DetailsTooltip details="">
+                        <DetailsTooltip
+                          tooltipPosition={
+                            DetailsTooltip.tooltipPosition.BOTTOM
+                          }
+                          details={
+                            <span>
+                              Include a custom memo to this transaction{" "}
+                              <TextLink
+                                variant={TextLink.variant.secondary}
+                                href="https://developers.stellar.org/docs/glossary/transactions/#memo"
+                                rel="noreferrer"
+                                target="_blank"
+                              >
+                                Learn more
+                              </TextLink>
+                            </span>
+                          }
+                        >
                           <span></span>
                         </DetailsTooltip>
                       </div>
