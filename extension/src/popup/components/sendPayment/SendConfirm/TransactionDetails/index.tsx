@@ -172,7 +172,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             <Loader /> <span>Processing transaction</span>
           </div>
           <div className="TransactionDetails__processing__copy">
-            Please don't close this window
+            Please don’t close this window
           </div>
         </div>
       )}
