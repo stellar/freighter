@@ -44,12 +44,14 @@ export const SendSettingsSlippage = () => {
         customBackAction={() => navigateTo(ROUTES.sendPaymentSettings)}
         customBackIcon={<Icon.X />}
         rightButton={
-          <DetailsTooltip
-            // TODO - add copy
-            details=""
-          >
-            <span></span>
-          </DetailsTooltip>
+          <div className="Slippage__tooltip">
+            <DetailsTooltip
+              // TODO - add copy
+              details=""
+            >
+              <span></span>
+            </DetailsTooltip>
+          </div>
         }
       />
       <div className="Slippage">
