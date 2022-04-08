@@ -110,13 +110,11 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     </div>
                     <Field name="memo">
                       {({ field }: FieldProps) => (
-                        <div className="SendSettings__input-textarea">
-                          <Textarea
-                            id="mnemonic-input"
-                            placeholder="Memo (optional)"
-                            {...field}
-                          />
-                        </div>
+                        <Textarea
+                          id="mnemonic-input"
+                          placeholder="Memo (optional)"
+                          {...field}
+                        />
                       )}
                     </Field>
                   </>
