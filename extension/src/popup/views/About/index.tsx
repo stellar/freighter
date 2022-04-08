@@ -8,14 +8,15 @@ import FreighterLogoLockup from "popup/assets/logo-lockup-freighter.svg";
 import "./styles.scss";
 
 interface AboutLinkProps {
+  children?: React.ReactNode | string;
   url: string;
 }
 
-const AboutLink = ({ url }: AboutLinkProps) => (
+const AboutLink = ({ children, url }: AboutLinkProps) => (
   <div className="About__link">
     <Icon.Link2 />
     <a target="_blank" rel="noreferrer" href={`https://${url}`}>
-      {url}
+      {children || url}
     </a>
   </div>
 );
@@ -38,6 +39,8 @@ export const About = () => (
       <AboutLink url="accountviewer.stellar.org" />
       <AboutLink url="stellarterm.com" />
       <AboutLink url="stellar.org" />
+      <AboutLink url="stellar.org/privacy-policy">Privacy Policy</AboutLink>
+      <AboutLink url="stellar.org/terms-of-service">Terms of Service</AboutLink>
     </div>
 
     <div className="About__copyright">
