@@ -5,12 +5,12 @@
   &__active-wrapper {
     background: none;
     border-radius: 2rem;
-    border-width: 1px;
+    border-width: 1.5px;
     border-style: solid;
     border-color: var(--pal-border-primary);
 
     &.active {
-      border-color: var(--pal-success-border);
+      border-color: rgba(61, 204, 152, 1);
     }
   }
 
