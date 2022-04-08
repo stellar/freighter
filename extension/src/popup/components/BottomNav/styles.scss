@@ -13,7 +13,8 @@
   }
 
   &--link {
-    filter: brightness(0.24);
+    filter: brightness(0) saturate(100%) invert(31%) sepia(6%) saturate(476%)
+      hue-rotate(195deg) brightness(100%) contrast(89%);
 
     &--active {
       filter: brightness(1);

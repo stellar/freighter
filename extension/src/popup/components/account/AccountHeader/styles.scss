@@ -100,8 +100,8 @@ $dropdown-animation: 0.3s ease-out;
   &__option-icon {
     display: flex;
     align-items: center;
-    width: 2rem;
-    height: 2rem;
+    width: 0.875rem;
+    height: 0.875rem;
     justify-content: center;
     margin: 0.25rem;
   }
@@ -128,7 +128,10 @@ $dropdown-animation: 0.3s ease-out;
   }
 
   &--option-check {
-    padding-right: 1rem;
+    align-items: center;
+    display: flex;
+    margin-right: 1rem;
+    width: 1.25rem;
   }
 
   &__list-divider {
