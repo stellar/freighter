@@ -22,7 +22,10 @@
 
   &--radio {
     &-check {
+      align-items: center;
+      display: flex;
       visibility: hidden;
+      width: 1.25rem;
     }
     &-label {
       align-items: center;
