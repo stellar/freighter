@@ -45,8 +45,11 @@ export const SendSettingsSlippage = () => {
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
-            // TODO - add copy
-            details=""
+            // TODO - add link to FAQ when added
+            details={
+              <span>Allowed downward variation in the destination amount</span>
+            }
+            tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
           >
             <span></span>
           </DetailsTooltip>

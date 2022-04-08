@@ -63,8 +63,20 @@ export const SendSettingsFee = () => {
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
-            // TODO - add copy
-            details=""
+            tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
+            details={
+              <span>
+                Maximum network transaction fee to be paid{" "}
+                <TextLink
+                  variant={TextLink.variant.secondary}
+                  href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Learn more
+                </TextLink>
+              </span>
+            }
           >
             <span></span>
           </DetailsTooltip>

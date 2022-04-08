@@ -341,7 +341,9 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
 
           <div className="SendPayment__btn-continue">
             <Button
-              disabled={loadingRate || !formik.values.amount || !formik.isValid}
+              disabled={
+                loadingRate || formik.values.amount === "0" || !formik.isValid
+              }
               fullWidth
               variant={Button.variant.tertiary}
               type="submit"

@@ -9,6 +9,14 @@ const truncateString = (str: string) =>
 export const truncatedPublicKey = (publicKey: string) =>
   truncateString(publicKey);
 
+export const truncatedFedAddress = (addr: string) => {
+  if (!addr || addr.indexOf("*") === -1) {
+    return addr;
+  }
+  const domain = addr.split("*")[1];
+  return `${addr[0]}...*${domain}`;
+};
+
 export const truncatedPoolId = (poolId: string) => truncateString(poolId);
 
 export const getTransactionInfo = (search: string) => {
