@@ -10,6 +10,7 @@ import {
   getAssetFromCanonical,
   xlmToStroop,
   getConversionRate,
+  truncatedFedAddress,
 } from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -57,6 +58,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
+
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
@@ -166,7 +168,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     <div className="TransactionDetails">
       {submission.submitStatus === ActionStatus.PENDING && (
         <div className="TransactionDetails__processing">
-          <Loader /> <span>Processing transaction</span>
+          <div className="TransactionDetails__processing__header">
+            <Loader /> <span>Processing transaction</span>
+          </div>
+          <div className="TransactionDetails__processing__copy">
+            Please don’t close this window
+          </div>
         </div>
       )}
       <SubviewHeader
@@ -211,7 +218,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <div className="TransactionDetails__row__right">
           <div className="TransactionDetails__identicon">
             <FedOrGAddress
-              fedAddress={federationAddress}
+              fedAddress={truncatedFedAddress(federationAddress)}
               gAddress={destination}
             />
           </div>
@@ -234,12 +241,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         </div>
       )}
       <div className="TransactionDetails__row">
-        <div>Network Fee </div>
+        <div>Transaction fee </div>
         <div className="TransactionDetails__row__right">
           {transactionFee} {sourceAsset.code}
         </div>
       </div>
-      <div className="TransactionDetails__buttons-row">
+      <div className="TransactionDetails__bottom-wrapper">
         {submission.submitStatus === ActionStatus.SUCCESS ? (
           <Button
             fullWidth
@@ -256,16 +263,22 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           </Button>
         ) : (
           <>
-            <Button
-              variant={Button.variant.tertiary}
-              onClick={() => {
-                dispatch(resetSubmission());
-                navigateTo(ROUTES.account);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSend}>Send</Button>
+            <div className="TransactionDetails__bottom-wrapper__copy">
+              {isPathPayment &&
+                "The final amount is approximate and may change"}
+            </div>
+            <div className="TransactionDetails__bottom-wrapper__buttons">
+              <Button
+                variant={Button.variant.tertiary}
+                onClick={() => {
+                  dispatch(resetSubmission());
+                  navigateTo(ROUTES.account);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSend}>Send</Button>
+            </div>
           </>
         )}
       </div>

@@ -9,8 +9,12 @@
 
     .Card {
       cursor: pointer;
-      text-align: center;
       font-weight: var(--font-weight-medium);
+      font-size: 1rem;
+      height: 2.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 

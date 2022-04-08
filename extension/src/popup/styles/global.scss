@@ -48,6 +48,15 @@ a {
 .Tooltip__content__container {
   padding: 0.5rem !important;
 }
+.Tooltip__component {
+  svg {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+  }
+  .IconButton--default {
+    margin-left: 0;
+  }
+}
 
 * {
   scrollbar-color: rgba(var(--pal-shadow-rbg), 0.25)

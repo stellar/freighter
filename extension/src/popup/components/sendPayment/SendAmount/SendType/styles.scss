@@ -2,6 +2,7 @@
   &--label {
     cursor: pointer;
     text-transform: none;
+    margin-bottom: 1rem;
   }
 
   &__title {
@@ -34,6 +35,10 @@
 
     &-check {
       visibility: hidden;
+      svg {
+        width: 1rem;
+        height: 1rem;
+      }
     }
   }
 }

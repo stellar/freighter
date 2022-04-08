@@ -27,7 +27,7 @@
     cursor: pointer;
     display: flex;
     padding: 0;
-    width: var(--back--button-dimension);
+    width: 0.9rem;
     z-index: var(--back--button-z-index);
   }
 
@@ -35,6 +35,8 @@
     font-size: 0.875rem;
     line-height: 1.375rem;
     color: var(--pal-text-tertiary);
+    position: absolute;
+    top: calc(var(--popup-vertical-padding) + 1.5rem);
   }
 
   &__form {
@@ -46,16 +48,15 @@
 
   &__amount-warning {
     margin: 1rem 0;
-    min-height: 7rem;
+    min-height: 9rem;
 
     &__path-payment {
       margin: 1rem 0;
-      min-height: 1rem;
+      min-height: 1.5rem;
     }
   }
 
   &__btn-set-max {
-    margin-top: 1rem;
     font-size: 0.875rem;
     line-height: 1.5rem;
   }
@@ -198,7 +199,6 @@
   &__row {
     display: flex;
     justify-content: space-between;
-    margin-top: 1rem;
     width: 100%;
 
     &__title {
@@ -223,11 +223,6 @@
 
   &__nav-btn {
     cursor: pointer;
-  }
-
-  &__input-textarea {
-    width: 100%;
-    margin-top: 1rem;
   }
 }
 
