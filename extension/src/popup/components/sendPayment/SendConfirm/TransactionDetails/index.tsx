@@ -10,6 +10,7 @@ import {
   getAssetFromCanonical,
   xlmToStroop,
   getConversionRate,
+  truncatedFedAddress,
 } from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -211,7 +212,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <div className="TransactionDetails__row__right">
           <div className="TransactionDetails__identicon">
             <FedOrGAddress
-              fedAddress={federationAddress}
+              fedAddress={truncatedFedAddress(federationAddress)}
               gAddress={destination}
             />
           </div>
