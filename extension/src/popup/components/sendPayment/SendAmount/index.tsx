@@ -72,7 +72,6 @@ const BalanceOption = ({
   balance: [string, Types.AssetBalance | Types.NativeBalance];
 }) => {
   const [assetDomain, setAssetDomain] = useState("stellar.org");
-  const assetCode = balance.token.code;
   const assetIssuer = "issuer" in balance.token ? balance.token.issuer.key : "";
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const server = new StellarSdk.Server(networkDetails.networkUrl);
@@ -93,11 +92,11 @@ const BalanceOption = ({
     if (balance.token.type !== "native") {
       fetchAssetDomain();
     }
-  }, [assetCode, assetIssuer, server, balance.token.type]);
+  }, [assetIssuer, server, balance.token.type]);
 
   return (
     <option key={key} value={key}>
-      {assetCode} &bull; {assetDomain}
+      {balance.token.code} &bull; {assetDomain}
     </option>
   );
 };
