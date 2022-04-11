@@ -3,8 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
-
+import { Types } from "@stellar/wallet-sdk";
 import { Select, Icon, Loader } from "@stellar/design-system";
+import StellarSdk from "stellar-sdk";
 
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
@@ -64,6 +65,42 @@ const ConversionRate = ({
     )}
   </div>
 );
+
+const BalanceOption = ({
+  balance: [key, balance],
+}: {
+  balance: [string, Types.AssetBalance | Types.NativeBalance];
+}) => {
+  const [assetDomain, setAssetDomain] = useState("stellar.org");
+  const assetCode = balance.token.code;
+  const assetIssuer = "issuer" in balance.token ? balance.token.issuer.key : "";
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const server = new StellarSdk.Server(networkDetails.networkUrl);
+
+  useEffect(() => {
+    const fetchAssetDomain = async () => {
+      let homeDomain = "";
+      // https://github.com/stellar/freighter/issues/410
+      try {
+        ({ home_domain: homeDomain } = await server.loadAccount(assetIssuer));
+      } catch (e) {
+        console.error(e);
+      }
+
+      setAssetDomain(homeDomain);
+    };
+
+    if (balance.token.type !== "native") {
+      fetchAssetDomain();
+    }
+  }, [assetCode, assetIssuer, server, balance.token.type]);
+
+  return (
+    <option key={key} value={key}>
+      {assetCode} &bull; {assetDomain}
+    </option>
+  );
+};
 
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
@@ -304,9 +341,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
             >
               {accountBalances.balances &&
                 Object.entries(accountBalances.balances).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.token.code}
-                  </option>
+                  <BalanceOption balance={[k, v]} />
                 ))}
             </Select>
           </div>
@@ -322,13 +357,9 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                   }
                 >
                   {destinationBalances.balances &&
-                    Object.entries(destinationBalances.balances).map(
-                      ([k, v]) => (
-                        <option key={k} value={k}>
-                          {v.token.code}
-                        </option>
-                      ),
-                    )}
+                    Object.entries(
+                      destinationBalances.balances,
+                    ).map(([k, v]) => <BalanceOption balance={[k, v]} />)}
                 </Select>
               </div>
               <div className="SendAmount__path-pay__copy">

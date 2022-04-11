@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 
@@ -46,6 +46,10 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
+
+  useEffect(() => {
+    setAssetIcons(inputAssetIcons);
+  }, [inputAssetIcons]);
 
   const retryAssetIconFetch = async ({
     key,
