@@ -96,7 +96,8 @@ const BalanceOption = ({
 
   return (
     <option key={key} value={key}>
-      {balance.token.code} &bull; {assetDomain}
+      {balance.token.code}
+      {assetDomain && ` \u2022 ${assetDomain}`}
     </option>
   );
 };
