@@ -83,18 +83,20 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const [fedAddress, setFedAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleContinue = (values: { destination: string }) => {
-    dispatch(saveDestination(validatedPubKey));
-    if (fedAddress) {
-      dispatch(saveFederationAddress(fedAddress));
-    }
-    formik.resetForm({ values });
+  const handleContinue = (
+    validatedDestination: string,
+    validatedFedAdress?: string,
+  ) => {
+    dispatch(saveDestination(validatedDestination));
+    dispatch(saveFederationAddress(validatedFedAdress || ""));
     navigateTo(ROUTES.sendPaymentAmount);
   };
 
   const formik = useFormik({
     initialValues: { destination: federationAddress || destination },
-    onSubmit: handleContinue,
+    onSubmit: () => {
+      handleContinue(validatedPubKey, fedAddress);
+    },
     validateOnChange: false,
     validate: (values) => {
       if (isValidPublicKey(values.destination)) {
@@ -228,21 +230,16 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                       <li key={pubKey}>
                         <button
                           onClick={async () => {
-                            // recentAddresses already validated so safe to dispatch
                             setIsLoading(true);
+                            // recentAddresses already validated so safe to dispatch
                             if (isFederationAddress(pubKey)) {
                               const fedResp = await FederationServer.resolve(
                                 pubKey,
                               );
-                              dispatch(saveDestination(pubKey));
-                              dispatch(
-                                saveFederationAddress(fedResp.account_id),
-                              );
+                              handleContinue(pubKey, fedResp.account_id);
                             } else {
-                              dispatch(saveDestination(pubKey));
+                              handleContinue(pubKey);
                             }
-                            navigateTo(ROUTES.sendPaymentAmount);
-                            setIsLoading(false);
                           }}
                           className="SendTo__subheading-identicon"
                         >
