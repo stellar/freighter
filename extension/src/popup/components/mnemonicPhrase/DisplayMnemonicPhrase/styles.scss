@@ -46,10 +46,10 @@
 
   .IconButton {
     &__label {
-      color: #fff;
+      color: var(--pal-text-primary);
     }
     svg {
-      stroke: #fff;
+      stroke: var(--pal-text-primary);
     }
   }
 }
