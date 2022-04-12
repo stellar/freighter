@@ -202,10 +202,12 @@ const initialState: InitialState = {
   accountBalances: {
     balances: null,
     isFunded: false,
+    subentryCount: 0,
   },
   destinationBalances: {
     balances: null,
     isFunded: false,
+    subentryCount: 0,
   },
   assetIcons: {},
 };

@@ -1,17 +1,25 @@
 .SendType {
+  &__form-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
   &--label {
     cursor: pointer;
     text-transform: none;
     margin-bottom: 1rem;
   }
 
-  &__title {
+  &__content-wrapper {
     display: flex;
-    flex-direction: column;
-    svg {
-      width: 1rem;
-    }
+    flex-direction: row;
+    align-items: start;
 
+    &__title {
+      display: flex;
+      flex-direction: column;
+    }
     &__subtext {
       color: var(--pal-text-tertiary);
     }
@@ -21,23 +29,19 @@
     &-field {
       visibility: hidden;
       width: 0;
-
-      &:checked ~ .SendType--radio-check {
-        visibility: visible;
-      }
-    }
-
-    &-label {
-      align-items: start;
-      display: flex;
-      justify-content: space-between;
     }
 
     &-check {
+      display: flex;
+      justify-content: flex-end;
+      flex: 1;
       visibility: hidden;
       svg {
         width: 1rem;
         height: 1rem;
+      }
+      &--active {
+        visibility: visible;
       }
     }
   }

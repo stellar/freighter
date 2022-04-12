@@ -219,6 +219,19 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     return decimal.format(Number(cleaned.slice(0, maxDigits))).toString();
   };
 
+  const handleSetMax = () => {
+    const baseReserve = (2 + accountBalances.subentryCount) * 0.5;
+
+    if (accountBalances.balances) {
+      // needed for different wallet-sdk bignumber.js version
+      const currentBal = new BigNumber(
+        accountBalances.balances[formik.values.asset].total.toString(),
+      );
+      const max = currentBal.minus(new BigNumber(baseReserve));
+      formik.setFieldValue("amount", max.toString());
+    }
+  };
+
   const DecideWarning = () => {
     // unfunded destination
     if (
@@ -268,20 +281,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
           available
         </div>
         <div className="SendAmount__btn-set-max">
-          <PillButton
-            onClick={() => {
-              if (accountBalances.balances) {
-                formik.setFieldValue(
-                  "amount",
-                  accountBalances.balances[
-                    formik.values.asset
-                  ].total.toString(),
-                );
-              }
-            }}
-          >
-            SET MAX
-          </PillButton>
+          <PillButton onClick={handleSetMax}>SET MAX</PillButton>
         </div>
         <form
           className="SendAmount__form"

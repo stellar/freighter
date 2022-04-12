@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
-import { Card, Loader } from "@stellar/design-system";
+import { Card, Loader, Icon } from "@stellar/design-system";
 
 import {
   getAssetFromCanonical,
@@ -183,6 +183,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             : "Confirm Send"
         }
         customBackAction={goBack}
+        customBackIcon={
+          submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
+        }
       />
       <div className="TransactionDetails__cards">
         <Card>
