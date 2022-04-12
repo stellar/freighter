@@ -227,9 +227,23 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                     {recentAddresses.map((pubKey) => (
                       <li key={pubKey}>
                         <button
-                          onClick={() =>
-                            formik.setFieldValue("destination", pubKey, true)
-                          }
+                          onClick={async () => {
+                            // recentAddresses already validated so safe to dispatch
+                            setIsLoading(true);
+                            if (isFederationAddress(pubKey)) {
+                              const fedResp = await FederationServer.resolve(
+                                pubKey,
+                              );
+                              dispatch(saveDestination(pubKey));
+                              dispatch(
+                                saveFederationAddress(fedResp.account_id),
+                              );
+                            } else {
+                              dispatch(saveDestination(pubKey));
+                            }
+                            navigateTo(ROUTES.sendPaymentAmount);
+                            setIsLoading(false);
+                          }}
                           className="SendTo__subheading-identicon"
                         >
                           <IdenticonImg publicKey={pubKey} />
