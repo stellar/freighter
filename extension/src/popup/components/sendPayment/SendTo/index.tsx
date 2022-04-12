@@ -200,7 +200,6 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          formik.submitForm();
         }}
       >
         <FormRows>
