@@ -12,6 +12,7 @@ module.exports = {
       logo: {
         alt: "Freighter Logo",
         src: "./images/logo.png",
+        srcDark: "./images/logo.png",
       },
       items: [
         {
