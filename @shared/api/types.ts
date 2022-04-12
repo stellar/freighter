@@ -73,6 +73,7 @@ export type HorizonOperation = Horizon.PaymentOperationResponse & {
 export interface AccountBalancesInterface {
   balances: Balances;
   isFunded: boolean | null;
+  subentryCount: number;
 }
 
 export interface AccountHistoryInterface {

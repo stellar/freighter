@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
-import { Icon } from "@stellar/design-system";
+import { DetailsTooltip, Icon, TextLink } from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
@@ -24,33 +24,68 @@ interface RadioCheckProps {
   name: string;
   title: string;
   subtext: string;
+  tooltipDetails: React.ReactNode;
   value: string;
+  selected: boolean;
 }
 
-const RadioCheck = ({ name, title, subtext, value }: RadioCheckProps) => (
-  <>
+const RadioCheck = ({
+  name,
+  title,
+  subtext,
+  tooltipDetails,
+  value,
+  selected,
+}: RadioCheckProps) => (
+  <div className="SendType__form-row">
     <label className="SendType--label SendType--radio-label">
-      <div className="SendType__title">
-        {/* TODO - tooltip copy */}
-        {title}
-        {subtext && <span className="SendType__title__subtext">{subtext}</span>}
-      </div>
-      <Field
-        className="SendType--radio-field"
-        name={name}
-        type="radio"
-        value={value}
-      />
-      <div className="SendType--radio-check">
-        <Icon.Check />
+      <div className="SendType__content-wrapper">
+        <div className="SendType__content-wrapper__title">
+          {title}
+          {subtext && (
+            <span className="SendType__content-wrapper__subtext">
+              {subtext}
+            </span>
+          )}
+        </div>
+        <Field
+          className="SendType--radio-field"
+          name={name}
+          type="radio"
+          value={value}
+        />
       </div>
     </label>
-  </>
+    <DetailsTooltip
+      tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM_START}
+      details={tooltipDetails}
+    >
+      <span></span>
+    </DetailsTooltip>
+    <div
+      className={`SendType--radio-check ${
+        selected ? "SendType--radio-check--active" : ""
+      }`}
+    >
+      <Icon.Check />
+    </div>
+  </div>
 );
 
 export const SendType = () => {
   const dispatch = useDispatch();
   const { destinationAsset } = useSelector(transactionDataSelector);
+
+  const submitForm = (values: { paymentType: string }) => {
+    // path payment flag is a non empty string in redux destinationAsset
+    dispatch(
+      saveDestinationAsset(
+        values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
+      ),
+    );
+    navigateTo(ROUTES.sendPaymentAmount);
+  };
+
   return (
     <PopupWrapper>
       <SubviewHeader
@@ -65,35 +100,55 @@ export const SendType = () => {
               ? PAYMENT_TYPES.REGULAR
               : PAYMENT_TYPES.PATH_PAYMENT,
         }}
-        onSubmit={(values) => {
-          // path payment flag is a non empty string in redux destinationAsset
-          dispatch(
-            saveDestinationAsset(
-              values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
-            ),
-          );
-          navigateTo(ROUTES.sendPaymentAmount);
-        }}
+        onSubmit={() => {}}
       >
-        <Form>
-          <RadioCheck
-            name="paymentType"
-            title="Same source and destination asset"
-            value={PAYMENT_TYPES.REGULAR}
-            subtext="Most common"
-          />
-          <RadioCheck
-            name="paymentType"
-            title="Different source and destination assets"
-            value={PAYMENT_TYPES.PATH_PAYMENT}
-            subtext="Less common"
-          />
-          <div className="SendPayment__btn-continue">
-            <Button fullWidth variant={Button.variant.tertiary} type="submit">
-              Done
-            </Button>
-          </div>
-        </Form>
+        {({ values }) => (
+          <Form>
+            <RadioCheck
+              name="paymentType"
+              title="Same source and destination asset"
+              value={PAYMENT_TYPES.REGULAR}
+              subtext="Most common"
+              tooltipDetails={
+                <span>
+                  The destination account receives the same asset and amount
+                  sent
+                </span>
+              }
+              selected={values.paymentType === PAYMENT_TYPES.REGULAR}
+            />
+            <RadioCheck
+              name="paymentType"
+              title="Different source and destination assets"
+              value={PAYMENT_TYPES.PATH_PAYMENT}
+              subtext="Less common"
+              tooltipDetails={
+                <span>
+                  The destination account can receive a different asset, the
+                  received amount is defined by the available conversion rates{" "}
+                  <TextLink
+                    variant={TextLink.variant.secondary}
+                    href="https://developers.stellar.org/docs/start/list-of-operations/#path-payment-strict-receive"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Learn more
+                  </TextLink>
+                </span>
+              }
+              selected={values.paymentType === PAYMENT_TYPES.PATH_PAYMENT}
+            />
+            <div className="SendPayment__btn-continue">
+              <Button
+                fullWidth
+                variant={Button.variant.tertiary}
+                onClick={() => submitForm(values)}
+              >
+                Done
+              </Button>
+            </div>
+          </Form>
+        )}
       </Formik>
     </PopupWrapper>
   );

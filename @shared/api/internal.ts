@@ -220,21 +220,24 @@ export const getAccountBalances = async ({
 
   let balances = null;
   let isFunded = null;
+  let subentryCount = 0;
 
   try {
-    ({ balances } = await dataProvider.fetchAccountDetails());
+    ({ balances, subentryCount } = await dataProvider.fetchAccountDetails());
     isFunded = true;
   } catch (e) {
     console.error(e);
     return {
       balances,
       isFunded: false,
+      subentryCount,
     };
   }
 
   return {
     balances,
     isFunded,
+    subentryCount,
   };
 };
 
