@@ -25,7 +25,7 @@ export const DisplayMnemonicPhrase = ({
 }: {
   mnemonicPhrase: string;
 }) => (
-  <>
+  <div className="DisplayMnemonicPhrase">
     <OnboardingScreen className="DisplayMnemonicPhrase__screen">
       <OnboardingHalfScreen className="DisplayMnemonicPhrase__half-screen">
         <OnboardingHeader className="DisplayMnemonicPhrase__header">
@@ -64,16 +64,10 @@ export const DisplayMnemonicPhrase = ({
               emitMetric(METRIC_NAMES.accountCreatorMnemonicDownloadPhrase);
             }}
           >
-            <IconButton
-              preset={IconButton.preset.download}
-              variant={IconButton.variant.highlight}
-            />
+            <IconButton preset={IconButton.preset.download} />
           </button>
           <CopyText textToCopy={mnemonicPhrase} showTooltip>
-            <IconButton
-              preset={IconButton.preset.copy}
-              variant={IconButton.variant.highlight}
-            />
+            <IconButton preset={IconButton.preset.copy} />
           </CopyText>
         </div>
         <Button
@@ -86,5 +80,5 @@ export const DisplayMnemonicPhrase = ({
         </Button>
       </OnboardingHalfScreen>
     </OnboardingScreen>
-  </>
+  </div>
 );

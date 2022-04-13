@@ -108,9 +108,9 @@ export const FirstTimeWarningMessage = () => (
 export const BackupPhraseWarningMessage = () => (
   <WarningMessage header="IMPORTANT">
     <p>
-      Keep your backup phrase in a safe and secure place. Anyone who has access
-      to this phrase has access to your account and to the funds in it, so save
-      it in a safe and secure place.
+      Keep your recovery phrase in a safe and secure place. Anyone who has
+      access to this phrase has access to your account and to the funds in it,
+      so save it in a safe and secure place.
     </p>
   </WarningMessage>
 );

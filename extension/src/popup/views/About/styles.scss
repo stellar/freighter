@@ -16,7 +16,7 @@
   }
 
   &__links-header {
-    color: var(--pal-border-secondary);
+    color: var(--secondary-text);
     font-weight: var(--font-weight-medium);
     margin-bottom: 1rem;
   }
@@ -36,6 +36,6 @@
   }
 
   &__copyright {
-    color: var(--pal-border-secondary);
+    color: var(--secondary-text);
   }
 }

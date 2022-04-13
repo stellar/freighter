@@ -39,10 +39,17 @@
   }
 
   .CopyText {
-    @media (hover: hover) {
-      &:hover {
-        opacity: 1;
-      }
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .IconButton {
+    &__label {
+      color: var(--pal-text-primary);
+    }
+    svg {
+      stroke: var(--pal-text-primary);
     }
   }
 }

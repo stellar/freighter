@@ -33,7 +33,7 @@ const MnemonicPhraseConfirmedMessage = () => (
         </div>
         <ul>
           <li>
-            Freighter will never ask for your backup phrase unless you're
+            Freighter will never ask for your recovery phrase unless you're
             actively importing your account using the browser extension - never
             on an external website.
           </li>
