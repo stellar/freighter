@@ -90,10 +90,21 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                       <span className="SendSettings__row__title">
                         Allowed slippage
                       </span>
-                      {/* TODO - link to FAQ when added */}
                       <DetailsTooltip
                         tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
-                        details="Allowed downward variation in the destination amount"
+                        details={
+                          <span>
+                            Allowed downward variation in the destination amount{" "}
+                            <TextLink
+                              variant={TextLink.variant.secondary}
+                              href="https://www.freighter.app/faq"
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              Learn more
+                            </TextLink>
+                          </span>
+                        }
                       >
                         <span></span>
                       </DetailsTooltip>
