@@ -225,6 +225,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                       <button
                         onClick={async () => {
                           setIsLoading(true);
+                          setValidatedPubKey(pubKey);
                           // recentAddresses already validated so safe to dispatch
                           if (isFederationAddress(pubKey)) {
                             const fedResp = await FederationServer.resolve(
