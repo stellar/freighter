@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 
-import StellarSdk from "stellar-sdk";
 import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
-import { stroopToXlm } from "helpers/stellar";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { FormRows } from "popup/basics/Forms";
@@ -16,44 +15,13 @@ import {
   saveTransactionFee,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "./styles.scss";
-
-enum NetworkCongestion {
-  LOW = "Low",
-  MEDIUM = "Medium",
-  HIGH = "High",
-}
 
 export const SendSettingsFee = () => {
   const dispatch = useDispatch();
   const { transactionFee } = useSelector(transactionDataSelector);
-  const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
-  const [recommendedFee, setRecommendedFee] = useState("");
-  const [networkCongestion, setNetworkCongestion] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const server = new StellarSdk.Server(networkUrl);
-        const {
-          fee_charged: feeCharged,
-          ledger_capacity_usage: ledgerCapacityUsage,
-        } = await server.feeStats();
-        setRecommendedFee(stroopToXlm(feeCharged.mode).toString());
-        if (ledgerCapacityUsage > 0.5 && ledgerCapacityUsage <= 0.75) {
-          setNetworkCongestion(NetworkCongestion.MEDIUM);
-        } else if (ledgerCapacityUsage > 0.75) {
-          setNetworkCongestion(NetworkCongestion.HIGH);
-        } else {
-          setNetworkCongestion(NetworkCongestion.LOW);
-        }
-      } catch {
-        // use default values
-      }
-    })();
-  }, [networkUrl]);
+  const { networkCongestion, recommendedFee } = useNetworkFees();
 
   return (
     <PopupWrapper>

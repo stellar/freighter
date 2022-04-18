@@ -10,11 +10,12 @@ import StellarSdk from "stellar-sdk";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
-import { getAssetFromCanonical } from "helpers/stellar";
-import { AppDispatch } from "popup/App";
-import { navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { ROUTES } from "popup/constants/routes";
+import { AppDispatch } from "popup/App";
+import { getAssetFromCanonical } from "helpers/stellar";
+import { navigateTo } from "popup/helpers/navigate";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -95,7 +96,7 @@ const BalanceOption = ({
   }, [assetIssuer, server, balance.token.type]);
 
   return (
-    <option key={key} value={key}>
+    <option value={key}>
       {balance.token.code}
       {assetDomain && ` \u2022 ${assetDomain}`}
     </option>
@@ -119,10 +120,38 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     destinationAsset,
   } = transactionData;
 
+  const { recommendedFee } = useNetworkFees();
+
+  const calculateAvailBalance = useCallback(
+    (selectedAsset: string) => {
+      let availBalance = "0";
+      if (accountBalances.balances) {
+        if (selectedAsset === "native") {
+          // take base reserve into account for XLM payments
+          const baseReserve = (2 + accountBalances.subentryCount) * 0.5;
+
+          // needed for different wallet-sdk bignumber.js version
+          const currentBal = new BigNumber(
+            accountBalances.balances[selectedAsset].total.toString(),
+          );
+          availBalance = currentBal
+            .minus(new BigNumber(baseReserve))
+            .minus(new BigNumber(Number(recommendedFee)))
+            .toString();
+        } else {
+          availBalance = accountBalances.balances[
+            selectedAsset
+          ].total.toString();
+        }
+      }
+
+      return availBalance;
+    },
+    [accountBalances.balances, accountBalances.subentryCount, recommendedFee],
+  );
+
   const [availBalance, setAvailBalance] = useState(
-    accountBalances.balances
-      ? accountBalances.balances[asset].total.toString()
-      : "0",
+    calculateAvailBalance(asset),
   );
 
   const [loadingRate, setLoadingRate] = useState(false);
@@ -172,6 +201,10 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     [],
   );
 
+  useEffect(() => {
+    setAvailBalance(calculateAvailBalance(formik.values.asset));
+  }, [calculateAvailBalance, formik.values.asset]);
+
   // on asset select get conversion rate
   useEffect(() => {
     if (!formik.values.destinationAsset) return;
@@ -217,19 +250,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
       return `${parts[0]}.${parts[1]}`;
     }
     return decimal.format(Number(cleaned.slice(0, maxDigits))).toString();
-  };
-
-  const handleSetMax = () => {
-    const baseReserve = (2 + accountBalances.subentryCount) * 0.5;
-
-    if (accountBalances.balances) {
-      // needed for different wallet-sdk bignumber.js version
-      const currentBal = new BigNumber(
-        accountBalances.balances[formik.values.asset].total.toString(),
-      );
-      const max = currentBal.minus(new BigNumber(baseReserve));
-      formik.setFieldValue("amount", max.toString());
-    }
   };
 
   const DecideWarning = () => {
@@ -281,7 +301,16 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
           available
         </div>
         <div className="SendAmount__btn-set-max">
-          <PillButton onClick={handleSetMax}>SET MAX</PillButton>
+          <PillButton
+            onClick={() => {
+              formik.setFieldValue(
+                "amount",
+                calculateAvailBalance(formik.values.asset),
+              );
+            }}
+          >
+            SET MAX
+          </PillButton>
         </div>
         <form
           className="SendAmount__form"
@@ -331,17 +360,12 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
               name="asset"
               value={formik.values.asset}
               onChange={(e) => {
-                if (accountBalances.balances) {
-                  setAvailBalance(
-                    accountBalances.balances[e.target.value].total.toString(),
-                  );
-                }
                 formik.setFieldValue("asset", e.target.value);
               }}
             >
               {accountBalances.balances &&
                 Object.entries(accountBalances.balances).map(([k, v]) => (
-                  <BalanceOption balance={[k, v]} />
+                  <BalanceOption key={k} balance={[k, v]} />
                 ))}
             </Select>
           </div>
