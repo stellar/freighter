@@ -25,5 +25,5 @@ export enum RESULT_CODES {
 }
 /*  eslint-enable camelcase  */
 
-export const getResultCode = (error: ErrorMessage) =>
-  error?.response?.extras?.result_codes?.operations || [];
+export const getResultCodes = (error: ErrorMessage | undefined) =>
+  error?.response?.extras?.result_codes || { operations: [], transaction: "" };
