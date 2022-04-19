@@ -7,7 +7,7 @@ import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
-import { getResultCode, RESULT_CODES } from "popup/helpers/parseTransaction";
+import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
 import { Balances } from "@shared/api/types";
 
@@ -19,7 +19,12 @@ export enum TRUSTLINE_ERROR_STATES {
   ASSET_HAS_BALANCE = "ASSET_HAS_BALANCE",
 }
 
-const mapErrorToErrorState = (operations: string[]) => {
+interface MapErrorToErrorState {
+  operations: string[];
+  transaction: string;
+}
+
+const mapErrorToErrorState = ({ operations = [] }: MapErrorToErrorState) => {
   if (operations.includes(RESULT_CODES.op_invalid_limit)) {
     return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
   }
@@ -31,10 +36,17 @@ const mapErrorToErrorState = (operations: string[]) => {
   return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 };
 
-const renderError = (
-  errorState: TRUSTLINE_ERROR_STATES,
-  assetBalance: string,
-) => {
+interface RenderError {
+  errorState: TRUSTLINE_ERROR_STATES;
+  assetBalance: string;
+  resultCodes: string;
+}
+
+const renderError = ({
+  errorState,
+  assetBalance,
+  resultCodes,
+}: RenderError) => {
   switch (errorState) {
     case TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS:
       return (
@@ -70,9 +82,20 @@ const renderError = (
     case TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR:
     default:
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          <p className="TrustlineError__title">An unknown error occurred.</p>
-        </InfoBlock>
+        <>
+          <InfoBlock variant={InfoBlock.variant.error}>
+            <div>
+              <p className="TrustlineError__title">
+                This transaction could not be completed.
+              </p>
+              {resultCodes ? (
+                <p className="TrustlineError__subtitle">
+                  Error code: {resultCodes}
+                </p>
+              ) : null}
+            </div>
+          </InfoBlock>
+        </>
       );
   }
 };
@@ -102,13 +125,17 @@ export const TrustlineError = ({
   }, [balances, errorAsset]);
 
   const errorState: TRUSTLINE_ERROR_STATES = error
-    ? mapErrorToErrorState(getResultCode(error))
+    ? mapErrorToErrorState(getResultCodes(error))
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return (
     <div className="TrustlineError">
       <div className="TrustlineError__body">
-        {renderError(errorState, assetBalance)}
+        {renderError({
+          errorState,
+          assetBalance,
+          resultCodes: JSON.stringify(getResultCodes(error)),
+        })}
       </div>
       <div className="TrustlineError__button">
         <Button fullWidth onClick={() => history.goBack()}>

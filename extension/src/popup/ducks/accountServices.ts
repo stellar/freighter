@@ -49,11 +49,15 @@ export const fundAccount = createAsyncThunk(
 );
 
 export const addAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<Account> },
+  { publicKey: string; allAccounts: Array<Account>; hasPrivateKey: boolean },
   string,
   { rejectValue: ErrorMessage }
 >("auth/addAccount", async (password, thunkApi) => {
-  let res = { publicKey: "", allAccounts: [] as Array<Account> };
+  let res = {
+    publicKey: "",
+    allAccounts: [] as Array<Account>,
+    hasPrivateKey: false,
+  };
 
   try {
     res = await addAccountService(password);
@@ -67,11 +71,15 @@ export const addAccount = createAsyncThunk<
 });
 
 export const importAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<Account> },
+  { publicKey: string; allAccounts: Array<Account>; hasPrivateKey: boolean },
   { password: string; privateKey: string },
   { rejectValue: ErrorMessage }
 >("auth/importAccount", async ({ password, privateKey }, thunkApi) => {
-  let res = { publicKey: "", allAccounts: [] as Array<Account> };
+  let res = {
+    publicKey: "",
+    allAccounts: [] as Array<Account>,
+    hasPrivateKey: false,
+  };
 
   try {
     res = await importAccountService(password, privateKey);
@@ -95,14 +103,18 @@ export const updateAccountName = createAsyncThunk(
 );
 
 export const recoverAccount = createAsyncThunk<
-  { allAccounts: Array<Account>; publicKey: string },
+  { allAccounts: Array<Account>; hasPrivateKey: boolean; publicKey: string },
   {
     password: string;
     mnemonicPhrase: string;
   },
   { rejectValue: ErrorMessage }
 >("auth/recoverAccount", async ({ password, mnemonicPhrase }, thunkApi) => {
-  let res = { allAccounts: [] as Array<Account>, publicKey: "" };
+  let res = {
+    allAccounts: [] as Array<Account>,
+    publicKey: "",
+    hasPrivateKey: false,
+  };
 
   try {
     res = await recoverAccountService(password, mnemonicPhrase);
@@ -268,9 +280,10 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(addAccount.fulfilled, (state, action) => {
-      const { publicKey, allAccounts } = action.payload || {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        hasPrivateKey: false,
       };
 
       return {
@@ -278,6 +291,7 @@ const authSlice = createSlice({
         error: "",
         publicKey,
         allAccounts,
+        hasPrivateKey,
       };
     });
     builder.addCase(addAccount.rejected, (state, action) => {
@@ -289,9 +303,10 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(importAccount.fulfilled, (state, action) => {
-      const { publicKey, allAccounts } = action.payload || {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        hasPrivateKey: false,
       };
 
       return {
@@ -299,6 +314,7 @@ const authSlice = createSlice({
         error: "",
         publicKey,
         allAccounts,
+        hasPrivateKey,
       };
     });
     builder.addCase(importAccount.rejected, (state, action) => {
@@ -352,15 +368,17 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(recoverAccount.fulfilled, (state, action) => {
-      const { publicKey, allAccounts } = action.payload || {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        hasPrivateKey: false,
       };
 
       return {
         ...state,
         error: "",
         allAccounts,
+        hasPrivateKey,
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
       };

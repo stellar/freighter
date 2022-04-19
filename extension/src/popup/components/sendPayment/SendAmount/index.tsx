@@ -72,7 +72,7 @@ const BalanceOption = ({
 }: {
   balance: [string, Types.AssetBalance | Types.NativeBalance];
 }) => {
-  const [assetDomain, setAssetDomain] = useState("stellar.org");
+  const [assetDomain, setAssetDomain] = useState("Stellar Lumens");
   const assetIssuer = "issuer" in balance.token ? balance.token.issuer.key : "";
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const server = new StellarSdk.Server(networkDetails.networkUrl);

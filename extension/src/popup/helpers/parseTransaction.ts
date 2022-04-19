@@ -22,8 +22,9 @@ export enum RESULT_CODES {
   op_invalid_limit = "op_invalid_limit",
   op_low_reserve = "op_low_reserve",
   op_under_dest_min = "op_under_dest_min",
+  tx_insufficient_balance = "tx_insufficient_balance",
 }
 /*  eslint-enable camelcase  */
 
-export const getResultCode = (error: ErrorMessage) =>
-  error?.response?.extras?.result_codes?.operations || [];
+export const getResultCodes = (error: ErrorMessage | undefined) =>
+  error?.response?.extras?.result_codes || { operations: [], transaction: "" };

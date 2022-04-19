@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
@@ -29,6 +29,7 @@ import "./styles.scss";
 export const RecoverAccount = () => {
   const publicKey = useSelector(publicKeySelector);
   const authError = useSelector(authErrorSelector);
+  const publicKeyRef = useRef(publicKey);
 
   interface FormValues {
     password: string;
@@ -65,9 +66,8 @@ export const RecoverAccount = () => {
   };
 
   useEffect(() => {
-    if (publicKey) {
+    if (publicKey && publicKey !== publicKeyRef.current) {
       navigateTo(ROUTES.recoverAccountSuccess);
-      window.close();
     }
   }, [publicKey]);
 
