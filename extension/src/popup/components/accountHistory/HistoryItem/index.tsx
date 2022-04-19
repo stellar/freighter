@@ -102,7 +102,7 @@ export const HistoryItem = ({
         <div className="HistoryItem__operation">
           {isPayment ? operationAssetCode : operationString}
           <div className="HistoryItem__date">
-            {recipientLabel} • {date}
+            {isPayment ? `${recipientLabel} \u2022` : null} {date}
           </div>
         </div>
 

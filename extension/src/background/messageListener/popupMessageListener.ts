@@ -219,11 +219,14 @@ export const popupMessageListener = (request: Request) => {
 
     store.dispatch(timeoutAccountAccess());
 
+    sessionTimer.startSession({ privateKey: keyPair.privateKey });
+
     const currentState = store.getState();
 
     return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
+      hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
 
@@ -264,6 +267,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
+      hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
 
@@ -365,6 +369,9 @@ export const popupMessageListener = (request: Request) => {
         APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
       localStorage.setItem(APPLICATION_ID, applicationState);
+
+      // start the timer now that we have active private key
+      sessionTimer.startSession({ privateKey: keyPair.privateKey });
     }
 
     const currentState = store.getState();
@@ -373,6 +380,7 @@ export const popupMessageListener = (request: Request) => {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
 

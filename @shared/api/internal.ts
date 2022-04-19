@@ -47,13 +47,23 @@ export const fundAccount = async (publicKey: string): Promise<void> => {
 
 export const addAccount = async (
   password: string,
-): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
+): Promise<{
+  publicKey: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+}> => {
   let error = "";
   let publicKey = "";
   let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, error, publicKey } = await sendMessageToBackground({
+    ({
+      allAccounts,
+      error,
+      publicKey,
+      hasPrivateKey,
+    } = await sendMessageToBackground({
       password,
       type: SERVICE_TYPES.ADD_ACCOUNT,
     }));
@@ -65,19 +75,29 @@ export const addAccount = async (
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey };
+  return { allAccounts, publicKey, hasPrivateKey };
 };
 
 export const importAccount = async (
   password: string,
   privateKey: string,
-): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
+): Promise<{
+  publicKey: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+}> => {
   let error = "";
   let publicKey = "";
   let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, publicKey, error } = await sendMessageToBackground({
+    ({
+      allAccounts,
+      publicKey,
+      error,
+      hasPrivateKey,
+    } = await sendMessageToBackground({
       password,
       privateKey,
       type: SERVICE_TYPES.IMPORT_ACCOUNT,
@@ -91,7 +111,7 @@ export const importAccount = async (
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey };
+  return { allAccounts, publicKey, hasPrivateKey };
 };
 
 export const makeAccountActive = (
@@ -160,12 +180,17 @@ export const confirmMnemonicPhrase = async (
 export const recoverAccount = async (
   password: string,
   recoverMnemonic: string,
-): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
+): Promise<{
+  publicKey: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+}> => {
   let publicKey = "";
   let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, publicKey } = await sendMessageToBackground({
+    ({ allAccounts, publicKey, hasPrivateKey } = await sendMessageToBackground({
       password,
       recoverMnemonic,
       type: SERVICE_TYPES.RECOVER_ACCOUNT,
@@ -174,7 +199,7 @@ export const recoverAccount = async (
     console.error(e);
   }
 
-  return { allAccounts, publicKey };
+  return { allAccounts, publicKey, hasPrivateKey };
 };
 
 export const confirmPassword = async (
