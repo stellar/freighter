@@ -220,29 +220,31 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                   <div className="SendTo__subheading">RECENT</div>
                 )}
                 <ul className="SendTo__recent-accts-ul">
-                  {recentAddresses.map((pubKey) => (
-                    <li key={pubKey}>
+                  {recentAddresses.map((address) => (
+                    <li key={address}>
                       <button
                         onClick={async () => {
                           setIsLoading(true);
-                          setValidatedPubKey(pubKey);
                           // recentAddresses already validated so safe to dispatch
-                          if (isFederationAddress(pubKey)) {
+                          if (isFederationAddress(address)) {
                             const fedResp = await FederationServer.resolve(
-                              pubKey,
+                              address,
                             );
-                            handleContinue(pubKey, fedResp.account_id);
+                            const publicKey = fedResp.account_id;
+                            setValidatedPubKey(publicKey);
+                            handleContinue(publicKey, address);
                           } else {
-                            handleContinue(pubKey);
+                            setValidatedPubKey(address);
+                            handleContinue(address);
                           }
                         }}
                         className="SendTo__subheading-identicon"
                       >
-                        <IdenticonImg publicKey={pubKey} />
+                        <IdenticonImg publicKey={address} />
                         <span>
-                          {isFederationAddress(pubKey)
-                            ? pubKey
-                            : truncatedPublicKey(pubKey)}
+                          {isFederationAddress(address)
+                            ? address
+                            : truncatedPublicKey(address)}
                         </span>
                       </button>
                     </li>

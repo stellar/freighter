@@ -46,8 +46,9 @@ type FLAGS = { [key in FLAG_TYPES]: boolean };
 interface TransactionInfoResponse {
   account: string;
   amount: string;
-  asset: { code: string };
+  asset: { code: string; issuer: string };
   balanceId: string;
+  bumpTo: string;
   buyAmount: string;
   buying: { code: string };
   claimants: Array<Claimant>;
@@ -58,8 +59,14 @@ interface TransactionInfoResponse {
   from: string;
   highThreshold: number;
   inflationDest: string;
+  limit: string;
+  line: {
+    code: string;
+    issuer: string;
+  };
   liquidityPoolId: string;
   lowThreshold: number;
+  name: string;
   masterWeight: number;
   medThreshold: number;
   maxAmountA: number;
@@ -85,6 +92,10 @@ interface TransactionInfoResponse {
   sponsoredId: string;
   trustor: string;
   type: keyof typeof OPERATION_TYPES;
+  value: {
+    type: string;
+    data: Buffer;
+  };
 }
 
 const KeyValueList = ({
@@ -247,6 +258,7 @@ export const Operations = ({
           amount,
           asset,
           balanceId,
+          bumpTo,
           buyAmount,
           buying,
           claimants,
@@ -257,6 +269,8 @@ export const Operations = ({
           from,
           highThreshold,
           inflationDest,
+          limit,
+          line,
           liquidityPoolId,
           lowThreshold,
           masterWeight,
@@ -267,6 +281,7 @@ export const Operations = ({
           minAmountB,
           minPrice,
           medThreshold,
+          name,
           offerId,
           path,
           price,
@@ -279,6 +294,7 @@ export const Operations = ({
           sponsoredId,
           trustor,
           type,
+          value,
           ...rest
         },
         i: number,
@@ -308,8 +324,15 @@ export const Operations = ({
 
               {asset ? (
                 <KeyValueList
-                  operationKey="Asset"
+                  operationKey="Asset Code"
                   operationValue={`${asset.code}`}
+                />
+              ) : null}
+
+              {asset?.issuer ? (
+                <KeyValueWithPublicKey
+                  operationKey="Asset Issuer"
+                  operationValue={`${asset.issuer}`}
                 />
               ) : null}
 
@@ -318,6 +341,10 @@ export const Operations = ({
                   operationKey="Balance Id"
                   operationValue={balanceId}
                 />
+              ) : null}
+
+              {bumpTo ? (
+                <KeyValueList operationKey="Bump To" operationValue={bumpTo} />
               ) : null}
 
               {buyAmount ? (
@@ -419,6 +446,23 @@ export const Operations = ({
                 />
               ) : null}
 
+              {limit ? (
+                <KeyValueList operationKey="Limit" operationValue={limit} />
+              ) : null}
+
+              {line ? (
+                <>
+                  <KeyValueList
+                    operationKey="Code"
+                    operationValue={line.code}
+                  />
+                  <KeyValueWithPublicKey
+                    operationKey="Issuer"
+                    operationValue={line.issuer}
+                  />
+                </>
+              ) : null}
+
               {liquidityPoolId ? (
                 <KeyValueList
                   operationKey="Liquidity Pool ID"
@@ -470,6 +514,10 @@ export const Operations = ({
                   operationKey="Medium Threshold"
                   operationValue={medThreshold}
                 />
+              ) : null}
+
+              {name ? (
+                <KeyValueList operationKey="Name" operationValue={name} />
               ) : null}
 
               {offerId ? (
@@ -556,6 +604,20 @@ export const Operations = ({
                 <KeyValueWithPublicKey
                   operationKey="Trustor"
                   operationValue={trustor}
+                />
+              ) : null}
+
+              {value?.type ? (
+                <KeyValueList
+                  operationKey="Value Type"
+                  operationValue={value.type}
+                />
+              ) : null}
+
+              {value?.data ? (
+                <KeyValueList
+                  operationKey="Value Data"
+                  operationValue={formattedBuffer(value.data)}
                 />
               ) : null}
 
