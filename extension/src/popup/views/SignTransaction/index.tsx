@@ -15,7 +15,6 @@ import {
   ButtonsContainer,
   ModalHeader,
   ModalWrapper,
-  SingleButtonContainer,
 } from "popup/basics/Modal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -97,69 +96,65 @@ export const SignTransaction = () => {
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <ModalWrapper>
-        <WarningMessage header={`Freighter is currently on ${networkName}`}>
+        <WarningMessage
+          handleCloseClick={() => window.close()}
+          isActive
+          header={`Freighter is set to ${networkName}`}
+        >
           <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
           <p>Signing this transaction is not possible at the moment.</p>
         </WarningMessage>
-        <SingleButtonContainer>
-          <Button
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={() => window.close()}
-          >
-            Close
-          </Button>
-        </SingleButtonContainer>
       </ModalWrapper>
     );
   }
 
   return (
-    <ModalWrapper>
-      <ModalHeader>
-        <strong>Confirm Transaction</strong>
-      </ModalHeader>
-      {flaggedKeyValues.length ? (
-        <FlaggedWarningMessage
-          isUnsafe={isUnsafe}
-          isMalicious={isMalicious}
-          isMemoRequired={isMemoRequired}
-        />
-      ) : null}
-      {!isDomainListedAllowed && !isSubmitDisabled ? (
-        <FirstTimeWarningMessage />
-      ) : null}
-      <ModalInfo
-        domain={domain}
-        domainTitle={domainTitle}
-        subject={`This website is requesting a signature to the following${" "}
+    <>
+      <ModalWrapper>
+        <ModalHeader>
+          <strong>Confirm Transaction</strong>
+        </ModalHeader>
+        {flaggedKeyValues.length ? (
+          <FlaggedWarningMessage
+            isUnsafe={isUnsafe}
+            isMalicious={isMalicious}
+            isMemoRequired={isMemoRequired}
+          />
+        ) : null}
+        {!isDomainListedAllowed && !isSubmitDisabled ? (
+          <FirstTimeWarningMessage />
+        ) : null}
+        <ModalInfo
+          domain={domain}
+          domainTitle={domainTitle}
+          subject={`This website is requesting a signature to the following${" "}
             ${isFeeBump ? "fee bump " : ""}transaction:`}
-      >
-        <TransactionHeader
-          _fee={_fee}
-          _sequence={_sequence}
-          source={source}
-          isFeeBump={isFeeBump}
-          isMemoRequired={isMemoRequired}
-        />
-      </ModalInfo>
+        >
+          <TransactionHeader
+            _fee={_fee}
+            _sequence={_sequence}
+            source={source}
+            isFeeBump={isFeeBump}
+            isMemoRequired={isMemoRequired}
+          />
+        </ModalInfo>
 
-      {isFeeBump ? (
-        <div className="SignTransaction__inner-transaction">
+        {isFeeBump ? (
+          <div className="SignTransaction__inner-transaction">
+            <Transaction
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
+              transaction={_innerTransaction}
+            />
+          </div>
+        ) : (
           <Transaction
             flaggedKeys={flaggedKeys}
             isMemoRequired={isMemoRequired}
-            transaction={_innerTransaction}
+            transaction={transaction}
           />
-        </div>
-      ) : (
-        <Transaction
-          flaggedKeys={flaggedKeys}
-          isMemoRequired={isMemoRequired}
-          transaction={transaction}
-        />
-      )}
-
+        )}
+      </ModalWrapper>
       <ButtonsContainer>
         <Button
           fullWidth
@@ -177,6 +172,6 @@ export const SignTransaction = () => {
           Sign Transaction
         </Button>
       </ButtonsContainer>
-    </ModalWrapper>
+    </>
   );
 };
