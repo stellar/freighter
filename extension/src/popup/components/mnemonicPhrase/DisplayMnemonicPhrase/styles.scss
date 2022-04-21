@@ -8,7 +8,14 @@
     font-size: 1rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-normal);
-    color: var(--pal-text-tertiary);
+
+    p {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    strong {
+      color: var(--pal-text-primary);
+    }
   }
 
   &__screen {

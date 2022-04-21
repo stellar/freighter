@@ -30,6 +30,10 @@
     justify-content: start;
     padding: 0 0 2rem 1.55rem;
     width: 27rem;
+
+    .Checkbox__container label {
+      color: rgba(255, 255, 255, 0.6);
+    }
   }
 
   &__mnemonic-input {
