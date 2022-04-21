@@ -13,7 +13,6 @@ import { emitMetric } from "helpers/metrics";
 import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 
-import { BottomNav } from "popup/components/BottomNav";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { addAccount, authErrorSelector } from "popup/ducks/accountServices";
@@ -85,7 +84,6 @@ export const AddAccount = () => {
           )}
         </Formik>
       </PopupWrapper>
-      <BottomNav />
     </>
   );
 };

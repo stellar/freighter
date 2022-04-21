@@ -160,16 +160,18 @@ export const FirstTimeWarningMessage = () => (
 );
 
 export const BackupPhraseWarningMessage = () => (
-  <div className="WarningMessage__infoBlock">
-    <div className="WarningMessage__header">
-      <Icon.AlertTriangle className="WarningMessage__icon" />
-      <div>IMPORTANT</div>
-    </div>
+  <div className="WarningMessage__backup">
+    <div className="WarningMessage__infoBlock">
+      <div className="WarningMessage__header">
+        <Icon.AlertTriangle className="WarningMessage__icon" />
+        <div>IMPORTANT</div>
+      </div>
 
-    <p>
-      Keep your recovery phrase in a safe and secure place. Anyone who has
-      access to this phrase has access to your account and to the funds in it,
-      so save it in a safe and secure place.
-    </p>
+      <p>
+        Keep your recovery phrase in a safe and secure place. Anyone who has
+        access to this phrase has access to your account and to the funds in it,
+        so save it in a safe and secure place.
+      </p>
+    </div>
   </div>
 );

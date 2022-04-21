@@ -67,15 +67,8 @@ export const DisplayBackupPhrase = () => {
               and to the funds in it, so save it in a safe and secure place.
             </p>
             <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
-            <CopyText
-              showTooltip
-              textToCopy={mnemonicPhrase}
-              tooltipPosition={CopyText.tooltipPosition.LEFT}
-            >
-              <IconButton
-                preset={IconButton.preset.copy}
-                variant={IconButton.variant.highlight}
-              />
+            <CopyText showTooltip textToCopy={mnemonicPhrase}>
+              <IconButton preset={IconButton.preset.copy} />
             </CopyText>
           </div>
           <div className="DisplayBackupPhrase__button">

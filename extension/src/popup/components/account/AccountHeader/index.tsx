@@ -12,7 +12,7 @@ import { Icon } from "@stellar/design-system";
 import "./styles.scss";
 
 const ImportedTagEl = () => (
-  <span className="AccountHeader--option-tag">&#183; Imported</span>
+  <span className="AccountHeader--option-tag">&bull; Imported</span>
 );
 
 interface AccountHeaderProps {
@@ -79,8 +79,9 @@ export const AccountHeader = ({
                   active={isSelected}
                   publicKey={accountPublicKey}
                   setIsDropdownOpen={setIsDropdownOpen}
-                />
-                {imported ? <ImportedTagEl /> : null}
+                >
+                  {imported ? <ImportedTagEl /> : null}
+                </AccountListIdenticon>
                 <span className="AccountHeader--option-check">
                   {isSelected ? <Icon.Check /> : null}
                 </span>

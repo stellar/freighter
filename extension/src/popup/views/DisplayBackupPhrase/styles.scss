@@ -17,4 +17,13 @@
     flex-grow: 1;
     justify-content: flex-end;
   }
+
+  .IconButton {
+    &__label {
+      color: var(--pal-text-primary);
+    }
+    svg {
+      stroke: var(--pal-text-primary);
+    }
+  }
 }
