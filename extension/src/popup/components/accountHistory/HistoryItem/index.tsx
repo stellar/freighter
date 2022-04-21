@@ -62,7 +62,7 @@ export const HistoryItem = ({
     PaymentComponent = (
       <>
         {paymentDifference}
-        {new BigNumber(amount).toFixed(2, 1).toString()} {operationAssetCode}
+        {new BigNumber(amount).toFixed(2, 1)} {operationAssetCode}
       </>
     );
     IconComponent = isRecipient ? (
