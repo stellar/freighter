@@ -11,6 +11,10 @@
     height: var(--popup--height);
   }
 
+  &__activate-button {
+    cursor: pointer;
+  }
+
   &__infoBlock {
     background: rgba(241, 165, 50, 0.32);
     border: none;
@@ -43,7 +47,6 @@
   }
 
   &__link-wrapper {
-    cursor: pointer;
     display: flex;
     flex-grow: 2;
     justify-content: flex-end;

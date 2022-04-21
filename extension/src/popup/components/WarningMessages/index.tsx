@@ -66,14 +66,16 @@ export const WarningMessage = ({
       document.querySelector("#modal-root")!,
     )
   ) : (
-    <WarningInfoBlock>
-      <div
-        className="WarningMessage__link-wrapper"
-        onClick={() => setIsWarningActive(true)}
-      >
-        <Icon.ChevronRight className="WarningMessage__link-icon" />
-      </div>
-    </WarningInfoBlock>
+    <div
+      className="WarningMessage__activate-button"
+      onClick={() => setIsWarningActive(true)}
+    >
+      <WarningInfoBlock>
+        <div className="WarningMessage__link-wrapper">
+          <Icon.ChevronRight className="WarningMessage__link-icon" />
+        </div>
+      </WarningInfoBlock>
+    </div>
   );
 };
 
