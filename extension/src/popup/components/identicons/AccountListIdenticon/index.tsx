@@ -9,6 +9,7 @@ import { IdenticonImg } from "../IdenticonImg";
 import "./styles.scss";
 
 interface KeyIdenticonProps {
+  children?: React.ReactNode;
   accountName: string;
   active?: boolean;
   publicKey: string;
@@ -17,6 +18,7 @@ interface KeyIdenticonProps {
 }
 
 export const AccountListIdenticon = ({
+  children,
   accountName = "",
   active = false,
   publicKey = "",
@@ -39,7 +41,7 @@ export const AccountListIdenticon = ({
     <div className="AccountListIdenticon">
       <div
         className={`AccountListIdenticon__active-wrapper ${
-          active ? "active" : null
+          active ? "active" : ""
         }`}
       >
         <div className="AccountListIdenticon__identicon-wrapper">
@@ -56,7 +58,7 @@ export const AccountListIdenticon = ({
               {accountName}
             </div>
             <div className="AccountListIdenticon__account-num">
-              {shortPublicKey}
+              {shortPublicKey} {children}
             </div>{" "}
           </>
         )}

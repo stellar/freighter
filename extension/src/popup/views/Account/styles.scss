@@ -38,8 +38,8 @@
       height: 2.5rem;
 
       svg {
-        width: 1rem;
-        height: 1rem;
+        width: 0.75rem;
+        height: 0.75rem;
       }
     }
   }
@@ -52,7 +52,7 @@
 
   &__account-num {
     align-items: center;
-    color: var(--pay-text-tertiary);
+    color: var(--secondary-text);
     gap: 0.5rem;
     display: flex;
     width: 100%;

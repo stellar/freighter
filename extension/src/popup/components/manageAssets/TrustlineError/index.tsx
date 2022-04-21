@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useHistory, Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import {
+  resetSubmission,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
@@ -109,6 +112,7 @@ export const TrustlineError = ({
   balances,
   errorAsset,
 }: TrustlineErrorProps) => {
+  const dispatch = useDispatch();
   const history = useHistory();
   const { error } = useSelector(transactionSubmissionSelector);
   const [assetBalance, setAssetBalance] = useState("");
@@ -138,7 +142,13 @@ export const TrustlineError = ({
         })}
       </div>
       <div className="TrustlineError__button">
-        <Button fullWidth onClick={() => history.goBack()}>
+        <Button
+          fullWidth
+          onClick={() => {
+            dispatch(resetSubmission());
+            history.goBack();
+          }}
+        >
           Got it
         </Button>
       </div>

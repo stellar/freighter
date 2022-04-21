@@ -75,7 +75,11 @@ export const ViewPublicKey = () => {
             })}
           >
             {({ errors }) => (
-              <div className="ViewPublicKey__header">
+              <div
+                className={`ViewPublicKey__header ${
+                  isEditingName ? "ViewPublicKey__header--is-editing" : ""
+                }`}
+              >
                 <BackButton />
                 {isEditingName ? (
                   <>
@@ -140,7 +144,7 @@ export const ViewPublicKey = () => {
             emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
           }}
         >
-          VIEW ON STELLAR.EXPERT
+          View on stellar.expert
         </Button>
       </div>
     </>
