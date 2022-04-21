@@ -1,6 +1,6 @@
 .Button.BasicButton {
-  text-transform: capitalize;
   border-radius: 0.5rem;
+  padding: 1rem 0;
 
   &--primary {
     border-color: var(--button-bg--primary);

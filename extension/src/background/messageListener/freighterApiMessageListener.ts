@@ -11,7 +11,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/helpers/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
-import { POPUP_WIDTH } from "constants/dimensions";
+import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -38,7 +38,7 @@ interface WINDOW_PARAMS {
 const WINDOW_SETTINGS: WINDOW_PARAMS = {
   type: "popup",
   width: POPUP_WIDTH,
-  height: 667,
+  height: POPUP_HEIGHT + 32, // include browser frame height,
 };
 
 export const freighterApiMessageListener = (

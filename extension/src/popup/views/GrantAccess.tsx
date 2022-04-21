@@ -12,7 +12,6 @@ import {
   ButtonsContainer,
   ModalHeader,
   ModalWrapper,
-  SingleButtonContainer,
 } from "popup/basics/Modal";
 
 import { ModalInfo } from "popup/components/ModalInfo";
@@ -47,36 +46,36 @@ export const GrantAccess = () => {
   };
 
   return (
-    <ModalWrapper>
-      <ModalHeader>
-        <strong>Share Public Key</strong>
-      </ModalHeader>
-      <FirstTimeWarningMessage />
-      <ModalInfo
-        domain={domain}
-        domainTitle={title}
-        subject="This website wants to know your public key:"
-      >
-        <KeyIdenticon publicKey={publicKey} />
-      </ModalInfo>
-      <SingleButtonContainer>
-        <ButtonsContainer>
-          <Button
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={rejectAndClose}
-          >
-            Reject
-          </Button>
-          <Button
-            fullWidth
-            isLoading={isGranting}
-            onClick={() => grantAndClose()}
-          >
-            Share
-          </Button>
-        </ButtonsContainer>
-      </SingleButtonContainer>
-    </ModalWrapper>
+    <>
+      <ModalWrapper>
+        <ModalHeader>
+          <strong>Share Public Key</strong>
+        </ModalHeader>
+        <FirstTimeWarningMessage />
+        <ModalInfo
+          domain={domain}
+          domainTitle={title}
+          subject="This website wants to know your public key:"
+        >
+          <KeyIdenticon publicKey={publicKey} />
+        </ModalInfo>
+      </ModalWrapper>
+      <ButtonsContainer>
+        <Button
+          fullWidth
+          variant={Button.variant.tertiary}
+          onClick={rejectAndClose}
+        >
+          Reject
+        </Button>
+        <Button
+          fullWidth
+          isLoading={isGranting}
+          onClick={() => grantAndClose()}
+        >
+          Share
+        </Button>
+      </ButtonsContainer>
+    </>
   );
 };

@@ -1,4 +1,6 @@
 import React, { useEffect } from "react";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import "./styles.scss";
 
@@ -7,7 +9,7 @@ interface ModalHeaderProps {
 }
 
 export const ModalHeader = ({ children }: ModalHeaderProps) => (
-  <section className="ModalWrapper--header">{children}</section>
+  <section className="ModalWrapper__header">{children}</section>
 );
 
 interface ModalWrapperProps {
@@ -16,14 +18,18 @@ interface ModalWrapperProps {
 
 export const ModalWrapper = ({ children }: ModalWrapperProps) => {
   useEffect(() => {
-    const disableScrollXClass = "ModalWrapper--disable-scroll-x";
+    const disableScrollXClass = "ModalWrapper__disable-scroll-x";
     document.querySelector("body")?.classList.add(disableScrollXClass);
 
     return () =>
       document.querySelector("body")?.classList.remove(disableScrollXClass);
   }, []);
 
-  return <section className="ModalWrapper">{children}</section>;
+  return (
+    <SimpleBar className="ModalWrapper__scrollbar">
+      <section className="ModalWrapper">{children} </section>
+    </SimpleBar>
+  );
 };
 
 interface ButtonsContainerProps {
@@ -31,15 +37,5 @@ interface ButtonsContainerProps {
 }
 
 export const ButtonsContainer = ({ children }: ButtonsContainerProps) => (
-  <div className="ModalWrapper--buttons-container">{children}</div>
-);
-
-interface SingleButtonContainerProps {
-  children: React.ReactNode;
-}
-
-export const SingleButtonContainer = ({
-  children,
-}: SingleButtonContainerProps) => (
-  <div className="ModalWrapper--single-button-container">{children}</div>
+  <div className="ModalWrapper__buttons-container">{children}</div>
 );
