@@ -2,6 +2,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+  height: var(--popup--height);
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    width: 100%;
+  }
 
   &__header {
     height: 2rem;
@@ -86,6 +96,6 @@
   }
 
   &__external-link {
-    padding: 0 var(--popup--side-padding);
+    width: 100%;
   }
 }
