@@ -1,25 +1,29 @@
+:root {
+  --buttons-container-height: 5.5rem;
+}
+
 .ModalWrapper {
-  padding: 1.5rem 1.875rem;
+  padding: 2rem 1.5rem 1rem 1.5rem;
   box-sizing: border-box;
 
-  &--disable-scroll-x {
+  &__scrollbar {
+    height: calc(var(--popup--height) - var(--buttons-container-height));
+  }
+
+  &__disable-scroll-x {
     overflow-x: hidden;
   }
 
-  &--header {
+  &__header {
     margin: 0 2rem 1.5rem;
     text-align: center;
   }
 
-  &--buttons-container {
+  &__buttons-container {
     display: flex;
     gap: 0.75rem;
+    height: var(--buttons-container-height);
     justify-content: space-around;
-    padding-top: 3rem;
-    padding-bottom: 1.5rem;
-  }
-
-  &--single-button-container {
-    margin-top: 12.25rem;
+    padding: 1rem 1.5rem;
   }
 }

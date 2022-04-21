@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "@stellar/design-system";
+
+import { Button } from "popup/basics/buttons/Button";
 
 import "./styles.scss";
 
@@ -12,18 +15,67 @@ const DirectoryLink = () => (
 interface WarningMessageProps {
   header: string;
   children: React.ReactNode;
+  handleCloseClick?: () => void;
+  isActive?: boolean;
+  isHighAlert?: boolean;
 }
 
-export const WarningMessage = ({ header, children }: WarningMessageProps) => (
-  <div className="WarningMessage">
-    <div className="WarningMessage__header">
-      <Icon.AlertTriangle className="WarningMessage__icon" />
-      <div>{header}</div>
-    </div>
+export const WarningMessage = ({
+  handleCloseClick,
+  header,
+  isActive = false,
+  isHighAlert = false,
+  children,
+}: WarningMessageProps) => {
+  const [isWarningActive, setIsWarningActive] = useState(isActive);
 
-    {children}
-  </div>
-);
+  const WarningInfoBlock = ({
+    children: headerChildren,
+  }: {
+    children?: React.ReactNode;
+  }) => (
+    <div
+      className={`WarningMessage__infoBlock ${
+        isHighAlert ? "WarningMessage__infoBlock--high-alert" : ""
+      }`}
+    >
+      <div className="WarningMessage__header">
+        <Icon.AlertTriangle className="WarningMessage__icon" />
+        <div>{header}</div>
+        {headerChildren}
+      </div>
+    </div>
+  );
+
+  return isWarningActive ? (
+    createPortal(
+      <div className="WarningMessage--active">
+        <WarningInfoBlock />
+        <div className="WarningMessage__children-wrapper">{children}</div>
+        <Button
+          variant={Button.variant.tertiary}
+          fullWidth
+          type="button"
+          onClick={() =>
+            handleCloseClick ? handleCloseClick() : setIsWarningActive(false)
+          }
+        >
+          Got it
+        </Button>
+      </div>,
+      document.querySelector("#modal-root")!,
+    )
+  ) : (
+    <WarningInfoBlock>
+      <div
+        className="WarningMessage__link-wrapper"
+        onClick={() => setIsWarningActive(true)}
+      >
+        <Icon.ChevronRight className="WarningMessage__link-icon" />
+      </div>
+    </WarningInfoBlock>
+  );
+};
 
 const DangerousAccountWarning = ({
   isUnsafe,
@@ -34,7 +86,7 @@ const DangerousAccountWarning = ({
 }) => {
   if (isMalicious) {
     return (
-      <WarningMessage header="Malicious account detected">
+      <WarningMessage header="Malicious account detected" isHighAlert>
         <p>
           An account you’re interacting with is tagged as malicious on{" "}
           <DirectoryLink />.
@@ -45,7 +97,7 @@ const DangerousAccountWarning = ({
   }
   if (isUnsafe) {
     return (
-      <WarningMessage header="Warning: unsafe account">
+      <WarningMessage header="Unsafe account">
         <p>
           An account you’re interacting with is tagged as unsafe on{" "}
           <DirectoryLink />. Please proceed with caution.
@@ -59,7 +111,7 @@ const DangerousAccountWarning = ({
 
 const MemoWarningMessage = ({ isMemoRequired }: { isMemoRequired: boolean }) =>
   isMemoRequired ? (
-    <WarningMessage header="Memo is required">
+    <WarningMessage header="Memo is required" isHighAlert>
       <p>
         A destination account requires the use of the memo field which is not
         present in the transaction you’re about to sign. Freighter automatically
@@ -91,7 +143,7 @@ export const FlaggedWarningMessage = ({
 );
 
 export const FirstTimeWarningMessage = () => (
-  <WarningMessage header="This is the first time you have interacted with this domain.">
+  <WarningMessage header="First Time Interaction">
     <p>
       If you believe you have interacted with this domain before, it is possible
       that scammers have copied the original site and/or made small changes to
@@ -106,11 +158,16 @@ export const FirstTimeWarningMessage = () => (
 );
 
 export const BackupPhraseWarningMessage = () => (
-  <WarningMessage header="IMPORTANT">
+  <div className="WarningMessage__infoBlock">
+    <div className="WarningMessage__header">
+      <Icon.AlertTriangle className="WarningMessage__icon" />
+      <div>IMPORTANT</div>
+    </div>
+
     <p>
       Keep your recovery phrase in a safe and secure place. Anyone who has
       access to this phrase has access to your account and to the funds in it,
       so save it in a safe and secure place.
     </p>
-  </WarningMessage>
+  </div>
 );
