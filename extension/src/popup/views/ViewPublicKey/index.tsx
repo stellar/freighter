@@ -14,7 +14,6 @@ import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
 import { BackButton } from "popup/basics/buttons/BackButton";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import {
   accountNameSelector,
   publicKeySelector,
@@ -65,8 +64,8 @@ export const ViewPublicKey = () => {
 
   return (
     <>
-      <PopupWrapper>
-        <div className="ViewPublicKey">
+      <div className="ViewPublicKey">
+        <div className="ViewPublicKey__content">
           <Formik
             initialValues={initialValues}
             onSubmit={handleSubmit}
@@ -75,7 +74,11 @@ export const ViewPublicKey = () => {
             })}
           >
             {({ errors }) => (
-              <div className="ViewPublicKey__header">
+              <div
+                className={`ViewPublicKey__header ${
+                  isEditingName ? "ViewPublicKey__header--is-editing" : ""
+                }`}
+              >
                 <BackButton />
                 {isEditingName ? (
                   <>
@@ -128,20 +131,20 @@ export const ViewPublicKey = () => {
             </CopyText>
           </div>
         </div>
-      </PopupWrapper>
-      <div className="ViewPublicKey__external-link">
-        <Button
-          fullWidth
-          variant={Button.variant.tertiary}
-          onClick={() => {
-            openTab(
-              `https://stellar.expert/explorer/${network.toLowerCase()}/account/${publicKey}`,
-            );
-            emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
-          }}
-        >
-          VIEW ON STELLAR.EXPERT
-        </Button>
+        <div className="ViewPublicKey__external-link">
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => {
+              openTab(
+                `https://stellar.expert/explorer/${network.toLowerCase()}/account/${publicKey}`,
+              );
+              emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
+            }}
+          >
+            View on stellar.expert
+          </Button>
+        </div>
       </div>
     </>
   );

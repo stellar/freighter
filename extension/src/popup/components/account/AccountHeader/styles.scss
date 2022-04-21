@@ -114,12 +114,16 @@ $dropdown-animation: 0.3s ease-out;
     align-items: center;
 
     > div {
-      max-width: 10rem;
+      max-width: 15rem;
+    }
+
+    .AccountListIdenticon__active-wrapper.active {
+      border-color: var(--pal-brand-primary-on);
     }
   }
 
   &--option-tag {
-    color: var(--pay-text-tertiary);
+    color: var(--secondary-text);
     flex: 1;
     text-align: left;
     font-size: 0.875rem;
@@ -136,7 +140,7 @@ $dropdown-animation: 0.3s ease-out;
 
   &__list-divider {
     border: none;
-    height: 2px;
+    height: 1px;
     background: var(--pal-border-secondary);
     border-radius: 1rem;
     margin: 1.2rem 0;

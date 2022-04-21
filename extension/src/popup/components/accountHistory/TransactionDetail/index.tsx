@@ -129,7 +129,7 @@ export const TransactionDetail = ({
                     <div className="TransactionDetail__header__network__icon" />
                   )}
 
-                  {networkDomain || "Stellar Lumens"}
+                  <span>{networkDomain || "Stellar Lumens"}</span>
                 </>
               </div>
             </div>

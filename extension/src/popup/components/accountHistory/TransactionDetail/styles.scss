@@ -6,7 +6,7 @@
   height: 100%;
 
   &__header {
-    border-bottom: 1px solid var(--pal-border-secondary);
+    border-bottom: 1px solid var(--pal-example-details);
     color: var(--pal-brand-primary-on);
     font-size: 2rem;
     font-weight: var(--font-weight-light);
@@ -14,10 +14,12 @@
     text-align: center;
 
     &__network {
+      align-items: center;
       display: flex;
       justify-content: center;
       gap: 0.5rem;
       font-size: 0.875rem;
+      line-height: 1.375rem;
       margin-top: 0.75rem;
 
       &__icon {
@@ -42,6 +44,7 @@
     padding-top: 1.5rem;
 
     &__row {
+      color: rgba(255, 255, 255, 0.6);
       display: flex;
       height: 1.5rem;
       justify-content: space-between;

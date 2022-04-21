@@ -15,6 +15,13 @@
     cursor: pointer;
   }
 
+  &__backup {
+    p {
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+    }
+  }
+
   &__infoBlock {
     background: rgba(241, 165, 50, 0.32);
     border: none;

@@ -34,7 +34,7 @@ export const Welcome = () => (
             </div>
           </Card>
         </div>
-        <div className="Welcome__half-screen">
+        <div className="Welcome__half-screen Welcome__import">
           <Card>
             <div className="Welcome__heading--small">I’ve done this before</div>
             <div className="Welcome__text">I have my 12 word seed phrase</div>

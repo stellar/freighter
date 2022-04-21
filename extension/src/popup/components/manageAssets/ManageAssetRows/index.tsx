@@ -18,6 +18,7 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   ActionStatus,
   getAccountBalances,
+  resetSubmission,
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
@@ -106,6 +107,7 @@ export const ManageAssetRows = ({
             networkDetails,
           }),
         );
+        dispatch(resetSubmission());
         navigateTo(ROUTES.account);
       }
 
