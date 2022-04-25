@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import StellarSdk from "stellar-sdk";
 
 import { Button } from "popup/basics/buttons/Button";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -109,82 +108,77 @@ export const TransactionDetail = ({
 
   return assetIssuer && !networkDomain ? null : (
     <div className="TransactionDetail">
-      <PopupWrapper>
-        <div>
-          <SubviewHeader
-            customBackAction={() => setIsDetailViewShowing(false)}
-            title={headerTitle}
-          />
-          {isPayment ? (
-            <div className="TransactionDetail__header">
-              {operationText}
-              <div className="TransactionDetail__header__network">
-                <>
-                  {networkIconUrl || assetType === "native" ? (
-                    <img
-                      src={networkIconUrl || StellarLogo}
-                      alt="Network icon"
-                    />
-                  ) : (
-                    <div className="TransactionDetail__header__network__icon" />
-                  )}
+      <div className="TransactionDetail__content">
+        <SubviewHeader
+          customBackAction={() => setIsDetailViewShowing(false)}
+          title={headerTitle}
+        />
+        {isPayment ? (
+          <div className="TransactionDetail__header">
+            {operationText}
+            <div className="TransactionDetail__header__network">
+              <>
+                {networkIconUrl || assetType === "native" ? (
+                  <img src={networkIconUrl || StellarLogo} alt="Network icon" />
+                ) : (
+                  <div className="TransactionDetail__header__network__icon" />
+                )}
 
-                  <span>{networkDomain || "Stellar Lumens"}</span>
-                </>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="TransactionDetail__info">
-            <div className="TransactionDetail__info__row">
-              {isPayment ? (
-                <>
-                  {isRecipient ? (
-                    <>
-                      <div>From</div>
-                      <div>
-                        <KeyIdenticon
-                          publicKey={from}
-                          customSize={identiconDimensions}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>To</div>
-                      <div>
-                        <KeyIdenticon
-                          publicKey={to}
-                          customSize={identiconDimensions}
-                        />
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div>Action</div>
-                  <div>{operationText}</div>
-                </>
-              )}
-            </div>
-            <div className="TransactionDetail__info__row">
-              <div>Date</div>
-              <div>
-                {createdAtTime} &bull; {createdAtDateStr}
-              </div>
-            </div>
-            <div className="TransactionDetail__info__row">
-              <div>Memo</div>
-              <div>{memo || `None`}</div>
-            </div>
-            <div className="TransactionDetail__info__row">
-              <div>Transaction fee</div>
-              <div>{stroopToXlm(feeCharged).toString()} XLM</div>
+                <span>{networkDomain || "Stellar Lumens"}</span>
+              </>
             </div>
           </div>
+        ) : null}
+
+        <div className="TransactionDetail__info">
+          <div className="TransactionDetail__info__row">
+            {isPayment ? (
+              <>
+                {isRecipient ? (
+                  <>
+                    <div>From</div>
+                    <div>
+                      <KeyIdenticon
+                        publicKey={from}
+                        customSize={identiconDimensions}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>To</div>
+                    <div>
+                      <KeyIdenticon
+                        publicKey={to}
+                        customSize={identiconDimensions}
+                      />
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <div>Action</div>
+                <div>{operationText}</div>
+              </>
+            )}
+          </div>
+          <div className="TransactionDetail__info__row">
+            <div>Date</div>
+            <div>
+              {createdAtTime} &bull; {createdAtDateStr}
+            </div>
+          </div>
+          <div className="TransactionDetail__info__row">
+            <div>Memo</div>
+            <div>{memo || `None`}</div>
+          </div>
+          <div className="TransactionDetail__info__row">
+            <div>Transaction fee</div>
+            <div>{stroopToXlm(feeCharged).toString()} XLM</div>
+          </div>
         </div>
-      </PopupWrapper>
+      </div>
       <div className="TransactionDetail__external-button">
         <Button
           fullWidth
