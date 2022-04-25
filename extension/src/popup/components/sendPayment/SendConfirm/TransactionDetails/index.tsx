@@ -250,6 +250,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         </div>
       </div>
       <div className="TransactionDetails__bottom-wrapper">
+        <div className="TransactionDetails__bottom-wrapper__copy">
+          {isPathPayment && "The final amount is approximate and may change"}
+        </div>
         {submission.submitStatus === ActionStatus.SUCCESS ? (
           <Button
             fullWidth
@@ -265,24 +268,18 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             View on Stellar.expert
           </Button>
         ) : (
-          <>
-            <div className="TransactionDetails__bottom-wrapper__copy">
-              {isPathPayment &&
-                "The final amount is approximate and may change"}
-            </div>
-            <div className="TransactionDetails__bottom-wrapper__buttons">
-              <Button
-                variant={Button.variant.tertiary}
-                onClick={() => {
-                  dispatch(resetSubmission());
-                  navigateTo(ROUTES.account);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSend}>Send</Button>
-            </div>
-          </>
+          <div className="TransactionDetails__bottom-wrapper__buttons">
+            <Button
+              variant={Button.variant.tertiary}
+              onClick={() => {
+                dispatch(resetSubmission());
+                navigateTo(ROUTES.account);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSend}>Send</Button>
+          </div>
         )}
       </div>
     </div>

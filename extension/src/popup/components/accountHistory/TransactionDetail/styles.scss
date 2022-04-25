@@ -3,7 +3,10 @@
 }
 
 .TransactionDetail {
-  height: 100%;
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
 
   &__header {
     border-bottom: 1px solid var(--pal-example-details);
@@ -34,6 +37,10 @@
         width: var(--TransactionDetail--icon-dimension);
       }
     }
+  }
+
+  &__content {
+    flex-grow: 1;
   }
 
   &__info {
