@@ -129,12 +129,10 @@ export const ManageAssetRows = ({
         {assetRows.map(({ code, domain, image, issuer }) => {
           if (!balances) return null;
           const canonicalAsset = getCanonicalFromAsset(code, issuer);
-          const isSubmitting =
-            submitStatus === ActionStatus.PENDING &&
-            assetSubmitting === canonicalAsset;
           const isTrustlineActive = Object.keys(balances).some(
             (balance) => balance === canonicalAsset,
           );
+          const isActionPending = submitStatus === ActionStatus.PENDING;
 
           return (
             <div className="ManageAssetRows__row" key={code}>
@@ -153,11 +151,12 @@ export const ManageAssetRows = ({
               </div>
               <div className="ManageAssetRows__button">
                 <PillButton
-                  isLoading={isSubmitting}
+                  disabled={isActionPending}
+                  isLoading={
+                    isActionPending && assetSubmitting === canonicalAsset
+                  }
                   onClick={() =>
-                    isSubmitting
-                      ? null
-                      : changeTrustline(code, issuer, !isTrustlineActive)
+                    changeTrustline(code, issuer, !isTrustlineActive)
                   }
                   type="button"
                 >
