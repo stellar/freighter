@@ -46,9 +46,10 @@
     padding: 0 0 2rem 0;
     color: var(--pal-text-primary);
     max-width: 24rem;
-    > div {
-      margin-bottom: 1rem;
-    }
+  }
+
+  &__infoBlock {
+    margin-bottom: 0.5rem;
   }
 
   &__illo-container {
@@ -61,6 +62,7 @@
 
   &__extension-image {
     height: 3.5rem;
+    margin-top: 0.5rem;
   }
 
   &__copy {
