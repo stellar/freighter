@@ -179,18 +179,16 @@ export const TransactionDetail = ({
           </div>
         </div>
       </div>
-      <div className="TransactionDetail__external-button">
-        <Button
-          fullWidth
-          onClick={() => {
-            emitMetric(METRIC_NAMES.historyOpenItem);
-            openTab(externalUrl);
-          }}
-          variant={Button.variant.tertiary}
-        >
-          View on stellar.expert
-        </Button>
-      </div>
+      <Button
+        fullWidth
+        onClick={() => {
+          emitMetric(METRIC_NAMES.historyOpenItem);
+          openTab(externalUrl);
+        }}
+        variant={Button.variant.tertiary}
+      >
+        View on stellar.expert
+      </Button>
     </div>
   );
 };
