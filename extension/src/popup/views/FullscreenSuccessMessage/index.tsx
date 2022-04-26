@@ -26,27 +26,29 @@ const MnemonicPhraseConfirmedMessage = () => (
         responsibility.
       </p>
     </div>
-    <InfoBlock variant={InfoBlock.variant.warning}>
-      <div className="InfoBlock__content">
-        <div className="InfoBlock__header">
-          Avoid scams and keep your account safe:
+    <div className="FullscreenSuccessMessage__infoBlock">
+      <InfoBlock variant={InfoBlock.variant.warning}>
+        <div className="InfoBlock__content">
+          <div className="InfoBlock__header">
+            Avoid scams and keep your account safe:
+          </div>
+          <ul>
+            <li>
+              Freighter will never ask for your recovery phrase unless you're
+              actively importing your account using the browser extension -
+              never on an external website.
+            </li>
+            <li>
+              Always check the domain of websites you’re using Freighter with
+            </li>
+            <li>
+              Freighter cannot recover your account if you lose your recovery
+              phrase, so keep it safe
+            </li>
+          </ul>
         </div>
-        <ul>
-          <li>
-            Freighter will never ask for your recovery phrase unless you're
-            actively importing your account using the browser extension - never
-            on an external website.
-          </li>
-          <li>
-            Always check the domain of websites you’re using Freighter with
-          </li>
-          <li>
-            Freighter cannot recover your account if you lose your recovery
-            phrase, so keep it safe
-          </li>
-        </ul>
-      </div>
-    </InfoBlock>
+      </InfoBlock>
+    </div>
     <SubmitButtonWrapper>
       <Button
         fullWidth
