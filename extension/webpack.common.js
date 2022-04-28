@@ -25,7 +25,15 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
   },
   output: {
     path: BUILD_PATH,
-    filename: "[name].min.js",
+    filename: (pathData) => {
+      const name = pathData.chunk.name;
+      /* don't add a hash to background and contentScript files 
+      because manifest.json is hardcoded to look for background.min.js 
+      and contentScript.min.js */
+      return !name.includes("index")
+        ? `${name.split("~")[0]}.min.js`
+        : "[name].min.js";
+    },
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
