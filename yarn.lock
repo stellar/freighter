@@ -10908,6 +10908,11 @@ node-gyp-build@^4.1.0:
   resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.2.3.tgz#ce6277f853835f718829efb47db20f3e4d9c4739"
   integrity sha512-MN6ZpzmfNCRM+3t57PTJHgHyw/h4OWnZ6mR8P5j/uZtqQr46RRuDE/P+g3n0YR/AiYXeWixZZzaip77gdICfRg==
 
+node-gyp-build@^4.3.0:
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.4.0.tgz#42e99687ce87ddeaf3a10b99dc06abc11021f3f4"
+  integrity sha512-amJnQCcgtRVw9SvoebO3BKGESClrfXGCUTX9hSn1OuGQTQBOZmVd0Z0OlecpuRksKvbsUqALE8jls/ErClAPuQ==
+
 node-int64@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/node-int64/-/node-int64-0.4.0.tgz#87a9065cdb355d3182d8f94ce11188b825c68a3b"
@@ -14156,6 +14161,13 @@ sodium-native@^2.3.0:
     nan "^2.14.0"
     node-gyp-build "^4.1.0"
 
+sodium-native@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/sodium-native/-/sodium-native-3.3.0.tgz#50ee52ac843315866cce3d0c08ab03eb78f22361"
+  integrity sha512-rg6lCDM/qa3p07YGqaVD+ciAbUqm6SoO4xmlcfkbU5r1zIGrguXztLiEtaLYTV5U6k8KSIUFmnU3yQUSKmf6DA==
+  dependencies:
+    node-gyp-build "^4.3.0"
+
 sort-css-media-queries@1.5.0:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/sort-css-media-queries/-/sort-css-media-queries-1.5.0.tgz#8f605ad372caad0b81be010311882c046e738093"
@@ -14379,10 +14391,10 @@ stellar-base@^0.13.1:
   optionalDependencies:
     sodium-native "^2.3.0"
 
-stellar-base@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-7.0.0.tgz#6ebb359fc0a5e8fe6ed855c62de78cbec779b463"
-  integrity sha512-Sfk/u/6HT+8xSQ4HvTI3XgthTS3fhv/ie6Jx4OzLvg81pt09bDDN5YvRbG6v3gZdiRA0pwg2RRz5YS3ph5ePEg==
+stellar-base@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-8.0.0.tgz#619e5fb7951fa8abb26322e51e611169a5d1cf62"
+  integrity sha512-MH0V94Hn/Ekq/yZxd+EQijkvfU+21zuqJAyEP8X+fhRR0IQYwGNByY003oLqIkgwqXotyofEQ76W5MoNFZmlpw==
   dependencies:
     base32.js "^0.1.0"
     bignumber.js "^4.0.0"
@@ -14390,9 +14402,9 @@ stellar-base@^7.0.0:
     js-xdr "^1.1.3"
     lodash "^4.17.21"
     sha.js "^2.3.6"
-    tweetnacl "^1.0.0"
+    tweetnacl "^1.0.3"
   optionalDependencies:
-    sodium-native "^2.3.0"
+    sodium-native "^3.3.0"
 
 stellar-hd-wallet@^0.0.10:
   version "0.0.10"
@@ -14411,10 +14423,10 @@ stellar-identicon-js@^1.0.0:
   dependencies:
     html-webpack-plugin "^3.2.0"
 
-stellar-sdk@^10.0.1:
-  version "10.0.1"
-  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-10.0.1.tgz#0a5ec3cd913c2a32897c1ef13abf41017b91634f"
-  integrity sha512-NWvDAldw4GVFqWo1wGoR9lCyJ6xIcO2ab4YX8BQYp1Z45/Rogv3Kj3RERsso/9m+MR+d2OfTmAhIy0vruRGv/Q==
+stellar-sdk@^10.1.0:
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-10.1.0.tgz#91cf9ed3c84c9a9d4c8aaa6cca29bd997b7c778a"
+  integrity sha512-8PTKuyrQ5bIbsyrLav+JE/c+rrLynBygiB4dpvG30ou7K8P6a5ainmGyVMbCzlz1OkKWoaAW5rJAkl3RhlTZkA==
   dependencies:
     "@types/eventsource" "^1.1.2"
     "@types/node" ">= 8"
@@ -14427,7 +14439,7 @@ stellar-sdk@^10.0.1:
     eventsource "^1.0.7"
     lodash "^4.17.21"
     randombytes "^2.1.0"
-    stellar-base "^7.0.0"
+    stellar-base "^8.0.0"
     toml "^2.3.0"
     tslib "^1.10.0"
     urijs "^1.19.1"
