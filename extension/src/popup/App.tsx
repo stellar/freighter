@@ -56,7 +56,7 @@ if (process.env.SENTRY_KEY) {
 export function App() {
   return (
     <Provider store={store}>
-      <span>teaaassst</span>
+      <span>change</span>
       <Router />
     </Provider>
   );
