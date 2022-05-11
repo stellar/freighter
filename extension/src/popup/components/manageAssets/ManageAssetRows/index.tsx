@@ -6,11 +6,13 @@ import "simplebar-react/dist/simplebar.min.css";
 
 import { AppDispatch } from "popup/App";
 
+import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { getCanonicalFromAsset } from "helpers/stellar";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
 
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -108,6 +110,12 @@ export const ManageAssetRows = ({
           }),
         );
         dispatch(resetSubmission());
+        emitMetric(
+          addTrustline
+            ? METRIC_NAMES.manageAssetAddAsset
+            : METRIC_NAMES.manageAssetRemoveAsset,
+          { assetCode, assetIssuer },
+        );
         navigateTo(ROUTES.account);
       }
 
