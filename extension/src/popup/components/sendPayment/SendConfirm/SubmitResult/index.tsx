@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
 import get from "lodash/get";
@@ -24,6 +24,8 @@ import {
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 
 import "./styles.scss";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const dispatch = useDispatch();
@@ -74,6 +76,10 @@ export const SubmitFail = () => {
   const isPathPayment = useSelector(isPathPaymentSelector);
 
   const horizonAsset = getAssetFromCanonical(asset);
+
+  useEffect(() => {
+    emitMetric(METRIC_NAMES.sendPaymentError, { error });
+  }, [error]);
 
   const decideError = () => {
     // unfunded destination

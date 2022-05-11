@@ -30,6 +30,8 @@ import {
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { AccountAssets } from "popup/components/account/AccountAssets";
@@ -157,6 +159,16 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           await dispatch(
             addRecentAddress({ publicKey: federationAddress || destination }),
           );
+
+          if (isPathPayment) {
+            emitMetric(METRIC_NAMES.sendPaymentPathPaymentSuccess, {
+              sourceAsset,
+              destAsset,
+              allowedSlippage,
+            });
+          } else {
+            emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+          }
         }
       }
     } catch (e) {
