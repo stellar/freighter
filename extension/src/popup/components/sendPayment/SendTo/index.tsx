@@ -13,7 +13,9 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
+import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { Button } from "popup/basics/buttons/Button";
@@ -224,6 +226,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                     <li key={address}>
                       <button
                         onClick={async () => {
+                          emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
                           setIsLoading(true);
                           // recentAddresses already validated so safe to dispatch
                           if (isFederationAddress(address)) {

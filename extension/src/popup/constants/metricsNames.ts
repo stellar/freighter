@@ -33,9 +33,21 @@ export const METRIC_NAMES = {
   sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
   sendPaymentConfirm: "loaded screen: send payment confirm",
 
+  sendPaymentRecentAddress: "send payment: recent address",
+  sendPaymentSetMax: "send payment: set max",
+  sendPaymentTypePayment: "send payment: selected type payment",
+  sendPaymentTypePathPayment: "send payment: selected type path payment",
+  sendPaymentSuccess: "send payment: payment success",
+  sendPaymentPathPaymentSuccess: "send payment: path payment success",
+  sendPaymentError: "send payment: error",
+
   viewManageAssets: "loaded screen: manage assets",
   viewAddAsset: "loaded screen: add asset",
   viewTrustlineError: "loaded screen: trustline error",
+
+  manageAssetAddAsset: "manage asset: add asset",
+  manageAssetRemoveAsset: "manage asset: remove asset",
+  manageAssetError: "manage asset: error",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
