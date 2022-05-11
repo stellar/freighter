@@ -159,16 +159,16 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           await dispatch(
             addRecentAddress({ publicKey: federationAddress || destination }),
           );
-        }
 
-        if (isPathPayment) {
-          emitMetric(METRIC_NAMES.sendPaymentPathPaymentSuccess, {
-            sourceAsset,
-            destAsset,
-            allowedSlippage,
-          });
-        } else {
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+          if (isPathPayment) {
+            emitMetric(METRIC_NAMES.sendPaymentPathPaymentSuccess, {
+              sourceAsset,
+              destAsset,
+              allowedSlippage,
+            });
+          } else {
+            emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+          }
         }
       }
     } catch (e) {
