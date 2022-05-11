@@ -149,9 +149,7 @@ export const SendType = () => {
               <Button
                 fullWidth
                 variant={Button.variant.tertiary}
-                onClick={() => {
-                  submitForm(values);
-                }}
+                onClick={() => submitForm(values)}
               >
                 Done
               </Button>
