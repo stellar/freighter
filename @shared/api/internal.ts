@@ -250,7 +250,7 @@ export const getAccountBalances = async ({
 
   try {
     ({ balances, subentryCount } = await dataProvider.fetchAccountDetails());
-    // let's filter out liquidity pool assets until freighter and wallet-sdk support
+    // let's filter out liquidity pool shares until freighter and wallet-sdk support
     balances = omitBy(balances, (b: any) => b.liquidity_pool_id) as Balances;
     isFunded = true;
   } catch (e) {
