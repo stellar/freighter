@@ -5,6 +5,8 @@ import { DetailsTooltip, Icon, TextLink } from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -83,6 +85,11 @@ export const SendType = () => {
         values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
       ),
     );
+    emitMetric(
+      values.paymentType === PAYMENT_TYPES.PATH_PAYMENT
+        ? METRIC_NAMES.sendPaymentTypePathPayment
+        : METRIC_NAMES.sendPaymentTypePayment,
+    );
     navigateTo(ROUTES.sendPaymentAmount);
   };
 
@@ -142,7 +149,9 @@ export const SendType = () => {
               <Button
                 fullWidth
                 variant={Button.variant.tertiary}
-                onClick={() => submitForm(values)}
+                onClick={() => {
+                  submitForm(values);
+                }}
               >
                 Done
               </Button>
