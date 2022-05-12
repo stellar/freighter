@@ -10,7 +10,10 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 
+import { emitMetric } from "helpers/metrics";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
+
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { Balances } from "@shared/api/types";
 
@@ -116,6 +119,10 @@ export const TrustlineError = ({
   const history = useHistory();
   const { error } = useSelector(transactionSubmissionSelector);
   const [assetBalance, setAssetBalance] = useState("");
+
+  useEffect(() => {
+    emitMetric(METRIC_NAMES.manageAssetError, { error });
+  }, [error]);
 
   useEffect(() => {
     if (!balances) return;

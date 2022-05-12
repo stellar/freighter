@@ -12,10 +12,12 @@ import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { ROUTES } from "popup/constants/routes";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { emitMetric } from "helpers/metrics";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -303,6 +305,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         <div className="SendAmount__btn-set-max">
           <PillButton
             onClick={() => {
+              emitMetric(METRIC_NAMES.sendPaymentSetMax);
               formik.setFieldValue(
                 "amount",
                 calculateAvailBalance(formik.values.asset),
