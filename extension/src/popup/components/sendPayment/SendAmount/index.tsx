@@ -338,7 +338,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
             <div className="SendAmount__input-amount__asset-copy">
               {getAssetFromCanonical(formik.values.asset).code}
             </div>
-            {destinationAsset && (
+            {destinationAsset && formik.values.amount !== "0" && (
               <ConversionRate
                 loading={loadingRate}
                 source={getAssetFromCanonical(formik.values.asset).code}
