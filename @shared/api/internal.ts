@@ -1,3 +1,4 @@
+import omitBy from "lodash/omitBy";
 import StellarSdk from "stellar-sdk";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
@@ -249,6 +250,8 @@ export const getAccountBalances = async ({
 
   try {
     ({ balances, subentryCount } = await dataProvider.fetchAccountDetails());
+    // let's filter out liquidity pool shares until freighter and wallet-sdk support
+    balances = omitBy(balances, (b: any) => b.liquidity_pool_id) as Balances;
     isFunded = true;
   } catch (e) {
     console.error(e);
