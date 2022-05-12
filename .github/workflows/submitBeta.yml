@@ -96,8 +96,7 @@ jobs:
           apiKey: ${{ secrets.AMO_SIGN_KEY }}
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
-      - name: Upload Release Asset
-        id: upload-release-asset
+      - name: Upload Firefox xpi
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
