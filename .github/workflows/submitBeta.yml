@@ -103,7 +103,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ steps.firefox-sign.outputs.target }}
-          asset_name: build-${{ github.event.inputs.version }}.xpi
+          asset_name: ${{ github.event.inputs.release }}-${{ github.event.inputs.version }}.xpi
           asset_content_type: application/xpi
       - name: Submit extension to Chrome
         uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
@@ -113,6 +113,7 @@ jobs:
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+          publish-target: trustedTesters
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@4d4ce0d91186ffe6633a8cda645146d38e88228b #v2
         env:
