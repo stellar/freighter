@@ -30,14 +30,14 @@ jobs:
         with:
           file: ./extension/public/static/manifest.json
           field: version_name
-          value: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.release }}
-      - name: Update manifest.json version
+          value: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+      - name: Update manifest.json version for Chrome
         uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
         with:
           file: ./extension/public/static/manifest.json
           field: version
           value: ${{ github.event.inputs.release }}
-      - name: Build extension
+      - name: Build extension for Chrome
         uses: actions/setup-node@v1
         with:
           node-version: "12"
@@ -47,22 +47,15 @@ jobs:
       - name: Zip extension build
         run: zip -qq -r ./build.zip *
         working-directory: ./extension/build
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
-          git tag ${{ github.event.inputs.version }}
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          tag_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.release }}
-          release_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.release }}
-          body: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.release }}
+          tag_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          release_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          body: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
           draft: false
           prerelease: true
       - name: Upload Release Asset
@@ -73,24 +66,36 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./extension/build/build.zip
-          asset_name: build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.release }}.zip
+          asset_name: build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
+      - name: Update manifest.json version for Firefox
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/public/static/manifest.json
+          field: version
+          value: ${{ github.event.inputs.release }}beta${{ github.event.inputs.version }}
       - name: Build extension for Firefox
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12"
+      - run: yarn build:extension:production
+      - name: Build xpi for Firefox
         id: firefox-build
-        uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
+        uses: kewisch/action-web-ext@20ee9837f7352d4770b93868a0aa59292eb43d8c #v1
         with:
           cmd: build
           source: ./extension/build
-          filename: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.release }}.xpi
+          filename: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.xpi
       - name: Sign extension for Firefox
         id: firefox-sign
-        uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
+        uses: kewisch/action-web-ext@20ee9837f7352d4770b93868a0aa59292eb43d8c #v1
         with:
           cmd: sign
           source: ${{ steps.firefox-build.outputs.target }}
           channel: unlisted
           apiKey: ${{ secrets.AMO_SIGN_KEY }}
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
+          timeout: 1800000
       - name: Upload Firefox xpi
         uses: actions/upload-release-asset@v1
         env:
