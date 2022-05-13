@@ -106,7 +106,7 @@ jobs:
           asset_name: ${{ github.event.inputs.release }}-${{ github.event.inputs.version }}.xpi
           asset_content_type: application/xpi
       - name: Submit extension to Chrome
-        uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
+        uses: mnao305/chrome-extension-upload@4061bc03cde1feaec8b153654495c88857fb76c3 #v2.2.0
         with:
           file-path: ./extension/build/build.zip
           extension-id: "kcigoalhjaghfigblagmiopnefgenfjb"
