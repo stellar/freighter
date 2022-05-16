@@ -205,7 +205,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             assetIcons={assetIcons}
             sortedBalances={[
               {
-                token: { issuer: sourceAsset.issuer, code: sourceAsset.code },
+                token: {
+                  issuer: { key: sourceAsset.issuer },
+                  code: sourceAsset.code,
+                },
                 total: amount || "0",
               },
             ]}
@@ -218,7 +221,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               sortedBalances={[
                 {
                   token: {
-                    issuer: destAsset.issuer,
+                    issuer: { key: destAsset.issuer },
                     code: destAsset.code,
                   },
                   total: destinationAmount || "0",
