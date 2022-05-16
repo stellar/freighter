@@ -143,9 +143,9 @@ export const ManageAssetRows = ({
           const isActionPending = submitStatus === ActionStatus.PENDING;
 
           return (
-            <div className="ManageAssetRows__row" key={code}>
+            <div className="ManageAssetRows__row" key={canonicalAsset}>
               <AssetIcon
-                assetIcons={code !== "XLM" ? { [code]: image } : {}}
+                assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
                 code={code}
                 issuerKey={issuer}
               />
