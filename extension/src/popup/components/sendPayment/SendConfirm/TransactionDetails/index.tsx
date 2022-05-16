@@ -8,6 +8,7 @@ import { Card, Loader, Icon } from "@stellar/design-system";
 
 import {
   getAssetFromCanonical,
+  getCanonicalFromAsset,
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
@@ -76,7 +77,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         code: destAsset.code,
         networkDetails,
       });
-      setDestAssetIcons({ [destAsset.code]: iconURL });
+      setDestAssetIcons({
+        [getCanonicalFromAsset(destAsset.code, destAsset.issuer)]: iconURL,
+      });
     })();
   }, [destAsset.code, destAsset.issuer, networkDetails]);
 
