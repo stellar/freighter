@@ -5,6 +5,7 @@ import { BigNumber } from "bignumber.js";
 import { AssetIcons } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
+import { getCanonicalFromAsset } from "helpers/stellar";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -21,11 +22,15 @@ export const AssetIcon = ({
   issuerKey: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
 }) =>
-  assetIcons[code] || code === "XLM" ? (
+  assetIcons[getCanonicalFromAsset(code, issuerKey)] || code === "XLM" ? (
     <img
       className="AccountAssets__asset--logo"
       alt={`${code} logo`}
-      src={code === "XLM" ? StellarLogo : assetIcons[code] || ""}
+      src={
+        code === "XLM"
+          ? StellarLogo
+          : assetIcons[getCanonicalFromAsset(code, issuerKey)] || ""
+      }
       onError={() => {
         if (retryAssetIconFetch) {
           retryAssetIconFetch({ key: issuerKey, code });
@@ -77,7 +82,10 @@ export const AccountAssets = ({
   return (
     <>
       {sortedBalances.map(({ token: { issuer, code }, total }) => (
-        <div className="AccountAssets__asset" key={code}>
+        <div
+          className="AccountAssets__asset"
+          key={`${code}:${issuer?.key || ""}`}
+        >
           <div className="AccountAssets__copy-left">
             <AssetIcon
               assetIcons={assetIcons}

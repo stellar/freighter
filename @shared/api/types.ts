@@ -34,6 +34,7 @@ export interface Response {
   allAccounts: Array<Account>;
   accountName: string;
   assetCode: string;
+  assetCanonical: string;
   iconUrl: string;
   network: string;
   recentAddresses: Array<string>;
