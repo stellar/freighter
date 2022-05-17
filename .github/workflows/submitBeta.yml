@@ -110,8 +110,8 @@ jobs:
         with:
           file-path: ./extension/build/build.zip
           extension-id: "kcigoalhjaghfigblagmiopnefgenfjb"
-          client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
-          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+          client-id: ${{ secrets.EXTENSION_CLIENT_ID_V2 }}
+          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN_V2 }}
           publish-target: trustedTesters
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@4d4ce0d91186ffe6633a8cda645146d38e88228b #v2
@@ -120,7 +120,7 @@ jobs:
           SLACK_CHANNEL: proj-freighter
           SLACK_COLOR: "#391EDA"
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
-          SLACK_TITLE: Freighter v${{ github.event.inputs.version }} has been submitted to app stores for review!
+          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/{{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}"
+          SLACK_TITLE: Freighter v${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }} has been submitted for testing!
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
