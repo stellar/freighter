@@ -637,24 +637,24 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const getCachedAssetIcon = () => {
-    const { assetCode } = request;
+    const { assetCanonical } = request;
 
     const assetIconCache = JSON.parse(
       localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
     );
 
     return {
-      iconUrl: assetIconCache[assetCode] || "",
+      iconUrl: assetIconCache[assetCanonical] || "",
     };
   };
 
   const cacheAssetIcon = () => {
-    const { assetCode, iconUrl } = request;
+    const { assetCanonical, iconUrl } = request;
 
     const assetIconCache = JSON.parse(
       localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
     );
-    assetIconCache[assetCode] = iconUrl;
+    assetIconCache[assetCanonical] = iconUrl;
     localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
   };
 

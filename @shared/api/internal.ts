@@ -322,7 +322,7 @@ export const getAssetIcons = async ({
         } = token;
         // eslint-disable-next-line no-await-in-loop
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
-        assetIcons[code] = icon;
+        assetIcons[`${code}:${key}`] = icon;
       }
     }
   }
@@ -343,7 +343,7 @@ export const retryAssetIcon = async ({
   const newAssetIcons = { ...assetIcons };
   try {
     await sendMessageToBackground({
-      assetCode: code,
+      assetCanonical: `${code}:${key}`,
       iconUrl: null,
       type: SERVICE_TYPES.CACHE_ASSET_ICON,
     });
@@ -351,7 +351,7 @@ export const retryAssetIcon = async ({
     return assetIcons;
   }
   const icon = await getIconUrlFromIssuer({ key, code, networkDetails });
-  newAssetIcons[code] = icon;
+  newAssetIcons[`${code}:${key}`] = icon;
   return newAssetIcons;
 };
 

@@ -8,6 +8,7 @@ import { Card, Loader, Icon } from "@stellar/design-system";
 
 import {
   getAssetFromCanonical,
+  getCanonicalFromAsset,
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
@@ -76,7 +77,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         code: destAsset.code,
         networkDetails,
       });
-      setDestAssetIcons({ [destAsset.code]: iconURL });
+      setDestAssetIcons({
+        [getCanonicalFromAsset(destAsset.code, destAsset.issuer)]: iconURL,
+      });
     })();
   }, [destAsset.code, destAsset.issuer, networkDetails]);
 
@@ -205,7 +208,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             assetIcons={assetIcons}
             sortedBalances={[
               {
-                token: { issuer: sourceAsset.issuer, code: sourceAsset.code },
+                token: {
+                  issuer: { key: sourceAsset.issuer },
+                  code: sourceAsset.code,
+                },
                 total: amount || "0",
               },
             ]}
@@ -218,7 +224,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               sortedBalances={[
                 {
                   token: {
-                    issuer: destAsset.issuer,
+                    issuer: { key: destAsset.issuer },
                     code: destAsset.code,
                   },
                   total: destinationAmount || "0",

@@ -8,8 +8,8 @@ import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { getCanonicalFromAsset } from "helpers/stellar";
 
 import { Balances } from "@shared/api/types";
 
@@ -57,7 +57,7 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
           collection.push({
             code,
             issuer: issuer?.key || "",
-            image: assetIcons[code],
+            image: assetIcons[getCanonicalFromAsset(code, issuer?.key)],
             domain,
           });
         }
