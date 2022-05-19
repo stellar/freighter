@@ -36,8 +36,8 @@ jobs:
         with:
           file: ./extension/public/static/manifest.json
           field: version
-          value: ${{ github.event.inputs.release }}
-      - name: Build extension for Chrome
+          value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
+      - name: Build extension
         uses: actions/setup-node@v1
         with:
           node-version: "12"
@@ -68,17 +68,6 @@ jobs:
       #     asset_path: ./extension/build/build.zip
       #     asset_name: build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.zip
       #     asset_content_type: application/zip
-      # - name: Update manifest.json version for Firefox
-      #   uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-      #   with:
-      #     file: ./extension/public/static/manifest.json
-      #     field: version
-      #     value: ${{ github.event.inputs.release }}beta${{ github.event.inputs.version }}
-      # - name: Build extension for Firefox
-      #   uses: actions/setup-node@v1
-      #   with:
-      #     node-version: "12"
-      # - run: yarn build:extension:production
       # - name: Build xpi for Firefox
       #   id: firefox-build
       #   uses: kewisch/action-web-ext@20ee9837f7352d4770b93868a0aa59292eb43d8c #v1
@@ -108,10 +97,11 @@ jobs:
       - name: Submit extension to Chrome
         uses: mnao305/chrome-extension-upload@4061bc03cde1feaec8b153654495c88857fb76c3 #v2.2.0
         with:
-          file-path: ./extension/build/build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.zip
+          file-path: ./extension/build/build.zip
           extension-id: "kcigoalhjaghfigblagmiopnefgenfjb"
           client-id: ${{ secrets.EXTENSION_CLIENT_ID_V2 }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN_V2 }}
+          publish: true
           publish-target: trustedTesters
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@4d4ce0d91186ffe6633a8cda645146d38e88228b #v2
