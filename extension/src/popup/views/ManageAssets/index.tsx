@@ -16,15 +16,14 @@ export const ManageAssets = () => {
   const { search } = useLocation();
 
   // find if from asset select input
-  let selectingSourceAsset = false;
-  let selectingDestAsset = false;
+  let selectingAssetType = "";
   const params = new URLSearchParams(search);
   switch (params.get(ASSET_SELECT.QUERY_PARAM)) {
     case ASSET_SELECT.SOURCE:
-      selectingSourceAsset = true;
+      selectingAssetType = ASSET_SELECT.SOURCE;
       break;
     case ASSET_SELECT.DEST:
-      selectingDestAsset = true;
+      selectingAssetType = ASSET_SELECT.DEST;
       break;
     default:
   }
@@ -48,8 +47,7 @@ export const ManageAssets = () => {
           <ChooseAsset
             balances={balances}
             setErrorAsset={setErrorAsset}
-            selectingSourceAsset={selectingSourceAsset}
-            selectingDestAsset={selectingDestAsset}
+            selectingAssetType={selectingAssetType}
           />
         </PrivateKeyRoute>
         <PrivateKeyRoute exact path={ROUTES.addAsset}>

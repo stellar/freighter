@@ -15,21 +15,20 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { Balances } from "@shared/api/types";
 
 import { ManageAssetCurrency, ManageAssetRows } from "../ManageAssetRows";
+import { SelectAssetRows } from "../SelectAssetRows";
 
 import "./styles.scss";
 
 interface ChooseAssetProps {
   balances: Balances;
   setErrorAsset: (errorAsset: string) => void;
-  selectingSourceAsset?: boolean;
-  selectingDestAsset?: boolean;
+  selectingAssetType: string;
 }
 
 export const ChooseAsset = ({
   balances,
   setErrorAsset,
-  selectingSourceAsset = false,
-  selectingDestAsset = false,
+  selectingAssetType,
 }: ChooseAssetProps) => {
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
@@ -71,7 +70,7 @@ export const ChooseAsset = ({
             domain,
           });
           // include native asset for asset dropdown selection
-        } else if (selectingSourceAsset || selectingDestAsset) {
+        } else if (selectingAssetType) {
           collection.push({
             code,
             issuer: "",
@@ -86,13 +85,7 @@ export const ChooseAsset = ({
     };
 
     fetchDomains();
-  }, [
-    assetIcons,
-    balances,
-    networkUrl,
-    selectingSourceAsset,
-    selectingDestAsset,
-  ]);
+  }, [assetIcons, balances, networkUrl, selectingAssetType]);
 
   return (
     <div className="ChooseAsset">
@@ -103,19 +96,27 @@ export const ChooseAsset = ({
       )}
       <SubviewHeader
         title="Choose Asset"
-        customBackIcon={
-          selectingSourceAsset || selectingDestAsset ? <Icon.X /> : undefined
-        }
+        customBackIcon={selectingAssetType ? <Icon.X /> : undefined}
       />
       <div className="ChooseAsset__wrapper">
         <div className="ChooseAsset__assets" ref={ManageAssetRowsWrapperRef}>
-          <ManageAssetRows
-            assetRows={assetRows}
-            setErrorAsset={setErrorAsset}
-            maxHeight={ManageAssetRowsWrapperRef?.current?.clientHeight || 600}
-            selectingSourceAsset={selectingSourceAsset}
-            selectingDestAsset={selectingDestAsset}
-          />
+          {selectingAssetType ? (
+            <SelectAssetRows
+              assetRows={assetRows}
+              maxHeight={
+                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
+              }
+              selectingAssetType={selectingAssetType}
+            />
+          ) : (
+            <ManageAssetRows
+              assetRows={assetRows}
+              setErrorAsset={setErrorAsset}
+              maxHeight={
+                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
+              }
+            />
+          )}
         </div>
         <div className="ChooseAsset__button">
           <Link to={ROUTES.addAsset}>
