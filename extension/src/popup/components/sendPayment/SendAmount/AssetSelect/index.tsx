@@ -32,20 +32,18 @@ export function AssetSelect({
   };
 
   return (
-    <div className="">
-      <div className="AssetSelect__wrapper" onClick={handleSelectAsset}>
-        <div className="AssetSelect__content">
-          <div className="AssetSelect__content__left">
-            <AssetIcon
-              assetIcons={assetIcons}
-              code={assetCode}
-              issuerKey={issuerKey}
-            />
-            <span className="AssetSelect__medium-copy">{assetCode}</span>
-          </div>
-          <div className="AssetSelect__content__right">
-            <Icon.ChevronDown />
-          </div>
+    <div className="AssetSelect__wrapper" onClick={handleSelectAsset}>
+      <div className="AssetSelect__content">
+        <div className="AssetSelect__content__left">
+          <AssetIcon
+            assetIcons={assetIcons}
+            code={assetCode}
+            issuerKey={issuerKey}
+          />
+          <span className="AssetSelect__medium-copy">{assetCode}</span>
+        </div>
+        <div className="AssetSelect__content__right">
+          <Icon.ChevronDown />
         </div>
       </div>
     </div>
@@ -87,29 +85,27 @@ export function PathPayAssetSelect({
   };
 
   return (
-    <div className="">
-      <div onClick={handleSelectAsset} className="AssetSelect__wrapper">
-        <div className="AssetSelect__content">
-          <div className="AssetSelect__content__left">
-            <span className="AssetSelect__light-copy AssetSelect__light-copy__label">
-              {source ? "From" : "To"}
-            </span>
-            <AssetIcon
-              assetIcons={assetIcons}
-              code={assetCode}
-              issuerKey={issuerKey}
-            />
-            <span className="AssetSelect__medium-copy">
-              {truncateLongAssetCode(assetCode)}
-            </span>{" "}
-            <Icon.ChevronDown />
-          </div>
-          <div className="AssetSelect__content__right">
-            <span className="AssetSelect__light-copy">
-              {balance && balance !== "0" ? balance : ""}{" "}
-              {truncateLongAssetCode(assetCode)}
-            </span>
-          </div>
+    <div onClick={handleSelectAsset} className="AssetSelect__wrapper">
+      <div className="AssetSelect__content">
+        <div className="AssetSelect__content__left">
+          <span className="AssetSelect__light-copy AssetSelect__light-copy__label">
+            {source ? "From" : "To"}
+          </span>
+          <AssetIcon
+            assetIcons={assetIcons}
+            code={assetCode}
+            issuerKey={issuerKey}
+          />
+          <span className="AssetSelect__medium-copy">
+            {truncateLongAssetCode(assetCode)}
+          </span>{" "}
+          <Icon.ChevronDown />
+        </div>
+        <div className="AssetSelect__content__right">
+          <span className="AssetSelect__light-copy">
+            {balance && balance !== "0" ? balance : ""}{" "}
+            {truncateLongAssetCode(assetCode)}
+          </span>
         </div>
       </div>
     </div>
