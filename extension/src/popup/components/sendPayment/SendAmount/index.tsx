@@ -3,10 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
-import { Types } from "@stellar/wallet-sdk";
-import { Select, Icon, Loader } from "@stellar/design-system";
-import StellarSdk from "stellar-sdk";
+import { Icon, Loader } from "@stellar/design-system";
 
+import {
+  AssetSelect,
+  PathPayAssetSelect,
+} from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -26,6 +28,7 @@ import {
   saveAsset,
   saveDestinationAsset,
   getBestPath,
+  resetDestinationAmount,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -59,7 +62,11 @@ const ConversionRate = ({
       <>
         {destAmount ? (
           <span>
-            {sourceAmount} {source} ≈ {destAmount} {dest}
+            1 {source} ≈{" "}
+            {new BigNumber(destAmount)
+              .div(new BigNumber(sourceAmount))
+              .toFixed(7)}{" "}
+            {dest}
           </span>
         ) : (
           <span>no path found</span>
@@ -68,42 +75,6 @@ const ConversionRate = ({
     )}
   </div>
 );
-
-const BalanceOption = ({
-  balance: [key, balance],
-}: {
-  balance: [string, Types.AssetBalance | Types.NativeBalance];
-}) => {
-  const [assetDomain, setAssetDomain] = useState("Stellar Lumens");
-  const assetIssuer = "issuer" in balance.token ? balance.token.issuer.key : "";
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const server = new StellarSdk.Server(networkDetails.networkUrl);
-
-  useEffect(() => {
-    const fetchAssetDomain = async () => {
-      let homeDomain = "";
-      // https://github.com/stellar/freighter/issues/410
-      try {
-        ({ home_domain: homeDomain } = await server.loadAccount(assetIssuer));
-      } catch (e) {
-        console.error(e);
-      }
-
-      setAssetDomain(homeDomain);
-    };
-
-    if (balance.token.type !== "native") {
-      fetchAssetDomain();
-    }
-  }, [assetIssuer, server, balance.token.type]);
-
-  return (
-    <option value={key}>
-      {balance.token.code}
-      {assetDomain && ` \u2022 ${assetDomain}`}
-    </option>
-  );
-};
 
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
@@ -211,6 +182,8 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   useEffect(() => {
     if (!formik.values.destinationAsset) return;
     setLoadingRate(true);
+    // clear dest amount before re-calculating for UI
+    dispatch(resetDestinationAmount());
     db(
       formik.values.amount || defaultSourceAmount,
       formik.values.asset,
@@ -222,6 +195,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     formik.values.asset,
     formik.values.destinationAsset,
     formik.values.amount,
+    dispatch,
   ]);
 
   const getAmountFontSize = () => {
@@ -357,45 +331,38 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
               <DecideWarning />
             </div>
           </>
-          <div>
-            <Select
-              id="asset-select"
-              name="asset"
-              value={formik.values.asset}
-              onChange={(e) => {
-                formik.setFieldValue("asset", e.target.value);
-              }}
-            >
-              {accountBalances.balances &&
-                Object.entries(accountBalances.balances).map(([k, v]) => (
-                  <BalanceOption key={k} balance={[k, v]} />
-                ))}
-            </Select>
-          </div>
-          {destinationAsset && (
-            <>
-              <div className="SendAmount__path-pay__select">
-                <Select
-                  id="destAsset-select"
-                  name="destinationAsset"
-                  value={formik.values.destinationAsset}
-                  onChange={(e) =>
-                    formik.setFieldValue("destinationAsset", e.target.value)
+          <div className="SendAmount__asset-select-container">
+            {!destinationAsset && (
+              <AssetSelect
+                assetCode={getAssetFromCanonical(formik.values.asset).code}
+                issuerKey={getAssetFromCanonical(formik.values.asset).issuer}
+              ></AssetSelect>
+            )}
+            {destinationAsset && (
+              <>
+                <PathPayAssetSelect
+                  source={true}
+                  assetCode={getAssetFromCanonical(formik.values.asset).code}
+                  issuerKey={getAssetFromCanonical(formik.values.asset).issuer}
+                  balance={formik.values.amount}
+                />
+                <PathPayAssetSelect
+                  source={false}
+                  assetCode={
+                    getAssetFromCanonical(formik.values.destinationAsset).code
                   }
-                >
-                  {destinationBalances.balances &&
-                    Object.entries(
-                      destinationBalances.balances,
-                    ).map(([k, v]) => <BalanceOption balance={[k, v]} />)}
-                </Select>
-              </div>
-              <div className="SendAmount__path-pay__copy">
-                Sending {getAssetFromCanonical(formik.values.asset).code}, they
-                will receive{" "}
-                {getAssetFromCanonical(formik.values.destinationAsset).code}
-              </div>
-            </>
-          )}
+                  issuerKey={
+                    getAssetFromCanonical(formik.values.destinationAsset).issuer
+                  }
+                  balance={
+                    destinationAmount
+                      ? new BigNumber(destinationAmount).toFixed(2)
+                      : "0"
+                  }
+                />
+              </>
+            )}
+          </div>
 
           <div className="SendPayment__btn-continue">
             <Button

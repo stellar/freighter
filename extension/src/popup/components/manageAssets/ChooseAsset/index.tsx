@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import StellarSdk from "stellar-sdk";
 import { Link } from "react-router-dom";
+import { Icon, Loader } from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
@@ -20,16 +21,25 @@ import "./styles.scss";
 interface ChooseAssetProps {
   balances: Balances;
   setErrorAsset: (errorAsset: string) => void;
+  selectingSourceAsset?: boolean;
+  selectingDestAsset?: boolean;
 }
 
-export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
+export const ChooseAsset = ({
+  balances,
+  setErrorAsset,
+  selectingSourceAsset = false,
+  selectingDestAsset = false,
+}: ChooseAssetProps) => {
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchDomains = async () => {
+      setIsLoading(true);
       const collection = [] as ManageAssetCurrency[];
       const sortedBalances = sortBalances(balances);
 
@@ -60,24 +70,51 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
             image: assetIcons[getCanonicalFromAsset(code, issuer?.key)],
             domain,
           });
+          // include native asset for asset dropdown selection
+        } else if (selectingSourceAsset || selectingDestAsset) {
+          collection.push({
+            code,
+            issuer: "",
+            image: "",
+            domain: "",
+          });
         }
       }
 
       setAssetRows(collection);
+      setIsLoading(false);
     };
 
     fetchDomains();
-  }, [assetIcons, balances, networkUrl]);
+  }, [
+    assetIcons,
+    balances,
+    networkUrl,
+    selectingSourceAsset,
+    selectingDestAsset,
+  ]);
 
   return (
     <div className="ChooseAsset">
-      <SubviewHeader title="Choose Asset" />
+      {isLoading && (
+        <div className="ChooseAsset__loader">
+          <Loader size="2rem" />
+        </div>
+      )}
+      <SubviewHeader
+        title="Choose Asset"
+        customBackIcon={
+          selectingSourceAsset || selectingDestAsset ? <Icon.X /> : undefined
+        }
+      />
       <div className="ChooseAsset__wrapper">
         <div className="ChooseAsset__assets" ref={ManageAssetRowsWrapperRef}>
           <ManageAssetRows
             assetRows={assetRows}
             setErrorAsset={setErrorAsset}
             maxHeight={ManageAssetRowsWrapperRef?.current?.clientHeight || 600}
+            selectingSourceAsset={selectingSourceAsset}
+            selectingDestAsset={selectingDestAsset}
           />
         </div>
         <div className="ChooseAsset__button">
