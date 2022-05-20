@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory } from "react-router-dom";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
-import { Types } from "@stellar/wallet-sdk";
 
 import { AppDispatch } from "popup/App";
 
@@ -26,13 +24,11 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
-  saveAsset,
-  saveDestinationAsset,
 } from "popup/ducks/transactionSubmission";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 
-import { CURRENCY, Balances } from "@shared/api/types";
+import { CURRENCY } from "@shared/api/types";
 
 import "./styles.scss";
 
@@ -42,16 +38,12 @@ interface ManageAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   setErrorAsset: (errorAsset: string) => void;
   maxHeight: number;
-  selectingSourceAsset?: boolean;
-  selectingDestAsset?: boolean;
 }
 
 export const ManageAssetRows = ({
   assetRows,
   setErrorAsset,
   maxHeight,
-  selectingSourceAsset = false,
-  selectingDestAsset = false,
 }: ManageAssetRowsProps) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -61,7 +53,6 @@ export const ManageAssetRows = ({
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
-  const history = useHistory();
 
   const server = new StellarSdk.Server(networkDetails.networkUrl);
 
@@ -135,17 +126,6 @@ export const ManageAssetRows = ({
     }
   };
 
-  const getAccountBalance = (canonical: string) => {
-    if (!balances) {
-      return "";
-    }
-    const bal: Types.Balance = balances[canonical as keyof Balances];
-    if (bal) {
-      return bal.total.toString();
-    }
-    return "";
-  };
-
   return (
     <SimpleBar
       className="ManageAssetRows__scrollbar"
@@ -163,23 +143,7 @@ export const ManageAssetRows = ({
           const isActionPending = submitStatus === ActionStatus.PENDING;
 
           return (
-            <div
-              className={`ManageAssetRows__row ${
-                selectingSourceAsset || selectingDestAsset ? "selectable" : ""
-              }`}
-              key={canonicalAsset}
-              onClick={() => {
-                if (selectingSourceAsset) {
-                  dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
-                  history.goBack();
-                } else if (selectingDestAsset) {
-                  dispatch(
-                    saveDestinationAsset(getCanonicalFromAsset(code, issuer)),
-                  );
-                  history.goBack();
-                }
-              }}
-            >
+            <div className="ManageAssetRows__row" key={canonicalAsset}>
               <AssetIcon
                 assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
                 code={code}
@@ -191,28 +155,20 @@ export const ManageAssetRows = ({
                   {formatDomain(domain)}
                 </div>
               </div>
-              {!(selectingSourceAsset || selectingDestAsset) && (
-                <div className="ManageAssetRows__button">
-                  <PillButton
-                    disabled={isActionPending}
-                    isLoading={
-                      isActionPending && assetSubmitting === canonicalAsset
-                    }
-                    onClick={() =>
-                      changeTrustline(code, issuer, !isTrustlineActive)
-                    }
-                    type="button"
-                  >
-                    {isTrustlineActive ? "Remove" : "Add"}
-                  </PillButton>
-                </div>
-              )}
-              {selectingSourceAsset && (
-                <div>
-                  {getAccountBalance(getCanonicalFromAsset(code, issuer))}{" "}
-                  {code}
-                </div>
-              )}
+              <div className="ManageAssetRows__button">
+                <PillButton
+                  disabled={isActionPending}
+                  isLoading={
+                    isActionPending && assetSubmitting === canonicalAsset
+                  }
+                  onClick={() =>
+                    changeTrustline(code, issuer, !isTrustlineActive)
+                  }
+                  type="button"
+                >
+                  {isTrustlineActive ? "Remove" : "Add"}
+                </PillButton>
+              </div>
             </div>
           );
         })}
