@@ -14,7 +14,7 @@ import {
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ASSET_SELECT } from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
 
 import { Balances } from "@shared/api/types";
 
@@ -84,9 +84,7 @@ export const SelectAssetRows = ({
             <div className="SelectAssetRows__code">
               {code}
               <div className="SelectAssetRows__domain">
-                {domain
-                  ? domain.replace("https://", "").replace("www.", "")
-                  : "Stellar Network"}
+                {formatDomain(domain)}
               </div>
             </div>
             {selectingAssetType === ASSET_SELECT.SOURCE && (

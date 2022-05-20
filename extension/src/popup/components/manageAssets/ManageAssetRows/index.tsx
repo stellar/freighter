@@ -10,7 +10,7 @@ import { AppDispatch } from "popup/App";
 
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
 
@@ -188,9 +188,7 @@ export const ManageAssetRows = ({
               <div className="ManageAssetRows__code">
                 {code}
                 <div className="ManageAssetRows__domain">
-                  {domain
-                    ? domain.replace("https://", "").replace("www.", "")
-                    : "Stellar Network"}
+                  {formatDomain(domain)}
                 </div>
               </div>
               {!(selectingSourceAsset || selectingDestAsset) && (
