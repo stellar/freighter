@@ -58,7 +58,7 @@ export const SendSettingsFee = () => {
             navigateTo(ROUTES.sendPaymentSettings);
           }}
         >
-          {({ setFieldValue }) => (
+          {({ setFieldValue, dirty }) => (
             <Form>
               <FormRows>
                 <Field name="transactionFee">
@@ -74,6 +74,7 @@ export const SendSettingsFee = () => {
                 <div className="TransactionFee__row">
                   <TextLink
                     underline
+                    disabled={!dirty && transactionFee === recommendedFee}
                     variant={TextLink.variant.secondary}
                     onClick={() =>
                       setFieldValue("transactionFee", recommendedFee)
