@@ -90,3 +90,11 @@ export const getConversionRate = (
   sourceAmount: string,
   destAmount: string,
 ): BigNumber => new BigNumber(destAmount).div(new BigNumber(sourceAmount));
+
+export const formatDomain = (domain: string) => {
+  if (domain) {
+    domain.replace("https://", "").replace("www.", "");
+    return domain;
+  }
+  return "Stellar Network";
+};
