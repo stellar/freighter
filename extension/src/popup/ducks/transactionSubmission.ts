@@ -192,7 +192,7 @@ const initialState: InitialState = {
     asset: "native",
     destination: "",
     federationAddress: "",
-    transactionFee: "0.00001",
+    transactionFee: "",
     memo: "",
     destinationAsset: "",
     destinationAmount: "",
