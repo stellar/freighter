@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import {
@@ -10,6 +10,7 @@ import {
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -18,6 +19,7 @@ import {
   saveMemo,
   transactionDataSelector,
   isPathPaymentSelector,
+  saveTransactionFee,
 } from "popup/ducks/transactionSubmission";
 
 import "../styles.scss";
@@ -28,6 +30,14 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
     transactionDataSelector,
   );
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const { recommendedFee } = useNetworkFees();
+
+  // use default transaction fee if unset
+  useEffect(() => {
+    if (!transactionFee) {
+      dispatch(saveTransactionFee(recommendedFee));
+    }
+  }, [dispatch, recommendedFee, transactionFee]);
 
   return (
     <PopupWrapper>
