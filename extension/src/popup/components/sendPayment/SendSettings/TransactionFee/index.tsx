@@ -69,7 +69,7 @@ export const SendSettingsFee = () => {
                         className="SendTo__input"
                         type="number"
                         {...field}
-                      ></Input>
+                      />
                       <div className="TransactionFee__row">
                         <TextLink
                           underline
