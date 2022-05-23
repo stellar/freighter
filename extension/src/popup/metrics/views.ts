@@ -43,6 +43,12 @@ const routeToEventName = {
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
   [ROUTES.addAsset]: METRIC_NAMES.viewManageAssets,
   [ROUTES.trustlineError]: METRIC_NAMES.viewTrustlineError,
+  [ROUTES.swap]: METRIC_NAMES.viewSwap,
+  [ROUTES.swapAmount]: METRIC_NAMES.swapAmount,
+  [ROUTES.swapSettings]: METRIC_NAMES.swapSettings,
+  [ROUTES.swapSettingsFee]: METRIC_NAMES.swapSettingsFee,
+  [ROUTES.swapSettingsSlippage]: METRIC_NAMES.swapSettingsSlippage,
+  [ROUTES.swapConfirm]: METRIC_NAMES.swapConfirm,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

@@ -20,7 +20,7 @@ import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { hasPrivateKeySelector } from "popup/ducks/accountServices";
 
-const VerifiedAccountRoute = (props: RouteProps) => {
+export const VerifiedAccountRoute = (props: RouteProps) => {
   const location = useLocation();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
 
