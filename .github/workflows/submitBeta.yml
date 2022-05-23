@@ -68,6 +68,12 @@ jobs:
       #     asset_path: ./extension/build/build.zip
       #     asset_name: build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.zip
       #     asset_content_type: application/zip
+      # - name: Update built manifest.json version for Firefox
+      #   uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+      #   with:
+      #     file: ./extension/build/manifest.json
+      #     field: version
+      #     value: ${{ github.event.inputs.release }}beta${{ github.event.inputs.version }}
       # - name: Build xpi for Firefox
       #   id: firefox-build
       #   uses: kewisch/action-web-ext@20ee9837f7352d4770b93868a0aa59292eb43d8c #v1
