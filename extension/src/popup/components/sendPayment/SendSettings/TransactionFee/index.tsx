@@ -63,26 +63,29 @@ export const SendSettingsFee = () => {
               <FormRows>
                 <Field name="transactionFee">
                   {({ field }: FieldProps) => (
-                    <Input
-                      id="transaction-fee-input"
-                      className="SendTo__input"
-                      type="number"
-                      {...field}
-                    ></Input>
+                    <>
+                      <Input
+                        id="transaction-fee-input"
+                        className="SendTo__input"
+                        type="number"
+                        {...field}
+                      />
+                      <div className="TransactionFee__row">
+                        <TextLink
+                          underline
+                          disabled={field.value === recommendedFee}
+                          variant={TextLink.variant.secondary}
+                          onClick={() =>
+                            setFieldValue("transactionFee", recommendedFee)
+                          }
+                        >
+                          Set recommended
+                        </TextLink>
+                        <span>{networkCongestion} congestion</span>
+                      </div>
+                    </>
                   )}
                 </Field>
-                <div className="TransactionFee__row">
-                  <TextLink
-                    underline
-                    variant={TextLink.variant.secondary}
-                    onClick={() =>
-                      setFieldValue("transactionFee", recommendedFee)
-                    }
-                  >
-                    Set recommended
-                  </TextLink>
-                  <span>{networkCongestion} congestion</span>
-                </div>
               </FormRows>
               <div className="SendPayment__btn-continue">
                 <Button
