@@ -8,7 +8,8 @@ import { AppDispatch } from "popup/App";
 
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { getCanonicalFromAsset, xlmToStroop } from "helpers/stellar";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
 
@@ -53,6 +54,7 @@ export const ManageAssetRows = ({
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
+  const { recommendedFee } = useNetworkFees();
 
   const server = new StellarSdk.Server(networkDetails.networkUrl);
 
@@ -68,7 +70,7 @@ export const ManageAssetRows = ({
     setAssetSubmitting(canonicalAsset);
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: StellarSdk.BASE_FEE,
+      fee: xlmToStroop(recommendedFee).toString(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
