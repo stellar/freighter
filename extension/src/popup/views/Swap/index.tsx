@@ -16,7 +16,6 @@ export const Swap = () => (
       <Redirect to={ROUTES.swapAmount} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.swapAmount}>
-      {/* ALEC TODO - make previous optional? */}
       <SendAmount previous={ROUTES.account} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.swapSettings}>

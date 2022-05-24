@@ -275,6 +275,8 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         title={`${isSwap ? "Swap" : "Send"} ${
           getAssetFromCanonical(formik.values.asset).code
         }`}
+        // TODO - uncomment once BottomNav added to all swap comps
+        // hasBackButton={!isSwap}
         customBackAction={() => navigateTo(previous)}
         rightButton={
           <button
