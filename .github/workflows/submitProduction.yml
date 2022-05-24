@@ -1,4 +1,4 @@
-name: Submit extension to browser store
+name: Production Deployment
 on:
   workflow_dispatch:
     inputs:

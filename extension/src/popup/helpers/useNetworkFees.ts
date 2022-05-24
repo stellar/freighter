@@ -23,10 +23,10 @@ export const useNetworkFees = () => {
       try {
         const server = new StellarSdk.Server(networkUrl);
         const {
-          fee_charged: feeCharged,
+          max_fee: maxFee,
           ledger_capacity_usage: ledgerCapacityUsage,
         } = await server.feeStats();
-        setRecommendedFee(stroopToXlm(feeCharged.mode).toString());
+        setRecommendedFee(stroopToXlm(maxFee.mode).toString());
         if (ledgerCapacityUsage > 0.5 && ledgerCapacityUsage <= 0.75) {
           setNetworkCongestion(NetworkCongestion.MEDIUM);
         } else if (ledgerCapacityUsage > 0.75) {
