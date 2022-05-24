@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
 import { Icon, Loader } from "@stellar/design-system";
+import StellarSdk from "stellar-sdk";
 
 import {
   AssetSelect,
@@ -93,7 +95,9 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     destinationAsset,
   } = transactionData;
 
+  const isSwap = useLocation().pathname === ROUTES.swapAmount;
   const { recommendedFee } = useNetworkFees();
+  const [loadingRate, setLoadingRate] = useState(false);
 
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
@@ -127,8 +131,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     calculateAvailBalance(asset),
   );
 
-  const [loadingRate, setLoadingRate] = useState(false);
-
   const handleContinue = (values: {
     amount: string;
     asset: string;
@@ -157,7 +159,10 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     initialValues: { amount, asset, destinationAsset },
     onSubmit: handleContinue,
     validate,
+    enableReinitialize: true,
   });
+
+  const showSourceAndDestAsset = !!formik.values.destinationAsset;
 
   const db = useCallback(
     debounce(async (formikAm, sourceAsset, destAsset) => {
@@ -198,6 +203,13 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     dispatch,
   ]);
 
+  // if swap set destination asset to native
+  useEffect(() => {
+    if (isSwap && !destinationAsset) {
+      dispatch(saveDestinationAsset(StellarSdk.Asset.native().toString()));
+    }
+  }, [isSwap, dispatch, destinationAsset]);
+
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
     if (length <= 9) {
@@ -231,6 +243,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const DecideWarning = () => {
     // unfunded destination
     if (
+      !isSwap &&
       shouldAccountDoesntExistWarning(
         destinationBalances.isFunded || false,
         asset,
@@ -259,7 +272,9 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   return (
     <PopupWrapper>
       <SubviewHeader
-        title={`Send ${getAssetFromCanonical(formik.values.asset).code}`}
+        title={`${isSwap ? "Swap" : "Send"} ${
+          getAssetFromCanonical(formik.values.asset).code
+        }`}
         customBackAction={() => navigateTo(previous)}
         rightButton={
           <button
@@ -312,7 +327,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
             <div className="SendAmount__input-amount__asset-copy">
               {getAssetFromCanonical(formik.values.asset).code}
             </div>
-            {destinationAsset && formik.values.amount !== "0" && (
+            {showSourceAndDestAsset && formik.values.amount !== "0" && (
               <ConversionRate
                 loading={loadingRate}
                 source={getAssetFromCanonical(formik.values.asset).code}
@@ -332,13 +347,13 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
             </div>
           </>
           <div className="SendAmount__asset-select-container">
-            {!destinationAsset && (
+            {!showSourceAndDestAsset && (
               <AssetSelect
                 assetCode={getAssetFromCanonical(formik.values.asset).code}
                 issuerKey={getAssetFromCanonical(formik.values.asset).issuer}
               ></AssetSelect>
             )}
-            {destinationAsset && (
+            {showSourceAndDestAsset && (
               <>
                 <PathPayAssetSelect
                   source={true}
