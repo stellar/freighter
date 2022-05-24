@@ -203,7 +203,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     dispatch,
   ]);
 
-  // if swap set destination asset to native
   useEffect(() => {
     if (isSwap && !destinationAsset) {
       dispatch(saveDestinationAsset(StellarSdk.Asset.native().toString()));
