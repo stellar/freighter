@@ -65,7 +65,7 @@ const retrievePublicKey = async () => {
   return publicKey;
 };
 
-const result = retrievePublicKey();
+const result = await retrievePublicKey();
 ```
 
 ### getNetwork
@@ -96,7 +96,7 @@ const retrieveNetwork = async () => {
   return network;
 };
 
-const result = retrieveNetwork();
+const result = await retrieveNetwork();
 ```
 
 ### signTransaction
@@ -135,7 +135,7 @@ const retrievePublicKey = async () => {
   return publicKey;
 };
 
-const retrievedPublicKey = retrievePublicKey();
+const retrievedPublicKey = await retrievePublicKey();
 
 const userSignTransaction = async (xdr: string, network: string) => {
   let signedTransaction = "";
@@ -155,7 +155,7 @@ const userSignTransaction = async (xdr: string, network: string) => {
 };
 
 const xdr = ""; // replace this with an xdr string of the transaction you want to sign
-const userSignedTransaction = userSignTransaction(xdr, "TESTNET");
+const userSignedTransaction = await userSignTransaction(xdr, "TESTNET");
 ```
 
 freighter-api will return a signed transaction xdr. Below is an example of how you might submit this signed transaction to Horizon using `stellar-sdk` (https://github.com/stellar/js-stellar-sdk):
@@ -180,7 +180,7 @@ const userSignTransaction = async (xdr: string, network: string) => {
 
 const xdr = ""; // replace this with an xdr string of the transaction you want to sign
 
-const userSignedTransaction = userSignTransaction(xdr, "TESTNET");
+const userSignedTransaction = await userSignTransaction(xdr, "TESTNET");
 
 const SERVER_URL = "https://horizon-testnet.stellar.org";
 
