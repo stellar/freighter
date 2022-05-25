@@ -1,16 +1,8 @@
 import React from "react";
-import { useSelector } from "react-redux";
 
-import {
-  Switch,
-  Redirect,
-  Route,
-  useLocation,
-  RouteProps,
-} from "react-router-dom";
-import { PublicKeyRoute } from "popup/Router";
+import { Switch, Redirect } from "react-router-dom";
+import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
-
 import { SendTo } from "popup/components/sendPayment/SendTo";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
@@ -18,24 +10,6 @@ import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
-import { hasPrivateKeySelector } from "popup/ducks/accountServices";
-
-export const VerifiedAccountRoute = (props: RouteProps) => {
-  const location = useLocation();
-  const hasPrivateKey = useSelector(hasPrivateKeySelector);
-
-  if (!hasPrivateKey) {
-    return (
-      <Redirect
-        to={{
-          pathname: ROUTES.verifyAccount,
-          state: { from: location },
-        }}
-      />
-    );
-  }
-  return <Route {...props} />;
-};
 
 export const SendPayment = () => (
   <Switch>

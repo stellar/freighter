@@ -58,7 +58,8 @@ export const Account = () => {
   const { balances, isFunded } = accountBalances;
 
   useEffect(() => {
-    // reset to avoid any residual data if switching between send and swap
+    // reset to avoid any residual data eg switching between send and swap or
+    // previous stale sends
     dispatch(resetSubmission());
     dispatch(
       getAccountBalances({

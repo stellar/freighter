@@ -144,6 +144,23 @@ const UnlockAccountRoute = (props: RouteProps) => {
   return <Route {...props} />;
 };
 
+export const VerifiedAccountRoute = (props: RouteProps) => {
+  const location = useLocation();
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  if (!hasPrivateKey) {
+    return (
+      <Redirect
+        to={{
+          pathname: ROUTES.verifyAccount,
+          state: { from: location },
+        }}
+      />
+    );
+  }
+  return <Route {...props} />;
+};
+
 const HomeRoute = () => {
   const allAccounts = useSelector(allAccountsSelector);
   const applicationState = useSelector(applicationStateSelector);

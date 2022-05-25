@@ -1,8 +1,7 @@
 import React from "react";
 import { Switch, Redirect } from "react-router-dom";
 
-import { VerifiedAccountRoute } from "popup/views/SendPayment";
-import { PublicKeyRoute } from "popup/Router";
+import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
