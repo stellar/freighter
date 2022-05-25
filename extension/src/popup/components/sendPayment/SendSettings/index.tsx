@@ -11,6 +11,7 @@ import {
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -30,6 +31,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
     transactionDataSelector,
   );
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
 
   // use default transaction fee if unset
@@ -39,11 +41,15 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
     }
   }, [dispatch, recommendedFee, transactionFee]);
 
+  // dont show memo for regular sends to Muxed, or for swaps
+  const showMemo = !isSwap && !destination.startsWith("M");
+  const showSlippage = isPathPayment || isSwap;
+
   return (
     <PopupWrapper>
       <div className="SendSettings">
         <SubviewHeader
-          title="Send Settings"
+          title={`${isSwap ? "Swap" : "Send"} Settings`}
           customBackAction={() => navigateTo(previous)}
         />
         <Formik
@@ -86,7 +92,12 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                         className="SendSettings__nav-btn"
                         onClick={() => {
                           submitForm();
-                          navigateTo(ROUTES.sendPaymentSettingsFee);
+                          // ALEC TODO - make an object with these routes?
+                          navigateTo(
+                            isSwap
+                              ? ROUTES.swapSettingsFee
+                              : ROUTES.sendPaymentSettingsFee,
+                          );
                         }}
                       >
                         <Icon.ChevronRight />
@@ -94,7 +105,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     </div>
                   </div>
                 </div>
-                {isPathPayment && (
+                {showSlippage && (
                   <div className="SendSettings__row">
                     <div className="SendSettings__row__left">
                       <span className="SendSettings__row__title">
@@ -126,7 +137,11 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                           className="SendSettings__nav-btn"
                           onClick={() => {
                             submitForm();
-                            navigateTo(ROUTES.sendPaymentSettingsSlippage);
+                            navigateTo(
+                              isSwap
+                                ? ROUTES.swapSettingsSlippage
+                                : ROUTES.sendPaymentSettingsSlippage,
+                            );
                           }}
                         >
                           <Icon.ChevronRight />
@@ -135,7 +150,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     </div>
                   </div>
                 )}
-                {!destination.startsWith("M") && (
+                {showMemo && (
                   <>
                     <div className="SendSettings__row">
                       <div className="SendSettings__row__left">
@@ -182,7 +197,11 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     fullWidth
                     type="submit"
                     variant={Button.variant.tertiary}
-                    onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
+                    onClick={() =>
+                      navigateTo(
+                        isSwap ? ROUTES.swapConfirm : ROUTES.sendPaymentConfirm,
+                      )
+                    }
                   >
                     Review Send
                   </Button>

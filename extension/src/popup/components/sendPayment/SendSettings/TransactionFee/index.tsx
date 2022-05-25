@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { Formik, Form, Field, FieldProps } from "formik";
 
 import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
@@ -7,6 +8,7 @@ import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { FormRows } from "popup/basics/Forms";
@@ -22,12 +24,15 @@ export const SendSettingsFee = () => {
   const dispatch = useDispatch();
   const { transactionFee } = useSelector(transactionDataSelector);
   const { networkCongestion, recommendedFee } = useNetworkFees();
+  const isSwap = useIsSwap();
 
   return (
     <PopupWrapper>
       <SubviewHeader
         title="Transaction Fee"
-        customBackAction={() => navigateTo(ROUTES.sendPaymentSettings)}
+        customBackAction={() =>
+          navigateTo(isSwap ? ROUTES.swapSettings : ROUTES.sendPaymentSettings)
+        }
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
@@ -55,7 +60,9 @@ export const SendSettingsFee = () => {
           initialValues={{ transactionFee }}
           onSubmit={(values) => {
             dispatch(saveTransactionFee(String(values.transactionFee)));
-            navigateTo(ROUTES.sendPaymentSettings);
+            navigateTo(
+              isSwap ? ROUTES.swapSettings : ROUTES.sendPaymentSettings,
+            );
           }}
         >
           {({ setFieldValue }) => (
