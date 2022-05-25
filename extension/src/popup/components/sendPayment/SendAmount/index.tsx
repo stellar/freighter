@@ -165,6 +165,10 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   });
 
   const showSourceAndDestAsset = !!formik.values.destinationAsset;
+  const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
+  const parsedDestAsset = getAssetFromCanonical(
+    formik.values.destinationAsset || "native",
+  );
 
   const db = useCallback(
     debounce(async (formikAm, sourceAsset, destAsset) => {
@@ -274,9 +278,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     <>
       <div className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}>
         <SubviewHeader
-          title={`${isSwap ? "Swap" : "Send"} ${
-            getAssetFromCanonical(formik.values.asset).code
-          }`}
+          title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
           hasBackButton={!isSwap}
           customBackAction={() => navigateTo(previous)}
           rightButton={
@@ -292,8 +294,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
         />
         <div className="SendAmount__content">
           <div className="SendAmount__asset-copy">
-            <span>{availBalance}</span>{" "}
-            <span>{getAssetFromCanonical(formik.values.asset).code}</span>{" "}
+            <span>{availBalance}</span> <span>{parsedSourceAsset.code}</span>{" "}
             available
           </div>
           <div className="SendAmount__btn-set-max">
@@ -340,16 +341,14 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                   autoComplete="off"
                 />
                 <div className="SendAmount__input-amount__asset-copy">
-                  {getAssetFromCanonical(formik.values.asset).code}
+                  {parsedSourceAsset.code}
                 </div>
                 {showSourceAndDestAsset && formik.values.amount !== "0" && (
                   <ConversionRate
                     loading={loadingRate}
-                    source={getAssetFromCanonical(formik.values.asset).code}
+                    source={parsedSourceAsset.code}
                     sourceAmount={formik.values.amount || defaultSourceAmount}
-                    dest={
-                      getAssetFromCanonical(formik.values.destinationAsset).code
-                    }
+                    dest={parsedDestAsset.code}
                     destAmount={destinationAmount}
                   />
                 )}
@@ -363,36 +362,22 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
                 <div className="SendAmount__asset-select-container">
                   {!showSourceAndDestAsset && (
                     <AssetSelect
-                      assetCode={
-                        getAssetFromCanonical(formik.values.asset).code
-                      }
-                      issuerKey={
-                        getAssetFromCanonical(formik.values.asset).issuer
-                      }
+                      assetCode={parsedSourceAsset.code}
+                      issuerKey={parsedSourceAsset.issuer}
                     ></AssetSelect>
                   )}
                   {showSourceAndDestAsset && (
                     <>
                       <PathPayAssetSelect
                         source={true}
-                        assetCode={
-                          getAssetFromCanonical(formik.values.asset).code
-                        }
-                        issuerKey={
-                          getAssetFromCanonical(formik.values.asset).issuer
-                        }
+                        assetCode={parsedSourceAsset.code}
+                        issuerKey={parsedSourceAsset.issuer}
                         balance={formik.values.amount}
                       />
                       <PathPayAssetSelect
                         source={false}
-                        assetCode={
-                          getAssetFromCanonical(formik.values.destinationAsset)
-                            .code
-                        }
-                        issuerKey={
-                          getAssetFromCanonical(formik.values.destinationAsset)
-                            .issuer
-                        }
+                        assetCode={parsedDestAsset.code}
+                        issuerKey={parsedDestAsset.issuer}
                         balance={
                           destinationAmount
                             ? new BigNumber(destinationAmount).toFixed(2)
