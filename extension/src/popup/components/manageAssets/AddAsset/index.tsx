@@ -81,7 +81,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
                     <Input
                       autoComplete="off"
                       id="assetDomain"
-                      placeholder="Asset Domain"
+                      placeholder="Asset domain, e.g. “centre.io”"
                       error={
                         errors.assetDomain && touched.assetDomain
                           ? errors.assetDomain

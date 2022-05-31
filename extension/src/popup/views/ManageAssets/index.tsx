@@ -5,6 +5,7 @@ import { Redirect, Route, Switch, useLocation } from "react-router-dom";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
+import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
@@ -49,6 +50,9 @@ export const ManageAssets = () => {
             setErrorAsset={setErrorAsset}
             selectingAssetType={selectingAssetType}
           />
+        </PrivateKeyRoute>
+        <PrivateKeyRoute exact path={ROUTES.searchAsset}>
+          <SearchAsset setErrorAsset={setErrorAsset} />
         </PrivateKeyRoute>
         <PrivateKeyRoute exact path={ROUTES.addAsset}>
           <AddAsset setErrorAsset={setErrorAsset} />

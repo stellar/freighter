@@ -119,7 +119,7 @@ export const ChooseAsset = ({
           )}
         </div>
         <div className="ChooseAsset__button">
-          <Link to={ROUTES.addAsset}>
+          <Link to={ROUTES.searchAsset}>
             <Button fullWidth variant={Button.variant.tertiary}>
               Add another asset
             </Button>

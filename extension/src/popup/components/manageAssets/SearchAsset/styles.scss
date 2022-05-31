@@ -1,0 +1,64 @@
+:root {
+  --SearchAsset--loader--dimension: 1rem;
+}
+
+.SearchAsset {
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__search-copy {
+    font-size: 0.8125rem;
+    line-height: 1.5rem;
+    text-align: right;
+
+    a {
+      color: #00b2ff;
+    }
+  }
+
+  &__InfoBlock {
+    padding-bottom: 1.625rem;
+    a {
+      color: var(--pal-brand-primary-on);
+      text-decoration: underline;
+    }
+  }
+
+  &__overlay {
+    position: absolute;
+    height: var(--popup--height);
+    width: var(--popup--width);
+    display: flex;
+    flex-direction: column;
+    background: black;
+    z-index: calc(var(--back--button-z-index) + 1);
+    opacity: 0.8;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+  }
+
+  &__loader {
+    position: absolute;
+    top: calc(50% - var(--SearchAsset--loader--dimension));
+    left: calc(50% - var(--SearchAsset--loader--dimension));
+    width: var(--SearchAsset--loader--dimension);
+  }
+
+  &__results {
+    flex-grow: 1;
+    height: 21.4rem;
+  }
+
+  &__copy {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    margin-top: 2.875rem;
+    text-align: center;
+
+    a {
+      color: var(--pal-brand-primary-on);
+      text-decoration: underline;
+    }
+  }
+}

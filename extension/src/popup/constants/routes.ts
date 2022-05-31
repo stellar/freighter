@@ -31,5 +31,6 @@ export enum ROUTES {
   security = "/settings/security",
   manageAssets = "/manage-assets",
   addAsset = "/manage-assets/add-asset",
+  searchAsset = "/manage-assets/search-asset",
   trustlineError = "/manage-assets/trustline-error",
 }

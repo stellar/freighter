@@ -41,7 +41,8 @@ const routeToEventName = {
     METRIC_NAMES.sendPaymentSettingsSlippage,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
-  [ROUTES.addAsset]: METRIC_NAMES.viewManageAssets,
+  [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
+  [ROUTES.searchAsset]: METRIC_NAMES.viewSearchAsset,
   [ROUTES.trustlineError]: METRIC_NAMES.viewTrustlineError,
 };
 

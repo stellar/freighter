@@ -43,6 +43,7 @@ export const METRIC_NAMES = {
 
   viewManageAssets: "loaded screen: manage assets",
   viewAddAsset: "loaded screen: add asset",
+  viewSearchAsset: "loaded screen: search asset",
   viewTrustlineError: "loaded screen: trustline error",
 
   manageAssetAddAsset: "manage asset: add asset",
