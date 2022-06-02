@@ -216,6 +216,7 @@ export const SendAmount = ({
     dispatch,
   ]);
 
+  // for swaps we're loading the destinationAsset here
   useEffect(() => {
     if (isSwap && !destinationAsset) {
       dispatch(saveDestinationAsset(StellarSdk.Asset.native().toString()));
