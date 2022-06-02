@@ -35,9 +35,65 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
-import { AccountAssets } from "popup/components/account/AccountAssets";
+import {
+  AccountAssets,
+  AssetIcon,
+} from "popup/components/account/AccountAssets";
 
 import "./styles.scss";
+
+const TwoAssetCard = ({
+  sourceAssetIcons,
+  sourceCanon,
+  sourceAmount,
+  destAssetIcons,
+  destCanon,
+  destAmount,
+}: {
+  sourceAssetIcons: AssetIcons;
+  sourceCanon: string;
+  sourceAmount: string;
+  destAssetIcons: AssetIcons;
+  destCanon: string;
+  destAmount: string;
+}) => {
+  const sourceAsset = getAssetFromCanonical(sourceCanon);
+  const destAsset = getAssetFromCanonical(destCanon);
+
+  return (
+    <div className="TwoAssetCard">
+      <div className="TwoAssetCard__row">
+        <div className="TwoAssetCard__row__left">
+          <AssetIcon
+            assetIcons={sourceAssetIcons}
+            code={sourceAsset.code}
+            issuerKey={sourceAsset.issuer}
+          />
+          {sourceAsset.code}
+        </div>
+        <div className="TwoAssetCard__row__right">
+          {sourceAmount} {sourceAsset.code}
+        </div>
+      </div>
+      <div className="TwoAssetCard__arrow-icon">
+        <Icon.ArrowDown />
+      </div>
+      <div className="TwoAssetCard__row">
+        <div className="TwoAssetCard__row__left">
+          <AssetIcon
+            assetIcons={destAssetIcons}
+            code={destAsset.code}
+            issuerKey={destAsset.issuer}
+          />
+          {destAsset.code}
+        </div>
+        <div className="TwoAssetCard__row__right">
+          {new BigNumber(destAmount).toFixed(2)} {destAsset.code}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
@@ -214,38 +270,37 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
         }
       />
-      <div className="TransactionDetails__cards">
-        <Card>
-          <AccountAssets
-            assetIcons={assetIcons}
-            sortedBalances={[
-              {
-                token: {
-                  issuer: { key: sourceAsset.issuer },
-                  code: sourceAsset.code,
-                },
-                total: amount || "0",
-              },
-            ]}
-          />
-        </Card>
-        {(isPathPayment || isSwap) && (
+
+      {!(isPathPayment || isSwap) && (
+        <div className="TransactionDetails__cards">
           <Card>
             <AccountAssets
-              assetIcons={destAssetIcons}
+              assetIcons={assetIcons}
               sortedBalances={[
                 {
                   token: {
-                    issuer: { key: destAsset.issuer },
-                    code: destAsset.code,
+                    issuer: { key: sourceAsset.issuer },
+                    code: sourceAsset.code,
                   },
-                  total: destinationAmount || "0",
+                  total: amount || "0",
                 },
               ]}
             />
           </Card>
-        )}
-      </div>
+        </div>
+      )}
+
+      {(isPathPayment || isSwap) && (
+        <TwoAssetCard
+          sourceAssetIcons={assetIcons}
+          sourceCanon={asset}
+          sourceAmount={amount}
+          destAssetIcons={destAssetIcons}
+          destCanon={destinationAsset || "native"}
+          destAmount={destinationAmount}
+        />
+      )}
+
       {!isSwap && (
         <div className="TransactionDetails__row">
           <div>Sending to </div>
