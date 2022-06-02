@@ -350,7 +350,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       )}
       <div className="TransactionDetails__bottom-wrapper">
         <div className="TransactionDetails__bottom-wrapper__copy">
-          {isPathPayment && "The final amount is approximate and may change"}
+          {(isPathPayment || isSwap) &&
+            submission.submitStatus !== ActionStatus.SUCCESS &&
+            "The final amount is approximate and may change"}
         </div>
         {submission.submitStatus === ActionStatus.SUCCESS ? (
           <Button
