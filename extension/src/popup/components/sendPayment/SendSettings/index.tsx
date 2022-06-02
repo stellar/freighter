@@ -25,7 +25,13 @@ import {
 
 import "../styles.scss";
 
-export const SendSettings = ({ previous }: { previous: ROUTES }) => {
+export const SendSettings = ({
+  previous,
+  next,
+}: {
+  previous: ROUTES;
+  next: ROUTES;
+}) => {
   const dispatch = useDispatch();
   const { destination, transactionFee, memo, allowedSlippage } = useSelector(
     transactionDataSelector,
@@ -92,7 +98,6 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                         className="SendSettings__nav-btn"
                         onClick={() => {
                           submitForm();
-                          // ALEC TODO - make an object with these routes?
                           navigateTo(
                             isSwap
                               ? ROUTES.swapSettingsFee
@@ -197,11 +202,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     fullWidth
                     type="submit"
                     variant={Button.variant.tertiary}
-                    onClick={() =>
-                      navigateTo(
-                        isSwap ? ROUTES.swapConfirm : ROUTES.sendPaymentConfirm,
-                      )
-                    }
+                    onClick={() => navigateTo(next)}
                   >
                     Review Send
                   </Button>

@@ -83,7 +83,13 @@ const ConversionRate = ({
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
 
-export const SendAmount = ({ previous }: { previous: ROUTES }) => {
+export const SendAmount = ({
+  previous,
+  next,
+}: {
+  previous: ROUTES;
+  next: ROUTES;
+}) => {
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -144,8 +150,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
       dispatch(saveDestinationAsset(values.destinationAsset));
     }
 
-    // ALEC TODO - make a "next" prop in these components?
-    navigateTo(isSwap ? ROUTES.swapSettings : ROUTES.sendPaymentSettings);
+    navigateTo(next);
   };
 
   const validate = (values: { amount: string }) => {

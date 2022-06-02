@@ -17,7 +17,6 @@ import {
   saveAllowedSlippage,
 } from "popup/ducks/transactionSubmission";
 import { navigateTo } from "popup/helpers/navigate";
-import { useIsSwap } from "popup/helpers/useIsSwap";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -26,9 +25,8 @@ import "./styles.scss";
 
 const defaultSlippage = "1";
 
-export const SendSettingsSlippage = () => {
+export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
-  const isSwap = useIsSwap();
   const { allowedSlippage } = useSelector(transactionDataSelector);
 
   let presetSlippage = "";
@@ -43,9 +41,7 @@ export const SendSettingsSlippage = () => {
     <PopupWrapper>
       <SubviewHeader
         title="Allowed Slippage"
-        customBackAction={() =>
-          navigateTo(isSwap ? ROUTES.swapSettings : ROUTES.sendPaymentSettings)
-        }
+        customBackAction={() => navigateTo(previous)}
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
@@ -68,10 +64,7 @@ export const SendSettingsSlippage = () => {
                 values.customSlippage || values.presetSlippage,
               ),
             );
-            // ALEC TODO - abstract?
-            navigateTo(
-              isSwap ? ROUTES.swapSettings : ROUTES.sendPaymentSettings,
-            );
+            navigateTo(previous);
           }}
           validationSchema={YupObject().shape({
             customSlippage: YupNumber().max(10, "must be below 10%"),

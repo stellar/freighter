@@ -15,16 +15,16 @@ export const Swap = () => (
       <Redirect to={ROUTES.swapAmount} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.swapAmount}>
-      <SendAmount previous={ROUTES.account} />
+      <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.swapSettings}>
-      <SendSettings previous={ROUTES.swapAmount} />
+      <SendSettings previous={ROUTES.swapAmount} next={ROUTES.swapConfirm} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.swapSettingsFee}>
-      <SendSettingsFee />
+      <SendSettingsFee previous={ROUTES.swapSettings} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.swapSettingsSlippage}>
-      <SendSettingsSlippage />
+      <SendSettingsSlippage previous={ROUTES.swapSettings} />
     </PublicKeyRoute>
     <VerifiedAccountRoute exact path={ROUTES.swapConfirm}>
       <SendConfirm previous={ROUTES.swapSettings} />

@@ -8,7 +8,6 @@ import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useIsSwap } from "popup/helpers/useIsSwap";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { FormRows } from "popup/basics/Forms";
@@ -20,19 +19,16 @@ import {
 
 import "./styles.scss";
 
-export const SendSettingsFee = () => {
+export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
   const { transactionFee } = useSelector(transactionDataSelector);
   const { networkCongestion, recommendedFee } = useNetworkFees();
-  const isSwap = useIsSwap();
 
   return (
     <PopupWrapper>
       <SubviewHeader
         title="Transaction Fee"
-        customBackAction={() =>
-          navigateTo(isSwap ? ROUTES.swapSettings : ROUTES.sendPaymentSettings)
-        }
+        customBackAction={() => navigateTo(previous)}
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
@@ -60,9 +56,7 @@ export const SendSettingsFee = () => {
           initialValues={{ transactionFee }}
           onSubmit={(values) => {
             dispatch(saveTransactionFee(String(values.transactionFee)));
-            navigateTo(
-              isSwap ? ROUTES.swapSettings : ROUTES.sendPaymentSettings,
-            );
+            navigateTo(previous);
           }}
         >
           {({ setFieldValue }) => (
