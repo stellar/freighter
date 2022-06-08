@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { Formik, Form, Field, FieldProps } from "formik";
 
 import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
@@ -18,7 +19,7 @@ import {
 
 import "./styles.scss";
 
-export const SendSettingsFee = () => {
+export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
   const { transactionFee } = useSelector(transactionDataSelector);
   const { networkCongestion, recommendedFee } = useNetworkFees();
@@ -27,7 +28,7 @@ export const SendSettingsFee = () => {
     <PopupWrapper>
       <SubviewHeader
         title="Transaction Fee"
-        customBackAction={() => navigateTo(ROUTES.sendPaymentSettings)}
+        customBackAction={() => navigateTo(previous)}
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
@@ -55,7 +56,7 @@ export const SendSettingsFee = () => {
           initialValues={{ transactionFee }}
           onSubmit={(values) => {
             dispatch(saveTransactionFee(String(values.transactionFee)));
-            navigateTo(ROUTES.sendPaymentSettings);
+            navigateTo(previous);
           }}
         >
           {({ setFieldValue }) => (

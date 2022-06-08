@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
@@ -22,6 +21,7 @@ import { AppDispatch } from "popup/App";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import { emitMetric } from "helpers/metrics";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -83,7 +83,13 @@ const ConversionRate = ({
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
 
-export const SendAmount = ({ previous }: { previous: ROUTES }) => {
+export const SendAmount = ({
+  previous,
+  next,
+}: {
+  previous: ROUTES;
+  next: ROUTES;
+}) => {
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -97,7 +103,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     destinationAsset,
   } = transactionData;
 
-  const isSwap = useLocation().pathname === ROUTES.swapAmount;
+  const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
   const [loadingRate, setLoadingRate] = useState(false);
 
@@ -143,7 +149,8 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
     }
-    navigateTo(ROUTES.sendPaymentSettings);
+
+    navigateTo(next);
   };
 
   const validate = (values: { amount: string }) => {
@@ -209,6 +216,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     dispatch,
   ]);
 
+  // for swaps we're loading the destinationAsset here
   useEffect(() => {
     if (isSwap && !destinationAsset) {
       dispatch(saveDestinationAsset(StellarSdk.Asset.native().toString()));

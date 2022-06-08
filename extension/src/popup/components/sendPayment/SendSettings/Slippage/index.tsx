@@ -25,7 +25,7 @@ import "./styles.scss";
 
 const defaultSlippage = "1";
 
-export const SendSettingsSlippage = () => {
+export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
   const { allowedSlippage } = useSelector(transactionDataSelector);
 
@@ -41,7 +41,7 @@ export const SendSettingsSlippage = () => {
     <PopupWrapper>
       <SubviewHeader
         title="Allowed Slippage"
-        customBackAction={() => navigateTo(ROUTES.sendPaymentSettings)}
+        customBackAction={() => navigateTo(previous)}
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
@@ -64,7 +64,7 @@ export const SendSettingsSlippage = () => {
                 values.customSlippage || values.presetSlippage,
               ),
             );
-            navigateTo(ROUTES.sendPaymentSettings);
+            navigateTo(previous);
           }}
           validationSchema={YupObject().shape({
             customSlippage: YupNumber().max(10, "must be below 10%"),
