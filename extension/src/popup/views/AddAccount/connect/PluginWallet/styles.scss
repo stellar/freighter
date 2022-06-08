@@ -1,0 +1,16 @@
+.PluginWallet {
+  padding: var(--popup-vertical-padding) var(--account-view-padding-left) 1rem
+    var(--account-view-padding-left);
+  height: calc(var(--popup--height) - var(--bottom-nav--height));
+  display: flex;
+  flex-direction: column;
+
+  p {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  &__btn-continue {
+    margin-top: auto;
+  }
+}

@@ -122,6 +122,20 @@ export const AccountHeader = ({
             </span>
           </Link>
         </li>
+        <li className="AccountHeader__option-list-item">
+          <Link
+            className="AccountHeader__option-link"
+            to={ROUTES.connectWallet}
+          >
+            <div className="AccountHeader__option-icon">
+              {/* ALEC TODO - import correct icon */}
+              <Icon.Codepen />
+            </div>
+            <span className="AccountHeader__option-link-copy">
+              Connect a hardware wallet
+            </span>
+          </Link>
+        </li>
       </ul>
       <div
         onClick={() => setIsDropdownOpen(false)}

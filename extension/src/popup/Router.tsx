@@ -37,6 +37,8 @@ import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
+import { ConnectWallet } from "popup/views/AddAccount/connect/ConnectWallet";
+import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
@@ -247,6 +249,12 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.importAccount}>
           <ImportAccount />
+        </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.connectWallet}>
+          <ConnectWallet />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.connectWalletPlugin}>
+          <PluginWallet />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />

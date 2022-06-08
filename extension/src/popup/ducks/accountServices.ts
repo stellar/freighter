@@ -238,15 +238,17 @@ interface InitialState {
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
+  connectingWalletType: string;
   error: string;
 }
 
 const initialState: InitialState = {
   allAccounts: [],
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
-  publicKey: "",
-  error: "",
   hasPrivateKey: false,
+  publicKey: "",
+  connectingWalletType: "",
+  error: "",
 };
 
 const authSlice = createSlice({
@@ -255,6 +257,9 @@ const authSlice = createSlice({
   reducers: {
     clearApiError(state) {
       state.error = "";
+    },
+    setConnectingWalletType(state, action) {
+      state.connectingWalletType = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -516,6 +521,6 @@ export const accountNameSelector = createSelector(
   },
 );
 
-export const { clearApiError } = authSlice.actions;
+export const { clearApiError, setConnectingWalletType } = authSlice.actions;
 
 export { reducer };

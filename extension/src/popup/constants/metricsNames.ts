@@ -6,6 +6,8 @@ export const METRIC_NAMES = {
   viewAccountCreator: "loaded screen: account creator",
   viewAddAccount: "loaded screen: add account",
   viewImportAccount: "loaded screen: import account",
+  viewConnectWallet: "loaded screen: connect wallet",
+  viewConnectWalletPlugin: "loaded screen: connect wallet plugin",
   viewGrantAccess: "loaded screen: grant access",
   viewLoading: "loaded screen: loading",
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
