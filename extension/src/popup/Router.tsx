@@ -54,6 +54,7 @@ import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
 import { VerifyAccount } from "popup/views/VerifyAccount";
+import { Swap } from "popup/views/Swap";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -136,6 +137,23 @@ const UnlockAccountRoute = (props: RouteProps) => {
       <Redirect
         to={{
           pathname: "/",
+        }}
+      />
+    );
+  }
+  return <Route {...props} />;
+};
+
+export const VerifiedAccountRoute = (props: RouteProps) => {
+  const location = useLocation();
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  if (!hasPrivateKey) {
+    return (
+      <Redirect
+        to={{
+          pathname: ROUTES.verifyAccount,
+          state: { from: location },
         }}
       />
     );
@@ -280,6 +298,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.manageAssets}>
           <ManageAssets />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.swap}>
+          <Swap />
         </PublicKeyRoute>
         <HomeRoute />
         {DEV_SERVER && (
