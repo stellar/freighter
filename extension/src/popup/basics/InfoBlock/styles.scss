@@ -1,6 +1,7 @@
 .BasicInfoBlock {
   .InfoBlock {
     border: none;
+    border-radius: 0.5rem;
     display: flex;
     font-size: var(--font-size-secondary);
     gap: 0.5rem;

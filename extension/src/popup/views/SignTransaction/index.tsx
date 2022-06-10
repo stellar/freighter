@@ -1,18 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Card } from "@stellar/design-system";
+import { Card, Icon } from "@stellar/design-system";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
-import { getTransactionInfo } from "helpers/stellar";
+import { getTransactionInfo, truncatedPublicKey } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
+import { InfoBlock } from "popup/basics/InfoBlock";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { TransactionHeading } from "popup/basics/Transaction";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import {
   allAccountsSelector,
+  hasPrivateKeySelector,
+  makeAccountActive,
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -25,10 +29,8 @@ import {
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import {
-  AccountList,
-  AccountListItem,
-} from "popup/components/account/AccountList";
+import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
+import { AccountList, ImportedTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessage,
@@ -36,7 +38,7 @@ import {
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
-import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
+import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
 import { Account } from "@shared/api/types";
 
@@ -60,17 +62,15 @@ export const SignTransaction = () => {
     _sequence,
   } = transaction;
 
-  console.log(accountToSign);
   const isFeeBump = !!_innerTransaction;
   const memo = decodeMemo(_memo);
 
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentAccount, setCurrentAccount] = useState({} as Account);
+  const [accountNotFound, setAccountNotFound] = useState(false);
 
   const accountSelectorRef = useRef<HTMLDivElement>(null);
-
-  console.log(isDropdownOpen);
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
@@ -99,6 +99,10 @@ export const SignTransaction = () => {
   );
   const allAccounts = useSelector(allAccountsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  // the public key the user had selected before starting this flow
+  const defaultPublicKey = useRef(publicKey);
 
   useEffect(() => {
     if (isMemoRequired) {
@@ -113,18 +117,47 @@ export const SignTransaction = () => {
   }, [isMemoRequired, isMalicious, isUnsafe]);
 
   useEffect(() => {
-    const currentAccountDetails = allAccounts.find(
-      ({ publicKey: currentPublicKey }) => currentPublicKey === publicKey,
-    );
+    // handle auto selecting the right account based on `accountToSign`
+    let currentAccountDetails;
+    let defaultAccountDetails;
+
+    allAccounts.forEach((account) => {
+      if (accountToSign) {
+        // does the user have the `accountToSign` somewhere in the accounts list?
+        if (account.publicKey === accountToSign) {
+          // if the `accountToSign` is found, but it isn't active, make it active
+          if (defaultPublicKey.current !== account.publicKey) {
+            dispatch(makeAccountActive(account.publicKey));
+          }
+
+          currentAccountDetails = account;
+        }
+      }
+
+      // In case we don't find `accountToSign` above, or `accountToSign` is null, save the account the user had already selected
+      if (account.publicKey === defaultPublicKey.current) {
+        defaultAccountDetails = account;
+      }
+    });
 
     if (currentAccountDetails) {
       setCurrentAccount(currentAccountDetails);
+    } else {
+      setCurrentAccount(defaultAccountDetails || ({} as Account));
+      setAccountNotFound(true);
     }
-  }, [allAccounts, publicKey]);
+  }, [accountToSign, allAccounts, dispatch]);
 
   useEffect(() => {
-    console.log(accountSelectorRef?.current?.clientHeight);
-  }, [accountSelectorRef]);
+    // handle the user manually changing their account using the selector
+    if (publicKey !== defaultPublicKey.current) {
+      setCurrentAccount(
+        allAccounts.find(
+          ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+        ) || ({} as Account),
+      );
+    }
+  }, [allAccounts, publicKey]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
@@ -170,17 +203,36 @@ export const SignTransaction = () => {
               <div className="SignTransaction__approval__title">
                 Approve using:
               </div>
-              <div onClick={() => setIsDropdownOpen(true)}>
-                <AccountListItem
+              <div
+                className="SignTransaction__current-account"
+                onClick={() => setIsDropdownOpen(true)}
+              >
+                <AccountListIdenticon
+                  displayKey
                   accountName={currentAccount.name}
-                  isSelected
-                  accountPublicKey={currentAccount.publicKey}
+                  active
+                  publicKey={currentAccount.publicKey}
                   setIsDropdownOpen={setIsDropdownOpen}
-                  imported={currentAccount.imported}
-                />
+                >
+                  {currentAccount.imported ? <ImportedTag /> : null}
+                </AccountListIdenticon>
+                <div className="SignTransaction__current-account__chevron">
+                  <Icon.ChevronDown />
+                </div>
               </div>
+              {!hasPrivateKey ? <div>Enter Password</div> : null}
             </div>
           </Card>
+          {accountNotFound && accountToSign ? (
+            <div className="SignTransaction__account-not-found">
+              <InfoBlock variant={InfoBlock.variant.warning}>
+                The application is requesting a specific account (
+                {truncatedPublicKey(accountToSign)}), which is not available on
+                Freighter. If you own this account, you can import it into
+                Freighter to complete this transaction.
+              </InfoBlock>
+            </div>
+          ) : null}
         </div>
 
         {isFeeBump ? (
@@ -198,7 +250,8 @@ export const SignTransaction = () => {
             transaction={transaction}
           />
         )}
-        <TransactionHeader
+        <TransactionHeading>Transaction Info</TransactionHeading>
+        <TransactionInfo
           _fee={_fee}
           _sequence={_sequence}
           isFeeBump={isFeeBump}

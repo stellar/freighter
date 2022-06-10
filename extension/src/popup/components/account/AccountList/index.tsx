@@ -7,7 +7,7 @@ import { Account } from "@shared/api/types";
 
 import "./styles.scss";
 
-const ImportedTagEl = () => (
+export const ImportedTag = () => (
   <span className="AccountList__option-tag">&bull; Imported</span>
 );
 
@@ -34,7 +34,7 @@ export const AccountListItem = ({
       publicKey={accountPublicKey}
       setIsDropdownOpen={setIsDropdownOpen}
     >
-      {imported ? <ImportedTagEl /> : null}
+      {imported ? <ImportedTag /> : null}
     </AccountListIdenticon>
     <span className="AccountList__option-check">
       {isSelected ? <Icon.Check /> : null}

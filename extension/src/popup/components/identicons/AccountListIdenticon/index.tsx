@@ -29,6 +29,7 @@ export const AccountListIdenticon = ({
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
+    console.log(1);
     if (!active) {
       dispatch(makeAccountActive(publicKey));
     }

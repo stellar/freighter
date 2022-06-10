@@ -29,7 +29,7 @@ const getMemoDisplay = ({
   return null;
 };
 
-interface TransactionListProps {
+interface TransactionInfoProps {
   _fee: number;
   _sequence: string;
   isFeeBump?: boolean;
@@ -37,18 +37,18 @@ interface TransactionListProps {
   memo?: string;
 }
 
-export const TransactionHeader = ({
+export const TransactionInfo = ({
   _fee,
   _sequence,
   isFeeBump,
   isMemoRequired,
   memo,
-}: TransactionListProps) => (
-  <div className="TransactionHeader">
+}: TransactionInfoProps) => (
+  <div className="TransactionInfo">
     {_fee ? (
       <div>
         <div>
-          <strong>Base fee:</strong>
+          <strong>Base fee</strong>
         </div>
         <div> {stroopToXlm(_fee).toString()} XLM</div>
       </div>
@@ -56,7 +56,7 @@ export const TransactionHeader = ({
     {memo ? (
       <div>
         <div>
-          <strong>Memo:</strong>
+          <strong>Memo</strong>
         </div>
         <div> {getMemoDisplay({ memo, isMemoRequired })} </div>
       </div>
@@ -65,7 +65,7 @@ export const TransactionHeader = ({
     {_sequence ? (
       <div>
         <div>
-          <strong>Transaction sequence number:</strong>
+          <strong>Transaction sequence number</strong>
         </div>
         <div> {_sequence}</div>
       </div>
@@ -73,7 +73,7 @@ export const TransactionHeader = ({
     {isFeeBump ? (
       <div>
         <div>
-          <strong>Inner Transaction:</strong>
+          <strong>Inner Transaction</strong>
         </div>
       </div>
     ) : null}

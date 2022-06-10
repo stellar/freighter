@@ -251,9 +251,9 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />
         </PublicKeyRoute>
-        <PrivateKeyRoute path={ROUTES.signTransaction}>
+        <PublicKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
-        </PrivateKeyRoute>
+        </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
           <DisplayBackupPhrase />
         </PublicKeyRoute>
