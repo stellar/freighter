@@ -82,6 +82,7 @@ export const freighterApiMessageListener = (
     const {
       transactionXdr,
       network = MAINNET_NETWORK_DETAILS.network,
+      accountToSign,
     } = request;
     const isTestnet = getIsTestnet();
     const { networkUrl } = getNetworkDetails(isTestnet);
@@ -157,6 +158,7 @@ export const freighterApiMessageListener = (
       isDomainListedAllowed,
       url: tabUrl,
       flaggedKeys,
+      accountToSign,
     } as TransactionInfo;
 
     transactionQueue.push(transaction);

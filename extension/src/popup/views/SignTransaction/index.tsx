@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { Card } from "@stellar/design-system";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -8,7 +9,12 @@ import { emitMetric } from "helpers/metrics";
 import { getTransactionInfo } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import {
+  allAccountsSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import {
@@ -19,7 +25,11 @@ import {
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { ModalInfo } from "popup/components/ModalInfo";
+import {
+  AccountList,
+  AccountListItem,
+} from "popup/components/account/AccountList";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessage,
   FirstTimeWarningMessage,
@@ -28,15 +38,17 @@ import {
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
 
+import { Account } from "@shared/api/types";
+
 import "./styles.scss";
 
 export const SignTransaction = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const {
+    accountToSign,
     transaction,
     domain,
-    domainTitle,
     isDomainListedAllowed,
     flaggedKeys,
   } = getTransactionInfo(location.search);
@@ -47,11 +59,18 @@ export const SignTransaction = () => {
     _networkPassphrase,
     _sequence,
   } = transaction;
+
+  console.log(accountToSign);
   const isFeeBump = !!_innerTransaction;
-  const source = isFeeBump ? _innerTransaction._source : transaction._source;
   const memo = decodeMemo(_memo);
 
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentAccount, setCurrentAccount] = useState({} as Account);
+
+  const accountSelectorRef = useRef<HTMLDivElement>(null);
+
+  console.log(isDropdownOpen);
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
@@ -75,6 +94,12 @@ export const SignTransaction = () => {
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
+  const { networkName, otherNetworkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
+  const allAccounts = useSelector(allAccountsSelector);
+  const publicKey = useSelector(publicKeySelector);
+
   useEffect(() => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
@@ -87,11 +112,21 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired, isMalicious, isUnsafe]);
 
-  const isSubmitDisabled = isMemoRequired || isMalicious;
+  useEffect(() => {
+    const currentAccountDetails = allAccounts.find(
+      ({ publicKey: currentPublicKey }) => currentPublicKey === publicKey,
+    );
 
-  const { networkName, otherNetworkName, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
+    if (currentAccountDetails) {
+      setCurrentAccount(currentAccountDetails);
+    }
+  }, [allAccounts, publicKey]);
+
+  useEffect(() => {
+    console.log(accountSelectorRef?.current?.clientHeight);
+  }, [accountSelectorRef]);
+
+  const isSubmitDisabled = isMemoRequired || isMalicious;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -109,7 +144,7 @@ export const SignTransaction = () => {
   }
 
   return (
-    <>
+    <div className="SignTransaction">
       <ModalWrapper>
         <ModalHeader>
           <strong>Confirm Transaction</strong>
@@ -124,20 +159,29 @@ export const SignTransaction = () => {
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
-        <ModalInfo
-          domain={domain}
-          domainTitle={domainTitle}
-          subject={`This website is requesting a signature to the following${" "}
-            ${isFeeBump ? "fee bump " : ""}transaction:`}
-        >
-          <TransactionHeader
-            _fee={_fee}
-            _sequence={_sequence}
-            source={source}
-            isFeeBump={isFeeBump}
-            isMemoRequired={isMemoRequired}
-          />
-        </ModalInfo>
+        <div className="SignTransaction__info">
+          <Card variant={Card.variant.highlight}>
+            <PunycodedDomain domain={domain} isRow />
+            <div className="SignTransaction__subject">
+              is requesting approval to a {isFeeBump ? "fee bump " : ""}
+              transaction:
+            </div>
+            <div className="SignTransaction__approval">
+              <div className="SignTransaction__approval__title">
+                Approve using:
+              </div>
+              <div onClick={() => setIsDropdownOpen(true)}>
+                <AccountListItem
+                  accountName={currentAccount.name}
+                  isSelected
+                  accountPublicKey={currentAccount.publicKey}
+                  setIsDropdownOpen={setIsDropdownOpen}
+                  imported={currentAccount.imported}
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
 
         {isFeeBump ? (
           <div className="SignTransaction__inner-transaction">
@@ -154,6 +198,12 @@ export const SignTransaction = () => {
             transaction={transaction}
           />
         )}
+        <TransactionHeader
+          _fee={_fee}
+          _sequence={_sequence}
+          isFeeBump={isFeeBump}
+          isMemoRequired={isMemoRequired}
+        />
       </ModalWrapper>
       <ButtonsContainer>
         <Button
@@ -172,6 +222,25 @@ export const SignTransaction = () => {
           Sign Transaction
         </Button>
       </ButtonsContainer>
-    </>
+      <div
+        className="SignTransaction__account-selector"
+        ref={accountSelectorRef}
+        style={{
+          bottom: isDropdownOpen
+            ? "0px"
+            : `-${accountSelectorRef?.current?.clientHeight}px`,
+        }}
+      >
+        <AccountList
+          allAccounts={allAccounts}
+          publicKey={publicKey}
+          setIsDropdownOpen={setIsDropdownOpen}
+        />
+      </div>
+      <LoadingBackground
+        onClick={() => setIsDropdownOpen(false)}
+        isActive={isDropdownOpen}
+      />
+    </div>
   );
 };

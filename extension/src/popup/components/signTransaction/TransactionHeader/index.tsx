@@ -3,8 +3,6 @@ import { Icon, IconButton } from "@stellar/design-system";
 
 import { stroopToXlm } from "helpers/stellar";
 
-import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-
 import "./styles.scss";
 
 const getMemoDisplay = ({
@@ -34,7 +32,6 @@ const getMemoDisplay = ({
 interface TransactionListProps {
   _fee: number;
   _sequence: string;
-  source: string;
   isFeeBump?: boolean;
   isMemoRequired: boolean;
   memo?: string;
@@ -43,21 +40,11 @@ interface TransactionListProps {
 export const TransactionHeader = ({
   _fee,
   _sequence,
-  source,
   isFeeBump,
   isMemoRequired,
   memo,
 }: TransactionListProps) => (
   <div className="TransactionHeader">
-    <div>
-      <div>
-        <strong>Source account:</strong>
-      </div>
-      <div>
-        <KeyIdenticon publicKey={source} />
-      </div>
-    </div>
-
     {_fee ? (
       <div>
         <div>

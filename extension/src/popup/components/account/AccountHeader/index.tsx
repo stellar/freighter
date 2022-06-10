@@ -1,19 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { Account } from "@shared/api/types";
-import { Icon } from "@stellar/design-system";
+
+import { AccountList } from "popup/components/account/AccountList";
 
 import "./styles.scss";
-
-const ImportedTagEl = () => (
-  <span className="AccountHeader--option-tag">&bull; Imported</span>
-);
 
 interface AccountHeaderProps {
   accountDropDownRef: React.RefObject<HTMLDivElement>;
@@ -64,31 +63,11 @@ export const AccountHeader = ({
         </div>
       </div>
       <ul ref={dropdownRef} className="AccountHeader__options-dropdown">
-        {allAccounts.map(
-          ({ publicKey: accountPublicKey, name: accountName, imported }) => {
-            const isSelected = publicKey === accountPublicKey;
-
-            return (
-              <li
-                className="AccountHeader__account-list-item"
-                key={`account-${accountName}`}
-              >
-                <AccountListIdenticon
-                  displayKey
-                  accountName={accountName}
-                  active={isSelected}
-                  publicKey={accountPublicKey}
-                  setIsDropdownOpen={setIsDropdownOpen}
-                >
-                  {imported ? <ImportedTagEl /> : null}
-                </AccountListIdenticon>
-                <span className="AccountHeader--option-check">
-                  {isSelected ? <Icon.Check /> : null}
-                </span>
-              </li>
-            );
-          },
-        )}
+        <AccountList
+          allAccounts={allAccounts}
+          publicKey={publicKey}
+          setIsDropdownOpen={setIsDropdownOpen}
+        />
         <hr className="AccountHeader__list-divider" />
         <li className="AccountHeader__option-list-item">
           <Link
@@ -123,12 +102,10 @@ export const AccountHeader = ({
           </Link>
         </li>
       </ul>
-      <div
+      <LoadingBackground
         onClick={() => setIsDropdownOpen(false)}
-        className={`AccountHeader__dropdown-background ${
-          isDropdownOpen ? "activate" : null
-        }`}
-      ></div>
+        isActive={isDropdownOpen}
+      />
     </div>
   );
 };
