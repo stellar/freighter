@@ -39,6 +39,26 @@ const AddManualAssetLink = () => (
   </div>
 );
 
+const ResultsHeader = () => (
+  <div className="SearchAsset__InfoBlock">
+    <InfoBlock>
+      <div>
+        Multiple assets have a similar code, please check the domain before
+        adding.
+        <div>
+          <a
+            href="https://developers.stellar.org/docs/issuing-assets/publishing-asset-info/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Learn more about assets domains
+          </a>
+        </div>
+      </div>
+    </InfoBlock>
+  </div>
+);
+
 export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
   const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -46,26 +66,6 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
-
-  const ResultsHeader = () => (
-    <div className="SearchAsset__InfoBlock">
-      <InfoBlock>
-        <div>
-          Multiple assets have a similar code, please check the domain before
-          adding.
-          <div>
-            <a
-              href="https://developers.stellar.org/docs/issuing-assets/publishing-asset-info/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Learn more about assets domains
-            </a>
-          </div>
-        </div>
-      </InfoBlock>
-    </div>
-  );
 
   interface AssetRecord {
     asset: string;
