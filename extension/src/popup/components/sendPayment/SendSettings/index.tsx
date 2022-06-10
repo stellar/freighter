@@ -47,6 +47,14 @@ export const SendSettings = ({
     }
   }, [dispatch, recommendedFee, transactionFee]);
 
+  const handleTxFeeNav = () =>
+    navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
+
+  const handleSlippageNav = () =>
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
+    );
+
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !destination.startsWith("M");
   const showSlippage = isPathPayment || isSwap;
@@ -69,7 +77,13 @@ export const SendSettings = ({
               <FormRows>
                 <div className="SendSettings__row">
                   <div className="SendSettings__row__left">
-                    <span className="SendSettings__row__title">
+                    <span
+                      className="SendSettings__row__title SendSettings__clickable"
+                      onClick={() => {
+                        submitForm();
+                        handleTxFeeNav();
+                      }}
+                    >
                       Transaction fee
                     </span>
                     <DetailsTooltip
@@ -91,29 +105,29 @@ export const SendSettings = ({
                       <span></span>
                     </DetailsTooltip>
                   </div>
-                  <div className="SendSettings__row__right">
+                  <div
+                    className="SendSettings__row__right SendSettings__clickable"
+                    onClick={() => {
+                      submitForm();
+                      handleTxFeeNav();
+                    }}
+                  >
                     <span>{transactionFee} XLM</span>
                     <div>
-                      <div
-                        className="SendSettings__nav-btn"
-                        onClick={() => {
-                          submitForm();
-                          navigateTo(
-                            isSwap
-                              ? ROUTES.swapSettingsFee
-                              : ROUTES.sendPaymentSettingsFee,
-                          );
-                        }}
-                      >
-                        <Icon.ChevronRight />
-                      </div>
+                      <Icon.ChevronRight />
                     </div>
                   </div>
                 </div>
                 {showSlippage && (
-                  <div className="SendSettings__row">
+                  <div className="SendSettings__row ">
                     <div className="SendSettings__row__left">
-                      <span className="SendSettings__row__title">
+                      <span
+                        className="SendSettings__row__title SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleSlippageNav();
+                        }}
+                      >
                         Allowed slippage
                       </span>
                       <DetailsTooltip
@@ -135,22 +149,16 @@ export const SendSettings = ({
                         <span></span>
                       </DetailsTooltip>
                     </div>
-                    <div className="SendSettings__row__right">
+                    <div
+                      className="SendSettings__row__right SendSettings__clickable"
+                      onClick={() => {
+                        submitForm();
+                        handleSlippageNav();
+                      }}
+                    >
                       <span>{allowedSlippage}%</span>
                       <div>
-                        <div
-                          className="SendSettings__nav-btn"
-                          onClick={() => {
-                            submitForm();
-                            navigateTo(
-                              isSwap
-                                ? ROUTES.swapSettingsSlippage
-                                : ROUTES.sendPaymentSettingsSlippage,
-                            );
-                          }}
-                        >
-                          <Icon.ChevronRight />
-                        </div>
+                        <Icon.ChevronRight />
                       </div>
                     </div>
                   </div>
