@@ -67,6 +67,12 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
     </div>
   );
 
+  interface AssetRecord {
+    asset: string;
+    domain?: string;
+    tomlInfo?: { image: string };
+  }
+
   const handleSearch = useCallback(
     debounce(async ({ target: { value: asset } }) => {
       let res;
@@ -93,12 +99,12 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
       setIsSearching(false);
 
       setAssetRows(
-        resJson._embedded.records.map(
-          (record: {
-            asset: string;
-            domain: string;
-            tomlInfo?: { image: string };
-          }) => {
+        resJson._embedded.records
+          // only show records that have a domain and domains that don't have just whitespace
+          .filter(
+            (record: AssetRecord) => record.domain && /\S/.test(record.domain),
+          )
+          .map((record: AssetRecord) => {
             const assetSplit = record.asset.split("-");
             return {
               code: assetSplit[0],
@@ -106,8 +112,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
               image: record?.tomlInfo?.image,
               domain: record.domain,
             };
-          },
-        ),
+          }),
       );
     }, 500),
     [],
@@ -134,6 +139,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
                 <Field name="asset">
                   {({ field }: FieldProps) => (
                     <Input
+                      autoFocus
                       autoComplete="off"
                       id="asset"
                       placeholder="Search for an asset"
@@ -153,7 +159,12 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
                   </a>
                 </div>
               </div>
-              <div className="SearchAsset__results" ref={ResultsRef}>
+              <div
+                className={`SearchAsset__results ${
+                  dirty ? "SearchAsset__results--active" : ""
+                }`}
+                ref={ResultsRef}
+              >
                 {isSearching ? (
                   <div className="SearchAsset__overlay">
                     <div className="SearchAsset__loader">
@@ -176,7 +187,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
                   <AddManualAssetLink />
                 ) : null}
               </div>
-              {!dirty ? (
+              {!dirty && hasNoResults ? (
                 <div>
                   <Link to={ROUTES.addAsset}>
                     <Button fullWidth variant={Button.variant.tertiary}>
