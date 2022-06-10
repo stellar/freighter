@@ -6,6 +6,7 @@ import { ROUTES } from "popup/constants/routes";
 import HistoryIcon from "popup/assets/icon-history.svg";
 import WalletIcon from "popup/assets/icon-wallet.svg";
 import SettingsIcon from "popup/assets/icon-settings.svg";
+import SwapIcon from "popup/assets/icon-swap.svg";
 
 import "./styles.scss";
 
@@ -32,7 +33,9 @@ export const BottomNav = () => (
     <BottomNavLink to={ROUTES.accountHistory}>
       <img src={HistoryIcon} alt="history icon" />
     </BottomNavLink>
-    {/* <img src={SwapIcon} alt="swap icon" /> */}
+    <BottomNavLink to={ROUTES.swap}>
+      <img src={SwapIcon} alt="swap icon" />
+    </BottomNavLink>
     <BottomNavLink to={ROUTES.settings}>
       <img src={SettingsIcon} alt="settings icon" />
     </BottomNavLink>
