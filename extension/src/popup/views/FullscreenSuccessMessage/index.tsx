@@ -70,7 +70,7 @@ const RecoverAccountSuccessMessage = () => (
     <div className="FullscreenSuccessMessage__copy">
       <p>
         You successfully imported your account. Keep your recovery phrase safe,
-        it's your responsibility
+        it’s your responsibility
       </p>
     </div>
     <AvoidScamsWarningBlock />
