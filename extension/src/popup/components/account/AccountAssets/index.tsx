@@ -42,9 +42,8 @@ export const AssetIcon = ({
         onError={() => {
           if (retryAssetIconFetch) {
             retryAssetIconFetch({ key: issuerKey, code });
-          } else {
-            setHasError(true);
           }
+          setHasError(true);
         }}
         onLoad={() => {
           setIsLoading(false);
