@@ -13,8 +13,14 @@ import { Header } from "popup/components/Header";
 import { OnboardingHeader } from "popup/components/Onboarding";
 import { Button } from "popup/basics/buttons/Button";
 import SuccessIllo from "popup/assets/illo-success-screen.svg";
+import ExtensionIllo from "popup/assets/illo-extension.png";
 
 import "./styles.scss";
+
+// userAgent sniffing is not foolproof so shouldn't expect this method
+// to be 100% accurate.
+const isChrome = () =>
+  navigator.userAgent.toLowerCase().indexOf("chrome") > -1 && !!window.chrome;
 
 const AvoidScamsWarningBlock = () => (
   <div className="FullscreenSuccessMessage__infoBlock">
@@ -56,10 +62,14 @@ const MnemonicPhraseConfirmedMessage = () => (
         fullWidth
         onClick={() => {
           emitMetric(METRIC_NAMES.accountCreatorFinished);
-          navigateTo(ROUTES.pinExtension);
+          if (isChrome()) {
+            navigateTo(ROUTES.pinExtension);
+          } else {
+            window.close();
+          }
         }}
       >
-        CONTINUE
+        {isChrome() ? "CONTINUE" : "ALL DONE"}
       </Button>
     </SubmitButtonWrapper>
   </>
@@ -72,17 +82,37 @@ const RecoverAccountSuccessMessage = () => (
         You successfully imported your account. Keep your recovery phrase safe,
         it’s your responsibility
       </p>
+      {!isChrome() && (
+        <p>
+          Check your account details by clicking on the Freighter icon on your
+          browser.
+        </p>
+      )}
     </div>
-    <AvoidScamsWarningBlock />
+    {isChrome() ? (
+      <AvoidScamsWarningBlock />
+    ) : (
+      <div className="FullscreenSuccessMessage__illo-container">
+        <img
+          className="FullscreenSuccessMessage__extension-image"
+          src={ExtensionIllo}
+          alt="Extension"
+        />
+      </div>
+    )}
     <SubmitButtonWrapper>
       <Button
         fullWidth
         onClick={() => {
           emitMetric(METRIC_NAMES.recoverAccountFinished);
-          navigateTo(ROUTES.pinExtension);
+          if (isChrome()) {
+            navigateTo(ROUTES.pinExtension);
+          } else {
+            window.close();
+          }
         }}
       >
-        CONTINUE
+        {isChrome() ? "CONTINUE" : "ALL DONE"}
       </Button>
     </SubmitButtonWrapper>
   </>
