@@ -55,6 +55,7 @@ import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
+import { PinExtension } from "popup/views/PinExtension";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -280,6 +281,9 @@ export const Router = () => {
         </UnlockAccountRoute>
         <PublicKeyRoute path={ROUTES.mnemonicPhraseConfirmed}>
           <FullscreenSuccessMessage />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.pinExtension}>
+          <PinExtension />
         </PublicKeyRoute>
         <Route path={ROUTES.accountCreator}>
           <AccountCreator />

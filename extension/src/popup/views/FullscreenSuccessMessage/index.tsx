@@ -5,18 +5,42 @@ import { emitMetric } from "helpers/metrics";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-
+import { navigateTo } from "popup/helpers/navigate";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { SubmitButtonWrapper } from "popup/basics/Forms";
-
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { OnboardingHeader } from "popup/components/Onboarding";
 import { Button } from "popup/basics/buttons/Button";
 import SuccessIllo from "popup/assets/illo-success-screen.svg";
-import ExtensionIllo from "popup/assets/illo-extension.png";
 
 import "./styles.scss";
+
+const AvoidScamsWarningBlock = () => (
+  <div className="FullscreenSuccessMessage__infoBlock">
+    <InfoBlock variant={InfoBlock.variant.warning}>
+      <div className="InfoBlock__content">
+        <div className="InfoBlock__header">
+          Avoid scams and keep your account safe
+        </div>
+        <ul>
+          <li>
+            Freighter will never ask for your recovery phrase unless you're
+            actively importing your account using the browser extension - never
+            on an external website.
+          </li>
+          <li>
+            Always check the domain of websites you’re using Freighter with
+          </li>
+          <li>
+            Freighter cannot recover your account if you lose your recovery
+            phrase, so keep it safe
+          </li>
+        </ul>
+      </div>
+    </InfoBlock>
+  </div>
+);
 
 const MnemonicPhraseConfirmedMessage = () => (
   <>
@@ -26,38 +50,16 @@ const MnemonicPhraseConfirmedMessage = () => (
         responsibility.
       </p>
     </div>
-    <div className="FullscreenSuccessMessage__infoBlock">
-      <InfoBlock variant={InfoBlock.variant.warning}>
-        <div className="InfoBlock__content">
-          <div className="InfoBlock__header">
-            Avoid scams and keep your account safe:
-          </div>
-          <ul>
-            <li>
-              Freighter will never ask for your recovery phrase unless you're
-              actively importing your account using the browser extension -
-              never on an external website.
-            </li>
-            <li>
-              Always check the domain of websites you’re using Freighter with
-            </li>
-            <li>
-              Freighter cannot recover your account if you lose your recovery
-              phrase, so keep it safe
-            </li>
-          </ul>
-        </div>
-      </InfoBlock>
-    </div>
+    <AvoidScamsWarningBlock />
     <SubmitButtonWrapper>
       <Button
         fullWidth
         onClick={() => {
           emitMetric(METRIC_NAMES.accountCreatorFinished);
-          window.close();
+          navigateTo(ROUTES.pinExtension);
         }}
       >
-        GOT IT
+        CONTINUE
       </Button>
     </SubmitButtonWrapper>
   </>
@@ -66,28 +68,21 @@ const MnemonicPhraseConfirmedMessage = () => (
 const RecoverAccountSuccessMessage = () => (
   <>
     <div className="FullscreenSuccessMessage__copy">
-      <p>You successfully imported your account.</p>
       <p>
-        Check your account details by clicking on the Freighter icon on your
-        browser.
+        You successfully imported your account. Keep your recovery phrase safe,
+        it's your responsibility
       </p>
     </div>
-    <div className="FullscreenSuccessMessage__illo-container">
-      <img
-        className="FullscreenSuccessMessage__extension-image"
-        src={ExtensionIllo}
-        alt="Extension"
-      />
-    </div>
+    <AvoidScamsWarningBlock />
     <SubmitButtonWrapper>
       <Button
         fullWidth
         onClick={() => {
           emitMetric(METRIC_NAMES.recoverAccountFinished);
-          window.close();
+          navigateTo(ROUTES.pinExtension);
         }}
       >
-        ALL DONE
+        CONTINUE
       </Button>
     </SubmitButtonWrapper>
   </>
