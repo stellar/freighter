@@ -17,13 +17,13 @@ export const PinExtension = () => (
           Pin the extension in your browser to access it easily.
         </div>
         <div className="PinExtension__caption">
-          1. Click on the Extensions menu in your browser
+          1. Click on the extensions button at the top of your browser’s bar
         </div>
         <div className="PinExtension__img">
           <img src={ExtensionsMenu} alt="Extensions Menu" />
         </div>
         <div className="PinExtension__caption">
-          2. Find Freighter in the list of extensions and click the Pin button
+          2. Click on Freighter’s pin button to have it always visibile
         </div>
         <div className="PinExtension__img">
           <img src={ExtensionsPin} alt="Extensions Pin" />
