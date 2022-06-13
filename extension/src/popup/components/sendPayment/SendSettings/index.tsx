@@ -119,7 +119,7 @@ export const SendSettings = ({
                   </div>
                 </div>
                 {showSlippage && (
-                  <div className="SendSettings__row ">
+                  <div className="SendSettings__row">
                     <div className="SendSettings__row__left">
                       <span
                         className="SendSettings__row__title SendSettings__clickable"
