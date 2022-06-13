@@ -166,10 +166,8 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
                 ref={ResultsRef}
               >
                 {isSearching ? (
-                  <div className="SearchAsset__overlay">
-                    <div className="SearchAsset__loader">
-                      <Loader />
-                    </div>
+                  <div className="SearchAsset__loader">
+                    <Loader />
                   </div>
                 ) : null}
 

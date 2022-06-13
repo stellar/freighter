@@ -47,12 +47,19 @@
     border-radius: 100px;
     padding: 0.25rem 0.5rem;
 
-    img {
-      width: 1rem;
-      height: 1rem;
+    .AccountAssets__asset--logo {
+      display: flex;
+      width: 0.875rem;
+      height: 0.875rem;
       border-radius: 1rem;
-      background: var(--pal-brand-primary-on);
       margin-right: 0.5rem;
+    }
+
+    .AccountAssets__asset--error {
+      img {
+        width: 0.4375rem;
+        height: 0.4375rem;
+      }
     }
 
     span {

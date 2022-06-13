@@ -23,21 +23,6 @@
     }
   }
 
-  &__overlay {
-    position: absolute;
-    height: var(--popup--height);
-    width: var(--popup--width);
-    display: flex;
-    flex-direction: column;
-    background: black;
-    z-index: calc(var(--back--button-z-index) + 1);
-    opacity: 0.8;
-    align-items: center;
-    justify-content: center;
-    top: 0;
-    left: 0;
-  }
-
   &__loader {
     position: absolute;
     top: calc(50% - var(--SearchAsset--loader--dimension));
