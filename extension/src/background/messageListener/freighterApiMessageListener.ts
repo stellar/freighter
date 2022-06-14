@@ -116,7 +116,7 @@ export const freighterApiMessageListener = (
         accountData.forEach(
           ({ address, tags }: { address: string; tags: Array<string> }) => {
             if (address === operation.destination) {
-              const collectedTags = [...tags];
+              let collectedTags = [...tags];
 
               /* if the user has opted out of validation, remove applicable tags */
               if (!isValidatingMemo) {
@@ -125,10 +125,10 @@ export const freighterApiMessageListener = (
                 );
               }
               if (!isValidatingSafety) {
-                collectedTags.filter(
+                collectedTags = collectedTags.filter(
                   (tag) => tag !== TRANSACTION_WARNING.unsafe,
                 );
-                collectedTags.filter(
+                collectedTags = collectedTags.filter(
                   (tag) => tag !== TRANSACTION_WARNING.malicious,
                 );
               }

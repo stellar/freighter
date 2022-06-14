@@ -372,7 +372,7 @@ export const SendAmount = ({
                     <AssetSelect
                       assetCode={parsedSourceAsset.code}
                       issuerKey={parsedSourceAsset.issuer}
-                    ></AssetSelect>
+                    />
                   )}
                   {showSourceAndDestAsset && (
                     <>

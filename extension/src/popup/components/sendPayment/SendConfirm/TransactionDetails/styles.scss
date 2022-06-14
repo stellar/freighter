@@ -14,9 +14,14 @@
       padding: 1rem;
     }
 
-    img {
+    .AccountAssets__asset--logo {
       width: 1.5rem;
       height: 1.5rem;
+    }
+
+    .AccountAssets__asset--error img {
+      width: 0.75rem;
+      height: 0.75rem;
     }
   }
 
@@ -132,12 +137,6 @@
       align-items: center;
       font-weight: var(--font-weight-medium);
       color: var(--pal-text-primary);
-
-      img {
-        width: 1.5rem;
-        height: 1.5rem;
-        margin-right: 0.5rem;
-      }
     }
 
     &__right {

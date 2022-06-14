@@ -270,7 +270,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
         }
       />
-
       {!(isPathPayment || isSwap) && (
         <div className="TransactionDetails__cards">
           <Card>
@@ -320,6 +319,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           <div className="TransactionDetails__row__right">{memo || "None"}</div>
         </div>
       )}
+
       {(isPathPayment || isSwap) && (
         <div className="TransactionDetails__row">
           <div>Conversion rate </div>
