@@ -142,7 +142,7 @@ export const SignTransaction = () => {
 
   useEffect(() => {
     // handle auto selecting the right account based on `accountToSign`
-    let currentAccountDetails;
+    let autoSelectedAccountDetails;
     let defaultAccountDetails;
 
     allAccounts.forEach((account) => {
@@ -155,7 +155,7 @@ export const SignTransaction = () => {
           }
 
           // save the details of the `accountToSign`
-          currentAccountDetails = account;
+          autoSelectedAccountDetails = account;
         }
       }
 
@@ -165,8 +165,8 @@ export const SignTransaction = () => {
       }
     });
 
-    if (currentAccountDetails) {
-      setCurrentAccount(currentAccountDetails);
+    if (autoSelectedAccountDetails) {
+      setCurrentAccount(autoSelectedAccountDetails);
     } else {
       setCurrentAccount(defaultAccountDetails || ({} as Account));
       setAccountNotFound(true);
