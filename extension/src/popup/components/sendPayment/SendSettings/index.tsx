@@ -11,6 +11,7 @@ import {
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -24,12 +25,19 @@ import {
 
 import "../styles.scss";
 
-export const SendSettings = ({ previous }: { previous: ROUTES }) => {
+export const SendSettings = ({
+  previous,
+  next,
+}: {
+  previous: ROUTES;
+  next: ROUTES;
+}) => {
   const dispatch = useDispatch();
   const { destination, transactionFee, memo, allowedSlippage } = useSelector(
     transactionDataSelector,
   );
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
 
   // use default transaction fee if unset
@@ -39,11 +47,23 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
     }
   }, [dispatch, recommendedFee, transactionFee]);
 
+  const handleTxFeeNav = () =>
+    navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
+
+  const handleSlippageNav = () =>
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
+    );
+
+  // dont show memo for regular sends to Muxed, or for swaps
+  const showMemo = !isSwap && !destination.startsWith("M");
+  const showSlippage = isPathPayment || isSwap;
+
   return (
     <PopupWrapper>
       <div className="SendSettings">
         <SubviewHeader
-          title="Send Settings"
+          title={`${isSwap ? "Swap" : "Send"} Settings`}
           customBackAction={() => navigateTo(previous)}
         />
         <Formik
@@ -57,7 +77,13 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
               <FormRows>
                 <div className="SendSettings__row">
                   <div className="SendSettings__row__left">
-                    <span className="SendSettings__row__title">
+                    <span
+                      className="SendSettings__row__title SendSettings__clickable"
+                      onClick={() => {
+                        submitForm();
+                        handleTxFeeNav();
+                      }}
+                    >
                       Transaction fee
                     </span>
                     <DetailsTooltip
@@ -79,25 +105,29 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                       <span></span>
                     </DetailsTooltip>
                   </div>
-                  <div className="SendSettings__row__right">
+                  <div
+                    className="SendSettings__row__right SendSettings__clickable"
+                    onClick={() => {
+                      submitForm();
+                      handleTxFeeNav();
+                    }}
+                  >
                     <span>{transactionFee} XLM</span>
                     <div>
-                      <div
-                        className="SendSettings__nav-btn"
-                        onClick={() => {
-                          submitForm();
-                          navigateTo(ROUTES.sendPaymentSettingsFee);
-                        }}
-                      >
-                        <Icon.ChevronRight />
-                      </div>
+                      <Icon.ChevronRight />
                     </div>
                   </div>
                 </div>
-                {isPathPayment && (
+                {showSlippage && (
                   <div className="SendSettings__row">
                     <div className="SendSettings__row__left">
-                      <span className="SendSettings__row__title">
+                      <span
+                        className="SendSettings__row__title SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleSlippageNav();
+                        }}
+                      >
                         Allowed slippage
                       </span>
                       <DetailsTooltip
@@ -119,23 +149,21 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                         <span></span>
                       </DetailsTooltip>
                     </div>
-                    <div className="SendSettings__row__right">
+                    <div
+                      className="SendSettings__row__right SendSettings__clickable"
+                      onClick={() => {
+                        submitForm();
+                        handleSlippageNav();
+                      }}
+                    >
                       <span>{allowedSlippage}%</span>
                       <div>
-                        <div
-                          className="SendSettings__nav-btn"
-                          onClick={() => {
-                            submitForm();
-                            navigateTo(ROUTES.sendPaymentSettingsSlippage);
-                          }}
-                        >
-                          <Icon.ChevronRight />
-                        </div>
+                        <Icon.ChevronRight />
                       </div>
                     </div>
                   </div>
                 )}
-                {!destination.startsWith("M") && (
+                {showMemo && (
                   <>
                     <div className="SendSettings__row">
                       <div className="SendSettings__row__left">
@@ -182,7 +210,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     fullWidth
                     type="submit"
                     variant={Button.variant.tertiary}
-                    onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
+                    onClick={() => navigateTo(next)}
                   >
                     Review Send
                   </Button>

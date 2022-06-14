@@ -20,19 +20,25 @@ export const SendPayment = () => (
       <SendTo previous={ROUTES.account} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.sendPaymentAmount}>
-      <SendAmount previous={ROUTES.sendPaymentTo} />
+      <SendAmount
+        previous={ROUTES.sendPaymentTo}
+        next={ROUTES.sendPaymentSettings}
+      />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.sendPaymentType}>
       <SendType />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
-      <SendSettings previous={ROUTES.sendPaymentAmount} />
+      <SendSettings
+        previous={ROUTES.sendPaymentAmount}
+        next={ROUTES.sendPaymentConfirm}
+      />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
-      <SendSettingsFee />
+      <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
-      <SendSettingsSlippage />
+      <SendSettingsSlippage previous={ROUTES.sendPaymentSettings} />
     </PublicKeyRoute>
     <VerifiedAccountRoute exact path={ROUTES.sendPaymentConfirm}>
       <SendConfirm previous={ROUTES.sendPaymentSettings} />

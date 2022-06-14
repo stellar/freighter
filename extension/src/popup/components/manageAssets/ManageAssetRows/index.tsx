@@ -8,7 +8,12 @@ import { AppDispatch } from "popup/App";
 
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
-import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import {
+  formatDomain,
+  getCanonicalFromAsset,
+  xlmToStroop,
+} from "helpers/stellar";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
 
@@ -35,12 +40,16 @@ import "./styles.scss";
 export type ManageAssetCurrency = CURRENCY & { domain: string };
 
 interface ManageAssetRowsProps {
+  children?: React.ReactNode;
+  header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
   setErrorAsset: (errorAsset: string) => void;
   maxHeight: number;
 }
 
 export const ManageAssetRows = ({
+  children,
+  header,
   assetRows,
   setErrorAsset,
   maxHeight,
@@ -53,6 +62,7 @@ export const ManageAssetRows = ({
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
+  const { recommendedFee } = useNetworkFees();
 
   const server = new StellarSdk.Server(networkDetails.networkUrl);
 
@@ -68,7 +78,7 @@ export const ManageAssetRows = ({
     setAssetSubmitting(canonicalAsset);
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: StellarSdk.BASE_FEE,
+      fee: xlmToStroop(recommendedFee).toString(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
@@ -133,6 +143,7 @@ export const ManageAssetRows = ({
         maxHeight: `${maxHeight}px`,
       }}
     >
+      {header}
       <div className="ManageAssetRows__content">
         {assetRows.map(({ code, domain, image, issuer }) => {
           if (!balances) return null;
@@ -173,6 +184,7 @@ export const ManageAssetRows = ({
           );
         })}
       </div>
+      {children}
     </SimpleBar>
   );
 };

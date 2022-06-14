@@ -27,6 +27,7 @@ export enum ROUTES {
   mnemonicPhrase = "/mnemonic-phrase",
   mnemonicPhraseConfirm = "/mnemonic-phrase/confirm",
   mnemonicPhraseConfirmed = "/mnemonic-phrase-confirmed",
+  pinExtension = "/pin-extension",
   unlockAccount = "/unlock-account",
   verifyAccount = "/verify-account",
   accountCreator = "/account-creator",
@@ -39,5 +40,6 @@ export enum ROUTES {
   security = "/settings/security",
   manageAssets = "/manage-assets",
   addAsset = "/manage-assets/add-asset",
+  searchAsset = "/manage-assets/search-asset",
   trustlineError = "/manage-assets/trustline-error",
 }

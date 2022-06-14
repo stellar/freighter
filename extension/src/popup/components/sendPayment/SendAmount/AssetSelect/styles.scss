@@ -39,11 +39,6 @@
     &__left {
       display: flex;
       align-items: center;
-      img {
-        height: 1.5rem;
-        width: 1.5rem;
-        margin: 0 0.5rem 0 0.75rem;
-      }
 
       svg {
         width: 1rem;
@@ -51,10 +46,15 @@
         margin: 0 0.5rem;
       }
 
-      .AccountAssets__asset--bullet {
+      .AccountAssets__asset--logo {
+        margin: 0 0.5rem 0 0.75rem;
         width: 1.5rem;
         height: 1.5rem;
-        margin: 0 0.5rem 0 0.75rem;
+      }
+
+      .AccountAssets__asset--error img {
+        width: 0.75rem;
+        height: 0.75rem;
       }
     }
 

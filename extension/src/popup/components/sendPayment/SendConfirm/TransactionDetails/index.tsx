@@ -25,19 +25,75 @@ import {
   submitFreighterTransaction,
   transactionSubmissionSelector,
   addRecentAddress,
-  resetSubmission,
   isPathPaymentSelector,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
-import { AccountAssets } from "popup/components/account/AccountAssets";
+import {
+  AccountAssets,
+  AssetIcon,
+} from "popup/components/account/AccountAssets";
 
 import "./styles.scss";
+
+const TwoAssetCard = ({
+  sourceAssetIcons,
+  sourceCanon,
+  sourceAmount,
+  destAssetIcons,
+  destCanon,
+  destAmount,
+}: {
+  sourceAssetIcons: AssetIcons;
+  sourceCanon: string;
+  sourceAmount: string;
+  destAssetIcons: AssetIcons;
+  destCanon: string;
+  destAmount: string;
+}) => {
+  const sourceAsset = getAssetFromCanonical(sourceCanon);
+  const destAsset = getAssetFromCanonical(destCanon);
+
+  return (
+    <div className="TwoAssetCard">
+      <div className="TwoAssetCard__row">
+        <div className="TwoAssetCard__row__left">
+          <AssetIcon
+            assetIcons={sourceAssetIcons}
+            code={sourceAsset.code}
+            issuerKey={sourceAsset.issuer}
+          />
+          {sourceAsset.code}
+        </div>
+        <div className="TwoAssetCard__row__right">
+          {sourceAmount} {sourceAsset.code}
+        </div>
+      </div>
+      <div className="TwoAssetCard__arrow-icon">
+        <Icon.ArrowDown />
+      </div>
+      <div className="TwoAssetCard__row">
+        <div className="TwoAssetCard__row__left">
+          <AssetIcon
+            assetIcons={destAssetIcons}
+            code={destAsset.code}
+            issuerKey={destAsset.issuer}
+          />
+          {destAsset.code}
+        </div>
+        <div className="TwoAssetCard__row__right">
+          {new BigNumber(destAmount).toFixed(2)} {destAsset.code}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
@@ -61,6 +117,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const isSwap = useIsSwap();
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -83,18 +140,26 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     })();
   }, [destAsset.code, destAsset.issuer, networkDetails]);
 
+  const computeDestMinWithSlippage = (
+    slippage: string,
+    destMin: string,
+  ): BigNumber => {
+    const mult = 1 - parseFloat(slippage) / 100;
+    return new BigNumber(destMin).times(new BigNumber(mult));
+  };
+
   const getOperation = () => {
-    // path payment
-    if (isPathPayment) {
-      const mult = 1 - parseFloat(allowedSlippage) / 100;
-      const destMin = new BigNumber(destinationAmount).times(
-        new BigNumber(mult),
+    // path payment or swap
+    if (isPathPayment || isSwap) {
+      const destMin = computeDestMinWithSlippage(
+        allowedSlippage,
+        destinationAmount,
       );
       return StellarSdk.Operation.pathPaymentStrictSend({
-        sendAsset: getAssetFromCanonical(asset),
+        sendAsset: sourceAsset,
         sendAmount: amount,
-        destination,
-        destAsset: getAssetFromCanonical(destinationAsset),
+        destination: isSwap ? publicKey : destination,
+        destAsset,
         destMin: destMin.toFixed(7),
         path: path.map((p) => getAssetFromCanonical(p)),
       });
@@ -159,10 +224,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         );
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          await dispatch(
-            addRecentAddress({ publicKey: federationAddress || destination }),
-          );
-
+          if (!isSwap) {
+            await dispatch(
+              addRecentAddress({ publicKey: federationAddress || destination }),
+            );
+          }
           if (isPathPayment) {
             emitMetric(METRIC_NAMES.sendPaymentPathPaymentSuccess, {
               sourceAsset,
@@ -179,12 +245,14 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     }
   };
 
+  const showMemo = !isSwap && !destination.startsWith("M");
+
   return (
     <div className="TransactionDetails">
       {submission.submitStatus === ActionStatus.PENDING && (
         <div className="TransactionDetails__processing">
           <div className="TransactionDetails__processing__header">
-            <Loader /> <span>Processing transaction</span>
+            <Loader /> <span>Processing {isSwap ? "swap" : "transaction"}</span>
           </div>
           <div className="TransactionDetails__processing__copy">
             Please don’t close this window
@@ -194,70 +262,71 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       <SubviewHeader
         title={
           submission.submitStatus === ActionStatus.SUCCESS
-            ? `Sent ${sourceAsset.code}`
-            : "Confirm Send"
+            ? `${isSwap ? "Swapped" : "Sent"} ${sourceAsset.code}`
+            : `${isSwap ? "Confirm Swap" : "Confirm Send"}`
         }
         customBackAction={goBack}
         customBackIcon={
           submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
         }
       />
-      <div className="TransactionDetails__cards">
-        <Card>
-          <AccountAssets
-            assetIcons={assetIcons}
-            sortedBalances={[
-              {
-                token: {
-                  issuer: { key: sourceAsset.issuer },
-                  code: sourceAsset.code,
-                },
-                total: amount || "0",
-              },
-            ]}
-          />
-        </Card>
-        {isPathPayment && (
+      {!(isPathPayment || isSwap) && (
+        <div className="TransactionDetails__cards">
           <Card>
             <AccountAssets
-              assetIcons={destAssetIcons}
+              assetIcons={assetIcons}
               sortedBalances={[
                 {
                   token: {
-                    issuer: { key: destAsset.issuer },
-                    code: destAsset.code,
+                    issuer: { key: sourceAsset.issuer },
+                    code: sourceAsset.code,
                   },
-                  total: destinationAmount || "0",
+                  total: amount || "0",
                 },
               ]}
             />
           </Card>
-        )}
-      </div>
-      <div className="TransactionDetails__row">
-        <div>Sending to </div>
-        <div className="TransactionDetails__row__right">
-          <div className="TransactionDetails__identicon">
-            <FedOrGAddress
-              fedAddress={truncatedFedAddress(federationAddress)}
-              gAddress={destination}
-            />
+        </div>
+      )}
+
+      {(isPathPayment || isSwap) && (
+        <TwoAssetCard
+          sourceAssetIcons={assetIcons}
+          sourceCanon={asset}
+          sourceAmount={amount}
+          destAssetIcons={destAssetIcons}
+          destCanon={destinationAsset || "native"}
+          destAmount={destinationAmount}
+        />
+      )}
+
+      {!isSwap && (
+        <div className="TransactionDetails__row">
+          <div>Sending to </div>
+          <div className="TransactionDetails__row__right">
+            <div className="TransactionDetails__identicon">
+              <FedOrGAddress
+                fedAddress={truncatedFedAddress(federationAddress)}
+                gAddress={destination}
+              />
+            </div>
           </div>
         </div>
-      </div>
-      {!destination.startsWith("M") && (
+      )}
+      {showMemo && (
         <div className="TransactionDetails__row">
           <div>Memo</div>
           <div className="TransactionDetails__row__right">{memo || "None"}</div>
         </div>
       )}
-      {isPathPayment && (
+
+      {(isPathPayment || isSwap) && (
         <div className="TransactionDetails__row">
           <div>Conversion rate </div>
           <div className="TransactionDetails__row__right">
-            1 {getAssetFromCanonical(asset).code} /{" "}
+            1 {sourceAsset.code} /{" "}
             {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
-            {getAssetFromCanonical(destinationAsset).code}
+            {destAsset.code}
           </div>
         </div>
       )}
@@ -267,9 +336,23 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           {transactionFee} {sourceAsset.code}
         </div>
       </div>
+      {isSwap && (
+        <div className="TransactionDetails__row">
+          <div>Minimum Received </div>
+          <div className="TransactionDetails__row__right">
+            {computeDestMinWithSlippage(
+              allowedSlippage,
+              destinationAmount,
+            ).toFixed(2)}{" "}
+            {sourceAsset.code}
+          </div>
+        </div>
+      )}
       <div className="TransactionDetails__bottom-wrapper">
         <div className="TransactionDetails__bottom-wrapper__copy">
-          {isPathPayment && "The final amount is approximate and may change"}
+          {(isPathPayment || isSwap) &&
+            submission.submitStatus !== ActionStatus.SUCCESS &&
+            "The final amount is approximate and may change"}
         </div>
         {submission.submitStatus === ActionStatus.SUCCESS ? (
           <Button
@@ -290,13 +373,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             <Button
               variant={Button.variant.tertiary}
               onClick={() => {
-                dispatch(resetSubmission());
                 navigateTo(ROUTES.account);
               }}
             >
               Cancel
             </Button>
-            <Button onClick={handleSend}>Send</Button>
+            <Button onClick={handleSend}>{isSwap ? "Swap" : "Send"}</Button>
           </div>
         )}
       </div>

@@ -9,6 +9,8 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
+import ImageMissingIcon from "popup/assets/image-missing.svg";
+
 import "./styles.scss";
 
 export const AssetIcon = ({
@@ -21,25 +23,39 @@ export const AssetIcon = ({
   code: string;
   issuerKey: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
-}) =>
-  assetIcons[getCanonicalFromAsset(code, issuerKey)] || code === "XLM" ? (
-    <img
-      className="AccountAssets__asset--logo"
-      alt={`${code} logo`}
-      src={
-        code === "XLM"
-          ? StellarLogo
-          : assetIcons[getCanonicalFromAsset(code, issuerKey)] || ""
-      }
-      onError={() => {
-        if (retryAssetIconFetch) {
-          retryAssetIconFetch({ key: issuerKey, code });
-        }
-      }}
-    />
+}) => {
+  const isXlm = code === "XLM";
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(!isXlm);
+  const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
+  const imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+
+  return canonicalAsset || isXlm ? (
+    <div
+      className={`AccountAssets__asset--logo ${
+        hasError ? "AccountAssets__asset--error" : ""
+      } ${isLoading ? "AccountAssets__asset--loading" : ""}`}
+    >
+      <img
+        alt={`${code} logo`}
+        src={isXlm ? StellarLogo : imgSrc}
+        onError={() => {
+          if (retryAssetIconFetch) {
+            retryAssetIconFetch({ key: issuerKey, code });
+          }
+          setHasError(true);
+        }}
+        onLoad={() => {
+          setIsLoading(false);
+        }}
+      />
+    </div>
   ) : (
-    <div className="AccountAssets__asset--bullet" />
+    <div className="AccountAssets__asset--logo AccountAssets__asset--error">
+      <img src={ImageMissingIcon} alt="Asset icon missing" />
+    </div>
   );
+};
 
 export const AccountAssets = ({
   assetIcons: inputAssetIcons,
