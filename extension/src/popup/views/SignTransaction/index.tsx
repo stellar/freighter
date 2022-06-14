@@ -175,13 +175,11 @@ export const SignTransaction = () => {
 
   useEffect(() => {
     // handle the user manually changing their account using the selector
-    if (publicKey !== defaultPublicKey.current) {
-      setCurrentAccount(
-        allAccounts.find(
-          ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
-        ) || ({} as Account),
-      );
-    }
+    setCurrentAccount(
+      allAccounts.find(
+        ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+      ) || ({} as Account),
+    );
   }, [allAccounts, publicKey]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
