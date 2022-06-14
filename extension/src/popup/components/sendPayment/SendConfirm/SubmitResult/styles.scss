@@ -47,12 +47,28 @@
     border-radius: 100px;
     padding: 0.25rem 0.5rem;
 
-    img {
-      width: 1rem;
-      height: 1rem;
+    %identiconImg {
       border-radius: 1rem;
-      background: var(--pal-brand-primary-on);
+      width: 0.875rem;
+      height: 0.875rem;
       margin-right: 0.5rem;
+    }
+
+    .IdenticonImg {
+      @extend %identiconImg;
+      background: var(--pal-brand-primary-on);
+    }
+
+    .AccountAssets__asset--logo {
+      @extend %identiconImg;
+      display: flex;
+    }
+
+    .AccountAssets__asset--error {
+      img {
+        width: 0.4375rem;
+        height: 0.4375rem;
+      }
     }
 
     span {
