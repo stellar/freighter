@@ -165,7 +165,7 @@ export const SignTransaction = () => {
   }, [accountToSign, allAccounts, dispatch]);
 
   useEffect(() => {
-    // handle any changes to the current - whether by auto select or manual select
+    // handle any changes to the current acct - whether by auto select or manual select
     setCurrentAccount(
       allAccounts.find(
         ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
