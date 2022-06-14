@@ -143,10 +143,9 @@ export const SignTransaction = () => {
   useEffect(() => {
     // handle auto selecting the right account based on `accountToSign`
     let autoSelectedAccountDetails;
-    let defaultAccountDetails;
 
-    allAccounts.forEach((account) => {
-      if (accountToSign) {
+    if (accountToSign) {
+      allAccounts.forEach((account) => {
         // does the user have the `accountToSign` somewhere in the accounts list?
         if (account.publicKey === accountToSign) {
           // if the `accountToSign` is found, but it isn't active, make it active
@@ -157,24 +156,16 @@ export const SignTransaction = () => {
           // save the details of the `accountToSign`
           autoSelectedAccountDetails = account;
         }
-      }
+      });
 
-      // In case we don't find `accountToSign` above, or `accountToSign` is null, save the details of the account the user had already selected
-      if (account.publicKey === defaultPublicKey.current) {
-        defaultAccountDetails = account;
+      if (!autoSelectedAccountDetails) {
+        setAccountNotFound(true);
       }
-    });
-
-    if (autoSelectedAccountDetails) {
-      setCurrentAccount(autoSelectedAccountDetails);
-    } else {
-      setCurrentAccount(defaultAccountDetails || ({} as Account));
-      setAccountNotFound(true);
     }
   }, [accountToSign, allAccounts, dispatch]);
 
   useEffect(() => {
-    // handle the user manually changing their account using the selector
+    // handle any changes to the current - whether by auto select or manual select
     setCurrentAccount(
       allAccounts.find(
         ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
