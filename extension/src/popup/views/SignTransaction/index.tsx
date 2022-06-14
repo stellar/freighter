@@ -127,6 +127,7 @@ export const SignTransaction = () => {
 
   // the public key the user had selected before starting this flow
   const defaultPublicKey = useRef(publicKey);
+  const allAccountsMap = useRef({} as { [key: string]: Account });
 
   useEffect(() => {
     if (isMemoRequired) {
@@ -144,8 +145,8 @@ export const SignTransaction = () => {
     // handle auto selecting the right account based on `accountToSign`
     let autoSelectedAccountDetails;
 
-    if (accountToSign) {
-      allAccounts.forEach((account) => {
+    allAccounts.forEach((account) => {
+      if (accountToSign) {
         // does the user have the `accountToSign` somewhere in the accounts list?
         if (account.publicKey === accountToSign) {
           // if the `accountToSign` is found, but it isn't active, make it active
@@ -156,21 +157,20 @@ export const SignTransaction = () => {
           // save the details of the `accountToSign`
           autoSelectedAccountDetails = account;
         }
-      });
-
-      if (!autoSelectedAccountDetails) {
-        setAccountNotFound(true);
       }
+
+      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
+      allAccountsMap.current[account.publicKey] = account;
+    });
+
+    if (!autoSelectedAccountDetails) {
+      setAccountNotFound(true);
     }
   }, [accountToSign, allAccounts, dispatch]);
 
   useEffect(() => {
     // handle any changes to the current acct - whether by auto select or manual select
-    setCurrentAccount(
-      allAccounts.find(
-        ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
-      ) || ({} as Account),
-    );
+    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
   }, [allAccounts, publicKey]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
