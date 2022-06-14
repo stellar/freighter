@@ -18,23 +18,39 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import "./styles.scss";
 
-export const VerifyAccount = () => {
+interface VerifyAccountProps {
+  isApproval?: boolean;
+  customBackAction?: () => void;
+  customSubmit?: (password: string) => Promise<void>;
+}
+
+export const VerifyAccount = ({
+  isApproval,
+  customBackAction,
+  customSubmit,
+}: VerifyAccountProps) => {
   const location = useLocation();
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
   const from = get(location, "state.from.pathname", "") as ROUTES;
 
   const handleSubmit = async (values: { password: string }) => {
-    await dispatch(confirmPassword(values.password));
-    navigateTo(from || ROUTES.account);
+    if (customSubmit) {
+      await customSubmit(values.password);
+    } else {
+      await dispatch(confirmPassword(values.password));
+      navigateTo(from || ROUTES.account);
+    }
   };
 
   return (
     <PopupWrapper>
-      <SubviewHeader title="Verification" />
+      <SubviewHeader title="Verification" customBackAction={customBackAction} />
       <div className="VerifyAccount__copy">
-        Enter your account password to authorize this transaction. You won’t be
-        asked to do this for the next 24 hours.
+        {isApproval
+          ? "Enter your account password to verify your account."
+          : "Enter your account password to authorize this transaction."}{" "}
+        You won’t be asked to do this for the next 24 hours.
       </div>
       <Formik initialValues={{ password: "" }} onSubmit={handleSubmit}>
         {({ dirty, isValid, isSubmitting, errors, touched }) => (
@@ -59,7 +75,7 @@ export const VerifyAccount = () => {
                 isLoading={isSubmitting}
                 disabled={!(dirty && isValid)}
               >
-                Submit
+                {isApproval ? "Approve" : "Submit"}
               </Button>
             </div>
           </Form>

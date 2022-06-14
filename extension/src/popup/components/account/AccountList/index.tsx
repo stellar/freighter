@@ -65,6 +65,7 @@ export const AccountList = ({
             accountPublicKey={accountPublicKey}
             setIsDropdownOpen={setIsDropdownOpen}
             imported={imported}
+            key={`${accountPublicKey}-${accountName}`}
           />
         );
       },

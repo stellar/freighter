@@ -15,6 +15,7 @@ import { TransactionHeading } from "popup/basics/Transaction";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import {
   allAccountsSelector,
+  confirmPassword,
   hasPrivateKeySelector,
   makeAccountActive,
   publicKeySelector,
@@ -40,13 +41,16 @@ import {
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
+import { VerifyAccount } from "popup/views/VerifyAccount";
+
 import { Account } from "@shared/api/types";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
 export const SignTransaction = () => {
   const location = useLocation();
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const {
     accountToSign,
     transaction,
@@ -69,6 +73,7 @@ export const SignTransaction = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentAccount, setCurrentAccount] = useState({} as Account);
   const [accountNotFound, setAccountNotFound] = useState(false);
+  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
 
   const accountSelectorRef = useRef<HTMLDivElement>(null);
 
@@ -78,9 +83,28 @@ export const SignTransaction = () => {
   };
 
   const signAndClose = async () => {
-    setIsConfirming(true);
     await dispatch(signTransaction({ transaction }));
     window.close();
+  };
+
+  const verifyPasswordThenSign = async (password: string) => {
+    const confirmPasswordResp = await dispatch(confirmPassword(password));
+
+    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
+      await signAndClose();
+    }
+  };
+
+  const handleApprove = async () => {
+    setIsConfirming(true);
+
+    if (hasPrivateKey) {
+      await signAndClose();
+    } else {
+      setIsPasswordRequired(true);
+    }
+
+    setIsConfirming(false);
   };
 
   const flaggedKeyValues = Object.values(flaggedKeys);
@@ -130,11 +154,12 @@ export const SignTransaction = () => {
             dispatch(makeAccountActive(account.publicKey));
           }
 
+          // save the details of the `accountToSign`
           currentAccountDetails = account;
         }
       }
 
-      // In case we don't find `accountToSign` above, or `accountToSign` is null, save the account the user had already selected
+      // In case we don't find `accountToSign` above, or `accountToSign` is null, save the details of the account the user had already selected
       if (account.publicKey === defaultPublicKey.current) {
         defaultAccountDetails = account;
       }
@@ -176,7 +201,13 @@ export const SignTransaction = () => {
     );
   }
 
-  return (
+  return isPasswordRequired ? (
+    <VerifyAccount
+      isApproval
+      customBackAction={() => setIsPasswordRequired(false)}
+      customSubmit={verifyPasswordThenSign}
+    />
+  ) : (
     <div className="SignTransaction">
       <ModalWrapper>
         <ModalHeader>
@@ -220,7 +251,6 @@ export const SignTransaction = () => {
                   <Icon.ChevronDown />
                 </div>
               </div>
-              {!hasPrivateKey ? <div>Enter Password</div> : null}
             </div>
           </Card>
           {accountNotFound && accountToSign ? (
@@ -270,9 +300,9 @@ export const SignTransaction = () => {
           disabled={isSubmitDisabled}
           fullWidth
           isLoading={isConfirming}
-          onClick={() => signAndClose()}
+          onClick={() => handleApprove()}
         >
-          Sign Transaction
+          Approve
         </Button>
       </ButtonsContainer>
       <div
