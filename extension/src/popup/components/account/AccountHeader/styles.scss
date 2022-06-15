@@ -58,6 +58,10 @@
 
     // default max-height on page load
     max-height: 0;
+
+    li::before {
+      content: none;
+    }
   }
 
   &__option-list-item {

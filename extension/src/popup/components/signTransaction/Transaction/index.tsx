@@ -2,7 +2,7 @@ import React from "react";
 
 import { FlaggedKeys } from "types/transactions";
 
-import { TransactionHeading } from "popup/basics/Transaction";
+import { TransactionHeading } from "popup/basics/TransactionHeading";
 
 import { Operations } from "popup/components/signTransaction/Operations";
 

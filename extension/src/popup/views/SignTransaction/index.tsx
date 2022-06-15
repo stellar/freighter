@@ -11,7 +11,7 @@ import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
-import { TransactionHeading } from "popup/basics/Transaction";
+import { TransactionHeading } from "popup/basics/TransactionHeading";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import {
   allAccountsSelector,
