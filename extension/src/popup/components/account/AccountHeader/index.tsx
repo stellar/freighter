@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Icon } from "@stellar/design-system";
 
 import { Account } from "@shared/api/types";
 import { Icon } from "@stellar/design-system";
