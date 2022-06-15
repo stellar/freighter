@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import LedgerApi from "@ledgerhq/hw-app-str";
-import { Checkbox, Icon, Input, TextLink } from "@stellar/design-system";
+import { Checkbox, Input, TextLink } from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
@@ -9,57 +7,15 @@ import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { BottomNav } from "popup/components/BottomNav";
 import { WalletType } from "popup/views/AddAccount/connect/ConnectWallet";
-import Ledger from "popup/assets/ledger.png";
+import {
+  LedgerConnect,
+  defaultStellarBipPath,
+} from "popup/components/hardwareConnect/LedgerConnect";
 
 import "./styles.scss";
 
-// ALEC TODO - put in a constant
-const defaultStellarBipPath = "44'/148'/0'";
-
-// ALEC TODO - probably move this somewhere
-const LedgerOverlay = ({ goBack }: { goBack?: () => void }) => {
-  const handleConnect = async () => {
-    try {
-      const transport = await TransportWebUSB.request();
-
-      // ALEC TODO - probably move some (all?) to a duck
-      const ledgerApi = new LedgerApi(transport);
-
-      const response = await ledgerApi.getPublicKey(defaultStellarBipPath);
-
-      const publicKey = response.publicKey;
-
-      // ALEC TODO - remove
-      console.log({ publicKey });
-    } catch (e) {
-      // ALEC TODO - store somewhere
-      console.log({ e });
-    }
-  };
-
-  // ALEC TODO - remove
-  console.log({ handleConnect });
-  return (
-    <div className="LedgerOverlay">
-      <div className="LedgerOverlay__wrapper">
-        <SubviewHeader
-          customBackAction={goBack || undefined}
-          customBackIcon={<Icon.X />}
-          title="Connect Ledger"
-        />
-        <div className="LedgerOverlay__center">
-          <img className="LedgerOverlay__img" src={Ledger} alt="ledger" />
-          <span>Connect device to computer</span>
-        </div>
-        <Button fullWidth variant={Button.variant.tertiary}>
-          Detect device
-        </Button>
-      </div>
-    </div>
-  );
-};
-
 export const PluginWallet = () => {
+  // TODO - move to redux
   const [bipPath, setBipPath] = useState(defaultStellarBipPath);
   const [useDefault, setUseDefault] = useState(true);
   const [showLedgerOverlay, setShowLedgerOverlay] = useState(false);
@@ -67,7 +23,7 @@ export const PluginWallet = () => {
   return (
     <>
       {showLedgerOverlay && (
-        <LedgerOverlay goBack={() => setShowLedgerOverlay(false)} />
+        <LedgerConnect goBack={() => setShowLedgerOverlay(false)} />
       )}
       <div className="PluginWallet">
         <SubviewHeader
@@ -102,7 +58,7 @@ export const PluginWallet = () => {
             </div>
           )}
           <Checkbox
-            checked={useDefault}
+            defaultChecked
             autoComplete="off"
             id="useDefault-input"
             label={

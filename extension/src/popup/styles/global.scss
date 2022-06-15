@@ -1,6 +1,7 @@
 :root {
   --z-index--banner: 10;
   --z-index--loader: -1;
+  --z-index--ledger: 3;
 
   // popup dimensions
   --popup--width: 360px;
@@ -21,6 +22,8 @@
   --button-bg--tertiary: #303448;
   --button-bg--primary: #6432f1;
   --secondary-text: #797a7f;
+
+
 }
 
 body {

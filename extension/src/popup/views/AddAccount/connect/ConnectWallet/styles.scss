@@ -1,6 +1,6 @@
 .ConnectWallet {
-  padding: var(--popup-vertical-padding) var(--account-view-padding-left) 1rem
-    var(--account-view-padding-left);
+  padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
+    var(--account-view-padding-side);
   height: calc(var(--popup--height) - var(--bottom-nav--height));
   display: flex;
   flex-direction: column;

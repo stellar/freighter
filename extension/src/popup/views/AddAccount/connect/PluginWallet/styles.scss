@@ -1,6 +1,6 @@
 .PluginWallet {
-  padding: var(--popup-vertical-padding) var(--account-view-padding-left) 1rem
-    var(--account-view-padding-left);
+  padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
+    var(--account-view-padding-side);
   height: calc(var(--popup--height) - var(--bottom-nav--height));
   display: flex;
   flex-direction: column;
@@ -27,50 +27,5 @@
 
   &__checkbox-label {
     color: var(--pal-text-primary);
-  }
-}
-
-.LedgerOverlay {
-  // ALEC TODO make constant?
-  z-index: 3;
-  position: absolute;
-  height: var(--popup--height);
-  width: var(--popup--width);
-  background-color: black;
-  &__wrapper {
-    // ALEC TODO make constant?
-    z-index: 4;
-    position: absolute;
-    margin-top: 2rem;
-    height: calc(var(--popup--height) - 2rem);
-    width: var(--popup--width);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-
-    background: var(--background-color);
-
-    // ALEC TODO - is this padding right? (also used in PluginWallet)
-    padding: var(--popup-vertical-padding) var(--account-view-padding-left) 1rem
-      var(--account-view-padding-left);
-    border-top-right-radius: 1rem;
-    border-top-left-radius: 1rem;
-  }
-
-  &__center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    row-gap: 1.5rem;
-
-    span {
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-      color: var(--pal-text-primary);
-    }
-    img {
-      width: 16.875rem;
-    }
   }
 }

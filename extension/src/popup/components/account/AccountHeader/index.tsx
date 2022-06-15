@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
+import { Account } from "@shared/api/types";
+import { Icon } from "@stellar/design-system";
+
 import { ROUTES } from "popup/constants/routes";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
-import { Account } from "@shared/api/types";
-import { Icon } from "@stellar/design-system";
+import IconCube from "popup/assets/icon-cube.svg";
 
 import "./styles.scss";
 
@@ -128,8 +129,11 @@ export const AccountHeader = ({
             to={ROUTES.connectWallet}
           >
             <div className="AccountHeader__option-icon">
-              {/* ALEC TODO - import correct icon */}
-              <Icon.Codepen />
+              <img
+                className="AccountHeader__img-cube-icon"
+                src={IconCube}
+                alt=""
+              />
             </div>
             <span className="AccountHeader__option-link-copy">
               Connect a hardware wallet
