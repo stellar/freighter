@@ -29,7 +29,7 @@
     }
   }
 
-  &__option.selected {
+  &__option:hover {
     background: var(--pal-background-secondary);
   }
 

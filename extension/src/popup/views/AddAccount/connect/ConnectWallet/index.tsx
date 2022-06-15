@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { useDispatch } from "react-redux";
 
-import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -17,10 +16,9 @@ export enum WalletType {
 
 export const ConnectWallet = () => {
   const dispatch = useDispatch();
-  const [selectedWallet, setSelectedWallet] = useState("");
 
-  const handleContinue = () => {
-    dispatch(setConnectingWalletType(WalletType.LEDGER));
+  const handleContinue = (type: WalletType) => {
+    dispatch(setConnectingWalletType(type));
     navigateTo(ROUTES.connectWalletPlugin);
   };
   return (
@@ -34,25 +32,12 @@ export const ConnectWallet = () => {
         <p>Select a hardware wallet you’d like to use with Freighter.</p>
         <ul className="ConnectWallet__options-list">
           <li
-            className={`ConnectWallet__option ${
-              selectedWallet === WalletType.LEDGER ? "selected" : ""
-            }`}
-            onClick={() => setSelectedWallet(WalletType.LEDGER)}
+            className="ConnectWallet__option"
+            onClick={() => handleContinue(WalletType.LEDGER)}
           >
             <img src={LedgerLogo} alt="ledger logo" />
           </li>
         </ul>
-
-        <div className="ConnectWallet__btn-continue">
-          <Button
-            disabled={selectedWallet === ""}
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={handleContinue}
-          >
-            Continue
-          </Button>
-        </div>
       </div>
       <BottomNav />
     </>

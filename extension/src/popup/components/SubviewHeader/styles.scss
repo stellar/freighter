@@ -4,6 +4,8 @@
   display: flex;
   padding-bottom: 2rem;
   position: relative;
+  // ALEC TODO - make sure didn't break anything
+  width: 100%;
 
   &--title {
     flex-grow: 1;
