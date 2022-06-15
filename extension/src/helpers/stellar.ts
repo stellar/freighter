@@ -23,6 +23,7 @@ export const getTransactionInfo = (search: string) => {
   const transactionInfo = parsedSearchParam(search);
 
   const {
+    accountToSign,
     url,
     transaction,
     isDomainListedAllowed,
@@ -36,6 +37,7 @@ export const getTransactionInfo = (search: string) => {
   );
 
   return {
+    accountToSign,
     transaction,
     domain: hostname,
     domainTitle: title,

@@ -117,7 +117,7 @@ const result = retrieveNetwork();
 
 ### signTransaction
 
-#### `signTransaction(xdr: string, network:? string) -> <Promise<string>>`
+#### `signTransaction(xdr: string, network:? string, publicKey:? string) -> <Promise<string>>`
 
 This function accepts a transaction XDR string as the first parameter, which it will decode, sign as the user, and then return the signed transaction to your application.
 
@@ -128,6 +128,8 @@ _NOTE:_ The user must provide a valid transaction XDR string for the extension t
 The second parameter is an optional string that you may pass to indicate what network you’re intending this transaction to be signed on. The parameter must be either `PUBLIC` or `TESTNET`. If you choose not to pass a param, freighter-api will default to `PUBLIC`.
 
 This is useful in the case that the user's Freighter is configured to the wrong network. Freighter will be able to throw a blocking error message communicating that you intended this transaction to be signed on a different network.
+
+The third parameter is another optional parameter that gives you the ability to specify which account's signature you’re requesting. If Freighter has the public key, it will switch to that account. If not, it will alert the user that they do not have the requested account.
 
 ```javascript
 import {
