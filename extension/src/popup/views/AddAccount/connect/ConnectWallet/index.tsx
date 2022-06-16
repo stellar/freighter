@@ -7,12 +7,9 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { BottomNav } from "popup/components/BottomNav";
 import { setConnectingWalletType } from "popup/ducks/accountServices";
 import LedgerLogo from "popup/assets/ledger-logo.png";
+import { WalletType } from "constants/hardwareWallet";
 
 import "./styles.scss";
-
-export enum WalletType {
-  LEDGER = "Ledger",
-}
 
 export const ConnectWallet = () => {
   const dispatch = useDispatch();

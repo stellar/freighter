@@ -18,6 +18,7 @@ import {
   signOut as signOutService,
 } from "@shared/api/internal";
 import { Account, ErrorMessage } from "@shared/api/types";
+import { WalletType } from "constants/hardwareWallet";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },
@@ -238,7 +239,7 @@ interface InitialState {
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
-  connectingWalletType: string;
+  connectingWalletType: WalletType;
   error: string;
 }
 
@@ -247,7 +248,7 @@ const initialState: InitialState = {
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   hasPrivateKey: false,
   publicKey: "",
-  connectingWalletType: "",
+  connectingWalletType: WalletType.NONE,
   error: "",
 };
 
