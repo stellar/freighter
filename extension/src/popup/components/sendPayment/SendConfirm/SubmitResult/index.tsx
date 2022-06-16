@@ -142,6 +142,7 @@ export const SubmitFail = () => {
   const decideError = () => {
     // unfunded destination
     if (
+      !isSwap &&
       shouldAccountDoesntExistWarning(
         destinationBalances.isFunded || false,
         asset,

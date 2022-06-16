@@ -212,7 +212,7 @@ export const SendSettings = ({
                     variant={Button.variant.tertiary}
                     onClick={() => navigateTo(next)}
                   >
-                    Review Send
+                    Review {isSwap ? "Swap" : "Send"}
                   </Button>
                 </div>
               </FormRows>
