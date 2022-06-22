@@ -29,7 +29,7 @@ const AvoidScamsWarningBlock = () => (
         <div className="InfoBlock__header">
           Avoid scams and keep your account safe
         </div>
-        <ul>
+        <ul className="FullscreenSuccessMessage__infoBlock__list">
           <li>
             Freighter will never ask for your recovery phrase unless you're
             actively importing your account using the browser extension - never
