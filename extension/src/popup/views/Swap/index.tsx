@@ -11,6 +11,7 @@ import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import {
   getAccountBalances,
+  getAssetIcons,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -18,10 +19,13 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 export const Swap = () => {
   const dispatch = useDispatch();
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, assetIcons } = useSelector(
+    transactionSubmissionSelector,
+  );
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
+  // load needed swap data here in case didn't go to home screen first
   useEffect(() => {
     if (!accountBalances.balances) {
       dispatch(
@@ -32,6 +36,15 @@ export const Swap = () => {
       );
     }
   }, [dispatch, publicKey, networkDetails, accountBalances]);
+
+  useEffect(() => {
+    if (!accountBalances.balances) return;
+    if (!Object.keys(assetIcons).length) {
+      dispatch(
+        getAssetIcons({ balances: accountBalances.balances, networkDetails }),
+      );
+    }
+  }, [dispatch, accountBalances, networkDetails, assetIcons]);
 
   return (
     <Switch>
