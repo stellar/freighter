@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
-import { Input, Checkbox, Textarea, TextLink } from "@stellar/design-system";
+import { Input, Checkbox, Select, TextLink } from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
 import { Onboarding } from "popup/components/Onboarding";
@@ -53,6 +53,9 @@ export const RecoverAccount = () => {
   });
 
   const dispatch = useDispatch();
+  const MAX_PHRASE_LENGTH = 24;
+  const [phraseLength, setPhraseLength] = useState(12);
+  const [phraseInputs, setPhraseInputs] = useState([] as string[]);
 
   const handleSubmit = async (values: FormValues) => {
     const { password, mnemonicPhrase } = values;
@@ -71,6 +74,32 @@ export const RecoverAccount = () => {
     }
   }, [publicKey]);
 
+  useEffect(() => {
+    const phraseInputsArr = [];
+
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < MAX_PHRASE_LENGTH; i++) {
+      phraseInputsArr.push(`MnemonicPhrase-${i}`);
+    }
+    setPhraseInputs(phraseInputsArr);
+  }, []);
+
+  // useEffect(() => {
+  //   const phraseInputsCopy = [...phraseInputs];
+  //   console.log(1);
+  //   while (phraseInputsCopy.length < phraseLength) {
+  //     phraseInputsCopy.push(`MnemonicPhrase-${phraseInputsCopy.length + 1}`);
+  //   }
+
+  //   while (phraseInputsCopy.length > phraseLength) {
+  //     phraseInputsCopy.push(`MnemonicPhrase-${phraseInputsCopy.length + 1}`);
+  //   }
+
+  //   setPhraseInputs(phraseInputsCopy);
+  // }, [phraseLength, phraseInputs]);
+
+  console.log(phraseLength);
+
   return (
     <>
       <Header />
@@ -88,8 +117,15 @@ export const RecoverAccount = () => {
                   <div className="RecoverAccount__header">
                     Import wallet from recovery phrase
                   </div>
+                  <Select
+                    onChange={(e) => setPhraseLength(Number(e.target.value))}
+                    id="RecoverAccount__phrase-length-selector"
+                  >
+                    <option>12</option>
+                    <option>24</option>
+                  </Select>
                   <div className="RecoverAccount__mnemonic-input">
-                    <Field name="mnemonicPhrase">
+                    {/* <Field name="mnemonicPhrase">
                       {({ field }: FieldProps) => (
                         <Textarea
                           className="TextArea Card Card--highlight"
@@ -107,7 +143,27 @@ export const RecoverAccount = () => {
                           customTextarea={<textarea {...field} />}
                         />
                       )}
-                    </Field>
+                    </Field> */}
+
+                    {phraseInputs.map((phraseInput, i) => (
+                      <Field name={phraseInput}>
+                        {({ field }: FieldProps) => (
+                          <Input
+                            autoComplete="off"
+                            disabled={i > phraseLength}
+                            id={phraseInput}
+                            placeholder="Enter your 12 word phrase to restore your wallet"
+                            error={
+                              authError ||
+                              (errors.mnemonicPhrase && touched.mnemonicPhrase
+                                ? authError || errors.mnemonicPhrase
+                                : null)
+                            }
+                            {...field}
+                          />
+                        )}
+                      </Field>
+                    ))}
                   </div>
                 </div>
                 <div className="RecoverAccount__half-screen">
