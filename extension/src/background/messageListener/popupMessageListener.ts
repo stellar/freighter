@@ -73,6 +73,45 @@ export const popupMessageListener = (request: Request) => {
   const _unlockKeystore = ({ password }: { password: string }) =>
     keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
 
+  const _storePublicKeyAccount = ({
+    publicKey,
+    walletType,
+  }: {
+    publicKey: string;
+    walletType: string;
+  }) => {
+    // ALEC TODO - remove
+    console.log("in _storePublicKeyAccount");
+
+    // ALEC TODO - change these values, obv
+    const keyId = "importedLedgerKeyID";
+    const accountName = "ledger";
+
+    const keyIdListArr = getKeyIdList();
+    keyIdListArr.push(keyId);
+
+    localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+    // ALEC TODO - why do I need to set this KEY_ID?
+    localStorage.setItem(KEY_ID, keyId);
+
+    // ALEC TODO - constant, better name?
+    const publicKeysMap = JSON.parse(
+      localStorage.getItem("publicKeys") || "[]",
+    );
+    if (!publicKeysMap[publicKey]) {
+      publicKeysMap[publicKey] = walletType;
+    }
+    localStorage.setItem(
+      "publicKeys",
+      JSON.stringify({ publicKey, walletType }),
+    );
+
+    addAccountName({
+      keyId,
+      accountName,
+    });
+  };
+
   const _storeAccount = async ({
     mnemonicPhrase,
     password,
@@ -271,6 +310,25 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
+  // when importing an account w/o a private key, eg. a hardware wallet
+  const importPublicKey = async () => {
+    // ALEC TODO - walletType best name?
+    const { publicKey, walletType } = request;
+
+    // ALEC TODO - validate somehow?
+
+    await _storePublicKeyAccount({
+      publicKey,
+      walletType,
+    });
+
+    // ALEC TODO - what to return?
+    // const currentState = store.getState();
+    // return {
+    //   publicKey: publicKeySelector(currentState)
+    // }
+  };
+
   const makeAccountActive = () => {
     const { publicKey } = request;
 
@@ -399,6 +457,9 @@ export const popupMessageListener = (request: Request) => {
     /* In Popup, we call loadAccount to figure out what the state the user is in,
     then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
     <UnlockAccount /> calls this method to fill in any missing data */
+
+    // ALEC TODO - remove
+    console.log("in confirmPassword");
 
     const { password } = request;
     const keyIdList = getKeyIdList();
@@ -663,6 +724,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
     [SERVICE_TYPES.IMPORT_ACCOUNT]: importAccount,
+    [SERVICE_TYPES.IMPORT_PUBLIC_KEY]: importPublicKey,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,

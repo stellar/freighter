@@ -38,6 +38,8 @@ export interface Response {
   iconUrl: string;
   network: string;
   recentAddresses: Array<string>;
+  // ALEC TODO - enum?
+  walletType: string;
 }
 
 export interface ExternalRequest {
