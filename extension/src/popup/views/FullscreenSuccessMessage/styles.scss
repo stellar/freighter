@@ -50,6 +50,15 @@
 
   &__infoBlock {
     margin-bottom: 0.5rem;
+
+    .BasicInfoBlock .InfoBlock--warning {
+      border: 1px solid rgba(255, 153, 0, 1);
+      padding: 1rem;
+
+      .InfoBlock__icon {
+        display: none;
+      }
+    }
   }
 
   &__illo-container {
