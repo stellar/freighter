@@ -59,18 +59,11 @@ export const ConfirmMnemonicPhrase = ({
   const wordStateArr: [string, boolean][] = Object.entries(initialWordState);
 
   const handleSubmit = async () => {
-    await dispatch(confirmMnemonicPhrase(calculateSelectedWords()));
+    await dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+    setSelectedWords([]);
   };
 
-  const displaySelectedWords = () =>
-    selectedWords.map((word) => (
-      <>
-        <span>{word}</span>
-        <span className=""></span>
-      </>
-    ));
-
-  const calculateSelectedWords = () =>
+  const joinSelectedWords = () =>
     selectedWords.map((word) => convertToWord(word)).join(" ");
 
   if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
@@ -97,7 +90,7 @@ export const ConfirmMnemonicPhrase = ({
                     onCopy={(e) => e.preventDefault()}
                   >
                     {generateMnemonicPhraseDisplay({
-                      mnemonicPhrase: calculateSelectedWords(),
+                      mnemonicPhrase: joinSelectedWords(),
                     })}
                   </ul>
                 </Card>
@@ -120,7 +113,7 @@ export const ConfirmMnemonicPhrase = ({
                 <Button
                   fullWidth
                   type="submit"
-                  disabled={!dirty && !!displaySelectedWords().length}
+                  disabled={!dirty && !!joinSelectedWords().length}
                   isLoading={isSubmitting}
                 >
                   NEXT
