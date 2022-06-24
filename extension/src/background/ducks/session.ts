@@ -111,9 +111,7 @@ export const allAccountsSelector = createSelector(
 );
 export const hasPrivateKeySelector = createSelector(
   sessionSelector,
-  (session) =>
-    // returns true if active account is a hardware wallet one
-    getIsHardwareWalletActive() || !!session.privateKey.length,
+  (session) => getIsHardwareWalletActive() || !!session.privateKey.length,
 );
 export const privateKeySelector = createSelector(
   sessionSelector,
