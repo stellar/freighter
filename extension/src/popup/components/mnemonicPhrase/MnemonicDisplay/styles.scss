@@ -9,13 +9,7 @@
     counter-reset: item;
     list-style-type: none;
 
-    li {
-      padding-left: 1rem;
-    }
-
     li::before {
-      color: var(--pal-text-tertiary);
-      content: none;
       counter-increment: item;
       content: counter(item);
     }
@@ -23,6 +17,15 @@
     &--popup-view {
       column-gap: 3rem;
       padding: 0 1rem;
+    }
+  }
+
+  &__list-item {
+    padding-left: 1rem;
+
+    &::before {
+      color: var(--pal-text-tertiary);
+      content: none;
     }
   }
 
