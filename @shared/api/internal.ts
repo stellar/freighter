@@ -115,22 +115,27 @@ export const importAccount = async (
   return { allAccounts, publicKey, hasPrivateKey };
 };
 
-// ALEC TODO - return something?
-export const importPublicKey = async (
+export const importHardwareWallet = async (
   publicKey: string,
   walletType: string,
 ) => {
+  let _publicKey = "";
+  let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
   try {
-    await sendMessageToBackground({
+    ({
+      publicKey: _publicKey,
+      allAccounts,
+      hasPrivateKey,
+    } = await sendMessageToBackground({
       publicKey,
       walletType,
-      type: SERVICE_TYPES.IMPORT_PUBLIC_KEY,
-    });
+      type: SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
+    }));
   } catch (e) {
-    // ALEC TODO - remove
-    console.log("import didn't work");
     console.log({ e });
   }
+  return { allAccounts, publicKey: _publicKey, hasPrivateKey };
 };
 
 export const makeAccountActive = (

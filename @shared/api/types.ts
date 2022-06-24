@@ -39,7 +39,7 @@ export interface Response {
   network: string;
   recentAddresses: Array<string>;
   // ALEC TODO - enum?
-  walletType: string;
+  hardwareWalletType: string;
 }
 
 export interface ExternalRequest {
@@ -53,6 +53,7 @@ export interface Account {
   publicKey: string;
   name: string;
   imported: boolean;
+  hardwareWalletType?: string;
 }
 
 export interface Settings {

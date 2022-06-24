@@ -31,6 +31,8 @@ import {
   getIsTestnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
+  getIsActiveHardwareWallet,
+  HW_PREFIX,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
@@ -45,6 +47,7 @@ import {
   mnemonicPhraseSelector,
   publicKeySelector,
   setActivePublicKey,
+  setActivePrivateKey,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
 } from "background/ducks/session";
@@ -70,41 +73,48 @@ export const popupMessageListener = (request: Request) => {
   });
   keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
 
-  const _unlockKeystore = ({ password }: { password: string }) =>
-    keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+  const _unlockKeystore = ({ password }: { password: string }) => {
+    return keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+  };
 
-  const _storePublicKeyAccount = ({
+  const _storeHardwareWalletAccount = ({
     publicKey,
-    walletType,
+    hardwareWalletType,
   }: {
     publicKey: string;
-    walletType: string;
+    hardwareWalletType: string;
   }) => {
-    // ALEC TODO - remove
-    console.log("in _storePublicKeyAccount");
+    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
+    const allAccounts = allAccountsSelector(store.getState());
 
-    // ALEC TODO - change these values, obv
-    const keyId = "importedLedgerKeyID";
-    const accountName = "ledger";
-
+    const keyId = `${HW_PREFIX}${publicKey}`;
     const keyIdListArr = getKeyIdList();
+    const accountName = `${hardwareWalletType} ${
+      keyIdListArr.filter((k: string) => k.indexOf(HW_PREFIX) !== -1).length + 1
+    }`;
     keyIdListArr.push(keyId);
 
     localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
-    // ALEC TODO - why do I need to set this KEY_ID?
     localStorage.setItem(KEY_ID, keyId);
 
-    // ALEC TODO - constant, better name?
-    const publicKeysMap = JSON.parse(
-      localStorage.getItem("publicKeys") || "[]",
+    store.dispatch(
+      logIn({
+        publicKey,
+        mnemonicPhrase,
+        allAccounts: [
+          ...allAccounts,
+          {
+            publicKey,
+            name: accountName,
+            imported: true,
+            hardwareWalletType,
+          },
+        ],
+      }),
     );
-    if (!publicKeysMap[publicKey]) {
-      publicKeysMap[publicKey] = walletType;
-    }
-    localStorage.setItem(
-      "publicKeys",
-      JSON.stringify({ publicKey, walletType }),
-    );
+
+    // an active hw account should not have an active private key
+    store.dispatch(setActivePrivateKey({ privateKey: "" }));
 
     addAccountName({
       keyId,
@@ -258,7 +268,8 @@ export const popupMessageListener = (request: Request) => {
 
     store.dispatch(timeoutAccountAccess());
 
-    sessionTimer.startSession({ privateKey: keyPair.privateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
 
     const currentState = store.getState();
 
@@ -299,7 +310,8 @@ export const popupMessageListener = (request: Request) => {
       imported: true,
     });
 
-    sessionTimer.startSession({ privateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey }));
 
     const currentState = store.getState();
 
@@ -310,23 +322,19 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  // when importing an account w/o a private key, eg. a hardware wallet
-  const importPublicKey = async () => {
-    // ALEC TODO - walletType best name?
-    const { publicKey, walletType } = request;
+  const importHardwareWallet = async () => {
+    const { publicKey, hardwareWalletType } = request;
 
-    // ALEC TODO - validate somehow?
-
-    await _storePublicKeyAccount({
+    await _storeHardwareWalletAccount({
       publicKey,
-      walletType,
+      hardwareWalletType,
     });
 
-    // ALEC TODO - what to return?
-    // const currentState = store.getState();
-    // return {
-    //   publicKey: publicKeySelector(currentState)
-    // }
+    return {
+      publicKey: publicKeySelector(store.getState()),
+      allAccounts: allAccountsSelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
+    };
   };
 
   const makeAccountActive = () => {
@@ -429,7 +437,8 @@ export const popupMessageListener = (request: Request) => {
       localStorage.setItem(APPLICATION_ID, applicationState);
 
       // start the timer now that we have active private key
-      sessionTimer.startSession({ privateKey: keyPair.privateKey });
+      sessionTimer.startSession();
+      store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
     }
 
     const currentState = store.getState();
@@ -453,13 +462,44 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const confirmPasswordHW = async () => {
+    if (!getIsActiveHardwareWallet()) {
+      return { error: "Something went wrong, please try again" };
+    }
+
+    const { password } = request;
+    const keyIdList = getKeyIdList();
+
+    // check password with a non-hw account, it's safe to assume at least
+    // one exists
+    const nonHwKeyIds = keyIdList.filter(
+      (k: string) => k.indexOf(HW_PREFIX) === -1,
+    );
+    try {
+      await keyManager.loadKey(nonHwKeyIds[0] || "", password);
+    } catch (e) {
+      console.error(e);
+      return { error: "Could not log into selected account" };
+    }
+
+    sessionTimer.startSession();
+    return {
+      publicKey: publicKeySelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
+      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      allAccounts: allAccountsSelector(store.getState()),
+    };
+  };
+
   const confirmPassword = async () => {
     /* In Popup, we call loadAccount to figure out what the state the user is in,
     then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
     <UnlockAccount /> calls this method to fill in any missing data */
 
-    // ALEC TODO - remove
-    console.log("in confirmPassword");
+    // if we're logging in with a hardware wallet, reroute this call
+    if (getIsActiveHardwareWallet()) {
+      return confirmPasswordHW();
+    }
 
     const { password } = request;
     const keyIdList = getKeyIdList();
@@ -542,7 +582,8 @@ export const popupMessageListener = (request: Request) => {
     }
 
     // start the timer now that we have active private key
-    sessionTimer.startSession({ privateKey: activePrivateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey: activePrivateKey }));
 
     return {
       publicKey: publicKeySelector(store.getState()),
@@ -724,7 +765,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
     [SERVICE_TYPES.IMPORT_ACCOUNT]: importAccount,
-    [SERVICE_TYPES.IMPORT_PUBLIC_KEY]: importPublicKey,
+    [SERVICE_TYPES.IMPORT_HARDWARE_WALLET]: importHardwareWallet,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
