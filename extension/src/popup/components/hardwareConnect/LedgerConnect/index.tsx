@@ -3,8 +3,6 @@ import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 import { Icon, InfoBlock } from "@stellar/design-system";
 
-import { importHardwareWallet } from "@shared/api/internal";
-
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -46,16 +44,6 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
 
   const handleConnect = async () => {
     setIsConnecting(true);
-
-    // ALEC TODO - remove hardcode
-    console.log("attempting import");
-    const pubKey = "GAARKRDCQQJOQYKBUY4ZI5NJQGEU3QRTCOXENJBMTUY5O7KXKULSWDEH";
-    const walletType = "LEDGER";
-    try {
-      await importHardwareWallet(pubKey, walletType);
-    } catch (e) {
-      console.log({ e });
-    }
 
     try {
       const transport = await TransportWebUSB.request();
