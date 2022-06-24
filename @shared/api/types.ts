@@ -38,7 +38,7 @@ export interface Response {
   iconUrl: string;
   network: string;
   recentAddresses: Array<string>;
-  // ALEC TODO - enum?
+  // TODO - use hardwarewalet enum when created
   hardwareWalletType: string;
 }
 
