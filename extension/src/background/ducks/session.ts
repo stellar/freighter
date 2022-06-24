@@ -1,7 +1,7 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 
 import { Account } from "@shared/api/types";
-import { getIsActiveHardwareWallet } from "background/helpers/account";
+import { getIsHardwareWalletActive } from "background/helpers/account";
 
 const initialState = {
   publicKey: "",
@@ -113,7 +113,7 @@ export const hasPrivateKeySelector = createSelector(
   sessionSelector,
   (session) =>
     // returns true if active account is a hardware wallet one
-    getIsActiveHardwareWallet() || !!session.privateKey.length,
+    getIsHardwareWalletActive() || !!session.privateKey.length,
 );
 export const privateKeySelector = createSelector(
   sessionSelector,

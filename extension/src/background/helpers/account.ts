@@ -45,5 +45,5 @@ export const getIsMemoValidationEnabled = () =>
 export const getIsSafetyValidationEnabled = () =>
   JSON.parse(localStorage.getItem(IS_VALIDATING_SAFETY_ID) || "true");
 
-export const getIsActiveHardwareWallet = () =>
+export const getIsHardwareWalletActive = () =>
   (localStorage.getItem(KEY_ID) || "").indexOf(HW_PREFIX) > -1;

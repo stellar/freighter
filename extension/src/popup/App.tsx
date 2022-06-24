@@ -16,7 +16,6 @@ import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
 
-// eslint-disable-next-line
 import { Router } from "./Router";
 
 import "./styles/global.scss";

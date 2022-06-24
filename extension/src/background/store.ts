@@ -1,5 +1,5 @@
 import { combineReducers } from "redux";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 
 import { sessionSlice } from "background/ducks/session";
 

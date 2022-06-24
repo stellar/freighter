@@ -44,7 +44,6 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
 
   const handleConnect = async () => {
     setIsConnecting(true);
-
     try {
       const transport = await TransportWebUSB.request();
       const ledgerApi = new LedgerApi(transport);

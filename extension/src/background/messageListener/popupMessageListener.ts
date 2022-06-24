@@ -31,7 +31,7 @@ import {
   getIsTestnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
-  getIsActiveHardwareWallet,
+  getIsHardwareWalletActive,
   HW_PREFIX,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
@@ -73,9 +73,8 @@ export const popupMessageListener = (request: Request) => {
   });
   keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
 
-  const _unlockKeystore = ({ password }: { password: string }) => {
-    return keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
-  };
+  const _unlockKeystore = ({ password }: { password: string }) =>
+    keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
 
   const _storeHardwareWalletAccount = ({
     publicKey,
@@ -463,7 +462,7 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const confirmPasswordHW = async () => {
-    if (!getIsActiveHardwareWallet()) {
+    if (!getIsHardwareWalletActive()) {
       return { error: "Something went wrong, please try again" };
     }
 
@@ -497,7 +496,7 @@ export const popupMessageListener = (request: Request) => {
     <UnlockAccount /> calls this method to fill in any missing data */
 
     // if we're logging in with a hardware wallet, reroute this call
-    if (getIsActiveHardwareWallet()) {
+    if (getIsHardwareWalletActive()) {
       return confirmPasswordHW();
     }
 
