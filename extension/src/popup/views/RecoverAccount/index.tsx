@@ -61,8 +61,10 @@ const PhraseInput = ({
         id={phraseInput}
         name={phraseInput}
         onChange={(e) => {
-          handleMnemonicInputChange(e.target.value, index);
-          setInputValue(e.target.value);
+          if (!isDisabled) {
+            handleMnemonicInputChange(e.target.value, index);
+            setInputValue(e.target.value);
+          }
         }}
         onPaste={(e) => e.preventDefault()}
         placeholder="Enter your 12 word phrase to restore your wallet"
