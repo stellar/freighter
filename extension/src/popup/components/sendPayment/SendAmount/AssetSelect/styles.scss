@@ -10,6 +10,18 @@
     cursor: pointer;
     line-height: 1.75rem;
     padding: 0.5rem 0.75rem;
+
+    &--path-pay {
+      &:nth-of-type(1) {
+        border-bottom: 0;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      &:nth-of-type(2) {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+    }
   }
 
   &__medium-copy {
