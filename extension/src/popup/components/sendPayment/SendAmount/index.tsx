@@ -6,6 +6,7 @@ import { useFormik } from "formik";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { Icon, Loader } from "@stellar/design-system";
+import StellarSdk from "stellar-sdk";
 
 import {
   AssetSelect,
@@ -220,10 +221,14 @@ export const SendAmount = ({
     if (isSwap && !destinationAsset) {
       // default to first non-native asset if exists
       const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
-        (b) => b !== "native",
+        (b) => b !== StellarSdk.Asset.native().toString(),
       );
       dispatch(
-        saveDestinationAsset(nonXlmAssets[0] ? nonXlmAssets[0] : "native"),
+        saveDestinationAsset(
+          nonXlmAssets[0]
+            ? nonXlmAssets[0]
+            : StellarSdk.Asset.native().toString(),
+        ),
       );
     }
   }, [isSwap, dispatch, destinationAsset, accountBalances]);
