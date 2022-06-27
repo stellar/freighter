@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { IconButton, Input, CopyText } from "@stellar/design-system";
+import { Input } from "@stellar/design-system";
 
 import { Field, Form, Formik } from "formik";
 
@@ -67,9 +67,6 @@ export const DisplayBackupPhrase = () => {
               and to the funds in it, so save it in a safe and secure place.
             </p>
             <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
-            <CopyText showTooltip textToCopy={mnemonicPhrase}>
-              <IconButton preset={IconButton.preset.copy} />
-            </CopyText>
           </div>
           <div className="DisplayBackupPhrase__button">
             <Button fullWidth onClick={() => navigateTo(ROUTES.account)}>

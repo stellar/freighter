@@ -38,7 +38,30 @@
 
   &__mnemonic-input {
     display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
     height: 10rem;
     width: 24rem;
+  }
+
+  &__phrase-input {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    width: 7rem;
+
+    &--disabled {
+      display: none;
+    }
+
+    &__number {
+      max-width: 1rem;
+    }
+  }
+
+  &__password-toggle {
+    cursor: pointer;
+    display: flex;
+    width: 1rem;
   }
 }
