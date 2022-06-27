@@ -219,9 +219,19 @@ export const SendAmount = ({
   // for swaps we're loading the destinationAsset here
   useEffect(() => {
     if (isSwap && !destinationAsset) {
-      dispatch(saveDestinationAsset(StellarSdk.Asset.native().toString()));
+      // default to first non-native asset if exists
+      const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
+        (b) => b !== StellarSdk.Asset.native().toString(),
+      );
+      dispatch(
+        saveDestinationAsset(
+          nonXlmAssets[0]
+            ? nonXlmAssets[0]
+            : StellarSdk.Asset.native().toString(),
+        ),
+      );
     }
-  }, [isSwap, dispatch, destinationAsset]);
+  }, [isSwap, dispatch, destinationAsset, accountBalances]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
