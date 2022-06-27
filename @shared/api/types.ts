@@ -38,6 +38,8 @@ export interface Response {
   iconUrl: string;
   network: string;
   recentAddresses: Array<string>;
+  // TODO - use hardwarewalet enum when created
+  hardwareWalletType: string;
 }
 
 export interface ExternalRequest {
@@ -51,6 +53,7 @@ export interface Account {
   publicKey: string;
   name: string;
   imported: boolean;
+  hardwareWalletType?: string;
 }
 
 export interface Settings {

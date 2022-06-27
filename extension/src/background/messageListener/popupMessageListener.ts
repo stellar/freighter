@@ -31,6 +31,8 @@ import {
   getIsTestnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
+  getIsHardwareWalletActive,
+  HW_PREFIX,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
@@ -45,6 +47,7 @@ import {
   mnemonicPhraseSelector,
   publicKeySelector,
   setActivePublicKey,
+  setActivePrivateKey,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
 } from "background/ducks/session";
@@ -72,6 +75,51 @@ export const popupMessageListener = (request: Request) => {
 
   const _unlockKeystore = ({ password }: { password: string }) =>
     keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+
+  const _storeHardwareWalletAccount = ({
+    publicKey,
+    hardwareWalletType,
+  }: {
+    publicKey: string;
+    hardwareWalletType: string;
+  }) => {
+    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
+    const allAccounts = allAccountsSelector(store.getState());
+
+    const keyId = `${HW_PREFIX}${publicKey}`;
+    const keyIdListArr = getKeyIdList();
+    const accountName = `${hardwareWalletType} ${
+      keyIdListArr.filter((k: string) => k.indexOf(HW_PREFIX) !== -1).length + 1
+    }`;
+    keyIdListArr.push(keyId);
+
+    localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+    localStorage.setItem(KEY_ID, keyId);
+
+    store.dispatch(
+      logIn({
+        publicKey,
+        mnemonicPhrase,
+        allAccounts: [
+          ...allAccounts,
+          {
+            publicKey,
+            name: accountName,
+            imported: true,
+            hardwareWalletType,
+          },
+        ],
+      }),
+    );
+
+    // an active hw account should not have an active private key
+    store.dispatch(setActivePrivateKey({ privateKey: "" }));
+
+    addAccountName({
+      keyId,
+      accountName,
+    });
+  };
 
   const _storeAccount = async ({
     mnemonicPhrase,
@@ -219,7 +267,8 @@ export const popupMessageListener = (request: Request) => {
 
     store.dispatch(timeoutAccountAccess());
 
-    sessionTimer.startSession({ privateKey: keyPair.privateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
 
     const currentState = store.getState();
 
@@ -260,7 +309,8 @@ export const popupMessageListener = (request: Request) => {
       imported: true,
     });
 
-    sessionTimer.startSession({ privateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey }));
 
     const currentState = store.getState();
 
@@ -268,6 +318,21 @@ export const popupMessageListener = (request: Request) => {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
       hasPrivateKey: hasPrivateKeySelector(currentState),
+    };
+  };
+
+  const importHardwareWallet = async () => {
+    const { publicKey, hardwareWalletType } = request;
+
+    await _storeHardwareWalletAccount({
+      publicKey,
+      hardwareWalletType,
+    });
+
+    return {
+      publicKey: publicKeySelector(store.getState()),
+      allAccounts: allAccountsSelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
     };
   };
 
@@ -371,7 +436,8 @@ export const popupMessageListener = (request: Request) => {
       localStorage.setItem(APPLICATION_ID, applicationState);
 
       // start the timer now that we have active private key
-      sessionTimer.startSession({ privateKey: keyPair.privateKey });
+      sessionTimer.startSession();
+      store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
     }
 
     const currentState = store.getState();
@@ -395,10 +461,44 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const confirmPasswordHW = async () => {
+    if (!getIsHardwareWalletActive()) {
+      return { error: "Something went wrong, please try again" };
+    }
+
+    const { password } = request;
+    const keyIdList = getKeyIdList();
+
+    // check password with a non-hw account, it's safe to assume at least
+    // one exists
+    const nonHwKeyIds = keyIdList.filter(
+      (k: string) => k.indexOf(HW_PREFIX) === -1,
+    );
+    try {
+      await keyManager.loadKey(nonHwKeyIds[0] || "", password);
+    } catch (e) {
+      console.error(e);
+      return { error: "Could not log into selected account" };
+    }
+
+    sessionTimer.startSession();
+    return {
+      publicKey: publicKeySelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
+      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      allAccounts: allAccountsSelector(store.getState()),
+    };
+  };
+
   const confirmPassword = async () => {
     /* In Popup, we call loadAccount to figure out what the state the user is in,
     then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
     <UnlockAccount /> calls this method to fill in any missing data */
+
+    // if we're logging in with a hardware wallet, reroute this call
+    if (getIsHardwareWalletActive()) {
+      return confirmPasswordHW();
+    }
 
     const { password } = request;
     const keyIdList = getKeyIdList();
@@ -481,7 +581,8 @@ export const popupMessageListener = (request: Request) => {
     }
 
     // start the timer now that we have active private key
-    sessionTimer.startSession({ privateKey: activePrivateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey: activePrivateKey }));
 
     return {
       publicKey: publicKeySelector(store.getState()),
@@ -663,6 +764,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
     [SERVICE_TYPES.IMPORT_ACCOUNT]: importAccount,
+    [SERVICE_TYPES.IMPORT_HARDWARE_WALLET]: importHardwareWallet,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,

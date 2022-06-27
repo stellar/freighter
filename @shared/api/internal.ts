@@ -115,6 +115,29 @@ export const importAccount = async (
   return { allAccounts, publicKey, hasPrivateKey };
 };
 
+export const importHardwareWallet = async (
+  publicKey: string,
+  walletType: string,
+) => {
+  let _publicKey = "";
+  let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
+  try {
+    ({
+      publicKey: _publicKey,
+      allAccounts,
+      hasPrivateKey,
+    } = await sendMessageToBackground({
+      publicKey,
+      walletType,
+      type: SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
+    }));
+  } catch (e) {
+    console.log({ e });
+  }
+  return { allAccounts, publicKey: _publicKey, hasPrivateKey };
+};
+
 export const makeAccountActive = (
   publicKey: string,
 ): Promise<{ publicKey: string; hasPrivateKey: boolean }> =>
