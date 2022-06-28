@@ -1,12 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
+import { FederationServer, MuxedAccount } from "stellar-sdk";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
-import { getTransactionInfo, truncatedPublicKey } from "helpers/stellar";
+import {
+  getTransactionInfo,
+  isFederationAddress,
+  isMuxedAccount,
+  truncatedPublicKey,
+} from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
@@ -52,7 +58,7 @@ export const SignTransaction = () => {
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch();
   const {
-    accountToSign,
+    accountToSign: _accountToSign,
     transaction,
     domain,
     isDomainListedAllowed,
@@ -68,6 +74,7 @@ export const SignTransaction = () => {
 
   const isFeeBump = !!_innerTransaction;
   const memo = decodeMemo(_memo);
+  let accountToSign = _accountToSign;
 
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -128,6 +135,31 @@ export const SignTransaction = () => {
   // the public key the user had selected before starting this flow
   const defaultPublicKey = useRef(publicKey);
   const allAccountsMap = useRef({} as { [key: string]: Account });
+
+  const resolveFederatedAddress = useCallback(async (inputDest) => {
+    let resolvedPublicKey;
+    try {
+      const fedResp = await FederationServer.resolve(inputDest);
+      resolvedPublicKey = fedResp.account_id;
+    } catch (e) {
+      console.error(e);
+    }
+
+    return resolvedPublicKey;
+  }, []);
+
+  const decodeAccountToSign = async () => {
+    if (_accountToSign) {
+      if (isMuxedAccount(_accountToSign)) {
+        const mAccount = MuxedAccount.fromAddress(_accountToSign, "0");
+        accountToSign = mAccount.baseAccount().accountId();
+      }
+      if (isFederationAddress(_accountToSign)) {
+        accountToSign = await resolveFederatedAddress(accountToSign);
+      }
+    }
+  };
+  decodeAccountToSign();
 
   useEffect(() => {
     if (isMemoRequired) {
