@@ -14,17 +14,12 @@ export const OptionTag = ({
   hardwareWalletType?: WalletType;
   imported: boolean;
 }) => {
-  if (hardwareWalletType) {
-    return (
-      <span className="AccountList__option-tag">
-        &bull; {hardwareWalletType}
-      </span>
-    );
-  }
-  if (imported) {
-    return <span className="AccountList__option-tag">&bull; Imported</span>;
-  }
-  return null;
+  if (!hardwareWalletType && !imported) return null;
+  return (
+    <span className="AccountList__option-tag">
+      &bull; {hardwareWalletType || "Imported"}
+    </span>
+  );
 };
 
 interface AccountListItemProps {
