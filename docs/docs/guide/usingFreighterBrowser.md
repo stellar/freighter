@@ -109,7 +109,7 @@ The user will need to provide their password if the extension does not currently
 
 _NOTE:_ The user must provide a valid transaction XDR string for the extension to properly sign.
 
-The second parameter is an optional string that you may pass to indicate what network you’re intending this transaction to be signed on. The parameter must be either `PUBLIC` or `TESTNET`. If you choose not to pass a param, freighter-api will default to `PUBLIC`.
+The second parameter is an optional string that you may pass to indicate what network you’re intending this transaction to be signed on. The network must be either `PUBLIC` or `TESTNET`. If you choose not to pass a network, freighter-api will default to `PUBLIC`. You may also pass `null` here if you choose not to pass a network param, but you would like to pass the third param available.
 
 This is useful in the case that the user's Freighter is configured to the wrong network. Freighter will be able to throw a blocking error message communicating that you intended this transaction to be signed on a different network.
 
@@ -137,12 +137,20 @@ const retrievePublicKey = async () => {
 
 const retrievedPublicKey = await retrievePublicKey();
 
-const userSignTransaction = async (xdr: string, network: string) => {
+const userSignTransaction = async (
+  xdr: string,
+  network: string,
+  signWith: string
+) => {
   let signedTransaction = "";
   let error = "";
 
   try {
-    signedTransaction = await window.freighterApi.signTransaction(xdr, network);
+    signedTransaction = await window.freighterApi.signTransaction(
+      xdr,
+      network,
+      signWith
+    );
   } catch (e) {
     error = e;
   }
@@ -161,12 +169,20 @@ const userSignedTransaction = await userSignTransaction(xdr, "TESTNET");
 freighter-api will return a signed transaction xdr. Below is an example of how you might submit this signed transaction to Horizon using `stellar-sdk` (https://github.com/stellar/js-stellar-sdk):
 
 ```javascript
-const userSignTransaction = async (xdr: string, network: string) => {
+const userSignTransaction = async (
+  xdr: string,
+  network: string,
+  signWith: string
+) => {
   let signedTransaction = "";
   let error = "";
 
   try {
-    signedTransaction = await window.freighterApi.signTransaction(xdr, network);
+    signedTransaction = await window.freighterApi.signTransaction(
+      xdr,
+      network,
+      signWith
+    );
   } catch (e) {
     error = e;
   }
