@@ -6,7 +6,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { BottomNav } from "popup/components/BottomNav";
-import { WalletType } from "constants/hardwareWallet";
+import { WalletType } from "@shared/constants/hardwareWallet";
 import {
   LedgerConnect,
   defaultStellarBipPath,

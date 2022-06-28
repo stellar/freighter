@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 import { Icon, InfoBlock } from "@stellar/design-system";
@@ -9,6 +10,8 @@ import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import Ledger from "popup/assets/ledger.png";
 import LedgerConnected from "popup/assets/ledger-connected.png";
+import { importHardwareWallet } from "popup/ducks/accountServices";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 import "./styles.scss";
 
@@ -35,6 +38,7 @@ const parseLedgerError = (err: any): string => {
 };
 
 export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
+  const dispatch = useDispatch();
   const [isConnecting, setIsConnecting] = useState(false);
 
   // TODO - move to redux with bipPath
@@ -51,6 +55,17 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
 
       setPublicKey(response.publicKey);
       setConnectError("");
+
+      dispatch(
+        importHardwareWallet({
+          publicKey: response.publicKey,
+          hardwareWalletType: WalletType.LEDGER,
+        }),
+      );
+
+      // ALEC TODO - remove
+      console.log("Connect worked");
+      console.log(response.publicKey);
     } catch (e) {
       setConnectError(parseLedgerError(e));
     }

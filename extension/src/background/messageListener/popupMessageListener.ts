@@ -5,6 +5,7 @@ import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { Account, Response as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
@@ -73,15 +74,30 @@ export const popupMessageListener = (request: Request) => {
   });
   keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
 
-  const _unlockKeystore = ({ password }: { password: string }) =>
-    keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+  const _unlockKeystore = ({
+    password,
+    keyID,
+  }: {
+    password: string;
+    keyID: string;
+  }) => keyManager.loadKey(keyID, password);
+
+  // this returns the first non hardware wallet (Hw) keyID, if it exists.
+  // Used for things like checking a password when a Hw is active.
+  const _getNonHwKeyID = () => {
+    const keyIdList = getKeyIdList();
+    const nonHwKeyIds = keyIdList.filter(
+      (k: string) => k.indexOf(HW_PREFIX) === -1,
+    );
+    return nonHwKeyIds[0] || "";
+  };
 
   const _storeHardwareWalletAccount = ({
     publicKey,
     hardwareWalletType,
   }: {
     publicKey: string;
-    hardwareWalletType: string;
+    hardwareWalletType: WalletType;
   }) => {
     const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
     const allAccounts = allAccountsSelector(store.getState());
@@ -241,8 +257,12 @@ export const popupMessageListener = (request: Request) => {
       return { error: "Mnemonic phrase not found" };
     }
 
+    const keyID = getIsHardwareWalletActive()
+      ? _getNonHwKeyID()
+      : localStorage.getItem(KEY_ID) || "";
+
     try {
-      await _unlockKeystore({ password });
+      await _unlockKeystore({ keyID, password });
     } catch (e) {
       console.error(e);
       return { error: "Incorrect password" };
@@ -282,9 +302,12 @@ export const popupMessageListener = (request: Request) => {
   const importAccount = async () => {
     const { password, privateKey } = request;
     let sourceKeys;
+    const keyID = getIsHardwareWalletActive()
+      ? _getNonHwKeyID()
+      : localStorage.getItem(KEY_ID) || "";
 
     try {
-      await _unlockKeystore({ password });
+      await _unlockKeystore({ keyID, password });
       sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
@@ -454,7 +477,10 @@ export const popupMessageListener = (request: Request) => {
     const { password } = request;
 
     try {
-      await _unlockKeystore({ password });
+      await _unlockKeystore({
+        keyID: localStorage.getItem(KEY_ID) || "",
+        password,
+      });
       return {};
     } catch (e) {
       return { error: "Incorrect Password" };
@@ -467,15 +493,12 @@ export const popupMessageListener = (request: Request) => {
     }
 
     const { password } = request;
-    const keyIdList = getKeyIdList();
 
     // check password with a non-hw account, it's safe to assume at least
     // one exists
-    const nonHwKeyIds = keyIdList.filter(
-      (k: string) => k.indexOf(HW_PREFIX) === -1,
-    );
+    const keyID = _getNonHwKeyID();
     try {
-      await keyManager.loadKey(nonHwKeyIds[0] || "", password);
+      await _unlockKeystore({ keyID, password });
     } catch (e) {
       console.error(e);
       return { error: "Could not log into selected account" };
@@ -519,7 +542,10 @@ export const popupMessageListener = (request: Request) => {
 
     // first make sure the password is correct to get active keystore, short circuit if not
     try {
-      activeAccountKeystore = await _unlockKeystore({ password });
+      activeAccountKeystore = await _unlockKeystore({
+        keyID: localStorage.getItem(KEY_ID) || "",
+        password,
+      });
     } catch (e) {
       console.error(e);
       return { error: "Could not log into selected account" };

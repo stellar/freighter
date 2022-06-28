@@ -7,6 +7,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
   importAccount as importAccountService,
+  importHardwareWallet as importHardwareWalletService,
   makeAccountActive as makeAccountActiveService,
   updateAccountName as updateAccountNameService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
@@ -18,7 +19,7 @@ import {
   signOut as signOutService,
 } from "@shared/api/internal";
 import { Account, ErrorMessage } from "@shared/api/types";
-import { WalletType } from "constants/hardwareWallet";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },
@@ -92,6 +93,33 @@ export const importAccount = createAsyncThunk<
   }
   return res;
 });
+
+export const importHardwareWallet = createAsyncThunk<
+  {
+    publicKey: string;
+    allAccounts: Array<Account>;
+    hasPrivateKey: boolean;
+  },
+  // ALEC TODO - use enum for hw type
+  { publicKey: string; hardwareWalletType: WalletType },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/importHardwareWallet",
+  async ({ publicKey, hardwareWalletType }, thunkApi) => {
+    let res = {
+      publicKey: "",
+      allAccounts: [] as Array<Account>,
+      hasPrivateKey: false,
+    };
+    try {
+      res = await importHardwareWalletService(publicKey, hardwareWalletType);
+    } catch (e) {
+      console.error("Failed when importing hardware wallet: ", e);
+      return thunkApi.rejectWithValue({ errorMessage: e.message });
+    }
+    return res;
+  },
+);
 
 export const makeAccountActive = createAsyncThunk(
   "auth/makeAccountActive",
@@ -324,6 +352,18 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(importAccount.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
+    builder.addCase(importHardwareWallet.fulfilled, (state, action) => {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload;
+      return { ...state, error: "", publicKey, allAccounts, hasPrivateKey };
+    });
+    builder.addCase(importHardwareWallet.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
 
       return {
