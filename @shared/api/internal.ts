@@ -12,6 +12,7 @@ import {
 import { MAINNET_NETWORK_DETAILS, NetworkDetails } from "../helpers/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
+import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 
@@ -117,7 +118,7 @@ export const importAccount = async (
 
 export const importHardwareWallet = async (
   publicKey: string,
-  walletType: string,
+  hardwareWalletType: WalletType,
 ) => {
   let _publicKey = "";
   let allAccounts = [] as Array<Account>;
@@ -129,7 +130,7 @@ export const importHardwareWallet = async (
       hasPrivateKey,
     } = await sendMessageToBackground({
       publicKey,
-      walletType,
+      hardwareWalletType,
       type: SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
     }));
   } catch (e) {

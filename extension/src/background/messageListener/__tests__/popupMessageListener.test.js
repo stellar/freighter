@@ -7,7 +7,7 @@ import {
   allAccountsSelector,
 } from "background/ducks/session";
 
-console.error = jest.fn();
+console.error = jest.fn((e) => console.log(e));
 
 describe("popupMessageListener", () => {
   describe("CREATE_ACCOUNT", () => {
@@ -60,6 +60,59 @@ describe("popupMessageListener", () => {
 
       await popupMessageListener(r);
       expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("IMPORT_ACCOUNT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.IMPORT_ACCOUNT;
+      r.password = "test";
+      r.privateKey = "SAUIIOB4EB6MZ25RKTKQ6DBXBDKKFQVMPLS2Q5LDH4GAMT7SAQPQMNCB";
+
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+
+      // check store
+      expect(publicKeySelector(store.getState())).toBe(
+        "GCYHTBIQHNHKJYG3WJQZ5HS2CDD7MDFOTAT5IGTK7IZXV3SHVQB3VLGV",
+      );
+      expect(privateKeySelector(store.getState())).toBe(
+        "SAUIIOB4EB6MZ25RKTKQ6DBXBDKKFQVMPLS2Q5LDH4GAMT7SAQPQMNCB",
+      );
+      expect(allAccountsSelector(store.getState()).length).toBe(3);
+      // check localStorage
+      expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(3);
+      expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(-1);
+    });
+  });
+
+  describe("MAKE_ACCOUNT_ACTIVE", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE;
+      r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
+
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+      expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(0);
+    });
+  });
+
+  describe("ADD_ACCOUNT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.ADD_ACCOUNT;
+      r.password = "test";
+
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+
+      // check store
+      expect(allAccountsSelector(store.getState()).length).toBe(4);
+      // check localStorage
+      expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(4);
+      expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(-1);
     });
   });
 });
