@@ -100,7 +100,6 @@ export const importHardwareWallet = createAsyncThunk<
     allAccounts: Array<Account>;
     hasPrivateKey: boolean;
   },
-  // ALEC TODO - use enum for hw type
   { publicKey: string; hardwareWalletType: WalletType },
   { rejectValue: ErrorMessage }
 >(

@@ -62,10 +62,6 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
           hardwareWalletType: WalletType.LEDGER,
         }),
       );
-
-      // ALEC TODO - remove
-      console.log("Connect worked");
-      console.log(response.publicKey);
     } catch (e) {
       setConnectError(parseLedgerError(e));
     }
