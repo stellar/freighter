@@ -1,14 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { Card, Icon } from "@stellar/design-system";
+import { FederationServer, MuxedAccount } from "stellar-sdk";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
-import { getTransactionInfo } from "helpers/stellar";
+import {
+  getTransactionInfo,
+  isFederationAddress,
+  isMuxedAccount,
+  truncatedPublicKey,
+} from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
+import { InfoBlock } from "popup/basics/InfoBlock";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { TransactionHeading } from "popup/basics/TransactionHeading";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import {
+  allAccountsSelector,
+  confirmPassword,
+  hasPrivateKeySelector,
+  makeAccountActive,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import {
@@ -19,24 +36,31 @@ import {
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { ModalInfo } from "popup/components/ModalInfo";
+import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
+import { AccountList, ImportedTag } from "popup/components/account/AccountList";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessage,
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
-import { TransactionHeader } from "popup/components/signTransaction/TransactionHeader";
+import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
+
+import { VerifyAccount } from "popup/views/VerifyAccount";
+
+import { Account } from "@shared/api/types";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
 export const SignTransaction = () => {
   const location = useLocation();
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const {
+    accountToSign: _accountToSign,
     transaction,
     domain,
-    domainTitle,
     isDomainListedAllowed,
     flaggedKeys,
   } = getTransactionInfo(location.search);
@@ -47,11 +71,18 @@ export const SignTransaction = () => {
     _networkPassphrase,
     _sequence,
   } = transaction;
+
   const isFeeBump = !!_innerTransaction;
-  const source = isFeeBump ? _innerTransaction._source : transaction._source;
   const memo = decodeMemo(_memo);
+  let accountToSign = _accountToSign;
 
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentAccount, setCurrentAccount] = useState({} as Account);
+  const [accountNotFound, setAccountNotFound] = useState(false);
+  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+
+  const accountSelectorRef = useRef<HTMLDivElement>(null);
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
@@ -59,9 +90,28 @@ export const SignTransaction = () => {
   };
 
   const signAndClose = async () => {
-    setIsConfirming(true);
     await dispatch(signTransaction({ transaction }));
     window.close();
+  };
+
+  const verifyPasswordThenSign = async (password: string) => {
+    const confirmPasswordResp = await dispatch(confirmPassword(password));
+
+    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
+      await signAndClose();
+    }
+  };
+
+  const handleApprove = async () => {
+    setIsConfirming(true);
+
+    if (hasPrivateKey) {
+      await signAndClose();
+    } else {
+      setIsPasswordRequired(true);
+    }
+
+    setIsConfirming(false);
   };
 
   const flaggedKeyValues = Object.values(flaggedKeys);
@@ -75,6 +125,42 @@ export const SignTransaction = () => {
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
+  const { networkName, otherNetworkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
+  const allAccounts = useSelector(allAccountsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  // the public key the user had selected before starting this flow
+  const defaultPublicKey = useRef(publicKey);
+  const allAccountsMap = useRef({} as { [key: string]: Account });
+
+  const resolveFederatedAddress = useCallback(async (inputDest) => {
+    let resolvedPublicKey;
+    try {
+      const fedResp = await FederationServer.resolve(inputDest);
+      resolvedPublicKey = fedResp.account_id;
+    } catch (e) {
+      console.error(e);
+    }
+
+    return resolvedPublicKey;
+  }, []);
+
+  const decodeAccountToSign = async () => {
+    if (_accountToSign) {
+      if (isMuxedAccount(_accountToSign)) {
+        const mAccount = MuxedAccount.fromAddress(_accountToSign, "0");
+        accountToSign = mAccount.baseAccount().accountId();
+      }
+      if (isFederationAddress(_accountToSign)) {
+        accountToSign = await resolveFederatedAddress(accountToSign);
+      }
+    }
+  };
+  decodeAccountToSign();
+
   useEffect(() => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
@@ -87,11 +173,39 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired, isMalicious, isUnsafe]);
 
-  const isSubmitDisabled = isMemoRequired || isMalicious;
+  useEffect(() => {
+    // handle auto selecting the right account based on `accountToSign`
+    let autoSelectedAccountDetails;
 
-  const { networkName, otherNetworkName, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
+    allAccounts.forEach((account) => {
+      if (accountToSign) {
+        // does the user have the `accountToSign` somewhere in the accounts list?
+        if (account.publicKey === accountToSign) {
+          // if the `accountToSign` is found, but it isn't active, make it active
+          if (defaultPublicKey.current !== account.publicKey) {
+            dispatch(makeAccountActive(account.publicKey));
+          }
+
+          // save the details of the `accountToSign`
+          autoSelectedAccountDetails = account;
+        }
+      }
+
+      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
+      allAccountsMap.current[account.publicKey] = account;
+    });
+
+    if (!autoSelectedAccountDetails) {
+      setAccountNotFound(true);
+    }
+  }, [accountToSign, allAccounts, dispatch]);
+
+  useEffect(() => {
+    // handle any changes to the current acct - whether by auto select or manual select
+    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
+  }, [allAccounts, publicKey]);
+
+  const isSubmitDisabled = isMemoRequired || isMalicious;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -108,8 +222,14 @@ export const SignTransaction = () => {
     );
   }
 
-  return (
-    <>
+  return isPasswordRequired ? (
+    <VerifyAccount
+      isApproval
+      customBackAction={() => setIsPasswordRequired(false)}
+      customSubmit={verifyPasswordThenSign}
+    />
+  ) : (
+    <div className="SignTransaction">
       <ModalWrapper>
         <ModalHeader>
           <strong>Confirm Transaction</strong>
@@ -124,20 +244,47 @@ export const SignTransaction = () => {
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
-        <ModalInfo
-          domain={domain}
-          domainTitle={domainTitle}
-          subject={`This website is requesting a signature to the following${" "}
-            ${isFeeBump ? "fee bump " : ""}transaction:`}
-        >
-          <TransactionHeader
-            _fee={_fee}
-            _sequence={_sequence}
-            source={source}
-            isFeeBump={isFeeBump}
-            isMemoRequired={isMemoRequired}
-          />
-        </ModalInfo>
+        <div className="SignTransaction__info">
+          <Card variant={Card.variant.highlight}>
+            <PunycodedDomain domain={domain} isRow />
+            <div className="SignTransaction__subject">
+              is requesting approval to a {isFeeBump ? "fee bump " : ""}
+              transaction:
+            </div>
+            <div className="SignTransaction__approval">
+              <div className="SignTransaction__approval__title">
+                Approve using:
+              </div>
+              <div
+                className="SignTransaction__current-account"
+                onClick={() => setIsDropdownOpen(true)}
+              >
+                <AccountListIdenticon
+                  displayKey
+                  accountName={currentAccount.name}
+                  active
+                  publicKey={currentAccount.publicKey}
+                  setIsDropdownOpen={setIsDropdownOpen}
+                >
+                  {currentAccount.imported ? <ImportedTag /> : null}
+                </AccountListIdenticon>
+                <div className="SignTransaction__current-account__chevron">
+                  <Icon.ChevronDown />
+                </div>
+              </div>
+            </div>
+          </Card>
+          {accountNotFound && accountToSign ? (
+            <div className="SignTransaction__account-not-found">
+              <InfoBlock variant={InfoBlock.variant.warning}>
+                The application is requesting a specific account (
+                {truncatedPublicKey(accountToSign)}), which is not available on
+                Freighter. If you own this account, you can import it into
+                Freighter to complete this transaction.
+              </InfoBlock>
+            </div>
+          ) : null}
+        </div>
 
         {isFeeBump ? (
           <div className="SignTransaction__inner-transaction">
@@ -154,6 +301,13 @@ export const SignTransaction = () => {
             transaction={transaction}
           />
         )}
+        <TransactionHeading>Transaction Info</TransactionHeading>
+        <TransactionInfo
+          _fee={_fee}
+          _sequence={_sequence}
+          isFeeBump={isFeeBump}
+          isMemoRequired={isMemoRequired}
+        />
       </ModalWrapper>
       <ButtonsContainer>
         <Button
@@ -167,11 +321,30 @@ export const SignTransaction = () => {
           disabled={isSubmitDisabled}
           fullWidth
           isLoading={isConfirming}
-          onClick={() => signAndClose()}
+          onClick={() => handleApprove()}
         >
-          Sign Transaction
+          Approve
         </Button>
       </ButtonsContainer>
-    </>
+      <div
+        className="SignTransaction__account-selector"
+        ref={accountSelectorRef}
+        style={{
+          bottom: isDropdownOpen
+            ? "0px"
+            : `-${accountSelectorRef?.current?.clientHeight}px`,
+        }}
+      >
+        <AccountList
+          allAccounts={allAccounts}
+          publicKey={publicKey}
+          setIsDropdownOpen={setIsDropdownOpen}
+        />
+      </div>
+      <LoadingBackground
+        onClick={() => setIsDropdownOpen(false)}
+        isActive={isDropdownOpen}
+      />
+    </div>
   );
 };

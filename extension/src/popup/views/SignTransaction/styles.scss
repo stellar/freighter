@@ -1,4 +1,8 @@
 .SignTransaction {
+  height: var(--popup--height);
+  overflow: hidden;
+  position: relative;
+
   &__inner-transaction {
     border: 1px solid var(--pal-border-primary);
     border-radius: 0.5rem;
@@ -7,5 +11,56 @@
     overflow: auto;
     padding: 1rem 2rem;
     zoom: 0.7;
+  }
+
+  &__info {
+    margin-bottom: 2rem;
+  }
+
+  &__subject {
+    border-bottom: 1px solid var(--pal-border-secondary);
+    color: var(--pal-text-primary);
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  &__approval {
+    margin-bottom: -1rem;
+
+    &__title {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.875rem;
+      line-height: 1.5rem;
+    }
+  }
+
+  &__current-account {
+    align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    margin: 1rem 0 0.5rem 0;
+    width: 100%;
+
+    &__chevron {
+      display: flex;
+      width: 0.75rem;
+    }
+  }
+
+  &__account-selector {
+    background: var(--background-color);
+    border-radius: 1.5rem 1.5rem 0 0;
+    box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
+    padding: 0.5rem 0 0.5rem 1.5rem;
+    position: absolute;
+    transition: all var(--dropdown-animation);
+    width: var(--popup--width);
+    z-index: var(--z-index-modal);
+  }
+
+  &__account-not-found {
+    margin-top: 1rem;
   }
 }

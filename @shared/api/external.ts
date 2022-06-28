@@ -22,7 +22,8 @@ export const requestPublicKey = async (): Promise<string> => {
 
 export const submitTransaction = async (
   transactionXdr: string,
-  network?: string,
+  network?: string | null,
+  accountToSign?: string,
 ): Promise<string> => {
   let response = { signedTransaction: "", error: "" };
   if (network && network !== NETWORKS.PUBLIC && network !== NETWORKS.TESTNET) {
@@ -33,6 +34,7 @@ export const submitTransaction = async (
     response = await sendMessageToContentScript({
       transactionXdr,
       network,
+      accountToSign,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION,
     });
   } catch (e) {

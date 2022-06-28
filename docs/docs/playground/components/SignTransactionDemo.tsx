@@ -1,19 +1,33 @@
 import React, { useState } from "react";
 import { signTransaction } from "@stellar/freighter-api";
-import { PlaygroundTextarea } from "./basics/inputs";
+import { PlaygroundInput, PlaygroundTextarea } from "./basics/inputs";
 
 export const SignTransactionDemo = () => {
   const [transactionXdr, setTransactionXdr] = useState("");
+  const [network, setNetwork] = useState("");
+  const [publicKey, setPublicKey] = useState("");
   const [transactionResult, setTransactionResult] = useState("");
-  const inputOnChangeHandler = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+
+  const xdrOnChangeHandler = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTransactionXdr(e.currentTarget.value);
   };
+  const networkOnChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNetwork(e.currentTarget.value);
+  };
+  const publicKeyOnChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPublicKey(e.currentTarget.value);
+  };
+
   const btnHandler = async () => {
     let signedTransaction;
     let error = "";
 
     try {
-      signedTransaction = await signTransaction(transactionXdr);
+      signedTransaction = await signTransaction(
+        transactionXdr,
+        network === "PUBLIC" || network === "TESTNET" ? network : null,
+        publicKey
+      );
     } catch (e) {
       error = e;
     }
@@ -23,7 +37,15 @@ export const SignTransactionDemo = () => {
     <section>
       <div>
         Enter transaction XDR:
-        <PlaygroundTextarea onChange={inputOnChangeHandler} />
+        <PlaygroundTextarea onChange={xdrOnChangeHandler} />
+      </div>
+      <div>
+        Enter network - "TESTNET"|"PUBLIC" (optional):
+        <PlaygroundInput onChange={networkOnChangeHandler} />
+      </div>
+      <div>
+        Request signature from specific public key (optional):
+        <PlaygroundInput onChange={publicKeyOnChangeHandler} />
       </div>
       <div>
         Result:

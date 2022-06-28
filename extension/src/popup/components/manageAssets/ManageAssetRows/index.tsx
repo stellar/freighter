@@ -9,7 +9,11 @@ import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { getCanonicalFromAsset, xlmToStroop } from "helpers/stellar";
+import {
+  formatDomain,
+  getCanonicalFromAsset,
+  xlmToStroop,
+} from "helpers/stellar";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
 
@@ -36,12 +40,16 @@ import "./styles.scss";
 export type ManageAssetCurrency = CURRENCY & { domain: string };
 
 interface ManageAssetRowsProps {
+  children?: React.ReactNode;
+  header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
   setErrorAsset: (errorAsset: string) => void;
   maxHeight: number;
 }
 
 export const ManageAssetRows = ({
+  children,
+  header,
   assetRows,
   setErrorAsset,
   maxHeight,
@@ -135,6 +143,7 @@ export const ManageAssetRows = ({
         maxHeight: `${maxHeight}px`,
       }}
     >
+      {header}
       <div className="ManageAssetRows__content">
         {assetRows.map(({ code, domain, image, issuer }) => {
           if (!balances) return null;
@@ -154,9 +163,7 @@ export const ManageAssetRows = ({
               <div className="ManageAssetRows__code">
                 {code}
                 <div className="ManageAssetRows__domain">
-                  {domain
-                    ? domain.replace("https://", "").replace("www.", "")
-                    : "Stellar Network"}
+                  {formatDomain(domain)}
                 </div>
               </div>
               <div className="ManageAssetRows__button">
@@ -177,6 +184,7 @@ export const ManageAssetRows = ({
           );
         })}
       </div>
+      {children}
     </SimpleBar>
   );
 };

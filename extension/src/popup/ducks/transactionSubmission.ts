@@ -217,6 +217,10 @@ const transactionSubmissionSlice = createSlice({
   initialState,
   reducers: {
     resetSubmission: () => initialState,
+    resetDestinationAmount: (state) => {
+      state.transactionData.destinationAmount =
+        initialState.transactionData.destinationAmount;
+    },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
@@ -306,6 +310,7 @@ const transactionSubmissionSlice = createSlice({
 
 export const {
   resetSubmission,
+  resetDestinationAmount,
   saveDestination,
   saveFederationAddress,
   saveAmount,

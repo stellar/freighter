@@ -19,6 +19,7 @@ import {
   getAccountBalances,
   getAssetIcons,
   transactionSubmissionSelector,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
@@ -57,6 +58,9 @@ export const Account = () => {
   const { balances, isFunded } = accountBalances;
 
   useEffect(() => {
+    // reset to avoid any residual data eg switching between send and swap or
+    // previous stale sends
+    dispatch(resetSubmission());
     dispatch(
       getAccountBalances({
         publicKey,

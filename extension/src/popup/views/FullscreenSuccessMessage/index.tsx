@@ -5,10 +5,9 @@ import { emitMetric } from "helpers/metrics";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-
+import { navigateTo } from "popup/helpers/navigate";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { SubmitButtonWrapper } from "popup/basics/Forms";
-
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { OnboardingHeader } from "popup/components/Onboarding";
@@ -18,6 +17,37 @@ import ExtensionIllo from "popup/assets/illo-extension.png";
 
 import "./styles.scss";
 
+// userAgent sniffing is not foolproof so shouldn't expect this method
+// to be 100% accurate.
+const isChrome = () =>
+  navigator.userAgent.toLowerCase().indexOf("chrome") > -1 && !!window.chrome;
+
+const AvoidScamsWarningBlock = () => (
+  <div className="FullscreenSuccessMessage__infoBlock">
+    <InfoBlock variant={InfoBlock.variant.warning}>
+      <div className="InfoBlock__content">
+        <div className="InfoBlock__header">
+          Avoid scams and keep your account safe
+        </div>
+        <ul className="FullscreenSuccessMessage__infoBlock__list">
+          <li>
+            Freighter will never ask for your recovery phrase unless you're
+            actively importing your account using the browser extension - never
+            on an external website.
+          </li>
+          <li>
+            Always check the domain of websites you’re using Freighter with
+          </li>
+          <li>
+            Freighter cannot recover your account if you lose your recovery
+            phrase, so keep it safe
+          </li>
+        </ul>
+      </div>
+    </InfoBlock>
+  </div>
+);
+
 const MnemonicPhraseConfirmedMessage = () => (
   <>
     <div className="FullscreenSuccessMessage__copy">
@@ -26,38 +56,20 @@ const MnemonicPhraseConfirmedMessage = () => (
         responsibility.
       </p>
     </div>
-    <div className="FullscreenSuccessMessage__infoBlock">
-      <InfoBlock variant={InfoBlock.variant.warning}>
-        <div className="InfoBlock__content">
-          <div className="InfoBlock__header">
-            Avoid scams and keep your account safe:
-          </div>
-          <ul>
-            <li>
-              Freighter will never ask for your recovery phrase unless you're
-              actively importing your account using the browser extension -
-              never on an external website.
-            </li>
-            <li>
-              Always check the domain of websites you’re using Freighter with
-            </li>
-            <li>
-              Freighter cannot recover your account if you lose your recovery
-              phrase, so keep it safe
-            </li>
-          </ul>
-        </div>
-      </InfoBlock>
-    </div>
+    <AvoidScamsWarningBlock />
     <SubmitButtonWrapper>
       <Button
         fullWidth
         onClick={() => {
           emitMetric(METRIC_NAMES.accountCreatorFinished);
-          window.close();
+          if (isChrome()) {
+            navigateTo(ROUTES.pinExtension);
+          } else {
+            window.close();
+          }
         }}
       >
-        GOT IT
+        {isChrome() ? "CONTINUE" : "ALL DONE"}
       </Button>
     </SubmitButtonWrapper>
   </>
@@ -66,28 +78,41 @@ const MnemonicPhraseConfirmedMessage = () => (
 const RecoverAccountSuccessMessage = () => (
   <>
     <div className="FullscreenSuccessMessage__copy">
-      <p>You successfully imported your account.</p>
       <p>
-        Check your account details by clicking on the Freighter icon on your
-        browser.
+        You successfully imported your account. Keep your recovery phrase safe,
+        it’s your responsibility
       </p>
+      {!isChrome() && (
+        <p>
+          Check your account details by clicking on the Freighter icon on your
+          browser.
+        </p>
+      )}
     </div>
-    <div className="FullscreenSuccessMessage__illo-container">
-      <img
-        className="FullscreenSuccessMessage__extension-image"
-        src={ExtensionIllo}
-        alt="Extension"
-      />
-    </div>
+    {isChrome() ? (
+      <AvoidScamsWarningBlock />
+    ) : (
+      <div className="FullscreenSuccessMessage__illo-container">
+        <img
+          className="FullscreenSuccessMessage__extension-image"
+          src={ExtensionIllo}
+          alt="Extension"
+        />
+      </div>
+    )}
     <SubmitButtonWrapper>
       <Button
         fullWidth
         onClick={() => {
           emitMetric(METRIC_NAMES.recoverAccountFinished);
-          window.close();
+          if (isChrome()) {
+            navigateTo(ROUTES.pinExtension);
+          } else {
+            window.close();
+          }
         }}
       >
-        ALL DONE
+        {isChrome() ? "CONTINUE" : "ALL DONE"}
       </Button>
     </SubmitButtonWrapper>
   </>

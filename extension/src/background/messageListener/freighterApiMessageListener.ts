@@ -79,10 +79,8 @@ export const freighterApiMessageListener = (
   };
 
   const submitTransaction = async () => {
-    const {
-      transactionXdr,
-      network = MAINNET_NETWORK_DETAILS.network,
-    } = request;
+    const { transactionXdr, network: _network, accountToSign } = request;
+    const network = _network ?? MAINNET_NETWORK_DETAILS.network;
     const isTestnet = getIsTestnet();
     const { networkUrl } = getNetworkDetails(isTestnet);
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
@@ -115,7 +113,7 @@ export const freighterApiMessageListener = (
         accountData.forEach(
           ({ address, tags }: { address: string; tags: Array<string> }) => {
             if (address === operation.destination) {
-              const collectedTags = [...tags];
+              let collectedTags = [...tags];
 
               /* if the user has opted out of validation, remove applicable tags */
               if (!isValidatingMemo) {
@@ -124,10 +122,10 @@ export const freighterApiMessageListener = (
                 );
               }
               if (!isValidatingSafety) {
-                collectedTags.filter(
+                collectedTags = collectedTags.filter(
                   (tag) => tag !== TRANSACTION_WARNING.unsafe,
                 );
-                collectedTags.filter(
+                collectedTags = collectedTags.filter(
                   (tag) => tag !== TRANSACTION_WARNING.malicious,
                 );
               }
@@ -157,6 +155,7 @@ export const freighterApiMessageListener = (
       isDomainListedAllowed,
       url: tabUrl,
       flaggedKeys,
+      accountToSign,
     } as TransactionInfo;
 
     transactionQueue.push(transaction);

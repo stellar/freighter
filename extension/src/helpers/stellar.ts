@@ -23,6 +23,7 @@ export const getTransactionInfo = (search: string) => {
   const transactionInfo = parsedSearchParam(search);
 
   const {
+    accountToSign,
     url,
     transaction,
     isDomainListedAllowed,
@@ -36,6 +37,7 @@ export const getTransactionInfo = (search: string) => {
   );
 
   return {
+    accountToSign,
     transaction,
     domain: hostname,
     domainTitle: title,
@@ -90,3 +92,15 @@ export const getConversionRate = (
   sourceAmount: string,
   destAmount: string,
 ): BigNumber => new BigNumber(destAmount).div(new BigNumber(sourceAmount));
+
+export const formatDomain = (domain: string) => {
+  if (domain) {
+    domain.replace("https://", "").replace("www.", "");
+    return domain;
+  }
+  return "Stellar Network";
+};
+
+export const isMuxedAccount = (publicKey: string) => publicKey.startsWith("M");
+
+export const isFederationAddress = (address: string) => address.includes("*");

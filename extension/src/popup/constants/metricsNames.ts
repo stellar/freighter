@@ -11,6 +11,7 @@ export const METRIC_NAMES = {
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
   viewMnemonicPhraseConfirm: "loaded screen: confirm mnemonic phrase",
   viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
+  viewPinExtension: "loaded screen: pix extension",
   viewRecoverAccount: "loaded screen: recover account",
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
@@ -41,8 +42,16 @@ export const METRIC_NAMES = {
   sendPaymentPathPaymentSuccess: "send payment: path payment success",
   sendPaymentError: "send payment: error",
 
+  viewSwap: "loaded screen: swap",
+  swapAmount: "loaded screen: swap amount",
+  swapSettings: "loaded screen: swap settings",
+  swapSettingsFee: "loaded screen: swap settings fee",
+  swapSettingsSlippage: "loaded screen: swap settings slippage",
+  swapConfirm: "loaded screen: swap confirm",
+
   viewManageAssets: "loaded screen: manage assets",
   viewAddAsset: "loaded screen: add asset",
+  viewSearchAsset: "loaded screen: search asset",
   viewTrustlineError: "loaded screen: trustline error",
 
   manageAssetAddAsset: "manage asset: add asset",
