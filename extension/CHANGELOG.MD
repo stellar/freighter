@@ -2,35 +2,35 @@
 
 ### Bug
 
-Ajustments to the pull up menu
+- Ajustments to the pull up menu
 
-After completing a swap and doing it again, when selecting asset the images
-won't load
+- After completing a swap and doing it again, when selecting asset the images
+  won't load
 
-Images are displaying the "no image" icon while loading. They should display the
-loader state
+- Images are displaying the "no image" icon while loading. They should display
+  the loader state
 
-Fix width and paddings on the account creation yellow box
+- Fix width and paddings on the account creation yellow box
 
-In clickable items, allow the user to click on the entire line, not only on the
-arrow
+- In clickable items, allow the user to click on the entire line, not only on
+  the arrow
 
 ### Story
 
-Ask the user to pin the extension after installation \(update image\)
+- Ask the user to pin the extension after installation \(update image\)
 
-Update "Offered by" field in the Chrome web store
+- Update "Offered by" field in the Chrome web store
 
-Update placeholder text of the manual asset add field
+- Update placeholder text of the manual asset add field
 
-Remove network tag from onboarding screens
+- Remove network tag from onboarding screens
 
-Allow the user to select a key when signing and verify if the user has the
-required key requested by the app
+- Allow the user to select a key when signing and verify if the user has the
+  required key requested by the app
 
-Set recommended fee as default when sending a payment
+- Set recommended fee as default when sending a payment
 
-Allow swapping assets using Path Payments
+- Allow swapping assets using Path Payments
 
 # v2.1.2
 
@@ -43,7 +43,6 @@ Allow swapping assets using Path Payments
 - Better asset icon handling
 - Path Payment starting at 0 error
 - Default to "recommended fee" in payment
--
 
 # v2.0.0
 
