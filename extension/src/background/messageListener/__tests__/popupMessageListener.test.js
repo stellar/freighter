@@ -87,6 +87,18 @@ describe("popupMessageListener", () => {
     });
   });
 
+  describe("MAKE_ACCOUNT_ACTIVE", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE;
+      r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
+
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+      expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(0);
+    });
+  });
+
   describe("ADD_ACCOUNT", () => {
     it("works", async () => {
       const r = {};
