@@ -1,3 +1,9 @@
+# Release notes - Version 2.2.1
+
+### Bug
+
+- fix bug when going to swap screen with no trustlines
+
 # Release notes - Version 2.2.0
 
 ### Bug
