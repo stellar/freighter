@@ -1,4 +1,64 @@
-#v1.2.0 **Bug Fixes:**
+# Release notes - Version 2.2.1
+
+### Bug
+
+- fix bug when going to swap screen with no trustlines
+
+# Release notes - Version 2.2.0
+
+### Bug
+
+- Ajustments to the pull up menu
+
+- After completing a swap and doing it again, when selecting asset the images
+  won't load
+
+- Images are displaying the "no image" icon while loading. They should display
+  the loader state
+
+- Fix width and paddings on the account creation yellow box
+
+- In clickable items, allow the user to click on the entire line, not only on
+  the arrow
+
+### Story
+
+- Ask the user to pin the extension after installation \(update image\)
+
+- Update "Offered by" field in the Chrome web store
+
+- Update placeholder text of the manual asset add field
+
+- Remove network tag from onboarding screens
+
+- Allow the user to select a key when signing and verify if the user has the
+  required key requested by the app
+
+- Set recommended fee as default when sending a payment
+
+- Allow swapping assets using Path Payments
+
+# v2.1.2
+
+- Protocol 19 update
+- Add tracking for new features
+- Filter out LP shares from balances
+
+**Bug Fixes:**
+
+- Better asset icon handling
+- Path Payment starting at 0 error
+- Default to "recommended fee" in payment
+
+# v2.0.0
+
+- UI revamp
+- Added managing trustlines
+- Added send payments/path payments
+
+# v1.2.0
+
+**Bug Fixes:**
 
 - Fix multi line operations in Account History
 - Add Lumenswap logo to footer

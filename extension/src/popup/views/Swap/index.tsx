@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Switch, Redirect } from "react-router-dom";
 
+import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
@@ -18,33 +19,30 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 export const Swap = () => {
-  const dispatch = useDispatch();
-  const { accountBalances, assetIcons } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const dispatch: AppDispatch = useDispatch();
+  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   // load needed swap data here in case didn't go to home screen first
   useEffect(() => {
-    if (!accountBalances.balances) {
-      dispatch(
-        getAccountBalances({
-          publicKey,
-          networkDetails,
-        }),
-      );
-    }
-  }, [dispatch, publicKey, networkDetails, accountBalances]);
+    (async () => {
+      if (!accountBalances.balances) {
+        const res = await dispatch(
+          getAccountBalances({
+            publicKey,
+            networkDetails,
+          }),
+        );
 
-  useEffect(() => {
-    if (!accountBalances.balances) return;
-    if (!Object.keys(assetIcons).length) {
-      dispatch(
-        getAssetIcons({ balances: accountBalances.balances, networkDetails }),
-      );
-    }
-  }, [dispatch, accountBalances, networkDetails, assetIcons]);
+        if (getAccountBalances.fulfilled.match(res)) {
+          dispatch(
+            getAssetIcons({ balances: res.payload.balances, networkDetails }),
+          );
+        }
+      }
+    })();
+  }, [dispatch, publicKey, networkDetails, accountBalances]);
 
   return (
     <Switch>
