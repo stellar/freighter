@@ -12,6 +12,7 @@ import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
+import { isMuxedAccount } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -56,7 +57,7 @@ export const SendSettings = ({
     );
 
   // dont show memo for regular sends to Muxed, or for swaps
-  const showMemo = !isSwap && !destination.startsWith("M");
+  const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = isPathPayment || isSwap;
 
   return (
@@ -212,7 +213,7 @@ export const SendSettings = ({
                     variant={Button.variant.tertiary}
                     onClick={() => navigateTo(next)}
                   >
-                    Review Send
+                    Review {isSwap ? "Swap" : "Send"}
                   </Button>
                 </div>
               </FormRows>

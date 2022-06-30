@@ -6,7 +6,11 @@ import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
 import { Input, Loader, TextLink } from "@stellar/design-system";
 
-import { truncatedPublicKey } from "helpers/stellar";
+import {
+  isFederationAddress,
+  isMuxedAccount,
+  truncatedPublicKey,
+} from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -108,8 +112,6 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     },
   });
 
-  const isFederationAddress = (address: string) => address.includes("*");
-
   const isValidPublicKey = (publicKey: string) => {
     if (StrKey.isValidMed25519PublicKey(publicKey)) {
       return true;
@@ -132,7 +134,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
         return;
       }
       // muxed account
-      if (inputDest.startsWith("M")) {
+      if (isMuxedAccount(inputDest)) {
         setValidatedPubKey(inputDest);
       }
       // federation address
@@ -181,7 +183,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
     // TODO - remove once wallet-sdk can handle muxed
     let publicKey = validatedPubKey;
-    if (validatedPubKey.startsWith("M")) {
+    if (isMuxedAccount(validatedPubKey)) {
       const mAccount = MuxedAccount.fromAddress(validatedPubKey, "0");
       publicKey = mAccount.baseAccount().accountId();
     }

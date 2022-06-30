@@ -22,7 +22,7 @@ export const requestPublicKey = async (): Promise<string> => {
 
 export const submitTransaction = async (
   transactionXdr: string,
-  network?: string,
+  network?: string | null,
   accountToSign?: string,
 ): Promise<string> => {
   let response = { signedTransaction: "", error: "" };

@@ -9,6 +9,7 @@ import { Card, Loader, Icon } from "@stellar/design-system";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
+  isMuxedAccount,
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
@@ -245,7 +246,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     }
   };
 
-  const showMemo = !isSwap && !destination.startsWith("M");
+  const showMemo = !isSwap && !isMuxedAccount(destination);
 
   return (
     <div className="TransactionDetails">

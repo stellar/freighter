@@ -100,3 +100,7 @@ export const formatDomain = (domain: string) => {
   }
   return "Stellar Network";
 };
+
+export const isMuxedAccount = (publicKey: string) => publicKey.startsWith("M");
+
+export const isFederationAddress = (address: string) => address.includes("*");

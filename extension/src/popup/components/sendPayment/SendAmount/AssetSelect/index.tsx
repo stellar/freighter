@@ -85,7 +85,10 @@ export function PathPayAssetSelect({
   };
 
   return (
-    <div onClick={handleSelectAsset} className="AssetSelect__wrapper">
+    <div
+      onClick={handleSelectAsset}
+      className="AssetSelect__wrapper AssetSelect__wrapper--path-pay"
+    >
       <div className="AssetSelect__content">
         <div className="AssetSelect__content__left">
           <span className="AssetSelect__light-copy AssetSelect__light-copy__label">

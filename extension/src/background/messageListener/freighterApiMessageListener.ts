@@ -79,11 +79,8 @@ export const freighterApiMessageListener = (
   };
 
   const submitTransaction = async () => {
-    const {
-      transactionXdr,
-      network = MAINNET_NETWORK_DETAILS.network,
-      accountToSign,
-    } = request;
+    const { transactionXdr, network: _network, accountToSign } = request;
+    const network = _network ?? MAINNET_NETWORK_DETAILS.network;
     const isTestnet = getIsTestnet();
     const { networkUrl } = getNetworkDetails(isTestnet);
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
