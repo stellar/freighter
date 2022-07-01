@@ -2,13 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
-import {
-  Input,
-  Checkbox,
-  Icon,
-  Select,
-  TextLink,
-} from "@stellar/design-system";
+import { Input, Checkbox, Icon, TextLink } from "@stellar/design-system";
 
 import { Button } from "popup/basics/buttons/Button";
 import { Onboarding } from "popup/components/Onboarding";
@@ -34,40 +28,29 @@ import "./styles.scss";
 interface PhraseInputProps {
   phraseInput: string;
   index: number;
-  isDisabled: boolean;
   handleMnemonicInputChange: (value: string, index: number) => void;
 }
 
 const PhraseInput = ({
   phraseInput,
   index,
-  isDisabled,
   handleMnemonicInputChange,
 }: PhraseInputProps) => {
   const [isTextShowing, setIsTextShowing] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
   return (
-    <div
-      key={phraseInput}
-      className={`RecoverAccount__phrase-input ${
-        isDisabled ? "RecoverAccount__phrase-input--disabled" : ""
-      }`}
-    >
-      <div className="RecoverAccount__phrase-input__number">{index + 1}. </div>
+    <div key={phraseInput} className="RecoverAccount__phrase-input">
       <Input
         autoComplete="off"
-        disabled={isDisabled}
         id={phraseInput}
         name={phraseInput}
         onChange={(e) => {
-          if (!isDisabled) {
-            handleMnemonicInputChange(e.target.value, index);
-            setInputValue(e.target.value);
-          }
+          handleMnemonicInputChange(e.target.value, index);
+          setInputValue(e.target.value);
         }}
         onPaste={(e) => e.preventDefault()}
-        placeholder="Enter your 12 word phrase to restore your wallet"
+        placeholder={`${index + 1}.`}
         type={isTextShowing ? "text" : "password"}
         value={inputValue}
       />
@@ -104,9 +87,7 @@ export const RecoverAccount = () => {
   });
 
   const dispatch = useDispatch();
-  const phraseLengthOptions = [12, 24];
-  const maxPhraseLength = Math.max(...phraseLengthOptions);
-  const [phraseLength, setPhraseLength] = useState(12);
+  const PHRASE_LENGTH = 12;
   const [phraseInputs, setPhraseInputs] = useState([] as string[]);
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
 
@@ -131,11 +112,11 @@ export const RecoverAccount = () => {
     const phraseInputsArr = [];
 
     // eslint-disable-next-line no-plusplus
-    for (let i = 1; i <= maxPhraseLength; i++) {
+    for (let i = 1; i <= PHRASE_LENGTH; i++) {
       phraseInputsArr.push(`MnemonicPhrase-${i}`);
     }
     setPhraseInputs(phraseInputsArr);
-  }, [maxPhraseLength]);
+  }, [PHRASE_LENGTH]);
 
   const handleMnemonicInputChange = (value: string, i: number) => {
     const arr = [...mnemonicPhraseArr];
@@ -161,30 +142,18 @@ export const RecoverAccount = () => {
                   <div className="RecoverAccount__header">
                     Import wallet from recovery phrase
                   </div>
-                  <Select
-                    onChange={(e) => setPhraseLength(Number(e.target.value))}
-                    id="RecoverAccount__phrase-length-selector"
-                  >
-                    {phraseLengthOptions.map((lengthOption) => (
-                      <option key={lengthOption}>
-                        {lengthOption}-word phrase
-                      </option>
-                    ))}
-                  </Select>
+                  <div className="RecoverAccount__subheader">
+                    Enter your 12 word phrase to restore your wallet
+                  </div>
                   <div className="RecoverAccount__mnemonic-input">
-                    {phraseInputs.map((phraseInput, i) => {
-                      const isDisabled = i >= phraseLength;
-
-                      return (
-                        <PhraseInput
-                          key={phraseInput}
-                          phraseInput={phraseInput}
-                          handleMnemonicInputChange={handleMnemonicInputChange}
-                          index={i}
-                          isDisabled={isDisabled}
-                        />
-                      );
-                    })}
+                    {phraseInputs.map((phraseInput, i) => (
+                      <PhraseInput
+                        key={phraseInput}
+                        phraseInput={phraseInput}
+                        handleMnemonicInputChange={handleMnemonicInputChange}
+                        index={i}
+                      />
+                    ))}
                   </div>
                   <div>{authError}</div>
                 </div>

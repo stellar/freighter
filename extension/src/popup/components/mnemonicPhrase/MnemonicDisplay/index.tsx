@@ -23,7 +23,7 @@ export const generateMnemonicPhraseDisplay = ({
 
     const randomNumber = random(1, 10);
     const randomWordArr = generateMnemonic().split(" ");
-    const randomWordIndex = random(0, randomWordArr.length);
+    const randomWordIndex = random(0, randomWordArr.length - 1);
     const randomWord = randomWordArr[randomWordIndex];
 
     return (
