@@ -312,13 +312,14 @@ const transactionSubmissionSlice = createSlice({
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
     },
-    // ALEC TODO - change name
-    saveHwSigningStatus: (
-      state,
-      action: { payload: { status: HwSigningStatus; transactionXDR: string } },
-    ) => {
-      state.hardwareWalletData.status = action.payload.status;
-      state.hardwareWalletData.transactionXDR = action.payload.transactionXDR;
+    openHwOverlay: (state, action) => {
+      state.hardwareWalletData.status = HwSigningStatus.IN_PROGRESS;
+      state.hardwareWalletData.transactionXDR =
+        action.payload?.transactionXDR || "";
+    },
+    closeHwOverlay: (state) => {
+      state.hardwareWalletData.status = HwSigningStatus.IDLE;
+      state.hardwareWalletData.transactionXDR = "";
     },
   },
   extraReducers: (builder) => {
@@ -394,7 +395,8 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveAllowedSlippage,
-  saveHwSigningStatus,
+  openHwOverlay,
+  closeHwOverlay,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

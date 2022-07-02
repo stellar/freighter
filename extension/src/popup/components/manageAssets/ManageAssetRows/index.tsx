@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import SimpleBar from "simplebar-react";
@@ -34,7 +34,7 @@ import {
   submitFreighterTransaction,
   transactionSubmissionSelector,
   HwSigningStatus,
-  saveHwSigningStatus,
+  openHwOverlay,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { LedgerConnect } from "popup/components/hardwareConnect/LedgerConnect";
@@ -68,8 +68,7 @@ export const ManageAssetRows = ({
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
-  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const isHardwareWallet = !!hardwareWalletType;
+  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
   const server = new StellarSdk.Server(networkDetails.networkUrl);
 
@@ -99,15 +98,21 @@ export const ManageAssetRows = ({
       .toXDR();
 
     if (isHardwareWallet) {
-      dispatch(
-        saveHwSigningStatus({
-          status: HwSigningStatus.IN_PROGRESS,
-          transactionXDR,
-        }),
-      );
-      return;
+      await dispatch(openHwOverlay({ transactionXDR }));
+    } else {
+      await signAndSubmit(transactionXDR);
+      dispatch(resetSubmission());
+      navigateTo(ROUTES.account);
     }
+    emitMetric(
+      addTrustline
+        ? METRIC_NAMES.manageAssetAddAsset
+        : METRIC_NAMES.manageAssetRemoveAsset,
+      { assetCode, assetIssuer },
+    );
+  };
 
+  const signAndSubmit = async (transactionXDR: string) => {
     const res = await dispatch(
       signFreighterTransaction({
         transactionXDR,
@@ -131,22 +136,20 @@ export const ManageAssetRows = ({
             networkDetails,
           }),
         );
-        dispatch(resetSubmission());
-        emitMetric(
-          addTrustline
-            ? METRIC_NAMES.manageAssetAddAsset
-            : METRIC_NAMES.manageAssetRemoveAsset,
-          { assetCode, assetIssuer },
-        );
-        navigateTo(ROUTES.account);
-      }
-
-      if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setErrorAsset(canonicalAsset);
-        navigateTo(ROUTES.trustlineError);
       }
     }
   };
+
+  // watch submitStatus if used ledger to send transaction
+  useEffect(() => {
+    if (submitStatus === ActionStatus.ERROR) {
+      setErrorAsset(assetSubmitting);
+      navigateTo(ROUTES.trustlineError);
+    } else if (submitStatus === ActionStatus.SUCCESS) {
+      dispatch(resetSubmission());
+      navigateTo(ROUTES.trustlineError);
+    }
+  }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
 
   return (
     <SimpleBar
@@ -155,9 +158,8 @@ export const ManageAssetRows = ({
         maxHeight: `${maxHeight}px`,
       }}
     >
-      {header}
-      {/* ALEC TODO - kinda gross? */}
       {hwStatus === HwSigningStatus.IN_PROGRESS && <LedgerConnect />}
+      {header}
       <div className="ManageAssetRows__content">
         {assetRows.map(({ code, domain, image, issuer }) => {
           if (!balances) return null;

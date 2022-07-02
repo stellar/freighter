@@ -27,7 +27,7 @@ import {
   addRecentAddress,
   isPathPaymentSelector,
   HwSigningStatus,
-  saveHwSigningStatus,
+  openHwOverlay,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -210,12 +210,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         );
 
       if (isHardwareWallet) {
-        dispatch(
-          saveHwSigningStatus({
-            status: HwSigningStatus.IN_PROGRESS,
-            transactionXDR,
-          }),
-        );
+        dispatch(openHwOverlay({ transactionXDR }));
         return;
       }
       const res = await dispatch(

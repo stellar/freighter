@@ -19,6 +19,7 @@ import {
   signWithLedger,
   submitFreighterTransaction,
   transactionSubmissionSelector,
+  closeHwOverlay,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -46,7 +47,7 @@ const parseLedgerError = (err: any): string => {
   return LEDGER_ERROR.OTHER;
 };
 
-export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
+export const LedgerConnect = () => {
   const dispatch: AppDispatch = useDispatch();
   const [isConnecting, setIsConnecting] = useState(false);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -60,19 +61,18 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [connectError, setConnectError] = useState("");
 
-  // ALEC TODO - probably need to split up this method w/ connect and sign
+  const closeOverlay = () => dispatch(closeHwOverlay());
+
   const handleConnect = async () => {
     setIsConnecting(true);
-    let success = false;
+    setConnectError("");
     try {
       const transport = await TransportWebUSB.request();
       const ledgerApi = new LedgerApi(transport);
       const response = await ledgerApi.getPublicKey(defaultStellarBipPath);
-
-      setConnectError("");
       setIsConnected(true);
 
-      // ALEC TODO - handle when connecting for first time ...
+      // if not signing a tx then assume initial account import
       if (!isSendingTransaction) {
         dispatch(
           importHardwareWallet({
@@ -81,31 +81,28 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
           }),
         );
       } else {
-        // ALEC TODO - best way of handling this?
         const res = await dispatch(
           signWithLedger({
             transactionXDR: transactionXDR as string,
             networkPassphrase: networkDetails.networkPassphrase,
-            // ALEC TODO - need to handle this part better
             publicKey: response.publicKey,
           }),
         );
 
         if (signWithLedger.fulfilled.match(res)) {
-          await dispatch(
+          dispatch(
             submitFreighterTransaction({
               signedXDR: res.payload,
               networkDetails,
             }),
           );
+          closeOverlay();
         }
       }
-      success = true;
     } catch (e) {
       setConnectError(parseLedgerError(e));
     }
     setIsConnecting(false);
-    return success;
   };
 
   // let's check connection on initial load
@@ -186,7 +183,7 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
     <div className="LedgerConnect">
       <div className="LedgerConnect__wrapper">
         <SubviewHeader
-          customBackAction={goBack || undefined}
+          customBackAction={closeOverlay}
           customBackIcon={<Icon.X />}
           title="Connect Ledger"
         />

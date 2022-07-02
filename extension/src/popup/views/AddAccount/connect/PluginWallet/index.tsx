@@ -1,30 +1,39 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Checkbox, Input, TextLink } from "@stellar/design-system";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
+import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { BottomNav } from "popup/components/BottomNav";
-import { WalletType } from "@shared/constants/hardwareWallet";
 import {
   LedgerConnect,
   defaultStellarBipPath,
 } from "popup/components/hardwareConnect/LedgerConnect";
+import {
+  transactionSubmissionSelector,
+  HwSigningStatus,
+  openHwOverlay,
+} from "popup/ducks/transactionSubmission";
 
 import "./styles.scss";
 
 export const PluginWallet = () => {
+  const dispatch: AppDispatch = useDispatch();
+  const {
+    hardwareWalletData: { status: hwStatus },
+  } = useSelector(transactionSubmissionSelector);
+
   // TODO - move to redux
   const [bipPath, setBipPath] = useState(defaultStellarBipPath);
   const [useDefault, setUseDefault] = useState(true);
-  const [showLedgerOverlay, setShowLedgerOverlay] = useState(false);
 
   return (
     <>
-      {showLedgerOverlay && (
-        <LedgerConnect goBack={() => setShowLedgerOverlay(false)} />
-      )}
+      {hwStatus === HwSigningStatus.IN_PROGRESS && <LedgerConnect />}
       <div className="PluginWallet">
         <SubviewHeader
           title={`Connect with ${WalletType.LEDGER}`}
@@ -68,7 +77,7 @@ export const PluginWallet = () => {
             }
             onClick={() => setUseDefault(!useDefault)}
           />
-          <Button fullWidth onClick={() => setShowLedgerOverlay(true)}>
+          <Button fullWidth onClick={() => dispatch(openHwOverlay({}))}>
             Connect
           </Button>
         </div>
