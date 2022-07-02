@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 import { Icon, InfoBlock } from "@stellar/design-system";
+import { WalletType } from "@shared/constants/hardwareWallet";
+
+import { AppDispatch } from "popup/App";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
@@ -10,8 +13,14 @@ import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import Ledger from "popup/assets/ledger.png";
 import LedgerConnected from "popup/assets/ledger-connected.png";
+import LedgerSigning from "popup/assets/ledger-signing.png";
 import { importHardwareWallet } from "popup/ducks/accountServices";
-import { WalletType } from "@shared/constants/hardwareWallet";
+import {
+  signWithLedger,
+  submitFreighterTransaction,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "./styles.scss";
 
@@ -38,35 +47,74 @@ const parseLedgerError = (err: any): string => {
 };
 
 export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const [isConnecting, setIsConnecting] = useState(false);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const {
+    hardwareWalletData: { transactionXDR },
+  } = useSelector(transactionSubmissionSelector);
+  // ALEC TODO - if going to do this way then need to clear the XDR
+  const isSendingTransaction = !!transactionXDR;
 
   // TODO - move to redux with bipPath
-  const [publicKey, setPublicKey] = useState("");
-  const isConnected = !!publicKey;
+  const [isConnected, setIsConnected] = useState(false);
   const [connectError, setConnectError] = useState("");
 
+  // ALEC TODO - probably need to split up this method w/ connect and sign
   const handleConnect = async () => {
     setIsConnecting(true);
+    let success = false;
     try {
       const transport = await TransportWebUSB.request();
       const ledgerApi = new LedgerApi(transport);
       const response = await ledgerApi.getPublicKey(defaultStellarBipPath);
 
-      setPublicKey(response.publicKey);
       setConnectError("");
+      setIsConnected(true);
 
-      dispatch(
-        importHardwareWallet({
-          publicKey: response.publicKey,
-          hardwareWalletType: WalletType.LEDGER,
-        }),
-      );
+      // ALEC TODO - handle when connecting for first time ...
+      if (!isSendingTransaction) {
+        dispatch(
+          importHardwareWallet({
+            publicKey: response.publicKey,
+            hardwareWalletType: WalletType.LEDGER,
+          }),
+        );
+      } else {
+        // ALEC TODO - best way of handling this?
+        const res = await dispatch(
+          signWithLedger({
+            transactionXDR: transactionXDR as string,
+            networkPassphrase: networkDetails.networkPassphrase,
+            // ALEC TODO - need to handle this part better
+            publicKey: response.publicKey,
+          }),
+        );
+
+        if (signWithLedger.fulfilled.match(res)) {
+          await dispatch(
+            submitFreighterTransaction({
+              signedXDR: res.payload,
+              networkDetails,
+            }),
+          );
+        }
+      }
+      success = true;
     } catch (e) {
       setConnectError(parseLedgerError(e));
     }
     setIsConnecting(false);
+    return success;
   };
+
+  // let's check connection on initial load
+  useEffect(() => {
+    handleConnect();
+
+    // ALEC TODO - best way of removing warning?
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const ConnectError = () => {
     let errorMessage = "";
@@ -92,6 +140,48 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
     );
   };
 
+  // ALEC TODO - probably better way of handling?
+  // probably combine these three get methods
+  const getLedgerImage = () => {
+    if (isConnected) {
+      return isSendingTransaction ? LedgerSigning : LedgerConnected;
+    }
+    return Ledger;
+  };
+
+  const getLedgerCaption = () => {
+    if (isConnected) {
+      return isSendingTransaction
+        ? "Review transaction on device"
+        : "You’re good to go!";
+    }
+    return "Connect device to computer";
+  };
+
+  const getLedgerButton = () => {
+    if (isConnected) {
+      return isSendingTransaction ? null : (
+        <Button
+          fullWidth
+          variant={Button.variant.tertiary}
+          onClick={() => navigateTo(ROUTES.account)}
+        >
+          Done
+        </Button>
+      );
+    }
+    return (
+      <Button
+        fullWidth
+        variant={Button.variant.tertiary}
+        onClick={handleConnect}
+        isLoading={isConnecting}
+      >
+        {isConnecting ? "Detecting" : "Detect device"}
+      </Button>
+    );
+  };
+
   return (
     <div className="LedgerConnect">
       <div className="LedgerConnect__wrapper">
@@ -107,36 +197,15 @@ export const LedgerConnect = ({ goBack }: { goBack?: () => void }) => {
           <div className="LedgerConnect__content__center">
             <img
               className="LedgerConnect__img"
-              src={isConnected ? LedgerConnected : Ledger}
+              src={getLedgerImage()}
               alt="ledger"
             />
-            <span>
-              {isConnected
-                ? "You’re good to go!"
-                : "Connect device to computer"}
-            </span>
+            <span>{getLedgerCaption()}</span>
           </div>
         </div>
         <div className="LedgerConnect__bottom">
           <ConnectError />
-          {isConnected ? (
-            <Button
-              fullWidth
-              variant={Button.variant.tertiary}
-              onClick={() => navigateTo(ROUTES.account)}
-            >
-              Done
-            </Button>
-          ) : (
-            <Button
-              fullWidth
-              variant={Button.variant.tertiary}
-              onClick={handleConnect}
-              isLoading={isConnecting}
-            >
-              {isConnecting ? "Detecting" : "Detect device"}
-            </Button>
-          )}
+          {getLedgerButton()}
         </div>
       </div>
     </div>

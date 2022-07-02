@@ -3,6 +3,7 @@ import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
+import { CURRENCY } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -20,7 +21,10 @@ import { PillButton } from "popup/basics/buttons/PillButton";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 
-import { publicKeySelector } from "popup/ducks/accountServices";
+import {
+  publicKeySelector,
+  hardwareWalletTypeSelector,
+} from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   ActionStatus,
@@ -29,11 +33,11 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
+  HwSigningStatus,
+  saveHwSigningStatus,
 } from "popup/ducks/transactionSubmission";
-
 import { AssetIcon } from "popup/components/account/AccountAssets";
-
-import { CURRENCY } from "@shared/api/types";
+import { LedgerConnect } from "popup/components/hardwareConnect/LedgerConnect";
 
 import "./styles.scss";
 
@@ -59,10 +63,13 @@ export const ManageAssetRows = ({
   const {
     accountBalances: { balances = {} },
     submitStatus,
+    hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
 
   const server = new StellarSdk.Server(networkDetails.networkUrl);
 
@@ -91,6 +98,16 @@ export const ManageAssetRows = ({
       .build()
       .toXDR();
 
+    if (isHardwareWallet) {
+      dispatch(
+        saveHwSigningStatus({
+          status: HwSigningStatus.IN_PROGRESS,
+          transactionXDR,
+        }),
+      );
+      return;
+    }
+
     const res = await dispatch(
       signFreighterTransaction({
         transactionXDR,
@@ -99,15 +116,10 @@ export const ManageAssetRows = ({
     );
 
     if (signFreighterTransaction.fulfilled.match(res)) {
-      const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
-        res.payload.signedTransaction,
-        networkDetails.networkPassphrase,
-      );
-
       const submitResp = await dispatch(
         submitFreighterTransaction({
-          signedXDR,
-          networkUrl: networkDetails.networkUrl,
+          signedXDR: res.payload.signedTransaction,
+          networkDetails,
         }),
       );
 
@@ -144,6 +156,8 @@ export const ManageAssetRows = ({
       }}
     >
       {header}
+      {/* ALEC TODO - kinda gross? */}
+      {hwStatus === HwSigningStatus.IN_PROGRESS && <LedgerConnect />}
       <div className="ManageAssetRows__content">
         {assetRows.map(({ code, domain, image, issuer }) => {
           if (!balances) return null;

@@ -275,6 +275,7 @@ const initialState: InitialState = {
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   hasPrivateKey: false,
   publicKey: "",
+  // ALEC TODO - remove?
   connectingWalletType: WalletType.NONE,
   error: "",
 };
@@ -286,6 +287,7 @@ const authSlice = createSlice({
     clearApiError(state) {
       state.error = "";
     },
+    // ALEC TODO - remove?
     setConnectingWalletType(state, action) {
       state.connectingWalletType = action.payload;
     },
@@ -558,6 +560,17 @@ export const accountNameSelector = createSelector(
     ) || { publicKey: "", name: "" };
 
     return name;
+  },
+);
+
+export const hardwareWalletTypeSelector = createSelector(
+  publicKeySelector,
+  allAccountsSelector,
+  (publicKey, allAccounts) => {
+    const account = allAccounts.find(
+      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+    ) || { hardwareWalletType: WalletType.NONE };
+    return account.hardwareWalletType;
   },
 );
 

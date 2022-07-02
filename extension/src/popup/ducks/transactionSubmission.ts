@@ -1,4 +1,4 @@
-import { Horizon, Server, ServerApi } from "stellar-sdk";
+import StellarSdk, { Horizon, Server, ServerApi } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -18,6 +18,8 @@ import {
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/helpers/stellar";
+import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+import LedgerApi from "@ledgerhq/hw-app-str";
 
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 
@@ -38,23 +40,70 @@ export const signFreighterTransaction = createAsyncThunk<
 
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
-  { signedXDR: string; networkUrl: string },
+  { signedXDR: string; networkDetails: NetworkDetails },
   {
     rejectValue: ErrorMessage;
   }
->("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
-  try {
-    return await internalSubmitFreighterTransaction({
-      signedXDR,
-      networkUrl,
-    });
-  } catch (e) {
-    return thunkApi.rejectWithValue({
-      errorMessage: e.message || e,
-      response: e.response?.data,
-    });
-  }
-});
+>(
+  "submitFreighterTransaction",
+  async ({ signedXDR, networkDetails }, thunkApi) => {
+    try {
+      return await internalSubmitFreighterTransaction({
+        signedXDR,
+        networkDetails,
+      });
+    } catch (e) {
+      console.log("ducks submitFreighterTransaction failed");
+      console.log({ e });
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message || e,
+        response: e.response?.data,
+      });
+    }
+  },
+);
+
+// ALEC TODO - best name? going to sign and submit here...
+// probably move ledger stuff to another file
+export const signWithLedger = createAsyncThunk<
+  // ALEC TODO - anys
+  any,
+  { transactionXDR: string; networkPassphrase: string; publicKey: string },
+  { rejectValue: ErrorMessage }
+>(
+  "signWithLedger",
+  async ({ transactionXDR, networkPassphrase, publicKey }, thunkApi) => {
+    try {
+      const tx = StellarSdk.TransactionBuilder.fromXDR(
+        transactionXDR,
+        networkPassphrase,
+      );
+
+      const transport = await TransportWebUSB.create();
+      const ledgerApi = new LedgerApi(transport);
+      // ALEC TODO - dont hardcode bip path
+      const result = await ledgerApi.signTransaction(
+        "44'/148'/0'",
+        tx.signatureBase(),
+      );
+
+      const keypair = StellarSdk.Keypair.fromPublicKey(publicKey);
+      const decoratedSignature = new StellarSdk.xdr.DecoratedSignature({
+        hint: keypair.signatureHint(),
+        signature: result.signature,
+      });
+
+      tx.signatures.push(decoratedSignature);
+
+      return tx.toXDR();
+    } catch (e) {
+      // ALEC TODO - remove
+      console.log("duck signWithLedger something went wrong");
+      console.log({ e });
+      return thunkApi.rejectWithValue({ errorMessage: e });
+    }
+  },
+);
 
 export const addRecentAddress = createAsyncThunk<
   { recentAddresses: Array<string> },
@@ -151,6 +200,12 @@ export const getBestPath = createAsyncThunk<
   },
 );
 
+// ALEC TODO - rename
+export enum HwSigningStatus {
+  IDLE = "IDLE",
+  IN_PROGRESS = "IN_PROGRESS",
+}
+
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -171,9 +226,15 @@ interface TransactionData {
   allowedSlippage: string;
 }
 
+interface HardwareWalletData {
+  status: HwSigningStatus;
+  transactionXDR: string;
+}
+
 interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
+  hardwareWalletData: HardwareWalletData;
   response: Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
@@ -185,6 +246,7 @@ interface InitialState {
 const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
+
   response: null,
   error: undefined,
   transactionData: {
@@ -198,6 +260,11 @@ const initialState: InitialState = {
     destinationAmount: "",
     path: [],
     allowedSlippage: "1",
+  },
+  // ALEC TODO - right name? hwTxData?
+  hardwareWalletData: {
+    status: HwSigningStatus.IDLE,
+    transactionXDR: "",
   },
   accountBalances: {
     balances: null,
@@ -244,6 +311,14 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
+    },
+    // ALEC TODO - change name
+    saveHwSigningStatus: (
+      state,
+      action: { payload: { status: HwSigningStatus; transactionXDR: string } },
+    ) => {
+      state.hardwareWalletData.status = action.payload.status;
+      state.hardwareWalletData.transactionXDR = action.payload.transactionXDR;
     },
   },
   extraReducers: (builder) => {
@@ -319,6 +394,7 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveAllowedSlippage,
+  saveHwSigningStatus,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

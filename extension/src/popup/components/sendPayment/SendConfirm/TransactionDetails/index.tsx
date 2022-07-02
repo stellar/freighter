@@ -26,9 +26,14 @@ import {
   transactionSubmissionSelector,
   addRecentAddress,
   isPathPaymentSelector,
+  HwSigningStatus,
+  saveHwSigningStatus,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import {
+  publicKeySelector,
+  hardwareWalletTypeSelector,
+} from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { emitMetric } from "helpers/metrics";
@@ -39,6 +44,7 @@ import {
   AccountAssets,
   AssetIcon,
 } from "popup/components/account/AccountAssets";
+import { LedgerConnect } from "popup/components/hardwareConnect/LedgerConnect";
 
 import "./styles.scss";
 
@@ -113,6 +119,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       path,
     },
     assetIcons,
+    hardwareWalletData: { status: hwStatus },
   } = submission;
 
   const transactionHash = submission.response?.hash;
@@ -121,6 +128,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
 
   const sourceAsset = getAssetFromCanonical(asset);
@@ -184,23 +193,31 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   // handles signing and submitting
   const handleSend = async () => {
-    const server = new StellarSdk.Server(networkDetails.networkUrl);
-
     try {
+      const server = new StellarSdk.Server(networkDetails.networkUrl);
       const transactionXDR = await server
         .loadAccount(publicKey)
-        .then((sourceAccount: Types.Account) => {
-          const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+        .then((sourceAccount: Types.Account) =>
+          new StellarSdk.TransactionBuilder(sourceAccount, {
             fee: xlmToStroop(transactionFee).toString(),
             networkPassphrase: networkDetails.networkPassphrase,
           })
             .addOperation(getOperation())
             .addMemo(StellarSdk.Memo.text(memo))
             .setTimeout(180)
-            .build();
-          return transaction.toXDR();
-        });
+            .build()
+            .toXDR(),
+        );
 
+      if (isHardwareWallet) {
+        dispatch(
+          saveHwSigningStatus({
+            status: HwSigningStatus.IN_PROGRESS,
+            transactionXDR,
+          }),
+        );
+        return;
+      }
       const res = await dispatch(
         signFreighterTransaction({
           transactionXDR,
@@ -212,14 +229,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         signFreighterTransaction.fulfilled.match(res) &&
         res.payload.signedTransaction
       ) {
-        const signedXDR = StellarSdk.TransactionBuilder.fromXDR(
-          res.payload.signedTransaction,
-          networkDetails.networkPassphrase,
-        );
         const submitResp = await dispatch(
           submitFreighterTransaction({
-            signedXDR,
-            networkUrl: networkDetails.networkUrl,
+            signedXDR: res.payload.signedTransaction,
+            networkDetails,
           }),
         );
 
@@ -249,6 +262,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <div className="TransactionDetails">
+      {/* ALEC TODO - kinda gross? */}
+      {hwStatus === HwSigningStatus.IN_PROGRESS && <LedgerConnect />}
       {submission.submitStatus === ActionStatus.PENDING && (
         <div className="TransactionDetails__processing">
           <div className="TransactionDetails__processing__header">
