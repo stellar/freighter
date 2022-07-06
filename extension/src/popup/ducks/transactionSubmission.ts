@@ -237,7 +237,6 @@ interface InitialState {
 const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
-
   response: null,
   error: undefined,
   transactionData: {

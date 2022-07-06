@@ -54,9 +54,8 @@ export const LedgerConnect = () => {
   const {
     hardwareWalletData: { transactionXDR },
   } = useSelector(transactionSubmissionSelector);
-  const isSendingTransaction = !!transactionXDR;
+  const isSigningTransaction = !!transactionXDR;
 
-  // TODO - move to redux with bipPath
   const [isConnected, setIsConnected] = useState(false);
   const [connectError, setConnectError] = useState("");
 
@@ -72,7 +71,7 @@ export const LedgerConnect = () => {
       setIsConnected(true);
 
       // if not signing a tx then assume initial account import
-      if (!isSendingTransaction) {
+      if (!isSigningTransaction) {
         dispatch(
           importHardwareWallet({
             publicKey: response.publicKey,
@@ -136,14 +135,14 @@ export const LedgerConnect = () => {
 
   const getLedgerImage = () => {
     if (isConnected) {
-      return isSendingTransaction ? LedgerSigning : LedgerConnected;
+      return isSigningTransaction ? LedgerSigning : LedgerConnected;
     }
     return Ledger;
   };
 
   const getLedgerCaption = () => {
     if (isConnected) {
-      return isSendingTransaction
+      return isSigningTransaction
         ? "Review transaction on device"
         : "You’re good to go!";
     }
@@ -152,7 +151,7 @@ export const LedgerConnect = () => {
 
   const getLedgerButton = () => {
     if (isConnected) {
-      return isSendingTransaction ? null : (
+      return isSigningTransaction ? null : (
         <Button
           fullWidth
           variant={Button.variant.tertiary}
