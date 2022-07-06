@@ -15,8 +15,8 @@ import {
 } from "popup/components/hardwareConnect/LedgerConnect";
 import {
   transactionSubmissionSelector,
-  HwSigningStatus,
-  openHwOverlay,
+  HwOverlayStatus,
+  startHwConnect,
 } from "popup/ducks/transactionSubmission";
 
 import "./styles.scss";
@@ -33,7 +33,7 @@ export const PluginWallet = () => {
 
   return (
     <>
-      {hwStatus === HwSigningStatus.IN_PROGRESS && <LedgerConnect />}
+      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
       <div className="PluginWallet">
         <SubviewHeader
           title={`Connect with ${WalletType.LEDGER}`}
@@ -77,7 +77,7 @@ export const PluginWallet = () => {
             }
             onClick={() => setUseDefault(!useDefault)}
           />
-          <Button fullWidth onClick={() => dispatch(openHwOverlay({}))}>
+          <Button fullWidth onClick={() => dispatch(startHwConnect())}>
             Connect
           </Button>
         </div>

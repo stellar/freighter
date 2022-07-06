@@ -54,7 +54,6 @@ export const LedgerConnect = () => {
   const {
     hardwareWalletData: { transactionXDR },
   } = useSelector(transactionSubmissionSelector);
-  // ALEC TODO - if going to do this way then need to clear the XDR
   const isSendingTransaction = !!transactionXDR;
 
   // TODO - move to redux with bipPath
@@ -108,8 +107,6 @@ export const LedgerConnect = () => {
   // let's check connection on initial load
   useEffect(() => {
     handleConnect();
-
-    // ALEC TODO - best way of removing warning?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -137,8 +134,6 @@ export const LedgerConnect = () => {
     );
   };
 
-  // ALEC TODO - probably better way of handling?
-  // probably combine these three get methods
   const getLedgerImage = () => {
     if (isConnected) {
       return isSendingTransaction ? LedgerSigning : LedgerConnected;

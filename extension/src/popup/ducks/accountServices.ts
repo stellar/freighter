@@ -275,7 +275,6 @@ const initialState: InitialState = {
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   hasPrivateKey: false,
   publicKey: "",
-  // ALEC TODO - remove?
   connectingWalletType: WalletType.NONE,
   error: "",
 };
@@ -287,7 +286,6 @@ const authSlice = createSlice({
     clearApiError(state) {
       state.error = "";
     },
-    // ALEC TODO - remove?
     setConnectingWalletType(state, action) {
       state.connectingWalletType = action.payload;
     },

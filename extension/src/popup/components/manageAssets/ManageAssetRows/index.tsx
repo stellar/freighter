@@ -33,8 +33,8 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
-  HwSigningStatus,
-  openHwOverlay,
+  HwOverlayStatus,
+  startHwSign,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { LedgerConnect } from "popup/components/hardwareConnect/LedgerConnect";
@@ -98,7 +98,7 @@ export const ManageAssetRows = ({
       .toXDR();
 
     if (isHardwareWallet) {
-      await dispatch(openHwOverlay({ transactionXDR }));
+      await dispatch(startHwSign({ transactionXDR }));
     } else {
       await signAndSubmit(transactionXDR);
       dispatch(resetSubmission());
@@ -158,7 +158,7 @@ export const ManageAssetRows = ({
         maxHeight: `${maxHeight}px`,
       }}
     >
-      {hwStatus === HwSigningStatus.IN_PROGRESS && <LedgerConnect />}
+      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
       {header}
       <div className="ManageAssetRows__content">
         {assetRows.map(({ code, domain, image, issuer }) => {

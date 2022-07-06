@@ -3,8 +3,9 @@
   position: fixed;
   height: var(--popup--height);
   width: var(--popup--width);
-  background-color: black;
   top: 0;
+  background: rgba(0, 0, 0, 0.8);
+  transition: background 1s ease;
 
   &__success {
     color: var(--pal-success);
@@ -17,6 +18,8 @@
     position: absolute;
     margin-top: 2rem;
     height: calc(var(--popup--height) - 2rem);
+    bottom: calc(-1 * var(--popup--height));
+    transition: all 1s ease;
     width: var(--popup--width);
     display: flex;
     flex-direction: column;

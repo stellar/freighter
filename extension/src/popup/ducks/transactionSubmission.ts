@@ -53,8 +53,6 @@ export const submitFreighterTransaction = createAsyncThunk<
         networkDetails,
       });
     } catch (e) {
-      console.log("ducks submitFreighterTransaction failed");
-      console.log({ e });
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
         response: e.response?.data,
@@ -63,11 +61,8 @@ export const submitFreighterTransaction = createAsyncThunk<
   },
 );
 
-// ALEC TODO - best name? going to sign and submit here...
-// probably move ledger stuff to another file
 export const signWithLedger = createAsyncThunk<
-  // ALEC TODO - anys
-  any,
+  string,
   { transactionXDR: string; networkPassphrase: string; publicKey: string },
   { rejectValue: ErrorMessage }
 >(
@@ -81,7 +76,7 @@ export const signWithLedger = createAsyncThunk<
 
       const transport = await TransportWebUSB.create();
       const ledgerApi = new LedgerApi(transport);
-      // ALEC TODO - dont hardcode bip path
+      // TODO - move to redux
       const result = await ledgerApi.signTransaction(
         "44'/148'/0'",
         tx.signatureBase(),
@@ -97,9 +92,6 @@ export const signWithLedger = createAsyncThunk<
 
       return tx.toXDR();
     } catch (e) {
-      // ALEC TODO - remove
-      console.log("duck signWithLedger something went wrong");
-      console.log({ e });
       return thunkApi.rejectWithValue({ errorMessage: e });
     }
   },
@@ -200,8 +192,7 @@ export const getBestPath = createAsyncThunk<
   },
 );
 
-// ALEC TODO - rename
-export enum HwSigningStatus {
+export enum HwOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
 }
@@ -227,7 +218,7 @@ interface TransactionData {
 }
 
 interface HardwareWalletData {
-  status: HwSigningStatus;
+  status: HwOverlayStatus;
   transactionXDR: string;
 }
 
@@ -261,9 +252,8 @@ const initialState: InitialState = {
     path: [],
     allowedSlippage: "1",
   },
-  // ALEC TODO - right name? hwTxData?
   hardwareWalletData: {
-    status: HwSigningStatus.IDLE,
+    status: HwOverlayStatus.IDLE,
     transactionXDR: "",
   },
   accountBalances: {
@@ -312,13 +302,16 @@ const transactionSubmissionSlice = createSlice({
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
     },
-    openHwOverlay: (state, action) => {
-      state.hardwareWalletData.status = HwSigningStatus.IN_PROGRESS;
-      state.hardwareWalletData.transactionXDR =
-        action.payload?.transactionXDR || "";
+    startHwConnect: (state) => {
+      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.transactionXDR = "";
+    },
+    startHwSign: (state, action) => {
+      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.transactionXDR = action.payload.transactionXDR;
     },
     closeHwOverlay: (state) => {
-      state.hardwareWalletData.status = HwSigningStatus.IDLE;
+      state.hardwareWalletData.status = HwOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
     },
   },
@@ -395,7 +388,8 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveAllowedSlippage,
-  openHwOverlay,
+  startHwConnect,
+  startHwSign,
   closeHwOverlay,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;

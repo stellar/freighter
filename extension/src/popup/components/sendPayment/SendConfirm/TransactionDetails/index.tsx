@@ -26,8 +26,8 @@ import {
   transactionSubmissionSelector,
   addRecentAddress,
   isPathPaymentSelector,
-  HwSigningStatus,
-  openHwOverlay,
+  HwOverlayStatus,
+  startHwSign,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -210,7 +210,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         );
 
       if (isHardwareWallet) {
-        dispatch(openHwOverlay({ transactionXDR }));
+        dispatch(startHwSign({ transactionXDR }));
         return;
       }
       const res = await dispatch(
@@ -257,8 +257,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <div className="TransactionDetails">
-      {/* ALEC TODO - kinda gross? */}
-      {hwStatus === HwSigningStatus.IN_PROGRESS && <LedgerConnect />}
+      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
       {submission.submitStatus === ActionStatus.PENDING && (
         <div className="TransactionDetails__processing">
           <div className="TransactionDetails__processing__header">
