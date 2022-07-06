@@ -256,141 +256,146 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const showMemo = !isSwap && !destination.startsWith("M");
 
   return (
-    <div className="TransactionDetails">
+    <>
       {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
-      {submission.submitStatus === ActionStatus.PENDING && (
-        <div className="TransactionDetails__processing">
-          <div className="TransactionDetails__processing__header">
-            <Loader /> <span>Processing {isSwap ? "swap" : "transaction"}</span>
-          </div>
-          <div className="TransactionDetails__processing__copy">
-            Please don’t close this window
-          </div>
-        </div>
-      )}
-      <SubviewHeader
-        title={
-          submission.submitStatus === ActionStatus.SUCCESS
-            ? `${isSwap ? "Swapped" : "Sent"} ${sourceAsset.code}`
-            : `${isSwap ? "Confirm Swap" : "Confirm Send"}`
-        }
-        customBackAction={goBack}
-        customBackIcon={
-          submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
-        }
-      />
-      {!(isPathPayment || isSwap) && (
-        <div className="TransactionDetails__cards">
-          <Card>
-            <AccountAssets
-              assetIcons={assetIcons}
-              sortedBalances={[
-                {
-                  token: {
-                    issuer: { key: sourceAsset.issuer },
-                    code: sourceAsset.code,
-                  },
-                  total: amount || "0",
-                },
-              ]}
-            />
-          </Card>
-        </div>
-      )}
-
-      {(isPathPayment || isSwap) && (
-        <TwoAssetCard
-          sourceAssetIcons={assetIcons}
-          sourceCanon={asset}
-          sourceAmount={amount}
-          destAssetIcons={destAssetIcons}
-          destCanon={destinationAsset || "native"}
-          destAmount={destinationAmount}
-        />
-      )}
-
-      {!isSwap && (
-        <div className="TransactionDetails__row">
-          <div>Sending to </div>
-          <div className="TransactionDetails__row__right">
-            <div className="TransactionDetails__identicon">
-              <FedOrGAddress
-                fedAddress={truncatedFedAddress(federationAddress)}
-                gAddress={destination}
-              />
+      <div className="TransactionDetails">
+        {submission.submitStatus === ActionStatus.PENDING && (
+          <div className="TransactionDetails__processing">
+            <div className="TransactionDetails__processing__header">
+              <Loader />{" "}
+              <span>Processing {isSwap ? "swap" : "transaction"}</span>
+            </div>
+            <div className="TransactionDetails__processing__copy">
+              Please don’t close this window
             </div>
           </div>
-        </div>
-      )}
-      {showMemo && (
-        <div className="TransactionDetails__row">
-          <div>Memo</div>
-          <div className="TransactionDetails__row__right">{memo || "None"}</div>
-        </div>
-      )}
-
-      {(isPathPayment || isSwap) && (
-        <div className="TransactionDetails__row">
-          <div>Conversion rate </div>
-          <div className="TransactionDetails__row__right">
-            1 {sourceAsset.code} /{" "}
-            {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
-            {destAsset.code}
-          </div>
-        </div>
-      )}
-      <div className="TransactionDetails__row">
-        <div>Transaction fee </div>
-        <div className="TransactionDetails__row__right">
-          {transactionFee} {sourceAsset.code}
-        </div>
-      </div>
-      {isSwap && (
-        <div className="TransactionDetails__row">
-          <div>Minimum Received </div>
-          <div className="TransactionDetails__row__right">
-            {computeDestMinWithSlippage(
-              allowedSlippage,
-              destinationAmount,
-            ).toFixed(2)}{" "}
-            {sourceAsset.code}
-          </div>
-        </div>
-      )}
-      <div className="TransactionDetails__bottom-wrapper">
-        <div className="TransactionDetails__bottom-wrapper__copy">
-          {(isPathPayment || isSwap) &&
-            submission.submitStatus !== ActionStatus.SUCCESS &&
-            "The final amount is approximate and may change"}
-        </div>
-        {submission.submitStatus === ActionStatus.SUCCESS ? (
-          <Button
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={() =>
-              openTab(
-                `https://stellar.expert/explorer/${
-                  networkDetails.isTestnet ? "testnet" : "public"
-                }/tx/${transactionHash}`,
-              )
-            }
-          >
-            View on Stellar.expert
-          </Button>
-        ) : (
-          <div className="TransactionDetails__bottom-wrapper__buttons">
-            <Button
-              variant={Button.variant.tertiary}
-              onClick={() => {
-                navigateTo(ROUTES.account);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSend}>{isSwap ? "Swap" : "Send"}</Button>
+        )}
+        <SubviewHeader
+          title={
+            submission.submitStatus === ActionStatus.SUCCESS
+              ? `${isSwap ? "Swapped" : "Sent"} ${sourceAsset.code}`
+              : `${isSwap ? "Confirm Swap" : "Confirm Send"}`
+          }
+          customBackAction={goBack}
+          customBackIcon={
+            submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
+          }
+        />
+        {!(isPathPayment || isSwap) && (
+          <div className="TransactionDetails__cards">
+            <Card>
+              <AccountAssets
+                assetIcons={assetIcons}
+                sortedBalances={[
+                  {
+                    token: {
+                      issuer: { key: sourceAsset.issuer },
+                      code: sourceAsset.code,
+                    },
+                    total: amount || "0",
+                  },
+                ]}
+              />
+            </Card>
           </div>
         )}
+
+        {(isPathPayment || isSwap) && (
+          <TwoAssetCard
+            sourceAssetIcons={assetIcons}
+            sourceCanon={asset}
+            sourceAmount={amount}
+            destAssetIcons={destAssetIcons}
+            destCanon={destinationAsset || "native"}
+            destAmount={destinationAmount}
+          />
+        )}
+
+        {!isSwap && (
+          <div className="TransactionDetails__row">
+            <div>Sending to </div>
+            <div className="TransactionDetails__row__right">
+              <div className="TransactionDetails__identicon">
+                <FedOrGAddress
+                  fedAddress={truncatedFedAddress(federationAddress)}
+                  gAddress={destination}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        {showMemo && (
+          <div className="TransactionDetails__row">
+            <div>Memo</div>
+            <div className="TransactionDetails__row__right">
+              {memo || "None"}
+            </div>
+          </div>
+        )}
+
+        {(isPathPayment || isSwap) && (
+          <div className="TransactionDetails__row">
+            <div>Conversion rate </div>
+            <div className="TransactionDetails__row__right">
+              1 {sourceAsset.code} /{" "}
+              {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
+              {destAsset.code}
+            </div>
+          </div>
+        )}
+        <div className="TransactionDetails__row">
+          <div>Transaction fee </div>
+          <div className="TransactionDetails__row__right">
+            {transactionFee} {sourceAsset.code}
+          </div>
+        </div>
+        {isSwap && (
+          <div className="TransactionDetails__row">
+            <div>Minimum Received </div>
+            <div className="TransactionDetails__row__right">
+              {computeDestMinWithSlippage(
+                allowedSlippage,
+                destinationAmount,
+              ).toFixed(2)}{" "}
+              {sourceAsset.code}
+            </div>
+          </div>
+        )}
+        <div className="TransactionDetails__bottom-wrapper">
+          <div className="TransactionDetails__bottom-wrapper__copy">
+            {(isPathPayment || isSwap) &&
+              submission.submitStatus !== ActionStatus.SUCCESS &&
+              "The final amount is approximate and may change"}
+          </div>
+          {submission.submitStatus === ActionStatus.SUCCESS ? (
+            <Button
+              fullWidth
+              variant={Button.variant.tertiary}
+              onClick={() =>
+                openTab(
+                  `https://stellar.expert/explorer/${
+                    networkDetails.isTestnet ? "testnet" : "public"
+                  }/tx/${transactionHash}`,
+                )
+              }
+            >
+              View on Stellar.expert
+            </Button>
+          ) : (
+            <div className="TransactionDetails__bottom-wrapper__buttons">
+              <Button
+                variant={Button.variant.tertiary}
+                onClick={() => {
+                  navigateTo(ROUTES.account);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSend}>{isSwap ? "Swap" : "Send"}</Button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };

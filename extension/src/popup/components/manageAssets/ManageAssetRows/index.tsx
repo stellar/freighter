@@ -152,55 +152,57 @@ export const ManageAssetRows = ({
   }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
 
   return (
-    <SimpleBar
-      className="ManageAssetRows__scrollbar"
-      style={{
-        maxHeight: `${maxHeight}px`,
-      }}
-    >
+    <>
       {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
-      {header}
-      <div className="ManageAssetRows__content">
-        {assetRows.map(({ code, domain, image, issuer }) => {
-          if (!balances) return null;
-          const canonicalAsset = getCanonicalFromAsset(code, issuer);
-          const isTrustlineActive = Object.keys(balances).some(
-            (balance) => balance === canonicalAsset,
-          );
-          const isActionPending = submitStatus === ActionStatus.PENDING;
+      <SimpleBar
+        className="ManageAssetRows__scrollbar"
+        style={{
+          maxHeight: `${maxHeight}px`,
+        }}
+      >
+        {header}
+        <div className="ManageAssetRows__content">
+          {assetRows.map(({ code, domain, image, issuer }) => {
+            if (!balances) return null;
+            const canonicalAsset = getCanonicalFromAsset(code, issuer);
+            const isTrustlineActive = Object.keys(balances).some(
+              (balance) => balance === canonicalAsset,
+            );
+            const isActionPending = submitStatus === ActionStatus.PENDING;
 
-          return (
-            <div className="ManageAssetRows__row" key={canonicalAsset}>
-              <AssetIcon
-                assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
-                code={code}
-                issuerKey={issuer}
-              />
-              <div className="ManageAssetRows__code">
-                {code}
-                <div className="ManageAssetRows__domain">
-                  {formatDomain(domain)}
+            return (
+              <div className="ManageAssetRows__row" key={canonicalAsset}>
+                <AssetIcon
+                  assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+                  code={code}
+                  issuerKey={issuer}
+                />
+                <div className="ManageAssetRows__code">
+                  {code}
+                  <div className="ManageAssetRows__domain">
+                    {formatDomain(domain)}
+                  </div>
+                </div>
+                <div className="ManageAssetRows__button">
+                  <PillButton
+                    disabled={isActionPending}
+                    isLoading={
+                      isActionPending && assetSubmitting === canonicalAsset
+                    }
+                    onClick={() =>
+                      changeTrustline(code, issuer, !isTrustlineActive)
+                    }
+                    type="button"
+                  >
+                    {isTrustlineActive ? "Remove" : "Add"}
+                  </PillButton>
                 </div>
               </div>
-              <div className="ManageAssetRows__button">
-                <PillButton
-                  disabled={isActionPending}
-                  isLoading={
-                    isActionPending && assetSubmitting === canonicalAsset
-                  }
-                  onClick={() =>
-                    changeTrustline(code, issuer, !isTrustlineActive)
-                  }
-                  type="button"
-                >
-                  {isTrustlineActive ? "Remove" : "Add"}
-                </PillButton>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {children}
-    </SimpleBar>
+            );
+          })}
+        </div>
+        {children}
+      </SimpleBar>
+    </>
   );
 };
