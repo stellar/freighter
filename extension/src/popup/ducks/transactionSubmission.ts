@@ -22,6 +22,7 @@ import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import { defaultStellarBipPath } from "popup/components/hardwareConnect/LedgerConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -78,7 +79,7 @@ export const signWithLedger = createAsyncThunk<
       const ledgerApi = new LedgerApi(transport);
       // TODO - move to redux
       const result = await ledgerApi.signTransaction(
-        "44'/148'/0'",
+        defaultStellarBipPath,
         tx.signatureBase(),
       );
 
