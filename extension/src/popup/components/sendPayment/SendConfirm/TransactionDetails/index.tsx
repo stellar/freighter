@@ -195,19 +195,19 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const handleSend = async () => {
     try {
       const server = new StellarSdk.Server(networkDetails.networkUrl);
-      const transactionXDR = await server
-        .loadAccount(publicKey)
-        .then((sourceAccount: Types.Account) =>
-          new StellarSdk.TransactionBuilder(sourceAccount, {
-            fee: xlmToStroop(transactionFee).toString(),
-            networkPassphrase: networkDetails.networkPassphrase,
-          })
-            .addOperation(getOperation())
-            .addMemo(StellarSdk.Memo.text(memo))
-            .setTimeout(180)
-            .build()
-            .toXDR(),
-        );
+      const sourceAccount: Types.Account = await server.loadAccount(publicKey);
+      const transactionXDR = await new StellarSdk.TransactionBuilder(
+        sourceAccount,
+        {
+          fee: xlmToStroop(transactionFee).toString(),
+          networkPassphrase: networkDetails.networkPassphrase,
+        },
+      )
+        .addOperation(getOperation())
+        .addMemo(StellarSdk.Memo.text(memo))
+        .setTimeout(180)
+        .build()
+        .toXDR();
 
       if (isHardwareWallet) {
         dispatch(startHwSign({ transactionXDR }));
