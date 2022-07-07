@@ -1,9 +1,10 @@
 .LedgerConnect {
   z-index: var(--z-index--ledger);
-  position: absolute;
+  position: fixed;
   height: var(--popup--height);
   width: var(--popup--width);
   background-color: black;
+  top: 0;
 
   &__success {
     color: var(--pal-success);

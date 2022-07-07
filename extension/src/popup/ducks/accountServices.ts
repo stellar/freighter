@@ -561,6 +561,17 @@ export const accountNameSelector = createSelector(
   },
 );
 
+export const hardwareWalletTypeSelector = createSelector(
+  publicKeySelector,
+  allAccountsSelector,
+  (publicKey, allAccounts) => {
+    const account = allAccounts.find(
+      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+    ) || { hardwareWalletType: WalletType.NONE };
+    return account.hardwareWalletType;
+  },
+);
+
 export const { clearApiError, setConnectingWalletType } = authSlice.actions;
 
 export { reducer };

@@ -1,4 +1,4 @@
-import { Horizon, Server, ServerApi } from "stellar-sdk";
+import StellarSdk, { Horizon, Server, ServerApi } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -18,8 +18,11 @@ import {
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/helpers/stellar";
+import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+import LedgerApi from "@ledgerhq/hw-app-str";
 
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import { defaultStellarBipPath } from "popup/components/hardwareConnect/LedgerConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -38,23 +41,62 @@ export const signFreighterTransaction = createAsyncThunk<
 
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
-  { signedXDR: string; networkUrl: string },
+  { signedXDR: string; networkDetails: NetworkDetails },
   {
     rejectValue: ErrorMessage;
   }
->("submitFreighterTransaction", async ({ signedXDR, networkUrl }, thunkApi) => {
-  try {
-    return await internalSubmitFreighterTransaction({
-      signedXDR,
-      networkUrl,
-    });
-  } catch (e) {
-    return thunkApi.rejectWithValue({
-      errorMessage: e.message || e,
-      response: e.response?.data,
-    });
-  }
-});
+>(
+  "submitFreighterTransaction",
+  async ({ signedXDR, networkDetails }, thunkApi) => {
+    try {
+      return await internalSubmitFreighterTransaction({
+        signedXDR,
+        networkDetails,
+      });
+    } catch (e) {
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message || e,
+        response: e.response?.data,
+      });
+    }
+  },
+);
+
+export const signWithLedger = createAsyncThunk<
+  string,
+  { transactionXDR: string; networkPassphrase: string; publicKey: string },
+  { rejectValue: ErrorMessage }
+>(
+  "signWithLedger",
+  async ({ transactionXDR, networkPassphrase, publicKey }, thunkApi) => {
+    try {
+      const tx = StellarSdk.TransactionBuilder.fromXDR(
+        transactionXDR,
+        networkPassphrase,
+      );
+
+      const transport = await TransportWebUSB.create();
+      const ledgerApi = new LedgerApi(transport);
+      // TODO - move to redux
+      const result = await ledgerApi.signTransaction(
+        defaultStellarBipPath,
+        tx.signatureBase(),
+      );
+
+      const keypair = StellarSdk.Keypair.fromPublicKey(publicKey);
+      const decoratedSignature = new StellarSdk.xdr.DecoratedSignature({
+        hint: keypair.signatureHint(),
+        signature: result.signature,
+      });
+
+      tx.signatures.push(decoratedSignature);
+
+      return tx.toXDR();
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e });
+    }
+  },
+);
 
 export const addRecentAddress = createAsyncThunk<
   { recentAddresses: Array<string> },
@@ -151,6 +193,11 @@ export const getBestPath = createAsyncThunk<
   },
 );
 
+export enum HwOverlayStatus {
+  IDLE = "IDLE",
+  IN_PROGRESS = "IN_PROGRESS",
+}
+
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -171,9 +218,15 @@ interface TransactionData {
   allowedSlippage: string;
 }
 
+interface HardwareWalletData {
+  status: HwOverlayStatus;
+  transactionXDR: string;
+}
+
 interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
+  hardwareWalletData: HardwareWalletData;
   response: Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
@@ -198,6 +251,10 @@ const initialState: InitialState = {
     destinationAmount: "",
     path: [],
     allowedSlippage: "1",
+  },
+  hardwareWalletData: {
+    status: HwOverlayStatus.IDLE,
+    transactionXDR: "",
   },
   accountBalances: {
     balances: null,
@@ -244,6 +301,18 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
+    },
+    startHwConnect: (state) => {
+      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.transactionXDR = "";
+    },
+    startHwSign: (state, action) => {
+      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.transactionXDR = action.payload.transactionXDR;
+    },
+    closeHwOverlay: (state) => {
+      state.hardwareWalletData.status = HwOverlayStatus.IDLE;
+      state.hardwareWalletData.transactionXDR = "";
     },
   },
   extraReducers: (builder) => {
@@ -319,6 +388,9 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveAllowedSlippage,
+  startHwConnect,
+  startHwSign,
+  closeHwOverlay,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

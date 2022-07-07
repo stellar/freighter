@@ -437,13 +437,17 @@ export const signFreighterTransaction = async ({
 
 export const submitFreighterTransaction = async ({
   signedXDR,
-  networkUrl,
+  networkDetails,
 }: {
   signedXDR: string;
-  networkUrl: string;
+  networkDetails: NetworkDetails;
 }) => {
-  const server = new StellarSdk.Server(networkUrl);
-  return await server.submitTransaction(signedXDR);
+  const tx = StellarSdk.TransactionBuilder.fromXDR(
+    signedXDR,
+    networkDetails.networkPassphrase,
+  );
+  const server = new StellarSdk.Server(networkDetails.networkUrl);
+  return await server.submitTransaction(tx);
 };
 
 export const addRecentAddress = async ({
