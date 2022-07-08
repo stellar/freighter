@@ -8,8 +8,6 @@ import {
 } from "constants/localStorageTypes";
 import { decodeString, encodeObject } from "helpers/urls";
 
-export const HW_PREFIX = "hw:";
-
 export const getKeyIdList = () =>
   JSON.parse(localStorage.getItem(KEY_ID_LIST) || "[]");
 
@@ -45,5 +43,14 @@ export const getIsMemoValidationEnabled = () =>
 export const getIsSafetyValidationEnabled = () =>
   JSON.parse(localStorage.getItem(IS_VALIDATING_SAFETY_ID) || "true");
 
+// hardware wallet helpers
+export const HW_PREFIX = "hw:";
+
 export const getIsHardwareWalletActive = () =>
   (localStorage.getItem(KEY_ID) || "").indexOf(HW_PREFIX) > -1;
+
+export const getBipPath = () => {
+  const keyId = localStorage.getItem(KEY_ID) || "";
+  const hwData = JSON.parse(localStorage.getItem(keyId) || "{}");
+  return hwData.bipPath || "";
+};

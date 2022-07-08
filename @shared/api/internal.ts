@@ -119,29 +119,38 @@ export const importAccount = async (
 export const importHardwareWallet = async (
   publicKey: string,
   hardwareWalletType: WalletType,
+  bipPath: string,
 ) => {
   let _publicKey = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
+  let _bipPath = "";
   try {
     ({
       publicKey: _publicKey,
       allAccounts,
       hasPrivateKey,
+      bipPath: _bipPath,
     } = await sendMessageToBackground({
       publicKey,
       hardwareWalletType,
+      bipPath,
       type: SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
     }));
   } catch (e) {
     console.log({ e });
   }
-  return { allAccounts, publicKey: _publicKey, hasPrivateKey };
+  return {
+    allAccounts,
+    publicKey: _publicKey,
+    hasPrivateKey,
+    bipPath: _bipPath,
+  };
 };
 
 export const makeAccountActive = (
   publicKey: string,
-): Promise<{ publicKey: string; hasPrivateKey: boolean }> =>
+): Promise<{ publicKey: string; hasPrivateKey: boolean; bipPath: string }> =>
   sendMessageToBackground({
     publicKey,
     type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
@@ -160,6 +169,7 @@ export const loadAccount = (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
+  bipPath: string;
 }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_ACCOUNT,

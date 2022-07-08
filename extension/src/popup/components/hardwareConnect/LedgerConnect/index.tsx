@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 import { Icon, InfoBlock } from "@stellar/design-system";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
-import { AppDispatch } from "popup/App";
+import { POPUP_HEIGHT } from "constants/dimensions";
 
+import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -14,7 +15,10 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import Ledger from "popup/assets/ledger.png";
 import LedgerConnected from "popup/assets/ledger-connected.png";
 import LedgerSigning from "popup/assets/ledger-signing.png";
-import { importHardwareWallet } from "popup/ducks/accountServices";
+import {
+  importHardwareWallet,
+  bipPathSelector,
+} from "popup/ducks/accountServices";
 import {
   signWithLedger,
   submitFreighterTransaction,
@@ -22,10 +26,9 @@ import {
   closeHwOverlay,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import "./styles.scss";
-
-export const defaultStellarBipPath = "44'/148'/0'";
 
 enum LEDGER_ERROR {
   NO_DEVICE = "NO_DEVICE",
@@ -47,28 +50,47 @@ const parseLedgerError = (err: any): string => {
   return LEDGER_ERROR.OTHER;
 };
 
-export const LedgerConnect = () => {
+export const LedgerConnect = ({ newBipPath }: { newBipPath?: string }) => {
   const dispatch: AppDispatch = useDispatch();
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
     hardwareWalletData: { transactionXDR },
   } = useSelector(transactionSubmissionSelector);
+  // if importing, get bipPath from user input,
+  // else get saved bipPath from redux
+  const signingBipPath = useSelector(bipPathSelector);
+  const bipPath = newBipPath || signingBipPath;
   const isSigningTransaction = !!transactionXDR;
 
-  const [isConnected, setIsConnected] = useState(false);
+  const [ledgerConnectSuccessful, setLedgerConnectSuccessful] = useState(false);
   const [connectError, setConnectError] = useState("");
 
-  const closeOverlay = () => dispatch(closeHwOverlay());
+  const closeOverlay = () => {
+    if (ledgerConnectRef.current) {
+      ledgerConnectRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
+    }
+    setTimeout(() => {
+      dispatch(closeHwOverlay());
+    }, 300);
+  };
+
+  // animate entry
+  const ledgerConnectRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ledgerConnectRef.current) {
+      ledgerConnectRef.current.style.bottom = "0";
+    }
+  }, [ledgerConnectRef]);
 
   const handleConnect = async () => {
-    setIsConnecting(true);
+    setIsDetecting(true);
     setConnectError("");
     try {
       const transport = await TransportWebUSB.request();
       const ledgerApi = new LedgerApi(transport);
-      const response = await ledgerApi.getPublicKey(defaultStellarBipPath);
-      setIsConnected(true);
+      const response = await ledgerApi.getPublicKey(bipPath);
+      setLedgerConnectSuccessful(true);
 
       // if not signing a tx then assume initial account import
       if (!isSigningTransaction) {
@@ -76,6 +98,7 @@ export const LedgerConnect = () => {
           importHardwareWallet({
             publicKey: response.publicKey,
             hardwareWalletType: WalletType.LEDGER,
+            bipPath,
           }),
         );
       } else {
@@ -84,9 +107,9 @@ export const LedgerConnect = () => {
             transactionXDR: transactionXDR as string,
             networkPassphrase: networkDetails.networkPassphrase,
             publicKey: response.publicKey,
+            bipPath,
           }),
         );
-
         if (signWithLedger.fulfilled.match(res)) {
           dispatch(
             submitFreighterTransaction({
@@ -95,12 +118,15 @@ export const LedgerConnect = () => {
             }),
           );
           closeOverlay();
+        } else {
+          setLedgerConnectSuccessful(false);
+          setConnectError(parseLedgerError(res.payload?.errorMessage || ""));
         }
       }
     } catch (e) {
       setConnectError(parseLedgerError(e));
     }
-    setIsConnecting(false);
+    setIsDetecting(false);
   };
 
   // let's check connection on initial load
@@ -134,14 +160,14 @@ export const LedgerConnect = () => {
   };
 
   const getLedgerImage = () => {
-    if (isConnected) {
+    if (ledgerConnectSuccessful) {
       return isSigningTransaction ? LedgerSigning : LedgerConnected;
     }
     return Ledger;
   };
 
   const getLedgerCaption = () => {
-    if (isConnected) {
+    if (ledgerConnectSuccessful) {
       return isSigningTransaction
         ? "Review transaction on device"
         : "You’re good to go!";
@@ -150,7 +176,7 @@ export const LedgerConnect = () => {
   };
 
   const getLedgerButton = () => {
-    if (isConnected) {
+    if (ledgerConnectSuccessful) {
       return isSigningTransaction ? null : (
         <Button
           fullWidth
@@ -166,16 +192,16 @@ export const LedgerConnect = () => {
         fullWidth
         variant={Button.variant.tertiary}
         onClick={handleConnect}
-        isLoading={isConnecting}
+        isLoading={isDetecting}
       >
-        {isConnecting ? "Detecting" : "Detect device"}
+        {isDetecting ? "Detecting" : "Detect device"}
       </Button>
     );
   };
 
   return (
     <div className="LedgerConnect">
-      <div className="LedgerConnect__wrapper">
+      <div className="LedgerConnect__wrapper" ref={ledgerConnectRef}>
         <SubviewHeader
           customBackAction={closeOverlay}
           customBackIcon={<Icon.X />}
@@ -183,7 +209,7 @@ export const LedgerConnect = () => {
         />
         <div className="LedgerConnect__content">
           <div className="LedgerConnect__success">
-            {isConnected ? "Connected" : ""}
+            {ledgerConnectSuccessful ? "Connected" : ""}
           </div>
           <div className="LedgerConnect__content__center">
             <img
@@ -199,6 +225,7 @@ export const LedgerConnect = () => {
           {getLedgerButton()}
         </div>
       </div>
+      <LoadingBackground onClick={undefined} isActive={true} />
     </div>
   );
 };

@@ -9,10 +9,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { BottomNav } from "popup/components/BottomNav";
-import {
-  LedgerConnect,
-  defaultStellarBipPath,
-} from "popup/components/hardwareConnect/LedgerConnect";
+import { LedgerConnect } from "popup/components/hardwareConnect/LedgerConnect";
 import {
   transactionSubmissionSelector,
   HwOverlayStatus,
@@ -21,19 +18,22 @@ import {
 
 import "./styles.scss";
 
+const defaultStellarBipPath = "44'/148'/0'";
+
 export const PluginWallet = () => {
   const dispatch: AppDispatch = useDispatch();
   const {
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
 
-  // TODO - move to redux
   const [bipPath, setBipPath] = useState(defaultStellarBipPath);
   const [useDefault, setUseDefault] = useState(true);
 
   return (
     <>
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
+      {hwStatus === HwOverlayStatus.IN_PROGRESS && (
+        <LedgerConnect newBipPath={bipPath} />
+      )}
       <div className="PluginWallet">
         <SubviewHeader
           title={`Connect with ${WalletType.LEDGER}`}
@@ -77,7 +77,12 @@ export const PluginWallet = () => {
             }
             onClick={() => setUseDefault(!useDefault)}
           />
-          <Button fullWidth onClick={() => dispatch(startHwConnect())}>
+          <Button
+            fullWidth
+            onClick={() => {
+              dispatch(startHwConnect());
+            }}
+          >
             Connect
           </Button>
         </div>

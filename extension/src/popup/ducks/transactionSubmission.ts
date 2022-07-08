@@ -22,7 +22,6 @@ import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
-import { defaultStellarBipPath } from "popup/components/hardwareConnect/LedgerConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -64,11 +63,19 @@ export const submitFreighterTransaction = createAsyncThunk<
 
 export const signWithLedger = createAsyncThunk<
   string,
-  { transactionXDR: string; networkPassphrase: string; publicKey: string },
+  {
+    transactionXDR: string;
+    networkPassphrase: string;
+    publicKey: string;
+    bipPath: string;
+  },
   { rejectValue: ErrorMessage }
 >(
   "signWithLedger",
-  async ({ transactionXDR, networkPassphrase, publicKey }, thunkApi) => {
+  async (
+    { transactionXDR, networkPassphrase, publicKey, bipPath },
+    thunkApi,
+  ) => {
     try {
       const tx = StellarSdk.TransactionBuilder.fromXDR(
         transactionXDR,
@@ -77,9 +84,8 @@ export const signWithLedger = createAsyncThunk<
 
       const transport = await TransportWebUSB.create();
       const ledgerApi = new LedgerApi(transport);
-      // TODO - move to redux
       const result = await ledgerApi.signTransaction(
-        defaultStellarBipPath,
+        bipPath,
         tx.signatureBase(),
       );
 
@@ -93,7 +99,7 @@ export const signWithLedger = createAsyncThunk<
 
       return tx.toXDR();
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
     }
   },
 );
