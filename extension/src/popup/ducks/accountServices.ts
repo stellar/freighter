@@ -99,19 +99,25 @@ export const importHardwareWallet = createAsyncThunk<
     publicKey: string;
     allAccounts: Array<Account>;
     hasPrivateKey: boolean;
+    bipPath: string;
   },
-  { publicKey: string; hardwareWalletType: WalletType },
+  { publicKey: string; hardwareWalletType: WalletType; bipPath: string },
   { rejectValue: ErrorMessage }
 >(
   "auth/importHardwareWallet",
-  async ({ publicKey, hardwareWalletType }, thunkApi) => {
+  async ({ publicKey, hardwareWalletType, bipPath }, thunkApi) => {
     let res = {
       publicKey: "",
       allAccounts: [] as Array<Account>,
       hasPrivateKey: false,
+      bipPath: "",
     };
     try {
-      res = await importHardwareWalletService(publicKey, hardwareWalletType);
+      res = await importHardwareWalletService(
+        publicKey,
+        hardwareWalletType,
+        bipPath,
+      );
     } catch (e) {
       console.error("Failed when importing hardware wallet: ", e);
       return thunkApi.rejectWithValue({ errorMessage: e.message });
@@ -267,6 +273,7 @@ interface InitialState {
   hasPrivateKey: boolean;
   publicKey: string;
   connectingWalletType: WalletType;
+  bipPath: string;
   error: string;
 }
 
@@ -276,6 +283,7 @@ const initialState: InitialState = {
   hasPrivateKey: false,
   publicKey: "",
   connectingWalletType: WalletType.NONE,
+  bipPath: "",
   error: "",
 };
 
@@ -322,6 +330,8 @@ const authSlice = createSlice({
       return {
         ...state,
         error: "",
+        // to be safe lets clear bipPath here, which is only for hWs
+        bipPath: "",
         publicKey,
         allAccounts,
         hasPrivateKey,
@@ -345,6 +355,8 @@ const authSlice = createSlice({
       return {
         ...state,
         error: "",
+        // to be safe lets clear bipPath here, which is only for hWs
+        bipPath: "",
         publicKey,
         allAccounts,
         hasPrivateKey,
@@ -359,8 +371,15 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(importHardwareWallet.fulfilled, (state, action) => {
-      const { publicKey, allAccounts, hasPrivateKey } = action.payload;
-      return { ...state, error: "", publicKey, allAccounts, hasPrivateKey };
+      const { publicKey, allAccounts, hasPrivateKey, bipPath } = action.payload;
+      return {
+        ...state,
+        error: "",
+        publicKey,
+        allAccounts,
+        hasPrivateKey,
+        bipPath,
+      };
     });
     builder.addCase(importHardwareWallet.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
@@ -371,15 +390,17 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(makeAccountActive.fulfilled, (state, action) => {
-      const { publicKey, hasPrivateKey } = action.payload || {
+      const { publicKey, hasPrivateKey, bipPath } = action.payload || {
         publicKey: "",
         hasPrivateKey: false,
+        bipPath: "",
       };
 
       return {
         ...state,
         publicKey,
         hasPrivateKey,
+        bipPath,
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
@@ -458,11 +479,13 @@ const authSlice = createSlice({
         publicKey,
         applicationState,
         allAccounts,
+        bipPath,
       } = action.payload || {
         hasPrivateKey: false,
         publicKey: "",
         applicationState: APPLICATION_STATE.APPLICATION_STARTED,
         allAccounts: [],
+        bipPath: "",
       };
       return {
         ...state,
@@ -471,6 +494,7 @@ const authSlice = createSlice({
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
         allAccounts,
+        bipPath,
       };
     });
     builder.addCase(loadAccount.rejected, (state, action) => {
@@ -547,6 +571,10 @@ export const authErrorSelector = createSelector(
 export const publicKeySelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.publicKey,
+);
+export const bipPathSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.bipPath,
 );
 
 export const accountNameSelector = createSelector(

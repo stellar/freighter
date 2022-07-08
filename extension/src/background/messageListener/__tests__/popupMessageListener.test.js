@@ -6,6 +6,7 @@ import {
   privateKeySelector,
   allAccountsSelector,
 } from "background/ducks/session";
+import { decodeString } from "helpers/urls";
 
 console.error = jest.fn((e) => console.log(e));
 
@@ -33,6 +34,7 @@ describe("popupMessageListener", () => {
       r.type = SERVICE_TYPES.IMPORT_HARDWARE_WALLET;
       r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
       r.hardwareWalletType = "ledger";
+      r.bipPath = "44'/148'/1'";
       await popupMessageListener(r);
       expect(console.error).not.toHaveBeenCalled();
 
@@ -49,6 +51,50 @@ describe("popupMessageListener", () => {
         "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O",
       );
       expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(2);
+      expect(
+        localStorage.getItem(
+          "hw:GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O",
+        ),
+      ).toBe(
+        JSON.stringify({
+          bipPath: "44'/148'/1'",
+          publicKey: "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O",
+        }),
+      );
+    });
+  });
+
+  describe("LOAD_ACCOUNT", () => {
+    it("loads bip path correctly", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.LOAD_ACCOUNT;
+
+      const resp = await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+
+      expect(resp.bipPath).toBe("44'/148'/1'");
+    });
+  });
+
+  describe("IMPORT_HARDWARE_WALLET", () => {
+    it("doesn't load the same account twice", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.IMPORT_HARDWARE_WALLET;
+      r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
+      r.hardwareWalletType = "ledger";
+      r.bipPath = "44'/148'/1'";
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+
+      // check store
+      expect(allAccountsSelector(store.getState()).length).toBe(2);
+      // check localStorage
+      expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(2);
+      expect(
+        Object.keys(
+          JSON.parse(decodeString(localStorage.getItem("accountNameList"))),
+        ).length,
+      ).toBe(2);
     });
   });
 
@@ -84,6 +130,18 @@ describe("popupMessageListener", () => {
       // check localStorage
       expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(3);
       expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(-1);
+    });
+  });
+
+  describe("LOAD_ACCOUNT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.LOAD_ACCOUNT;
+
+      const resp = await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+
+      expect(resp.bipPath).toBe("");
     });
   });
 

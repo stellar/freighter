@@ -34,6 +34,7 @@ import {
   getIsSafetyValidationEnabled,
   getIsHardwareWalletActive,
   HW_PREFIX,
+  getBipPath,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
@@ -92,49 +93,65 @@ export const popupMessageListener = (request: Request) => {
     return nonHwKeyIds[0] || "";
   };
 
+  // in lieu of using KeyManager, let's store hW data in local storage
+  // using schema:
+  // "hw:<G account>": {
+  //   publicKey: "",
+  //   bipPath: "",
+  // }
   const _storeHardwareWalletAccount = ({
     publicKey,
     hardwareWalletType,
+    bipPath,
   }: {
     publicKey: string;
     hardwareWalletType: WalletType;
+    bipPath: string;
   }) => {
     const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
-    const allAccounts = allAccountsSelector(store.getState());
+    let allAccounts = allAccountsSelector(store.getState());
 
     const keyId = `${HW_PREFIX}${publicKey}`;
     const keyIdListArr = getKeyIdList();
     const accountName = `${hardwareWalletType} ${
       keyIdListArr.filter((k: string) => k.indexOf(HW_PREFIX) !== -1).length + 1
     }`;
-    keyIdListArr.push(keyId);
 
-    localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+    if (keyIdListArr.indexOf(keyId) === -1) {
+      keyIdListArr.push(keyId);
+      localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+      const hwData = {
+        bipPath,
+        publicKey,
+      };
+      localStorage.setItem(keyId, JSON.stringify(hwData));
+      addAccountName({
+        keyId,
+        accountName,
+      });
+      allAccounts = [
+        ...allAccounts,
+        {
+          publicKey,
+          name: accountName,
+          imported: true,
+          hardwareWalletType,
+        },
+      ];
+    }
+
     localStorage.setItem(KEY_ID, keyId);
 
     store.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
-        allAccounts: [
-          ...allAccounts,
-          {
-            publicKey,
-            name: accountName,
-            imported: true,
-            hardwareWalletType,
-          },
-        ],
+        allAccounts,
       }),
     );
 
     // an active hw account should not have an active private key
     store.dispatch(setActivePrivateKey({ privateKey: "" }));
-
-    addAccountName({
-      keyId,
-      accountName,
-    });
   };
 
   const _storeAccount = async ({
@@ -345,17 +362,19 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const importHardwareWallet = async () => {
-    const { publicKey, hardwareWalletType } = request;
+    const { publicKey, hardwareWalletType, bipPath } = request;
 
     await _storeHardwareWalletAccount({
       publicKey,
       hardwareWalletType,
+      bipPath,
     });
 
     return {
       publicKey: publicKeySelector(store.getState()),
       allAccounts: allAccountsSelector(store.getState()),
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
+      bipPath: getBipPath(),
     };
   };
 
@@ -381,6 +400,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(currentState),
       hasPrivateKey: hasPrivateKeySelector(currentState),
+      bipPath: getBipPath(),
     };
   };
 
@@ -406,6 +426,7 @@ export const popupMessageListener = (request: Request) => {
       publicKey: publicKeySelector(currentState),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
       allAccounts: allAccountsSelector(currentState),
+      bipPath: getBipPath(),
     };
   };
 

@@ -3,8 +3,8 @@
   position: fixed;
   height: var(--popup--height);
   width: var(--popup--width);
-  background-color: black;
   top: 0;
+  left: 0;
 
   &__success {
     color: var(--pal-success);
@@ -17,6 +17,10 @@
     position: absolute;
     margin-top: 2rem;
     height: calc(var(--popup--height) - 2rem);
+    // set in component for transition
+    bottom: calc(-1 * var(--popup--height));
+    transition: bottom var(--dropdown-animation);
+
     width: var(--popup--width);
     display: flex;
     flex-direction: column;

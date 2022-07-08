@@ -40,6 +40,7 @@ export interface Response {
   network: string;
   recentAddresses: Array<string>;
   hardwareWalletType: WalletType;
+  bipPath: string;
 }
 
 export interface ExternalRequest {
