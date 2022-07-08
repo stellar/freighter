@@ -64,8 +64,6 @@ export const METRIC_NAMES = {
   accountCreatorReject: "account creator: create password: error",
 
   accountCreatorMnemonicViewPhrase: "account creator: viewed phrase",
-  accountCreatorMnemonicDownloadPhrase: "account creator: downloaded phrase",
-  accountCreatorMnemonicCopyPhrase: "account creator: copied phrase",
 
   accountCreatorMnemonicConfirmPhrase:
     "account creator: confirm phrase: confirmed phrase",

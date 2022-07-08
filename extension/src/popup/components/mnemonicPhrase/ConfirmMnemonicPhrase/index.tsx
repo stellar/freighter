@@ -18,6 +18,7 @@ import {
   OnboardingScreen,
   OnboardingHeader,
 } from "popup/components/Onboarding";
+import { generateMnemonicPhraseDisplay } from "popup/components/mnemonicPhrase/MnemonicDisplay";
 
 import { CheckButton } from "../CheckButton";
 
@@ -58,10 +59,11 @@ export const ConfirmMnemonicPhrase = ({
   const wordStateArr: [string, boolean][] = Object.entries(initialWordState);
 
   const handleSubmit = async () => {
-    await dispatch(confirmMnemonicPhrase(displaySelectedWords()));
+    await dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+    setSelectedWords([]);
   };
 
-  const displaySelectedWords = () =>
+  const joinSelectedWords = () =>
     selectedWords.map((word) => convertToWord(word)).join(" ");
 
   if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
@@ -83,9 +85,14 @@ export const ConfirmMnemonicPhrase = ({
             <Form className="ConfirmMnemonicPhrase--form-wrapper">
               <div className="ConfirmMnemonicPhrase__selected-words-wrapper">
                 <Card variant={Card.variant.highlight}>
-                  <span className="ConfirmMnemonicPhrase__selected-words-text">
-                    {displaySelectedWords()}
-                  </span>
+                  <ul
+                    className="ConfirmMnemonicPhrase__selected-words-text"
+                    onCopy={(e) => e.preventDefault()}
+                  >
+                    {generateMnemonicPhraseDisplay({
+                      mnemonicPhrase: joinSelectedWords(),
+                    })}
+                  </ul>
                 </Card>
               </div>
               <FormError>{authError}</FormError>
@@ -106,7 +113,7 @@ export const ConfirmMnemonicPhrase = ({
                 <Button
                   fullWidth
                   type="submit"
-                  disabled={!dirty && !!displaySelectedWords().length}
+                  disabled={!dirty && !!joinSelectedWords().length}
                   isLoading={isSubmitting}
                 >
                   NEXT

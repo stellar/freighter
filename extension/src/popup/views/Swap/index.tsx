@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Switch, Redirect } from "react-router-dom";
 
+import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
@@ -18,7 +19,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 export const Swap = () => {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const { accountBalances, assetIcons } = useSelector(
     transactionSubmissionSelector,
   );
@@ -27,14 +28,22 @@ export const Swap = () => {
 
   // load needed swap data here in case didn't go to home screen first
   useEffect(() => {
-    if (!accountBalances.balances) {
-      dispatch(
-        getAccountBalances({
-          publicKey,
-          networkDetails,
-        }),
-      );
-    }
+    (async () => {
+      if (!accountBalances.balances) {
+        const res = await dispatch(
+          getAccountBalances({
+            publicKey,
+            networkDetails,
+          }),
+        );
+
+        if (getAccountBalances.fulfilled.match(res)) {
+          dispatch(
+            getAssetIcons({ balances: res.payload.balances, networkDetails }),
+          );
+        }
+      }
+    })();
   }, [dispatch, publicKey, networkDetails, accountBalances]);
 
   useEffect(() => {

@@ -25,7 +25,7 @@ export const SignTransactionDemo = () => {
     try {
       signedTransaction = await signTransaction(
         transactionXdr,
-        network === "PUBLIC" || network === "TESTNET" ? network : undefined,
+        network === "PUBLIC" || network === "TESTNET" ? network : null,
         publicKey
       );
     } catch (e) {
