@@ -90,10 +90,10 @@ export const LedgerConnect = ({ newBipPath }: { newBipPath?: string }) => {
       const transport = await TransportWebUSB.request();
       const ledgerApi = new LedgerApi(transport);
       const response = await ledgerApi.getPublicKey(bipPath);
+      setLedgerConnectSuccessful(true);
 
       // if not signing a tx then assume initial account import
       if (!isSigningTransaction) {
-        setLedgerConnectSuccessful(true);
         dispatch(
           importHardwareWallet({
             publicKey: response.publicKey,
@@ -102,7 +102,6 @@ export const LedgerConnect = ({ newBipPath }: { newBipPath?: string }) => {
           }),
         );
       } else {
-        setLedgerConnectSuccessful(true);
         const res = await dispatch(
           signWithLedger({
             transactionXDR: transactionXDR as string,
