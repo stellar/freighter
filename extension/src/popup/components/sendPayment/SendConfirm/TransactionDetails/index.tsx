@@ -5,6 +5,7 @@ import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import {
   getAssetFromCanonical,
@@ -119,6 +120,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
   const isSwap = useIsSwap();
+  const { t } = useTranslation();
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -253,18 +255,21 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {submission.submitStatus === ActionStatus.PENDING && (
         <div className="TransactionDetails__processing">
           <div className="TransactionDetails__processing__header">
-            <Loader /> <span>Processing {isSwap ? "swap" : "transaction"}</span>
+            <Loader />{" "}
+            <span>
+              {t("Processing")} {isSwap ? t("swap") : t("transaction")}
+            </span>
           </div>
           <div className="TransactionDetails__processing__copy">
-            Please don’t close this window
+            {t("Please don’t close this window")}
           </div>
         </div>
       )}
       <SubviewHeader
         title={
           submission.submitStatus === ActionStatus.SUCCESS
-            ? `${isSwap ? "Swapped" : "Sent"} ${sourceAsset.code}`
-            : `${isSwap ? "Confirm Swap" : "Confirm Send"}`
+            ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
+            : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
         }
         customBackAction={goBack}
         customBackIcon={
@@ -303,7 +308,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
       {!isSwap && (
         <div className="TransactionDetails__row">
-          <div>Sending to </div>
+          <div>{t("Sending to")} </div>
           <div className="TransactionDetails__row__right">
             <div className="TransactionDetails__identicon">
               <FedOrGAddress
@@ -317,13 +322,15 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {showMemo && (
         <div className="TransactionDetails__row">
           <div>Memo</div>
-          <div className="TransactionDetails__row__right">{memo || "None"}</div>
+          <div className="TransactionDetails__row__right">
+            {memo || t("None")}
+          </div>
         </div>
       )}
 
       {(isPathPayment || isSwap) && (
         <div className="TransactionDetails__row">
-          <div>Conversion rate </div>
+          <div>{t("Conversion rate")} </div>
           <div className="TransactionDetails__row__right">
             1 {sourceAsset.code} /{" "}
             {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
@@ -332,14 +339,14 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         </div>
       )}
       <div className="TransactionDetails__row">
-        <div>Transaction fee </div>
+        <div>{t("Transaction fee")} </div>
         <div className="TransactionDetails__row__right">
           {transactionFee} {sourceAsset.code}
         </div>
       </div>
       {isSwap && (
         <div className="TransactionDetails__row">
-          <div>Minimum Received </div>
+          <div>{t("Minimum Received")} </div>
           <div className="TransactionDetails__row__right">
             {computeDestMinWithSlippage(
               allowedSlippage,
@@ -353,7 +360,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <div className="TransactionDetails__bottom-wrapper__copy">
           {(isPathPayment || isSwap) &&
             submission.submitStatus !== ActionStatus.SUCCESS &&
-            "The final amount is approximate and may change"}
+            t("The final amount is approximate and may change")}
         </div>
         {submission.submitStatus === ActionStatus.SUCCESS ? (
           <Button
@@ -367,7 +374,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               )
             }
           >
-            View on Stellar.expert
+            {t("View on")} Stellar.expert
           </Button>
         ) : (
           <div className="TransactionDetails__bottom-wrapper__buttons">
@@ -377,9 +384,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 navigateTo(ROUTES.account);
               }}
             >
-              Cancel
+              {t("Cancel")}
             </Button>
-            <Button onClick={handleSend}>{isSwap ? "Swap" : "Send"}</Button>
+            <Button onClick={handleSend}>
+              {isSwap ? t("Swap") : t("Send")}
+            </Button>
           </div>
         )}
       </div>

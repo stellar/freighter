@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Input } from "@stellar/design-system";
-
+import { useTranslation } from "react-i18next";
 import { Field, Form, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
@@ -21,6 +21,7 @@ import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
 import "./styles.scss";
 
 export const DisplayBackupPhrase = () => {
+  const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState("");
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);
   const mnemonicPhrase = useMnemonicPhrase();
@@ -58,19 +59,20 @@ export const DisplayBackupPhrase = () => {
 
   return (
     <div className="DisplayBackupPhrase">
-      <SubviewHeader title="Show recovery phrase" />
+      <SubviewHeader title={t("Show recovery phrase")} />
       {isPhraseUnlocked ? (
         <>
           <div>
             <p>
-              Anyone who has access to this phrase has access to your account
-              and to the funds in it, so save it in a safe and secure place.
+              {t(
+                "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+              )}
             </p>
             <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
           </div>
           <div className="DisplayBackupPhrase__button">
             <Button fullWidth onClick={() => navigateTo(ROUTES.account)}>
-              Done
+              {t("Done")}
             </Button>
           </div>
         </>
@@ -87,7 +89,7 @@ export const DisplayBackupPhrase = () => {
                   customInput={<Field />}
                   type="password"
                   name="password"
-                  placeholder="Enter your password"
+                  placeholder={t("Enter your password")}
                 />
 
                 <Button
@@ -97,7 +99,7 @@ export const DisplayBackupPhrase = () => {
                   type="submit"
                   variant={Button.variant.tertiary}
                 >
-                  Show recovery phrase
+                  {t("Show recovery phrase")}
                 </Button>
               </Form>
             )}

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import StellarSdk from "stellar-sdk";
 import { Link } from "react-router-dom";
 import { Icon, Loader } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
@@ -30,6 +31,7 @@ export const ChooseAsset = ({
   setErrorAsset,
   selectingAssetType,
 }: ChooseAssetProps) => {
+  const { t } = useTranslation();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -121,7 +123,7 @@ export const ChooseAsset = ({
         <div className="ChooseAsset__button">
           <Link to={ROUTES.searchAsset}>
             <Button fullWidth variant={Button.variant.tertiary}>
-              Add another asset
+              {t("Add another asset")}
             </Button>
           </Link>
         </div>

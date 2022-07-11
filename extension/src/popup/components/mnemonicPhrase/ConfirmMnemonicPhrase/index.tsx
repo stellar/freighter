@@ -3,6 +3,7 @@ import { Redirect } from "react-router-dom";
 import { Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { Card } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
@@ -31,6 +32,7 @@ export const ConfirmMnemonicPhrase = ({
 }: {
   words: string[];
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const initialWordState = words.reduce(
@@ -74,11 +76,11 @@ export const ConfirmMnemonicPhrase = ({
     <>
       <OnboardingScreen className="ConfirmMnemonicPhrase__screen">
         <OnboardingHeader className="ConfirmMnemonicPhrase__header">
-          Confirm your recovery phrase
+          {t("Confirm your recovery phrase")}
         </OnboardingHeader>
         <div className="ConfirmMnemonicPhrase__content">
-          <p>Please select each word in the same order you have</p>
-          <p>them noted to confirm you go them right</p>
+          <p>{t("Please select each word in the same order you have")}</p>
+          <p>{t("them noted to confirm you go them right")}</p>
         </div>
         <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
           {({ dirty, isSubmitting, handleChange }) => (
@@ -116,7 +118,7 @@ export const ConfirmMnemonicPhrase = ({
                   disabled={!dirty && !!joinSelectedWords().length}
                   isLoading={isSubmitting}
                 >
-                  NEXT
+                  {t("NEXT")}
                 </Button>
               </SubmitButtonWrapper>
             </Form>

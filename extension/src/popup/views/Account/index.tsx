@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
@@ -40,6 +41,7 @@ export const defaultAccountBalances = {
 } as AccountBalancesInterface;
 
 export const Account = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
@@ -106,7 +108,7 @@ export const Account = () => {
             <div className="AccountView__send-receive-button">
               <NavButton
                 showBorder
-                title="qr-nav"
+                title={t("View public key")}
                 id="nav-btn-qr"
                 icon={<Icon.QrCode />}
                 onClick={() => navigateTo(ROUTES.viewPublicKey)}
@@ -115,7 +117,7 @@ export const Account = () => {
             <div className="AccountView__send-receive-button">
               <NavButton
                 showBorder
-                title="send-nav"
+                title={t("Send Payment")}
                 id="nav-btn-send"
                 icon={<Icon.Send />}
                 onClick={() => navigateTo(ROUTES.sendPayment)}
@@ -140,7 +142,7 @@ export const Account = () => {
         {isFunded ? (
           <Link to={ROUTES.manageAssets}>
             <Button fullWidth variant={Button.variant.tertiary}>
-              Manage Assets
+              {t("Manage Assets")}
             </Button>
           </Link>
         ) : null}
