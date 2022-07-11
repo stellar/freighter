@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+
+import { Account } from "@shared/api/types";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -8,10 +10,8 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
-import { Account } from "@shared/api/types";
-
 import { AccountList } from "popup/components/account/AccountList";
+import IconCube from "popup/assets/icon-cube.svg";
 
 import "./styles.scss";
 
@@ -100,6 +100,23 @@ export const AccountHeader = ({
             </div>
             <span className="AccountHeader__option-link-copy">
               {t("Import a Stellar secret key")}
+            </span>
+          </Link>
+        </li>
+        <li className="AccountHeader__option-list-item">
+          <Link
+            className="AccountHeader__option-link"
+            to={ROUTES.connectWallet}
+          >
+            <div className="AccountHeader__option-icon">
+              <img
+                className="AccountHeader__img-cube-icon"
+                src={IconCube}
+                alt=""
+              />
+            </div>
+            <span className="AccountHeader__option-link-copy">
+              Connect a hardware wallet
             </span>
           </Link>
         </li>

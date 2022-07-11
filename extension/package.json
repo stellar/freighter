@@ -13,6 +13,8 @@
     "start:unpacked-extension": "yarn build --watch --info-verbosity verbose"
   },
   "dependencies": {
+    "@ledgerhq/hw-app-str": "^6.27.1",
+    "@ledgerhq/hw-transport-webusb": "^6.27.1",
     "@reduxjs/toolkit": "^1.5.0",
     "@sentry/browser": "^6.0.0",
     "@sentry/tracing": "^6.0.0",

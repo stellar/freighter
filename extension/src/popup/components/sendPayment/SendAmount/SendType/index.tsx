@@ -139,7 +139,7 @@ export const SendType = () => {
                   )}{" "}
                   <TextLink
                     variant={TextLink.variant.secondary}
-                    href="https://developers.stellar.org/docs/start/list-of-operations/#path-payment-strict-receive"
+                    href="https://www.ledger.com/stellar-wallet"
                     rel="noreferrer"
                     target="_blank"
                   >
