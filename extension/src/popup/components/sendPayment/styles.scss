@@ -1,0 +1,265 @@
+:root {
+  --bottom-btn-margin: 24px;
+
+  --continue-btn-height: 3.7rem;
+}
+
+.SendPayment {
+  &__btn-continue {
+    position: absolute;
+    top: calc(
+      var(--popup--height) - var(--continue-btn-height) -
+        var(--bottom-btn-margin)
+    );
+    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+    left: var(--popup--side-padding);
+  }
+}
+
+.SendAmount {
+  padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
+    var(--account-view-padding-side);
+  height: var(--popup--height);
+  display: flex;
+  flex-direction: column;
+
+  &__full-height {
+    height: calc(var(--popup--height) - var(--bottom-nav--height));
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    margin-top: -1.5rem;
+  }
+  &__simplebar {
+    margin-top: 1rem;
+    height: 19rem;
+
+    &__full-height {
+      height: 23rem;
+    }
+
+    &__content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+  }
+
+  &__icon-slider {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    padding: 0;
+    width: 0.9rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    z-index: var(--back--button-z-index);
+  }
+
+  &__asset-copy {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--pal-text-tertiary);
+    margin-bottom: 1rem;
+  }
+
+  &__form {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__amount-warning {
+    margin: 1rem 0;
+
+    &__path-payment {
+      margin: 1rem 0;
+    }
+  }
+
+  &__btn-set-max {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+
+  &__input-amount {
+    margin-top: 5rem;
+    font-size: 2.5rem;
+    line-height: 4.5rem;
+    font-weight: var(--font-weight-light);
+    color: var(--pal-text-primary);
+    background: none;
+    border: none;
+    text-align: center;
+    opacity: 0.6;
+    background-color: transparent;
+    outline: none;
+    width: 100%;
+    transition: opacity 0.15s ease-in-out;
+
+    &__full-height {
+      margin-top: 2rem;
+    }
+
+    @media (hover: hover) {
+      &:hover,
+      &:focus {
+        opacity: 1;
+      }
+    }
+    &__asset-copy {
+      width: 100%;
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__small {
+    font-size: 1.6rem;
+  }
+
+  &__med {
+    font-size: 1.875rem;
+  }
+
+  &__row {
+    &__rate {
+      display: flex;
+      justify-content: center;
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+      height: 1.375rem;
+      color: var(--pal-text-tertiary);
+    }
+  }
+
+  &__asset-select-container {
+    margin-top: auto;
+  }
+
+  &__btn-continue {
+    margin-top: auto;
+  }
+}
+
+.SendTo {
+  &__address-wrapper {
+    margin-top: 1rem;
+  }
+
+  &__loader {
+    height: 8.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: end;
+  }
+
+  &__subheading {
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--pal-text-tertiary);
+  }
+
+  &__subsection-copy {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    margin-top: 0.75rem;
+    color: var(--pal-text-primary);
+  }
+
+  &__recent-accts-ul {
+    padding: 0;
+
+    li::before {
+      content: none;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  }
+
+  &__subheading-identicon {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--pal-text-primary);
+    font-weight: var(--font-weight-medium);
+    background: none;
+    border: 0;
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    margin: 0.75rem 0 0 0;
+    align-items: center;
+
+    img {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 1rem;
+      background: var(--pal-brand-primary-on);
+    }
+
+    span {
+      margin-left: 0.5rem;
+    }
+  }
+
+  &__info-block {
+    font-size: 0.875rem;
+  }
+}
+
+.SendSettings {
+  &__input {
+    color: black;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+
+    &__title {
+      color: var(--pal-text-primary);
+    }
+
+    &__right {
+      display: flex;
+      align-items: center;
+    }
+
+    &__left {
+      display: flex;
+      align-items: center;
+
+      button {
+        margin-left: 0.5rem;
+        width: 1rem;
+      }
+    }
+  }
+
+  &__clickable {
+    cursor: pointer;
+  }
+}
+
+.SendConfirm {
+  display: flex;
+  flex-direction: column;
+
+  text-align: center;
+  &__input {
+    color: black;
+  }
+}

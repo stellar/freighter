@@ -1,6 +1,7 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 
 import { Account } from "@shared/api/types";
+import { getIsHardwareWalletActive } from "background/helpers/account";
 
 const initialState = {
   publicKey: "",
@@ -38,7 +39,7 @@ export const sessionSlice = createSlice({
       };
     },
     logOut: () => initialState,
-    grantAccountAccess: (state, action: { payload: AppData }) => {
+    setActivePrivateKey: (state, action: { payload: AppData }) => {
       const { privateKey } = action.payload;
 
       return {
@@ -89,7 +90,7 @@ export const {
   actions: {
     logIn,
     logOut,
-    grantAccountAccess,
+    setActivePrivateKey,
     setActivePublicKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
@@ -110,7 +111,7 @@ export const allAccountsSelector = createSelector(
 );
 export const hasPrivateKeySelector = createSelector(
   sessionSelector,
-  (session) => !!session.privateKey.length,
+  (session) => getIsHardwareWalletActive() || !!session.privateKey.length,
 );
 export const privateKeySelector = createSelector(
   sessionSelector,

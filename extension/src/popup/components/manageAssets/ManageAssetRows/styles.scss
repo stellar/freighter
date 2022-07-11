@@ -1,0 +1,45 @@
+.ManageAssetRows {
+  &__scrollbar {
+    padding-right: var(--popup--side-padding);
+    width: calc(var(--popup--width) - var(--popup--side-padding));
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: space-between;
+  }
+
+  &--scrolling {
+    padding-right: 0.625rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__icon {
+    width: 2rem;
+  }
+
+  &__bullet {
+    background: var(--pal-brand-primary);
+    height: 1.5rem;
+    width: 1.5rem;
+  }
+
+  &__code {
+    color: var(--pal-text-primary);
+    flex-grow: 1;
+    line-height: 1.5rem;
+  }
+
+  &__domain {
+    color: var(--pal-text-tertiary);
+    font-size: var(--font-size-secondary);
+    line-height: 1.375rem;
+  }
+}

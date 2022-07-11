@@ -1,0 +1,77 @@
+:root {
+  --account-view-padding-side: 1.5rem;
+}
+
+.AccountView {
+  padding: 0.25rem var(--account-view-padding-side);
+
+  &__account-actions {
+    align-items: center;
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+  }
+
+  &__name-key-display {
+    flex-direction: row;
+    width: 67%;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  &__send-receive-display {
+    display: flex;
+    justify-content: right;
+
+    > div {
+      margin-left: 1rem;
+    }
+  }
+
+  &__send-receive-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    button {
+      width: 2.5rem;
+      height: 2.5rem;
+
+      svg {
+        width: 0.75rem;
+        height: 0.75rem;
+      }
+    }
+  }
+
+  &__account-name {
+    color: var(--pal-text-primary);
+    width: 100%;
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__account-num {
+    align-items: center;
+    color: var(--secondary-text);
+    gap: 0.5rem;
+    display: flex;
+    width: 100%;
+
+    svg {
+      width: 1rem;
+    }
+  }
+
+  &__assets-wrapper {
+    // TODO: Standardize scrollbar implementation
+    //https://github.com/stellar/freighter/issues/419
+
+    height: 20.375rem;
+    padding-right: var(--popup--side-padding);
+    width: calc(var(--popup--width) - var(--popup--side-padding));
+
+    .AccountAssets__asset {
+      margin: 2rem 0;
+    }
+  }
+}

@@ -1,0 +1,22 @@
+.Settings {
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--popup--height) - var(--bottom-nav--height));
+  padding: 2rem var(--popup--side-padding) var(--popup-vertical-padding);
+
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__version {
+    color: var(--pal-text-tertiary);
+    font-size: 0.875rem;
+  }
+
+  &__logout {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+}

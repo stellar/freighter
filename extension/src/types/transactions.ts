@@ -12,4 +12,6 @@ export interface TransactionInfo {
   transaction: { [key: string]: any };
   isDomainListedAllowed: boolean;
   flaggedKeys: FlaggedKeys;
+  title?: string;
+  accountToSign?: string;
 }

@@ -1,0 +1,20 @@
+.BasicInfoBlock {
+  .InfoBlock {
+    border: none;
+    border-radius: 0.5rem;
+    display: flex;
+    font-size: var(--font-size-secondary);
+    gap: 0.5rem;
+    padding: 0.875rem;
+
+    &__icon {
+      position: static;
+    }
+    &--warning {
+      background-color: rgba(241, 165, 50, 0.32);
+    }
+    &--error {
+      background-color: rgba(241, 50, 50, 0.32);
+    }
+  }
+}

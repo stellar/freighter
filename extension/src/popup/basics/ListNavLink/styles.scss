@@ -1,0 +1,20 @@
+.ListNavLink {
+  line-height: 1.5rem;
+
+  a {
+    align-items: center;
+    color: var(--pal-text-primary);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  &__wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__icon {
+    height: 1.25rem;
+  }
+}

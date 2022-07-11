@@ -1,0 +1,32 @@
+.ChooseAsset {
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__loader {
+    height: var(--popup--height);
+    width: var(--popup--width);
+    z-index: calc(var(--back--button-z-index) + 1);
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+  }
+
+  &__wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__assets {
+    flex-grow: 1;
+    height: 27.75rem;
+  }
+
+  &__button {
+    a {
+      color: var(--pal-text-primary);
+    }
+  }
+}

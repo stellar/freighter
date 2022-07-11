@@ -1,0 +1,53 @@
+.ConfirmMnemonicPhrase {
+  &__screen {
+    flex-flow: column wrap;
+    justify-content: start;
+  }
+
+  &__header {
+    text-align: center;
+  }
+
+  &__content {
+    margin: 1.5rem 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: var(--font-weight-normal);
+    color: var(--pal-text-tertiary);
+    text-align: center;
+
+    p {
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 0 !important;
+    }
+  }
+
+  &--form-wrapper {
+    width: 24rem;
+    margin: 0 auto;
+  }
+
+  &__selected-words-wrapper {
+    height: 7.5rem;
+    width: 100%;
+  }
+
+  &__selected-words-text {
+    display: flex;
+    flex-wrap: wrap;
+    font-weight: var(--font-weight-medium);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--pal-text-primary);
+    list-style-type: none;
+    padding: 0;
+  }
+
+  &__word-bubble-wrapper {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-content: start;
+    padding: 1rem 0;
+  }
+}

@@ -1,0 +1,41 @@
+.About {
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+  font-size: 0.875rem;
+
+  &__body {
+    flex-grow: 2;
+  }
+
+  &__info {
+    color: var(--pal-brand-primary-on);
+    line-height: 1.375rem;
+    margin: 1rem 0 2rem 0;
+  }
+
+  &__links-header {
+    color: var(--secondary-text);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 1rem;
+  }
+
+  &__link {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+
+    a {
+      color: var(--pal-brand-primary-on);
+    }
+
+    &:not(:last-child) {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__copyright {
+    color: var(--secondary-text);
+  }
+}

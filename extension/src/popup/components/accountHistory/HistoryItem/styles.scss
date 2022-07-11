@@ -1,0 +1,47 @@
+.HistoryItem {
+  color: var(--pal-text-primary);
+  cursor: pointer;
+
+  &__row {
+    display: flex;
+  }
+
+  &__icon {
+    border: 1px solid var(--pal-border-primary);
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    margin-right: 1rem;
+    width: 2rem;
+
+    &--default {
+      width: 0.875rem;
+    }
+
+    &--received,
+    &--sent {
+      width: 1.2rem;
+    }
+
+    &--received {
+      color: var(--pal-success);
+    }
+  }
+
+  &__operation {
+    flex-grow: 2;
+    line-height: 1.5rem;
+  }
+
+  &__date {
+    color: var(--secondary-text);
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  &__payment {
+    line-height: 1.5rem;
+  }
+}

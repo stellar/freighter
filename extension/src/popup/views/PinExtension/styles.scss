@@ -1,0 +1,30 @@
+.PinExtension {
+  margin-top: 4.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__wrapper {
+    max-width: 24rem;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    line-height: 2.25rem;
+    text-align: center;
+    color: var(--pal-text-primary);
+  }
+
+  &__caption {
+    line-height: 1.5rem;
+    margin: 2rem 0;
+    color: var(--pal-text-tertiary);
+  }
+
+  &__img {
+    img {
+      width: 100%;
+    }
+  }
+}

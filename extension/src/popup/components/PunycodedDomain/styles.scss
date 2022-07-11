@@ -1,0 +1,31 @@
+.PunycodedDomain {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+
+  &--row {
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: start;
+    margin-bottom: 0;
+  }
+
+  &__favicon {
+    width: 2rem;
+  }
+
+  &__domain {
+    color: var(--pal-text-primary);
+  }
+
+  &__title {
+    color: var(--pal-text-tertiary);
+    font-size: 0.875rem;
+  }
+
+  div {
+    margin-bottom: 1rem;
+  }
+}

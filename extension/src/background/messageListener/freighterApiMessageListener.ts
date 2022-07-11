@@ -11,7 +11,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/helpers/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
-import { POPUP_WIDTH } from "constants/dimensions";
+import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -38,7 +38,7 @@ interface WINDOW_PARAMS {
 const WINDOW_SETTINGS: WINDOW_PARAMS = {
   type: "popup",
   width: POPUP_WIDTH,
-  height: 667,
+  height: POPUP_HEIGHT + 32, // include browser frame height,
 };
 
 export const freighterApiMessageListener = (
@@ -79,10 +79,8 @@ export const freighterApiMessageListener = (
   };
 
   const submitTransaction = async () => {
-    const {
-      transactionXdr,
-      network = MAINNET_NETWORK_DETAILS.network,
-    } = request;
+    const { transactionXdr, network: _network, accountToSign } = request;
+    const network = _network ?? MAINNET_NETWORK_DETAILS.network;
     const isTestnet = getIsTestnet();
     const { networkUrl } = getNetworkDetails(isTestnet);
     const transaction = StellarSdk.TransactionBuilder.fromXDR(
@@ -115,7 +113,7 @@ export const freighterApiMessageListener = (
         accountData.forEach(
           ({ address, tags }: { address: string; tags: Array<string> }) => {
             if (address === operation.destination) {
-              const collectedTags = [...tags];
+              let collectedTags = [...tags];
 
               /* if the user has opted out of validation, remove applicable tags */
               if (!isValidatingMemo) {
@@ -124,10 +122,10 @@ export const freighterApiMessageListener = (
                 );
               }
               if (!isValidatingSafety) {
-                collectedTags.filter(
+                collectedTags = collectedTags.filter(
                   (tag) => tag !== TRANSACTION_WARNING.unsafe,
                 );
-                collectedTags.filter(
+                collectedTags = collectedTags.filter(
                   (tag) => tag !== TRANSACTION_WARNING.malicious,
                 );
               }
@@ -157,6 +155,7 @@ export const freighterApiMessageListener = (
       isDomainListedAllowed,
       url: tabUrl,
       flaggedKeys,
+      accountToSign,
     } as TransactionInfo;
 
     transactionQueue.push(transaction);

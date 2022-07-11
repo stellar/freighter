@@ -1,0 +1,81 @@
+:root {
+  --z-index--banner: 10;
+  --z-index--loader: -1;
+  --z-index--ledger: 20;
+
+  // popup dimensions
+  --popup--width: 360px;
+  --popup--height: 600px;
+  --popup--side-padding: 1.5rem;
+  --popup-vertical-padding: 1.5rem;
+
+  --header--height: 119px;
+  --bottom-nav--height: 72px;
+
+  --fullscreen--max-width: 1100px;
+
+  --back--button-dimension: 1rem;
+  --back--button-z-index: 2;
+
+  // TODO: migrate to SDS
+  --background-color: #1f212a;
+  --button-bg--tertiary: #303448;
+  --button-bg--primary: #6432f1;
+  --secondary-text: #797a7f;
+
+  --dropdown-animation: 0.3s ease-out;
+}
+
+body {
+  background: var(--background-color) !important;
+  overscroll-behavior: none;
+  margin: 0;
+  padding: 0;
+}
+
+body,
+html {
+  height: var(--popup--height);
+  width: var(--popup--width);
+}
+
+a {
+  text-decoration: none;
+}
+
+#root {
+  position: relative;
+  height: 100%;
+}
+
+.simplebar-content {
+  height: 100%;
+}
+
+// TODO: Update in SDS
+.Tooltip__content__container {
+  padding: 0.5rem !important;
+}
+.Tooltip__component {
+  svg {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+  }
+  .IconButton--default {
+    margin-left: 0;
+  }
+}
+
+* {
+  scrollbar-color: rgba(var(--pal-shadow-rbg), 0.25)
+    var(--pal-background-primary);
+
+  &::-webkit-scrollbar {
+    background-color: var(--pal-background-primary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(var(--pal-shadow-rbg), 0.25);
+    border-radius: 0.5rem;
+  }
+}

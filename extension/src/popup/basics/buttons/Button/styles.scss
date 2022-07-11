@@ -1,0 +1,20 @@
+.Button.BasicButton {
+  border-radius: 0.5rem;
+  box-shadow: none;
+  padding: 1rem 0;
+
+  &--primary {
+    border-color: var(--button-bg--primary);
+    background: var(--button-bg--primary);
+  }
+
+  &--tertiary {
+    border-color: var(--button-bg--tertiary);
+    background: var(--button-bg--tertiary);
+
+    &:hover {
+      background-color: var(--background-color);
+      border: 1px var(--button-bg--tertiary) solid;
+    }
+  }
+}

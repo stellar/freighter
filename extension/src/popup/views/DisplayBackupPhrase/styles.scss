@@ -1,0 +1,29 @@
+.DisplayBackupPhrase {
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
+  }
+
+  &__button {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: flex-end;
+  }
+
+  .IconButton {
+    &__label {
+      color: var(--pal-text-primary);
+    }
+    svg {
+      stroke: var(--pal-text-primary);
+    }
+  }
+}

@@ -1,0 +1,18 @@
+.SubviewHeader {
+  align-items: center;
+  color: var(--pal-brand-primary-on);
+  display: flex;
+  padding-bottom: 2rem;
+  position: relative;
+  width: 100%;
+
+  &--title {
+    flex-grow: 1;
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+  }
+
+  &--spacer {
+    width: var(--back--button-dimension);
+  }
+}

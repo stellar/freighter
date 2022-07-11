@@ -1,0 +1,101 @@
+.ViewPublicKey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+  height: var(--popup--height);
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    width: 100%;
+  }
+
+  &__header {
+    height: 2rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--pal-text-primary);
+    font-weight: var(--font-weight-medium);
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &--is-editing {
+      gap: 1rem;
+      justify-content: initial;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-flow: row wrap;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: space-between;
+
+    * {
+      text-align: center;
+    }
+
+    .FieldNote--error {
+      position: absolute;
+    }
+  }
+
+  &__account-name-display {
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    text-align: center;
+  }
+
+  &--account-name-div {
+    > button {
+      background: none;
+      color: inherit;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    svg {
+      width: var(--back--button-dimension);
+    }
+  }
+
+  &__qr-code {
+    height: 11.5rem;
+    width: 11.5rem;
+    background: var(--pal-brand-primary-on);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 3rem;
+  }
+
+  &__address-copy-label {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2rem;
+  }
+
+  &__address-copy {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--pal-text-primary);
+  }
+
+  &__copy-btn {
+    margin-top: 1rem;
+  }
+
+  &__external-link {
+    width: 100%;
+  }
+}

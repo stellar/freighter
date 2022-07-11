@@ -1,0 +1,14 @@
+.ModalInfo {
+  &--subject {
+    border-bottom: 1px solid var(--pal-border-secondary);
+    color: var(--pal-text-primary);
+    line-height: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  &--card {
+    margin-bottom: 2rem;
+  }
+}

@@ -7,6 +7,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
   importAccount as importAccountService,
+  importHardwareWallet as importHardwareWalletService,
   makeAccountActive as makeAccountActiveService,
   updateAccountName as updateAccountNameService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
@@ -17,11 +18,8 @@ import {
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
 } from "@shared/api/internal";
-import { Account } from "@shared/api/types";
-
-interface ErrorMessage {
-  errorMessage: string;
-}
+import { Account, ErrorMessage } from "@shared/api/types";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },
@@ -53,11 +51,15 @@ export const fundAccount = createAsyncThunk(
 );
 
 export const addAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<Account> },
+  { publicKey: string; allAccounts: Array<Account>; hasPrivateKey: boolean },
   string,
   { rejectValue: ErrorMessage }
 >("auth/addAccount", async (password, thunkApi) => {
-  let res = { publicKey: "", allAccounts: [] as Array<Account> };
+  let res = {
+    publicKey: "",
+    allAccounts: [] as Array<Account>,
+    hasPrivateKey: false,
+  };
 
   try {
     res = await addAccountService(password);
@@ -71,11 +73,15 @@ export const addAccount = createAsyncThunk<
 });
 
 export const importAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<Account> },
+  { publicKey: string; allAccounts: Array<Account>; hasPrivateKey: boolean },
   { password: string; privateKey: string },
   { rejectValue: ErrorMessage }
 >("auth/importAccount", async ({ password, privateKey }, thunkApi) => {
-  let res = { publicKey: "", allAccounts: [] as Array<Account> };
+  let res = {
+    publicKey: "",
+    allAccounts: [] as Array<Account>,
+    hasPrivateKey: false,
+  };
 
   try {
     res = await importAccountService(password, privateKey);
@@ -88,6 +94,38 @@ export const importAccount = createAsyncThunk<
   return res;
 });
 
+export const importHardwareWallet = createAsyncThunk<
+  {
+    publicKey: string;
+    allAccounts: Array<Account>;
+    hasPrivateKey: boolean;
+    bipPath: string;
+  },
+  { publicKey: string; hardwareWalletType: WalletType; bipPath: string },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/importHardwareWallet",
+  async ({ publicKey, hardwareWalletType, bipPath }, thunkApi) => {
+    let res = {
+      publicKey: "",
+      allAccounts: [] as Array<Account>,
+      hasPrivateKey: false,
+      bipPath: "",
+    };
+    try {
+      res = await importHardwareWalletService(
+        publicKey,
+        hardwareWalletType,
+        bipPath,
+      );
+    } catch (e) {
+      console.error("Failed when importing hardware wallet: ", e);
+      return thunkApi.rejectWithValue({ errorMessage: e.message });
+    }
+    return res;
+  },
+);
+
 export const makeAccountActive = createAsyncThunk(
   "auth/makeAccountActive",
   (publicKey: string) => makeAccountActiveService(publicKey),
@@ -99,14 +137,18 @@ export const updateAccountName = createAsyncThunk(
 );
 
 export const recoverAccount = createAsyncThunk<
-  { allAccounts: Array<Account>; publicKey: string },
+  { allAccounts: Array<Account>; hasPrivateKey: boolean; publicKey: string },
   {
     password: string;
     mnemonicPhrase: string;
   },
   { rejectValue: ErrorMessage }
 >("auth/recoverAccount", async ({ password, mnemonicPhrase }, thunkApi) => {
-  let res = { allAccounts: [] as Array<Account>, publicKey: "" };
+  let res = {
+    allAccounts: [] as Array<Account>,
+    publicKey: "",
+    hasPrivateKey: false,
+  };
 
   try {
     res = await recoverAccountService(password, mnemonicPhrase);
@@ -156,8 +198,7 @@ export const confirmMnemonicPhrase = createAsyncThunk<
     } else {
       return thunkApi.rejectWithValue({
         applicationState: res.applicationState,
-        errorMessage:
-          "The secret phrase you entered is invalid, please check the phrase you have noted and try again.",
+        errorMessage: "The secret phrase you entered is incorrect.",
       });
     }
 
@@ -231,15 +272,19 @@ interface InitialState {
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
+  connectingWalletType: WalletType;
+  bipPath: string;
   error: string;
 }
 
 const initialState: InitialState = {
   allAccounts: [],
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
-  publicKey: "",
-  error: "",
   hasPrivateKey: false,
+  publicKey: "",
+  connectingWalletType: WalletType.NONE,
+  bipPath: "",
+  error: "",
 };
 
 const authSlice = createSlice({
@@ -248,6 +293,9 @@ const authSlice = createSlice({
   reducers: {
     clearApiError(state) {
       state.error = "";
+    },
+    setConnectingWalletType(state, action) {
+      state.connectingWalletType = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -273,16 +321,20 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(addAccount.fulfilled, (state, action) => {
-      const { publicKey, allAccounts } = action.payload || {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        hasPrivateKey: false,
       };
 
       return {
         ...state,
         error: "",
+        // to be safe lets clear bipPath here, which is only for hWs
+        bipPath: "",
         publicKey,
         allAccounts,
+        hasPrivateKey,
       };
     });
     builder.addCase(addAccount.rejected, (state, action) => {
@@ -294,16 +346,20 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(importAccount.fulfilled, (state, action) => {
-      const { publicKey, allAccounts } = action.payload || {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        hasPrivateKey: false,
       };
 
       return {
         ...state,
         error: "",
+        // to be safe lets clear bipPath here, which is only for hWs
+        bipPath: "",
         publicKey,
         allAccounts,
+        hasPrivateKey,
       };
     });
     builder.addCase(importAccount.rejected, (state, action) => {
@@ -314,16 +370,37 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(importHardwareWallet.fulfilled, (state, action) => {
+      const { publicKey, allAccounts, hasPrivateKey, bipPath } = action.payload;
+      return {
+        ...state,
+        error: "",
+        publicKey,
+        allAccounts,
+        hasPrivateKey,
+        bipPath,
+      };
+    });
+    builder.addCase(importHardwareWallet.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
     builder.addCase(makeAccountActive.fulfilled, (state, action) => {
-      const { publicKey, hasPrivateKey } = action.payload || {
+      const { publicKey, hasPrivateKey, bipPath } = action.payload || {
         publicKey: "",
         hasPrivateKey: false,
+        bipPath: "",
       };
 
       return {
         ...state,
         publicKey,
         hasPrivateKey,
+        bipPath,
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
@@ -357,15 +434,17 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(recoverAccount.fulfilled, (state, action) => {
-      const { publicKey, allAccounts } = action.payload || {
+      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        hasPrivateKey: false,
       };
 
       return {
         ...state,
         error: "",
         allAccounts,
+        hasPrivateKey,
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
       };
@@ -400,11 +479,13 @@ const authSlice = createSlice({
         publicKey,
         applicationState,
         allAccounts,
+        bipPath,
       } = action.payload || {
         hasPrivateKey: false,
         publicKey: "",
         applicationState: APPLICATION_STATE.APPLICATION_STARTED,
         allAccounts: [],
+        bipPath: "",
       };
       return {
         ...state,
@@ -413,6 +494,7 @@ const authSlice = createSlice({
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
         allAccounts,
+        bipPath,
       };
     });
     builder.addCase(loadAccount.rejected, (state, action) => {
@@ -452,6 +534,7 @@ const authSlice = createSlice({
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
         allAccounts,
+        error: "",
       };
     });
     builder.addCase(signOut.fulfilled, (_state, action) => {
@@ -489,6 +572,10 @@ export const publicKeySelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.publicKey,
 );
+export const bipPathSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.bipPath,
+);
 
 export const accountNameSelector = createSelector(
   publicKeySelector,
@@ -502,6 +589,17 @@ export const accountNameSelector = createSelector(
   },
 );
 
-export const { clearApiError } = authSlice.actions;
+export const hardwareWalletTypeSelector = createSelector(
+  publicKeySelector,
+  allAccountsSelector,
+  (publicKey, allAccounts) => {
+    const account = allAccounts.find(
+      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+    ) || { hardwareWalletType: WalletType.NONE };
+    return account.hardwareWalletType;
+  },
+);
+
+export const { clearApiError, setConnectingWalletType } = authSlice.actions;
 
 export { reducer };

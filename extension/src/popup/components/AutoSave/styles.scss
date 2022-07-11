@@ -1,0 +1,16 @@
+.AutoSave {
+  &--status {
+    left: 0;
+    max-width: var(--popup--width);
+    opacity: 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    transition: opacity var(--anim-transition-default);
+
+    &--failed {
+      opacity: 1;
+      z-index: var(--z-index--banner);
+    }
+  }
+}

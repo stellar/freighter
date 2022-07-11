@@ -1,0 +1,39 @@
+.MnemonicDisplay {
+  margin: 2rem 0 1rem;
+  position: relative;
+  text-align: center;
+
+  &__ordered-list {
+    columns: 2;
+    text-align: start;
+    counter-reset: item;
+    list-style-type: none;
+
+    li::before {
+      counter-increment: item;
+      content: counter(item);
+    }
+
+    &--popup-view {
+      column-gap: 3rem;
+      padding: 0 1rem;
+    }
+  }
+
+  &__list-item {
+    padding-left: 1rem;
+
+    &::before {
+      color: var(--pal-text-tertiary);
+      content: none;
+    }
+  }
+
+  &__random-word {
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    z-index: -1;
+  }
+}

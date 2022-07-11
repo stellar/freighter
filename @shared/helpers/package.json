@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "typescript": "~3.7.2",
-    "stellar-sdk": "5.0.1"
+    "stellar-sdk": "^10.1.0"
   },
   "devDependencies": {
     "@stellar/prettier-config": "^1.0.1"

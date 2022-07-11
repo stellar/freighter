@@ -1,0 +1,63 @@
+.TextArea {
+  padding: 1.5rem !important;
+  resize: none;
+}
+
+.RecoverAccount {
+  &__header {
+    font-size: 2.5rem;
+    line-height: 3rem;
+    font-weight: var(--font-weight-normal);
+    color: var(--pal-text-primary);
+    text-align: left;
+    margin-bottom: 1.5rem;
+  }
+
+  &__subheader {
+    line-height: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__screen {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    height: calc(100vh - var(--header--height));
+    max-height: 40rem;
+    max-width: 57rem;
+    width: 100%;
+    margin: auto;
+  }
+
+  &__half-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    padding: 0 0 2rem 1.55rem;
+    width: 27rem;
+
+    .Checkbox__container label {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  &__mnemonic-input {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    width: 24rem;
+  }
+
+  &__phrase-input {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    width: 11rem;
+  }
+
+  &__password-toggle {
+    cursor: pointer;
+    display: flex;
+    width: 1rem;
+  }
+}

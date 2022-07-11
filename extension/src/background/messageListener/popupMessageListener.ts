@@ -5,6 +5,7 @@ import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { Account, Response as Request } from "@shared/api/types";
 import { MessageResponder } from "background/types";
@@ -20,6 +21,7 @@ import {
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
+  RECENT_ADDRESSES,
 } from "constants/localStorageTypes";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
@@ -30,6 +32,9 @@ import {
   getIsTestnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
+  getIsHardwareWalletActive,
+  HW_PREFIX,
+  getBipPath,
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
@@ -44,6 +49,7 @@ import {
   mnemonicPhraseSelector,
   publicKeySelector,
   setActivePublicKey,
+  setActivePrivateKey,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
 } from "background/ducks/session";
@@ -69,8 +75,84 @@ export const popupMessageListener = (request: Request) => {
   });
   keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
 
-  const _unlockKeystore = ({ password }: { password: string }) =>
-    keyManager.loadKey(localStorage.getItem(KEY_ID) || "", password);
+  const _unlockKeystore = ({
+    password,
+    keyID,
+  }: {
+    password: string;
+    keyID: string;
+  }) => keyManager.loadKey(keyID, password);
+
+  // this returns the first non hardware wallet (Hw) keyID, if it exists.
+  // Used for things like checking a password when a Hw is active.
+  const _getNonHwKeyID = () => {
+    const keyIdList = getKeyIdList();
+    const nonHwKeyIds = keyIdList.filter(
+      (k: string) => k.indexOf(HW_PREFIX) === -1,
+    );
+    return nonHwKeyIds[0] || "";
+  };
+
+  // in lieu of using KeyManager, let's store hW data in local storage
+  // using schema:
+  // "hw:<G account>": {
+  //   publicKey: "",
+  //   bipPath: "",
+  // }
+  const _storeHardwareWalletAccount = ({
+    publicKey,
+    hardwareWalletType,
+    bipPath,
+  }: {
+    publicKey: string;
+    hardwareWalletType: WalletType;
+    bipPath: string;
+  }) => {
+    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
+    let allAccounts = allAccountsSelector(store.getState());
+
+    const keyId = `${HW_PREFIX}${publicKey}`;
+    const keyIdListArr = getKeyIdList();
+    const accountName = `${hardwareWalletType} ${
+      keyIdListArr.filter((k: string) => k.indexOf(HW_PREFIX) !== -1).length + 1
+    }`;
+
+    if (keyIdListArr.indexOf(keyId) === -1) {
+      keyIdListArr.push(keyId);
+      localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+      const hwData = {
+        bipPath,
+        publicKey,
+      };
+      localStorage.setItem(keyId, JSON.stringify(hwData));
+      addAccountName({
+        keyId,
+        accountName,
+      });
+      allAccounts = [
+        ...allAccounts,
+        {
+          publicKey,
+          name: accountName,
+          imported: true,
+          hardwareWalletType,
+        },
+      ];
+    }
+
+    localStorage.setItem(KEY_ID, keyId);
+
+    store.dispatch(
+      logIn({
+        publicKey,
+        mnemonicPhrase,
+        allAccounts,
+      }),
+    );
+
+    // an active hw account should not have an active private key
+    store.dispatch(setActivePrivateKey({ privateKey: "" }));
+  };
 
   const _storeAccount = async ({
     mnemonicPhrase,
@@ -192,8 +274,12 @@ export const popupMessageListener = (request: Request) => {
       return { error: "Mnemonic phrase not found" };
     }
 
+    const keyID = getIsHardwareWalletActive()
+      ? _getNonHwKeyID()
+      : localStorage.getItem(KEY_ID) || "";
+
     try {
-      await _unlockKeystore({ password });
+      await _unlockKeystore({ keyID, password });
     } catch (e) {
       console.error(e);
       return { error: "Incorrect password" };
@@ -218,20 +304,27 @@ export const popupMessageListener = (request: Request) => {
 
     store.dispatch(timeoutAccountAccess());
 
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
+
     const currentState = store.getState();
 
     return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
+      hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
 
   const importAccount = async () => {
     const { password, privateKey } = request;
     let sourceKeys;
+    const keyID = getIsHardwareWalletActive()
+      ? _getNonHwKeyID()
+      : localStorage.getItem(KEY_ID) || "";
 
     try {
-      await _unlockKeystore({ password });
+      await _unlockKeystore({ keyID, password });
       sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
@@ -256,13 +349,32 @@ export const popupMessageListener = (request: Request) => {
       imported: true,
     });
 
-    sessionTimer.startSession({ privateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey }));
 
     const currentState = store.getState();
 
     return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
+      hasPrivateKey: hasPrivateKeySelector(currentState),
+    };
+  };
+
+  const importHardwareWallet = async () => {
+    const { publicKey, hardwareWalletType, bipPath } = request;
+
+    await _storeHardwareWalletAccount({
+      publicKey,
+      hardwareWalletType,
+      bipPath,
+    });
+
+    return {
+      publicKey: publicKeySelector(store.getState()),
+      allAccounts: allAccountsSelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
+      bipPath: getBipPath(),
     };
   };
 
@@ -288,6 +400,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(currentState),
       hasPrivateKey: hasPrivateKeySelector(currentState),
+      bipPath: getBipPath(),
     };
   };
 
@@ -313,6 +426,7 @@ export const popupMessageListener = (request: Request) => {
       publicKey: publicKeySelector(currentState),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
       allAccounts: allAccountsSelector(currentState),
+      bipPath: getBipPath(),
     };
   };
 
@@ -364,6 +478,10 @@ export const popupMessageListener = (request: Request) => {
         APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
       localStorage.setItem(APPLICATION_ID, applicationState);
+
+      // start the timer now that we have active private key
+      sessionTimer.startSession();
+      store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
     }
 
     const currentState = store.getState();
@@ -372,6 +490,7 @@ export const popupMessageListener = (request: Request) => {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
 
@@ -379,17 +498,51 @@ export const popupMessageListener = (request: Request) => {
     const { password } = request;
 
     try {
-      await _unlockKeystore({ password });
+      await _unlockKeystore({
+        keyID: localStorage.getItem(KEY_ID) || "",
+        password,
+      });
       return {};
     } catch (e) {
       return { error: "Incorrect Password" };
     }
   };
 
+  const confirmPasswordHW = async () => {
+    if (!getIsHardwareWalletActive()) {
+      return { error: "Something went wrong, please try again" };
+    }
+
+    const { password } = request;
+
+    // check password with a non-hw account, it's safe to assume at least
+    // one exists
+    const keyID = _getNonHwKeyID();
+    try {
+      await _unlockKeystore({ keyID, password });
+    } catch (e) {
+      console.error(e);
+      return { error: "Could not log into selected account" };
+    }
+
+    sessionTimer.startSession();
+    return {
+      publicKey: publicKeySelector(store.getState()),
+      hasPrivateKey: hasPrivateKeySelector(store.getState()),
+      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      allAccounts: allAccountsSelector(store.getState()),
+    };
+  };
+
   const confirmPassword = async () => {
     /* In Popup, we call loadAccount to figure out what the state the user is in,
     then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
     <UnlockAccount /> calls this method to fill in any missing data */
+
+    // if we're logging in with a hardware wallet, reroute this call
+    if (getIsHardwareWalletActive()) {
+      return confirmPasswordHW();
+    }
 
     const { password } = request;
     const keyIdList = getKeyIdList();
@@ -410,7 +563,10 @@ export const popupMessageListener = (request: Request) => {
 
     // first make sure the password is correct to get active keystore, short circuit if not
     try {
-      activeAccountKeystore = await _unlockKeystore({ password });
+      activeAccountKeystore = await _unlockKeystore({
+        keyID: localStorage.getItem(KEY_ID) || "",
+        password,
+      });
     } catch (e) {
       console.error(e);
       return { error: "Could not log into selected account" };
@@ -472,7 +628,8 @@ export const popupMessageListener = (request: Request) => {
     }
 
     // start the timer now that we have active private key
-    sessionTimer.startSession({ privateKey: activePrivateKey });
+    sessionTimer.startSession();
+    store.dispatch(setActivePrivateKey({ privateKey: activePrivateKey }));
 
     return {
       publicKey: publicKeySelector(store.getState()),
@@ -544,6 +701,41 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const signFreighterTransaction = () => {
+    const { transactionXDR, network } = request;
+    const transaction = StellarSdk.TransactionBuilder.fromXDR(
+      transactionXDR,
+      network,
+    );
+
+    const privateKey = privateKeySelector(store.getState());
+    if (privateKey.length) {
+      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      transaction.sign(sourceKeys);
+      return { signedTransaction: transaction.toXDR() };
+    }
+
+    return { error: "Session timed out" };
+  };
+
+  const addRecentAddress = () => {
+    const { publicKey } = request;
+    const storedJSON = localStorage.getItem(RECENT_ADDRESSES) || "[]";
+    const recentAddresses = JSON.parse(storedJSON);
+    if (recentAddresses.indexOf(publicKey) === -1) {
+      recentAddresses.push(publicKey);
+    }
+    localStorage.setItem(RECENT_ADDRESSES, JSON.stringify(recentAddresses));
+
+    return { recentAddresses };
+  };
+
+  const loadRecentAddresses = () => {
+    const storedJSON = localStorage.getItem(RECENT_ADDRESSES) || "[]";
+    const recentAddresses = JSON.parse(storedJSON);
+    return { recentAddresses };
+  };
+
   const signOut = () => {
     store.dispatch(logOut());
 
@@ -593,24 +785,24 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const getCachedAssetIcon = () => {
-    const { assetCode } = request;
+    const { assetCanonical } = request;
 
     const assetIconCache = JSON.parse(
       localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
     );
 
     return {
-      iconUrl: assetIconCache[assetCode],
+      iconUrl: assetIconCache[assetCanonical] || "",
     };
   };
 
   const cacheAssetIcon = () => {
-    const { assetCode, iconUrl } = request;
+    const { assetCanonical, iconUrl } = request;
 
     const assetIconCache = JSON.parse(
       localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
     );
-    assetIconCache[assetCode] = iconUrl;
+    assetIconCache[assetCanonical] = iconUrl;
     localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
   };
 
@@ -619,6 +811,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
     [SERVICE_TYPES.ADD_ACCOUNT]: addAccount,
     [SERVICE_TYPES.IMPORT_ACCOUNT]: importAccount,
+    [SERVICE_TYPES.IMPORT_HARDWARE_WALLET]: importHardwareWallet,
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
@@ -630,6 +823,9 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
+    [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
+    [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,

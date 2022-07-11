@@ -1,0 +1,49 @@
+.AccountHistory {
+  &__wrapper {
+    padding: var(--popup-vertical-padding) var(--popup--side-padding);
+  }
+
+  &__header {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__selector {
+    border-bottom: 1px solid var(--pal-example-details);
+    display: flex;
+    gap: 1rem;
+    margin: 0.5rem 0 1.5rem;
+
+    &__item {
+      color: var(--secondary-text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+      padding: 0.5rem 0;
+      text-transform: uppercase;
+
+      &--active {
+        border-bottom: 2px solid var(--pal-brand-primary);
+        color: var(--pal-brand-primary-on);
+      }
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    &__scrollbar {
+      max-height: 25rem;
+      padding-right: var(--popup--side-padding);
+      width: calc(var(--popup--width) - var(--popup--side-padding));
+    }
+
+    &__items {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+  }
+}

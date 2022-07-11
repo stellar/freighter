@@ -1,0 +1,22 @@
+.AccountCreator {
+  margin-bottom: 1rem;
+
+  &__header {
+    text-align: center;
+  }
+
+  &__buttow-row {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  &__screen {
+    flex-flow: column wrap;
+    align-content: center;
+  }
+
+  &__half-screen {
+    flex-direction: column;
+    justify-content: center;
+  }
+}

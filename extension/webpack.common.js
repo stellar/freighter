@@ -1,6 +1,7 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
 const webpack = require("webpack");
@@ -24,7 +25,15 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
   },
   output: {
     path: BUILD_PATH,
-    filename: "[name].min.js",
+    filename: (pathData) => {
+      const name = pathData.chunk.name;
+      /* don't add a hash to background and contentScript files 
+      because manifest.json is hardcoded to look for background.min.js 
+      and contentScript.min.js */
+      return !name.includes("index")
+        ? `${name.split("~")[0]}.min.js`
+        : "[name].min.js";
+    },
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
@@ -65,6 +74,31 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
           },
         ],
       },
+      {
+        test: /\.(css|sass|scss)$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: "css-loader",
+            options: {
+              sourceMap: true,
+            },
+          },
+          { loader: "sass-loader" },
+        ],
+      },
+      {
+        test: /\.(woff(2)?|ttf|eot)(\?v=\d+\.\d+\.\d+)?$/,
+        use: [
+          {
+            loader: "file-loader",
+            options: {
+              name: "[name].[ext]",
+              outputPath: "fonts/",
+            },
+          },
+        ],
+      },
     ],
   },
   plugins: [
@@ -82,6 +116,10 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
     }),
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
+    }),
+    new MiniCssExtractPlugin({
+      filename: "style.min.css",
+      chunkFilename: "[name].min.css",
     }),
   ],
   stats: DEFAULT_STATS,

@@ -1,0 +1,18 @@
+.Header {
+  border-bottom: 1px solid var(--pal-border-primary);
+  padding: 1.5rem 0;
+
+  &__popup {
+    max-width: 0;
+    padding: 0;
+    border: none;
+  }
+
+  &__fullscreen {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 auto;
+    max-width: var(--fullscreen--max-width);
+  }
+}
