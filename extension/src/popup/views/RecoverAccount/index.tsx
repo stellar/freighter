@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
 import { Input, Checkbox, Icon, TextLink } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { Onboarding } from "popup/components/Onboarding";
@@ -77,6 +78,7 @@ export const RecoverAccount = () => {
     termsOfUse: false,
   };
 
+  const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const authError = useSelector(authErrorSelector);
   const publicKeyRef = useRef(publicKey);
@@ -140,10 +142,10 @@ export const RecoverAccount = () => {
               <div className="RecoverAccount__screen">
                 <div className="RecoverAccount__half-screen">
                   <div className="RecoverAccount__header">
-                    Import wallet from recovery phrase
+                    {t("Import wallet from recovery phrase")}
                   </div>
                   <div className="RecoverAccount__subheader">
-                    Enter your 12 word phrase to restore your wallet
+                    {t("Enter your 12 word phrase to restore your wallet")}
                   </div>
                   <div className="RecoverAccount__mnemonic-input">
                     {phraseInputs.map((phraseInput, i) => (
@@ -164,7 +166,7 @@ export const RecoverAccount = () => {
                       customInput={<Field />}
                       id="password-input"
                       name="password"
-                      placeholder="New password"
+                      placeholder={t("New password")}
                       type="password"
                       error={
                         errors.password && touched.password
@@ -177,7 +179,7 @@ export const RecoverAccount = () => {
                       customInput={<Field />}
                       id="confirm-password-input"
                       name="confirmPassword"
-                      placeholder="Confirm password"
+                      placeholder={t("Confirm password")}
                       type="password"
                       error={
                         errors.confirmPassword && touched.confirmPassword
@@ -198,12 +200,12 @@ export const RecoverAccount = () => {
                           }
                           label={
                             <span>
-                              I have read and agree to{" "}
+                              {t("I have read and agree to")}{" "}
                               <TextLink
                                 variant={TextLink.variant.secondary}
                                 href="https://stellar.org/terms-of-service"
                               >
-                                Terms of Use
+                                {t("Terms of Use")}
                               </TextLink>
                             </span>
                           }
@@ -218,7 +220,7 @@ export const RecoverAccount = () => {
                       isLoading={isSubmitting}
                       disabled={!(dirty && isValid)}
                     >
-                      IMPORT
+                      {t("IMPORT")}
                     </Button>
                   </SubmitButtonWrapper>
                 </div>

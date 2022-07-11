@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import SimpleBar from "simplebar-react";
+import { useTranslation } from "react-i18next";
 import "simplebar-react/dist/simplebar.min.css";
 import { CURRENCY } from "@shared/api/types";
 
@@ -58,6 +59,7 @@ export const ManageAssetRows = ({
   setErrorAsset,
   maxHeight,
 }: ManageAssetRowsProps) => {
+  const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
@@ -194,7 +196,7 @@ export const ManageAssetRows = ({
                     }
                     type="button"
                   >
-                    {isTrustlineActive ? "Remove" : "Add"}
+                    {isTrustlineActive ? t("Remove") : t("Add")}
                   </PillButton>
                 </div>
               </div>

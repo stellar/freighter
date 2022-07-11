@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
 import { FederationServer, MuxedAccount } from "stellar-sdk";
+import { useTranslation } from "react-i18next";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -55,6 +56,7 @@ import { AppDispatch } from "popup/App";
 import "./styles.scss";
 
 export const SignTransaction = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch();
   const {
@@ -213,10 +215,13 @@ export const SignTransaction = () => {
         <WarningMessage
           handleCloseClick={() => window.close()}
           isActive
-          header={`Freighter is set to ${networkName}`}
+          header={`${t("Freighter is set to")} ${networkName}`}
         >
-          <p>The transaction you’re trying to sign is on {otherNetworkName}.</p>
-          <p>Signing this transaction is not possible at the moment.</p>
+          <p>
+            {t("The transaction you’re trying to sign is on")}{" "}
+            {otherNetworkName}.
+          </p>
+          <p>{t("Signing this transaction is not possible at the moment.")}</p>
         </WarningMessage>
       </ModalWrapper>
     );
@@ -232,7 +237,7 @@ export const SignTransaction = () => {
     <div className="SignTransaction">
       <ModalWrapper>
         <ModalHeader>
-          <strong>Confirm Transaction</strong>
+          <strong>{t("Confirm Transaction")}</strong>
         </ModalHeader>
         {flaggedKeyValues.length ? (
           <FlaggedWarningMessage
@@ -248,12 +253,12 @@ export const SignTransaction = () => {
           <Card variant={Card.variant.highlight}>
             <PunycodedDomain domain={domain} isRow />
             <div className="SignTransaction__subject">
-              is requesting approval to a {isFeeBump ? "fee bump " : ""}
-              transaction:
+              {t("is requesting approval to a")} {isFeeBump ? "fee bump " : ""}
+              {t("transaction")}:
             </div>
             <div className="SignTransaction__approval">
               <div className="SignTransaction__approval__title">
-                Approve using:
+                {t("Approve using")}:
               </div>
               <div
                 className="SignTransaction__current-account"
@@ -280,10 +285,11 @@ export const SignTransaction = () => {
           {accountNotFound && accountToSign ? (
             <div className="SignTransaction__account-not-found">
               <InfoBlock variant={InfoBlock.variant.warning}>
-                The application is requesting a specific account (
-                {truncatedPublicKey(accountToSign)}), which is not available on
-                Freighter. If you own this account, you can import it into
-                Freighter to complete this transaction.
+                {t("The application is requesting a specific account")} (
+                {truncatedPublicKey(accountToSign)}),{" "}
+                {t(
+                  "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
+                )}
               </InfoBlock>
             </div>
           ) : null}
@@ -304,7 +310,7 @@ export const SignTransaction = () => {
             transaction={transaction}
           />
         )}
-        <TransactionHeading>Transaction Info</TransactionHeading>
+        <TransactionHeading>{t("Transaction Info")}</TransactionHeading>
         <TransactionInfo
           _fee={_fee}
           _sequence={_sequence}
@@ -318,7 +324,7 @@ export const SignTransaction = () => {
           variant={Button.variant.tertiary}
           onClick={() => rejectAndClose()}
         >
-          Reject
+          {t("Reject")}
         </Button>
         <Button
           disabled={isSubmitDisabled}
@@ -326,7 +332,7 @@ export const SignTransaction = () => {
           isLoading={isConfirming}
           onClick={() => handleApprove()}
         >
-          Approve
+          {t("Approve")}
         </Button>
       </ButtonsContainer>
       <div

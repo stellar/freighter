@@ -7,6 +7,7 @@ import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { Icon, Loader } from "@stellar/design-system";
 import StellarSdk from "stellar-sdk";
+import { useTranslation } from "react-i18next";
 
 import {
   AssetSelect,
@@ -58,27 +59,31 @@ const ConversionRate = ({
   dest: string;
   destAmount: string;
   loading: boolean;
-}) => (
-  <div className="SendAmount__row__rate">
-    {loading ? (
-      <Loader />
-    ) : (
-      <>
-        {destAmount ? (
-          <span>
-            1 {source} ≈{" "}
-            {new BigNumber(destAmount)
-              .div(new BigNumber(sourceAmount))
-              .toFixed(7)}{" "}
-            {dest}
-          </span>
-        ) : (
-          <span>no path found</span>
-        )}
-      </>
-    )}
-  </div>
-);
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="SendAmount__row__rate">
+      {loading ? (
+        <Loader />
+      ) : (
+        <>
+          {destAmount ? (
+            <span>
+              1 {source} ≈{" "}
+              {new BigNumber(destAmount)
+                .div(new BigNumber(sourceAmount))
+                .toFixed(7)}{" "}
+              {dest}
+            </span>
+          ) : (
+            <span>{t("no path found")}</span>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
 
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
@@ -90,6 +95,7 @@ export const SendAmount = ({
   previous: ROUTES;
   next: ROUTES;
 }) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -278,14 +284,14 @@ export const SendAmount = ({
     if (formik.errors.amount === AMOUNT_ERROR.TOO_HIGH) {
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
-          Entered amount is higher than your balance
+          {t("Entered amount is higher than your balance")}
         </InfoBlock>
       );
     }
     if (formik.errors.amount === AMOUNT_ERROR.DEC_MAX) {
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
-          7 digits after the decimal allowed
+          7 {t("digits after the decimal allowed")}
         </InfoBlock>
       );
     }
@@ -313,7 +319,7 @@ export const SendAmount = ({
         <div className="SendAmount__content">
           <div className="SendAmount__asset-copy">
             <span>{availBalance}</span> <span>{parsedSourceAsset.code}</span>{" "}
-            available
+            {t("available")}
           </div>
           <div className="SendAmount__btn-set-max">
             <PillButton
@@ -325,7 +331,7 @@ export const SendAmount = ({
                 );
               }}
             >
-              SET MAX
+              {t("SET MAX")}
             </PillButton>
           </div>
 
@@ -416,7 +422,7 @@ export const SendAmount = ({
                 variant={Button.variant.tertiary}
                 type="submit"
               >
-                Continue
+                {t("Continue")}
               </Button>
             </div>
           </form>

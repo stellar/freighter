@@ -7,6 +7,7 @@ import {
   DetailsTooltip,
   TextLink,
 } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
@@ -33,6 +34,7 @@ export const SendSettings = ({
   previous: ROUTES;
   next: ROUTES;
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { destination, transactionFee, memo, allowedSlippage } = useSelector(
     transactionDataSelector,
@@ -64,7 +66,7 @@ export const SendSettings = ({
     <PopupWrapper>
       <div className="SendSettings">
         <SubviewHeader
-          title={`${isSwap ? "Swap" : "Send"} Settings`}
+          title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
           customBackAction={() => navigateTo(previous)}
         />
         <Formik
@@ -85,20 +87,20 @@ export const SendSettings = ({
                         handleTxFeeNav();
                       }}
                     >
-                      Transaction fee
+                      {t("Transaction fee")}
                     </span>
                     <DetailsTooltip
                       tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
                       details={
                         <span>
-                          Maximum network transaction fee to be paid{" "}
+                          {t("Maximum network transaction fee to be paid")}{" "}
                           <TextLink
                             variant={TextLink.variant.secondary}
                             href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
                             rel="noreferrer"
                             target="_blank"
                           >
-                            Learn more
+                            {t("Learn more")}
                           </TextLink>
                         </span>
                       }
@@ -129,20 +131,22 @@ export const SendSettings = ({
                           handleSlippageNav();
                         }}
                       >
-                        Allowed slippage
+                        {t("Allowed slippage")}
                       </span>
                       <DetailsTooltip
                         tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
                         details={
                           <span>
-                            Allowed downward variation in the destination amount{" "}
+                            {t(
+                              "Allowed downward variation in the destination amount",
+                            )}{" "}
                             <TextLink
                               variant={TextLink.variant.secondary}
                               href="https://www.freighter.app/faq"
                               rel="noreferrer"
                               target="_blank"
                             >
-                              Learn more
+                              {t("Learn more")}
                             </TextLink>
                           </span>
                         }
@@ -168,21 +172,23 @@ export const SendSettings = ({
                   <>
                     <div className="SendSettings__row">
                       <div className="SendSettings__row__left">
-                        <span className="SendSettings__row__title">Memo</span>{" "}
+                        <span className="SendSettings__row__title">
+                          {t("Memo")}
+                        </span>{" "}
                         <DetailsTooltip
                           tooltipPosition={
                             DetailsTooltip.tooltipPosition.BOTTOM
                           }
                           details={
                             <span>
-                              Include a custom memo to this transaction{" "}
+                              {t("Include a custom memo to this transaction")}{" "}
                               <TextLink
                                 variant={TextLink.variant.secondary}
                                 href="https://developers.stellar.org/docs/glossary/transactions/#memo"
                                 rel="noreferrer"
                                 target="_blank"
                               >
-                                Learn more
+                                {t("Learn more")}
                               </TextLink>
                             </span>
                           }
@@ -198,7 +204,7 @@ export const SendSettings = ({
                       {({ field }: FieldProps) => (
                         <Textarea
                           id="mnemonic-input"
-                          placeholder="Memo (optional)"
+                          placeholder={t("Memo (optional)")}
                           {...field}
                         />
                       )}
@@ -213,7 +219,7 @@ export const SendSettings = ({
                     variant={Button.variant.tertiary}
                     onClick={() => navigateTo(next)}
                   >
-                    Review {isSwap ? "Swap" : "Send"}
+                    {t("Review")} {isSwap ? t("Swap") : t("Send")}
                   </Button>
                 </div>
               </FormRows>

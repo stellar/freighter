@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Account } from "@shared/api/types";
 import { Icon } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -27,6 +28,7 @@ export const AccountHeader = ({
   currentAccountName,
   publicKey,
 }: AccountHeaderProps) => {
+  const { t } = useTranslation();
   const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -75,8 +77,8 @@ export const AccountHeader = ({
             to={{
               pathname: ROUTES.addAccount,
               state: {
-                header: "Create a new Stellar address",
-                cta: "Add address",
+                header: t("Create a new Stellar address"),
+                cta: t("Add address"),
               },
             }}
           >
@@ -84,7 +86,7 @@ export const AccountHeader = ({
               <Icon.PlusCircle />
             </div>
             <span className="AccountHeader__option-link-copy">
-              Create a new Stellar address
+              {t("Create a new Stellar address")}
             </span>
           </Link>
         </li>
@@ -97,7 +99,7 @@ export const AccountHeader = ({
               <Icon.Download />
             </div>
             <span className="AccountHeader__option-link-copy">
-              Import a Stellar secret key
+              {t("Import a Stellar secret key")}
             </span>
           </Link>
         </li>
