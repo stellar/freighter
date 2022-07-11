@@ -37,7 +37,7 @@ import {
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-import { AccountList, ImportedTag } from "popup/components/account/AccountList";
+import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessage,
@@ -266,7 +266,10 @@ export const SignTransaction = () => {
                   publicKey={currentAccount.publicKey}
                   setIsDropdownOpen={setIsDropdownOpen}
                 >
-                  {currentAccount.imported ? <ImportedTag /> : null}
+                  <OptionTag
+                    hardwareWalletType={currentAccount.hardwareWalletType}
+                    imported={currentAccount.imported}
+                  />
                 </AccountListIdenticon>
                 <div className="SignTransaction__current-account__chevron">
                   <Icon.ChevronDown />

@@ -4,6 +4,8 @@ export enum ROUTES {
   account = "/account",
   viewPublicKey = "/account/view-public-key",
   importAccount = "/account/import",
+  connectWallet = "/account/connect",
+  connectWalletPlugin = "/account/connect/plugin",
   accountHistory = "/account-history",
   sendPayment = "/account/sendPayment",
   sendPaymentTo = "/account/sendPayment/to",

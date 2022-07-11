@@ -1,0 +1,43 @@
+.ConnectWallet {
+  padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
+    var(--account-view-padding-side);
+  height: calc(var(--popup--height) - var(--bottom-nav--height));
+  display: flex;
+  flex-direction: column;
+
+  p {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  ul {
+    padding: 0;
+  }
+
+  li {
+    cursor: pointer;
+    width: 19.5rem;
+    height: 3.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--pal-background-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 5rem;
+    }
+  }
+
+  &__option:hover {
+    background: var(--pal-background-secondary);
+  }
+
+  li::before {
+    content: none;
+  }
+
+  &__btn-continue {
+    margin-top: auto;
+  }
+}
