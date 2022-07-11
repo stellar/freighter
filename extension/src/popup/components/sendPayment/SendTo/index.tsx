@@ -5,8 +5,13 @@ import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
 import { Input, Loader, TextLink } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
-import { truncatedPublicKey } from "helpers/stellar";
+import {
+  isFederationAddress,
+  isMuxedAccount,
+  truncatedPublicKey,
+} from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -42,37 +47,49 @@ export const shouldAccountDoesntExistWarning = (
   (new BigNumber(amount).lt(baseReserve) ||
     assetID !== Asset.native().toString());
 
-export const AccountDoesntExistWarning = () => (
-  <div className="SendTo__info-block">
-    <InfoBlock className="SendTo__info-block">
-      <div>
-        The destination account doesn’t exist. Send at least 1 XLM to create
-        account.{" "}
-        <TextLink
-          variant={TextLink.variant.secondary}
-          href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
-          rel="noreferrer"
-          target="_blank"
-        >
-          Learn more about account creation
-        </TextLink>
-      </div>
-    </InfoBlock>
-  </div>
-);
+export const AccountDoesntExistWarning = () => {
+  const { t } = useTranslation();
 
-const InvalidAddressWarning = () => (
-  <div className="SendTo__info-block">
-    <InfoBlock variant={InfoBlock.variant.warning}>
-      <div>
-        <strong>INVALID STELLAR ADDRESS</strong>
-        <p>Addresses are uppercase and begin with letters “G“ or “M“.</p>
-      </div>
-    </InfoBlock>
-  </div>
-);
+  return (
+    <div className="SendTo__info-block">
+      <InfoBlock className="SendTo__info-block">
+        <div>
+          {t(
+            "The destination account doesn’t exist. Send at least 1 XLM to create account.",
+          )}{" "}
+          <TextLink
+            variant={TextLink.variant.secondary}
+            href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+            rel="noreferrer"
+            target="_blank"
+          >
+            {t("Learn more about account creation")}
+          </TextLink>
+        </div>
+      </InfoBlock>
+    </div>
+  );
+};
+
+const InvalidAddressWarning = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="SendTo__info-block">
+      <InfoBlock variant={InfoBlock.variant.warning}>
+        <div>
+          <strong>{t("INVALID STELLAR ADDRESS")}</strong>
+          <p>
+            {t("Addresses are uppercase and begin with letters “G“ or “M“.")}
+          </p>
+        </div>
+      </InfoBlock>
+    </div>
+  );
+};
 
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const { destination, federationAddress } = useSelector(
     transactionDataSelector,
@@ -104,11 +121,9 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       if (isValidPublicKey(values.destination)) {
         return {};
       }
-      return { destination: "invalid public key" };
+      return { destination: t("invalid public key") };
     },
   });
-
-  const isFederationAddress = (address: string) => address.includes("*");
 
   const isValidPublicKey = (publicKey: string) => {
     if (StrKey.isValidMed25519PublicKey(publicKey)) {
@@ -132,7 +147,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
         return;
       }
       // muxed account
-      if (inputDest.startsWith("M")) {
+      if (isMuxedAccount(inputDest)) {
         setValidatedPubKey(inputDest);
       }
       // federation address
@@ -142,7 +157,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
           setValidatedPubKey(fedResp.account_id);
           setFedAddress(inputDest);
         } catch (e) {
-          formik.setErrors({ destination: "invalid federation address" });
+          formik.setErrors({ destination: t("invalid federation address") });
         }
       }
       // else, a regular account
@@ -181,7 +196,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
     // TODO - remove once wallet-sdk can handle muxed
     let publicKey = validatedPubKey;
-    if (validatedPubKey.startsWith("M")) {
+    if (isMuxedAccount(validatedPubKey)) {
       const mAccount = MuxedAccount.fromAddress(validatedPubKey, "0");
       publicKey = mAccount.baseAccount().accountId();
     }
@@ -204,7 +219,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
           autoComplete="off"
           id="destination-input"
           name="destination"
-          placeholder="Recipient Stellar address"
+          placeholder={t("Recipient Stellar address")}
           onChange={formik.handleChange}
           value={formik.values.destination}
         />
@@ -219,7 +234,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
             {formik.values.destination === "" ? (
               <>
                 {recentAddresses.length > 0 && (
-                  <div className="SendTo__subheading">RECENT</div>
+                  <div className="SendTo__subheading">{t("RECENT")}</div>
                 )}
                 <ul className="SendTo__recent-accts-ul">
                   {recentAddresses.map((address) => (
@@ -264,7 +279,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                     {isFederationAddress(formik.values.destination) && (
                       <>
                         <div className="SendTo__subheading">
-                          FEDERATION ADDRESS
+                          {t("FEDERATION ADDRESS")}
                         </div>
                         <div className="SendTo__subsection-copy">
                           {formik.values.destination}
@@ -283,7 +298,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                         variant={Button.variant.tertiary}
                         onClick={() => formik.submitForm()}
                       >
-                        Continue
+                        {t("Continue")}
                       </Button>
                     </div>
                   </>

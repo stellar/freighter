@@ -3,20 +3,26 @@ import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
-import { Types } from "@stellar/wallet-sdk";
-import { Select, Icon, Loader } from "@stellar/design-system";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
+import { Icon, Loader } from "@stellar/design-system";
 import StellarSdk from "stellar-sdk";
+import { useTranslation } from "react-i18next";
 
+import {
+  AssetSelect,
+  PathPayAssetSelect,
+} from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import { emitMetric } from "helpers/metrics";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -26,11 +32,13 @@ import {
   saveAsset,
   saveDestinationAsset,
   getBestPath,
+  resetDestinationAmount,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
+import { BottomNav } from "popup/components/BottomNav";
 
 import "../styles.scss";
 
@@ -51,64 +59,43 @@ const ConversionRate = ({
   dest: string;
   destAmount: string;
   loading: boolean;
-}) => (
-  <div className="SendAmount__row__rate">
-    {loading ? (
-      <Loader />
-    ) : (
-      <>
-        {destAmount ? (
-          <span>
-            {sourceAmount} {source} ≈ {destAmount} {dest}
-          </span>
-        ) : (
-          <span>no path found</span>
-        )}
-      </>
-    )}
-  </div>
-);
-
-const BalanceOption = ({
-  balance: [key, balance],
-}: {
-  balance: [string, Types.AssetBalance | Types.NativeBalance];
 }) => {
-  const [assetDomain, setAssetDomain] = useState("Stellar Lumens");
-  const assetIssuer = "issuer" in balance.token ? balance.token.issuer.key : "";
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const server = new StellarSdk.Server(networkDetails.networkUrl);
-
-  useEffect(() => {
-    const fetchAssetDomain = async () => {
-      let homeDomain = "";
-      // https://github.com/stellar/freighter/issues/410
-      try {
-        ({ home_domain: homeDomain } = await server.loadAccount(assetIssuer));
-      } catch (e) {
-        console.error(e);
-      }
-
-      setAssetDomain(homeDomain);
-    };
-
-    if (balance.token.type !== "native") {
-      fetchAssetDomain();
-    }
-  }, [assetIssuer, server, balance.token.type]);
+  const { t } = useTranslation();
 
   return (
-    <option value={key}>
-      {balance.token.code}
-      {assetDomain && ` \u2022 ${assetDomain}`}
-    </option>
+    <div className="SendAmount__row__rate">
+      {loading ? (
+        <Loader />
+      ) : (
+        <>
+          {destAmount ? (
+            <span>
+              1 {source} ≈{" "}
+              {new BigNumber(destAmount)
+                .div(new BigNumber(sourceAmount))
+                .toFixed(7)}{" "}
+              {dest}
+            </span>
+          ) : (
+            <span>{t("no path found")}</span>
+          )}
+        </>
+      )}
+    </div>
   );
 };
 
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
 
-export const SendAmount = ({ previous }: { previous: ROUTES }) => {
+export const SendAmount = ({
+  previous,
+  next,
+}: {
+  previous: ROUTES;
+  next: ROUTES;
+}) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -122,7 +109,9 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     destinationAsset,
   } = transactionData;
 
+  const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const [loadingRate, setLoadingRate] = useState(false);
 
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
@@ -156,8 +145,6 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     calculateAvailBalance(asset),
   );
 
-  const [loadingRate, setLoadingRate] = useState(false);
-
   const handleContinue = (values: {
     amount: string;
     asset: string;
@@ -168,7 +155,8 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
     }
-    navigateTo(ROUTES.sendPaymentSettings);
+
+    navigateTo(next);
   };
 
   const validate = (values: { amount: string }) => {
@@ -186,7 +174,14 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     initialValues: { amount, asset, destinationAsset },
     onSubmit: handleContinue,
     validate,
+    enableReinitialize: true,
   });
+
+  const showSourceAndDestAsset = !!formik.values.destinationAsset;
+  const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
+  const parsedDestAsset = getAssetFromCanonical(
+    formik.values.destinationAsset || "native",
+  );
 
   const db = useCallback(
     debounce(async (formikAm, sourceAsset, destAsset) => {
@@ -211,6 +206,8 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   useEffect(() => {
     if (!formik.values.destinationAsset) return;
     setLoadingRate(true);
+    // clear dest amount before re-calculating for UI
+    dispatch(resetDestinationAmount());
     db(
       formik.values.amount || defaultSourceAmount,
       formik.values.asset,
@@ -222,7 +219,25 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     formik.values.asset,
     formik.values.destinationAsset,
     formik.values.amount,
+    dispatch,
   ]);
+
+  // for swaps we're loading the destinationAsset here
+  useEffect(() => {
+    if (isSwap && !destinationAsset) {
+      // default to first non-native asset if exists
+      const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
+        (b) => b !== StellarSdk.Asset.native().toString(),
+      );
+      dispatch(
+        saveDestinationAsset(
+          nonXlmAssets[0]
+            ? nonXlmAssets[0]
+            : StellarSdk.Asset.native().toString(),
+        ),
+      );
+    }
+  }, [isSwap, dispatch, destinationAsset, accountBalances]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -257,6 +272,7 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   const DecideWarning = () => {
     // unfunded destination
     if (
+      !isSwap &&
       shouldAccountDoesntExistWarning(
         destinationBalances.isFunded || false,
         asset,
@@ -268,14 +284,14 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
     if (formik.errors.amount === AMOUNT_ERROR.TOO_HIGH) {
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
-          Entered amount is higher than your balance
+          {t("Entered amount is higher than your balance")}
         </InfoBlock>
       );
     }
     if (formik.errors.amount === AMOUNT_ERROR.DEC_MAX) {
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
-          7 digits after the decimal allowed
+          7 {t("digits after the decimal allowed")}
         </InfoBlock>
       );
     }
@@ -283,134 +299,136 @@ export const SendAmount = ({ previous }: { previous: ROUTES }) => {
   };
 
   return (
-    <PopupWrapper>
-      <SubviewHeader
-        title={`Send ${getAssetFromCanonical(formik.values.asset).code}`}
-        customBackAction={() => navigateTo(previous)}
-        rightButton={
-          <button
-            onClick={() => navigateTo(ROUTES.sendPaymentType)}
-            className="SendAmount__icon-slider"
-          >
-            <Icon.Sliders />
-          </button>
-        }
-      />
-      <div className="SendAmount">
-        <div className="SendAmount__asset-copy">
-          <span>{availBalance}</span>{" "}
-          <span>{getAssetFromCanonical(formik.values.asset).code}</span>{" "}
-          available
-        </div>
-        <div className="SendAmount__btn-set-max">
-          <PillButton
-            onClick={() => {
-              emitMetric(METRIC_NAMES.sendPaymentSetMax);
-              formik.setFieldValue(
-                "amount",
-                calculateAvailBalance(formik.values.asset),
-              );
-            }}
-          >
-            SET MAX
-          </PillButton>
-        </div>
-        <form
-          className="SendAmount__form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            formik.submitForm();
-          }}
-        >
-          <>
-            <input
-              className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
-              name="amount"
-              type="text"
-              placeholder="0"
-              value={formik.values.amount}
-              onChange={(e) =>
-                formik.setFieldValue("amount", formatAmount(e.target.value))
-              }
-              autoFocus
-              autoComplete="off"
-            />
-            <div className="SendAmount__input-amount__asset-copy">
-              {getAssetFromCanonical(formik.values.asset).code}
-            </div>
-            {destinationAsset && formik.values.amount !== "0" && (
-              <ConversionRate
-                loading={loadingRate}
-                source={getAssetFromCanonical(formik.values.asset).code}
-                sourceAmount={formik.values.amount || defaultSourceAmount}
-                dest={
-                  getAssetFromCanonical(formik.values.destinationAsset).code
-                }
-                destAmount={destinationAmount}
-              />
-            )}
-            <div
-              className={`SendAmount__amount-warning${
-                destinationAsset ? "__path-payment" : ""
-              }`}
-            >
-              <DecideWarning />
-            </div>
-          </>
-          <div>
-            <Select
-              id="asset-select"
-              name="asset"
-              value={formik.values.asset}
-              onChange={(e) => {
-                formik.setFieldValue("asset", e.target.value);
+    <>
+      <div className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}>
+        <SubviewHeader
+          title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
+          hasBackButton={!isSwap}
+          customBackAction={() => navigateTo(previous)}
+          rightButton={
+            isSwap ? null : (
+              <button
+                onClick={() => navigateTo(ROUTES.sendPaymentType)}
+                className="SendAmount__icon-slider"
+              >
+                <Icon.Sliders />
+              </button>
+            )
+          }
+        />
+        <div className="SendAmount__content">
+          <div className="SendAmount__asset-copy">
+            <span>{availBalance}</span> <span>{parsedSourceAsset.code}</span>{" "}
+            {t("available")}
+          </div>
+          <div className="SendAmount__btn-set-max">
+            <PillButton
+              onClick={() => {
+                emitMetric(METRIC_NAMES.sendPaymentSetMax);
+                formik.setFieldValue(
+                  "amount",
+                  calculateAvailBalance(formik.values.asset),
+                );
               }}
             >
-              {accountBalances.balances &&
-                Object.entries(accountBalances.balances).map(([k, v]) => (
-                  <BalanceOption key={k} balance={[k, v]} />
-                ))}
-            </Select>
+              {t("SET MAX")}
+            </PillButton>
           </div>
-          {destinationAsset && (
-            <>
-              <div className="SendAmount__path-pay__select">
-                <Select
-                  id="destAsset-select"
-                  name="destinationAsset"
-                  value={formik.values.destinationAsset}
-                  onChange={(e) =>
-                    formik.setFieldValue("destinationAsset", e.target.value)
-                  }
-                >
-                  {destinationBalances.balances &&
-                    Object.entries(
-                      destinationBalances.balances,
-                    ).map(([k, v]) => <BalanceOption balance={[k, v]} />)}
-                </Select>
-              </div>
-              <div className="SendAmount__path-pay__copy">
-                Sending {getAssetFromCanonical(formik.values.asset).code}, they
-                will receive{" "}
-                {getAssetFromCanonical(formik.values.destinationAsset).code}
-              </div>
-            </>
-          )}
 
-          <div className="SendPayment__btn-continue">
-            <Button
-              disabled={
-                loadingRate || formik.values.amount === "0" || !formik.isValid
-              }
-              fullWidth
-              variant={Button.variant.tertiary}
-              type="submit"
+          <form
+            className="SendAmount__form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              formik.submitForm();
+            }}
+          >
+            <SimpleBar
+              className={`${
+                isSwap
+                  ? "SendAmount__simplebar"
+                  : "SendAmount__simplebar__full-height"
+              }`}
             >
-              Continue
-            </Button>
-          </div>
-        </form>
+              <div className="SendAmount__simplebar__content">
+                <input
+                  className={`SendAmount__input-amount ${
+                    isSwap ? "SendAmount__input-amount__full-height" : ""
+                  } SendAmount__${getAmountFontSize()}`}
+                  name="amount"
+                  type="text"
+                  placeholder="0"
+                  value={formik.values.amount}
+                  onChange={(e) =>
+                    formik.setFieldValue("amount", formatAmount(e.target.value))
+                  }
+                  autoFocus
+                  autoComplete="off"
+                />
+                <div className="SendAmount__input-amount__asset-copy">
+                  {parsedSourceAsset.code}
+                </div>
+                {showSourceAndDestAsset && formik.values.amount !== "0" && (
+                  <ConversionRate
+                    loading={loadingRate}
+                    source={parsedSourceAsset.code}
+                    sourceAmount={formik.values.amount || defaultSourceAmount}
+                    dest={parsedDestAsset.code}
+                    destAmount={destinationAmount}
+                  />
+                )}
+                <div
+                  className={`SendAmount__amount-warning${
+                    destinationAsset ? "__path-payment" : ""
+                  }`}
+                >
+                  <DecideWarning />
+                </div>
+                <div className="SendAmount__asset-select-container">
+                  {!showSourceAndDestAsset && (
+                    <AssetSelect
+                      assetCode={parsedSourceAsset.code}
+                      issuerKey={parsedSourceAsset.issuer}
+                    />
+                  )}
+                  {showSourceAndDestAsset && (
+                    <>
+                      <PathPayAssetSelect
+                        source={true}
+                        assetCode={parsedSourceAsset.code}
+                        issuerKey={parsedSourceAsset.issuer}
+                        balance={formik.values.amount}
+                      />
+                      <PathPayAssetSelect
+                        source={false}
+                        assetCode={parsedDestAsset.code}
+                        issuerKey={parsedDestAsset.issuer}
+                        balance={
+                          destinationAmount
+                            ? new BigNumber(destinationAmount).toFixed(2)
+                            : "0"
+                        }
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            </SimpleBar>
+            <div className="SendAmount__btn-continue">
+              <Button
+                disabled={
+                  loadingRate || formik.values.amount === "0" || !formik.isValid
+                }
+                fullWidth
+                variant={Button.variant.tertiary}
+                type="submit"
+              >
+                {t("Continue")}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
-    </PopupWrapper>
+      {isSwap && <BottomNav />}
+    </>
   );
 };

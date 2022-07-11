@@ -7,10 +7,13 @@ import {
   DetailsTooltip,
   TextLink,
 } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { useIsSwap } from "popup/helpers/useIsSwap";
+import { isMuxedAccount } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -24,12 +27,20 @@ import {
 
 import "../styles.scss";
 
-export const SendSettings = ({ previous }: { previous: ROUTES }) => {
+export const SendSettings = ({
+  previous,
+  next,
+}: {
+  previous: ROUTES;
+  next: ROUTES;
+}) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { destination, transactionFee, memo, allowedSlippage } = useSelector(
     transactionDataSelector,
   );
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
 
   // use default transaction fee if unset
@@ -39,11 +50,23 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
     }
   }, [dispatch, recommendedFee, transactionFee]);
 
+  const handleTxFeeNav = () =>
+    navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
+
+  const handleSlippageNav = () =>
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
+    );
+
+  // dont show memo for regular sends to Muxed, or for swaps
+  const showMemo = !isSwap && !isMuxedAccount(destination);
+  const showSlippage = isPathPayment || isSwap;
+
   return (
     <PopupWrapper>
       <div className="SendSettings">
         <SubviewHeader
-          title="Send Settings"
+          title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
           customBackAction={() => navigateTo(previous)}
         />
         <Formik
@@ -57,21 +80,27 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
               <FormRows>
                 <div className="SendSettings__row">
                   <div className="SendSettings__row__left">
-                    <span className="SendSettings__row__title">
-                      Transaction fee
+                    <span
+                      className="SendSettings__row__title SendSettings__clickable"
+                      onClick={() => {
+                        submitForm();
+                        handleTxFeeNav();
+                      }}
+                    >
+                      {t("Transaction fee")}
                     </span>
                     <DetailsTooltip
                       tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
                       details={
                         <span>
-                          Maximum network transaction fee to be paid{" "}
+                          {t("Maximum network transaction fee to be paid")}{" "}
                           <TextLink
                             variant={TextLink.variant.secondary}
                             href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
                             rel="noreferrer"
                             target="_blank"
                           >
-                            Learn more
+                            {t("Learn more")}
                           </TextLink>
                         </span>
                       }
@@ -79,39 +108,45 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                       <span></span>
                     </DetailsTooltip>
                   </div>
-                  <div className="SendSettings__row__right">
+                  <div
+                    className="SendSettings__row__right SendSettings__clickable"
+                    onClick={() => {
+                      submitForm();
+                      handleTxFeeNav();
+                    }}
+                  >
                     <span>{transactionFee} XLM</span>
                     <div>
-                      <div
-                        className="SendSettings__nav-btn"
-                        onClick={() => {
-                          submitForm();
-                          navigateTo(ROUTES.sendPaymentSettingsFee);
-                        }}
-                      >
-                        <Icon.ChevronRight />
-                      </div>
+                      <Icon.ChevronRight />
                     </div>
                   </div>
                 </div>
-                {isPathPayment && (
+                {showSlippage && (
                   <div className="SendSettings__row">
                     <div className="SendSettings__row__left">
-                      <span className="SendSettings__row__title">
-                        Allowed slippage
+                      <span
+                        className="SendSettings__row__title SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleSlippageNav();
+                        }}
+                      >
+                        {t("Allowed slippage")}
                       </span>
                       <DetailsTooltip
                         tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
                         details={
                           <span>
-                            Allowed downward variation in the destination amount{" "}
+                            {t(
+                              "Allowed downward variation in the destination amount",
+                            )}{" "}
                             <TextLink
                               variant={TextLink.variant.secondary}
                               href="https://www.freighter.app/faq"
                               rel="noreferrer"
                               target="_blank"
                             >
-                              Learn more
+                              {t("Learn more")}
                             </TextLink>
                           </span>
                         }
@@ -119,41 +154,41 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                         <span></span>
                       </DetailsTooltip>
                     </div>
-                    <div className="SendSettings__row__right">
+                    <div
+                      className="SendSettings__row__right SendSettings__clickable"
+                      onClick={() => {
+                        submitForm();
+                        handleSlippageNav();
+                      }}
+                    >
                       <span>{allowedSlippage}%</span>
                       <div>
-                        <div
-                          className="SendSettings__nav-btn"
-                          onClick={() => {
-                            submitForm();
-                            navigateTo(ROUTES.sendPaymentSettingsSlippage);
-                          }}
-                        >
-                          <Icon.ChevronRight />
-                        </div>
+                        <Icon.ChevronRight />
                       </div>
                     </div>
                   </div>
                 )}
-                {!destination.startsWith("M") && (
+                {showMemo && (
                   <>
                     <div className="SendSettings__row">
                       <div className="SendSettings__row__left">
-                        <span className="SendSettings__row__title">Memo</span>{" "}
+                        <span className="SendSettings__row__title">
+                          {t("Memo")}
+                        </span>{" "}
                         <DetailsTooltip
                           tooltipPosition={
                             DetailsTooltip.tooltipPosition.BOTTOM
                           }
                           details={
                             <span>
-                              Include a custom memo to this transaction{" "}
+                              {t("Include a custom memo to this transaction")}{" "}
                               <TextLink
                                 variant={TextLink.variant.secondary}
                                 href="https://developers.stellar.org/docs/glossary/transactions/#memo"
                                 rel="noreferrer"
                                 target="_blank"
                               >
-                                Learn more
+                                {t("Learn more")}
                               </TextLink>
                             </span>
                           }
@@ -169,7 +204,7 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                       {({ field }: FieldProps) => (
                         <Textarea
                           id="mnemonic-input"
-                          placeholder="Memo (optional)"
+                          placeholder={t("Memo (optional)")}
                           {...field}
                         />
                       )}
@@ -182,9 +217,9 @@ export const SendSettings = ({ previous }: { previous: ROUTES }) => {
                     fullWidth
                     type="submit"
                     variant={Button.variant.tertiary}
-                    onClick={() => navigateTo(ROUTES.sendPaymentConfirm)}
+                    onClick={() => navigateTo(next)}
                   >
-                    Review Send
+                    {t("Review")} {isSwap ? t("Swap") : t("Send")}
                   </Button>
                 </div>
               </FormRows>

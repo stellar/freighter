@@ -12,7 +12,7 @@ enum InfoBlockVariant {
 
 interface InfoBlockProps extends React.InputHTMLAttributes<HTMLInputElement> {
   variant?: InfoBlockVariant;
-  children: string | React.ReactElement;
+  children: string | React.ReactNode;
 }
 
 export const InfoBlock = ({ children, variant }: InfoBlockProps) => (

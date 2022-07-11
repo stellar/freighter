@@ -1,8 +1,8 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
-
 import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
@@ -18,7 +18,8 @@ import {
 
 import "./styles.scss";
 
-export const SendSettingsFee = () => {
+export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { transactionFee } = useSelector(transactionDataSelector);
   const { networkCongestion, recommendedFee } = useNetworkFees();
@@ -27,21 +28,21 @@ export const SendSettingsFee = () => {
     <PopupWrapper>
       <SubviewHeader
         title="Transaction Fee"
-        customBackAction={() => navigateTo(ROUTES.sendPaymentSettings)}
+        customBackAction={() => navigateTo(previous)}
         customBackIcon={<Icon.X />}
         rightButton={
           <DetailsTooltip
             tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
             details={
               <span>
-                Maximum network transaction fee to be paid{" "}
+                {t("Maximum network transaction fee to be paid")}{" "}
                 <TextLink
                   variant={TextLink.variant.secondary}
                   href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Learn more
+                  {t("Learn more")}
                 </TextLink>
               </span>
             }
@@ -55,7 +56,7 @@ export const SendSettingsFee = () => {
           initialValues={{ transactionFee }}
           onSubmit={(values) => {
             dispatch(saveTransactionFee(String(values.transactionFee)));
-            navigateTo(ROUTES.sendPaymentSettings);
+            navigateTo(previous);
           }}
         >
           {({ setFieldValue }) => (
@@ -79,9 +80,11 @@ export const SendSettingsFee = () => {
                             setFieldValue("transactionFee", recommendedFee)
                           }
                         >
-                          Set recommended
+                          {t("Set recommended")}
                         </TextLink>
-                        <span>{networkCongestion} congestion</span>
+                        <span>
+                          {networkCongestion} {t("congestion")}
+                        </span>
                       </div>
                     </>
                   )}
@@ -93,7 +96,7 @@ export const SendSettingsFee = () => {
                   variant={Button.variant.tertiary}
                   type="submit"
                 >
-                  Done
+                  {t("Done")}
                 </Button>
               </div>
             </Form>

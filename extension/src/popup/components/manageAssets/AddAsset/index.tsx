@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Input } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
 import StellarSdk from "stellar-sdk";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
@@ -32,6 +33,7 @@ interface AddAssetProps {
 }
 
 export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
+  const { t } = useTranslation();
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isCurrencyNotFound, setIsCurrencyNotFound] = useState(false);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
@@ -73,7 +75,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
       {({ dirty, errors, isSubmitting, isValid, touched }) => (
         <Form>
           <div className="AddAsset">
-            <SubviewHeader title="Add Another Asset" />
+            <SubviewHeader title={t("Add Another Asset")} />
             <FormRows>
               <div>
                 <Field name="assetDomain">
@@ -81,7 +83,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
                     <Input
                       autoComplete="off"
                       id="assetDomain"
-                      placeholder="Asset Domain"
+                      placeholder={`${t("Asset domain")}, e.g. “centre.io”`}
                       error={
                         errors.assetDomain && touched.assetDomain
                           ? errors.assetDomain
@@ -94,12 +96,12 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
               </div>
               <div className="AddAsset__results">
                 {isCurrencyNotFound ? (
-                  <InfoBlock>Asset not found</InfoBlock>
+                  <InfoBlock>{t("Asset not found")}</InfoBlock>
                 ) : null}
                 {assetRows.length ? (
                   <>
                     <div className="AddAsset__title">
-                      Assets found in this domain
+                      {t("Assets found in this domain")}
                     </div>
                     <div
                       className="AddAsset__results__rows"
@@ -124,7 +126,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
                   isLoading={isSubmitting}
                   disabled={!(dirty && isValid)}
                 >
-                  Search
+                  {t("Search")}
                 </Button>
               </div>
             </FormRows>

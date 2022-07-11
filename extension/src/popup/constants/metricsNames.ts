@@ -6,11 +6,14 @@ export const METRIC_NAMES = {
   viewAccountCreator: "loaded screen: account creator",
   viewAddAccount: "loaded screen: add account",
   viewImportAccount: "loaded screen: import account",
+  viewConnectWallet: "loaded screen: connect wallet",
+  viewConnectWalletPlugin: "loaded screen: connect wallet plugin",
   viewGrantAccess: "loaded screen: grant access",
   viewLoading: "loaded screen: loading",
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
   viewMnemonicPhraseConfirm: "loaded screen: confirm mnemonic phrase",
   viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
+  viewPinExtension: "loaded screen: pix extension",
   viewRecoverAccount: "loaded screen: recover account",
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
@@ -41,8 +44,16 @@ export const METRIC_NAMES = {
   sendPaymentPathPaymentSuccess: "send payment: path payment success",
   sendPaymentError: "send payment: error",
 
+  viewSwap: "loaded screen: swap",
+  swapAmount: "loaded screen: swap amount",
+  swapSettings: "loaded screen: swap settings",
+  swapSettingsFee: "loaded screen: swap settings fee",
+  swapSettingsSlippage: "loaded screen: swap settings slippage",
+  swapConfirm: "loaded screen: swap confirm",
+
   viewManageAssets: "loaded screen: manage assets",
   viewAddAsset: "loaded screen: add asset",
+  viewSearchAsset: "loaded screen: search asset",
   viewTrustlineError: "loaded screen: trustline error",
 
   manageAssetAddAsset: "manage asset: add asset",
@@ -53,8 +64,6 @@ export const METRIC_NAMES = {
   accountCreatorReject: "account creator: create password: error",
 
   accountCreatorMnemonicViewPhrase: "account creator: viewed phrase",
-  accountCreatorMnemonicDownloadPhrase: "account creator: downloaded phrase",
-  accountCreatorMnemonicCopyPhrase: "account creator: copied phrase",
 
   accountCreatorMnemonicConfirmPhrase:
     "account creator: confirm phrase: confirmed phrase",

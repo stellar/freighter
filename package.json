@@ -17,6 +17,7 @@
     "build:docs": "yarn workspace docs build",
     "build:extension:experimental": "yarn workspace extension build:experimental",
     "build:extension:production": "yarn workspace extension build:production",
+    "build:extension:translations": "yarn workspace extension build:translations",
     "build:extension": "yarn workspace extension build",
     "start": "run-p --print-label start:freighter-api start:docs start:extension start:unpacked",
     "start:freighter-api": "yarn workspace @stellar/freighter-api start",

@@ -8,10 +8,12 @@ import "./styles.scss";
 export const PunycodedDomain = ({
   domain,
   domainTitle,
+  isRow,
   ...props
 }: {
   domain: string;
   domainTitle?: string;
+  isRow?: boolean;
 }) => {
   const punycodedDomain = getPunycodedDomain(domain);
   const isDomainValid = punycodedDomain === domain;
@@ -19,16 +21,23 @@ export const PunycodedDomain = ({
   const favicon = getSiteFavicon(domain);
 
   return (
-    <div className="PunycodedDomain" {...props}>
+    <div
+      className={`PunycodedDomain ${isRow ? "PunycodedDomain--row" : ""}`}
+      {...props}
+    >
       <div>
-        <img src={favicon} alt="Site favicon" />
+        <img
+          className="PunycodedDomain__favicon"
+          src={favicon}
+          alt="Site favicon"
+        />
       </div>
-      <div className="PunycodedDomain--domain">
+      <div className="PunycodedDomain__domain">
         <strong>
           {isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`}
         </strong>
       </div>
-      <div className="PunycodedDomain--title">{domainTitle}</div>
+      <div className="PunycodedDomain__title">{domainTitle}</div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 
@@ -22,6 +23,7 @@ import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import "popup/metrics/access";
 
 export const GrantAccess = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
   const [isGranting, setIsGranting] = useState(false);
@@ -49,13 +51,13 @@ export const GrantAccess = () => {
     <>
       <ModalWrapper>
         <ModalHeader>
-          <strong>Share Public Key</strong>
+          <strong>{t("Share Public Key")}</strong>
         </ModalHeader>
         <FirstTimeWarningMessage />
         <ModalInfo
           domain={domain}
           domainTitle={title}
-          subject="This website wants to know your public key:"
+          subject={`${t("This website wants to know your public key")}:`}
         >
           <KeyIdenticon publicKey={publicKey} />
         </ModalInfo>
@@ -66,14 +68,14 @@ export const GrantAccess = () => {
           variant={Button.variant.tertiary}
           onClick={rejectAndClose}
         >
-          Reject
+          {t("Reject")}
         </Button>
         <Button
           fullWidth
           isLoading={isGranting}
           onClick={() => grantAndClose()}
         >
-          Share
+          {t("Share")}
         </Button>
       </ButtonsContainer>
     </>

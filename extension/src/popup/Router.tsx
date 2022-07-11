@@ -37,6 +37,8 @@ import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
+import { ConnectWallet } from "popup/views/AddAccount/connect/ConnectWallet";
+import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
@@ -54,6 +56,8 @@ import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
 import { VerifyAccount } from "popup/views/VerifyAccount";
+import { Swap } from "popup/views/Swap";
+import { PinExtension } from "popup/views/PinExtension";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -136,6 +140,23 @@ const UnlockAccountRoute = (props: RouteProps) => {
       <Redirect
         to={{
           pathname: "/",
+        }}
+      />
+    );
+  }
+  return <Route {...props} />;
+};
+
+export const VerifiedAccountRoute = (props: RouteProps) => {
+  const location = useLocation();
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  if (!hasPrivateKey) {
+    return (
+      <Redirect
+        to={{
+          pathname: ROUTES.verifyAccount,
+          state: { from: location },
         }}
       />
     );
@@ -230,12 +251,18 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.importAccount}>
           <ImportAccount />
         </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.connectWallet}>
+          <ConnectWallet />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.connectWalletPlugin}>
+          <PluginWallet />
+        </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />
         </PublicKeyRoute>
-        <PrivateKeyRoute path={ROUTES.signTransaction}>
+        <PublicKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
-        </PrivateKeyRoute>
+        </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
           <DisplayBackupPhrase />
         </PublicKeyRoute>
@@ -263,6 +290,9 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.mnemonicPhraseConfirmed}>
           <FullscreenSuccessMessage />
         </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.pinExtension}>
+          <PinExtension />
+        </PublicKeyRoute>
         <Route path={ROUTES.accountCreator}>
           <AccountCreator />
         </Route>
@@ -280,6 +310,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.manageAssets}>
           <ManageAssets />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.swap}>
+          <Swap />
         </PublicKeyRoute>
         <HomeRoute />
         {DEV_SERVER && (
