@@ -333,7 +333,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           <div className="TransactionDetails__row">
             <div>{t("Memo")}</div>
             <div className="TransactionDetails__row__right">
-              {memo || "None"}
+              {memo || t("None")}
             </div>
           </div>
         )}
