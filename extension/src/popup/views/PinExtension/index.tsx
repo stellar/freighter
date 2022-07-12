@@ -30,7 +30,7 @@ export const PinExtension = () => {
             <img src={ExtensionsMenu} alt="Extensions Menu" />
           </div>
           <div className="PinExtension__caption">
-            2. {t("Click on Freighter’s pin button to have it always visibile")}
+            2. {t("Click on Freighter’s pin button to have it always visible")}
           </div>
           <div className="PinExtension__img">
             <img src={ExtensionsPin} alt="Extensions Pin" />
