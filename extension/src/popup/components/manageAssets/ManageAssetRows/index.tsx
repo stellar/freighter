@@ -99,22 +99,27 @@ export const ManageAssetRows = ({
       .build()
       .toXDR();
 
+    const trackChangeTrustline = () => {
+      emitMetric(
+        addTrustline
+          ? METRIC_NAMES.manageAssetAddAsset
+          : METRIC_NAMES.manageAssetRemoveAsset,
+        { assetCode, assetIssuer },
+      );
+    };
+
     if (isHardwareWallet) {
       await dispatch(startHwSign({ transactionXDR }));
+      trackChangeTrustline();
     } else {
-      await signAndSubmit(transactionXDR);
-      dispatch(resetSubmission());
-      navigateTo(ROUTES.account);
+      await signAndSubmit(transactionXDR, trackChangeTrustline);
     }
-    emitMetric(
-      addTrustline
-        ? METRIC_NAMES.manageAssetAddAsset
-        : METRIC_NAMES.manageAssetRemoveAsset,
-      { assetCode, assetIssuer },
-    );
   };
 
-  const signAndSubmit = async (transactionXDR: string) => {
+  const signAndSubmit = async (
+    transactionXDR: string,
+    trackChangeTrustline: () => void,
+  ) => {
     const res = await dispatch(
       signFreighterTransaction({
         transactionXDR,
@@ -138,6 +143,14 @@ export const ManageAssetRows = ({
             networkDetails,
           }),
         );
+        trackChangeTrustline();
+        dispatch(resetSubmission());
+        navigateTo(ROUTES.account);
+      }
+
+      if (submitFreighterTransaction.rejected.match(submitResp)) {
+        setErrorAsset(assetSubmitting);
+        navigateTo(ROUTES.trustlineError);
       }
     }
   };

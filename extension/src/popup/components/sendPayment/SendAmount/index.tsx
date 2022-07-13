@@ -416,7 +416,10 @@ export const SendAmount = ({
             <div className="SendAmount__btn-continue">
               <Button
                 disabled={
-                  loadingRate || formik.values.amount === "0" || !formik.isValid
+                  loadingRate ||
+                  formik.values.amount === "0" ||
+                  !formik.isValid ||
+                  !destinationAmount
                 }
                 fullWidth
                 variant={Button.variant.tertiary}

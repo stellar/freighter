@@ -7,6 +7,11 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { Onboarding } from "popup/components/Onboarding";
+import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
+import { Header } from "popup/components/Header";
+import { PasswordRequirements } from "popup/components/PasswordRequirements";
+
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import {
@@ -19,10 +24,6 @@ import {
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/accountServices";
-import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { Header } from "popup/components/Header";
-import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 import "./styles.scss";
 
@@ -65,6 +66,9 @@ const PhraseInput = ({
   );
 };
 
+const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
+  mnemonicPhraseArr.join(" ").trim();
+
 export const RecoverAccount = () => {
   interface FormValues {
     password: string;
@@ -99,7 +103,7 @@ export const RecoverAccount = () => {
     await dispatch(
       recoverAccount({
         password,
-        mnemonicPhrase: mnemonicPhraseArr.join(" ").trim(),
+        mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
       }),
     );
   };
@@ -157,7 +161,7 @@ export const RecoverAccount = () => {
                       />
                     ))}
                   </div>
-                  <div>{authError}</div>
+                  <FormError>{authError}</FormError>
                 </div>
                 <div className="RecoverAccount__half-screen">
                   <FormRows>
@@ -218,7 +222,13 @@ export const RecoverAccount = () => {
                     <Button
                       fullWidth
                       isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
+                      disabled={
+                        !(
+                          dirty &&
+                          isValid &&
+                          buildMnemonicPhrase(mnemonicPhraseArr).length
+                        )
+                      }
                     >
                       {t("IMPORT")}
                     </Button>
