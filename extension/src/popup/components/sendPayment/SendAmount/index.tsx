@@ -419,7 +419,8 @@ export const SendAmount = ({
                   loadingRate ||
                   formik.values.amount === "0" ||
                   !formik.isValid ||
-                  !destinationAmount
+                  // path payment, but path not found
+                  (showSourceAndDestAsset && !destinationAmount)
                 }
                 fullWidth
                 variant={Button.variant.tertiary}
