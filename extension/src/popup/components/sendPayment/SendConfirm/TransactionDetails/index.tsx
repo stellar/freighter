@@ -46,7 +46,7 @@ import {
   AccountAssets,
   AssetIcon,
 } from "popup/components/account/AccountAssets";
-import { LedgerConnect } from "popup/components/hardwareConnect/LedgerConnect";
+import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 
 import "./styles.scss";
 
@@ -260,7 +260,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <>
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
+      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
       <div className="TransactionDetails">
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
@@ -367,6 +367,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           </div>
         )}
         <div className="TransactionDetails__bottom-wrapper">
+          {/* ALEC TODO - fix */}
+          <div>
+            {hwStatus === HwOverlayStatus.IN_PROGRESS && (
+              <div>Sign using hardware wallet</div>
+            )}
+          </div>
           <div className="TransactionDetails__bottom-wrapper__copy">
             {(isPathPayment || isSwap) &&
               submission.submitStatus !== ActionStatus.SUCCESS &&
@@ -396,7 +402,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               >
                 {t("Cancel")}
               </Button>
-              <Button onClick={handleSend}>
+              <Button
+                onClick={handleSend}
+                isLoading={hwStatus === HwOverlayStatus.IN_PROGRESS}
+              >
                 {isSwap ? t("Swap") : t("Send")}
               </Button>
             </div>

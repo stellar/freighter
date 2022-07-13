@@ -38,7 +38,7 @@ import {
   startHwSign,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { LedgerConnect } from "popup/components/hardwareConnect/LedgerConnect";
+import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 
 import "./styles.scss";
 
@@ -155,7 +155,7 @@ export const ManageAssetRows = ({
 
   return (
     <>
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerConnect />}
+      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
       <SimpleBar
         className="ManageAssetRows__scrollbar"
         style={{
