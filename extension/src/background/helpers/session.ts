@@ -1,8 +1,5 @@
 import { store } from "background/store";
-import {
-  grantAccountAccess,
-  timeoutAccountAccess,
-} from "background/ducks/session";
+import { timeoutAccountAccess } from "background/ducks/session";
 
 // 24 hours
 const SESSION_LENGTH = 60 * 24;
@@ -14,11 +11,10 @@ export class SessionTimer {
     this.DURATION = duration || this.DURATION;
   }
 
-  startSession(key: { privateKey: string }) {
+  startSession() {
     if (this.runningTimeout) {
       clearTimeout(this.runningTimeout);
     }
-    store.dispatch(grantAccountAccess(key));
     this.runningTimeout = setTimeout(() => {
       store.dispatch(timeoutAccountAccess());
     }, this.DURATION);
