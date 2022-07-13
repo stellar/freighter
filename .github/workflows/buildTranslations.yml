@@ -1,6 +1,7 @@
 name: Build translations
 
-on: [pull_request, push]
+on:
+  pull_request:
     paths:
       - "extension/**/*"
 
