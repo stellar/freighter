@@ -62,7 +62,7 @@
   "Choose Asset": "Choose Asset",
   "Claimant": "Claimant",
   "Clear Flags": "Clear Flags",
-  "Click on Freighter’s pin button to have it always visibile": "Click on Freighter’s pin button to have it always visibile",
+  "Click on Freighter’s pin button to have it always visible": "Click on Freighter’s pin button to have it always visible",
   "Click on the extensions button at the top of your browser’s bar": "Click on the extensions button at the top of your browser’s bar",
   "Code": "Code",
   "CONFIRM": "CONFIRM",
@@ -110,6 +110,9 @@
     }
   },
   "Freighter cannot recover your account if you lose your recovery phrase, so keep it safe": "Freighter cannot recover your account if you lose your recovery phrase, so keep it safe",
+  "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser": {
+    " It’s a safer alternative to copying and pasting private keys for use with web apps": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps."
+  },
   "Freighter is set to": "Freighter is set to",
   "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website": "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
   "From": "From",
@@ -158,6 +161,7 @@
   "Leave Feedback": "Leave Feedback",
   "Less common": "Less common",
   "Limit": "Limit",
+  "LINKS": "LINKS",
   "Liquidity Pool ID": "Liquidity Pool ID",
   "LOG IN": "LOG IN",
   "Log Out": "Log Out",
@@ -206,6 +210,7 @@
   "powered by": "powered by",
   "Preferences": "Preferences",
   "Price": "Price",
+  "Privacy Policy": "Privacy Policy",
   "Processing": "Processing",
   "read before importing your key": "read before importing your key",
   "Received": "Received",
@@ -249,6 +254,7 @@
   "Swap": "Swap",
   "swapped": "swapped",
   "Swapped": "Swapped",
+  "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
