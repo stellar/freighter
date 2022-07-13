@@ -44,7 +44,7 @@ export const About = () => {
           {t("Privacy Policy")}
         </AboutLink>
         <AboutLink url="stellar.org/terms-of-service">
-          {t("Terms of Service")}
+          {t("Terms of Servic")}
         </AboutLink>
       </div>
 
