@@ -75,8 +75,6 @@ export const LedgerSign = () => {
           bipPath,
         }),
       );
-      // ALEC TODO - remove
-      console.log({ res });
       if (signWithLedger.fulfilled.match(res)) {
         dispatch(
           submitFreighterTransaction({
@@ -90,8 +88,6 @@ export const LedgerSign = () => {
         setConnectError(parseLedgerError(res.payload?.errorMessage || ""));
       }
     } catch (e) {
-      // ALEC TODO - remove
-      console.log({ e });
       setConnectError(parseLedgerError(e));
     }
     setIsDetecting(false);

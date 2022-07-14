@@ -24,6 +24,7 @@ export const sessionSlice = createSlice({
   name: "session",
   initialState,
   reducers: {
+    reset: () => initialState,
     logIn: (state, action: { payload: UiData }) => {
       const {
         publicKey,
@@ -88,6 +89,7 @@ export const sessionSelector = (state: { session: UiData & AppData }) =>
 
 export const {
   actions: {
+    reset,
     logIn,
     logOut,
     setActivePrivateKey,

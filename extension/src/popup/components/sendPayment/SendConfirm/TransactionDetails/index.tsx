@@ -367,12 +367,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           </div>
         )}
         <div className="TransactionDetails__bottom-wrapper">
-          {/* ALEC TODO - fix */}
-          <div>
-            {hwStatus === HwOverlayStatus.IN_PROGRESS && (
-              <div>Sign using hardware wallet</div>
-            )}
-          </div>
           <div className="TransactionDetails__bottom-wrapper__copy">
             {(isPathPayment || isSwap) &&
               submission.submitStatus !== ActionStatus.SUCCESS &&

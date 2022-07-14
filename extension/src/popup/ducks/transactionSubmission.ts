@@ -226,8 +226,6 @@ interface TransactionData {
 
 interface HardwareWalletData {
   status: HwOverlayStatus;
-  // ALEC TODO - just have 1 status obv
-  signingStatus: HwOverlayStatus;
   transactionXDR: string;
 }
 
@@ -262,7 +260,6 @@ const initialState: InitialState = {
   },
   hardwareWalletData: {
     status: HwOverlayStatus.IDLE,
-    signingStatus: HwOverlayStatus.IDLE,
     transactionXDR: "",
   },
   accountBalances: {
@@ -383,16 +380,6 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.path = path;
       state.transactionData.destinationAmount =
         action.payload.destination_amount;
-    });
-    builder.addCase(signWithLedger.pending, (state) => {
-      state.hardwareWalletData.signingStatus = HwOverlayStatus.IN_PROGRESS;
-    });
-    // ALEC TODO - fix these two below, obv
-    builder.addCase(signWithLedger.rejected, (state) => {
-      state.hardwareWalletData.signingStatus = HwOverlayStatus.IDLE;
-    });
-    builder.addCase(signWithLedger.fulfilled, (state) => {
-      state.hardwareWalletData.signingStatus = HwOverlayStatus.IDLE;
     });
   },
 });

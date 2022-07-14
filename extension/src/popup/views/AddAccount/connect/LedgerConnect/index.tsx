@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 import { InfoBlock } from "@stellar/design-system";
@@ -63,6 +64,7 @@ export const LedgerErrorBlock = ({ error }: { error: LEDGER_ERROR }) => {
 
 export const LedgerConnect = () => {
   const dispatch: AppDispatch = useDispatch();
+  const { t } = useTranslation();
 
   const [isDetecting, setIsDetecting] = useState(false);
   const { search } = useLocation();
@@ -116,7 +118,7 @@ export const LedgerConnect = () => {
         onClick={handleConnect}
         isLoading={isDetecting}
       >
-        {isDetecting ? "Detecting" : "Detect device"}
+        {isDetecting ? t("Detecting") : t("Detect device")}
       </Button>
     );
   };
@@ -125,12 +127,11 @@ export const LedgerConnect = () => {
     <>
       <FullscreenStyle />
       <div className="LedgerConnect">
-        {/* ALEC TODO - wrap in language thing */}
         <div className="LedgerConnect__header">Connect Ledger</div>
         <div className="LedgerConnect__caption">
           {ledgerConnectSuccessful
-            ? "You’re good to go!"
-            : "Connect device to computer"}
+            ? t("You’re good to go!")
+            : t("Connect device to computer")}
         </div>
         <div className="LedgerConnect__content__center">
           <img
