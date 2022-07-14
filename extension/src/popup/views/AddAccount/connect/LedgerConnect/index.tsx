@@ -39,16 +39,17 @@ export const parseLedgerError = (err: any): LEDGER_ERROR => {
 };
 
 export const LedgerErrorBlock = ({ error }: { error: LEDGER_ERROR }) => {
+  const { t } = useTranslation();
   let errorMessage = "";
   switch (error) {
     case LEDGER_ERROR.NOT_OPEN:
-      errorMessage = "Please select Stellar app and try again.";
+      errorMessage = t("Please select Stellar app and try again.");
       break;
     case LEDGER_ERROR.NO_DEVICE:
-      errorMessage = "No device selected.";
+      errorMessage = t("No device selected.");
       break;
     case LEDGER_ERROR.OTHER:
-      errorMessage = "Error connecting. Please try again.";
+      errorMessage = t("Error connecting. Please try again.");
       break;
     default:
       break;

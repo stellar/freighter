@@ -72,6 +72,7 @@
   "Confirm Transaction": "Confirm Transaction",
   "Confirm your recovery phrase": "Confirm your recovery phrase",
   "congestion": "congestion",
+  "Connect device to computer": "Connect device to computer",
   "Continue": "Continue",
   "CONTINUE": "CONTINUE",
   "Conversion rate": "Conversion rate",
@@ -84,6 +85,8 @@
   "Date": "Date",
   "Destination": "Destination",
   "Destination Asset": "Destination Asset",
+  "Detect device": "Detect device",
+  "Detecting": "Detecting",
   "Different source and destination assets": "Different source and destination assets",
   "digits after the decimal allowed": "digits after the decimal allowed",
   "directory": "directory",
@@ -100,6 +103,9 @@
   "Entered amount is higher than your balance": "Entered amount is higher than your balance",
   "Error": "Error",
   "Error code": "Error code",
+  "Error connecting": {
+    " Please try again": "Error connecting. Please try again."
+  },
   "Failed": "Failed",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "For your safety, signing this transaction is disabled": "For your safety, signing this transaction is disabled",
@@ -187,6 +193,7 @@
   "New password": "New password",
   "Next": "Next",
   "NEXT": "NEXT",
+  "No device selected": "No device selected.",
   "no path found": "no path found",
   "No transactions to show": "No transactions to show",
   "NO TRUSTLINE TO SENT ASSET": "NO TRUSTLINE TO SENT ASSET",
@@ -203,6 +210,7 @@
   "Please don’t close this window": "Please don’t close this window",
   "Please proceed with caution": "Please proceed with caution.",
   "Please select each word in the same order you have": "Please select each word in the same order you have",
+  "Please select Stellar app and try again": "Please select Stellar app and try again.",
   "powered by": "powered by",
   "Preferences": "Preferences",
   "Price": "Price",
@@ -215,6 +223,7 @@
   "Reject": "Reject",
   "Remove": "Remove",
   "Review": "Review",
+  "Review transaction on device": "Review transaction on device",
   "Same source and destination asset": "Same source and destination asset",
   "Search": "Search",
   "Search for an asset": "Search for an asset",
@@ -298,6 +307,7 @@
   "You successfully imported your account": {
     " Keep your recovery phrase safe, it’s your responsibility": "You successfully imported your account. Keep your recovery phrase safe, it’s your responsibility"
   },
+  "You’re good to go!": "You’re good to go!",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"
 }

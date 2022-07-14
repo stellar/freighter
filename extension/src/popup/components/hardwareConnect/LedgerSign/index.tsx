@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 import { Icon } from "@stellar/design-system";
@@ -30,6 +31,7 @@ import "./styles.scss";
 
 export const LedgerSign = () => {
   const dispatch: AppDispatch = useDispatch();
+  const { t } = useTranslation();
   const [isDetecting, setIsDetecting] = useState(false);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
@@ -119,8 +121,8 @@ export const LedgerSign = () => {
             />
             <span>
               {ledgerConnectSuccessful
-                ? "Review transaction on device"
-                : "Connect device to computer"}
+                ? t("Review transaction on device")
+                : t("Connect device to computer")}
             </span>
           </div>
         </div>
@@ -133,7 +135,7 @@ export const LedgerSign = () => {
               onClick={handleSign}
               isLoading={isDetecting}
             >
-              {isDetecting ? "Detecting" : "Detect device"}
+              {isDetecting ? t("Detecting") : t("Detect device")}
             </Button>
           )}
         </div>
