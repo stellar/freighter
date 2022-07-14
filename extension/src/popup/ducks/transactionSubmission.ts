@@ -320,6 +320,7 @@ const transactionSubmissionSlice = createSlice({
       state.hardwareWalletData.status = HwOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
     },
+    
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {

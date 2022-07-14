@@ -1,6 +1,7 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
 import { store } from "background/store";
+import { sessionSlice } from "background/ducks/session";
 import {
   publicKeySelector,
   privateKeySelector,
@@ -10,7 +11,11 @@ import { decodeString } from "helpers/urls";
 
 console.error = jest.fn((e) => console.log(e));
 
-describe("popupMessageListener", () => {
+describe("regular account flow", () => {
+  beforeAll(() => {
+    localStorage.clear();
+    store.dispatch(sessionSlice.actions.reset());
+  });
   describe("CREATE_ACCOUNT", () => {
     it("works", async () => {
       const r = {};
@@ -27,13 +32,95 @@ describe("popupMessageListener", () => {
       expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(1);
     });
   });
+  describe("CONFIRM_PASSWORD", () => {
+    it("works after importing hardware wallet", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
+      r.password = "test";
 
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+  describe("LOAD_ACCOUNT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.LOAD_ACCOUNT;
+
+      const resp = await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+  describe("SIGN_OUT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.SIGN_OUT;
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+  describe("CONFIRM_PASSWORD", () => {
+    it("works after signing out", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
+      r.password = "test";
+
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+  describe("ADD_ACCOUNT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.ADD_ACCOUNT;
+      r.password = "test";
+
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+
+      expect(allAccountsSelector(store.getState()).length).toBe(2);
+      expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(2);
+    });
+  });
+  describe("MAKE_ACCOUNT_ACTIVE", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE;
+      r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
+
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("adding hardware wallets", () => {
+  beforeAll(() => {
+    localStorage.clear();
+    store.dispatch(sessionSlice.actions.reset());
+  });
+  describe("CREATE_ACCOUNT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.CREATE_ACCOUNT;
+      r.password = "test";
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+
+      // check store
+      expect(publicKeySelector(store.getState())).toBeTruthy();
+      expect(privateKeySelector(store.getState())).toBe("");
+      expect(allAccountsSelector(store.getState()).length).toBe(1);
+      // check localStorage
+      expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(1);
+    });
+  });
   describe("IMPORT_HARDWARE_WALLET", () => {
     it("works", async () => {
       const r = {};
       r.type = SERVICE_TYPES.IMPORT_HARDWARE_WALLET;
       r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
-      r.hardwareWalletType = "ledger";
+      r.hardwareWalletType = "Ledger";
       r.bipPath = "44'/148'/1'";
       await popupMessageListener(r);
       expect(console.error).not.toHaveBeenCalled();
@@ -63,7 +150,24 @@ describe("popupMessageListener", () => {
       );
     });
   });
+  describe("SIGN_OUT", () => {
+    it("works", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.SIGN_OUT;
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
+  describe("CONFIRM_PASSWORD", () => {
+    it("works after signing out", async () => {
+      const r = {};
+      r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
+      r.password = "test";
 
+      await popupMessageListener(r);
+      expect(console.error).not.toHaveBeenCalled();
+    });
+  });
   describe("LOAD_ACCOUNT", () => {
     it("loads bip path correctly", async () => {
       const r = {};
@@ -75,13 +179,12 @@ describe("popupMessageListener", () => {
       expect(resp.bipPath).toBe("44'/148'/1'");
     });
   });
-
   describe("IMPORT_HARDWARE_WALLET", () => {
     it("doesn't load the same account twice", async () => {
       const r = {};
       r.type = SERVICE_TYPES.IMPORT_HARDWARE_WALLET;
       r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
-      r.hardwareWalletType = "ledger";
+      r.hardwareWalletType = "Ledger";
       r.bipPath = "44'/148'/1'";
       await popupMessageListener(r);
       expect(console.error).not.toHaveBeenCalled();
@@ -97,9 +200,8 @@ describe("popupMessageListener", () => {
       ).toBe(2);
     });
   });
-
   describe("CONFIRM_PASSWORD", () => {
-    it("works", async () => {
+    it("works after importing hardware wallet", async () => {
       const r = {};
       r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
       r.password = "test";
@@ -108,7 +210,6 @@ describe("popupMessageListener", () => {
       expect(console.error).not.toHaveBeenCalled();
     });
   });
-
   describe("IMPORT_ACCOUNT", () => {
     it("works", async () => {
       const r = {};
@@ -132,7 +233,6 @@ describe("popupMessageListener", () => {
       expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(-1);
     });
   });
-
   describe("LOAD_ACCOUNT", () => {
     it("works", async () => {
       const r = {};
@@ -144,7 +244,6 @@ describe("popupMessageListener", () => {
       expect(resp.bipPath).toBe("");
     });
   });
-
   describe("MAKE_ACCOUNT_ACTIVE", () => {
     it("works", async () => {
       const r = {};
@@ -156,7 +255,6 @@ describe("popupMessageListener", () => {
       expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(0);
     });
   });
-
   describe("ADD_ACCOUNT", () => {
     it("works", async () => {
       const r = {};

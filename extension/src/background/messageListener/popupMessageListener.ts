@@ -508,41 +508,56 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
-  const confirmPasswordHW = async () => {
-    if (!getIsHardwareWalletActive()) {
-      return { error: "Something went wrong, please try again" };
+  const _getLocalStorageAccounts = async (password: string) => {
+    const keyIdList = getKeyIdList();
+    const accountNameList = getAccountNameList();
+    const unlockedAccounts = [] as Array<Account>;
+
+    // for loop to preserve order of accounts
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < keyIdList.length; i++) {
+      const keyId = keyIdList[i];
+      let keyStore;
+
+      // iterate over each keyId we have and get the associated keystore
+      let publicKey = "";
+      let imported = false;
+      let hardwareWalletType = WalletType.NONE;
+
+      if (keyId.indexOf(HW_PREFIX) !== -1) {
+        publicKey = keyId.split(":")[1];
+        imported = true;
+        // all hardware wallets are ledgers for now
+        hardwareWalletType = WalletType.LEDGER;
+      } else {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          keyStore = await keyManager.loadKey(keyId, password);
+        } catch (e) {
+          console.error(e);
+        }
+
+        publicKey = keyStore?.publicKey || "";
+        imported = keyStore?.extra.imported || false;
+      }
+
+      if (publicKey) {
+        // push the data into a list of accounts
+        unlockedAccounts.push({
+          publicKey,
+          name: accountNameList[keyId] || `Account ${keyIdList.length}`,
+          imported,
+          hardwareWalletType,
+        });
+      }
     }
-
-    const { password } = request;
-
-    // check password with a non-hw account, it's safe to assume at least
-    // one exists
-    const keyID = _getNonHwKeyID();
-    try {
-      await _unlockKeystore({ keyID, password });
-    } catch (e) {
-      console.error(e);
-      return { error: "Could not log into selected account" };
-    }
-
-    sessionTimer.startSession();
-    return {
-      publicKey: publicKeySelector(store.getState()),
-      hasPrivateKey: hasPrivateKeySelector(store.getState()),
-      applicationState: localStorage.getItem(APPLICATION_ID) || "",
-      allAccounts: allAccountsSelector(store.getState()),
-    };
+    return unlockedAccounts;
   };
 
   const confirmPassword = async () => {
     /* In Popup, we call loadAccount to figure out what the state the user is in,
     then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
     <UnlockAccount /> calls this method to fill in any missing data */
-
-    // if we're logging in with a hardware wallet, reroute this call
-    if (getIsHardwareWalletActive()) {
-      return confirmPasswordHW();
-    }
 
     const { password } = request;
     const keyIdList = getKeyIdList();
@@ -559,12 +574,21 @@ export const popupMessageListener = (request: Request) => {
     }
     /* end migration script */
 
+    // if active hw then use the first non-hw keyID to check password
+    // with keyManager
+    let keyID = localStorage.getItem(KEY_ID) || "";
+    let hwPublicKey = "";
+    if (getIsHardwareWalletActive()) {
+      hwPublicKey = keyID.split(":")[1];
+      keyID = _getNonHwKeyID();
+    }
+
     let activeAccountKeystore;
 
     // first make sure the password is correct to get active keystore, short circuit if not
     try {
       activeAccountKeystore = await _unlockKeystore({
-        keyID: localStorage.getItem(KEY_ID) || "",
+        keyID,
         password,
       });
     } catch (e) {
@@ -580,9 +604,6 @@ export const popupMessageListener = (request: Request) => {
 
     const activeMnemonicPhrase = activeExtra.mnemonicPhrase;
 
-    const accountNameList = getAccountNameList();
-    const unlockedAccounts = [] as Array<Account>;
-
     if (
       !publicKeySelector(store.getState()) ||
       !allAccountsSelector(store.getState()).length
@@ -591,45 +612,20 @@ export const popupMessageListener = (request: Request) => {
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
 
-      // for loop to preserve order of accounts
-      // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < keyIdList.length; i++) {
-        const keyId = keyIdList[i];
-        let keyStore;
-
-        // iterate over each keyId we have and get the associated keystore
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          keyStore = await keyManager.loadKey(keyId, password);
-        } catch (e) {
-          console.error(e);
-        }
-
-        if (keyStore) {
-          // push the data into a list of accounts
-
-          const { publicKey, extra = { mnemonicPhrase: "" } } = keyStore;
-          const { imported = false } = extra;
-          unlockedAccounts.push({
-            publicKey,
-            name: accountNameList[keyId] || `Account ${keyIdList.length}`,
-            imported,
-          });
-        }
-      }
-
       store.dispatch(
         logIn({
-          publicKey: activePublicKey,
+          publicKey: hwPublicKey || activePublicKey,
           mnemonicPhrase: activeMnemonicPhrase,
-          allAccounts: unlockedAccounts,
+          allAccounts: await _getLocalStorageAccounts(password),
         }),
       );
     }
 
     // start the timer now that we have active private key
     sessionTimer.startSession();
-    store.dispatch(setActivePrivateKey({ privateKey: activePrivateKey }));
+    if (!getIsHardwareWalletActive()) {
+      store.dispatch(setActivePrivateKey({ privateKey: activePrivateKey }));
+    }
 
     return {
       publicKey: publicKeySelector(store.getState()),

@@ -39,6 +39,7 @@ import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { ConnectWallet } from "popup/views/AddAccount/connect/ConnectWallet";
 import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
+import { LedgerConnect } from "popup/views/AddAccount/connect/LedgerConnect";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
@@ -256,6 +257,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.connectWalletPlugin}>
           <PluginWallet />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.connectLedger}>
+          <LedgerConnect />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />
