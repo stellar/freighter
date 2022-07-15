@@ -89,7 +89,7 @@ export const LedgerSign = () => {
         } else {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwTransaction({ transactionXDR: res.payload });
+          await handleSignedHwTransaction({ signedTransaction: res.payload });
         }
         closeOverlay();
       } else {

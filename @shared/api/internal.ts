@@ -411,13 +411,13 @@ export const grantAccess = async (url: string): Promise<void> => {
 };
 
 export const handleSignedHwTransaction = async ({
-  transactionXDR,
+  signedTransaction,
 }: {
-  transactionXDR: string;
+  signedTransaction: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
-      transactionXDR,
+      signedTransaction,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION,
     });
   } catch (e) {

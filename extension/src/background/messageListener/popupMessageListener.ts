@@ -664,12 +664,12 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const handleSignedHwTransaction = () => {
-    const { transactionXDR } = request;
+    const { signedTransaction } = request;
 
     const transactionResponse = responseQueue.pop();
 
     if (typeof transactionResponse === "function") {
-      transactionResponse(transactionXDR);
+      transactionResponse(signedTransaction);
       return {};
     }
 
