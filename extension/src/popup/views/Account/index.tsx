@@ -81,7 +81,7 @@ export const Account = () => {
 
   return accountBalanceStatus !== ActionStatus.SUCCESS ? null : (
     <>
-      <div className="AccountView">
+      <div className="AccountView1">
         <AccountHeader
           accountDropDownRef={accountDropDownRef}
           allAccounts={allAccounts}
