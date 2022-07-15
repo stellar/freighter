@@ -1,6 +1,7 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { Heading5 } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -15,6 +16,7 @@ import { signOut } from "popup/ducks/accountServices";
 import "./styles.scss";
 
 export const Settings = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const signOutAndClose = async (e: React.FormEvent) => {
@@ -31,17 +33,21 @@ export const Settings = () => {
             <Heading5>Settings</Heading5>
             <div className="Settings__version">
               {/* TODO: Make this dynamic */}
-              v2.1.2
+              v2.3.0
             </div>
           </div>
           <ListNavLinkWrapper>
-            <ListNavLink href={ROUTES.preferences}>Preferences</ListNavLink>
-            <ListNavLink href={ROUTES.security}>Security</ListNavLink>
-            <ListNavLink href="http://freighter.app/help">Help</ListNavLink>
-            <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
-              Leave Feedback
+            <ListNavLink href={ROUTES.preferences}>
+              {t("Preferences")}
             </ListNavLink>
-            <ListNavLink href={ROUTES.about}>About</ListNavLink>
+            <ListNavLink href={ROUTES.security}>{t("Security")}</ListNavLink>
+            <ListNavLink href="http://freighter.app/help">
+              {t("Help")}
+            </ListNavLink>
+            <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
+              {t("Leave Feedback")}
+            </ListNavLink>
+            <ListNavLink href={ROUTES.about}>{t("About")}</ListNavLink>
           </ListNavLinkWrapper>
         </div>
         <div className="Settings__logout">
@@ -50,7 +56,7 @@ export const Settings = () => {
             variant={Button.variant.tertiary}
             onClick={(e) => signOutAndClose(e)}
           >
-            Log Out
+            {t("Log Out")}
           </Button>
         </div>
       </nav>

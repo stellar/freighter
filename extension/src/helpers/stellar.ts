@@ -26,6 +26,7 @@ export const getTransactionInfo = (search: string) => {
     accountToSign,
     url,
     transaction,
+    transactionXdr,
     isDomainListedAllowed,
     flaggedKeys,
     tab: { title = "" },
@@ -39,6 +40,7 @@ export const getTransactionInfo = (search: string) => {
   return {
     accountToSign,
     transaction,
+    transactionXdr,
     domain: hostname,
     domainTitle: title,
     operations: _operations,

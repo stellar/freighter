@@ -4,6 +4,7 @@ import QrCode from "qrcode.react";
 import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 import { Icon, Input, CopyText } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { Button } from "popup/basics/buttons/Button";
@@ -24,6 +25,7 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import "./styles.scss";
 
 export const ViewPublicKey = () => {
+  const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const accountName = useSelector(accountNameSelector);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -70,7 +72,10 @@ export const ViewPublicKey = () => {
             initialValues={initialValues}
             onSubmit={handleSubmit}
             validationSchema={YupObject().shape({
-              accountName: YupString().max(24, "max of 24 characters allowed"),
+              accountName: YupString().max(
+                24,
+                t("max of 24 characters allowed"),
+              ),
             })}
           >
             {({ errors }) => (
@@ -120,14 +125,14 @@ export const ViewPublicKey = () => {
             />
           </div>
           <div className="ViewPublicKey__address-copy-label">
-            Wallet Address
+            {t("Wallet Address")}
           </div>
           <div className="ViewPublicKey__address-copy">
             {truncatedPublicKey(publicKey)}
           </div>
           <div className="ViewPublicKey__copy-btn">
             <CopyText textToCopy={publicKey} doneLabel="ADDRESS COPIED">
-              <PillButton>COPY</PillButton>
+              <PillButton>{t("COPY")}</PillButton>
             </CopyText>
           </div>
         </div>
@@ -142,7 +147,7 @@ export const ViewPublicKey = () => {
               emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
             }}
           >
-            View on stellar.expert
+            {t("View on")} stellar.expert
           </Button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -28,6 +29,7 @@ const initialValues: FormValues = {
 };
 
 export const AddAccount = () => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
 
@@ -57,7 +59,7 @@ export const AddAccount = () => {
                     <Input
                       autoComplete="off"
                       id="password-input"
-                      placeholder="Enter Password"
+                      placeholder={t("Enter Password")}
                       type="password"
                       error={
                         authError ||
@@ -76,7 +78,7 @@ export const AddAccount = () => {
                     isLoading={isSubmitting}
                     type="submit"
                   >
-                    Add New Address
+                    {t("Add New Address")}
                   </Button>
                 </SubmitButtonWrapper>
               </FormRows>

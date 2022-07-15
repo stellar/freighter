@@ -2,6 +2,7 @@ import React from "react";
 import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Input } from "@stellar/design-system";
@@ -29,6 +30,7 @@ export const VerifyAccount = ({
   customBackAction,
   customSubmit,
 }: VerifyAccountProps) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
@@ -45,11 +47,16 @@ export const VerifyAccount = ({
 
   return (
     <PopupWrapper>
-      <SubviewHeader title="Verification" customBackAction={customBackAction} />
+      <SubviewHeader
+        title={t("Verification")}
+        customBackAction={customBackAction}
+      />
       <div className="VerifyAccount__copy">
         {isApproval
-          ? "Enter your account password to verify your account."
-          : "Enter your account password to authorize this transaction."}{" "}
+          ? t("Enter your account password to verify your account.")
+          : t(
+              "Enter your account password to authorize this transaction.",
+            )}{" "}
         You won’t be asked to do this for the next 24 hours.
       </div>
       <Formik initialValues={{ password: "" }} onSubmit={handleSubmit}>
@@ -60,7 +67,7 @@ export const VerifyAccount = ({
                 <Input
                   id="password-input"
                   type="password"
-                  placeholder="Enter password"
+                  placeholder={t("Enter password")}
                   error={
                     authError ||
                     (errors.password && touched.password ? errors.password : "")
@@ -75,7 +82,7 @@ export const VerifyAccount = ({
                 isLoading={isSubmitting}
                 disabled={!(dirty && isValid)}
               >
-                {isApproval ? "Approve" : "Submit"}
+                {isApproval ? t("Approve") : t("Submit")}
               </Button>
             </div>
           </Form>
