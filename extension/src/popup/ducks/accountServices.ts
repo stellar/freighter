@@ -7,6 +7,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
   importAccount as importAccountService,
+  importHardwareWallet as importHardwareWalletService,
   makeAccountActive as makeAccountActiveService,
   updateAccountName as updateAccountNameService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
@@ -18,6 +19,7 @@ import {
   signOut as signOutService,
 } from "@shared/api/internal";
 import { Account, ErrorMessage } from "@shared/api/types";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },
@@ -91,6 +93,38 @@ export const importAccount = createAsyncThunk<
   }
   return res;
 });
+
+export const importHardwareWallet = createAsyncThunk<
+  {
+    publicKey: string;
+    allAccounts: Array<Account>;
+    hasPrivateKey: boolean;
+    bipPath: string;
+  },
+  { publicKey: string; hardwareWalletType: WalletType; bipPath: string },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/importHardwareWallet",
+  async ({ publicKey, hardwareWalletType, bipPath }, thunkApi) => {
+    let res = {
+      publicKey: "",
+      allAccounts: [] as Array<Account>,
+      hasPrivateKey: false,
+      bipPath: "",
+    };
+    try {
+      res = await importHardwareWalletService(
+        publicKey,
+        hardwareWalletType,
+        bipPath,
+      );
+    } catch (e) {
+      console.error("Failed when importing hardware wallet: ", e);
+      return thunkApi.rejectWithValue({ errorMessage: e.message });
+    }
+    return res;
+  },
+);
 
 export const makeAccountActive = createAsyncThunk(
   "auth/makeAccountActive",
@@ -238,15 +272,19 @@ interface InitialState {
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
+  connectingWalletType: WalletType;
+  bipPath: string;
   error: string;
 }
 
 const initialState: InitialState = {
   allAccounts: [],
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
-  publicKey: "",
-  error: "",
   hasPrivateKey: false,
+  publicKey: "",
+  connectingWalletType: WalletType.NONE,
+  bipPath: "",
+  error: "",
 };
 
 const authSlice = createSlice({
@@ -255,6 +293,9 @@ const authSlice = createSlice({
   reducers: {
     clearApiError(state) {
       state.error = "";
+    },
+    setConnectingWalletType(state, action) {
+      state.connectingWalletType = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -289,6 +330,8 @@ const authSlice = createSlice({
       return {
         ...state,
         error: "",
+        // to be safe lets clear bipPath here, which is only for hWs
+        bipPath: "",
         publicKey,
         allAccounts,
         hasPrivateKey,
@@ -312,6 +355,8 @@ const authSlice = createSlice({
       return {
         ...state,
         error: "",
+        // to be safe lets clear bipPath here, which is only for hWs
+        bipPath: "",
         publicKey,
         allAccounts,
         hasPrivateKey,
@@ -325,16 +370,37 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(importHardwareWallet.fulfilled, (state, action) => {
+      const { publicKey, allAccounts, hasPrivateKey, bipPath } = action.payload;
+      return {
+        ...state,
+        error: "",
+        publicKey,
+        allAccounts,
+        hasPrivateKey,
+        bipPath,
+      };
+    });
+    builder.addCase(importHardwareWallet.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
     builder.addCase(makeAccountActive.fulfilled, (state, action) => {
-      const { publicKey, hasPrivateKey } = action.payload || {
+      const { publicKey, hasPrivateKey, bipPath } = action.payload || {
         publicKey: "",
         hasPrivateKey: false,
+        bipPath: "",
       };
 
       return {
         ...state,
         publicKey,
         hasPrivateKey,
+        bipPath,
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
@@ -413,11 +479,13 @@ const authSlice = createSlice({
         publicKey,
         applicationState,
         allAccounts,
+        bipPath,
       } = action.payload || {
         hasPrivateKey: false,
         publicKey: "",
         applicationState: APPLICATION_STATE.APPLICATION_STARTED,
         allAccounts: [],
+        bipPath: "",
       };
       return {
         ...state,
@@ -426,6 +494,7 @@ const authSlice = createSlice({
           applicationState || APPLICATION_STATE.APPLICATION_STARTED,
         publicKey,
         allAccounts,
+        bipPath,
       };
     });
     builder.addCase(loadAccount.rejected, (state, action) => {
@@ -503,6 +572,10 @@ export const publicKeySelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.publicKey,
 );
+export const bipPathSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.bipPath,
+);
 
 export const accountNameSelector = createSelector(
   publicKeySelector,
@@ -516,6 +589,17 @@ export const accountNameSelector = createSelector(
   },
 );
 
-export const { clearApiError } = authSlice.actions;
+export const hardwareWalletTypeSelector = createSelector(
+  publicKeySelector,
+  allAccountsSelector,
+  (publicKey, allAccounts) => {
+    const account = allAccounts.find(
+      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+    ) || { hardwareWalletType: WalletType.NONE };
+    return account.hardwareWalletType;
+  },
+);
+
+export const { clearApiError, setConnectingWalletType } = authSlice.actions;
 
 export { reducer };

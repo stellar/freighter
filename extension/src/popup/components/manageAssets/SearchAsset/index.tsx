@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Input, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
@@ -30,36 +31,46 @@ interface SearchAssetProps {
   setErrorAsset: (errorAsset: string) => void;
 }
 
-const AddManualAssetLink = () => (
-  <div className="SearchAsset__copy">
-    Can’t find the asset you’re looking for?
-    <div>
-      <Link to={ROUTES.addAsset}>Add it manually</Link>
-    </div>
-  </div>
-);
+const AddManualAssetLink = () => {
+  const { t } = useTranslation();
 
-const ResultsHeader = () => (
-  <div className="SearchAsset__InfoBlock">
-    <InfoBlock>
+  return (
+    <div className="SearchAsset__copy">
+      {t("Can’t find the asset you’re looking for?")}
       <div>
-        Multiple assets have a similar code, please check the domain before
-        adding.
-        <div>
-          <a
-            href="https://developers.stellar.org/docs/issuing-assets/publishing-asset-info/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Learn more about assets domains
-          </a>
-        </div>
+        <Link to={ROUTES.addAsset}>{t("Add it manually")}</Link>
       </div>
-    </InfoBlock>
-  </div>
-);
+    </div>
+  );
+};
+
+const ResultsHeader = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="SearchAsset__InfoBlock">
+      <InfoBlock>
+        <div>
+          {t(
+            "Multiple assets have a similar code, please check the domain before adding.",
+          )}
+          <div>
+            <a
+              href="https://developers.stellar.org/docs/issuing-assets/publishing-asset-info/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t("Learn more about assets domains")}
+            </a>
+          </div>
+        </div>
+      </InfoBlock>
+    </div>
+  );
+};
 
 export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
+  const { t } = useTranslation();
   const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [maxHeight, setMaxHeight] = useState(0);
@@ -91,7 +102,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
       } catch (e) {
         console.error(e);
         setIsSearching(false);
-        throw new Error("Unable to search for assets");
+        throw new Error(t("Unable to search for assets"));
       }
 
       const resJson = await res.json();
@@ -133,7 +144,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
           }}
         >
           <div className="SearchAsset">
-            <SubviewHeader title="Choose Asset" />
+            <SubviewHeader title={t("Choose Asset")} />
             <FormRows>
               <div>
                 <Field name="asset">
@@ -142,13 +153,13 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
                       autoFocus
                       autoComplete="off"
                       id="asset"
-                      placeholder="Search for an asset"
+                      placeholder={t("Search for an asset")}
                       {...field}
                     />
                   )}
                 </Field>
                 <div className="SearchAsset__search-copy">
-                  powered by{" "}
+                  {t("powered by")}{" "}
                   <a
                     className="SearchAsset__search-copy"
                     href="https://stellar.expert"
@@ -189,7 +200,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
                 <div>
                   <Link to={ROUTES.addAsset}>
                     <Button fullWidth variant={Button.variant.tertiary}>
-                      Add asset manually
+                      {t("Add asset manually")}
                     </Button>
                   </Link>
                 </div>

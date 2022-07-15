@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { FlaggedKeys } from "types/transactions";
 
@@ -19,10 +20,11 @@ export const Transaction = ({
   isMemoRequired,
   transaction,
 }: TransactionProps) => {
+  const { t } = useTranslation();
   const { _operations } = transaction;
 
   const operationText =
-    _operations && _operations.length > 1 ? "Operations" : "Operation";
+    _operations && _operations.length > 1 ? t("Operations") : t("Operation");
 
   return (
     <div className="Transaction">

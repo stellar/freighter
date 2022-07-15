@@ -1,66 +1,109 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
-import { Input, Checkbox, Textarea, TextLink } from "@stellar/design-system";
+import { Input, Checkbox, Icon, TextLink } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { Onboarding } from "popup/components/Onboarding";
+import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FullscreenStyle } from "popup/components/FullscreenStyle";
+import { Header } from "popup/components/Header";
+import { PasswordRequirements } from "popup/components/PasswordRequirements";
+
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
-  mnemonicPhrase as mnemonicPhraseValidator,
 } from "popup/helpers/validators";
 import {
   authErrorSelector,
   publicKeySelector,
   recoverAccount,
 } from "popup/ducks/accountServices";
-import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { Header } from "popup/components/Header";
-import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 import "./styles.scss";
 
-export const RecoverAccount = () => {
-  const publicKey = useSelector(publicKeySelector);
-  const authError = useSelector(authErrorSelector);
-  const publicKeyRef = useRef(publicKey);
+interface PhraseInputProps {
+  phraseInput: string;
+  index: number;
+  handleMnemonicInputChange: (value: string, index: number) => void;
+}
 
+const PhraseInput = ({
+  phraseInput,
+  index,
+  handleMnemonicInputChange,
+}: PhraseInputProps) => {
+  const [isTextShowing, setIsTextShowing] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+
+  return (
+    <div key={phraseInput} className="RecoverAccount__phrase-input">
+      <Input
+        autoComplete="off"
+        id={phraseInput}
+        name={phraseInput}
+        onChange={(e) => {
+          handleMnemonicInputChange(e.target.value, index);
+          setInputValue(e.target.value);
+        }}
+        onPaste={(e) => e.preventDefault()}
+        placeholder={`${index + 1}.`}
+        type={isTextShowing ? "text" : "password"}
+        value={inputValue}
+      />
+      <div
+        className="RecoverAccount__password-toggle"
+        onClick={() => setIsTextShowing(!isTextShowing)}
+      >
+        {isTextShowing ? <Icon.Eye /> : <Icon.EyeOff />}
+      </div>
+    </div>
+  );
+};
+
+const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
+  mnemonicPhraseArr.join(" ").trim();
+
+export const RecoverAccount = () => {
   interface FormValues {
     password: string;
     confirmPassword: string;
-    mnemonicPhrase: string;
     termsOfUse: boolean;
   }
 
   const initialValues: FormValues = {
     password: "",
     confirmPassword: "",
-    mnemonicPhrase: "",
     termsOfUse: false,
   };
 
+  const { t } = useTranslation();
+  const publicKey = useSelector(publicKeySelector);
+  const authError = useSelector(authErrorSelector);
+  const publicKeyRef = useRef(publicKey);
   const RecoverAccountSchema = YupObject().shape({
-    mnemonicPhrase: mnemonicPhraseValidator,
     password: passwordValidator,
     confirmPassword: confirmPasswordValidator,
     termsOfUse: termsofUseValidator,
   });
 
   const dispatch = useDispatch();
+  const PHRASE_LENGTH = 12;
+  const [phraseInputs, setPhraseInputs] = useState([] as string[]);
+  const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
 
   const handleSubmit = async (values: FormValues) => {
-    const { password, mnemonicPhrase } = values;
+    const { password } = values;
 
     await dispatch(
       recoverAccount({
         password,
-        mnemonicPhrase: mnemonicPhrase.trim(),
+        mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
       }),
     );
   };
@@ -71,6 +114,23 @@ export const RecoverAccount = () => {
     }
   }, [publicKey]);
 
+  useEffect(() => {
+    const phraseInputsArr = [];
+
+    // eslint-disable-next-line no-plusplus
+    for (let i = 1; i <= PHRASE_LENGTH; i++) {
+      phraseInputsArr.push(`MnemonicPhrase-${i}`);
+    }
+    setPhraseInputs(phraseInputsArr);
+  }, [PHRASE_LENGTH]);
+
+  const handleMnemonicInputChange = (value: string, i: number) => {
+    const arr = [...mnemonicPhraseArr];
+    arr[i] = value;
+
+    setMnemonicPhraseArr(arr);
+  };
+
   return (
     <>
       <Header />
@@ -78,37 +138,30 @@ export const RecoverAccount = () => {
       <Onboarding hasGoBackBtn>
         <Formik
           initialValues={initialValues}
-          onSubmit={handleSubmit}
           validationSchema={RecoverAccountSchema}
+          onSubmit={handleSubmit}
         >
           {({ dirty, touched, isSubmitting, isValid, errors }) => (
             <Form>
               <div className="RecoverAccount__screen">
                 <div className="RecoverAccount__half-screen">
                   <div className="RecoverAccount__header">
-                    Import wallet from recovery phrase
+                    {t("Import wallet from recovery phrase")}
+                  </div>
+                  <div className="RecoverAccount__subheader">
+                    {t("Enter your 12 word phrase to restore your wallet")}
                   </div>
                   <div className="RecoverAccount__mnemonic-input">
-                    <Field name="mnemonicPhrase">
-                      {({ field }: FieldProps) => (
-                        <Textarea
-                          className="TextArea Card Card--highlight"
-                          autoComplete="off"
-                          id="mnemonic-input"
-                          name="mnemonicPhrase"
-                          placeholder="Enter your 12 word phrase to restore your wallet"
-                          rows={5}
-                          error={
-                            authError ||
-                            (errors.mnemonicPhrase && touched.mnemonicPhrase
-                              ? authError || errors.mnemonicPhrase
-                              : null)
-                          }
-                          customTextarea={<textarea {...field} />}
-                        />
-                      )}
-                    </Field>
+                    {phraseInputs.map((phraseInput, i) => (
+                      <PhraseInput
+                        key={phraseInput}
+                        phraseInput={phraseInput}
+                        handleMnemonicInputChange={handleMnemonicInputChange}
+                        index={i}
+                      />
+                    ))}
                   </div>
+                  <FormError>{authError}</FormError>
                 </div>
                 <div className="RecoverAccount__half-screen">
                   <FormRows>
@@ -117,7 +170,7 @@ export const RecoverAccount = () => {
                       customInput={<Field />}
                       id="password-input"
                       name="password"
-                      placeholder="New password"
+                      placeholder={t("New password")}
                       type="password"
                       error={
                         errors.password && touched.password
@@ -130,7 +183,7 @@ export const RecoverAccount = () => {
                       customInput={<Field />}
                       id="confirm-password-input"
                       name="confirmPassword"
-                      placeholder="Confirm password"
+                      placeholder={t("Confirm password")}
                       type="password"
                       error={
                         errors.confirmPassword && touched.confirmPassword
@@ -151,12 +204,12 @@ export const RecoverAccount = () => {
                           }
                           label={
                             <span>
-                              I have read and agree to{" "}
+                              {t("I have read and agree to")}{" "}
                               <TextLink
                                 variant={TextLink.variant.secondary}
                                 href="https://stellar.org/terms-of-service"
                               >
-                                Terms of Use
+                                {t("Terms of Use")}
                               </TextLink>
                             </span>
                           }
@@ -169,9 +222,15 @@ export const RecoverAccount = () => {
                     <Button
                       fullWidth
                       isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
+                      disabled={
+                        !(
+                          dirty &&
+                          isValid &&
+                          buildMnemonicPhrase(mnemonicPhraseArr).length
+                        )
+                      }
                     >
-                      IMPORT
+                      {t("IMPORT")}
                     </Button>
                   </SubmitButtonWrapper>
                 </div>
