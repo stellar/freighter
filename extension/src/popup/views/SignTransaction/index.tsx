@@ -26,6 +26,7 @@ import {
   hasPrivateKeySelector,
   makeAccountActive,
   publicKeySelector,
+  hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -47,8 +48,13 @@ import {
 } from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
-
 import { VerifyAccount } from "popup/views/VerifyAccount";
+import {
+  HwOverlayStatus,
+  startHwSign,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
+import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 
 import { Account } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
@@ -62,6 +68,7 @@ export const SignTransaction = () => {
   const {
     accountToSign: _accountToSign,
     transaction,
+    transactionXdr,
     domain,
     isDomainListedAllowed,
     flaggedKeys,
@@ -77,14 +84,25 @@ export const SignTransaction = () => {
   const isFeeBump = !!_innerTransaction;
   const memo = decodeMemo(_memo);
   let accountToSign = _accountToSign;
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
+  const {
+    hardwareWalletData: { status: hwStatus },
+  } = useSelector(transactionSubmissionSelector);
 
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentAccount, setCurrentAccount] = useState({} as Account);
   const [accountNotFound, setAccountNotFound] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-
   const accountSelectorRef = useRef<HTMLDivElement>(null);
+  const [startedHwSign, setStartedHwSign] = useState(false);
+
+  useEffect(() => {
+    if (startedHwSign && hwStatus === HwOverlayStatus.IDLE) {
+      window.close();
+    }
+  }, [startedHwSign, hwStatus]);
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
@@ -92,8 +110,15 @@ export const SignTransaction = () => {
   };
 
   const signAndClose = async () => {
-    await dispatch(signTransaction({ transaction }));
-    window.close();
+    if (isHardwareWallet) {
+      await dispatch(
+        startHwSign({ transactionXDR: transactionXdr, shouldSubmit: false }),
+      );
+      setStartedHwSign(true);
+    } else {
+      await dispatch(signTransaction({ transaction }));
+      window.close();
+    }
   };
 
   const verifyPasswordThenSign = async (password: string) => {
@@ -234,126 +259,130 @@ export const SignTransaction = () => {
       customSubmit={verifyPasswordThenSign}
     />
   ) : (
-    <div className="SignTransaction">
-      <ModalWrapper>
-        <ModalHeader>
-          <strong>{t("Confirm Transaction")}</strong>
-        </ModalHeader>
-        {flaggedKeyValues.length ? (
-          <FlaggedWarningMessage
-            isUnsafe={isUnsafe}
-            isMalicious={isMalicious}
-            isMemoRequired={isMemoRequired}
-          />
-        ) : null}
-        {!isDomainListedAllowed && !isSubmitDisabled ? (
-          <FirstTimeWarningMessage />
-        ) : null}
-        <div className="SignTransaction__info">
-          <Card variant={Card.variant.highlight}>
-            <PunycodedDomain domain={domain} isRow />
-            <div className="SignTransaction__subject">
-              {t("is requesting approval to a")} {isFeeBump ? "fee bump " : ""}
-              {t("transaction")}:
-            </div>
-            <div className="SignTransaction__approval">
-              <div className="SignTransaction__approval__title">
-                {t("Approve using")}:
+    <>
+      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      <div className="SignTransaction">
+        <ModalWrapper>
+          <ModalHeader>
+            <strong>{t("Confirm Transaction")}</strong>
+          </ModalHeader>
+          {flaggedKeyValues.length ? (
+            <FlaggedWarningMessage
+              isUnsafe={isUnsafe}
+              isMalicious={isMalicious}
+              isMemoRequired={isMemoRequired}
+            />
+          ) : null}
+          {!isDomainListedAllowed && !isSubmitDisabled ? (
+            <FirstTimeWarningMessage />
+          ) : null}
+          <div className="SignTransaction__info">
+            <Card variant={Card.variant.highlight}>
+              <PunycodedDomain domain={domain} isRow />
+              <div className="SignTransaction__subject">
+                {t("is requesting approval to a")}{" "}
+                {isFeeBump ? "fee bump " : ""}
+                {t("transaction")}:
               </div>
-              <div
-                className="SignTransaction__current-account"
-                onClick={() => setIsDropdownOpen(true)}
-              >
-                <AccountListIdenticon
-                  displayKey
-                  accountName={currentAccount.name}
-                  active
-                  publicKey={currentAccount.publicKey}
-                  setIsDropdownOpen={setIsDropdownOpen}
+              <div className="SignTransaction__approval">
+                <div className="SignTransaction__approval__title">
+                  {t("Approve using")}:
+                </div>
+                <div
+                  className="SignTransaction__current-account"
+                  onClick={() => setIsDropdownOpen(true)}
                 >
-                  <OptionTag
-                    hardwareWalletType={currentAccount.hardwareWalletType}
-                    imported={currentAccount.imported}
-                  />
-                </AccountListIdenticon>
-                <div className="SignTransaction__current-account__chevron">
-                  <Icon.ChevronDown />
+                  <AccountListIdenticon
+                    displayKey
+                    accountName={currentAccount.name}
+                    active
+                    publicKey={currentAccount.publicKey}
+                    setIsDropdownOpen={setIsDropdownOpen}
+                  >
+                    <OptionTag
+                      hardwareWalletType={currentAccount.hardwareWalletType}
+                      imported={currentAccount.imported}
+                    />
+                  </AccountListIdenticon>
+                  <div className="SignTransaction__current-account__chevron">
+                    <Icon.ChevronDown />
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-          {accountNotFound && accountToSign ? (
-            <div className="SignTransaction__account-not-found">
-              <InfoBlock variant={InfoBlock.variant.warning}>
-                {t("The application is requesting a specific account")} (
-                {truncatedPublicKey(accountToSign)}),{" "}
-                {t(
-                  "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
-                )}
-              </InfoBlock>
-            </div>
-          ) : null}
-        </div>
+            </Card>
+            {accountNotFound && accountToSign ? (
+              <div className="SignTransaction__account-not-found">
+                <InfoBlock variant={InfoBlock.variant.warning}>
+                  {t("The application is requesting a specific account")} (
+                  {truncatedPublicKey(accountToSign)}),{" "}
+                  {t(
+                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
+                  )}
+                </InfoBlock>
+              </div>
+            ) : null}
+          </div>
 
-        {isFeeBump ? (
-          <div className="SignTransaction__inner-transaction">
+          {isFeeBump ? (
+            <div className="SignTransaction__inner-transaction">
+              <Transaction
+                flaggedKeys={flaggedKeys}
+                isMemoRequired={isMemoRequired}
+                transaction={_innerTransaction}
+              />
+            </div>
+          ) : (
             <Transaction
               flaggedKeys={flaggedKeys}
               isMemoRequired={isMemoRequired}
-              transaction={_innerTransaction}
+              transaction={transaction}
             />
-          </div>
-        ) : (
-          <Transaction
-            flaggedKeys={flaggedKeys}
+          )}
+          <TransactionHeading>{t("Transaction Info")}</TransactionHeading>
+          <TransactionInfo
+            _fee={_fee}
+            _sequence={_sequence}
+            isFeeBump={isFeeBump}
             isMemoRequired={isMemoRequired}
-            transaction={transaction}
           />
-        )}
-        <TransactionHeading>{t("Transaction Info")}</TransactionHeading>
-        <TransactionInfo
-          _fee={_fee}
-          _sequence={_sequence}
-          isFeeBump={isFeeBump}
-          isMemoRequired={isMemoRequired}
-        />
-      </ModalWrapper>
-      <ButtonsContainer>
-        <Button
-          fullWidth
-          variant={Button.variant.tertiary}
-          onClick={() => rejectAndClose()}
+        </ModalWrapper>
+        <ButtonsContainer>
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => rejectAndClose()}
+          >
+            {t("Reject")}
+          </Button>
+          <Button
+            disabled={isSubmitDisabled}
+            fullWidth
+            isLoading={isConfirming}
+            onClick={() => handleApprove()}
+          >
+            {t("Approve")}
+          </Button>
+        </ButtonsContainer>
+        <div
+          className="SignTransaction__account-selector"
+          ref={accountSelectorRef}
+          style={{
+            bottom: isDropdownOpen
+              ? "0px"
+              : `-${accountSelectorRef?.current?.clientHeight}px`,
+          }}
         >
-          {t("Reject")}
-        </Button>
-        <Button
-          disabled={isSubmitDisabled}
-          fullWidth
-          isLoading={isConfirming}
-          onClick={() => handleApprove()}
-        >
-          {t("Approve")}
-        </Button>
-      </ButtonsContainer>
-      <div
-        className="SignTransaction__account-selector"
-        ref={accountSelectorRef}
-        style={{
-          bottom: isDropdownOpen
-            ? "0px"
-            : `-${accountSelectorRef?.current?.clientHeight}px`,
-        }}
-      >
-        <AccountList
-          allAccounts={allAccounts}
-          publicKey={publicKey}
-          setIsDropdownOpen={setIsDropdownOpen}
+          <AccountList
+            allAccounts={allAccounts}
+            publicKey={publicKey}
+            setIsDropdownOpen={setIsDropdownOpen}
+          />
+        </div>
+        <LoadingBackground
+          onClick={() => setIsDropdownOpen(false)}
+          isActive={isDropdownOpen}
         />
       </div>
-      <LoadingBackground
-        onClick={() => setIsDropdownOpen(false)}
-        isActive={isDropdownOpen}
-      />
-    </div>
+    </>
   );
 };

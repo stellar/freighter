@@ -663,6 +663,19 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const handleSignedHwTransaction = () => {
+    const { transactionXDR } = request;
+
+    const transactionResponse = responseQueue.pop();
+
+    if (typeof transactionResponse === "function") {
+      transactionResponse(transactionXDR);
+      return {};
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const signTransaction = () => {
     const privateKey = privateKeySelector(store.getState());
 
@@ -818,6 +831,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.GRANT_ACCESS]: grantAccess,
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
+    [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,

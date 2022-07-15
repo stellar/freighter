@@ -213,7 +213,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         .toXDR();
 
       if (isHardwareWallet) {
-        dispatch(startHwSign({ transactionXDR }));
+        dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
         return;
       }
       const res = await dispatch(

@@ -100,7 +100,7 @@ export const ManageAssetRows = ({
       .toXDR();
 
     if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR }));
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
     } else {
       await signAndSubmit(transactionXDR);
       dispatch(resetSubmission());
