@@ -16,7 +16,8 @@ jobs:
       - name: Run translation job
         run: |
           yarn && yarn build:freighter-api && yarn build:extension:translations
-      - name: Check diff
+      - name: Verify diff
+        id: verify_diff
         run: |
           git diff --quiet  || echo "::set-output name=new_translations_exist::true"
       - name: Commit files
