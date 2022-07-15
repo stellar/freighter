@@ -142,7 +142,7 @@ export const Account = () => {
         {isFunded ? (
           <Link to={ROUTES.manageAssets}>
             <Button fullWidth variant={Button.variant.tertiary}>
-              {t("Manage Assets")}
+              {t("Manage Asset")}
             </Button>
           </Link>
         ) : null}
