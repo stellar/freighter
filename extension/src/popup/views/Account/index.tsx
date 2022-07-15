@@ -81,7 +81,7 @@ export const Account = () => {
 
   return accountBalanceStatus !== ActionStatus.SUCCESS ? null : (
     <>
-      <div className="AccountView">
+      <div className="AccountView1">
         <AccountHeader
           accountDropDownRef={accountDropDownRef}
           allAccounts={allAccounts}
@@ -142,7 +142,7 @@ export const Account = () => {
         {isFunded ? (
           <Link to={ROUTES.manageAssets}>
             <Button fullWidth variant={Button.variant.tertiary}>
-              {t("Manage Assets")}
+              {t("Manage Asset")}
             </Button>
           </Link>
         ) : null}
