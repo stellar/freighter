@@ -16,7 +16,11 @@ jobs:
       - name: Run translation job
         run: |
           yarn && yarn build:freighter-api && yarn build:extension:translations
+      - name: Check diff
+          run: |
+          git diff --quiet  || echo "::set-output name=new_translations_exist::true"
       - name: Commit files
+        if: steps.verify_diff.outputs.new_translations_exist == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
