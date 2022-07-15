@@ -324,6 +324,7 @@ const transactionSubmissionSlice = createSlice({
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
     },
+    
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {

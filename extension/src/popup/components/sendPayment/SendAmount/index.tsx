@@ -416,7 +416,11 @@ export const SendAmount = ({
             <div className="SendAmount__btn-continue">
               <Button
                 disabled={
-                  loadingRate || formik.values.amount === "0" || !formik.isValid
+                  loadingRate ||
+                  formik.values.amount === "0" ||
+                  !formik.isValid ||
+                  // path payment, but path not found
+                  (showSourceAndDestAsset && !destinationAmount)
                 }
                 fullWidth
                 variant={Button.variant.tertiary}

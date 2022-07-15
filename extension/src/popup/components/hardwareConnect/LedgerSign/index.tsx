@@ -78,7 +78,6 @@ export const LedgerSign = () => {
           bipPath,
         }),
       );
-
       if (signWithLedger.fulfilled.match(res)) {
         if (shouldSubmit) {
           dispatch(
@@ -92,7 +91,6 @@ export const LedgerSign = () => {
           // submitting to network or handling in background script
           await handleSignedHwTransaction({ transactionXDR: res.payload });
         }
-
         closeOverlay();
       } else {
         setLedgerConnectSuccessful(false);

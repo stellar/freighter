@@ -120,13 +120,15 @@ export const ChooseAsset = ({
             />
           )}
         </div>
-        <div className="ChooseAsset__button">
-          <Link to={ROUTES.searchAsset}>
-            <Button fullWidth variant={Button.variant.tertiary}>
-              {t("Add another asset")}
-            </Button>
-          </Link>
-        </div>
+        {!selectingAssetType && (
+          <div className="ChooseAsset__button">
+            <Link to={ROUTES.searchAsset}>
+              <Button fullWidth variant={Button.variant.tertiary}>
+                {t("Add another asset")}
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
