@@ -109,7 +109,7 @@ export const ManageAssetRows = ({
     };
 
     if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR }));
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackChangeTrustline();
     } else {
       await signAndSubmit(transactionXDR, trackChangeTrustline);

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 import { Icon } from "@stellar/design-system";
+import { handleSignedHwTransaction } from "@shared/api/internal";
 
 import { POPUP_HEIGHT } from "constants/dimensions";
 
@@ -35,7 +36,7 @@ export const LedgerSign = () => {
   const [isDetecting, setIsDetecting] = useState(false);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
-    hardwareWalletData: { transactionXDR },
+    hardwareWalletData: { transactionXDR, shouldSubmit },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
   const [ledgerConnectSuccessful, setLedgerConnectSuccessful] = useState(false);
@@ -78,12 +79,18 @@ export const LedgerSign = () => {
         }),
       );
       if (signWithLedger.fulfilled.match(res)) {
-        dispatch(
-          submitFreighterTransaction({
-            signedXDR: res.payload,
-            networkDetails,
-          }),
-        );
+        if (shouldSubmit) {
+          dispatch(
+            submitFreighterTransaction({
+              signedXDR: res.payload,
+              networkDetails,
+            }),
+          );
+        } else {
+          // right now there are only two cases after signing,
+          // submitting to network or handling in background script
+          await handleSignedHwTransaction({ signedTransaction: res.payload });
+        }
         closeOverlay();
       } else {
         setLedgerConnectSuccessful(false);

@@ -227,6 +227,7 @@ interface TransactionData {
 interface HardwareWalletData {
   status: HwOverlayStatus;
   transactionXDR: string;
+  shouldSubmit: boolean;
 }
 
 interface InitialState {
@@ -261,6 +262,7 @@ const initialState: InitialState = {
   hardwareWalletData: {
     status: HwOverlayStatus.IDLE,
     transactionXDR: "",
+    shouldSubmit: true,
   },
   accountBalances: {
     balances: null,
@@ -315,10 +317,12 @@ const transactionSubmissionSlice = createSlice({
     startHwSign: (state, action) => {
       state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
       state.hardwareWalletData.transactionXDR = action.payload.transactionXDR;
+      state.hardwareWalletData.shouldSubmit = action.payload.shouldSubmit;
     },
     closeHwOverlay: (state) => {
       state.hardwareWalletData.status = HwOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
+      state.hardwareWalletData.shouldSubmit = true;
     },
     
   },

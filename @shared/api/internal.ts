@@ -410,6 +410,21 @@ export const grantAccess = async (url: string): Promise<void> => {
   }
 };
 
+export const handleSignedHwTransaction = async ({
+  signedTransaction,
+}: {
+  signedTransaction: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      signedTransaction,
+      type: SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signTransaction = async ({
   transaction,
 }: {
