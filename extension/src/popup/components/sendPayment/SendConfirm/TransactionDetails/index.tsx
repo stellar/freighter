@@ -351,7 +351,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <div className="TransactionDetails__row">
           <div>{t("Transaction fee")} </div>
           <div className="TransactionDetails__row__right">
-            {transactionFee} {sourceAsset.code}
+            {transactionFee} XLM
           </div>
         </div>
         {isSwap && (
