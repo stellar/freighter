@@ -1,0 +1,68 @@
+.LedgerSign {
+  z-index: var(--z-index--ledger);
+  position: fixed;
+  height: var(--popup--height);
+  width: var(--popup--width);
+  top: 0;
+  left: 0;
+
+  &__success {
+    color: var(--pal-success);
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  &__wrapper {
+    z-index: calc(var(--z-index--ledger) + 1);
+    position: absolute;
+    margin-top: 2rem;
+    height: calc(var(--popup--height) - 2rem);
+    // set in component for transition
+    bottom: calc(-1 * var(--popup--height));
+    transition: bottom var(--dropdown-animation);
+
+    width: var(--popup--width);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--background-color);
+
+    // TODO - make a single reusable var when removing PopupWrapper
+    padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
+      var(--account-view-padding-side);
+    border-top-right-radius: 1rem;
+    border-top-left-radius: 1rem;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 50%;
+    align-items: center;
+
+    &__center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      row-gap: 1.5rem;
+
+      span {
+        font-size: 0.875rem;
+        line-height: 1.5rem;
+        color: var(--pal-text-primary);
+      }
+      img {
+        width: 16.875rem;
+      }
+    }
+  }
+
+  &__bottom {
+    margin-top: auto;
+    width: 100%;
+    row-gap: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+}

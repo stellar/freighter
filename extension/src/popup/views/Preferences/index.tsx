@@ -2,6 +2,7 @@ import React from "react";
 import { Icon, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 import {
   MAINNET_NETWORK_DETAILS,
@@ -41,6 +42,7 @@ const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
 );
 
 export const Preferences = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const {
     isDataSharingAllowed,
@@ -83,7 +85,7 @@ export const Preferences = () => {
 
   return (
     <div className="Preferences">
-      <SubviewHeader title="Preferences" />
+      <SubviewHeader title={t("Preferences")} />
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
@@ -92,7 +94,7 @@ export const Preferences = () => {
         <Form>
           <AutoSaveFields />
           <div className="Preferences--section">
-            <div className="Preferences--section--title">Network</div>
+            <div className="Preferences--section--title">{t("Network")}</div>
             <RadioCheck
               name="networkSelected"
               title="Public Network"
@@ -106,14 +108,14 @@ export const Preferences = () => {
           </div>
           <div className="Preferences--section">
             <div className="Preferences--section--title">
-              Verification with stellar.expert
+              {t("Verification with")} stellar.expert
             </div>
             <div className="Preferences--toggle">
               <label
                 htmlFor="isValidatingMemoValue"
                 className="Preferences--label"
               >
-                Validate addresses that require a memo
+                {t("Validate addresses that require a memo")}
               </label>
               <Toggle
                 checked={initialValues.isValidatingMemoValue}
@@ -127,7 +129,7 @@ export const Preferences = () => {
                 htmlFor="isValidatingSafetyValue"
                 className="Preferences--label"
               >
-                Block malicious or unsafe addresses and domains
+                {t("Block malicious or unsafe addresses and domains")}
               </label>
               <Toggle
                 checked={initialValues.isValidatingSafetyValue}
@@ -138,7 +140,7 @@ export const Preferences = () => {
           </div>
           <div className="Preferences--section">
             <div className="Preferences--section--title">
-              Anonymous data sharing{" "}
+              {t("Anonymous data sharing")}{" "}
             </div>
 
             <div className="Preferences--toggle">
@@ -146,9 +148,9 @@ export const Preferences = () => {
                 htmlFor="isDataSharingAllowedValue"
                 className="Preferences--label"
               >
-                Allow Freighter to collect anonymous information about usage.
-                Freighter will never collect your personal information such as
-                IP address, keys, balance or transaction amounts.
+                {t(
+                  "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
+                )}
               </label>
               <Toggle
                 checked={initialValues.isDataSharingAllowedValue}

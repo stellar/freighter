@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Input, Checkbox, TextLink } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
@@ -35,6 +36,7 @@ export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
+  const { t } = useTranslation();
 
   interface FormValues {
     password: string;
@@ -71,7 +73,7 @@ export const AccountCreator = () => {
       <Onboarding hasGoBackBtn>
         <OnboardingScreen className="AccountCreator__screen">
           <OnboardingHeader className="AccountCreator__header">
-            Create a password
+            {t("Create a password")}
           </OnboardingHeader>
           <Formik
             initialValues={initialValues}
@@ -87,7 +89,7 @@ export const AccountCreator = () => {
                         <Input
                           autoComplete="off"
                           id="new-password-input"
-                          placeholder="New password"
+                          placeholder={t("New password")}
                           type="password"
                           error={
                             authError ||
@@ -104,7 +106,7 @@ export const AccountCreator = () => {
                         <Input
                           autoComplete="off"
                           id="confirm-password-input"
-                          placeholder="Confirm password"
+                          placeholder={t("Confirm password")}
                           type="password"
                           error={
                             authError ||
@@ -127,12 +129,12 @@ export const AccountCreator = () => {
                           id="termsOfUse-input"
                           label={
                             <span>
-                              I have read and agree to{" "}
+                              {t("I have read and agree to")}{" "}
                               <TextLink
                                 variant={TextLink.variant.secondary}
                                 href="https://stellar.org/terms-of-service"
                               >
-                                Terms of Use
+                                {t("Terms of Use")}
                               </TextLink>
                             </span>
                           }
@@ -148,7 +150,7 @@ export const AccountCreator = () => {
                       isLoading={isSubmitting}
                       disabled={!(dirty && isValid)}
                     >
-                      CONFIRM
+                      {t("CONFIRM")}
                     </Button>
                   </SubmitButtonWrapper>
                 </OnboardingHalfScreen>

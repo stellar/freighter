@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import StellarSdk from "stellar-sdk";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 
@@ -67,6 +68,7 @@ export const TransactionDetail = ({
     padding: ".1rem",
   };
 
+  const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [networkIconUrl, setNetworkIconUrl] = useState("");
   const [networkDomain, setNetworkDomain] = useState("");
@@ -136,7 +138,7 @@ export const TransactionDetail = ({
               <>
                 {isRecipient ? (
                   <>
-                    <div>From</div>
+                    <div>{t("From")}</div>
                     <div>
                       <KeyIdenticon
                         publicKey={from}
@@ -146,7 +148,7 @@ export const TransactionDetail = ({
                   </>
                 ) : (
                   <>
-                    <div>To</div>
+                    <div>{t("To")}</div>
                     <div>
                       <KeyIdenticon
                         publicKey={to}
@@ -158,23 +160,23 @@ export const TransactionDetail = ({
               </>
             ) : (
               <>
-                <div>Action</div>
+                <div>{t("Action")}</div>
                 <div>{operationText}</div>
               </>
             )}
           </div>
           <div className="TransactionDetail__info__row">
-            <div>Date</div>
+            <div>{t("Date")}</div>
             <div>
               {createdAtTime} &bull; {createdAtDateStr}
             </div>
           </div>
           <div className="TransactionDetail__info__row">
-            <div>Memo</div>
+            <div>{t("Memo")}</div>
             <div>{memo || `None`}</div>
           </div>
           <div className="TransactionDetail__info__row">
-            <div>Transaction fee</div>
+            <div>{t("Transaction fee")}</div>
             <div>{stroopToXlm(feeCharged).toString()} XLM</div>
           </div>
         </div>
@@ -187,7 +189,7 @@ export const TransactionDetail = ({
         }}
         variant={Button.variant.tertiary}
       >
-        View on stellar.expert
+        {t("View on")} stellar.expert
       </Button>
     </div>
   );

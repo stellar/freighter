@@ -2,6 +2,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
 import { DetailsTooltip, Icon, TextLink } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
@@ -75,6 +76,7 @@ const RadioCheck = ({
 );
 
 export const SendType = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { destinationAsset } = useSelector(transactionDataSelector);
 
@@ -96,7 +98,7 @@ export const SendType = () => {
   return (
     <PopupWrapper>
       <SubviewHeader
-        title="Send Type"
+        title={t("Send Type")}
         customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
         customBackIcon={<Icon.X />}
       />
@@ -113,33 +115,35 @@ export const SendType = () => {
           <Form>
             <RadioCheck
               name="paymentType"
-              title="Same source and destination asset"
+              title={t("Same source and destination asset")}
               value={PAYMENT_TYPES.REGULAR}
               subtext="Most common"
               tooltipDetails={
                 <span>
-                  The destination account receives the same asset and amount
-                  sent
+                  {t(
+                    "The destination account receives the same asset and amount sent",
+                  )}
                 </span>
               }
               selected={values.paymentType === PAYMENT_TYPES.REGULAR}
             />
             <RadioCheck
               name="paymentType"
-              title="Different source and destination assets"
+              title={t("Different source and destination assets")}
               value={PAYMENT_TYPES.PATH_PAYMENT}
-              subtext="Less common"
+              subtext={t("Less common")}
               tooltipDetails={
                 <span>
-                  The destination account can receive a different asset, the
-                  received amount is defined by the available conversion rates{" "}
+                  {t(
+                    "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
+                  )}{" "}
                   <TextLink
                     variant={TextLink.variant.secondary}
-                    href="https://developers.stellar.org/docs/start/list-of-operations/#path-payment-strict-receive"
+                    href="https://www.ledger.com/stellar-wallet"
                     rel="noreferrer"
                     target="_blank"
                   >
-                    Learn more
+                    {t("Learn more")}
                   </TextLink>
                 </span>
               }
@@ -151,7 +155,7 @@ export const SendType = () => {
                 variant={Button.variant.tertiary}
                 onClick={() => submitForm(values)}
               >
-                Done
+                {t("Done")}
               </Button>
             </div>
           </Form>

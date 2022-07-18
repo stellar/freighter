@@ -1,5 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -25,19 +26,23 @@ const BottomNavLink = ({ children, to }: NavLinkProps) => (
   </NavLink>
 );
 
-export const BottomNav = () => (
-  <div className="BottomNav">
-    <BottomNavLink to={ROUTES.account}>
-      <img src={WalletIcon} alt="wallet icon" />
-    </BottomNavLink>
-    <BottomNavLink to={ROUTES.accountHistory}>
-      <img src={HistoryIcon} alt="history icon" />
-    </BottomNavLink>
-    <BottomNavLink to={ROUTES.swap}>
-      <img src={SwapIcon} alt="swap icon" />
-    </BottomNavLink>
-    <BottomNavLink to={ROUTES.settings}>
-      <img src={SettingsIcon} alt="settings icon" />
-    </BottomNavLink>
-  </div>
-);
+export const BottomNav = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="BottomNav">
+      <BottomNavLink to={ROUTES.account}>
+        <img src={WalletIcon} alt="wallet icon" title={t("Home")} />
+      </BottomNavLink>
+      <BottomNavLink to={ROUTES.accountHistory}>
+        <img src={HistoryIcon} alt="history icon" title={t("History")} />
+      </BottomNavLink>
+      <BottomNavLink to={ROUTES.swap}>
+        <img src={SwapIcon} alt="swap icon" title={t("Swap")} />
+      </BottomNavLink>
+      <BottomNavLink to={ROUTES.settings}>
+        <img src={SettingsIcon} alt="settings icon" title={t("Settings")} />
+      </BottomNavLink>
+    </div>
+  );
+};
