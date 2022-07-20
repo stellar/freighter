@@ -21,19 +21,24 @@ export enum LEDGER_ERROR {
   NONE = "",
   NO_DEVICE = "NO_DEVICE",
   NOT_OPEN = "NOT_OPEN",
+  TX_REJECTED = "TX_REJECTED",
   OTHER = "OTHER",
 }
 
 export const parseLedgerError = (err: any): LEDGER_ERROR => {
-  const { message } = err;
+  const message = err.message || err;
+
   if (!message) {
     return LEDGER_ERROR.OTHER;
   }
   if (message.indexOf("No device selected") > -1) {
     return LEDGER_ERROR.NO_DEVICE;
   }
-  if (message.indexOf("Incorrect length")) {
+  if (message.indexOf("Incorrect length") > -1) {
     return LEDGER_ERROR.NOT_OPEN;
+  }
+  if (message.indexOf("Transaction approval request was rejected") > -1) {
+    return LEDGER_ERROR.TX_REJECTED;
   }
   return LEDGER_ERROR.OTHER;
 };
@@ -50,6 +55,9 @@ export const LedgerErrorBlock = ({ error }: { error: LEDGER_ERROR }) => {
       break;
     case LEDGER_ERROR.OTHER:
       errorMessage = t("Error connecting. Please try again.");
+      break;
+    case LEDGER_ERROR.TX_REJECTED:
+      errorMessage = t("Transaction Rejected.");
       break;
     default:
       break;
