@@ -632,6 +632,7 @@ export const popupMessageListener = (request: Request) => {
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
       applicationState: localStorage.getItem(APPLICATION_ID) || "",
       allAccounts: allAccountsSelector(store.getState()),
+      bipPath: getBipPath(),
     };
   };
 

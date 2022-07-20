@@ -244,12 +244,14 @@ export const confirmPassword = async (
   hasPrivateKey: boolean;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
+  bipPath: string;
 }> => {
   let response = {
     publicKey: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Array<Account>,
+    bipPath: "",
   };
   try {
     response = await sendMessageToBackground({
