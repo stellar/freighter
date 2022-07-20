@@ -20,7 +20,9 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 export const Swap = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, assetIcons } = useSelector(
+    transactionSubmissionSelector,
+  );
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -43,6 +45,15 @@ export const Swap = () => {
       }
     })();
   }, [dispatch, publicKey, networkDetails, accountBalances]);
+
+  useEffect(() => {
+    if (!accountBalances.balances) return;
+    if (!Object.keys(assetIcons).length) {
+      dispatch(
+        getAssetIcons({ balances: accountBalances.balances, networkDetails }),
+      );
+    }
+  }, [dispatch, accountBalances, networkDetails, assetIcons]);
 
   return (
     <Switch>

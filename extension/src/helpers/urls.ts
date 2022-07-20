@@ -7,7 +7,8 @@ export const encodeObject = (obj: {}) =>
 export const decodeString = (str: string) =>
   decodeURIComponent(escape(atob(str)));
 
-export const newTabHref = (path = "") => `index.html#${path}`;
+export const newTabHref = (path = "", queryParams = "") =>
+  `index.html#${path}${queryParams ? "?" : ""}${queryParams}`;
 
 export const removeQueryParam = (url = "") => url.replace(/\?(.*)/, "");
 

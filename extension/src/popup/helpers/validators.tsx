@@ -13,5 +13,3 @@ export const termsOfUse = YupBool().oneOf(
   [true],
   "Agreeing to the Terms of Use and the Privacy Policy is required",
 );
-
-export const mnemonicPhrase = YupString().required("Backup phrase is required");

@@ -10,6 +10,7 @@ export interface TransactionInfo {
   url: string;
   tab: Tabs.Tab;
   transaction: { [key: string]: any };
+  transactionXdr: string;
   isDomainListedAllowed: boolean;
   flaggedKeys: FlaggedKeys;
   title?: string;

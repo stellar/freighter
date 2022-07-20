@@ -33,10 +33,14 @@
   }
 
   &__selected-words-text {
+    display: flex;
+    flex-wrap: wrap;
     font-weight: var(--font-weight-medium);
     font-size: 1rem;
     line-height: 1.5rem;
     color: var(--pal-text-primary);
+    list-style-type: none;
+    padding: 0;
   }
 
   &__word-bubble-wrapper {

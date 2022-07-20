@@ -1,15 +1,26 @@
 import React from "react";
 import { Icon } from "@stellar/design-system";
+import { Account } from "@shared/api/types";
 
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-
-import { Account } from "@shared/api/types";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 import "./styles.scss";
 
-export const ImportedTag = () => (
-  <span className="AccountList__option-tag">&bull; Imported</span>
-);
+export const OptionTag = ({
+  hardwareWalletType = WalletType.NONE,
+  imported,
+}: {
+  hardwareWalletType?: WalletType;
+  imported: boolean;
+}) => {
+  if (!hardwareWalletType && !imported) return null;
+  return (
+    <span className="AccountList__option-tag">
+      &bull; {hardwareWalletType || "Imported"}
+    </span>
+  );
+};
 
 interface AccountListItemProps {
   accountName: string;
@@ -17,6 +28,7 @@ interface AccountListItemProps {
   accountPublicKey: string;
   setIsDropdownOpen: (isDropdownOpen: boolean) => void;
   imported: boolean;
+  hardwareWalletType?: WalletType;
 }
 
 export const AccountListItem = ({
@@ -25,6 +37,7 @@ export const AccountListItem = ({
   accountPublicKey,
   setIsDropdownOpen,
   imported,
+  hardwareWalletType = WalletType.NONE,
 }: AccountListItemProps) => (
   <li className="AccountList__item" key={`account-${accountName}`}>
     <AccountListIdenticon
@@ -34,7 +47,7 @@ export const AccountListItem = ({
       publicKey={accountPublicKey}
       setIsDropdownOpen={setIsDropdownOpen}
     >
-      {imported ? <ImportedTag /> : null}
+      <OptionTag imported={imported} hardwareWalletType={hardwareWalletType} />
     </AccountListIdenticon>
     <span className="AccountList__option-check">
       {isSelected ? <Icon.Check /> : null}
@@ -55,7 +68,12 @@ export const AccountList = ({
 }: AccounsListProps) => (
   <>
     {allAccounts.map(
-      ({ publicKey: accountPublicKey, name: accountName, imported }) => {
+      ({
+        publicKey: accountPublicKey,
+        name: accountName,
+        imported,
+        hardwareWalletType,
+      }) => {
         const isSelected = publicKey === accountPublicKey;
 
         return (
@@ -65,6 +83,7 @@ export const AccountList = ({
             accountPublicKey={accountPublicKey}
             setIsDropdownOpen={setIsDropdownOpen}
             imported={imported}
+            hardwareWalletType={hardwareWalletType}
             key={`${accountPublicKey}-${accountName}`}
           />
         );
