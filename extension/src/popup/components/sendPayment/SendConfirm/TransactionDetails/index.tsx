@@ -202,7 +202,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       const transactionXDR = await new StellarSdk.TransactionBuilder(
         sourceAccount,
         {
-          fee: xlmToStroop(transactionFee).toFixed(),
+          fee: xlmToStroop(transactionFee).toString(),
           networkPassphrase: networkDetails.networkPassphrase,
         },
       )

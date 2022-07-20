@@ -86,7 +86,7 @@ export const ManageAssetRows = ({
     setAssetSubmitting(canonicalAsset);
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: xlmToStroop(recommendedFee).toFixed(),
+      fee: xlmToStroop(recommendedFee).toString(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
