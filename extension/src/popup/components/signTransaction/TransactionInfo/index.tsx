@@ -1,21 +1,24 @@
 import React from "react";
 import { Icon, IconButton } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { stroopToXlm } from "helpers/stellar";
 
 import "./styles.scss";
 
-const getMemoDisplay = ({
+const MemoDisplay = ({
   memo,
   isMemoRequired,
 }: {
   memo: string;
   isMemoRequired: boolean;
 }) => {
+  const { t } = useTranslation();
+
   if (isMemoRequired) {
     return (
       <IconButton
-        label="Not defined"
+        label={t("Not defined")}
         altText="Error"
         icon={<Icon.Info />}
         variant={IconButton.variant.error}
@@ -43,39 +46,45 @@ export const TransactionInfo = ({
   isFeeBump,
   isMemoRequired,
   memo,
-}: TransactionInfoProps) => (
-  <div className="TransactionInfo">
-    {_fee ? (
-      <div>
-        <div>
-          <strong>Base fee</strong>
-        </div>
-        <div> {stroopToXlm(_fee).toString()} XLM</div>
-      </div>
-    ) : null}
-    {memo ? (
-      <div>
-        <div>
-          <strong>Memo</strong>
-        </div>
-        <div> {getMemoDisplay({ memo, isMemoRequired })} </div>
-      </div>
-    ) : null}
+}: TransactionInfoProps) => {
+  const { t } = useTranslation();
 
-    {_sequence ? (
-      <div>
+  return (
+    <div className="TransactionInfo">
+      {_fee ? (
         <div>
-          <strong>Transaction sequence number</strong>
+          <div>
+            <strong>{t("Base fee")}</strong>
+          </div>
+          <div> {stroopToXlm(_fee).toString()} XLM</div>
         </div>
-        <div> {_sequence}</div>
-      </div>
-    ) : null}
-    {isFeeBump ? (
-      <div>
+      ) : null}
+      {memo ? (
         <div>
-          <strong>Inner Transaction</strong>
+          <div>
+            <strong>{t("Memo")}</strong>
+          </div>
+          <div>
+            <MemoDisplay memo={memo} isMemoRequired={isMemoRequired} />
+          </div>
         </div>
-      </div>
-    ) : null}
-  </div>
-);
+      ) : null}
+
+      {_sequence ? (
+        <div>
+          <div>
+            <strong>{t("Transaction sequence number")}</strong>
+          </div>
+          <div> {_sequence}</div>
+        </div>
+      ) : null}
+      {isFeeBump ? (
+        <div>
+          <div>
+            <strong>{t("Inner Transaction")}</strong>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};

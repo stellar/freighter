@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -8,17 +9,21 @@ import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 
 import "./styles.scss";
 
-export const Security = () => (
-  <div className="Security">
-    <SubviewHeader title="Security" />
-    <ListNavLinkWrapper>
-      {/* 
+export const Security = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="Security">
+      <SubviewHeader title="Security" />
+      <ListNavLinkWrapper>
+        {/* 
       TODO: Add Change Password
       <ListNavLink href="/">Change Password</ListNavLink> 
       */}
-      <ListNavLink href={ROUTES.displayBackupPhrase}>
-        Show recovery phrase
-      </ListNavLink>
-    </ListNavLinkWrapper>
-  </div>
-);
+        <ListNavLink href={ROUTES.displayBackupPhrase}>
+          {t("Show recovery phrase")}
+        </ListNavLink>
+      </ListNavLinkWrapper>
+    </div>
+  );
+};

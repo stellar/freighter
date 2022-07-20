@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import {
   configureStore,
   isPlain,
@@ -15,6 +15,8 @@ import { metricsMiddleware } from "helpers/metrics";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
+
+import { Loading } from "popup/components/Loading";
 
 import { Router } from "./Router";
 
@@ -56,7 +58,9 @@ if (process.env.SENTRY_KEY) {
 export function App() {
   return (
     <Provider store={store}>
-      <Router />
+      <Suspense fallback={<Loading />}>
+        <Router />
+      </Suspense>
     </Provider>
   );
 }
