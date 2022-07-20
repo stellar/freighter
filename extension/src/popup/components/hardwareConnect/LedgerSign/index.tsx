@@ -78,6 +78,7 @@ export const LedgerSign = () => {
           bipPath,
         }),
       );
+
       if (signWithLedger.fulfilled.match(res)) {
         if (shouldSubmit) {
           dispatch(
