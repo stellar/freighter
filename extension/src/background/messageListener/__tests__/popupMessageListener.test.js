@@ -164,8 +164,10 @@ describe("adding hardware wallets", () => {
       r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
       r.password = "test";
 
-      await popupMessageListener(r);
+      const resp = await popupMessageListener(r);
       expect(console.error).not.toHaveBeenCalled();
+
+      expect(resp.bipPath).toBe("44'/148'/1'");
     });
   });
   describe("LOAD_ACCOUNT", () => {

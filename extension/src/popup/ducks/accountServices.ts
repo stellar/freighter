@@ -212,6 +212,7 @@ export const confirmPassword = createAsyncThunk<
     hasPrivateKey: boolean;
     applicationState: APPLICATION_STATE;
     allAccounts: Array<Account>;
+    bipPath: string;
   },
   string,
   { rejectValue: ErrorMessage }
@@ -221,6 +222,7 @@ export const confirmPassword = createAsyncThunk<
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Array<Account>,
+    bipPath: "",
   };
   try {
     res = await confirmPasswordService(phrase);
@@ -521,11 +523,13 @@ const authSlice = createSlice({
         applicationState,
         hasPrivateKey,
         allAccounts,
+        bipPath,
       } = action.payload || {
         publicKey: "",
         hasPrivateKey: false,
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         allAccounts: [""],
+        bipPath: "",
       };
       return {
         ...state,
@@ -534,6 +538,7 @@ const authSlice = createSlice({
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         publicKey,
         allAccounts,
+        bipPath,
         error: "",
       };
     });
