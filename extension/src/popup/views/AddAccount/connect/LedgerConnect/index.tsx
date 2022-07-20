@@ -43,10 +43,14 @@ export const LedgerErrorBlock = ({ error }: { error: LEDGER_ERROR }) => {
   let errorMessage = "";
   switch (error) {
     case LEDGER_ERROR.NOT_OPEN:
-      errorMessage = t("Please select Stellar app and try again.");
+      errorMessage = t(
+        "Please open the Stellar app on the device and try again.",
+      );
       break;
     case LEDGER_ERROR.NO_DEVICE:
-      errorMessage = t("No device selected.");
+      errorMessage = t(
+        "No device detected. Please make sure your device is connected and the Stellar app is open on it.",
+      );
       break;
     case LEDGER_ERROR.OTHER:
       errorMessage = t("Error connecting. Please try again.");
