@@ -2,7 +2,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
-
+import { useTranslation } from "react-i18next";
 import {
   Input,
   Icon,
@@ -26,6 +26,7 @@ import "./styles.scss";
 const defaultSlippage = "1";
 
 export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { allowedSlippage } = useSelector(transactionDataSelector);
 
@@ -47,7 +48,9 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
           <DetailsTooltip
             // TODO - add link to FAQ when added
             details={
-              <span>Allowed downward variation in the destination amount</span>
+              <span>
+                {t("Allowed downward variation in the destination amount")}
+              </span>
             }
             tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
           >
@@ -67,7 +70,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
             navigateTo(previous);
           }}
           validationSchema={YupObject().shape({
-            customSlippage: YupNumber().max(10, "must be below 10%"),
+            customSlippage: YupNumber().max(10, `${t("must be below")} 10%`),
           })}
         >
           {({ setFieldValue, values, errors }) => (
@@ -118,7 +121,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                   {({ field }: FieldProps) => (
                     <Input
                       id="custom-input"
-                      placeholder="Custom %"
+                      placeholder={`${t("Custom")} %`}
                       type="number"
                       {...field}
                       onChange={(e) => {
@@ -138,7 +141,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                   setFieldValue("customSlippage", "");
                 }}
               >
-                Set default
+                {t("Set default")}
               </TextLink>
               <div className="SendPayment__btn-continue">
                 <Button
@@ -147,7 +150,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                   variant={Button.variant.tertiary}
                   type="submit"
                 >
-                  Done
+                  {t("Done")}
                 </Button>
               </div>
             </Form>

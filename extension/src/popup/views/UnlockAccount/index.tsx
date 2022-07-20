@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { Input, TextLink } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
@@ -19,6 +20,7 @@ import {
 import "./styles.scss";
 
 export const UnlockAccount = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const from = get(location, "state.from.pathname", "") as ROUTES;
   const queryParams = get(location, "search", "");
@@ -44,7 +46,7 @@ export const UnlockAccount = () => {
     <div className="UnlockAccount">
       <Header isPopupView />
       <div className="UnlockAccount__header">
-        A Stellar wallet for every website
+        {t("A Stellar wallet for every website")}
       </div>
       <Formik onSubmit={handleSubmit} initialValues={initialValues}>
         {({ dirty, isSubmitting, isValid, errors, touched }) => (
@@ -56,7 +58,7 @@ export const UnlockAccount = () => {
                     <Input
                       autoComplete="off"
                       id="password-input"
-                      placeholder="Enter Password"
+                      placeholder={t("Enter Password")}
                       type="password"
                       error={
                         authError ||
@@ -76,7 +78,7 @@ export const UnlockAccount = () => {
                   isLoading={isSubmitting}
                   disabled={!(dirty && isValid)}
                 >
-                  LOG IN
+                  {t("LOG IN")}
                 </Button>
               </SubmitButtonWrapper>
             </div>
@@ -84,7 +86,7 @@ export const UnlockAccount = () => {
         )}
       </Formik>
       <div className="UnlockAccount__import-account">
-        <div>Want to add another account?</div>
+        <div>{t("Want to add another account?")}</div>
         <div>
           <TextLink
             variant={TextLink.variant.secondary}
@@ -92,7 +94,7 @@ export const UnlockAccount = () => {
               openTab(newTabHref(ROUTES.recoverAccount));
             }}
           >
-            Import using account seed phrase
+            {t("Import using account seed phrase")}
           </TextLink>
         </div>
       </div>

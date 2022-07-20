@@ -1,0 +1,33 @@
+.LedgerConnect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+
+  &__header {
+    font-size: 2.5rem;
+    line-height: 3rem;
+    color: var(--pal-text-primary);
+    margin-bottom: 1rem;
+  }
+
+  &__caption {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    margin-bottom: 7.5rem;
+    color: var(--pal-text-primary);
+  }
+
+  &__img {
+    height: 2.5rem;
+    margin-bottom: 7.5rem;
+  }
+
+  &__bottom {
+    width: 19.5rem;
+    row-gap: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+}

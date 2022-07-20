@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useHistory, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
@@ -42,31 +43,33 @@ const mapErrorToErrorState = ({ operations = [] }: MapErrorToErrorState) => {
   return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 };
 
-interface RenderError {
+interface RenderedErrorProps {
   errorState: TRUSTLINE_ERROR_STATES;
   assetBalance: string;
   resultCodes: string;
 }
 
-const renderError = ({
+const RenderedError = ({
   errorState,
   assetBalance,
   resultCodes,
-}: RenderError) => {
+}: RenderedErrorProps) => {
+  const { t } = useTranslation();
+
   switch (errorState) {
     case TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS:
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           <div>
-            <p className="TrustlineError__title">Not enough lumens</p>
-            <p>0.500001 XLM are required to add a new asset.</p>
+            <p className="TrustlineError__title">{t("Not enough lumens")}</p>
+            <p>0.500001 XLM {t("are required to add a new asset.")}</p>
             <p className="TrustlineError__links">
               <Link to="https://developers.stellar.org/docs/glossary/minimum-balance/#changes-to-transaction-fees-and-minimum-balances">
-                Learn more about transaction fees
+                {t("Learn more about transaction fees")}
               </Link>
               <br />
               <Link to="https://developers.stellar.org/docs/glossary/accounts/#liabilities">
-                Learn more about account reserves
+                {t("Learn more about account reserves")}
               </Link>
             </p>
           </div>
@@ -76,12 +79,14 @@ const renderError = ({
       return (
         <>
           <InfoBlock variant={InfoBlock.variant.warning}>
-            <p className="TrustlineError__title">This asset has a balance</p>
+            <p className="TrustlineError__title">
+              {t("This asset has a balance")}
+            </p>
           </InfoBlock>
           <p className="TrustlineError__subtitle">
-            This asset has a balance of <strong>{assetBalance}</strong>. You
-            must have a balance of <strong>0</strong> in order to remove an
-            asset.
+            {t("This asset has a balance of")} <strong>{assetBalance}</strong>.{" "}
+            {t("You must have a balance of")} <strong>0</strong>{" "}
+            {t("in order to remove an asset.")}
           </p>
         </>
       );
@@ -92,11 +97,11 @@ const renderError = ({
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
               <p className="TrustlineError__title">
-                This transaction could not be completed.
+                {t("This transaction could not be completed.")}
               </p>
               {resultCodes ? (
                 <p className="TrustlineError__subtitle">
-                  Error code: {resultCodes}
+                  {t("Error code")}: {resultCodes}
                 </p>
               ) : null}
             </div>
@@ -115,6 +120,7 @@ export const TrustlineError = ({
   balances,
   errorAsset,
 }: TrustlineErrorProps) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const history = useHistory();
   const { error } = useSelector(transactionSubmissionSelector);
@@ -142,11 +148,11 @@ export const TrustlineError = ({
   return (
     <div className="TrustlineError">
       <div className="TrustlineError__body">
-        {renderError({
-          errorState,
-          assetBalance,
-          resultCodes: JSON.stringify(getResultCodes(error)),
-        })}
+        <RenderedError
+          errorState={errorState}
+          assetBalance={assetBalance}
+          resultCodes={JSON.stringify(getResultCodes(error))}
+        />
       </div>
       <div className="TrustlineError__button">
         <Button
@@ -156,7 +162,7 @@ export const TrustlineError = ({
             history.goBack();
           }}
         >
-          Got it
+          {t("Got it")}
         </Button>
       </div>
     </div>

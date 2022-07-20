@@ -151,6 +151,7 @@ export const freighterApiMessageListener = (
 
     const transactionInfo = {
       transaction,
+      transactionXdr,
       tab,
       isDomainListedAllowed,
       url: tabUrl,

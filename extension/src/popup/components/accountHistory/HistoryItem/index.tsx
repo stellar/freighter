@@ -2,6 +2,7 @@ import React from "react";
 import { camelCase } from "lodash";
 import { Icon } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
+import { useTranslation } from "react-i18next";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -72,9 +73,10 @@ export const HistoryItem = ({
     );
   }
 
+  const { t } = useTranslation();
   const renderPaymentComponent = () => PaymentComponent;
   const renderIcon = () => IconComponent;
-  const recipientLabel = isRecipient ? "Received" : "Sent";
+  const recipientLabel = isRecipient ? t("Received") : t("Sent");
 
   return (
     <div

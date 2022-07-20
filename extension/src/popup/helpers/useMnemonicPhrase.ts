@@ -19,6 +19,10 @@ export const useMnemonicPhrase = () => {
     };
 
     fetchMnemonicPhrase();
+
+    return () => {
+      setMnemonicPhrase("");
+    };
   }, []);
 
   return mnemonicPhrase;
