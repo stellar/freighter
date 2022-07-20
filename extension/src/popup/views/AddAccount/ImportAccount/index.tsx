@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Form, Field, FieldProps, Formik } from "formik";
 import { bool as YupBool, object as YupObject, string as YupString } from "yup";
 import { Checkbox, Input } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -37,6 +38,7 @@ export const ImportAccount = () => {
     authorization: YupBool().oneOf([true], "required"),
   });
 
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
 
@@ -55,19 +57,18 @@ export const ImportAccount = () => {
 
   return (
     <div className="ImportAccount">
-      <SubviewHeader title="Import Stellar Secret Key" />
+      <SubviewHeader title={t("Import Stellar Secret Key")} />
       <div className="ImportAccount__warning-block">
         <InfoBlock variant={InfoBlock.variant.warning}>
           <div>
             <div className="ImportAccount__warning-header">
-              read before importing your key
+              {t("read before importing your key")}
             </div>
             <div className="ImportAccount__warning-copy">
               <p>
-                Freighter can’t recover your imported secret key using your
-                recovery phrase. Storing your secret key is your responsibility.
-                Freighter will never ask for your secret key outside of the
-                extension.
+                {t(
+                  "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension.",
+                )}
               </p>
             </div>
           </div>
@@ -87,7 +88,7 @@ export const ImportAccount = () => {
                     autoComplete="off"
                     id="privateKey-input"
                     type="password"
-                    placeholder="Your Stellar secret key"
+                    placeholder={t("Your Stellar secret key")}
                     error={authError}
                     {...field}
                   />
@@ -99,7 +100,7 @@ export const ImportAccount = () => {
                     autoComplete="off"
                     id="password-input"
                     type="password"
-                    placeholder="Enter password"
+                    placeholder={t("Enter password")}
                     error={authError}
                     {...field}
                   />
@@ -110,7 +111,9 @@ export const ImportAccount = () => {
                   <Checkbox
                     autoComplete="off"
                     id="authorization-input"
-                    label="I’m aware Freighter can’t recover the imported  secret key"
+                    label={t(
+                      "I’m aware Freighter can’t recover the imported  secret key",
+                    )}
                     {...field}
                   />
                 )}
@@ -122,7 +125,7 @@ export const ImportAccount = () => {
                 variant={Button.variant.tertiary}
                 onClick={() => navigateTo(ROUTES.account)}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 fullWidth
@@ -130,7 +133,7 @@ export const ImportAccount = () => {
                 isLoading={isSubmitting}
                 disabled={!(dirty && isValid)}
               >
-                Import
+                {t("Import")}
               </Button>
             </div>
           </Form>

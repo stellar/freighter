@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
 import get from "lodash/get";
 import { Icon, TextLink } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { AssetIcons } from "@shared/api/types";
 
@@ -70,6 +71,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     },
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
+  const { t } = useTranslation();
   const isSwap = useIsSwap();
 
   const sourceAsset = getAssetFromCanonical(asset);
@@ -77,7 +79,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   return (
     <div className="SubmitResult">
       <div className="SubmitResult__header">
-        Successfuly {isSwap ? "swapped" : "sent"}
+        {t("Successfuly")} {isSwap ? t("swapped") : t("sent")}
       </div>
       <div className="SubmitResult__amount">
         {amount} {sourceAsset.code}
@@ -101,7 +103,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       </div>
       <div className="SubmitResult__button-rows__success">
         <Button fullWidth onClick={() => viewDetails()}>
-          Transaction Details
+          {t("Transaction Details")}
         </Button>
         <Button
           fullWidth
@@ -110,7 +112,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
             navigateTo(ROUTES.account);
           }}
         >
-          Done
+          {t("Done")}
         </Button>
       </div>
     </div>
@@ -132,6 +134,7 @@ export const SubmitFail = () => {
   } = useSelector(transactionSubmissionSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const isSwap = useIsSwap();
+  const { t } = useTranslation();
 
   const sourceAsset = getAssetFromCanonical(asset);
 
@@ -159,10 +162,12 @@ export const SubmitFail = () => {
         return (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
-              <strong>NO TRUSTLINE TO SENT ASSET</strong>
+              <strong>{t("NO TRUSTLINE TO SENT ASSET")}</strong>
               <div>
-                The receiving account doesn’t have a trustline to the sent
-                asset: <strong>{sourceAsset.code}</strong>.
+                {t(
+                  "The receiving account doesn’t have a trustline to the sent asset",
+                )}
+                : <strong>{sourceAsset.code}</strong>.
                 <TextLink
                   underline
                   variant={TextLink.variant.secondary}
@@ -170,7 +175,7 @@ export const SubmitFail = () => {
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Learn more about trustlines
+                  {t("Learn more about trustlines")}
                 </TextLink>
               </div>
             </div>
@@ -185,9 +190,9 @@ export const SubmitFail = () => {
         return (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
-              <strong>CONVERSION RATE CHANGED</strong>
+              <strong>{t("CONVERSION RATE CHANGED")}</strong>
               <div>
-                Please check the new rate and try again.{" "}
+                {t("Please check the new rate and try again.")}{" "}
                 <TextLink
                   underline
                   variant={TextLink.variant.secondary}
@@ -195,7 +200,7 @@ export const SubmitFail = () => {
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Learn more about conversion rates
+                  {t("Learn more about conversion rates")}
                 </TextLink>
               </div>
             </div>
@@ -208,9 +213,9 @@ export const SubmitFail = () => {
 
   return (
     <div className="SubmitResult">
-      <div className="SubmitResult__header">Error</div>
+      <div className="SubmitResult__header">{t("Error")}</div>
       <div className="SubmitResult__amount">
-        {isSwap ? "Swap" : "Transaction"} Failed
+        {isSwap ? t("Swap") : t("Transaction")} {t("Failed")}
       </div>
       <div className="SubmitResult__icon SubmitResult__fail">
         <Icon.XCircle />
@@ -238,7 +243,7 @@ export const SubmitFail = () => {
             navigateTo(ROUTES.account);
           }}
         >
-          Got it
+          {t("Got it")}
         </Button>
       </div>
     </div>

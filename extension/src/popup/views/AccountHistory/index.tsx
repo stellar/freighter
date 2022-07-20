@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Horizon } from "stellar-sdk";
 import SimpleBar from "simplebar-react";
+import { useTranslation } from "react-i18next";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { HorizonOperation } from "@shared/api/types";
@@ -29,19 +30,24 @@ const getIsPayment = (type: Horizon.OperationResponseType) =>
     Horizon.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
 
-enum SELECTOR_OPTIONS {
-  ALL = "ALL",
-  SENT = "SENT",
-  RECEIVED = "RECEIVED",
-}
-
-type HistorySegments =
-  | {
-      [key in SELECTOR_OPTIONS]: HistoryItemOperation[] | [];
-    }
-  | null;
-
 export const AccountHistory = () => {
+  enum SELECTOR_OPTIONS {
+    ALL = "ALL",
+    SENT = "SENT",
+    RECEIVED = "RECEIVED",
+  }
+  /*
+      t("ALL");
+      t("SENT");
+      t("RECEIVED");
+    */
+  type HistorySegments =
+    | {
+        [key in SELECTOR_OPTIONS]: HistoryItemOperation[] | [];
+      }
+    | null;
+
+  const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
@@ -104,14 +110,14 @@ export const AccountHistory = () => {
       }
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails]);
+  }, [publicKey, networkDetails, SELECTOR_OPTIONS]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
       <div className="AccountHistory__wrapper">
-        <header className="AccountHistory__header">Transactions</header>
+        <header className="AccountHistory__header">{t("Transactions")}</header>
         <div className="AccountHistory__selector">
           {Object.values(SELECTOR_OPTIONS).map((option) => (
             <div
@@ -123,7 +129,7 @@ export const AccountHistory = () => {
               }`}
               onClick={() => setSelectedSegment(option)}
             >
-              {option}
+              {t(option)}
             </div>
           ))}
         </div>
@@ -147,7 +153,7 @@ export const AccountHistory = () => {
             </SimpleBar>
           ) : (
             <div>
-              {isAccountHistoryLoading ? null : "No transactions to show"}
+              {isAccountHistoryLoading ? null : t("No transactions to show")}
             </div>
           )}
         </div>
