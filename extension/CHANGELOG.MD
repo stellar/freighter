@@ -6,8 +6,7 @@ handle rejected tx from ledger error message
 
 \[Ledger\] Replace error messages
 
-\[Ledger\] When the device is already connected and the Stellar application
-already opened, Freighter still asks to connect the device to the computer
+\[Ledger\] fix bug when logging out and in with ledger, then sending transaction
 
 transaction fee denominated in XLM always
 
