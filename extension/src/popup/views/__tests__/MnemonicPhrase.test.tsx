@@ -92,17 +92,6 @@ describe("MnemonicPhrase", () => {
       );
       await waitFor(() => screen.getByText(MNEMONIC));
 
-      // Copy
-      fireEvent.click(screen.getByTestId("copy"));
-      expect(emitMetric).toHaveBeenCalledWith(
-        METRIC_NAMES.accountCreatorMnemonicCopyPhrase,
-      );
-      // Download
-      fireEvent.click(screen.getByTestId("download"));
-      expect(emitMetric).toHaveBeenCalledWith(
-        METRIC_NAMES.accountCreatorMnemonicDownloadPhrase,
-      );
-
       // Confirm mnemonic
       await act(async () => {
         fireEvent.click(screen.getByTestId("confirm"));

@@ -12,6 +12,7 @@ import {
 import { MAINNET_NETWORK_DETAILS, NetworkDetails } from "../helpers/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
+import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 
@@ -115,9 +116,41 @@ export const importAccount = async (
   return { allAccounts, publicKey, hasPrivateKey };
 };
 
+export const importHardwareWallet = async (
+  publicKey: string,
+  hardwareWalletType: WalletType,
+  bipPath: string,
+) => {
+  let _publicKey = "";
+  let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
+  let _bipPath = "";
+  try {
+    ({
+      publicKey: _publicKey,
+      allAccounts,
+      hasPrivateKey,
+      bipPath: _bipPath,
+    } = await sendMessageToBackground({
+      publicKey,
+      hardwareWalletType,
+      bipPath,
+      type: SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
+    }));
+  } catch (e) {
+    console.log({ e });
+  }
+  return {
+    allAccounts,
+    publicKey: _publicKey,
+    hasPrivateKey,
+    bipPath: _bipPath,
+  };
+};
+
 export const makeAccountActive = (
   publicKey: string,
-): Promise<{ publicKey: string; hasPrivateKey: boolean }> =>
+): Promise<{ publicKey: string; hasPrivateKey: boolean; bipPath: string }> =>
   sendMessageToBackground({
     publicKey,
     type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
@@ -136,6 +169,7 @@ export const loadAccount = (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
+  bipPath: string;
 }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_ACCOUNT,
@@ -210,12 +244,14 @@ export const confirmPassword = async (
   hasPrivateKey: boolean;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
+  bipPath: string;
 }> => {
   let response = {
     publicKey: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Array<Account>,
+    bipPath: "",
   };
   try {
     response = await sendMessageToBackground({
@@ -376,6 +412,21 @@ export const grantAccess = async (url: string): Promise<void> => {
   }
 };
 
+export const handleSignedHwTransaction = async ({
+  signedTransaction,
+}: {
+  signedTransaction: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      signedTransaction,
+      type: SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signTransaction = async ({
   transaction,
 }: {
@@ -413,13 +464,17 @@ export const signFreighterTransaction = async ({
 
 export const submitFreighterTransaction = async ({
   signedXDR,
-  networkUrl,
+  networkDetails,
 }: {
   signedXDR: string;
-  networkUrl: string;
+  networkDetails: NetworkDetails;
 }) => {
-  const server = new StellarSdk.Server(networkUrl);
-  return await server.submitTransaction(signedXDR);
+  const tx = StellarSdk.TransactionBuilder.fromXDR(
+    signedXDR,
+    networkDetails.networkPassphrase,
+  );
+  const server = new StellarSdk.Server(networkDetails.networkUrl);
+  return await server.submitTransaction(tx);
 };
 
 export const addRecentAddress = async ({
