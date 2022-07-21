@@ -71,6 +71,7 @@ export const SignTransaction = () => {
     transactionXdr,
     domain,
     isDomainListedAllowed,
+    isHttpsDomain,
     flaggedKeys,
   } = getTransactionInfo(location.search);
   const {
@@ -80,6 +81,8 @@ export const SignTransaction = () => {
     _networkPassphrase,
     _sequence,
   } = transaction;
+
+  console.log(isHttpsDomain);
 
   const isFeeBump = !!_innerTransaction;
   const memo = decodeMemo(_memo);
