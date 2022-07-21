@@ -4,7 +4,7 @@
 
 handle rejected tx from ledger error message
 
-\[Ledger\] Replace error messages
+\[Ledger\] Replace tx rejected error messages
 
 \[Ledger\] fix bug when logging out and in with ledger, then sending transaction
 
