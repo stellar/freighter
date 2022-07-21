@@ -1,3 +1,26 @@
+# Release notes - Wallets - Version 2.3.0
+
+### Bug
+
+handle rejected tx from ledger error message
+
+\[Ledger\] Replace error messages
+
+\[Ledger\] When the device is already connected and the Stellar application
+already opened, Freighter still asks to connect the device to the computer
+
+transaction fee denominated in XLM always
+
+### Story
+
+Address demonic vulnerability
+
+Structure to support localization
+
+Change links on the about page
+
+Connect using Ledger
+
 # Release notes - Version 2.2.1
 
 ### Bug
