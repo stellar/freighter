@@ -141,7 +141,7 @@ export const SubmitFail = () => {
 
     switch (errorDetails.opError) {
       case RESULT_CODES.tx_insufficient_fee:
-        errorDetails.title = "Insufficient Fee";
+        errorDetails.title = t("Insufficient Fee");
         errorDetails.errorBlock = (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
@@ -162,7 +162,7 @@ export const SubmitFail = () => {
         );
         break;
       case RESULT_CODES.op_underfunded:
-        errorDetails.title = "Insufficient Balance";
+        errorDetails.title = t("Insufficient Balance");
         errorDetails.errorBlock = (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
@@ -174,7 +174,7 @@ export const SubmitFail = () => {
         );
         break;
       case RESULT_CODES.op_no_destination:
-        errorDetails.title = "Destination account doesn’t exist";
+        errorDetails.title = t("Destination account doesn’t exist");
         errorDetails.errorBlock = (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
@@ -195,12 +195,14 @@ export const SubmitFail = () => {
         );
         break;
       case RESULT_CODES.op_no_trust:
-        errorDetails.title = "Destination account does not accept this asset";
+        errorDetails.title = t(
+          "Destination account does not accept this asset",
+        );
         errorDetails.errorBlock = (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
               {t(
-                "The destination account does not accept the asset you're sending. The destination account must opt to accept this asset before receiving it.",
+                "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it.",
               )}
               <TextLink
                 underline
@@ -216,7 +218,7 @@ export const SubmitFail = () => {
         );
         break;
       case RESULT_CODES.op_under_dest_min:
-        errorDetails.title = "Conversion rate changed";
+        errorDetails.title = t("Conversion rate changed");
         errorDetails.errorBlock = (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
@@ -235,7 +237,7 @@ export const SubmitFail = () => {
         );
         break;
       case RESULT_CODES.op_low_reserve:
-        errorDetails.title = "Account minimum balance is too low";
+        errorDetails.title = t("Account minimum balance is too low");
         errorDetails.errorBlock = (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>
@@ -257,7 +259,9 @@ export const SubmitFail = () => {
         break;
       default:
         errorDetails.status = httpCode;
-        errorDetails.title = `${isSwap ? "Swap" : "Transaction"} failed`;
+        errorDetails.title = `${
+          isSwap ? t("Swap failed") : t("Transaction failed")
+        }`;
         errorDetails.errorBlock = (
           <InfoBlock variant={InfoBlock.variant.error}>
             <div>{t("One or more operations in this transaction failed.")}</div>
