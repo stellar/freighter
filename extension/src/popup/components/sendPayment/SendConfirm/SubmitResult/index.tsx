@@ -113,6 +113,13 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   );
 };
 
+interface ErrorDetails {
+  title: string;
+  errorBlock: React.ReactNode;
+  opError: RESULT_CODES;
+  status: string;
+}
+
 export const SubmitFail = () => {
   const { error } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
@@ -122,8 +129,8 @@ export const SubmitFail = () => {
     emitMetric(METRIC_NAMES.sendPaymentError, { error });
   }, [error]);
 
-  const getErrorDetails = (err: ErrorMessage | undefined) => {
-    const errorDetails = {
+  const getErrorDetails = (err: ErrorMessage | undefined): ErrorDetails => {
+    const errorDetails: ErrorDetails = {
       title: "",
       errorBlock: <div></div>,
       opError: RESULT_CODES.tx_failed,
