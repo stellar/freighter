@@ -83,7 +83,7 @@ export const HistoryItem = ({
   if (isSwap) {
     PaymentComponent = (
       <>
-        {new BigNumber(amount).toFixed(2, 1)} {assetCode}
+        {new BigNumber(amount).toFixed(2, 1)} {destAssetCode}
       </>
     );
     rowText = t(`${srcAssetCode} for ${destAssetCode}`);
@@ -108,7 +108,7 @@ export const HistoryItem = ({
       <Icon.ArrowUp className="HistoryItem__icon--sent" />
     );
     rowText = destAssetCode;
-    dateText = t(`${isRecipient ? "Received" : "Sent"} \u2022} ${date}`);
+    dateText = t(`${isRecipient ? "Received" : "Sent"} \u2022 ${date}`);
     transactionDetailProps = {
       ...transactionDetailProps,
       isRecipient,
