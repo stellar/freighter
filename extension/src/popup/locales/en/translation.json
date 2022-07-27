@@ -1,4 +1,5 @@
 {
+  "{{srcAssetCode}} for {{destAssetCode}}": "{{srcAssetCode}} for {{destAssetCode}}",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
@@ -232,6 +233,7 @@
   "Privacy Policy": "Privacy Policy",
   "Processing": "Processing",
   "read before importing your key": "read before importing your key",
+  "Received": "Received",
   "RECEIVED": "RECEIVED",
   "RECENT": "RECENT",
   "Recipient Stellar address": "Recipient Stellar address",
@@ -271,9 +273,11 @@
   "Successfuly": "Successfuly",
   "swap": "swap",
   "Swap": "Swap",
+  "Swap • {{date}}": "Swap • {{date}}",
   "Swap failed": "Swap failed",
   "swapped": "swapped",
   "Swapped": "Swapped",
+  "Swapped {{srcAssetCode}} for {{destAssetCode}}": "Swapped {{srcAssetCode}} for {{destAssetCode}}",
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",

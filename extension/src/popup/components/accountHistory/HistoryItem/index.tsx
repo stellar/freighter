@@ -86,11 +86,17 @@ export const HistoryItem = ({
         {new BigNumber(amount).toFixed(2, 1)} {destAssetCode}
       </>
     );
-    rowText = t(`${srcAssetCode} for ${destAssetCode}`);
-    dateText = t(`Swap \u2022 ${date}`);
+    rowText = t(`{{srcAssetCode}} for {{destAssetCode}}`, {
+      srcAssetCode,
+      destAssetCode,
+    });
+    dateText = t(`Swap \u2022 {{date}}`, { date });
     transactionDetailProps = {
       ...transactionDetailProps,
-      headerTitle: t(`Swapped ${srcAssetCode} for ${destAssetCode}`),
+      headerTitle: t(`Swapped {{srcAssetCode}} for {{destAssetCode}}`, {
+        srcAssetCode,
+        destAssetCode,
+      }),
       operationText: `+${new BigNumber(amount)} ${destAssetCode}`,
     };
   } else if (isPayment) {
@@ -108,11 +114,13 @@ export const HistoryItem = ({
       <Icon.ArrowUp className="HistoryItem__icon--sent" />
     );
     rowText = destAssetCode;
-    dateText = t(`${isRecipient ? "Received" : "Sent"} \u2022 ${date}`);
+    dateText = `${isRecipient ? t("Received") : t("Sent")} \u2022 ${date}`;
     transactionDetailProps = {
       ...transactionDetailProps,
       isRecipient,
-      headerTitle: t(`${isRecipient ? "Received" : "Sent"} ${destAssetCode}`),
+      headerTitle: `${
+        isRecipient ? t("Received") : t("Sent")
+      } ${destAssetCode}`,
       operationText: `${paymentDifference}${new BigNumber(
         amount,
       )} ${destAssetCode}`,
