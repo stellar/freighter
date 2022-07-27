@@ -1,4 +1,5 @@
 {
+  "{{srcAssetCode}} for {{destAssetCode}}": "{{srcAssetCode}} for {{destAssetCode}}",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
@@ -272,9 +273,11 @@
   "Successfuly": "Successfuly",
   "swap": "swap",
   "Swap": "Swap",
+  "Swap • {{date}}": "Swap • {{date}}",
   "Swap failed": "Swap failed",
   "swapped": "swapped",
   "Swapped": "Swapped",
+  "Swapped {{srcAssetCode}} for {{destAssetCode}}": "Swapped {{srcAssetCode}} for {{destAssetCode}}",
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
@@ -298,6 +301,7 @@
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
   "transaction": "transaction",
+  "Transaction": "Transaction",
   "Transaction Details": "Transaction Details",
   "Transaction failed": "Transaction failed",
   "Transaction fee": "Transaction fee",
