@@ -123,16 +123,16 @@ export const SendAmount = ({
 
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(
-            accountBalances.balances[selectedAsset].total.toString(),
+            accountBalances.balances[selectedAsset].total.toFixed(),
           );
           availBalance = currentBal
             .minus(new BigNumber(baseReserve))
             .minus(new BigNumber(Number(recommendedFee)))
-            .toString();
+            .toFixed();
         } else {
           availBalance = accountBalances.balances[
             selectedAsset
-          ].total.toString();
+          ].total.toFixed();
         }
       }
 

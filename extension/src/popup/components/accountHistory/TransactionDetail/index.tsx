@@ -27,6 +27,7 @@ export interface TransactionDetailProps {
   headerTitle: string;
   isRecipient: boolean;
   isPayment: boolean;
+  isSwap: boolean;
   operationText: string;
   externalUrl: string;
   setIsDetailViewShowing: (isDetailViewShoing: boolean) => void;
@@ -37,6 +38,7 @@ export const TransactionDetail = ({
   headerTitle,
   isPayment,
   isRecipient,
+  isSwap,
   operationText,
   externalUrl,
   setIsDetailViewShowing,
@@ -134,7 +136,7 @@ export const TransactionDetail = ({
 
         <div className="TransactionDetail__info">
           <div className="TransactionDetail__info__row">
-            {isPayment ? (
+            {isPayment && !isSwap ? (
               <>
                 {isRecipient ? (
                   <>
@@ -159,10 +161,12 @@ export const TransactionDetail = ({
                 )}
               </>
             ) : (
-              <>
-                <div>{t("Action")}</div>
-                <div>{operationText}</div>
-              </>
+              !isSwap && (
+                <>
+                  <div>{t("Action")}</div>
+                  <div>{operationText}</div>
+                </>
+              )
             )}
           </div>
           <div className="TransactionDetail__info__row">

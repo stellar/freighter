@@ -139,7 +139,7 @@ export const AccountAssets = ({
           </div>
           <div className="AccountAssets__copy-right">
             <div>
-              {new BigNumber(total).toString()} <span>{code}</span>
+              {new BigNumber(total).toFixed()} <span>{code}</span>
             </div>
           </div>
         </div>

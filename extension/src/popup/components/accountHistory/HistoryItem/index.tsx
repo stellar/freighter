@@ -14,7 +14,10 @@ import { HorizonOperation } from "@shared/api/types";
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
 
-export type HistoryItemOperation = HorizonOperation & { isPayment?: boolean };
+export type HistoryItemOperation = HorizonOperation & {
+  isPayment?: boolean;
+  isSwap?: boolean;
+};
 
 interface HistoryItemProps {
   operation: HistoryItemOperation;
@@ -31,6 +34,7 @@ export const HistoryItem = ({
   setDetailViewProps,
   setIsDetailViewShowing,
 }: HistoryItemProps) => {
+  const { t } = useTranslation();
   const {
     amount,
     asset_code: assetCode,
@@ -40,7 +44,12 @@ export const HistoryItem = ({
     type,
     transaction_attr: { operation_count: operationCount },
     isPayment = false,
+    isSwap = false,
   } = operation;
+  let sourceAssetCode;
+  if ("source_asset_code" in operation) {
+    sourceAssetCode = operation.source_asset_code;
+  }
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const operationString = `${OPERATION_TYPES[operationType]}${
     operationCount > 1 ? ` + ${operationCount - 1} ops` : ""
@@ -50,20 +59,47 @@ export const HistoryItem = ({
     .split(" ")
     .slice(1, 3)
     .join(" ");
-  const operationAssetCode = assetCode || "XLM";
+  const srcAssetCode = sourceAssetCode || "XLM";
+  const destAssetCode = assetCode || "XLM";
 
   let isRecipient = false;
   let paymentDifference = "";
+  let rowText = "";
+  let dateText = "";
   let IconComponent = <Icon.Shuffle className="HistoryItem__icon--default" />;
   let PaymentComponent = null as React.ReactElement | null;
 
-  if (isPayment) {
+  let transactionDetailProps: TransactionDetailProps = {
+    operation,
+    isRecipient,
+    isPayment,
+    isSwap,
+    headerTitle: "",
+    operationText: "",
+    externalUrl: `${url}/op/${id}`,
+    setIsDetailViewShowing,
+  };
+
+  if (isSwap) {
+    PaymentComponent = (
+      <>
+        {new BigNumber(amount).toFixed(2, 1)} {destAssetCode}
+      </>
+    );
+    rowText = t(`${srcAssetCode} for ${destAssetCode}`);
+    dateText = t(`Swap \u2022 ${date}`);
+    transactionDetailProps = {
+      ...transactionDetailProps,
+      headerTitle: t(`Swapped ${srcAssetCode} for ${destAssetCode}`),
+      operationText: `+${new BigNumber(amount)} ${destAssetCode}`,
+    };
+  } else if (isPayment) {
     isRecipient = to === publicKey;
     paymentDifference = isRecipient ? "+" : "-";
     PaymentComponent = (
       <>
         {paymentDifference}
-        {new BigNumber(amount).toFixed(2, 1)} {operationAssetCode}
+        {new BigNumber(amount).toFixed(2, 1)} {destAssetCode}
       </>
     );
     IconComponent = isRecipient ? (
@@ -71,43 +107,42 @@ export const HistoryItem = ({
     ) : (
       <Icon.ArrowUp className="HistoryItem__icon--sent" />
     );
+    rowText = destAssetCode;
+    dateText = t(`${isRecipient ? "Received" : "Sent"} \u2022 ${date}`);
+    transactionDetailProps = {
+      ...transactionDetailProps,
+      isRecipient,
+      headerTitle: t(`${isRecipient ? "Received" : "Sent"} ${destAssetCode}`),
+      operationText: `${paymentDifference}${new BigNumber(
+        amount,
+      )} ${destAssetCode}`,
+    };
+  } else {
+    rowText = operationString;
+    transactionDetailProps = {
+      ...transactionDetailProps,
+      headerTitle: t("Transaction"),
+      operationText: operationString,
+    };
   }
 
-  const { t } = useTranslation();
   const renderPaymentComponent = () => PaymentComponent;
   const renderIcon = () => IconComponent;
-  const recipientLabel = isRecipient ? t("Received") : t("Sent");
 
   return (
     <div
       className="HistoryItem"
       onClick={() => {
         emitMetric(METRIC_NAMES.historyOpenItem);
-        setDetailViewProps({
-          operation,
-          isRecipient,
-          isPayment,
-          headerTitle: isPayment
-            ? `${recipientLabel} ${operationAssetCode}`
-            : "Transaction",
-          operationText: isPayment
-            ? `${paymentDifference}${new BigNumber(
-                amount,
-              )} ${operationAssetCode}`
-            : operationString,
-          externalUrl: `${url}/op/${id}`,
-          setIsDetailViewShowing,
-        });
+        setDetailViewProps(transactionDetailProps);
         setIsDetailViewShowing(true);
       }}
     >
       <div className="HistoryItem__row">
         <div className="HistoryItem__icon">{renderIcon()}</div>
         <div className="HistoryItem__operation">
-          {isPayment ? operationAssetCode : operationString}
-          <div className="HistoryItem__date">
-            {isPayment ? `${recipientLabel} \u2022` : null} {date}
-          </div>
+          {rowText}
+          <div className="HistoryItem__date">{dateText}</div>
         </div>
 
         <div className="HistoryItem__payment">{renderPaymentComponent()}</div>
