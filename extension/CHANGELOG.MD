@@ -1,3 +1,25 @@
+# Release notes - Wallets - Version 2.3.0
+
+### Bug
+
+handle rejected tx from ledger error message
+
+\[Ledger\] Replace tx rejected error messages
+
+\[Ledger\] fix bug when logging out and in with ledger, then sending transaction
+
+transaction fee denominated in XLM always
+
+### Story
+
+Address demonic vulnerability
+
+Structure to support localization
+
+Change links on the about page
+
+Connect using Ledger
+
 # Release notes - Version 2.2.1
 
 ### Bug
