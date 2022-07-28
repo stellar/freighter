@@ -255,8 +255,7 @@ export const Operations = ({
   const { t } = useTranslation();
 
   enum AuthorizationMap {
-    "",
-    "Authorization Required",
+    "Authorization Required" = 1,
     "Authorization Revocable",
     "Authorization Required; Authorization Required",
     "Authorization Immutable",
