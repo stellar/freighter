@@ -242,7 +242,7 @@ interface InitialState {
   assetIcons: AssetIcons;
 }
 
-const initialState: InitialState = {
+export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
   response: null,
