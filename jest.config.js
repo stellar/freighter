@@ -12,7 +12,9 @@ module.exports = {
     "<rootDir>/config/jest/extendJest.ts",
     "@testing-library/jest-dom",
   ],
-  testURL: "http://localhost",
+  testEnvironmentOptions: {
+    url: "http://localhost",
+  },
   transform: {
     "^.+\\.(js|jsx|ts|tsx|mjs)$": ["babel-jest"],
   },
@@ -24,4 +26,5 @@ module.exports = {
   },
   moduleFileExtensions: ["js", "jsx", "json", "node", "mjs", "ts", "tsx"],
   moduleDirectories: ["node_modules", "<rootDir>/extension/src", "<rootDir>/."],
+  testEnvironment: "jsdom",
 };

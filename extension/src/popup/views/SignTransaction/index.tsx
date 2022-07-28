@@ -82,8 +82,6 @@ export const SignTransaction = () => {
     _sequence,
   } = transaction;
 
-  console.log(isHttpsDomain);
-
   const isFeeBump = !!_innerTransaction;
   const memo = decodeMemo(_memo);
   let accountToSign = _accountToSign;
