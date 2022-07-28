@@ -10,8 +10,7 @@
     "build:translations": "yarn build --env.TRANSLATIONS=true",
     "start": "webpack-dev-server --config webpack.dev.js",
     "start:experimental": "yarn start --env.EXPERIMENTAL=true",
-    "start:unpacked-extension": "yarn build --watch --info-verbosity verbose",
-    "test": "jest"
+    "start:unpacked-extension": "yarn build --watch --info-verbosity verbose"
   },
   "dependencies": {
     "@ledgerhq/hw-app-str": "^6.27.1",
