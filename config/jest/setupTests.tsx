@@ -30,16 +30,13 @@ jest.mock("react-i18next", () => ({
       changeLanguage: () => new Promise(() => {}),
     },
   }),
-  Trans: ({ children }: { children: React.ReactElement[] }) => (
-    <div>
-      {children.map((child, i) => {
-        if (typeof child === "string") {
-          return <span key={i}>{child}</span>;
-        }
-        return "";
-      })}
-    </div>
-  ),
+  Trans: ({ children }: { children: React.ReactElement[] }) =>
+    children.map((child, i) => {
+      if (typeof child === "string") {
+        return <span key={i}>{child}</span>;
+      }
+      return "";
+    }),
 }));
 /* eslint-enable react/no-array-index-key */
 
