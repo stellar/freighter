@@ -38,8 +38,6 @@ export const Wrapper: React.FunctionComponent<any> = ({
 
   return (
     <>
-      <div id="#modal-root" />
-      <div id="tesst" />
       <Router history={routerHistory}>
         <Provider
           store={makeDummyStore({
