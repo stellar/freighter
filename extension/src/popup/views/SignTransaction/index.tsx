@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
 import { FederationServer, MuxedAccount } from "stellar-sdk";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -255,6 +255,27 @@ export const SignTransaction = () => {
     );
   }
 
+  if (!isHttpsDomain) {
+    return (
+      <ModalWrapper>
+        <WarningMessage
+          handleCloseClick={() => window.close()}
+          isActive
+          isHighAlert
+          header={t("WEBSITE CONNECTION IS NOT SECURE")}
+        >
+          <p>
+            <Trans domain={domain}>
+              The website <strong>{{ domain }}</strong> does not use an SSL
+              certificate. For additional safety Freighter only works with
+              websites that provide an SSL certificate.
+            </Trans>
+          </p>
+        </WarningMessage>
+      </ModalWrapper>
+    );
+  }
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -264,7 +285,7 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="SignTransaction">
+      <div className="SignTransaction" data-testid="SignTransaction">
         <ModalWrapper>
           <ModalHeader>
             <strong>{t("Confirm Transaction")}</strong>

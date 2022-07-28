@@ -292,6 +292,9 @@
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
+  "The website <1>{{domain}}</1> does not use an SSL certificate": {
+    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{{domain}}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
+  },
   "them noted to confirm you go them right": "them noted to confirm you go them right",
   "This asset has a balance": "This asset has a balance",
   "This asset has a balance of": "This asset has a balance of",
@@ -321,6 +324,7 @@
   "View public key": "View public key",
   "Wallet Address": "Wallet Address",
   "Want to add another account?": "Want to add another account?",
+  "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
   "Weight": "Weight",
   "Welcome! Is this your first time using Freighter?": "Welcome! Is this your first time using Freighter?",
   "which is not available on Freighter": {
