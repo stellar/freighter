@@ -30,12 +30,16 @@ const getIsPayment = (type: Horizon.OperationResponseType) =>
     Horizon.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
 
+const getIsSwap = (operation: HistoryItemOperation) =>
+  operation.type_i === 13 && operation.source_account === operation.to;
+
+enum SELECTOR_OPTIONS {
+  ALL = "ALL",
+  SENT = "SENT",
+  RECEIVED = "RECEIVED",
+}
+
 export const AccountHistory = () => {
-  enum SELECTOR_OPTIONS {
-    ALL = "ALL",
-    SENT = "SENT",
-    RECEIVED = "RECEIVED",
-  }
   /*
       t("ALL");
       t("SENT");
@@ -61,6 +65,7 @@ export const AccountHistory = () => {
     headerTitle: "",
     isPayment: false,
     isRecipient: false,
+    isSwap: false,
     operationText: "",
     externalUrl: "",
     setIsDetailViewShowing,
@@ -85,8 +90,9 @@ export const AccountHistory = () => {
       };
       operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
-        const historyOperation = { ...operation, isPayment };
-        if (isPayment) {
+        const isSwap = getIsSwap(operation);
+        const historyOperation = { ...operation, isPayment, isSwap };
+        if (isPayment && !isSwap) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
           }
@@ -110,7 +116,7 @@ export const AccountHistory = () => {
       }
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails, SELECTOR_OPTIONS]);
+  }, [publicKey, networkDetails]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
