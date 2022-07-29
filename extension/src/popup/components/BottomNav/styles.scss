@@ -19,5 +19,9 @@
     &--active {
       filter: brightness(1);
     }
+
+    &:hover {
+      filter: brightness(1);
+    }
   }
 }
