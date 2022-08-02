@@ -367,9 +367,7 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i] as
-        | Types.AssetBalance
-        | Types.NativeBalance;
+      const { token } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
           issuer: { key },
