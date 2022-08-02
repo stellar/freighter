@@ -227,7 +227,8 @@ export const SendAmount = ({
     if (isSwap && !destinationAsset) {
       // default to first non-native asset if exists
       const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
-        (b) => b !== StellarSdk.Asset.native().toString(),
+        (b) =>
+          b !== StellarSdk.Asset.native().toString() && b.indexOf(":lp") === -1,
       );
       dispatch(
         saveDestinationAsset(

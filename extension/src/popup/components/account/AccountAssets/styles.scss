@@ -21,6 +21,17 @@ $loader-light-color: #444961;
       }
     }
 
+    &--lp-share {
+      background: var(--pal-background-secondary);
+      border-radius: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      line-height: 1.5rem;
+      color: var(--pal-text-primary);
+    }
+
     &--error {
       align-items: center;
       background: rgba(100, 50, 241, 0.32);
