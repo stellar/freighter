@@ -1,6 +1,5 @@
-import omitBy from "lodash/omitBy";
 import StellarSdk from "stellar-sdk";
-import { DataProvider } from "@stellar/wallet-sdk";
+import { DataProvider, Types } from "@stellar/wallet-sdk";
 import {
   Account,
   AccountBalancesInterface,
@@ -280,14 +279,32 @@ export const getAccountBalances = async ({
     networkPassphrase,
   });
 
-  let balances = null;
+  let balances: any = null;
   let isFunded = null;
   let subentryCount = 0;
 
   try {
-    ({ balances, subentryCount } = await dataProvider.fetchAccountDetails());
-    // let's filter out liquidity pool shares until freighter and wallet-sdk support
-    balances = omitBy(balances, (b: any) => b.liquidity_pool_id) as Balances;
+    const resp = await dataProvider.fetchAccountDetails();
+    balances = resp.balances;
+    subentryCount = resp.subentryCount;
+
+    for (let i = 0; i < Object.keys(resp.balances).length; i++) {
+      const k = Object.keys(resp.balances)[i];
+      const v: any = resp.balances[k];
+      if (v.liquidity_pool_id) {
+        const server = new StellarSdk.Server(networkUrl);
+        const lp = await server
+          .liquidityPools()
+          .liquidityPoolId(v.liquidity_pool_id)
+          .call();
+        balances[k] = {
+          ...balances[k],
+          liquidityPoolId: v.liquidity_pool_id,
+          reserves: lp.reserves,
+        };
+        delete balances[k].liquidity_pool_id;
+      }
+    }
     isFunded = true;
   } catch (e) {
     console.error(e);
@@ -350,7 +367,9 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
+      const { token } = balanceValues[i] as
+        | Types.AssetBalance
+        | Types.NativeBalance;
       if (token && "issuer" in token) {
         const {
           issuer: { key },

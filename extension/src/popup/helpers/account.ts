@@ -8,7 +8,7 @@ export const sortBalances = (balances: Balances) => {
   Object.entries(balances).forEach(([k, v]) => {
     if (k === "native") {
       collection.unshift(v);
-    } else if (!k.includes(":lp")) {
+    } else {
       collection.push(v);
     }
   });
