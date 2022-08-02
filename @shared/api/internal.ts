@@ -1,5 +1,5 @@
 import StellarSdk from "stellar-sdk";
-import { DataProvider, Types } from "@stellar/wallet-sdk";
+import { DataProvider } from "@stellar/wallet-sdk";
 import {
   Account,
   AccountBalancesInterface,
