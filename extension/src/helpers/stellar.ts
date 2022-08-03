@@ -32,6 +32,7 @@ export const getTransactionInfo = (search: string) => {
     tab: { title = "" },
   } = transactionInfo;
   const hostname = getUrlHostname(url);
+  const isHttpsDomain = url.startsWith("https");
   const { _operations = [] } = transaction;
   const operationTypes = _operations.map(
     (operation: { type: string }) => operation.type,
@@ -43,6 +44,7 @@ export const getTransactionInfo = (search: string) => {
     transactionXdr,
     domain: hostname,
     domainTitle: title,
+    isHttpsDomain,
     operations: _operations,
     operationTypes,
     isDomainListedAllowed,
