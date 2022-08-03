@@ -14,6 +14,8 @@ import ImageMissingIcon from "popup/assets/image-missing.svg";
 
 import "./styles.scss";
 
+const getIsXlm = (code: string) => code === "XLM";
+
 export const AssetIcon = ({
   assetIcons,
   code,
@@ -31,7 +33,7 @@ export const AssetIcon = ({
     Method 2. We get an icon path directly from an API (like in the trustline flow) and just pass it to this component to render
   */
 
-  const isXlm = code === "XLM";
+  const isXlm = getIsXlm(code);
 
   // in Method 1, while we wait for the icon path to load, `assetIcons` will be empty until the promise resolves
   // This does not apply for XLM as there is no lookup as that logo lives in this codebase
@@ -83,13 +85,17 @@ export const AssetIcon = ({
   );
 };
 
+interface AccountAssetsProps {
+  assetIcons: AssetIcons;
+  sortedBalances: Array<any>;
+  setSelectedAsset?: (selectedAsset: string) => void;
+}
+
 export const AccountAssets = ({
   assetIcons: inputAssetIcons,
   sortedBalances,
-}: {
-  assetIcons: AssetIcons;
-  sortedBalances: Array<any>;
-}) => {
+  setSelectedAsset,
+}: AccountAssetsProps) => {
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
@@ -121,12 +127,21 @@ export const AccountAssets = ({
     }
   };
 
+  const handleClick = (code: string) => {
+    if (setSelectedAsset) {
+      setSelectedAsset(getIsXlm(code) ? "native" : code);
+    }
+  };
+
   return (
     <>
       {sortedBalances.map(({ token: { issuer, code }, total }) => (
         <div
-          className="AccountAssets__asset"
+          className={`AccountAssets__asset ${
+            setSelectedAsset ? "AccountAssets__asset--has-detail" : ""
+          }`}
           key={`${code}:${issuer?.key || ""}`}
+          onClick={() => handleClick(code)}
         >
           <div className="AccountAssets__copy-left">
             <AssetIcon
