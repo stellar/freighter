@@ -74,7 +74,10 @@ export const ConfirmMnemonicPhrase = ({
 
   return (
     <>
-      <OnboardingScreen className="ConfirmMnemonicPhrase__screen">
+      <OnboardingScreen
+        className="ConfirmMnemonicPhrase__screen"
+        data-testid="ConfirmMnemonicPhrase"
+      >
         <OnboardingHeader className="ConfirmMnemonicPhrase__header">
           {t("Confirm your recovery phrase")}
         </OnboardingHeader>
@@ -113,6 +116,7 @@ export const ConfirmMnemonicPhrase = ({
               </div>
               <SubmitButtonWrapper>
                 <Button
+                  data-testid="display-mnemonic-phrase-confirm-btn"
                   fullWidth
                   type="submit"
                   disabled={!dirty && !!joinSelectedWords().length}
