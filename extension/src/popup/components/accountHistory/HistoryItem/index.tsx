@@ -76,7 +76,7 @@ export const HistoryItem = ({
   let isRecipient = false;
   let paymentDifference = "";
   let rowText = "";
-  let dateText = "";
+  let dateText = date;
   let IconComponent = <Icon.Shuffle className="HistoryItem__icon--default" />;
   let PaymentComponent = null as React.ReactElement | null;
 
