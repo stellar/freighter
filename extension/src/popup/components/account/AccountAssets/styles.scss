@@ -10,6 +10,10 @@ $loader-light-color: #444961;
     font-size: 1rem;
     line-height: 1.5rem;
 
+    &--has-detail {
+      cursor: pointer;
+    }
+
     &--logo {
       margin-right: 1rem;
       width: 2rem;

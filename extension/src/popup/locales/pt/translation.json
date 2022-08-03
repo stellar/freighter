@@ -1,5 +1,7 @@
 {
+  " SWAP": " SWAP",
   "{{srcAssetCode}} for {{destAssetCode}}": "{{srcAssetCode}} for {{destAssetCode}}",
+  "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
@@ -166,6 +168,7 @@
     " Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place."
   },
   "Learn more": "Learn more",
+  "Learn More": "Learn More",
   "Learn more about account creation": "Learn more about account creation",
   "Learn more about account funding": "Learn more about account funding",
   "Learn more about account reserves": "Learn more about account reserves",
@@ -239,6 +242,7 @@
   "Recipient Stellar address": "Recipient Stellar address",
   "Reject": "Reject",
   "Remove": "Remove",
+  "Reserved Balance*": "Reserved Balance*",
   "Review": "Review",
   "Review transaction on device": "Review transaction on device",
   "Same source and destination asset": "Same source and destination asset",
@@ -249,6 +253,7 @@
   "Seller": "Seller",
   "Selling": "Selling",
   "Send": "Send",
+  "SEND": "SEND",
   "Send Payment": "Send Payment",
   "Send Type": "Send Type",
   "Sending Asset": "Sending Asset",
@@ -303,6 +308,8 @@
   "To": "To",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
+  "Total Available": "Total Available",
+  "Total Balance": "Total Balance",
   "transaction": "transaction",
   "Transaction": "Transaction",
   "Transaction Details": "Transaction Details",

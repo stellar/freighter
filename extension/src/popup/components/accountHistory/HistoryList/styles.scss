@@ -1,0 +1,15 @@
+.HistoryList {
+  max-height: 25rem;
+  padding-right: var(--popup--side-padding);
+  width: calc(var(--popup--width) - var(--popup--side-padding));
+
+  &--assetDetail {
+    max-height: 18rem;
+  }
+
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
