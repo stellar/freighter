@@ -3,9 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Types } from "@stellar/wallet-sdk";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
+import { getAccountHistory } from "@shared/api/internal";
 import { AccountBalancesInterface } from "@shared/api/types";
 
 import { Button } from "popup/basics/buttons/Button";
@@ -23,11 +25,16 @@ import {
   resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
-import { sortBalances } from "popup/helpers/account";
+import {
+  AssetOperations,
+  sortBalances,
+  sortOperationsByAsset,
+} from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { AssetDetail } from "popup/components/account/AssetDetail";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
 
@@ -53,7 +60,11 @@ export const Account = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<any>);
+  const [sortedBalances, setSortedBalances] = useState(
+    [] as Array<Types.AssetBalance | Types.NativeBalance>,
+  );
+  const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
+  const [selectedAsset, setSelectedAsset] = useState("");
 
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +90,38 @@ export const Account = () => {
     dispatch(getAssetIcons({ balances, networkDetails }));
   }, [balances, networkDetails, dispatch]);
 
-  return accountBalanceStatus !== ActionStatus.SUCCESS ? null : (
+  useEffect(() => {
+    const fetchAccountHistory = async () => {
+      try {
+        const res = await getAccountHistory({ publicKey, networkDetails });
+        setAssetOperations(
+          sortOperationsByAsset({
+            operations: res.operations,
+            balances: sortedBalances,
+          }),
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchAccountHistory();
+  }, [publicKey, networkDetails, sortedBalances]);
+
+  if (accountBalanceStatus !== ActionStatus.SUCCESS) {
+    // waiting for account balances to load
+    return null;
+  }
+
+  return selectedAsset ? (
+    <AssetDetail
+      accountBalances={accountBalances}
+      assetOperations={assetOperations[selectedAsset]}
+      networkDetails={networkDetails}
+      publicKey={publicKey}
+      selectedAsset={selectedAsset}
+      setSelectedAsset={setSelectedAsset}
+    />
+  ) : (
     <>
       <div className="AccountView">
         <AccountHeader
@@ -130,6 +172,7 @@ export const Account = () => {
             <AccountAssets
               sortedBalances={sortedBalances}
               assetIcons={assetIcons}
+              setSelectedAsset={setSelectedAsset}
             />
           </SimpleBar>
         ) : (
