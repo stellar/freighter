@@ -47,6 +47,11 @@ export const ChooseAsset = ({
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
       for (let i = 0; i < sortedBalances.length; i += 1) {
+        if (sortedBalances[i].liquidityPoolId) {
+          // eslint-disable-next-line
+          continue;
+        }
+
         const {
           token: { code, issuer },
         } = sortedBalances[i];
