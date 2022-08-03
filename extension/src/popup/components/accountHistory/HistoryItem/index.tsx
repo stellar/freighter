@@ -14,9 +14,20 @@ import { HorizonOperation } from "@shared/api/types";
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
 
+export const historyItemDetailViewProps: TransactionDetailProps = {
+  operation: {} as HorizonOperation,
+  headerTitle: "",
+  isPayment: false,
+  isRecipient: false,
+  isSwap: false,
+  operationText: "",
+  externalUrl: "",
+  setIsDetailViewShowing: () => null,
+};
+
 export type HistoryItemOperation = HorizonOperation & {
-  isPayment?: boolean;
-  isSwap?: boolean;
+  isPayment: boolean;
+  isSwap: boolean;
 };
 
 interface HistoryItemProps {
