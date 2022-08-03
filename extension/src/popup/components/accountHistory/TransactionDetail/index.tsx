@@ -5,7 +5,7 @@ import { Button } from "popup/basics/buttons/Button";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { NetworkInfo } from "popup/components/accountHistory/NetworkInfo";
+import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
@@ -81,7 +81,7 @@ export const TransactionDetail = ({
         {isPayment ? (
           <div className="TransactionDetail__header">
             {operationText}
-            <NetworkInfo
+            <AssetNetworkInfo
               assetCode={assetCode || ""}
               assetType={assetType}
               assetIssuer={assetIssuer || ""}

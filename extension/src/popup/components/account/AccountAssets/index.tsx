@@ -169,13 +169,18 @@ export const AccountAssets = ({
           code = rb.token.code;
           amountUnit = rb.token.code;
         }
+        const isLP = issuer === "lp";
+        const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+
         return (
           <div
             className={`AccountAssets__asset ${
-              setSelectedAsset ? "AccountAssets__asset--has-detail" : ""
+              setSelectedAsset && !isLP
+                ? "AccountAssets__asset--has-detail"
+                : ""
             }`}
-            key={`${code}:${issuer?.key || ""}`}
-            onClick={() => handleClick(code)}
+            key={canonicalAsset}
+            onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
           >
             <div className="AccountAssets__copy-left">
               <AssetIcon

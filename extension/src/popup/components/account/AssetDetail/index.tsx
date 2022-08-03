@@ -13,6 +13,7 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -23,7 +24,7 @@ import {
   HistoryItem,
 } from "popup/components/accountHistory/HistoryItem";
 import { HistoryList } from "popup/components/accountHistory/HistoryList";
-import { NetworkInfo } from "popup/components/accountHistory/NetworkInfo";
+import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
 import {
   TransactionDetail,
   TransactionDetailProps,
@@ -53,7 +54,7 @@ export const AssetDetail = ({
   setSelectedAsset,
 }: AssetDetailProps) => {
   const isNative = selectedAsset === "native";
-  const assetCode = isNative ? "XLM" : selectedAsset;
+  const assetCode = getAssetFromCanonical(selectedAsset).code;
 
   const balanceKey = Object.keys(accountBalances?.balances || {}).find((k) =>
     k.includes(selectedAsset),
@@ -94,6 +95,10 @@ export const AssetDetail = ({
     assetIssuer,
   });
 
+  if (!assetOperations) {
+    return null;
+  }
+
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
@@ -119,7 +124,7 @@ export const AssetDetail = ({
         <div className="AssetDetail__total">
           <div className="AssetDetail__total__copy">{balanceTotal}</div>
           <div className="AssetDetail__total__network">
-            <NetworkInfo
+            <AssetNetworkInfo
               assetCode={assetCode}
               assetIssuer={assetIssuer}
               assetType={balance?.token.type || ""}

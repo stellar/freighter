@@ -8,19 +8,19 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 
 import "./styles.scss";
 
-interface NetworkInfoProps {
+interface AssetNetworkInfoProps {
   assetIssuer: string;
   assetCode: string;
   assetType: string;
   assetDomain: string;
 }
 
-export const NetworkInfo = ({
+export const AssetNetworkInfo = ({
   assetIssuer,
   assetCode,
   assetType,
   assetDomain,
-}: NetworkInfoProps) => {
+}: AssetNetworkInfoProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [networkIconUrl, setNetworkIconUrl] = useState("");
 
@@ -46,12 +46,12 @@ export const NetworkInfo = ({
     }
   }, [assetCode, assetIssuer, networkDetails]);
   return (
-    <div className="TransactionDetail__header__network">
+    <div className="AssetNetworkInfo__network">
       <>
         {networkIconUrl || assetType === "native" ? (
           <img src={networkIconUrl || StellarLogo} alt="Network icon" />
         ) : (
-          <div className="TransactionDetail__header__network__icon" />
+          <div className="AssetNetworkInfo__network__icon" />
         )}
 
         <span>{assetDomain || "Stellar Lumens"}</span>

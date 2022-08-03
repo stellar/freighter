@@ -7,6 +7,8 @@ import {
   HorizonOperation,
 } from "@shared/api/types";
 
+import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+
 export const sortBalances = (balances: Balances) => {
   const collection = [] as Array<any>;
   if (!balances) return collection;
@@ -47,20 +49,31 @@ export const sortOperationsByAsset = ({
   operations,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
+
   balances.forEach((bal) => {
-    const key = bal.token.type === "native" ? bal.token.type : bal.token.code;
-    assetOperationMap[key] = [];
+    if (bal.token) {
+      const issuer = "issuer" in bal.token ? bal.token.issuer.key : "";
+      assetOperationMap[getCanonicalFromAsset(bal.token.code, issuer)] = [];
+    }
   });
 
   operations.forEach((op) => {
     if (getIsPayment(op.type)) {
-      Object.keys(assetOperationMap).forEach((asset) => {
-        if (op.asset_code === asset || op.asset_type === asset) {
+      Object.keys(assetOperationMap).forEach((assetKey) => {
+        const asset = getAssetFromCanonical(assetKey);
+        const assetCode = asset.code === "XLM" ? "native" : asset.code;
+        const assetIssuer = asset.issuer;
+
+        if (
+          (op.asset_code === assetCode && op.asset_issuer === assetIssuer) ||
+          op.asset_type === assetCode
+        ) {
           assetOperationMap[asset].push(op);
         } else if ("source_asset_type" in op || "source_asset_code" in op) {
           if (
-            op.source_asset_type === asset ||
-            op.source_asset_code === asset
+            op.source_asset_type === assetCode ||
+            (op.source_asset_code === assetCode &&
+              op.source_asset_issuer === assetIssuer)
           ) {
             assetOperationMap[asset].push(op);
           }
