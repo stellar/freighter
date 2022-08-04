@@ -52,6 +52,7 @@ export const HistoryItem = ({
     created_at: createdAt,
     id,
     to,
+    from,
     type,
     transaction_attr: { operation_count: operationCount },
     isPayment = false,
@@ -111,7 +112,8 @@ export const HistoryItem = ({
       operationText: `+${new BigNumber(amount)} ${destAssetCode}`,
     };
   } else if (isPayment) {
-    isRecipient = to === publicKey;
+    // default to Sent if a payment to self
+    isRecipient = to === publicKey && from !== publicKey;
     paymentDifference = isRecipient ? "+" : "-";
     PaymentComponent = (
       <>
