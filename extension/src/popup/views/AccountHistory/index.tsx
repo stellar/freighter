@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { Loader } from "@stellar/design-system";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation } from "@shared/api/types";
@@ -61,6 +62,7 @@ export const AccountHistory = () => {
   const [detailViewProps, setDetailViewProps] = useState(
     defaultDetailViewProps,
   );
+  const [isLoading, setIsLoading] = useState(false);
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails.isTestnet);
 
@@ -68,6 +70,7 @@ export const AccountHistory = () => {
   const isAccountHistoryLoading = historySegments === null;
 
   useEffect(() => {
+    setIsLoading(true);
     const createSegments = (operations: HorizonOperation[]) => {
       const segments = {
         [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
@@ -81,8 +84,7 @@ export const AccountHistory = () => {
         if (isPayment && !isSwap) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
-          }
-          if (operation.to === publicKey) {
+          } else if (operation.to === publicKey) {
             segments[SELECTOR_OPTIONS.RECEIVED].push(historyOperation);
           }
         }
@@ -100,6 +102,7 @@ export const AccountHistory = () => {
       } catch (e) {
         console.error(e);
       }
+      setIsLoading(false);
     };
     fetchAccountHistory();
   }, [publicKey, networkDetails]);
@@ -108,6 +111,11 @@ export const AccountHistory = () => {
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
+      {isLoading && (
+        <div className="AccountHistory__loader">
+          <Loader size="2rem" />
+        </div>
+      )}
       <div className="AccountHistory__wrapper">
         <header className="AccountHistory__header">{t("Transactions")}</header>
         <div className="AccountHistory__selector">
