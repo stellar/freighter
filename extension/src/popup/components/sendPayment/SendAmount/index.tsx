@@ -123,16 +123,16 @@ export const SendAmount = ({
 
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(
-            accountBalances.balances[selectedAsset].total.toString(),
+            accountBalances.balances[selectedAsset].total.toFixed(),
           );
           availBalance = currentBal
             .minus(new BigNumber(baseReserve))
             .minus(new BigNumber(Number(recommendedFee)))
-            .toString();
+            .toFixed();
         } else {
           availBalance = accountBalances.balances[
             selectedAsset
-          ].total.toString();
+          ].total.toFixed();
         }
       }
 
@@ -227,7 +227,8 @@ export const SendAmount = ({
     if (isSwap && !destinationAsset) {
       // default to first non-native asset if exists
       const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
-        (b) => b !== StellarSdk.Asset.native().toString(),
+        (b) =>
+          b !== StellarSdk.Asset.native().toString() && b.indexOf(":lp") === -1,
       );
       dispatch(
         saveDestinationAsset(

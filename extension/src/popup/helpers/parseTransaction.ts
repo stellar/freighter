@@ -19,11 +19,20 @@ export const decodeMemo = (memo: {}) => {
 
 /*  eslint-disable camelcase  */
 export enum RESULT_CODES {
+  tx_failed = "tx_failed",
+  tx_insufficient_fee = "tx_insufficient_fee",
   op_invalid_limit = "op_invalid_limit",
   op_low_reserve = "op_low_reserve",
   op_under_dest_min = "op_under_dest_min",
+  op_underfunded = "op_underfunded",
+  op_no_destination = "op_no_destination",
+  op_no_trust = "op_no_trust",
 }
 /*  eslint-enable camelcase  */
 
-export const getResultCodes = (error: ErrorMessage | undefined) =>
-  error?.response?.extras?.result_codes || { operations: [], transaction: "" };
+export const getResultCodes = (error: ErrorMessage | undefined) => {
+  const txError = get(error, "response.extras.result_codes.transaction", "");
+  const opErrors = get(error, "response.extras.result_codes.operations", []);
+
+  return { operations: opErrors, transaction: txError };
+};
