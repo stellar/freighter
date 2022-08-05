@@ -49,15 +49,8 @@
     }
   }
 
-  &__account-selector {
-    background: var(--background-color);
-    border-radius: 1.5rem 1.5rem 0 0;
-    box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
+  &__modal {
     padding: 0.5rem 0 0.5rem 1.5rem;
-    position: absolute;
-    transition: all var(--dropdown-animation);
-    width: var(--popup--width);
-    z-index: var(--z-index-modal);
   }
 
   &__account-not-found {

@@ -1,4 +1,7 @@
 {
+  " SWAP": " SWAP",
+  "{{srcAssetCode}} for {{destAssetCode}}": "{{srcAssetCode}} for {{destAssetCode}}",
+  "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
@@ -6,6 +9,7 @@
   "About": "About",
   "account": "account",
   "Account": "Account",
+  "Account minimum balance is too low": "Account minimum balance is too low",
   "Action": "Action",
   "Add": "Add",
   "Add address": "Add address",
@@ -76,7 +80,7 @@
   "Continue": "Continue",
   "CONTINUE": "CONTINUE",
   "Conversion rate": "Conversion rate",
-  "CONVERSION RATE CHANGED": "CONVERSION RATE CHANGED",
+  "Conversion rate changed": "Conversion rate changed",
   "COPY": "COPY",
   "Create a new Stellar address": "Create a new Stellar address",
   "Create a password": "Create a password",
@@ -84,6 +88,8 @@
   "Custom": "Custom",
   "Date": "Date",
   "Destination": "Destination",
+  "Destination account does not accept this asset": "Destination account does not accept this asset",
+  "Destination account doesn’t exist": "Destination account doesn’t exist",
   "Destination Asset": "Destination Asset",
   "Detect device": "Detect device",
   "Detecting": "Detecting",
@@ -106,8 +112,10 @@
   "Error connecting": {
     " Please try again": "Error connecting. Please try again."
   },
-  "Failed": "Failed",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
+  "Fees can vary depending on the network congestion": {
+    " Please try using the suggested fee and try again": "Fees can vary depending on the network congestion. Please try using the suggested fee and try again."
+  },
   "For your safety, signing this transaction is disabled": "For your safety, signing this transaction is disabled",
   "For your security, we'll check if you got it right in the next step": "For your security, we'll check if you got it right in the next step.",
   "Freighter can’t recover your imported secret key using your recovery phrase": {
@@ -148,6 +156,8 @@
   "Include a custom memo to this transaction": "Include a custom memo to this transaction",
   "Inflation Destination": "Inflation Destination",
   "Inner Transaction": "Inner Transaction",
+  "Insufficient Balance": "Insufficient Balance",
+  "Insufficient Fee": "Insufficient Fee",
   "invalid federation address": "invalid federation address",
   "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
@@ -158,10 +168,13 @@
     " Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place."
   },
   "Learn more": "Learn more",
+  "Learn More": "Learn More",
   "Learn more about account creation": "Learn more about account creation",
+  "Learn more about account funding": "Learn more about account funding",
   "Learn more about account reserves": "Learn more about account reserves",
   "Learn more about assets domains": "Learn more about assets domains",
   "Learn more about conversion rates": "Learn more about conversion rates",
+  "Learn more about fees": "Learn more about fees",
   "Learn more about transaction fees": "Learn more about transaction fees",
   "Learn more about trustlines": "Learn more about trustlines",
   "Leave Feedback": "Leave Feedback",
@@ -202,11 +215,11 @@
   },
   "no path found": "no path found",
   "No transactions to show": "No transactions to show",
-  "NO TRUSTLINE TO SENT ASSET": "NO TRUSTLINE TO SENT ASSET",
   "None": "None",
   "Not defined": "Not defined",
   "Not enough lumens": "Not enough lumens",
   "Offer Id": "Offer Id",
+  "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
   "only way to access it in a new browser": "only way to access it in a new browser",
   "Operation": "Operation",
   "Operations": "Operations",
@@ -229,6 +242,7 @@
   "Recipient Stellar address": "Recipient Stellar address",
   "Reject": "Reject",
   "Remove": "Remove",
+  "Reserved Balance*": "Reserved Balance*",
   "Review": "Review",
   "Review transaction on device": "Review transaction on device",
   "Same source and destination asset": "Same source and destination asset",
@@ -239,6 +253,7 @@
   "Seller": "Seller",
   "Selling": "Selling",
   "Send": "Send",
+  "SEND": "SEND",
   "Send Payment": "Send Payment",
   "Send Type": "Send Type",
   "Sending Asset": "Sending Asset",
@@ -263,29 +278,42 @@
   "Successfuly": "Successfuly",
   "swap": "swap",
   "Swap": "Swap",
+  "Swap • {{date}}": "Swap • {{date}}",
+  "Swap failed": "Swap failed",
   "swapped": "swapped",
   "Swapped": "Swapped",
+  "Swapped {{srcAssetCode}} for {{destAssetCode}}": "Swapped {{srcAssetCode}} for {{destAssetCode}}",
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
+  "The destination account does not accept the asset you’re sending": {
+    " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
+  },
   "The destination account doesn’t exist": {
+    " Make sure it is a funded Stellar account and try again": "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again.",
     " Send at least 1 XLM to create account": "The destination account doesn’t exist. Send at least 1 XLM to create account."
   },
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
-  "The receiving account doesn’t have a trustline to the sent asset": "The receiving account doesn’t have a trustline to the sent asset",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
+  "The website <1>{{domain}}</1> does not use an SSL certificate": {
+    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{{domain}}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
+  },
   "them noted to confirm you go them right": "them noted to confirm you go them right",
   "This asset has a balance": "This asset has a balance",
   "This asset has a balance of": "This asset has a balance of",
   "This transaction could not be completed": "This transaction could not be completed.",
   "This website wants to know your public key": "This website wants to know your public key",
   "To": "To",
+  "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
+  "Total Available": "Total Available",
+  "Total Balance": "Total Balance",
   "transaction": "transaction",
   "Transaction": "Transaction",
   "Transaction Details": "Transaction Details",
+  "Transaction failed": "Transaction failed",
   "Transaction fee": "Transaction fee",
   "Transaction Info": "Transaction Info",
   "Transaction Rejected": "Transaction Rejected.",
@@ -303,6 +331,7 @@
   "View public key": "View public key",
   "Wallet Address": "Wallet Address",
   "Want to add another account?": "Want to add another account?",
+  "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
   "Weight": "Weight",
   "Welcome! Is this your first time using Freighter?": "Welcome! Is this your first time using Freighter?",
   "which is not available on Freighter": {
@@ -317,6 +346,9 @@
     " Keep your recovery phrase safe, it’s your responsibility": "You successfully imported your account. Keep your recovery phrase safe, it’s your responsibility"
   },
   "You’re good to go!": "You’re good to go!",
+  "Your account balance is not sufficient for this transaction": {
+    " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
+  },
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"
 }

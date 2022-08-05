@@ -1,0 +1,23 @@
+.AssetNetworkInfo {
+  &__network {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    margin-top: 0.75rem;
+
+    &__icon {
+      background: var(--pal-brand-primary);
+      border-radius: 10rem;
+      height: var(--TransactionDetail--icon-dimension);
+      width: var(--TransactionDetail--icon-dimension);
+    }
+
+    img {
+      height: var(--TransactionDetail--icon-dimension);
+      width: var(--TransactionDetail--icon-dimension);
+    }
+  }
+}
