@@ -228,8 +228,8 @@ export const SendAmount = ({
       let defaultDestAsset;
 
       // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
-      if (formik.values.asset !== "native") {
-        defaultDestAsset = "native";
+      if (formik.values.asset !== StellarSdk.Asset.native().toString()) {
+        defaultDestAsset = StellarSdk.Asset.native().toString();
       } else {
         // otherwise default to first non-native asset if exists
         const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
