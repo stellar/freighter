@@ -103,6 +103,11 @@ export const AssetDetail = ({
     return null;
   }
 
+  if (assetIssuer && !assetDomain) {
+    // if we have an asset issuer, wait until we have the asset domain before continuing
+    return null;
+  }
+
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
