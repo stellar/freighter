@@ -155,6 +155,12 @@ export const HistoryItem = ({
       headerTitle: t(`Create Account {{account}}`, {
         account: truncatedPublicKey(account),
       }),
+      isPayment: true,
+      operation: {
+        ...operation,
+        asset_type: "native",
+        to: account,
+      },
       operationText: `-${new BigNumber(startingBalance)} XLM`,
     };
   } else {
