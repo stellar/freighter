@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon } from "@stellar/design-system";
@@ -31,6 +32,8 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { saveAsset } from "popup/ducks/transactionSubmission";
+import { AppDispatch } from "popup/App";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -53,6 +56,7 @@ export const AssetDetail = ({
   selectedAsset,
   setSelectedAsset,
 }: AssetDetailProps) => {
+  const dispatch: AppDispatch = useDispatch();
   const isNative = selectedAsset === "native";
   const assetCode = getAssetFromCanonical(selectedAsset).code;
 
@@ -135,10 +139,20 @@ export const AssetDetail = ({
         <div className="AssetDetail__actions">
           {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
             <>
-              <PillButton onClick={() => navigateTo(ROUTES.sendPayment)}>
+              <PillButton
+                onClick={() => {
+                  dispatch(saveAsset(selectedAsset));
+                  navigateTo(ROUTES.sendPayment);
+                }}
+              >
                 {t("SEND")}
               </PillButton>
-              <PillButton onClick={() => navigateTo(ROUTES.swap)}>
+              <PillButton
+                onClick={() => {
+                  dispatch(saveAsset(selectedAsset));
+                  navigateTo(ROUTES.swap);
+                }}
+              >
                 {t(" SWAP")}
               </PillButton>
             </>
