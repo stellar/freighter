@@ -8,6 +8,7 @@ import { OPERATION_TYPES } from "constants/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
+import { truncatedPublicKey } from "helpers/stellar";
 
 import { HorizonOperation } from "@shared/api/types";
 
@@ -17,6 +18,7 @@ import "./styles.scss";
 export const historyItemDetailViewProps: TransactionDetailProps = {
   operation: {} as HorizonOperation,
   headerTitle: "",
+  isCreateExternalAccount: false,
   isPayment: false,
   isRecipient: false,
   isSwap: false,
@@ -26,6 +28,7 @@ export const historyItemDetailViewProps: TransactionDetailProps = {
 };
 
 export type HistoryItemOperation = HorizonOperation & {
+  isCreateExternalAccount: boolean;
   isPayment: boolean;
   isSwap: boolean;
 };
@@ -47,14 +50,17 @@ export const HistoryItem = ({
 }: HistoryItemProps) => {
   const { t } = useTranslation();
   const {
+    account,
     amount,
     asset_code: assetCode,
     created_at: createdAt,
     id,
     to,
     from,
+    starting_balance: startingBalance,
     type,
     transaction_attr: { operation_count: operationCount },
+    isCreateExternalAccount = false,
     isPayment = false,
     isSwap = false,
   } = operation;
@@ -83,6 +89,7 @@ export const HistoryItem = ({
 
   let transactionDetailProps: TransactionDetailProps = {
     operation,
+    isCreateExternalAccount,
     isRecipient,
     isPayment,
     isSwap,
@@ -137,6 +144,18 @@ export const HistoryItem = ({
       operationText: `${paymentDifference}${new BigNumber(
         amount,
       )} ${destAssetCode}`,
+    };
+  } else if (isCreateExternalAccount) {
+    PaymentComponent = <>-{new BigNumber(startingBalance).toFixed(2, 1)} XLM</>;
+    IconComponent = <Icon.ArrowUp className="HistoryItem__icon--sent" />;
+    rowText = "XLM";
+    dateText = `${t("Sent")} \u2022 ${date}`;
+    transactionDetailProps = {
+      ...transactionDetailProps,
+      headerTitle: t(`Create Account {{account}}`, {
+        account: truncatedPublicKey(account),
+      }),
+      operationText: `-${new BigNumber(startingBalance)} XLM`,
     };
   } else {
     rowText = operationString;

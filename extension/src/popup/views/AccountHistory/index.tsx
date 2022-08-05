@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
+import { Horizon } from "stellar-sdk";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation } from "@shared/api/types";
@@ -80,13 +81,26 @@ export const AccountHistory = () => {
       operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
         const isSwap = getIsSwap(operation);
-        const historyOperation = { ...operation, isPayment, isSwap };
+        const isCreateExternalAccount =
+          operation.type === Horizon.OperationResponseType.createAccount &&
+          operation.account !== publicKey;
+        const historyOperation = {
+          ...operation,
+          isPayment,
+          isSwap,
+          isCreateExternalAccount,
+        };
+
         if (isPayment && !isSwap) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
           } else if (operation.to === publicKey) {
             segments[SELECTOR_OPTIONS.RECEIVED].push(historyOperation);
           }
+        }
+
+        if (isCreateExternalAccount) {
+          segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
         }
 
         segments[SELECTOR_OPTIONS.ALL].push(historyOperation);
