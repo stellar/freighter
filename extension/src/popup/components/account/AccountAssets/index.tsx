@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { isEmpty } from "lodash";
-import { Horizon } from "stellar-sdk";
+import StellarSdk, { Horizon } from "stellar-sdk";
 
 import { AssetIcons } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
@@ -149,9 +149,18 @@ export const AccountAssets = ({
     if (!reserves[0] || !reserves[1]) {
       return "";
     }
-    return `${reserves[0].asset.split(":")[0]} / ${
-      reserves[1].asset.split(":")[0]
-    } `;
+
+    let assetA = reserves[0].asset.split(":")[0];
+    let assetB = reserves[1].asset.split(":")[0];
+
+    if (assetA === StellarSdk.Asset.native().toString()) {
+      assetA = StellarSdk.Asset.native().code;
+    }
+    if (assetB === StellarSdk.Asset.native().toString()) {
+      assetB = StellarSdk.Asset.native().code;
+    }
+
+    return `${assetA} / ${assetB} `;
   };
 
   return (
