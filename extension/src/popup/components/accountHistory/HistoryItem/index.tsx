@@ -8,7 +8,6 @@ import { OPERATION_TYPES } from "constants/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
-import { truncatedPublicKey } from "helpers/stellar";
 
 import { HorizonOperation } from "@shared/api/types";
 
@@ -152,9 +151,7 @@ export const HistoryItem = ({
     dateText = `${t("Sent")} \u2022 ${date}`;
     transactionDetailProps = {
       ...transactionDetailProps,
-      headerTitle: t(`Create Account {{account}}`, {
-        account: truncatedPublicKey(account),
-      }),
+      headerTitle: t("Create Account"),
       isPayment: true,
       operation: {
         ...operation,
