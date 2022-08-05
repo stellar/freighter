@@ -20,6 +20,7 @@ import "./styles.scss";
 export interface TransactionDetailProps {
   operation: HorizonOperation;
   headerTitle: string;
+  isCreateExternalAccount: boolean;
   isRecipient: boolean;
   isPayment: boolean;
   isSwap: boolean;
