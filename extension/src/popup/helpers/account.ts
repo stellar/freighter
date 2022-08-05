@@ -9,20 +9,25 @@ import {
 
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 
+export const LP_IDENTIFIER = ":lp";
+
 export const sortBalances = (balances: Balances) => {
   const collection = [] as Array<any>;
+  const lpBalances = [] as Array<any>;
   if (!balances) return collection;
 
-  // put XLM at the top of the balance list
+  // put XLM at the top of the balance list, LP shares last
   Object.entries(balances).forEach(([k, v]) => {
     if (k === "native") {
       collection.unshift(v);
+    } else if (k.includes(LP_IDENTIFIER)) {
+      lpBalances.push(v);
     } else {
       collection.push(v);
     }
   });
 
-  return collection;
+  return collection.concat(lpBalances);
 };
 
 export const getIsPayment = (type: Horizon.OperationResponseType) =>
