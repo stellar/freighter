@@ -3,6 +3,19 @@
     padding: var(--popup-vertical-padding) var(--popup--side-padding);
   }
 
+  &__loader {
+    height: var(--popup--height);
+    width: var(--popup--width);
+    z-index: calc(var(--back--button-z-index) + 1);
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+  }
+
   &__header {
     font-size: 1.25rem;
     margin-bottom: 1.5rem;
@@ -33,17 +46,5 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-
-    &__scrollbar {
-      max-height: 25rem;
-      padding-right: var(--popup--side-padding);
-      width: calc(var(--popup--width) - var(--popup--side-padding));
-    }
-
-    &__items {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
   }
 }

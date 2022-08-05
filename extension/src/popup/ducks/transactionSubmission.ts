@@ -242,7 +242,7 @@ interface InitialState {
   assetIcons: AssetIcons;
 }
 
-const initialState: InitialState = {
+export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
   response: null,
@@ -324,7 +324,6 @@ const transactionSubmissionSlice = createSlice({
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
     },
-    
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {

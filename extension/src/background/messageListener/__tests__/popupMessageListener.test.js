@@ -1,11 +1,11 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
 import { store } from "background/store";
-import { sessionSlice } from "background/ducks/session";
 import {
   publicKeySelector,
   privateKeySelector,
   allAccountsSelector,
+  sessionSlice,
 } from "background/ducks/session";
 import { decodeString } from "helpers/urls";
 
@@ -47,7 +47,7 @@ describe("regular account flow", () => {
       const r = {};
       r.type = SERVICE_TYPES.LOAD_ACCOUNT;
 
-      const resp = await popupMessageListener(r);
+      await popupMessageListener(r);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
