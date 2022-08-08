@@ -23,6 +23,7 @@ import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
+import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -235,7 +236,7 @@ export const SendAmount = ({
         const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
           (b) =>
             b !== StellarSdk.Asset.native().toString() &&
-            b.indexOf(":lp") === -1,
+            b.indexOf(LP_IDENTIFIER) === -1,
         );
         defaultDestAsset = nonXlmAssets[0]
           ? nonXlmAssets[0]
