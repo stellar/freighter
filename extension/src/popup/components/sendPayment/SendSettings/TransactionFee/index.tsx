@@ -2,6 +2,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Formik, Form, Field, FieldProps } from "formik";
+import { object as YupObject, number as YupNumber } from "yup";
 import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -59,8 +60,14 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
             dispatch(saveTransactionFee(String(values.transactionFee)));
             navigateTo(previous);
           }}
+          validationSchema={YupObject().shape({
+            transactionFee: YupNumber().min(
+              0.00001,
+              `${t("must be greater than")} 0.00001`,
+            ),
+          })}
         >
-          {({ setFieldValue }) => (
+          {({ setFieldValue, values, isValid, errors }) => (
             <Form>
               <FormRows>
                 <Field name="transactionFee">
@@ -71,6 +78,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                         className="SendTo__input"
                         type="number"
                         {...field}
+                        error={errors.transactionFee}
                       />
                       <div className="TransactionFee__row">
                         <TextLink
@@ -95,6 +103,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                 <Button
                   fullWidth
                   variant={Button.variant.tertiary}
+                  disabled={!values.transactionFee || !isValid}
                   type="submit"
                 >
                   {t("Done")}

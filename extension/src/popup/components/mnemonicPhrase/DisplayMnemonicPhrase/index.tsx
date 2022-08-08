@@ -24,7 +24,10 @@ export const DisplayMnemonicPhrase = ({
   const { t } = useTranslation();
 
   return (
-    <div className="DisplayMnemonicPhrase">
+    <div
+      className="DisplayMnemonicPhrase"
+      data-testid="display-mnemonic-phrase"
+    >
       <OnboardingScreen className="DisplayMnemonicPhrase__screen">
         <OnboardingHalfScreen className="DisplayMnemonicPhrase__half-screen">
           <OnboardingHeader className="DisplayMnemonicPhrase__header">
@@ -54,6 +57,7 @@ export const DisplayMnemonicPhrase = ({
           </InfoBlock>
           <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} />
           <Button
+            data-testid="display-mnemonic-phrase-next-btn"
             fullWidth
             onClick={() => {
               navigateTo(ROUTES.mnemonicPhraseConfirm);
