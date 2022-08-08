@@ -1,32 +1,29 @@
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import StellarSdk from "stellar-sdk";
+import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
 import { stroopToXlm } from "helpers/stellar";
-import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { useAssetDomain } from "popup/helpers/useAssetDomain";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { HorizonOperation } from "@shared/api/types";
-import StellarLogo from "popup/assets/stellar-logo.png";
-
 import "./styles.scss";
 
 export interface TransactionDetailProps {
   operation: HorizonOperation;
   headerTitle: string;
+  isCreateExternalAccount: boolean;
   isRecipient: boolean;
   isPayment: boolean;
+  isSwap: boolean;
   operationText: string;
   externalUrl: string;
   setIsDetailViewShowing: (isDetailViewShoing: boolean) => void;
@@ -37,6 +34,7 @@ export const TransactionDetail = ({
   headerTitle,
   isPayment,
   isRecipient,
+  isSwap,
   operationText,
   externalUrl,
   setIsDetailViewShowing,
@@ -69,46 +67,12 @@ export const TransactionDetail = ({
   };
 
   const { t } = useTranslation();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [networkIconUrl, setNetworkIconUrl] = useState("");
-  const [networkDomain, setNetworkDomain] = useState("");
 
-  useEffect(() => {
-    const fetchIconUrl = async () => {
-      const { networkUrl } = networkDetails;
-      const server = new StellarSdk.Server(networkUrl);
-      let iconUrl = "";
-      let assetDomain = "";
+  const { assetDomain } = useAssetDomain({
+    assetIssuer,
+  });
 
-      // TODO: Combine these 2 into 1 call. getIconUrlFromIssuer load's the issuer account from Horizon.
-      // Find a way to get the icon and the home domain in one call even when icon is cached
-      // https://github.com/stellar/freighter/issues/410
-      try {
-        ({ home_domain: assetDomain } = await server.loadAccount(assetIssuer));
-      } catch (e) {
-        console.error(e);
-      }
-      setNetworkDomain(assetDomain || " ");
-
-      try {
-        iconUrl = await getIconUrlFromIssuer({
-          key: assetIssuer || "",
-          code: assetCode || "",
-          networkDetails,
-        });
-      } catch (e) {
-        console.error(e);
-      }
-
-      setNetworkIconUrl(iconUrl);
-    };
-
-    if (assetIssuer) {
-      fetchIconUrl();
-    }
-  }, [assetCode, assetIssuer, isRecipient, networkDetails]);
-
-  return assetIssuer && !networkDomain ? null : (
+  return assetIssuer && !assetDomain ? null : (
     <div className="TransactionDetail">
       <div className="TransactionDetail__content">
         <SubviewHeader
@@ -118,23 +82,18 @@ export const TransactionDetail = ({
         {isPayment ? (
           <div className="TransactionDetail__header">
             {operationText}
-            <div className="TransactionDetail__header__network">
-              <>
-                {networkIconUrl || assetType === "native" ? (
-                  <img src={networkIconUrl || StellarLogo} alt="Network icon" />
-                ) : (
-                  <div className="TransactionDetail__header__network__icon" />
-                )}
-
-                <span>{networkDomain || "Stellar Lumens"}</span>
-              </>
-            </div>
+            <AssetNetworkInfo
+              assetCode={assetCode || ""}
+              assetType={assetType}
+              assetIssuer={assetIssuer || ""}
+              assetDomain={assetDomain}
+            />
           </div>
         ) : null}
 
         <div className="TransactionDetail__info">
           <div className="TransactionDetail__info__row">
-            {isPayment ? (
+            {isPayment && !isSwap ? (
               <>
                 {isRecipient ? (
                   <>
@@ -159,10 +118,12 @@ export const TransactionDetail = ({
                 )}
               </>
             ) : (
-              <>
-                <div>{t("Action")}</div>
-                <div>{operationText}</div>
-              </>
+              !isSwap && (
+                <>
+                  <div>{t("Action")}</div>
+                  <div>{operationText}</div>
+                </>
+              )
             )}
           </div>
           <div className="TransactionDetail__info__row">
