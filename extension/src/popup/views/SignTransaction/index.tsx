@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
 import { FederationServer, MuxedAccount } from "stellar-sdk";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -17,7 +17,6 @@ import {
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
-import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { TransactionHeading } from "popup/basics/TransactionHeading";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import {
@@ -48,13 +47,15 @@ import {
 } from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
 import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
+import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { SlideupModal } from "popup/components/SlideupModal";
+
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import {
   HwOverlayStatus,
   startHwSign,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 
 import { Account } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
@@ -71,6 +72,7 @@ export const SignTransaction = () => {
     transactionXdr,
     domain,
     isDomainListedAllowed,
+    isHttpsDomain,
     flaggedKeys,
   } = getTransactionInfo(location.search);
   const {
@@ -95,7 +97,6 @@ export const SignTransaction = () => {
   const [currentAccount, setCurrentAccount] = useState({} as Account);
   const [accountNotFound, setAccountNotFound] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  const accountSelectorRef = useRef<HTMLDivElement>(null);
   const [startedHwSign, setStartedHwSign] = useState(false);
 
   useEffect(() => {
@@ -252,6 +253,27 @@ export const SignTransaction = () => {
     );
   }
 
+  if (!isHttpsDomain) {
+    return (
+      <ModalWrapper>
+        <WarningMessage
+          handleCloseClick={() => window.close()}
+          isActive
+          isHighAlert
+          header={t("WEBSITE CONNECTION IS NOT SECURE")}
+        >
+          <p>
+            <Trans domain={domain}>
+              The website <strong>{{ domain }}</strong> does not use an SSL
+              certificate. For additional safety Freighter only works with
+              websites that provide an SSL certificate.
+            </Trans>
+          </p>
+        </WarningMessage>
+      </ModalWrapper>
+    );
+  }
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -261,7 +283,7 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="SignTransaction">
+      <div className="SignTransaction" data-testid="SignTransaction">
         <ModalWrapper>
           <ModalHeader>
             <strong>{t("Confirm Transaction")}</strong>
@@ -363,25 +385,18 @@ export const SignTransaction = () => {
             {t("Approve")}
           </Button>
         </ButtonsContainer>
-        <div
-          className="SignTransaction__account-selector"
-          ref={accountSelectorRef}
-          style={{
-            bottom: isDropdownOpen
-              ? "0px"
-              : `-${accountSelectorRef?.current?.clientHeight}px`,
-          }}
+        <SlideupModal
+          isModalOpen={isDropdownOpen}
+          setIsModalOpen={setIsDropdownOpen}
         >
-          <AccountList
-            allAccounts={allAccounts}
-            publicKey={publicKey}
-            setIsDropdownOpen={setIsDropdownOpen}
-          />
-        </div>
-        <LoadingBackground
-          onClick={() => setIsDropdownOpen(false)}
-          isActive={isDropdownOpen}
-        />
+          <div className="SignTransaction__modal">
+            <AccountList
+              allAccounts={allAccounts}
+              publicKey={publicKey}
+              setIsDropdownOpen={setIsDropdownOpen}
+            />
+          </div>
+        </SlideupModal>
       </div>
     </>
   );

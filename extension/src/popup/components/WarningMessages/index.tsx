@@ -43,6 +43,7 @@ export const WarningMessage = ({
       className={`WarningMessage__infoBlock ${
         isHighAlert ? "WarningMessage__infoBlock--high-alert" : ""
       }`}
+      data-testid="WarningMessage"
     >
       <div className="WarningMessage__header">
         <Icon.AlertTriangle className="WarningMessage__icon" />

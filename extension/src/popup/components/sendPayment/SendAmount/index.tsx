@@ -23,6 +23,7 @@ import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
+import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -123,16 +124,16 @@ export const SendAmount = ({
 
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(
-            accountBalances.balances[selectedAsset].total.toString(),
+            accountBalances.balances[selectedAsset].total.toFixed(),
           );
           availBalance = currentBal
             .minus(new BigNumber(baseReserve))
             .minus(new BigNumber(Number(recommendedFee)))
-            .toString();
+            .toFixed();
         } else {
           availBalance = accountBalances.balances[
             selectedAsset
-          ].total.toString();
+          ].total.toFixed();
         }
       }
 
@@ -222,22 +223,35 @@ export const SendAmount = ({
     dispatch,
   ]);
 
-  // for swaps we're loading the destinationAsset here
+  // for swaps we're loading and choosing the default destinationAsset here
   useEffect(() => {
     if (isSwap && !destinationAsset) {
-      // default to first non-native asset if exists
-      const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
-        (b) => b !== StellarSdk.Asset.native().toString(),
-      );
-      dispatch(
-        saveDestinationAsset(
-          nonXlmAssets[0]
-            ? nonXlmAssets[0]
-            : StellarSdk.Asset.native().toString(),
-        ),
-      );
+      let defaultDestAsset;
+
+      // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
+      if (formik.values.asset !== StellarSdk.Asset.native().toString()) {
+        defaultDestAsset = StellarSdk.Asset.native().toString();
+      } else {
+        // otherwise default to first non-native asset if exists
+        const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
+          (b) =>
+            b !== StellarSdk.Asset.native().toString() &&
+            b.indexOf(LP_IDENTIFIER) === -1,
+        );
+        defaultDestAsset = nonXlmAssets[0]
+          ? nonXlmAssets[0]
+          : StellarSdk.Asset.native().toString();
+      }
+
+      dispatch(saveDestinationAsset(defaultDestAsset));
     }
-  }, [isSwap, dispatch, destinationAsset, accountBalances]);
+  }, [
+    isSwap,
+    dispatch,
+    destinationAsset,
+    accountBalances,
+    formik.values.asset,
+  ]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;

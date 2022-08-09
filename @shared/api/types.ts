@@ -71,9 +71,7 @@ export interface AssetIcons {
 export type Balances = Types.BalanceMap | null;
 
 /* eslint-disable camelcase */
-export type HorizonOperation = Horizon.PaymentOperationResponse & {
-  transaction_attr: Horizon.TransactionResponse;
-};
+export type HorizonOperation = any;
 /* eslint-enable camelcase */
 
 export interface AccountBalancesInterface {

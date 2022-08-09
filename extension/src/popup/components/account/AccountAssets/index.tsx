@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { isEmpty } from "lodash";
+import StellarSdk, { Horizon } from "stellar-sdk";
 
 import { AssetIcons } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
@@ -14,16 +15,20 @@ import ImageMissingIcon from "popup/assets/image-missing.svg";
 
 import "./styles.scss";
 
+const getIsXlm = (code: string) => code === "XLM";
+
 export const AssetIcon = ({
   assetIcons,
   code,
   issuerKey,
   retryAssetIconFetch,
+  isLPShare = false,
 }: {
   assetIcons: AssetIcons;
   code: string;
   issuerKey: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
+  isLPShare?: boolean;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -31,7 +36,7 @@ export const AssetIcon = ({
     Method 2. We get an icon path directly from an API (like in the trustline flow) and just pass it to this component to render
   */
 
-  const isXlm = code === "XLM";
+  const isXlm = getIsXlm(code);
 
   // in Method 1, while we wait for the icon path to load, `assetIcons` will be empty until the promise resolves
   // This does not apply for XLM as there is no lookup as that logo lives in this codebase
@@ -44,6 +49,15 @@ export const AssetIcon = ({
 
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
   const imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+
+  // If an LP share return early w/ hardcoded icon
+  if (isLPShare) {
+    return (
+      <div className="AccountAssets__asset--logo AccountAssets__asset--lp-share">
+        LP
+      </div>
+    );
+  }
 
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
   if (isFetchingAssetIcons) {
@@ -83,13 +97,17 @@ export const AssetIcon = ({
   );
 };
 
+interface AccountAssetsProps {
+  assetIcons: AssetIcons;
+  sortedBalances: Array<any>;
+  setSelectedAsset?: (selectedAsset: string) => void;
+}
+
 export const AccountAssets = ({
   assetIcons: inputAssetIcons,
   sortedBalances,
-}: {
-  assetIcons: AssetIcons;
-  sortedBalances: Array<any>;
-}) => {
+  setSelectedAsset,
+}: AccountAssetsProps) => {
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
@@ -121,29 +139,76 @@ export const AccountAssets = ({
     }
   };
 
+  const handleClick = (code: string) => {
+    if (setSelectedAsset) {
+      setSelectedAsset(getIsXlm(code) ? "native" : code);
+    }
+  };
+
+  const getLPShareCode = (reserves: Horizon.Reserve[]) => {
+    if (!reserves[0] || !reserves[1]) {
+      return "";
+    }
+
+    let assetA = reserves[0].asset.split(":")[0];
+    let assetB = reserves[1].asset.split(":")[0];
+
+    if (assetA === StellarSdk.Asset.native().toString()) {
+      assetA = StellarSdk.Asset.native().code;
+    }
+    if (assetB === StellarSdk.Asset.native().toString()) {
+      assetB = StellarSdk.Asset.native().code;
+    }
+
+    return `${assetA} / ${assetB} `;
+  };
+
   return (
     <>
-      {sortedBalances.map(({ token: { issuer, code }, total }) => (
-        <div
-          className="AccountAssets__asset"
-          key={`${code}:${issuer?.key || ""}`}
-        >
-          <div className="AccountAssets__copy-left">
-            <AssetIcon
-              assetIcons={assetIcons}
-              code={code}
-              issuerKey={issuer?.key}
-              retryAssetIconFetch={retryAssetIconFetch}
-            />
-            <span>{code}</span>
-          </div>
-          <div className="AccountAssets__copy-right">
-            <div>
-              {new BigNumber(total).toString()} <span>{code}</span>
+      {sortedBalances.map((rb: any) => {
+        let issuer;
+        let code = "";
+        let amountUnit;
+        if (rb.liquidityPoolId) {
+          issuer = "lp";
+          code = getLPShareCode(rb.reserves);
+          amountUnit = "shares";
+        } else {
+          issuer = rb.token.issuer;
+          code = rb.token.code;
+          amountUnit = rb.token.code;
+        }
+        const isLP = issuer === "lp";
+        const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+
+        return (
+          <div
+            className={`AccountAssets__asset ${
+              setSelectedAsset && !isLP
+                ? "AccountAssets__asset--has-detail"
+                : ""
+            }`}
+            key={canonicalAsset}
+            onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
+          >
+            <div className="AccountAssets__copy-left">
+              <AssetIcon
+                assetIcons={assetIcons}
+                code={code}
+                issuerKey={issuer?.key}
+                retryAssetIconFetch={retryAssetIconFetch}
+                isLPShare={!!rb.liquidityPoolId}
+              />
+              <span>{code}</span>
+            </div>
+            <div className="AccountAssets__copy-right">
+              <div>
+                {new BigNumber(rb.total).toFixed()} <span>{amountUnit}</span>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 };
