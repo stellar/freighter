@@ -1,3 +1,39 @@
+# Release notes - Wallets - Version 2.4.0
+
+### Bug
+
+Rename "native" to "XLM" on LP shares
+
+LP shares should be listed after all other assets
+
+Fees are displayed in scientific notation
+
+Asset "Send" and "Swap" should default to that asset
+
+Before displaying the asset name, it briefly flashes "Stellar Network"
+
+show create account ops in account history under "sent" column
+
+large decimals turn amount to exponential notation, causing error in send flow
+
+Include hover states to the bottom bar menu buttons
+
+Make sure user can't re-view mnemonic phrase after creating account
+
+### Story
+
+WalletConnect technical evaluation
+
+Show swaps in history
+
+Display error details for all errors
+
+Display LP shares in the app
+
+Allow Freighter to interact with applications that use https only
+
+Display asset balance details
+
 # Release notes - Wallets - Version 2.3.0
 
 ### Bug
