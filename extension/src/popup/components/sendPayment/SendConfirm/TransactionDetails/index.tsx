@@ -96,7 +96,7 @@ const TwoAssetCard = ({
           {destAsset.code}
         </div>
         <div className="TwoAssetCard__row__right">
-          {new BigNumber(destAmount).toFixed(2)} {destAsset.code}
+          {new BigNumber(destAmount).toFixed()} {destAsset.code}
         </div>
       </div>
     </div>
@@ -361,7 +361,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               {computeDestMinWithSlippage(
                 allowedSlippage,
                 destinationAmount,
-              ).toFixed(2)}{" "}
+              ).toFixed()}{" "}
               {sourceAsset.code}
             </div>
           </div>

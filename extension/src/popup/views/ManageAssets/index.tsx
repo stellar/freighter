@@ -12,7 +12,9 @@ import { ROUTES } from "popup/constants/routes";
 import { ASSET_SELECT } from "popup/components/sendPayment/SendAmount/AssetSelect";
 
 export const ManageAssets = () => {
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, destinationBalances } = useSelector(
+    transactionSubmissionSelector,
+  );
   const [errorAsset, setErrorAsset] = useState("");
   const { search } = useLocation();
 
@@ -29,7 +31,13 @@ export const ManageAssets = () => {
     default:
   }
 
-  const { balances } = accountBalances;
+  let balances;
+  // path payment destAsset is the only time we use recipient trustlines
+  if (!params.get("isSwap") && selectingAssetType === ASSET_SELECT.DEST) {
+    balances = destinationBalances.balances;
+  } else {
+    balances = accountBalances.balances;
+  }
 
   if (!balances) {
     return (
