@@ -6,6 +6,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 
 import "./styles.scss";
 
@@ -13,6 +14,7 @@ export enum ASSET_SELECT {
   QUERY_PARAM = "assetSelect",
   SOURCE = "source",
   DEST = "dest",
+  SWAP_QUERY_PARAM = "isSwap",
 }
 
 export function AssetSelect({
@@ -62,18 +64,23 @@ export function PathPayAssetSelect({
   balance: string;
 }) {
   const { assetIcons } = useSelector(transactionSubmissionSelector);
+  const isSwap = useIsSwap();
 
   const handleSelectAsset = () => {
     if (source) {
       navigateTo(
         ROUTES.manageAssets,
-        `?${ASSET_SELECT.QUERY_PARAM}=${ASSET_SELECT.SOURCE}`,
+        `?${ASSET_SELECT.QUERY_PARAM}=${ASSET_SELECT.SOURCE}${
+          isSwap ? `&${ASSET_SELECT.SWAP_QUERY_PARAM}=true` : ""
+        }`,
       );
       return;
     }
     navigateTo(
       ROUTES.manageAssets,
-      `?${ASSET_SELECT.QUERY_PARAM}=${ASSET_SELECT.DEST}`,
+      `?${ASSET_SELECT.QUERY_PARAM}=${ASSET_SELECT.DEST}${
+        isSwap ? `&${ASSET_SELECT.SWAP_QUERY_PARAM}=true` : ""
+      }`,
     );
   };
 
