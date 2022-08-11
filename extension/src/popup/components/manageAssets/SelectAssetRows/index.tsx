@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { Types } from "@stellar/wallet-sdk";
@@ -31,6 +31,10 @@ export const SelectAssetRows = ({
   maxHeight,
   selectingAssetType,
 }: SelectAssetRowsProps) => {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const isSwap = params.get(ASSET_SELECT.SWAP_QUERY_PARAM);
+
   const {
     accountBalances: { balances = {} },
   } = useSelector(transactionSubmissionSelector);
@@ -47,6 +51,9 @@ export const SelectAssetRows = ({
     }
     return "";
   };
+
+  // hide balances for path pay dest asset
+  const hideBalances = !isSwap && selectingAssetType === ASSET_SELECT.DEST;
 
   return (
     <SimpleBar
@@ -87,7 +94,7 @@ export const SelectAssetRows = ({
                 {formatDomain(domain)}
               </div>
             </div>
-            {selectingAssetType === ASSET_SELECT.SOURCE && (
+            {!hideBalances && (
               <div>
                 {getAccountBalance(getCanonicalFromAsset(code, issuer))} {code}
               </div>
