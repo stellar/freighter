@@ -248,7 +248,7 @@ interface InitialState {
   assetIcons: AssetIcons;
   assetSelect: {
     type: AssetSelectType;
-    source: boolean;
+    isSource: boolean;
   };
 }
 
@@ -287,7 +287,7 @@ export const initialState: InitialState = {
   assetIcons: {},
   assetSelect: {
     type: AssetSelectType.MANAGE,
-    source: true,
+    isSource: true,
   },
 };
 
@@ -342,7 +342,7 @@ const transactionSubmissionSlice = createSlice({
       state.assetSelect.type = action.payload;
     },
     saveAssetSelectSource: (state, action) => {
-      state.assetSelect.source = action.payload;
+      state.assetSelect.isSource = action.payload;
     },
   },
   extraReducers: (builder) => {

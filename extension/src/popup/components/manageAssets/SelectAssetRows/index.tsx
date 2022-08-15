@@ -50,7 +50,7 @@ export const SelectAssetRows = ({
   // hide balances for path pay dest asset
   const hideBalances =
     assetSelect.type === AssetSelectType.PATH_PAY &&
-    assetSelect.source === false;
+    assetSelect.isSource === false;
 
   return (
     <SimpleBar
@@ -65,7 +65,7 @@ export const SelectAssetRows = ({
             className="SelectAssetRows__row selectable"
             key={getCanonicalFromAsset(code, issuer)}
             onClick={() => {
-              if (assetSelect.source) {
+              if (assetSelect.isSource) {
                 dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
                 history.goBack();
               } else {

@@ -23,7 +23,7 @@ export const ManageAssets = () => {
   // path payment destAsset is the only time we use recipient trustlines
   if (
     assetSelect.type === AssetSelectType.PATH_PAY &&
-    assetSelect.source === false
+    assetSelect.isSource === false
   ) {
     balances = destinationBalances.balances;
   } else {
