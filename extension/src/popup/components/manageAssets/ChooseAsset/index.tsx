@@ -8,7 +8,10 @@ import { useTranslation } from "react-i18next";
 import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import {
+  transactionSubmissionSelector,
+  AssetSelectType,
+} from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { getCanonicalFromAsset } from "helpers/stellar";
@@ -23,20 +26,19 @@ import "./styles.scss";
 interface ChooseAssetProps {
   balances: Balances;
   setErrorAsset: (errorAsset: string) => void;
-  selectingAssetType: string;
 }
 
-export const ChooseAsset = ({
-  balances,
-  setErrorAsset,
-  selectingAssetType,
-}: ChooseAssetProps) => {
+export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
   const { t } = useTranslation();
-  const { assetIcons } = useSelector(transactionSubmissionSelector);
+  const { assetIcons, assetSelect } = useSelector(
+    transactionSubmissionSelector,
+  );
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const managingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   useEffect(() => {
     const fetchDomains = async () => {
@@ -77,7 +79,7 @@ export const ChooseAsset = ({
             domain,
           });
           // include native asset for asset dropdown selection
-        } else if (selectingAssetType) {
+        } else if (!managingAssets) {
           collection.push({
             code,
             issuer: "",
@@ -92,7 +94,7 @@ export const ChooseAsset = ({
     };
 
     fetchDomains();
-  }, [assetIcons, balances, networkUrl, selectingAssetType]);
+  }, [assetIcons, balances, networkUrl, managingAssets]);
 
   return (
     <div className="ChooseAsset">
@@ -103,19 +105,11 @@ export const ChooseAsset = ({
       )}
       <SubviewHeader
         title="Choose Asset"
-        customBackIcon={selectingAssetType ? <Icon.X /> : undefined}
+        customBackIcon={!managingAssets ? <Icon.X /> : undefined}
       />
       <div className="ChooseAsset__wrapper">
         <div className="ChooseAsset__assets" ref={ManageAssetRowsWrapperRef}>
-          {selectingAssetType ? (
-            <SelectAssetRows
-              assetRows={assetRows}
-              maxHeight={
-                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
-              }
-              selectingAssetType={selectingAssetType}
-            />
-          ) : (
+          {managingAssets ? (
             <ManageAssetRows
               assetRows={assetRows}
               setErrorAsset={setErrorAsset}
@@ -123,9 +117,16 @@ export const ChooseAsset = ({
                 ManageAssetRowsWrapperRef?.current?.clientHeight || 600
               }
             />
+          ) : (
+            <SelectAssetRows
+              assetRows={assetRows}
+              maxHeight={
+                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
+              }
+            />
           )}
         </div>
-        {!selectingAssetType && (
+        {managingAssets && (
           <div className="ChooseAsset__button">
             <Link to={ROUTES.searchAsset}>
               <Button fullWidth variant={Button.variant.tertiary}>
