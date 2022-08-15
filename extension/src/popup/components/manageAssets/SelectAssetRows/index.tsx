@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory, useLocation } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { Types } from "@stellar/wallet-sdk";
@@ -10,9 +10,9 @@ import {
   transactionSubmissionSelector,
   saveAsset,
   saveDestinationAsset,
+  AssetSelectType,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { ASSET_SELECT } from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
 
@@ -23,20 +23,15 @@ import "./styles.scss";
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   maxHeight: number;
-  selectingAssetType: string;
 }
 
 export const SelectAssetRows = ({
   assetRows,
   maxHeight,
-  selectingAssetType,
 }: SelectAssetRowsProps) => {
-  const { search } = useLocation();
-  const params = new URLSearchParams(search);
-  const isSwap = params.get(ASSET_SELECT.SWAP_QUERY_PARAM);
-
   const {
     accountBalances: { balances = {} },
+    assetSelect,
   } = useSelector(transactionSubmissionSelector);
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
@@ -53,7 +48,9 @@ export const SelectAssetRows = ({
   };
 
   // hide balances for path pay dest asset
-  const hideBalances = !isSwap && selectingAssetType === ASSET_SELECT.DEST;
+  const hideBalances =
+    assetSelect.type === AssetSelectType.PATH_PAY &&
+    assetSelect.isSource === false;
 
   return (
     <SimpleBar
@@ -68,10 +65,10 @@ export const SelectAssetRows = ({
             className="SelectAssetRows__row selectable"
             key={getCanonicalFromAsset(code, issuer)}
             onClick={() => {
-              if (selectingAssetType === ASSET_SELECT.SOURCE) {
+              if (assetSelect.isSource) {
                 dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
                 history.goBack();
-              } else if (selectingAssetType === ASSET_SELECT.DEST) {
+              } else {
                 dispatch(
                   saveDestinationAsset(getCanonicalFromAsset(code, issuer)),
                 );
