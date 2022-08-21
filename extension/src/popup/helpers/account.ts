@@ -90,8 +90,11 @@ export const sortOperationsByAsset = ({
   return assetOperationMap;
 };
 
-export const getStellarExpertUrl = (isTestnet: boolean) =>
-  `https://stellar.expert/explorer/${isTestnet ? "testnet" : "public"}`;
+export const getStellarExpertUrl = (network: string) =>
+  `https://stellar.expert/explorer/${
+    // TODO IN THIS PR
+    network === "TESTNET" ? "testnet" : "public"
+  }`;
 
 interface GetAvailableBalance {
   accountBalances: AccountBalancesInterface;

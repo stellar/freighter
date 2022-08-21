@@ -71,12 +71,15 @@ const ResultsHeader = () => {
 
 export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
   const { t } = useTranslation();
-  const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
+  const { network } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [maxHeight, setMaxHeight] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
+
+  // TODO IN THIS PR
+  const isTestnet = network === "TESTNET";
 
   interface AssetRecord {
     asset: string;
