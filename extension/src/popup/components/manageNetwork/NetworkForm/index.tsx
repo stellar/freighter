@@ -11,12 +11,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
 
-import {
-  addCustomNetwork,
-  changeNetwork,
-  // settingsNetworkDetailsSelector,
-  // settingsNetworksListSelector,
-} from "popup/ducks/settings";
+import { addCustomNetwork, changeNetwork } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 

@@ -40,6 +40,7 @@ import {
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
   getIsHardwareWalletActive,
+  getSavedNetworks,
   getNetworkDetails,
   getNetworksList,
   HW_PREFIX,
@@ -429,10 +430,7 @@ export const popupMessageListener = (request: Request) => {
 
   const addCustomNetwork = () => {
     const { customNetwork } = request;
-    const savedNetworks = JSON.parse(
-      localStorage.getItem(NETWORKS_LIST_ID) ||
-        JSON.stringify(DEFAULT_NETWORKS),
-    );
+    const savedNetworks = getSavedNetworks();
 
     // Network Name already used
     if (

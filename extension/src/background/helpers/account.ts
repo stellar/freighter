@@ -67,6 +67,11 @@ export const getBipPath = () => {
   return hwData.bipPath || "";
 };
 
+export const getSavedNetworks = () =>
+  JSON.parse(
+    localStorage.getItem(NETWORKS_LIST_ID) || JSON.stringify(DEFAULT_NETWORKS),
+  );
+
 export const getNetworkDetails = () => {
   const networkDetails = JSON.parse(
     localStorage.getItem(NETWORK_ID) || JSON.stringify(DEFAULT_NETWORKS[0]),

@@ -22,19 +22,19 @@ export interface NetworkDetails {
   networkPassphrase: string;
 }
 
-export const MAINNET_NETWORK_DETAILS = {
+export const MAINNET_NETWORK_DETAILS: NetworkDetails = {
   network: NETWORKS.PUBLIC,
   networkName: NETWORK_NAMES.PUBNET,
   networkUrl: NETWORK_URLS.PUBLIC,
   networkPassphrase: StellarSdk.Networks.PUBLIC,
-} as NetworkDetails;
+};
 
-export const TESTNET_NETWORK_DETAILS = {
+export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
   network: NETWORKS.TESTNET,
   networkName: NETWORK_NAMES.TESTNET,
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: StellarSdk.Networks.TESTNET,
-} as NetworkDetails;
+};
 
 export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
   MAINNET_NETWORK_DETAILS,
