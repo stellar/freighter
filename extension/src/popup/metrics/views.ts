@@ -56,6 +56,8 @@ const routeToEventName = {
   [ROUTES.swapConfirm]: METRIC_NAMES.swapConfirm,
   [ROUTES.manageNetwork]: METRIC_NAMES.viewManageNetwork,
   [ROUTES.addNetwork]: METRIC_NAMES.viewAddNetwork,
+  [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
+  [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

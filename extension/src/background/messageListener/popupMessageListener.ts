@@ -24,7 +24,6 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
-import { MANAGE_NETWORK_ERROR } from "constants/networks";
 import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
@@ -433,18 +432,6 @@ export const popupMessageListener = (request: Request) => {
       localStorage.getItem(NETWORKS_LIST_ID) ||
         JSON.stringify(DEFAULT_NETWORKS),
     );
-
-    // Network Name already used
-    if (
-      savedNetworks.find(
-        ({ networkName }: { networkName: string }) =>
-          networkName === customNetwork.networkName,
-      )
-    ) {
-      return {
-        error: MANAGE_NETWORK_ERROR,
-      };
-    }
 
     const { isSwitchSelected, ...networkDetails } = customNetwork;
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];

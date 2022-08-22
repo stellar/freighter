@@ -1,0 +1,6 @@
+.NetworkSettings {
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--popup--height) - var(--bottom-nav--height));
+  padding: 2rem var(--popup--side-padding) var(--popup-vertical-padding);
+}

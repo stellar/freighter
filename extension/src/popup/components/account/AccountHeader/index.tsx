@@ -188,7 +188,7 @@ export const AccountHeader = ({
           <div className="AccountHeader__account-list-item">
             <Link
               className="AccountHeader__account-list-item__link"
-              to={ROUTES.addNetwork}
+              to={ROUTES.networkSettings}
             >
               <div className="AccountHeader__account-list-item__icon">
                 <Icon.Tool />

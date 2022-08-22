@@ -3,4 +3,16 @@
   flex-direction: column;
   height: var(--popup--height);
   padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__modal {
+    &__title {
+      color: var(--pal-brand-primary-on);
+      font-weight: var(--font-weight-medium);
+      text-transform: uppercase;
+    }
+
+    &__body {
+      margin-left: -1.5rem;
+    }
+  }
 }
