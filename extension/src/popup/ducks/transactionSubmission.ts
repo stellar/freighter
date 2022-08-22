@@ -8,6 +8,7 @@ import {
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
   getAssetIcons as getAssetIconsService,
+  getBlockedDomains as internalGetBlockedDomains,
 } from "@shared/api/internal";
 
 import {
@@ -199,6 +200,25 @@ export const getBestPath = createAsyncThunk<
   },
 );
 
+// ALEC TODO - move to another thunk?
+// ALEC TODO - name?
+export const getBlockedDomains = createAsyncThunk<
+  // ALEC TODO - any (returned from background)
+  any,
+  // ALEC TODO - best here?
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getBlockedDomains", async (_, thunkApi) => {
+  try {
+    const resp = await internalGetBlockedDomains();
+    // ALEC TODO - remove
+    console.log("popup ducks", { resp });
+    return resp;
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
 export enum HwOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
@@ -250,6 +270,8 @@ interface InitialState {
     type: AssetSelectType;
     isSource: boolean;
   };
+  // ALEC TODO - any
+  blockedDomains: any;
 }
 
 export const initialState: InitialState = {
@@ -289,6 +311,7 @@ export const initialState: InitialState = {
     type: AssetSelectType.MANAGE,
     isSource: true,
   },
+  blockedDomains: [],
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -403,6 +426,9 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.path = path;
       state.transactionData.destinationAmount =
         action.payload.destination_amount;
+    });
+    builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
+      state.blockedDomains = action.payload;
     });
   },
 });

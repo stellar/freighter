@@ -38,6 +38,7 @@ import {
 } from "background/helpers/account";
 import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
+import { cachedFetch } from "background/helpers/cachedFetch";
 
 import { store } from "background/store";
 import {
@@ -816,6 +817,29 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
   };
 
+  const getBlockedDomains = async () => {
+    // ALEC TODO - cache this
+    try {
+      // ALEC TODO - remove
+      // const resp = await fetch(
+      //   "https://api.stellar.expert/explorer/directory/blocked-domains",
+      // );
+      // // ALEC TODO - name
+      // const j = await resp.json();
+
+      // // ALEC TODO - remove
+      // console.log("background resp", { j });
+      // return j._embedded.records;
+
+      return await cachedFetch(
+        "https://api.stellar.expert/explorer/directory/blocked-domains",
+      );
+    } catch (e) {
+      console.error(e);
+      return new Error("Error getting blocked domains");
+    }
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -843,6 +867,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
     [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
+    [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
   };
 
   return messageResponder[request.type]();
