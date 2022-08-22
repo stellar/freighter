@@ -379,7 +379,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               onClick={() =>
                 openTab(
                   `https://stellar.expert/explorer/${
-                    networkDetails.isTestnet ? "testnet" : "public"
+                    // TODO IN THIS PR
+                    networkDetails.network === "TESTNET" ? "testnet" : "public"
                   }/tx/${transactionHash}`,
                 )
               }

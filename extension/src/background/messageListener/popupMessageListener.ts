@@ -15,28 +15,37 @@ import {
   APPLICATION_ID,
   CACHED_ASSET_ICONS_ID,
   DATA_SHARING_ID,
-  IS_TESTNET_ID,
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
+  NETWORK_ID,
+  NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
+import { MANAGE_NETWORK_ERROR } from "constants/networks";
+import {
+  DEFAULT_NETWORKS,
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/constants/stellar";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 import {
   addAccountName,
   getAccountNameList,
   getKeyIdList,
-  getIsTestnet,
+  getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
   getIsHardwareWalletActive,
+  getSavedNetworks,
+  getNetworkDetails,
+  getNetworksList,
   HW_PREFIX,
   getBipPath,
 } from "background/helpers/account";
-import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
 
 import { store } from "background/store";
@@ -219,7 +228,8 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    if (getIsTestnet()) {
+    // TODO IN THIS PR
+    if (!getIsMainnet()) {
       try {
         await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
@@ -416,6 +426,54 @@ export const popupMessageListener = (request: Request) => {
     return {
       allAccounts: allAccountsSelector(store.getState()),
     };
+  };
+
+  const addCustomNetwork = () => {
+    const { customNetwork } = request;
+    const savedNetworks = getSavedNetworks();
+
+    // Network Name already used
+    if (
+      savedNetworks.find(
+        ({ networkName }: { networkName: string }) =>
+          networkName === customNetwork.networkName,
+      )
+    ) {
+      return {
+        error: MANAGE_NETWORK_ERROR,
+      };
+    }
+
+    const { isSwitchSelected, ...networkDetails } = customNetwork;
+    const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(networksList));
+    if (isSwitchSelected) {
+      localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
+    }
+
+    return {
+      networkDetails,
+      networksList,
+    };
+  };
+
+  const changeNetwork = () => {
+    const { networkName } = request;
+
+    const savedNetworks = JSON.parse(
+      localStorage.getItem(NETWORKS_LIST_ID) ||
+        JSON.stringify(DEFAULT_NETWORKS),
+    ) as NetworkDetails[];
+
+    const networkDetails =
+      savedNetworks.find(
+        ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
+      ) || MAINNET_NETWORK_DETAILS;
+
+    localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
+
+    return { networkDetails };
   };
 
   const loadAccount = () => {
@@ -758,13 +816,12 @@ export const popupMessageListener = (request: Request) => {
   const saveSettings = () => {
     const {
       isDataSharingAllowed,
-      isTestnet,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      networkDetails,
     } = request;
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
-    localStorage.setItem(IS_TESTNET_ID, JSON.stringify(isTestnet));
     localStorage.setItem(
       IS_VALIDATING_MEMO_ID,
       JSON.stringify(isMemoValidationEnabled),
@@ -773,12 +830,14 @@ export const popupMessageListener = (request: Request) => {
       IS_VALIDATING_SAFETY_ID,
       JSON.stringify(isSafetyValidationEnabled),
     );
+    localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
 
     return {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
-      networkDetails: getNetworkDetails(isTestnet),
+      networkDetails: getNetworkDetails(),
+      networksList: getNetworksList(),
     };
   };
 
@@ -790,7 +849,8 @@ export const popupMessageListener = (request: Request) => {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
-      networkDetails: getNetworkDetails(getIsTestnet()),
+      networkDetails: getNetworkDetails(),
+      networksList: getNetworksList(),
     };
   };
 
@@ -825,6 +885,8 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
+    [SERVICE_TYPES.ADD_CUSTOM_NETWORK]: addCustomNetwork,
+    [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,
     [SERVICE_TYPES.RECOVER_ACCOUNT]: recoverAccount,
