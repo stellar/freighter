@@ -25,7 +25,6 @@ import {
   NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
 import {
-  DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
 } from "@shared/constants/stellar";
@@ -445,13 +444,27 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
+  const removeCustomNetwork = () => {
+    const { networkName } = request;
+
+    const savedNetworks = getSavedNetworks();
+    const networkIndex = savedNetworks.findIndex(
+      ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
+    );
+
+    const updatedNetworksList = savedNetworks.splice(networkIndex, 1);
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(updatedNetworksList));
+
+    return {
+      networksList: updatedNetworksList,
+    };
+  };
+
   const changeNetwork = () => {
     const { networkName } = request;
 
-    const savedNetworks = JSON.parse(
-      localStorage.getItem(NETWORKS_LIST_ID) ||
-        JSON.stringify(DEFAULT_NETWORKS),
-    ) as NetworkDetails[];
+    const savedNetworks = getSavedNetworks();
 
     const networkDetails =
       savedNetworks.find(
@@ -873,6 +886,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
     [SERVICE_TYPES.ADD_CUSTOM_NETWORK]: addCustomNetwork,
+    [SERVICE_TYPES.REMOVE_CUSTOM_NETWORK]: removeCustomNetwork,
     [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,

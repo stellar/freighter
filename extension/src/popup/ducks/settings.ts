@@ -10,6 +10,7 @@ import {
   loadSettings as loadSettingsService,
   changeNetwork as changeNetworkService,
   addCustomNetwork as addCustomNetworkService,
+  removeCustomNetwork as removeCustomNetworkService,
 } from "@shared/api/internal";
 import {
   NetworkDetails,
@@ -96,6 +97,14 @@ export const addCustomNetwork = createAsyncThunk<
   addCustomNetworkService(customNetwork),
 );
 
+export const removeCustomNetwork = createAsyncThunk<
+  { networkDetails: NetworkDetails; networksList: NetworkDetails[] },
+  { networkName: string },
+  { rejectValue: ErrorMessage }
+>("settings/removeCustomNetwork", ({ networkName }) =>
+  removeCustomNetworkService(networkName),
+);
+
 const settingsSlice = createSlice({
   name: "settings",
   initialState,
@@ -160,6 +169,27 @@ const settingsSlice = createSlice({
     );
     builder.addCase(
       addCustomNetwork.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          networkDetails: NetworkDetails;
+          networksList: NetworkDetails[];
+        }>,
+      ) => {
+        const { networkDetails, networksList } = action?.payload || {
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          networksList: DEFAULT_NETWORKS,
+        };
+
+        return {
+          ...state,
+          networkDetails,
+          networksList,
+        };
+      },
+    );
+    builder.addCase(
+      removeCustomNetwork.fulfilled,
       (
         state,
         action: PayloadAction<{

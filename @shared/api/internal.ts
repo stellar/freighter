@@ -627,6 +627,29 @@ export const addCustomNetwork = async (
   return response;
 };
 
+export const removeCustomNetwork = async (
+  networkName: string,
+): Promise<{
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+}> => {
+  let response = {
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: [] as NetworkDetails[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      networkName,
+      type: SERVICE_TYPES.REMOVE_CUSTOM_NETWORK,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
 export const loadSettings = (): Promise<Settings> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,

@@ -9,6 +9,7 @@ import { useLocation } from "react-router-dom";
 import { AppDispatch } from "popup/App";
 
 import { Button } from "popup/basics/buttons/Button";
+import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
@@ -17,6 +18,7 @@ import { isActiveNetwork } from "helpers/stellar";
 import {
   addCustomNetwork,
   changeNetwork,
+  removeCustomNetwork,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
@@ -47,12 +49,11 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
-  const [isNetworkNameInUse, setIsNetworkNameInUse] = useState(false);
+  const [isNetworkInUse, setIsNetworkInUse] = useState(false);
+  const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
   const { search } = useLocation();
-  console.log(search);
 
   const networkIndex = new URLSearchParams(search).get("networkIndex");
-
   const networkDetailsToEdit = networksList[Number(networkIndex)];
 
   const initialValues: FormValues = isEditing
@@ -70,16 +71,22 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     networkUrl: YupString().required(),
   });
 
+  const handleRemoveNetwork = async () => {
+    const res = await dispatch(
+      removeCustomNetwork({
+        networkName: networkDetailsToEdit.networkName,
+      }),
+    );
+
+    if (removeCustomNetwork.fulfilled.match(res)) {
+      navigateTo(ROUTES.account);
+    }
+  };
+
   const handleEditNetwork = async (values: FormValues) => {
-    if (
-      isActiveNetwork({ network: CUSTOM_NETWORK, ...values }, networkDetails)
-    ) {
-      setIsNetworkNameInUse(true);
-    } else {
-      const res = await dispatch(changeNetwork(values));
-      if (changeNetwork.fulfilled.match(res)) {
-        navigateTo(ROUTES.account);
-      }
+    const res = await dispatch(changeNetwork(values));
+    if (changeNetwork.fulfilled.match(res)) {
+      navigateTo(ROUTES.account);
     }
   };
 
@@ -106,22 +113,62 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     }
   };
 
-  const CloseModal = () => (
-    <Button fullWidth variant={Button.variant.tertiary} onClick={() => {}}>
+  const CloseModalButton = () => (
+    <Button
+      type="button"
+      fullWidth
+      variant={Button.variant.tertiary}
+      onClick={() => setIsNetworkInUse(false)}
+    >
       {t("Got it")}
     </Button>
   );
 
+  const ConfirmRemovalButtons = () => (
+    <div className="NetworkForm__removal-buttons">
+      <Button
+        type="button"
+        variant={Button.variant.tertiary}
+        onClick={() => setIsConfirmingRemoval(false)}
+      >
+        {t("Cancel")}
+      </Button>
+      <Button
+        type="button"
+        variant={Button.variant.tertiary}
+        onClick={() => {
+          handleRemoveNetwork();
+        }}
+      >
+        {t("Remove")}
+      </Button>
+    </div>
+  );
+
   return (
     <div className="NetworkForm">
-      {isNetworkNameInUse ? (
-        <NetworkModal buttonComponent={<CloseModal />}>
+      {isNetworkInUse ? (
+        <NetworkModal buttonComponent={<CloseModalButton />}>
           <div>
             <div className="NetworkForm__modal__title">
-              Network name is in use
+              {t("Network name is in use")}
             </div>
             <div className="NetworkForm__modal__body">
-              Please select a different network.
+              {t("Please select a different network.")}
+            </div>
+          </div>
+        </NetworkModal>
+      ) : null}
+      {isConfirmingRemoval ? (
+        <NetworkModal buttonComponent={<ConfirmRemovalButtons />}>
+          <div>
+            <div className="NetworkForm__modal__title">
+              {t("Confirm removing Network")}
+            </div>
+            <div className="NetworkForm__modal__body">
+              {t(
+                "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
+              )}
             </div>
           </div>
         </NetworkModal>
@@ -174,7 +221,18 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               placeholder={t("Enter passphrase")}
             />
             {isEditing ? (
-              <Button variant={Button.variant.tertiary}>{t("Remove")}</Button>
+              <PillButton
+                type="button"
+                onClick={() => {
+                  if (isActiveNetwork(networkDetailsToEdit, networkDetails)) {
+                    setIsNetworkInUse(true);
+                  } else {
+                    setIsConfirmingRemoval(true);
+                  }
+                }}
+              >
+                {t("Remove")}
+              </PillButton>
             ) : (
               <Field name="isSwitchSelected">
                 {({ field }: FieldProps) => (
