@@ -631,3 +631,10 @@ export const loadSettings = (): Promise<Settings> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
+
+export const getBlockedDomains = async () => {
+  const resp = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
+  });
+  return resp;
+};
