@@ -5,10 +5,15 @@ import {
   AccountBalancesInterface,
   AccountHistoryInterface,
   Balances,
+  CustomNetwork,
   HorizonOperation,
   Settings,
 } from "./types";
-import { MAINNET_NETWORK_DETAILS, NetworkDetails } from "../helpers/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  DEFAULT_NETWORKS,
+  NetworkDetails,
+} from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
@@ -550,18 +555,19 @@ export const showBackupPhrase = async (
 
 export const saveSettings = async ({
   isDataSharingAllowed,
-  isTestnet,
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
+  networkDetails,
 }: {
   isDataSharingAllowed: boolean;
-  isTestnet: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  networkDetails: NetworkDetails;
 }): Promise<Settings> => {
   let response = {
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isSafetyValidationEnabled: true,
   };
@@ -569,10 +575,50 @@ export const saveSettings = async ({
   try {
     response = await sendMessageToBackground({
       isDataSharingAllowed,
-      isTestnet,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      networkDetails,
       type: SERVICE_TYPES.SAVE_SETTINGS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const changeNetwork = async (
+  networkName: string,
+): Promise<NetworkDetails> => {
+  let networkDetails = MAINNET_NETWORK_DETAILS;
+
+  try {
+    ({ networkDetails } = await sendMessageToBackground({
+      networkName,
+      type: SERVICE_TYPES.CHANGE_NETWORK,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return networkDetails;
+};
+
+export const addCustomNetwork = async (
+  customNetwork: CustomNetwork,
+): Promise<{
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+}> => {
+  let response = {
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: [] as NetworkDetails[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      customNetwork,
+      type: SERVICE_TYPES.ADD_CUSTOM_NETWORK,
     });
   } catch (e) {
     console.error(e);

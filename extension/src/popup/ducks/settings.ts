@@ -8,24 +8,30 @@ import {
 import {
   saveSettings as saveSettingsService,
   loadSettings as loadSettingsService,
+  changeNetwork as changeNetworkService,
+  addCustomNetwork as addCustomNetworkService,
 } from "@shared/api/internal";
-import { NetworkDetails } from "@shared/helpers/stellar";
+import {
+  NetworkDetails,
+  DEFAULT_NETWORKS,
+  MAINNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 
-import { Settings } from "@shared/api/types";
+import { CustomNetwork, Settings } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
 }
+
 const initialState: Settings = {
   isDataSharingAllowed: false,
   networkDetails: {
-    isTestnet: false,
     network: "",
     networkName: "",
-    otherNetworkName: "",
     networkUrl: "",
     networkPassphrase: "",
   } as NetworkDetails,
+  networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
 };
@@ -38,9 +44,9 @@ export const saveSettings = createAsyncThunk<
   Settings,
   {
     isDataSharingAllowed: boolean;
-    isTestnet: boolean;
     isMemoValidationEnabled: boolean;
     isSafetyValidationEnabled: boolean;
+    networkDetails: NetworkDetails;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -48,7 +54,7 @@ export const saveSettings = createAsyncThunk<
   async (
     {
       isDataSharingAllowed,
-      isTestnet,
+      networkDetails,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
     },
@@ -59,7 +65,7 @@ export const saveSettings = createAsyncThunk<
     try {
       res = await saveSettingsService({
         isDataSharingAllowed,
-        isTestnet,
+        networkDetails,
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
       });
@@ -72,6 +78,22 @@ export const saveSettings = createAsyncThunk<
 
     return res;
   },
+);
+
+export const changeNetwork = createAsyncThunk<
+  NetworkDetails,
+  { networkName: string },
+  { rejectValue: ErrorMessage }
+>("settings/changeNetwork", ({ networkName }) =>
+  changeNetworkService(networkName),
+);
+
+export const addCustomNetwork = createAsyncThunk<
+  { networkDetails: NetworkDetails; networksList: NetworkDetails[] },
+  { customNetwork: CustomNetwork },
+  { rejectValue: ErrorMessage }
+>("settings/addCustomNetwork", ({ customNetwork }) =>
+  addCustomNetworkService(customNetwork),
 );
 
 const settingsSlice = createSlice({
@@ -87,6 +109,7 @@ const settingsSlice = createSlice({
           networkDetails,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+          networksList,
         } = action?.payload || {
           ...initialState,
         };
@@ -97,6 +120,7 @@ const settingsSlice = createSlice({
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
           networkDetails,
+          networksList,
         };
       },
     );
@@ -106,6 +130,7 @@ const settingsSlice = createSlice({
         const {
           isDataSharingAllowed,
           networkDetails,
+          networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
         } = action?.payload || {
@@ -116,8 +141,41 @@ const settingsSlice = createSlice({
           ...state,
           isDataSharingAllowed,
           networkDetails,
+          networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+        };
+      },
+    );
+    builder.addCase(
+      changeNetwork.fulfilled,
+      (state, action: PayloadAction<NetworkDetails>) => {
+        const networkDetails = action?.payload || MAINNET_NETWORK_DETAILS;
+
+        return {
+          ...state,
+          networkDetails,
+        };
+      },
+    );
+    builder.addCase(
+      addCustomNetwork.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          networkDetails: NetworkDetails;
+          networksList: NetworkDetails[];
+        }>,
+      ) => {
+        const { networkDetails, networksList } = action?.payload || {
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          networksList: DEFAULT_NETWORKS,
+        };
+
+        return {
+          ...state,
+          networkDetails,
+          networksList,
         };
       },
     );
@@ -137,4 +195,9 @@ export const settingsDataSharingSelector = createSelector(
 export const settingsNetworkDetailsSelector = createSelector(
   settingsSelector,
   (settings) => settings.networkDetails,
+);
+
+export const settingsNetworksListSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.networksList,
 );

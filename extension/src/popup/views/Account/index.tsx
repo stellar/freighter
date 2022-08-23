@@ -180,7 +180,8 @@ export const Account = () => {
           </SimpleBar>
         ) : (
           <NotFundedMessage
-            isTestnet={networkDetails.isTestnet}
+            // TODO IN THIS PR
+            isTestnet={networkDetails.network === "TESTNET"}
             setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
             publicKey={publicKey}
           />
