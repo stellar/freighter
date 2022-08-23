@@ -6,8 +6,9 @@ import { useTranslation } from "react-i18next";
 
 import {
   MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
   TESTNET_NETWORK_DETAILS,
-} from "@shared/helpers/stellar";
+} from "@shared/constants/stellar";
 
 import {
   saveSettings,
@@ -49,17 +50,17 @@ export const Preferences = () => {
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
   } = useSelector(settingsSelector);
-  const { network } = useSelector(settingsNetworkDetailsSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   interface SettingValues {
-    networkSelected: string;
+    networkDetailsValue: NetworkDetails;
     isValidatingMemoValue: boolean;
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
   }
 
   const initialValues: SettingValues = {
-    networkSelected: network,
+    networkDetailsValue: networkDetails,
     isValidatingMemoValue: isMemoValidationEnabled,
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
@@ -67,7 +68,7 @@ export const Preferences = () => {
 
   const handleSubmit = async (formValue: SettingValues) => {
     const {
-      networkSelected,
+      networkDetailsValue,
       isValidatingMemoValue,
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
@@ -75,7 +76,7 @@ export const Preferences = () => {
 
     await dispatch(
       saveSettings({
-        isTestnet: networkSelected === TESTNET_NETWORK_DETAILS.network,
+        networkDetails: networkDetailsValue,
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,

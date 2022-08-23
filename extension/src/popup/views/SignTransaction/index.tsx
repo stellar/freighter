@@ -153,7 +153,7 @@ export const SignTransaction = () => {
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
-  const { networkName, otherNetworkName, networkPassphrase } = useSelector(
+  const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
   const allAccounts = useSelector(allAccountsSelector);
@@ -235,6 +235,7 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
+  // TODO IN THIS PR
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <ModalWrapper>
@@ -245,7 +246,7 @@ export const SignTransaction = () => {
         >
           <p>
             {t("The transaction you’re trying to sign is on")}{" "}
-            {otherNetworkName}.
+            {_networkPassphrase}.
           </p>
           <p>{t("Signing this transaction is not possible at the moment.")}</p>
         </WarningMessage>
