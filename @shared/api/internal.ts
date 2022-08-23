@@ -590,7 +590,5 @@ export const getBlockedDomains = async () => {
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
   });
-  // ALEC TODO - remove
-  console.log("shared api internal", { resp });
   return resp;
 };

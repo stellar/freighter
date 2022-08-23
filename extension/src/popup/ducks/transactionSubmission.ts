@@ -16,6 +16,7 @@ import {
   AssetIcons,
   Balances,
   ErrorMessage,
+  BlockedDomain,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/helpers/stellar";
@@ -200,20 +201,14 @@ export const getBestPath = createAsyncThunk<
   },
 );
 
-// ALEC TODO - move to another thunk?
-// ALEC TODO - name?
 export const getBlockedDomains = createAsyncThunk<
-  // ALEC TODO - any (returned from background)
-  any,
-  // ALEC TODO - best here?
+  Array<BlockedDomain>,
   undefined,
   { rejectValue: ErrorMessage }
 >("getBlockedDomains", async (_, thunkApi) => {
   try {
     const resp = await internalGetBlockedDomains();
-    // ALEC TODO - remove
-    console.log("popup ducks", { resp });
-    return resp;
+    return resp.blockedDomains || [];
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e });
   }
@@ -270,8 +265,7 @@ interface InitialState {
     type: AssetSelectType;
     isSource: boolean;
   };
-  // ALEC TODO - any
-  blockedDomains: any;
+  blockedDomains: Array<BlockedDomain>;
 }
 
 export const initialState: InitialState = {

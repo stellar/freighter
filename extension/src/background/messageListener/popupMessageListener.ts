@@ -22,6 +22,7 @@ import {
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
+  CACHED_BLOCKED_DOMAINS_ID,
 } from "constants/localStorageTypes";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
@@ -54,6 +55,7 @@ import {
   timeoutAccountAccess,
   updateAllAccountsAccountName,
 } from "background/ducks/session";
+import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL } from "background/constants/apiUrls";
 
 const sessionTimer = new SessionTimer();
 
@@ -818,22 +820,12 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const getBlockedDomains = async () => {
-    // ALEC TODO - cache this
     try {
-      // ALEC TODO - remove
-      // const resp = await fetch(
-      //   "https://api.stellar.expert/explorer/directory/blocked-domains",
-      // );
-      // // ALEC TODO - name
-      // const j = await resp.json();
-
-      // // ALEC TODO - remove
-      // console.log("background resp", { j });
-      // return j._embedded.records;
-
-      return await cachedFetch(
-        "https://api.stellar.expert/explorer/directory/blocked-domains",
+      const resp = await cachedFetch(
+        STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
+        CACHED_BLOCKED_DOMAINS_ID,
       );
+      return { blockedDomains: resp?._embedded?.records || [] };
     } catch (e) {
       console.error(e);
       return new Error("Error getting blocked domains");

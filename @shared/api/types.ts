@@ -41,6 +41,12 @@ export interface Response {
   recentAddresses: Array<string>;
   hardwareWalletType: WalletType;
   bipPath: string;
+  blockedDomains: Array<BlockedDomain>;
+}
+
+export interface BlockedDomain {
+  domain: string;
+  paging_token: string;
 }
 
 export interface ExternalRequest {

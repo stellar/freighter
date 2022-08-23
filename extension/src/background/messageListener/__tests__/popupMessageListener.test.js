@@ -274,22 +274,3 @@ describe("adding hardware wallets", () => {
     });
   });
 });
-
-// ALEC TODO - cleanup
-describe("getting blocked domains", () => {
-  beforeAll(() => {
-    localStorage.clear();
-    store.dispatch(sessionSlice.actions.reset());
-  });
-  describe("call getBlockedDomains", () => {
-    it("works", async () => {
-      const r = {};
-      r.type = SERVICE_TYPES.GET_BLOCKED_DOMAINS;
-      await popupMessageListener(r);
-      expect(console.error).not.toHaveBeenCalled();
-
-      console.log(store.getState());
-      console.log(localStorage);
-    });
-  });
-});
