@@ -17,7 +17,7 @@ import {
   ErrorMessage,
 } from "@shared/api/types";
 
-import { NetworkDetails } from "@shared/helpers/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 

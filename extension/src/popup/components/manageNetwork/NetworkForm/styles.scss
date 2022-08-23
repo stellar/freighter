@@ -1,0 +1,6 @@
+.NetworkForm {
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+}

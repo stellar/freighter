@@ -58,6 +58,7 @@ import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
+import { ManageNetwork } from "popup/views/ManageNetwork";
 import { PinExtension } from "popup/views/PinExtension";
 
 import "popup/metrics/views";
@@ -317,6 +318,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.swap}>
           <Swap />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.manageNetwork}>
+          <ManageNetwork />
         </PublicKeyRoute>
         <HomeRoute />
         {DEV_SERVER && (

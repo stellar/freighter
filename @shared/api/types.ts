@@ -4,7 +4,7 @@ import { Types } from "@stellar/wallet-sdk";
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
-import { NetworkDetails } from "../helpers/stellar";
+import { NetworkDetails } from "../constants/stellar";
 
 export interface Response {
   error: string;
@@ -31,13 +31,16 @@ export interface Response {
   isTestnet: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  customNetwork: CustomNetwork;
   networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
   allAccounts: Array<Account>;
   accountName: string;
   assetCode: string;
   assetCanonical: string;
   iconUrl: string;
   network: string;
+  networkName: string;
   recentAddresses: Array<string>;
   hardwareWalletType: WalletType;
   bipPath: string;
@@ -62,6 +65,7 @@ export interface Settings {
   networkDetails: NetworkDetails;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  networksList: NetworkDetails[];
 }
 
 export interface AssetIcons {
@@ -97,3 +101,5 @@ declare global {
 }
 
 export type CURRENCY = { code: string; issuer: string; image: string };
+
+export type CustomNetwork = NetworkDetails & { isSwitchSelected: boolean };
