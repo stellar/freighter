@@ -129,7 +129,7 @@ const settingsSlice = createSlice({
   name: "settings",
   initialState,
   reducers: {
-    clearApiError(state) {
+    clearSettingsError(state) {
       state.error = "";
     },
   },
@@ -258,7 +258,7 @@ const settingsSlice = createSlice({
 
 export const { reducer } = settingsSlice;
 
-export const { clearApiError } = settingsSlice.actions;
+export const { clearSettingsError } = settingsSlice.actions;
 
 export const settingsSelector = (state: { settings: Settings }) =>
   state.settings;

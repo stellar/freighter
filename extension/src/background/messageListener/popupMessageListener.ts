@@ -483,7 +483,6 @@ export const popupMessageListener = (request: Request) => {
     const { networkName } = request;
 
     const savedNetworks = getSavedNetworks();
-
     const networkDetails =
       savedNetworks.find(
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,

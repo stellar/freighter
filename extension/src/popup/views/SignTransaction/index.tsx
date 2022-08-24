@@ -235,6 +235,7 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
+  // TODO IN THIS PR
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <ModalWrapper>

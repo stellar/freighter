@@ -18,6 +18,7 @@ import { isActiveNetwork, isMainnet, isTestnet } from "helpers/stellar";
 import {
   addCustomNetwork,
   changeNetwork,
+  clearSettingsError,
   editCustomNetwork,
   removeCustomNetwork,
   settingsErrorSelector,
@@ -136,6 +137,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     }
 
     if (addCustomNetworkFulfilled && changeNetworkFulfilled) {
+      clearSettingsError();
       navigateTo(ROUTES.account);
     }
   };
