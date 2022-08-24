@@ -66,7 +66,8 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     networkDetailsToEdit,
     networkDetails,
   );
-  const isMainnetOrTestnet = networkIndex === 0 || networkIndex === 1;
+  const isEditingMainnetOrTestnet =
+    isEditing && (networkIndex === 0 || networkIndex === 1);
 
   const initialValues: FormValues = isEditing
     ? { ...networkDetailsToEdit, isSwitchSelected: false }
@@ -267,7 +268,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
             />
             {isEditing ? (
               <div className="NetworkForm__remove-wrapper">
-                {!isMainnetOrTestnet && (
+                {!isEditingMainnetOrTestnet && (
                   <PillButton
                     type="button"
                     onClick={() => {
@@ -310,7 +311,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                   {t("Cancel")}
                 </Button>
                 <Button
-                  disabled={!isValid || isMainnetOrTestnet}
+                  disabled={!isValid || isEditingMainnetOrTestnet}
                   isLoading={isSubmitting}
                   fullWidth
                   type="submit"
@@ -321,7 +322,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
             ) : (
               <div className="NetworkForm__add-button">
                 <Button
-                  disabled={!(isValid && dirty) || isMainnetOrTestnet}
+                  disabled={!(isValid && dirty) || isEditingMainnetOrTestnet}
                   fullWidth
                   isLoading={isSubmitting}
                   type="submit"
