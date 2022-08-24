@@ -66,6 +66,7 @@ export const ManageAssetRows = ({
     accountBalances: { balances = {} },
     submitStatus,
     hardwareWalletData: { status: hwStatus },
+    blockedDomains,
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
@@ -166,6 +167,14 @@ export const ManageAssetRows = ({
     }
   }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
 
+  // ALEC TODO - remove
+  console.log({ blockedDomains });
+
+  const isBlockedDomain = (domain: string) => {
+    const found = blockedDomains.filter((b) => b.domain === domain);
+    return found.length > 0;
+  };
+
   return (
     <>
       {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
@@ -178,6 +187,14 @@ export const ManageAssetRows = ({
         {header}
         <div className="ManageAssetRows__content">
           {assetRows.map(({ code, domain, image, issuer }) => {
+            // ALEC TODO - remove
+            console.log({ domain });
+
+            if (isBlockedDomain(domain)) {
+              // ALEC TODO - remove
+              console.log("BLOCKED");
+            }
+
             if (!balances) return null;
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
             const isTrustlineActive = Object.keys(balances).some(
