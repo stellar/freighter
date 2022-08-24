@@ -15,6 +15,7 @@ import {
   getConversionRate,
   truncatedFedAddress,
 } from "helpers/stellar";
+import { getStellarExpertUrl } from "popup/helpers/account";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -378,10 +379,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               variant={Button.variant.tertiary}
               onClick={() =>
                 openTab(
-                  `https://stellar.expert/explorer/${
-                    // TODO IN THIS PR
-                    networkDetails.network === "TESTNET" ? "testnet" : "public"
-                  }/tx/${transactionHash}`,
+                  `${getStellarExpertUrl(
+                    networkDetails,
+                  )}/tx/${transactionHash}`,
                 )
               }
             >

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
-import { isEmpty } from "lodash";
+import isEmpty from "lodash/isEmpty";
 import StellarSdk, { Horizon } from "stellar-sdk";
 
 import { AssetIcons } from "@shared/api/types";
