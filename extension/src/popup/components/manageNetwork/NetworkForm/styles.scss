@@ -25,6 +25,7 @@
 
   &__remove-wrapper {
     display: flex;
+    height: 2.2rem;
     justify-content: center;
     margin-top: 0.75rem;
   }
@@ -44,10 +45,11 @@
     width: 100%;
     .BasicButton {
       background: rgba(229, 72, 77, 1);
+      border-color: rgba(229, 72, 77, 1);
     }
   }
 
   &__add-button {
-    margin-top: 3.625rem;
+    margin-top: 5.625rem;
   }
 }
