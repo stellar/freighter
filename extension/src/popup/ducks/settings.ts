@@ -11,6 +11,7 @@ import {
   changeNetwork as changeNetworkService,
   addCustomNetwork as addCustomNetworkService,
   removeCustomNetwork as removeCustomNetworkService,
+  editCustomNetwork as editCustomNetworkService,
 } from "@shared/api/internal";
 import {
   NetworkDetails,
@@ -18,7 +19,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
-import { CustomNetwork, Settings } from "@shared/api/types";
+import { Settings } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
@@ -35,6 +36,7 @@ const initialState: Settings = {
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
+  error: "",
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
@@ -90,12 +92,22 @@ export const changeNetwork = createAsyncThunk<
 );
 
 export const addCustomNetwork = createAsyncThunk<
-  { networkDetails: NetworkDetails; networksList: NetworkDetails[] },
-  { customNetwork: CustomNetwork },
+  { networksList: NetworkDetails[] },
+  { networkDetails: NetworkDetails },
   { rejectValue: ErrorMessage }
->("settings/addCustomNetwork", ({ customNetwork }) =>
-  addCustomNetworkService(customNetwork),
-);
+>("settings/addCustomNetwork", async ({ networkDetails }, thunkApi) => {
+  let res;
+  try {
+    res = await addCustomNetworkService(networkDetails);
+  } catch (e) {
+    console.error(e);
+    return thunkApi.rejectWithValue({
+      errorMessage: e.message,
+    });
+  }
+
+  return res;
+});
 
 export const removeCustomNetwork = createAsyncThunk<
   { networkDetails: NetworkDetails; networksList: NetworkDetails[] },
@@ -105,10 +117,22 @@ export const removeCustomNetwork = createAsyncThunk<
   removeCustomNetworkService(networkName),
 );
 
+export const editCustomNetwork = createAsyncThunk<
+  { networkDetails: NetworkDetails; networksList: NetworkDetails[] },
+  { networkDetails: NetworkDetails; networkIndex: number },
+  { rejectValue: ErrorMessage }
+>("settings/editCustomNetwork", ({ networkDetails, networkIndex }) =>
+  editCustomNetworkService({ networkDetails, networkIndex }),
+);
+
 const settingsSlice = createSlice({
   name: "settings",
   initialState,
-  reducers: {},
+  reducers: {
+    clearApiError(state) {
+      state.error = "";
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(
       saveSettings.fulfilled,
@@ -172,39 +196,59 @@ const settingsSlice = createSlice({
       (
         state,
         action: PayloadAction<{
-          networkDetails: NetworkDetails;
           networksList: NetworkDetails[];
         }>,
       ) => {
-        const { networkDetails, networksList } = action?.payload || {
-          networkDetails: MAINNET_NETWORK_DETAILS,
+        const { networksList } = action?.payload || {
           networksList: DEFAULT_NETWORKS,
         };
 
         return {
           ...state,
-          networkDetails,
           networksList,
         };
       },
     );
+    builder.addCase(addCustomNetwork.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
     builder.addCase(
       removeCustomNetwork.fulfilled,
       (
         state,
         action: PayloadAction<{
-          networkDetails: NetworkDetails;
           networksList: NetworkDetails[];
         }>,
       ) => {
-        const { networkDetails, networksList } = action?.payload || {
-          networkDetails: MAINNET_NETWORK_DETAILS,
+        const { networksList } = action?.payload || {
           networksList: DEFAULT_NETWORKS,
         };
 
         return {
           ...state,
-          networkDetails,
+          networksList,
+        };
+      },
+    );
+    builder.addCase(
+      editCustomNetwork.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          networksList: NetworkDetails[];
+        }>,
+      ) => {
+        const { networksList } = action?.payload || {
+          networksList: DEFAULT_NETWORKS,
+        };
+
+        return {
+          ...state,
           networksList,
         };
       },
@@ -213,6 +257,8 @@ const settingsSlice = createSlice({
 });
 
 export const { reducer } = settingsSlice;
+
+export const { clearApiError } = settingsSlice.actions;
 
 export const settingsSelector = (state: { settings: Settings }) =>
   state.settings;
@@ -230,4 +276,9 @@ export const settingsNetworkDetailsSelector = createSelector(
 export const settingsNetworksListSelector = createSelector(
   settingsSelector,
   (settings) => settings.networksList,
+);
+
+export const settingsErrorSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.error,
 );

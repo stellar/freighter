@@ -28,6 +28,7 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import {
   AssetOperations,
+  isTestnet,
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
@@ -178,8 +179,7 @@ export const Account = () => {
           </SimpleBar>
         ) : (
           <NotFundedMessage
-            // TODO IN THIS PR
-            isTestnet={networkDetails.network === "TESTNET"}
+            isTestnet={isTestnet(networkDetails)}
             setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
             publicKey={publicKey}
           />

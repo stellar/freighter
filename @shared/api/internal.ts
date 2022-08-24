@@ -5,7 +5,6 @@ import {
   AccountBalancesInterface,
   AccountHistoryInterface,
   Balances,
-  CustomNetwork,
   HorizonOperation,
   Settings,
 } from "./types";
@@ -570,6 +569,7 @@ export const saveSettings = async ({
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isSafetyValidationEnabled: true,
+    error: "",
   };
 
   try {
@@ -605,23 +605,26 @@ export const changeNetwork = async (
 };
 
 export const addCustomNetwork = async (
-  customNetwork: CustomNetwork,
+  networkDetails: NetworkDetails,
 ): Promise<{
-  networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
 }> => {
   let response = {
-    networkDetails: MAINNET_NETWORK_DETAILS,
+    error: "",
     networksList: [] as NetworkDetails[],
   };
 
   try {
     response = await sendMessageToBackground({
-      customNetwork,
+      networkDetails,
       type: SERVICE_TYPES.ADD_CUSTOM_NETWORK,
     });
   } catch (e) {
     console.error(e);
+  }
+
+  if (response.error) {
+    throw new Error(response.error);
   }
 
   return response;
@@ -642,6 +645,34 @@ export const removeCustomNetwork = async (
     response = await sendMessageToBackground({
       networkName,
       type: SERVICE_TYPES.REMOVE_CUSTOM_NETWORK,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const editCustomNetwork = async ({
+  networkDetails,
+  networkIndex,
+}: {
+  networkDetails: NetworkDetails;
+  networkIndex: number;
+}): Promise<{
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+}> => {
+  let response = {
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: [] as NetworkDetails[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      networkDetails,
+      networkIndex,
+      type: SERVICE_TYPES.EDIT_CUSTOM_NETWORK,
     });
   } catch (e) {
     console.error(e);

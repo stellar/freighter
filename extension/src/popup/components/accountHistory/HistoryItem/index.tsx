@@ -1,5 +1,5 @@
 import React from "react";
-import { camelCase } from "lodash";
+import camelCase from "lodash/camelCase";
 import { Icon } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";

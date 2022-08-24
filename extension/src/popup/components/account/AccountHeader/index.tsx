@@ -57,13 +57,11 @@ export const AccountHeader = ({
     networksModalHeight.current = calculateModalHeight(networksList.length);
   }, [networksList]);
 
-  useEffect(() => {
-    const index = networksList.findIndex((n) =>
-      isActiveNetwork(n, networkDetails),
-    );
+  const index = networksList.findIndex((n) =>
+    isActiveNetwork(n, networkDetails),
+  );
 
-    activeNetworkIndex.current = index;
-  }, [networksList, networkDetails]);
+  activeNetworkIndex.current = index;
 
   return (
     <div className="AccountHeader" ref={accountDropDownRef}>

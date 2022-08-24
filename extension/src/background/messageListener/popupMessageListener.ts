@@ -226,7 +226,6 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    // TODO IN THIS PR
     if (!getIsMainnet()) {
       try {
         await fetch(
@@ -427,19 +426,26 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const addCustomNetwork = () => {
-    const { customNetwork } = request;
+    const { networkDetails } = request;
     const savedNetworks = getSavedNetworks();
 
-    const { isSwitchSelected, ...networkDetails } = customNetwork;
+    // Network Name already used
+    if (
+      savedNetworks.find(
+        ({ networkName }: { networkName: string }) =>
+          networkName === networkDetails.networkName,
+      )
+    ) {
+      return {
+        error: "Network name is already in use",
+      };
+    }
+
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
     localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(networksList));
-    if (isSwitchSelected) {
-      localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
-    }
 
     return {
-      networkDetails,
       networksList,
     };
   };
@@ -452,13 +458,25 @@ export const popupMessageListener = (request: Request) => {
       ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
     );
 
-    const updatedNetworksList = savedNetworks.splice(networkIndex, 1);
+    savedNetworks.splice(networkIndex, 1);
 
-    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(updatedNetworksList));
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
 
     return {
-      networksList: updatedNetworksList,
+      networksList: savedNetworks,
     };
+  };
+
+  const editCustomNetwork = () => {
+    const { networkDetails, networkIndex } = request;
+
+    const savedNetworks = getSavedNetworks();
+
+    savedNetworks.splice(networkIndex, 1, networkDetails);
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
+
+    return { networksList: savedNetworks };
   };
 
   const changeNetwork = () => {
@@ -887,6 +905,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
     [SERVICE_TYPES.ADD_CUSTOM_NETWORK]: addCustomNetwork,
     [SERVICE_TYPES.REMOVE_CUSTOM_NETWORK]: removeCustomNetwork,
+    [SERVICE_TYPES.EDIT_CUSTOM_NETWORK]: editCustomNetwork,
     [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,

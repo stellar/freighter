@@ -4,7 +4,7 @@ import { Checkbox, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
-import { useLocation } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 
@@ -13,12 +13,14 @@ import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
-import { isActiveNetwork } from "helpers/stellar";
+import { isActiveNetwork, isMainnet, isTestnet } from "helpers/stellar";
 
 import {
   addCustomNetwork,
   changeNetwork,
+  editCustomNetwork,
   removeCustomNetwork,
+  settingsErrorSelector,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
@@ -49,12 +51,20 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
+  const settingsError = useSelector(settingsErrorSelector);
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
+  const history = useHistory();
   const { search } = useLocation();
 
   const networkIndex = new URLSearchParams(search).get("networkIndex");
   const networkDetailsToEdit = networksList[Number(networkIndex)];
+  const isCurrentNetworkActive = isActiveNetwork(
+    networkDetailsToEdit,
+    networkDetails,
+  );
+  const isMainnetOrTestnet =
+    isMainnet(networkDetailsToEdit) || isTestnet(networkDetailsToEdit);
 
   const initialValues: FormValues = isEditing
     ? { ...networkDetailsToEdit, isSwitchSelected: false }
@@ -84,32 +94,57 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const handleEditNetwork = async (values: FormValues) => {
-    const res = await dispatch(changeNetwork(values));
-    if (changeNetwork.fulfilled.match(res)) {
-      navigateTo(ROUTES.account);
+    if (isCurrentNetworkActive) {
+      setIsNetworkInUse(true);
+    } else {
+      const res = await dispatch(
+        editCustomNetwork({
+          networkDetails: { ...values, network: CUSTOM_NETWORK },
+          networkIndex: Number(networkIndex),
+        }),
+      );
+      if (editCustomNetwork.fulfilled.match(res)) {
+        navigateTo(ROUTES.account);
+      }
     }
   };
 
   const handleAddNetwork = async (values: FormValues) => {
-    const res = await dispatch(
+    const addCustomNetworkRes = await dispatch(
       addCustomNetwork({
-        customNetwork: {
+        networkDetails: {
           ...values,
           network: CUSTOM_NETWORK,
-          isSwitchSelected: !!values.isSwitchSelected,
         },
       }),
     );
-    if (addCustomNetwork.fulfilled.match(res)) {
+
+    const addCustomNetworkFulfilled = addCustomNetwork.fulfilled.match(
+      addCustomNetworkRes,
+    );
+    let changeNetworkFulfilled = true;
+
+    if (values.isSwitchSelected) {
+      changeNetworkFulfilled = false;
+
+      const changeNetworkRes = await dispatch(
+        changeNetwork({
+          networkName: values.networkName,
+        }),
+      );
+      changeNetworkFulfilled = changeNetwork.fulfilled.match(changeNetworkRes);
+    }
+
+    if (addCustomNetworkFulfilled && changeNetworkFulfilled) {
       navigateTo(ROUTES.account);
     }
   };
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = async (values: FormValues) => {
     if (isEditing) {
-      handleEditNetwork(values);
+      await handleEditNetwork(values);
     } else {
-      handleAddNetwork(values);
+      await handleAddNetwork(values);
     }
   };
 
@@ -127,21 +162,24 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const ConfirmRemovalButtons = () => (
     <div className="NetworkForm__removal-buttons">
       <Button
+        fullWidth
         type="button"
         variant={Button.variant.tertiary}
         onClick={() => setIsConfirmingRemoval(false)}
       >
         {t("Cancel")}
       </Button>
-      <Button
-        type="button"
-        variant={Button.variant.tertiary}
-        onClick={() => {
-          handleRemoveNetwork();
-        }}
-      >
-        {t("Remove")}
-      </Button>
+      <div className="NetworkForm__remove-button">
+        <Button
+          fullWidth
+          type="button"
+          onClick={() => {
+            handleRemoveNetwork();
+          }}
+        >
+          {t("Remove")}
+        </Button>
+      </div>
     </div>
   );
 
@@ -151,7 +189,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         <NetworkModal buttonComponent={<CloseModalButton />}>
           <div>
             <div className="NetworkForm__modal__title">
-              {t("Network name is in use")}
+              {t("Network is in use")}
             </div>
             <div className="NetworkForm__modal__body">
               {t("Please select a different network.")}
@@ -160,7 +198,10 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         </NetworkModal>
       ) : null}
       {isConfirmingRemoval ? (
-        <NetworkModal buttonComponent={<ConfirmRemovalButtons />}>
+        <NetworkModal
+          isConfirmation
+          buttonComponent={<ConfirmRemovalButtons />}
+        >
           <div>
             <div className="NetworkForm__modal__title">
               {t("Confirm removing Network")}
@@ -182,14 +223,15 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         validationSchema={NetworkFormSchema}
       >
         {({ dirty, errors, isSubmitting, isValid, touched }) => (
-          <Form className="DisplayBackupPhrase__form">
+          <Form className="NetworkForm__form">
             <Input
               id="networkName"
               autoComplete="off"
               error={
-                errors.networkName && touched.networkName
+                settingsError ||
+                (errors.networkName && touched.networkName
                   ? errors.networkName
-                  : ""
+                  : "")
               }
               customInput={<Field />}
               label={t("Name")}
@@ -221,18 +263,22 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               placeholder={t("Enter passphrase")}
             />
             {isEditing ? (
-              <PillButton
-                type="button"
-                onClick={() => {
-                  if (isActiveNetwork(networkDetailsToEdit, networkDetails)) {
-                    setIsNetworkInUse(true);
-                  } else {
-                    setIsConfirmingRemoval(true);
-                  }
-                }}
-              >
-                {t("Remove")}
-              </PillButton>
+              <div className="NetworkForm__remove-wrapper">
+                {!isMainnetOrTestnet && (
+                  <PillButton
+                    type="button"
+                    onClick={() => {
+                      if (isCurrentNetworkActive) {
+                        setIsNetworkInUse(true);
+                      } else {
+                        setIsConfirmingRemoval(true);
+                      }
+                    }}
+                  >
+                    {t("Remove")}
+                  </PillButton>
+                )}
+              </div>
             ) : (
               <Field name="isSwitchSelected">
                 {({ field }: FieldProps) => (
@@ -251,25 +297,35 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               </Field>
             )}
             {isEditing ? (
-              <Button
-                disabled={!isValid}
-                fullWidth
-                isLoading={isSubmitting}
-                type="submit"
-                variant={Button.variant.tertiary}
-              >
-                {t("Add network")}
-              </Button>
+              <div className="NetworkForm__editing-buttons">
+                <Button
+                  onClick={() => history.goBack()}
+                  type="button"
+                  variant={Button.variant.tertiary}
+                  fullWidth
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  disabled={!isValid || isMainnetOrTestnet}
+                  isLoading={isSubmitting}
+                  fullWidth
+                  type="submit"
+                >
+                  {t("Save")}
+                </Button>
+              </div>
             ) : (
-              <Button
-                disabled={!(isValid && dirty)}
-                fullWidth
-                isLoading={isSubmitting}
-                type="submit"
-                variant={Button.variant.tertiary}
-              >
-                {t("Add network")}
-              </Button>
+              <div className="NetworkForm__add-button">
+                <Button
+                  disabled={!(isValid && dirty) || isMainnetOrTestnet}
+                  fullWidth
+                  isLoading={isSubmitting}
+                  type="submit"
+                >
+                  {t("Add network")}
+                </Button>
+              </div>
             )}
           </Form>
         )}

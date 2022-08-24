@@ -6,8 +6,13 @@ import {
   Balances,
   HorizonOperation,
 } from "@shared/api/types";
+import { NetworkDetails } from "@shared/constants/stellar";
 
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isTestnet,
+} from "helpers/stellar";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -90,10 +95,9 @@ export const sortOperationsByAsset = ({
   return assetOperationMap;
 };
 
-export const getStellarExpertUrl = (network: string) =>
+export const getStellarExpertUrl = (networkDetails: NetworkDetails) =>
   `https://stellar.expert/explorer/${
-    // TODO IN THIS PR
-    network === "TESTNET" ? "testnet" : "public"
+    isTestnet(networkDetails) ? "testnet" : "public"
   }`;
 
 interface GetAvailableBalance {
