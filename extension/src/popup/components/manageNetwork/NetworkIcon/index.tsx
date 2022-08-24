@@ -15,15 +15,17 @@ const getNetworkColor = (index: number | null): any => {
     return "";
   }
 
-  // The first 2 networks in the list will always
+  // The first 2 networks in the list should always be the DEFAULT_NETWORKs
   if (index < DEFAULT_NETWORK_COLORS.length) {
     return DEFAULT_NETWORK_COLORS[index];
   }
 
+  // If these networks fall in our first pass through the custom colors, use the network index to find what color to use
   if (index < CUSTOM_NETWORK_COLORS.length + DEFAULT_NETWORK_COLORS.length) {
     return CUSTOM_NETWORK_COLORS[index - DEFAULT_NETWORK_COLORS.length];
   }
 
+  // We've already cycled through the custom network colors once. Start over from the beginning
   if (index > CUSTOM_NETWORK_COLORS.length) {
     return getNetworkColor(index - CUSTOM_NETWORK_COLORS.length);
   }
