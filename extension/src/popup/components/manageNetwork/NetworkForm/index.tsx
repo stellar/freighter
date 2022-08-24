@@ -13,7 +13,7 @@ import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
-import { isActiveNetwork, isMainnet, isTestnet } from "helpers/stellar";
+import { isActiveNetwork } from "helpers/stellar";
 
 import {
   addCustomNetwork,
@@ -58,14 +58,15 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const history = useHistory();
   const { search } = useLocation();
 
-  const networkIndex = new URLSearchParams(search).get("networkIndex");
-  const networkDetailsToEdit = networksList[Number(networkIndex)];
+  const networkIndex = Number(
+    new URLSearchParams(search).get(NETWORK_INDEX_SEARCH_PARAM),
+  );
+  const networkDetailsToEdit = networksList[networkIndex];
   const isCurrentNetworkActive = isActiveNetwork(
     networkDetailsToEdit,
     networkDetails,
   );
-  const isMainnetOrTestnet =
-    isMainnet(networkDetailsToEdit) || isTestnet(networkDetailsToEdit);
+  const isMainnetOrTestnet = networkIndex === 0 || networkIndex === 1;
 
   const initialValues: FormValues = isEditing
     ? { ...networkDetailsToEdit, isSwitchSelected: false }
@@ -101,7 +102,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       const res = await dispatch(
         editCustomNetwork({
           networkDetails: { ...values, network: CUSTOM_NETWORK },
-          networkIndex: Number(networkIndex),
+          networkIndex,
         }),
       );
       if (editCustomNetwork.fulfilled.match(res)) {
