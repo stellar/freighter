@@ -2,10 +2,10 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import SimpleBar from "simplebar-react";
-import { Button } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
+import { Button } from "popup/basics/buttons/Button";
 
 import { navigateTo } from "popup/helpers/navigate";
 
