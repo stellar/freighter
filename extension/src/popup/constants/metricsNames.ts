@@ -59,6 +59,8 @@ export const METRIC_NAMES = {
 
   viewManageNetwork: "loaded screen: manage network",
   viewAddNetwork: "loaded screen: add network",
+  viewEditNetwork: "loaded screen: edit network",
+  viewNetworkSettings: "loaded screen: network settings",
 
   manageAssetAddAsset: "manage asset: add asset",
   manageAssetRemoveAsset: "manage asset: remove asset",
