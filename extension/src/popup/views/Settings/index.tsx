@@ -37,6 +37,9 @@ export const Settings = () => {
             </div>
           </div>
           <ListNavLinkWrapper>
+            <ListNavLink href={ROUTES.networkSettings}>
+              {t("Network Settings")}
+            </ListNavLink>
             <ListNavLink href={ROUTES.preferences}>
               {t("Preferences")}
             </ListNavLink>
