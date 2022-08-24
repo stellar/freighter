@@ -1,14 +1,10 @@
 import React from "react";
-import { Icon, Toggle } from "@stellar/design-system";
+import { Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import {
-  MAINNET_NETWORK_DETAILS,
-  NetworkDetails,
-  TESTNET_NETWORK_DETAILS,
-} from "@shared/constants/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 import {
   saveSettings,
@@ -20,27 +16,6 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
 
 import "./styles.scss";
-
-interface RadioCheckProps {
-  name: string;
-  title: string;
-  value: string;
-}
-
-const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
-  <label className="Preferences--label Preferences--radio-label">
-    {title}
-    <Field
-      className="Preferences--radio-field"
-      name={name}
-      type="radio"
-      value={value}
-    />
-    <div className="Preferences--radio-check">
-      <Icon.Check />
-    </div>
-  </label>
-);
 
 export const Preferences = () => {
   const { t } = useTranslation();
@@ -94,19 +69,6 @@ export const Preferences = () => {
       >
         <Form>
           <AutoSaveFields />
-          <div className="Preferences--section">
-            <div className="Preferences--section--title">{t("Network")}</div>
-            <RadioCheck
-              name="networkSelected"
-              title="Public Network"
-              value={MAINNET_NETWORK_DETAILS.network}
-            />
-            <RadioCheck
-              name="networkSelected"
-              title="Test Network"
-              value={TESTNET_NETWORK_DETAILS.network}
-            />
-          </div>
           <div className="Preferences--section">
             <div className="Preferences--section--title">
               {t("Verification with")} stellar.expert
