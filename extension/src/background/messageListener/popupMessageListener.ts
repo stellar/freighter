@@ -24,9 +24,7 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
-import { MANAGE_NETWORK_ERROR } from "constants/networks";
 import {
-  DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
 } from "@shared/constants/stellar";
@@ -228,7 +226,6 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    // TODO IN THIS PR
     if (!getIsMainnet()) {
       try {
         await fetch(
@@ -429,43 +426,63 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const addCustomNetwork = () => {
-    const { customNetwork } = request;
+    const { networkDetails } = request;
     const savedNetworks = getSavedNetworks();
 
     // Network Name already used
     if (
       savedNetworks.find(
         ({ networkName }: { networkName: string }) =>
-          networkName === customNetwork.networkName,
+          networkName === networkDetails.networkName,
       )
     ) {
       return {
-        error: MANAGE_NETWORK_ERROR,
+        error: "Network name is already in use",
       };
     }
 
-    const { isSwitchSelected, ...networkDetails } = customNetwork;
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
     localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(networksList));
-    if (isSwitchSelected) {
-      localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
-    }
 
     return {
-      networkDetails,
       networksList,
     };
+  };
+
+  const removeCustomNetwork = () => {
+    const { networkName } = request;
+
+    const savedNetworks = getSavedNetworks();
+    const networkIndex = savedNetworks.findIndex(
+      ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
+    );
+
+    savedNetworks.splice(networkIndex, 1);
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
+
+    return {
+      networksList: savedNetworks,
+    };
+  };
+
+  const editCustomNetwork = () => {
+    const { networkDetails, networkIndex } = request;
+
+    const savedNetworks = getSavedNetworks();
+
+    savedNetworks.splice(networkIndex, 1, networkDetails);
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
+
+    return { networksList: savedNetworks };
   };
 
   const changeNetwork = () => {
     const { networkName } = request;
 
-    const savedNetworks = JSON.parse(
-      localStorage.getItem(NETWORKS_LIST_ID) ||
-        JSON.stringify(DEFAULT_NETWORKS),
-    ) as NetworkDetails[];
-
+    const savedNetworks = getSavedNetworks();
     const networkDetails =
       savedNetworks.find(
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
@@ -886,6 +903,8 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
     [SERVICE_TYPES.ADD_CUSTOM_NETWORK]: addCustomNetwork,
+    [SERVICE_TYPES.REMOVE_CUSTOM_NETWORK]: removeCustomNetwork,
+    [SERVICE_TYPES.EDIT_CUSTOM_NETWORK]: editCustomNetwork,
     [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,

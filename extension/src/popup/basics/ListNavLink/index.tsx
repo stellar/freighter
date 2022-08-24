@@ -9,21 +9,30 @@ import "./styles.scss";
 interface ListNavLinkProps {
   children: string | React.ReactNode;
   href: string | ROUTES;
+  searchParams?: string;
 }
 
-export const ListNavLink = ({ children, href }: ListNavLinkProps) => (
-  <div className="ListNavLink">
-    {Object.values(ROUTES).includes(href as ROUTES) ? (
-      <Link to={href}>
-        {children} <Icon.ChevronRight className="ListNavLink__icon" />
-      </Link>
-    ) : (
-      <a rel="noreferrer" target="_blank" href={href}>
-        {children} <Icon.ChevronRight className="ListNavLink__icon" />
-      </a>
-    )}
-  </div>
-);
+export const ListNavLink = ({
+  children,
+  href,
+  searchParams = "",
+}: ListNavLinkProps) => {
+  const fullHref = `${href}${searchParams}`;
+
+  return (
+    <div className="ListNavLink">
+      {Object.values(ROUTES).includes(href as ROUTES) ? (
+        <Link to={fullHref}>
+          {children} <Icon.ChevronRight className="ListNavLink__icon" />
+        </Link>
+      ) : (
+        <a rel="noreferrer" target="_blank" href={fullHref}>
+          {children} <Icon.ChevronRight className="ListNavLink__icon" />
+        </a>
+      )}
+    </div>
+  );
+};
 
 export const ListNavLinkWrapper = ({
   children,

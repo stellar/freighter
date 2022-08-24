@@ -70,7 +70,7 @@ export const getBipPath = () => {
 export const getSavedNetworks = () =>
   JSON.parse(
     localStorage.getItem(NETWORKS_LIST_ID) || JSON.stringify(DEFAULT_NETWORKS),
-  );
+  ) as NetworkDetails[];
 
 export const getNetworkDetails = () => {
   const networkDetails = JSON.parse(
