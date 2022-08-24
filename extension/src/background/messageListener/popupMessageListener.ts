@@ -21,6 +21,7 @@ import {
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
+  CACHED_BLOCKED_DOMAINS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
@@ -47,6 +48,7 @@ import {
   getBipPath,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
+import { cachedFetch } from "background/helpers/cachedFetch";
 
 import { store } from "background/store";
 import {
@@ -62,6 +64,7 @@ import {
   timeoutAccountAccess,
   updateAllAccountsAccountName,
 } from "background/ducks/session";
+import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL } from "background/constants/apiUrls";
 
 const sessionTimer = new SessionTimer();
 
@@ -876,6 +879,19 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
   };
 
+  const getBlockedDomains = async () => {
+    try {
+      const resp = await cachedFetch(
+        STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
+        CACHED_BLOCKED_DOMAINS_ID,
+      );
+      return { blockedDomains: resp?._embedded?.records || [] };
+    } catch (e) {
+      console.error(e);
+      return new Error("Error getting blocked domains");
+    }
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -905,6 +921,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
     [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
+    [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
   };
 
   return messageResponder[request.type]();

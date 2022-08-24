@@ -24,6 +24,7 @@ import {
   resetSubmission,
   saveAssetSelectType,
   AssetSelectType,
+  getBlockedDomains,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -81,6 +82,7 @@ export const Account = () => {
         networkDetails,
       }),
     );
+    dispatch(getBlockedDomains());
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {

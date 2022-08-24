@@ -6,10 +6,13 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
-import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar.ts";
+import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
-import { ALLOWLIST_ID } from "constants/localStorageTypes";
+import {
+  ALLOWLIST_ID,
+  CACHED_BLOCKED_ACCOUNTS_ID,
+} from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import {
@@ -95,7 +98,10 @@ export const freighterApiMessageListener = (
 
     const isDomainListedAllowed = isSenderAllowed({ sender });
 
-    const directoryLookupJson = await cachedFetch(STELLAR_DIRECTORY_URL);
+    const directoryLookupJson = await cachedFetch(
+      STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
+      CACHED_BLOCKED_ACCOUNTS_ID,
+    );
     const accountData = directoryLookupJson?._embedded?.records || [];
 
     const _operations =
