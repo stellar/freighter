@@ -2,11 +2,14 @@ import {
   ACCOUNT_NAME_LIST_ID,
   KEY_ID_LIST,
   KEY_ID,
-  IS_TESTNET_ID,
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
+  NETWORK_ID,
+  NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
+import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
+import { isMainnet, isTestnet } from "helpers/stellar";
 
 export const getKeyIdList = () =>
   JSON.parse(localStorage.getItem(KEY_ID_LIST) || "[]");
@@ -34,8 +37,17 @@ export const addAccountName = ({
   localStorage.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
 };
 
-export const getIsTestnet = () =>
-  JSON.parse(localStorage.getItem(IS_TESTNET_ID) || "false");
+export const getIsMainnet = () => {
+  const networkDetails = getNetworkDetails();
+
+  return isMainnet(networkDetails);
+};
+
+export const getIsTestnet = () => {
+  const networkDetails = getNetworkDetails();
+
+  return isTestnet(networkDetails);
+};
 
 export const getIsMemoValidationEnabled = () =>
   JSON.parse(localStorage.getItem(IS_VALIDATING_MEMO_ID) || "true");
@@ -53,4 +65,25 @@ export const getBipPath = () => {
   const keyId = localStorage.getItem(KEY_ID) || "";
   const hwData = JSON.parse(localStorage.getItem(keyId) || "{}");
   return hwData.bipPath || "";
+};
+
+export const getSavedNetworks = () =>
+  JSON.parse(
+    localStorage.getItem(NETWORKS_LIST_ID) || JSON.stringify(DEFAULT_NETWORKS),
+  ) as NetworkDetails[];
+
+export const getNetworkDetails = () => {
+  const networkDetails = JSON.parse(
+    localStorage.getItem(NETWORK_ID) || JSON.stringify(DEFAULT_NETWORKS[0]),
+  ) as NetworkDetails;
+
+  return networkDetails;
+};
+
+export const getNetworksList = () => {
+  const networksList = JSON.parse(
+    localStorage.getItem(NETWORKS_LIST_ID) || JSON.stringify(DEFAULT_NETWORKS),
+  ) as NetworkDetails[];
+
+  return networksList;
 };
