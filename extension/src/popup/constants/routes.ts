@@ -45,4 +45,6 @@ export enum ROUTES {
   trustlineError = "/manage-assets/trustline-error",
   manageNetwork = "/manage-network",
   addNetwork = "/manage-network/add-network",
+  editNetwork = "/manage-network/edit-network",
+  networkSettings = "/manage-network/network-settings",
 }
