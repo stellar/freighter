@@ -31,7 +31,6 @@ export interface Response {
   isTestnet: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
-  customNetwork: CustomNetwork;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
@@ -40,6 +39,7 @@ export interface Response {
   assetCanonical: string;
   iconUrl: string;
   network: string;
+  networkIndex: number;
   networkName: string;
   recentAddresses: Array<string>;
   hardwareWalletType: WalletType;
@@ -72,6 +72,7 @@ export interface Settings {
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   networksList: NetworkDetails[];
+  error: string;
 }
 
 export interface AssetIcons {
@@ -107,5 +108,3 @@ declare global {
 }
 
 export type CURRENCY = { code: string; issuer: string; image: string };
-
-export type CustomNetwork = NetworkDetails & { isSwitchSelected: boolean };

@@ -17,13 +17,11 @@ import {
 } from "popup/ducks/settings";
 import { AccountList } from "popup/components/account/AccountList";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
+import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
+
 import IconCube from "popup/assets/icon-cube.svg";
 
 import "./styles.scss";
-
-const NETWORK_COLORS = ["#30A46C", "#6E56CF"];
-
-const getNetworkColor = (index: number) => NETWORK_COLORS[index];
 
 interface AccountHeaderProps {
   accountDropDownRef: React.RefObject<HTMLDivElement>;
@@ -45,10 +43,11 @@ export const AccountHeader = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
 
-  const calculateModalHeight = (listLength: number) => (listLength + 2) * 6;
-
   const accountsModalHeight = useRef(0);
   const networksModalHeight = useRef(0);
+  const activeNetworkIndex = useRef<number | null>(null);
+
+  const calculateModalHeight = (listLength: number) => (listLength + 2) * 6;
 
   useEffect(() => {
     accountsModalHeight.current = calculateModalHeight(allAccounts.length);
@@ -57,6 +56,12 @@ export const AccountHeader = ({
   useEffect(() => {
     networksModalHeight.current = calculateModalHeight(networksList.length);
   }, [networksList]);
+
+  const index = networksList.findIndex((n) =>
+    isActiveNetwork(n, networkDetails),
+  );
+
+  activeNetworkIndex.current = index;
 
   return (
     <div className="AccountHeader" ref={accountDropDownRef}>
@@ -74,7 +79,7 @@ export const AccountHeader = ({
         className="AccountHeader__network-wrapper"
         onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
       >
-        <div className="AccountHeader__network-icon mainnet" />
+        <NetworkIcon index={activeNetworkIndex.current} />
         <div className="AccountHeader__network-copy">
           {networkDetails.networkName}
         </div>
@@ -155,10 +160,7 @@ export const AccountHeader = ({
                   dispatch(changeNetwork({ networkName: n.networkName }))
                 }
               >
-                <div
-                  className="AccountHeader__network-icon"
-                  style={{ background: getNetworkColor(i) }}
-                />
+                <NetworkIcon index={i} />
                 <div className="AccountHeader__network-copy">
                   {n.networkName}
                 </div>
@@ -188,7 +190,7 @@ export const AccountHeader = ({
           <div className="AccountHeader__account-list-item">
             <Link
               className="AccountHeader__account-list-item__link"
-              to={ROUTES.addNetwork}
+              to={ROUTES.networkSettings}
             >
               <div className="AccountHeader__account-list-item__icon">
                 <Icon.Tool />

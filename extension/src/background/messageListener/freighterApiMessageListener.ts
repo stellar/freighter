@@ -204,7 +204,6 @@ export const freighterApiMessageListener = (
     let network = "";
 
     try {
-      // TODO IN THIS PR
       ({ network } = getNetworkDetails());
     } catch (error) {
       console.error(error);

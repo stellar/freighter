@@ -32,7 +32,7 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { truncatedPublicKey } from "helpers/stellar";
+import { isTestnet, truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -180,8 +180,7 @@ export const Account = () => {
           </SimpleBar>
         ) : (
           <NotFundedMessage
-            // TODO IN THIS PR
-            isTestnet={networkDetails.network === "TESTNET"}
+            isTestnet={isTestnet(networkDetails)}
             setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
             publicKey={publicKey}
           />
