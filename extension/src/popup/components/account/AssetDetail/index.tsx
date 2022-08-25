@@ -80,7 +80,7 @@ export const AssetDetail = ({
     selectedAsset,
   });
 
-  const stellarExpertUrl = getStellarExpertUrl(networkDetails.network);
+  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);

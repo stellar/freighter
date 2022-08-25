@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
-import { isEqual } from "lodash";
+import isEqual from "lodash/isEqual";
 
 import { NETWORK_URLS, NetworkDetails } from "@shared/constants/stellar";
 
