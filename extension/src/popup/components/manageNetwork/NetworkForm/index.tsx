@@ -99,10 +99,14 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     }
   };
 
+  const showNetworkUrlInvalidModal = (networkUrl: string) => {
+    setIsNetworkUrlValid(true);
+    setInvalidUrl(networkUrl);
+  };
+
   const handleEditNetwork = async (values: FormValues) => {
     if (!isNetworkUrlValidHelper(values.networkUrl)) {
-      setIsNetworkUrlValid(true);
-      setInvalidUrl(values.networkUrl);
+      showNetworkUrlInvalidModal(values.networkUrl);
       return;
     }
 
@@ -123,8 +127,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
   const handleAddNetwork = async (values: FormValues) => {
     if (!isNetworkUrlValidHelper(values.networkUrl)) {
-      setIsNetworkUrlValid(true);
-      setInvalidUrl(values.networkUrl);
+      showNetworkUrlInvalidModal(values.networkUrl);
       return;
     }
 
