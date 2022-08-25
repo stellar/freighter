@@ -19,7 +19,7 @@ const config = {
     filename: "[name].min.js",
   },
   resolve: {
-    extensions: [".ts"],
+    extensions: [".ts", ".js"],
     plugins: [
       new TsconfigPathsPlugin({
         configFile: path.resolve(__dirname, "./tsconfig.json"),

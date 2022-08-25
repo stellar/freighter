@@ -1,0 +1,36 @@
+.NetworkSettings {
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: 2rem var(--popup--side-padding) var(--popup-vertical-padding);
+
+  &__header {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  &__scrollbar {
+    height: 23.85rem;
+  }
+
+  &__name {
+    align-items: center;
+    display: flex;
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+  }
+
+  &__url {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.875rem;
+    margin-left: 1rem;
+  }
+
+  &__bottom {
+    padding: 1.5rem 0;
+  }
+}

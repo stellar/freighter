@@ -33,6 +33,8 @@
 
     &__right {
       color: var(--pal-text-primary);
+      overflow-y: hidden;
+      max-width: 10rem;
     }
   }
 

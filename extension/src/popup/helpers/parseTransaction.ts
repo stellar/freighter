@@ -1,5 +1,5 @@
 import buffer from "buffer";
-import { get } from "lodash";
+import get from "lodash/get";
 
 import { MEMO_TYPES } from "popup/constants/memoTypes";
 

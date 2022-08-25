@@ -15,6 +15,7 @@ import {
   getConversionRate,
   truncatedFedAddress,
 } from "helpers/stellar";
+import { getStellarExpertUrl } from "popup/helpers/account";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -96,7 +97,7 @@ const TwoAssetCard = ({
           {destAsset.code}
         </div>
         <div className="TwoAssetCard__row__right">
-          {new BigNumber(destAmount).toFixed(2)} {destAsset.code}
+          {new BigNumber(destAmount).toFixed()} {destAsset.code}
         </div>
       </div>
     </div>
@@ -361,7 +362,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               {computeDestMinWithSlippage(
                 allowedSlippage,
                 destinationAmount,
-              ).toFixed(2)}{" "}
+              ).toFixed()}{" "}
               {sourceAsset.code}
             </div>
           </div>
@@ -378,9 +379,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               variant={Button.variant.tertiary}
               onClick={() =>
                 openTab(
-                  `https://stellar.expert/explorer/${
-                    networkDetails.isTestnet ? "testnet" : "public"
-                  }/tx/${transactionHash}`,
+                  `${getStellarExpertUrl(
+                    networkDetails,
+                  )}/tx/${transactionHash}`,
                 )
               }
             >

@@ -11,12 +11,13 @@ enum InfoBlockVariant {
 }
 
 interface InfoBlockProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  className?: string;
   variant?: InfoBlockVariant;
   children: string | React.ReactNode;
 }
 
-export const InfoBlock = ({ children, variant }: InfoBlockProps) => (
-  <div className="BasicInfoBlock">
+export const InfoBlock = ({ children, className, variant }: InfoBlockProps) => (
+  <div className={`BasicInfoBlock ${className}`}>
     <SDSInfoBlock variant={variant}>{children}</SDSInfoBlock>
   </div>
 );
