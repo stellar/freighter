@@ -1,4 +1,4 @@
-import { Horizon } from "stellar-sdk";
+import StellarSdk, { Horizon } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 import { BigNumber } from "bignumber.js";
 import {
@@ -137,4 +137,17 @@ export const getAvailableBalance = ({
   }
 
   return availBalance;
+};
+
+export const isNetworkUrlValid = (networkUrl: string) => {
+  let isValid = true;
+
+  try {
+    // eslint-disable-next-line no-new
+    new StellarSdk.Server(networkUrl);
+  } catch (e) {
+    console.error(e);
+    isValid = false;
+  }
+  return isValid;
 };
