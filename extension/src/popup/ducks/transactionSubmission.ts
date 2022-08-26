@@ -219,6 +219,12 @@ export enum HwOverlayStatus {
   IN_PROGRESS = "IN_PROGRESS",
 }
 
+// ALEC TODO - combine with above?
+export enum BlockedDomainStatus {
+  IDLE = "IDLE",
+  IN_PROGRESS = "IN_PROGRESS",
+}
+
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -266,6 +272,7 @@ interface InitialState {
     isSource: boolean;
   };
   blockedDomains: Array<BlockedDomain>;
+  blockedDomainStatus: BlockedDomainStatus;
 }
 
 export const initialState: InitialState = {
@@ -306,6 +313,10 @@ export const initialState: InitialState = {
     isSource: true,
   },
   blockedDomains: [],
+  // ALEC TODO - move probably
+  // blockedDomainStatus: BlockedDomainStatus.IDLE,
+  // ALEC TODO - remove
+  blockedDomainStatus: BlockedDomainStatus.IN_PROGRESS,
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -360,6 +371,13 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAssetSelectSource: (state, action) => {
       state.assetSelect.isSource = action.payload;
+    },
+    // ALEC TODO - name change for these?
+    showBlockedDomainWarning: (state) => {
+      state.blockedDomainStatus = BlockedDomainStatus.IN_PROGRESS;
+    },
+    closeBlockedDomainWarning: (state) => {
+      state.blockedDomainStatus = BlockedDomainStatus.IDLE;
     },
   },
   extraReducers: (builder) => {
@@ -443,6 +461,8 @@ export const {
   closeHwOverlay,
   saveAssetSelectType,
   saveAssetSelectSource,
+  showBlockedDomainWarning,
+  closeBlockedDomainWarning,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

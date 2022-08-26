@@ -31,6 +31,7 @@ export interface Response {
   isTestnet: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  isValidatingSafeAssetsEnabled: boolean;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
@@ -71,6 +72,7 @@ export interface Settings {
   networkDetails: NetworkDetails;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   error: string;
 }

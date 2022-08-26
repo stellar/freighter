@@ -43,3 +43,43 @@
     line-height: 1.375rem;
   }
 }
+
+// ALEC TODO - move
+// ALEC TODO - name
+// ALEC TODO - finish styling + add the animation
+.WarningModal {
+  // ALEC TODO - change I think
+  z-index: var(--z-index--ledger);
+  position: fixed;
+  height: calc(var(--popup--height) - 2rem);
+  // ALEC TODO
+  // bottom: calc(-1 * var(--popup--height));
+  width: var(--popup--width);
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-color);
+  margin-top: 2rem;
+  transition: bottom var(--dropdown-animation);
+  border-top-right-radius: 1rem;
+  border-top-left-radius: 1rem;
+  padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
+    var(--account-view-padding-side);
+
+  &__header {
+    font-weight: var(--font-weight-medium);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--pal-text-primary);
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  &__bottom-content {
+    margin-top: auto;
+  }
+}
