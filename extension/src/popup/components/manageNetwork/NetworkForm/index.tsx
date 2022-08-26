@@ -14,7 +14,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { isNetworkUrlValid as isNetworkUrlValidHelper } from "popup/helpers/account";
-import { isActiveNetwork } from "helpers/stellar";
+import { CUSTOM_NETWORK, isActiveNetwork } from "helpers/stellar";
 
 import {
   addCustomNetwork,
@@ -32,8 +32,6 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkModal } from "../NetworkModal";
 
 import "./styles.scss";
-
-const CUSTOM_NETWORK = "CUSTOM";
 
 interface FormValues {
   networkName: string;
@@ -104,6 +102,17 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     setInvalidUrl(networkUrl);
   };
 
+  const getCustomNetworkDetailsFromFormValues = (values: FormValues) => {
+    const { networkName, networkUrl, networkPassphrase } = values;
+
+    return {
+      network: CUSTOM_NETWORK,
+      networkName,
+      networkUrl,
+      networkPassphrase,
+    };
+  };
+
   const handleEditNetwork = async (values: FormValues) => {
     if (!isNetworkUrlValidHelper(values.networkUrl)) {
       showNetworkUrlInvalidModal(values.networkUrl);
@@ -115,7 +124,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     } else {
       const res = await dispatch(
         editCustomNetwork({
-          networkDetails: { ...values, network: CUSTOM_NETWORK },
+          networkDetails: getCustomNetworkDetailsFromFormValues(values),
           networkIndex,
         }),
       );
@@ -133,10 +142,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
     const addCustomNetworkRes = await dispatch(
       addCustomNetwork({
-        networkDetails: {
-          ...values,
-          network: CUSTOM_NETWORK,
-        },
+        networkDetails: getCustomNetworkDetailsFromFormValues(values),
       }),
     );
 

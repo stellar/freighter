@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import { Button } from "popup/basics/buttons/Button";
 
@@ -9,8 +10,9 @@ import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkIn
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { stroopToXlm } from "helpers/stellar";
+import { stroopToXlm, isCustomNetwork } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -71,6 +73,7 @@ export const TransactionDetail = ({
   const { assetDomain } = useAssetDomain({
     assetIssuer,
   });
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return assetIssuer && !assetDomain ? null : (
     <div className="TransactionDetail">
@@ -142,16 +145,18 @@ export const TransactionDetail = ({
           </div>
         </div>
       </div>
-      <Button
-        fullWidth
-        onClick={() => {
-          emitMetric(METRIC_NAMES.historyOpenItem);
-          openTab(externalUrl);
-        }}
-        variant={Button.variant.tertiary}
-      >
-        {t("View on")} stellar.expert
-      </Button>
+      {!isCustomNetwork(networkDetails) ? (
+        <Button
+          fullWidth
+          onClick={() => {
+            emitMetric(METRIC_NAMES.historyOpenItem);
+            openTab(externalUrl);
+          }}
+          variant={Button.variant.tertiary}
+        >
+          {t("View on")} stellar.expert
+        </Button>
+      ) : null}
     </div>
   );
 };
