@@ -314,9 +314,9 @@ export const initialState: InitialState = {
   },
   blockedDomains: [],
   // ALEC TODO - move probably
-  // blockedDomainStatus: BlockedDomainStatus.IDLE,
+  blockedDomainStatus: BlockedDomainStatus.IDLE,
   // ALEC TODO - remove
-  blockedDomainStatus: BlockedDomainStatus.IN_PROGRESS,
+  // blockedDomainStatus: BlockedDomainStatus.IN_PROGRESS,
 };
 
 const transactionSubmissionSlice = createSlice({

@@ -18,6 +18,7 @@ import {
 } from "helpers/stellar";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
@@ -251,54 +252,67 @@ export const ManageAssetRows = ({
 
     return (
       <div className="WarningModal">
-        <div className="WarningModal__header">Warning</div>
-        <div className="WarningModal__description">
-          {t(
-            "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
-          )}
-        </div>
-        {/* ALEC TODO - re-use from ManageAssetRows ? */}
-        <div className="ManageAssetRows__row">
-          <AssetIcon
-            assetIcons={{ [getCanonicalFromAsset(code, issuer)]: image }}
-            code={code}
-            issuerKey={issuer}
-          />
-          <div className="ManageAssetRows__code">
-            {code}
-            <div className="ManageAssetRows__domain">
-              {formatDomain(domain)}
+        <div className="WarningModal__wrapper" ref={modalRef}>
+          <div className="WarningModal__header">Warning</div>
+          <div className="WarningModal__description">
+            {t(
+              "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
+            )}
+          </div>
+          {/* ALEC TODO - re-use from ManageAssetRows ? */}
+          <div className="ManageAssetRows__row">
+            <AssetIcon
+              assetIcons={{ [getCanonicalFromAsset(code, issuer)]: image }}
+              code={code}
+              issuerKey={issuer}
+            />
+            <div className="ManageAssetRows__code">
+              {code}
+              <div className="ManageAssetRows__domain">
+                {formatDomain(domain)}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="WarningModal__bottom-content">
-          <div>
-            <InfoBlock variant={InfoBlock.variant.error}>
-              {t(
-                "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-              )}
-              <p>
-                {t("You can disable this alert by going to")}{" "}
-                <strong>{t("Settings > Security")}</strong>
-              </p>
-            </InfoBlock>
-          </div>
-          <div className="WarningModal__btn">
-            <Button
-              fullWidth
-              variant={Button.variant.tertiary}
-              onClick={closeOverlay}
-            >
-              {t("Got it")}
-            </Button>
-            {/* ALEC TODO - make button red */}
-            {!isValidatingSafeAssetsEnabled && (
-              <Button fullWidth onClick={closeOverlay}>
-                {t("Add anyway")}
+          <div className="WarningModal__bottom-content">
+            <div>
+              <InfoBlock variant={InfoBlock.variant.error}>
+                <p>
+                  {isValidatingSafeAssetsEnabled
+                    ? t(
+                        "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                      )
+                    : t(
+                        "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
+                      )}
+                </p>
+                <p>
+                  {t("You can")}{" "}
+                  {`${
+                    isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
+                  }`}{" "}
+                  {t("this alert by going to")}{" "}
+                  <strong>{t("Settings > Security")}</strong>
+                </p>
+              </InfoBlock>
+            </div>
+            <div className="WarningModal__btns">
+              <Button
+                fullWidth
+                variant={Button.variant.tertiary}
+                type="button"
+                onClick={closeOverlay}
+              >
+                {t("Got it")}
               </Button>
-            )}
-          </div>{" "}
+              {!isValidatingSafeAssetsEnabled && (
+                <Button fullWidth onClick={closeOverlay} type="button">
+                  {/* ALEC TODO - handle add anyway onclick */}
+                  {t("Add anyway")}
+                </Button>
+              )}
+            </div>{" "}
+          </div>
         </div>
       </div>
     );
@@ -325,12 +339,6 @@ export const ManageAssetRows = ({
         {header}
         <div className="ManageAssetRows__content">
           {assetRows.map(({ code, domain, image, issuer }) => {
-            // ALEC TODO - remove
-            console.log({ code });
-            console.log({ domain });
-            console.log({ image });
-            console.log({ issuer });
-
             if (!balances) return null;
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
             const isTrustlineActive = Object.keys(balances).some(
@@ -376,6 +384,10 @@ export const ManageAssetRows = ({
         </div>
         {children}
       </SimpleBar>
+      <LoadingBackground
+        onClick={() => {}}
+        isActive={blockedDomainStatus === BlockedDomainStatus.IN_PROGRESS}
+      />
     </>
   );
 };
