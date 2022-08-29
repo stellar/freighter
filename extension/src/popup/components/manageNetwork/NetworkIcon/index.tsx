@@ -38,8 +38,5 @@ interface NetworkIconProps {
 }
 
 export const NetworkIcon = ({ index }: NetworkIconProps) => (
-  <div
-    className="AccountHeader__network-icon"
-    style={{ background: getNetworkColor(index) }}
-  />
+  <div className="NetworkIcon" style={{ background: getNetworkColor(index) }} />
 );
