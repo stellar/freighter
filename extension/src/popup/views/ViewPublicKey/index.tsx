@@ -10,7 +10,7 @@ import { PillButton } from "popup/basics/buttons/PillButton";
 import { Button } from "popup/basics/buttons/Button";
 
 import { emitMetric } from "helpers/metrics";
-import { truncatedPublicKey } from "helpers/stellar";
+import { truncatedPublicKey, isCustomNetwork } from "helpers/stellar";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
@@ -29,7 +29,7 @@ export const ViewPublicKey = () => {
   const publicKey = useSelector(publicKeySelector);
   const accountName = useSelector(accountNameSelector);
   const [isEditingName, setIsEditingName] = useState(false);
-  const { network } = useSelector(settingsNetworkDetailsSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const EditNameButton = () => {
     const { submitForm } = useFormikContext();
@@ -137,18 +137,20 @@ export const ViewPublicKey = () => {
           </div>
         </div>
         <div className="ViewPublicKey__external-link">
-          <Button
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={() => {
-              openTab(
-                `https://stellar.expert/explorer/${network.toLowerCase()}/account/${publicKey}`,
-              );
-              emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
-            }}
-          >
-            {t("View on")} stellar.expert
-          </Button>
+          {!isCustomNetwork(networkDetails) ? (
+            <Button
+              fullWidth
+              variant={Button.variant.tertiary}
+              onClick={() => {
+                openTab(
+                  `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,
+                );
+                emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
+              }}
+            >
+              {t("View on")} stellar.expert
+            </Button>
+          ) : null}
         </div>
       </div>
     </>
