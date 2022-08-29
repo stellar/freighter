@@ -189,7 +189,6 @@ export const ManageAssetRows = ({
 
   return (
     <>
-      {/* ALEC TODO - test this with the hardware wallet */}
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
       {blockedDomains.status === ShowOverlayStatus.IN_PROGRESS && (
         <ScamAssetWarning
