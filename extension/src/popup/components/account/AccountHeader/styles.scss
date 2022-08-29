@@ -23,21 +23,6 @@
     justify-content: right;
   }
 
-  &__network-icon {
-    border-radius: 2rem;
-    margin-right: 0.5rem;
-    height: 0.5rem;
-    width: 0.5rem;
-
-    &.testnet {
-      background: var(--pal-brand-primary);
-    }
-
-    &.mainnet {
-      background: var(--pal-success);
-    }
-  }
-
   &__network-copy {
     font-size: 0.875rem;
     line-height: 1.5rem;
