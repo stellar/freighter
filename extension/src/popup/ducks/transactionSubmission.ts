@@ -214,13 +214,7 @@ export const getBlockedDomains = createAsyncThunk<
   }
 });
 
-export enum HwOverlayStatus {
-  IDLE = "IDLE",
-  IN_PROGRESS = "IN_PROGRESS",
-}
-
-// ALEC TODO - combine with above?
-export enum BlockedDomainStatus {
+export enum ShowOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
 }
@@ -246,7 +240,7 @@ interface TransactionData {
 }
 
 interface HardwareWalletData {
-  status: HwOverlayStatus;
+  status: ShowOverlayStatus;
   transactionXDR: string;
   shouldSubmit: boolean;
 }
@@ -271,8 +265,10 @@ interface InitialState {
     type: AssetSelectType;
     isSource: boolean;
   };
-  blockedDomains: Array<BlockedDomain>;
-  blockedDomainStatus: BlockedDomainStatus;
+  blockedDomains: {
+    domains: Array<BlockedDomain>;
+    status: ShowOverlayStatus;
+  };
 }
 
 export const initialState: InitialState = {
@@ -293,7 +289,7 @@ export const initialState: InitialState = {
     allowedSlippage: "1",
   },
   hardwareWalletData: {
-    status: HwOverlayStatus.IDLE,
+    status: ShowOverlayStatus.IDLE,
     transactionXDR: "",
     shouldSubmit: true,
   },
@@ -312,11 +308,10 @@ export const initialState: InitialState = {
     type: AssetSelectType.MANAGE,
     isSource: true,
   },
-  blockedDomains: [],
-  // ALEC TODO - move probably
-  blockedDomainStatus: BlockedDomainStatus.IDLE,
-  // ALEC TODO - remove
-  // blockedDomainStatus: BlockedDomainStatus.IN_PROGRESS,
+  blockedDomains: {
+    domains: [],
+    status: ShowOverlayStatus.IDLE,
+  },
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -353,16 +348,16 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.allowedSlippage = action.payload;
     },
     startHwConnect: (state) => {
-      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
       state.hardwareWalletData.transactionXDR = "";
     },
     startHwSign: (state, action) => {
-      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
       state.hardwareWalletData.transactionXDR = action.payload.transactionXDR;
       state.hardwareWalletData.shouldSubmit = action.payload.shouldSubmit;
     },
     closeHwOverlay: (state) => {
-      state.hardwareWalletData.status = HwOverlayStatus.IDLE;
+      state.hardwareWalletData.status = ShowOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
     },
@@ -372,12 +367,11 @@ const transactionSubmissionSlice = createSlice({
     saveAssetSelectSource: (state, action) => {
       state.assetSelect.isSource = action.payload;
     },
-    // ALEC TODO - name change for these?
     showBlockedDomainWarning: (state) => {
-      state.blockedDomainStatus = BlockedDomainStatus.IN_PROGRESS;
+      state.blockedDomains.status = ShowOverlayStatus.IN_PROGRESS;
     },
     closeBlockedDomainWarning: (state) => {
-      state.blockedDomainStatus = BlockedDomainStatus.IDLE;
+      state.blockedDomains.status = ShowOverlayStatus.IDLE;
     },
   },
   extraReducers: (builder) => {
@@ -440,7 +434,7 @@ const transactionSubmissionSlice = createSlice({
         action.payload.destination_amount;
     });
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
-      state.blockedDomains = action.payload;
+      state.blockedDomains.domains = action.payload;
     });
   },
 });

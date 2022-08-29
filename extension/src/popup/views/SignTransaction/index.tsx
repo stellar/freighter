@@ -52,7 +52,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import {
-  HwOverlayStatus,
+  ShowOverlayStatus,
   startHwSign,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
@@ -100,7 +100,7 @@ export const SignTransaction = () => {
   const [startedHwSign, setStartedHwSign] = useState(false);
 
   useEffect(() => {
-    if (startedHwSign && hwStatus === HwOverlayStatus.IDLE) {
+    if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
       window.close();
     }
   }, [startedHwSign, hwStatus]);
@@ -283,7 +283,7 @@ export const SignTransaction = () => {
     />
   ) : (
     <>
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
       <div className="SignTransaction" data-testid="SignTransaction">
         <ModalWrapper>
           <ModalHeader>

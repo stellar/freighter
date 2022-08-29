@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import SimpleBar from "simplebar-react";
@@ -27,10 +27,7 @@ import {
   publicKeySelector,
   hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSelector,
-} from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   ActionStatus,
   getAccountBalances,
@@ -38,19 +35,13 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
-  HwOverlayStatus,
   startHwSign,
-  // ALEC TODO - move
   showBlockedDomainWarning,
-  closeBlockedDomainWarning,
-  BlockedDomainStatus,
+  ShowOverlayStatus,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
-
-// ALEC TODO - move
-import { POPUP_HEIGHT } from "constants/dimensions";
-import { Button, InfoBlock } from "@stellar/design-system";
+import { ScamAssetWarning } from "popup/components/WarningMessages";
 
 import "./styles.scss";
 
@@ -79,7 +70,6 @@ export const ManageAssetRows = ({
     submitStatus,
     hardwareWalletData: { status: hwStatus },
     blockedDomains,
-    blockedDomainStatus,
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
@@ -88,17 +78,12 @@ export const ManageAssetRows = ({
 
   const server = new StellarSdk.Server(networkDetails.networkUrl);
 
-  // ALEC TODO - move to redux?
-  // ALEC TODO - change defaults back to ""
-  // ALEC TODO - do better, obviously
-  const [blockedDomain, setBlockedDomain] = useState("lobstrr.co");
-  const [blockedCode, setBlockedCode] = useState("BTC");
-  const [blockedImage, setBlockedImage] = useState(
-    "https://lobstrr.co/btctoken.png",
-  );
-  const [blockedIssuer, setBlockedIssuer] = useState(
-    "GDWKS7O7RQY4ZRHPHLLMP63CGGNWCK72MP5J6FMVANA45ZI5WBJLQFHN",
-  );
+  const [scamAssetData, setScamAssetData] = useState({
+    domain: "",
+    code: "",
+    issuer: "",
+    image: "",
+  });
 
   const changeTrustline = async (
     assetCode: string,
@@ -192,142 +177,26 @@ export const ManageAssetRows = ({
     }
   }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
 
-  // ALEC TODO - remove
-  console.log({ blockedDomains });
-
   const isBlockedDomain = (domain: string) => {
-    const found = blockedDomains.filter((b) => b.domain === domain);
+    const found = blockedDomains.domains.filter((b) => b.domain === domain);
     return found.length > 0;
   };
 
-  // ALEC TODO - probably use an object arg or something
-  const handleBlockedDomain = (
-    domain: string,
-    image: string,
-    code: string,
-    issuer: string,
-  ) => {
-    // ALEC TODO - remove
-    console.log("warning modal slides up here");
-    console.log({ domain });
-
+  const handleBlockedDomain = (assetData: AssetRowData) => {
     dispatch(showBlockedDomainWarning());
-    setBlockedDomain(domain);
-    setBlockedImage(image);
-    setBlockedCode(code);
-    setBlockedIssuer(issuer);
-  };
-
-  // ALEC TODO - move
-  // ALEC TODO - name, BlockedDomainOverlay?
-  const WarningModal = ({
-    domain,
-    code,
-    issuer,
-    image,
-  }: {
-    domain: string;
-    code: string;
-    issuer: string;
-    image: string;
-  }) => {
-    const modalRef = useRef<HTMLDivElement>(null);
-    const { isValidatingSafeAssetsEnabled } = useSelector(settingsSelector);
-
-    const closeOverlay = () => {
-      if (modalRef.current) {
-        modalRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
-      }
-      setTimeout(() => {
-        dispatch(closeBlockedDomainWarning());
-      }, 300);
-    };
-
-    // animate entry
-    useEffect(() => {
-      if (modalRef.current) {
-        modalRef.current.style.bottom = "0";
-      }
-    }, [modalRef]);
-
-    return (
-      <div className="WarningModal">
-        <div className="WarningModal__wrapper" ref={modalRef}>
-          <div className="WarningModal__header">Warning</div>
-          <div className="WarningModal__description">
-            {t(
-              "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
-            )}
-          </div>
-          {/* ALEC TODO - re-use from ManageAssetRows ? */}
-          <div className="ManageAssetRows__row">
-            <AssetIcon
-              assetIcons={{ [getCanonicalFromAsset(code, issuer)]: image }}
-              code={code}
-              issuerKey={issuer}
-            />
-            <div className="ManageAssetRows__code">
-              {code}
-              <div className="ManageAssetRows__domain">
-                {formatDomain(domain)}
-              </div>
-            </div>
-          </div>
-
-          <div className="WarningModal__bottom-content">
-            <div>
-              <InfoBlock variant={InfoBlock.variant.error}>
-                <p>
-                  {isValidatingSafeAssetsEnabled
-                    ? t(
-                        "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                      )
-                    : t(
-                        "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
-                      )}
-                </p>
-                <p>
-                  {t("You can")}{" "}
-                  {`${
-                    isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
-                  }`}{" "}
-                  {t("this alert by going to")}{" "}
-                  <strong>{t("Settings > Security")}</strong>
-                </p>
-              </InfoBlock>
-            </div>
-            <div className="WarningModal__btns">
-              <Button
-                fullWidth
-                variant={Button.variant.tertiary}
-                type="button"
-                onClick={closeOverlay}
-              >
-                {t("Got it")}
-              </Button>
-              {!isValidatingSafeAssetsEnabled && (
-                <Button fullWidth onClick={closeOverlay} type="button">
-                  {/* ALEC TODO - handle add anyway onclick */}
-                  {t("Add anyway")}
-                </Button>
-              )}
-            </div>{" "}
-          </div>
-        </div>
-      </div>
-    );
+    setScamAssetData(assetData);
   };
 
   return (
     <>
       {/* ALEC TODO - test this with the hardware wallet */}
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      {blockedDomainStatus === BlockedDomainStatus.IN_PROGRESS && (
-        <WarningModal
-          domain={blockedDomain}
-          code={blockedCode}
-          issuer={blockedIssuer}
-          image={blockedImage}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {blockedDomains.status === ShowOverlayStatus.IN_PROGRESS && (
+        <ScamAssetWarning
+          domain={scamAssetData.domain}
+          code={scamAssetData.code}
+          issuer={scamAssetData.issuer}
+          image={scamAssetData.image}
         />
       )}
       <SimpleBar
@@ -348,17 +217,12 @@ export const ManageAssetRows = ({
 
             return (
               <div className="ManageAssetRows__row" key={canonicalAsset}>
-                <AssetIcon
-                  assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+                <ManageAssetRow
                   code={code}
-                  issuerKey={issuer}
+                  issuer={issuer}
+                  image={image}
+                  domain={domain}
                 />
-                <div className="ManageAssetRows__code">
-                  {code}
-                  <div className="ManageAssetRows__domain">
-                    {formatDomain(domain)}
-                  </div>
-                </div>
                 <div className="ManageAssetRows__button">
                   <PillButton
                     disabled={isActionPending}
@@ -366,9 +230,8 @@ export const ManageAssetRows = ({
                       isActionPending && assetSubmitting === canonicalAsset
                     }
                     onClick={() => {
-                      // ALEC TODO - better way of handling?
                       if (isBlockedDomain(domain)) {
-                        handleBlockedDomain(domain, image, code, issuer);
+                        handleBlockedDomain({ domain, image, code, issuer });
                       } else {
                         changeTrustline(code, issuer, !isTrustlineActive);
                       }
@@ -386,8 +249,37 @@ export const ManageAssetRows = ({
       </SimpleBar>
       <LoadingBackground
         onClick={() => {}}
-        isActive={blockedDomainStatus === BlockedDomainStatus.IN_PROGRESS}
+        isActive={blockedDomains.status === ShowOverlayStatus.IN_PROGRESS}
       />
+    </>
+  );
+};
+
+interface AssetRowData {
+  code: string;
+  issuer: string;
+  image: string;
+  domain: string;
+}
+
+export const ManageAssetRow = ({
+  code,
+  issuer,
+  image,
+  domain,
+}: AssetRowData) => {
+  const canonicalAsset = getCanonicalFromAsset(code, issuer);
+  return (
+    <>
+      <AssetIcon
+        assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+        code={code}
+        issuerKey={issuer}
+      />
+      <div className="ManageAssetRows__code">
+        {code}
+        <div className="ManageAssetRows__domain">{formatDomain(domain)}</div>
+      </div>
     </>
   );
 };

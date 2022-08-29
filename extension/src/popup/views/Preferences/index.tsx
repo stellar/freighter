@@ -41,7 +41,6 @@ export const Preferences = () => {
     isValidatingMemoValue: isMemoValidationEnabled,
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
-    // ALEC TODO - name change? change isValidatingSafetyValue name?
     isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
   };
 
