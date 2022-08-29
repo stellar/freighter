@@ -65,7 +65,7 @@ export const AccountHistory = () => {
   );
   const [isLoading, setIsLoading] = useState(false);
 
-  const stellarExpertUrl = getStellarExpertUrl(networkDetails.isTestnet);
+  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   // differentiate between if data is still loading and if no account history results came back from Horizon
   const isAccountHistoryLoading = historySegments === null;
