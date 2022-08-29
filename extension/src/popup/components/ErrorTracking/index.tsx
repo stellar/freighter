@@ -18,7 +18,7 @@ export const ErrorTracking = () => {
 
   if (!isDataSharingAllowed) {
     /* 
-    Note: Sentry.close does not completely disable calls to Sentry. It still reports, but with a completely anonymized payload. 
+    Note: Sentry.close does not completely disable calls to Sentry. Sentry will still report, but with a completely anonymized payload. 
     When you refresh/reopen the app after disabling tracking, it will not initialize Sentry, thus disabling *all* calls to Sentry
     */
 
