@@ -17,7 +17,7 @@ import {
   ErrorMessage,
 } from "@shared/api/types";
 
-import { NetworkDetails } from "@shared/helpers/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
@@ -230,6 +230,12 @@ interface HardwareWalletData {
   shouldSubmit: boolean;
 }
 
+export enum AssetSelectType {
+  MANAGE = "MANAGE",
+  REGULAR = "REGULAR",
+  PATH_PAY = "PATH_PAY",
+  SWAP = "SWAP",
+}
 interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
@@ -240,6 +246,10 @@ interface InitialState {
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
+  assetSelect: {
+    type: AssetSelectType;
+    isSource: boolean;
+  };
 }
 
 export const initialState: InitialState = {
@@ -275,6 +285,10 @@ export const initialState: InitialState = {
     subentryCount: 0,
   },
   assetIcons: {},
+  assetSelect: {
+    type: AssetSelectType.MANAGE,
+    isSource: true,
+  },
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -323,6 +337,12 @@ const transactionSubmissionSlice = createSlice({
       state.hardwareWalletData.status = HwOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
+    },
+    saveAssetSelectType: (state, action) => {
+      state.assetSelect.type = action.payload;
+    },
+    saveAssetSelectSource: (state, action) => {
+      state.assetSelect.isSource = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -401,6 +421,8 @@ export const {
   startHwConnect,
   startHwSign,
   closeHwOverlay,
+  saveAssetSelectType,
+  saveAssetSelectSource,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

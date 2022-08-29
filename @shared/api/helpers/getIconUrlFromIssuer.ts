@@ -1,7 +1,7 @@
 import StellarSdk, { StellarTomlResolver } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
-import { NetworkDetails } from "../../helpers/stellar";
+import { NetworkDetails } from "../../constants/stellar";
 
 /* 
 This runs a slightly convoluted process to find an icon's url. 
