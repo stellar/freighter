@@ -24,6 +24,7 @@ export const Preferences = () => {
     isDataSharingAllowed,
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
+    isValidatingSafeAssetsEnabled,
   } = useSelector(settingsSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -32,6 +33,7 @@ export const Preferences = () => {
     isValidatingMemoValue: boolean;
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
+    isValidatingSafeAssetsValue: boolean;
   }
 
   const initialValues: SettingValues = {
@@ -39,6 +41,7 @@ export const Preferences = () => {
     isValidatingMemoValue: isMemoValidationEnabled,
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
+    isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -47,6 +50,7 @@ export const Preferences = () => {
       isValidatingMemoValue,
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
+      isValidatingSafeAssetsValue,
     } = formValue;
 
     await dispatch(
@@ -55,6 +59,7 @@ export const Preferences = () => {
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
+        isValidatingSafeAssetsEnabled: isValidatingSafeAssetsValue,
       }),
     );
   };
@@ -102,6 +107,20 @@ export const Preferences = () => {
                 checked={initialValues.isValidatingSafetyValue}
                 customInput={<Field />}
                 id="isValidatingSafetyValue"
+              />
+            </div>
+
+            <div className="Preferences--toggle">
+              <label
+                htmlFor="isValidatingSafeAssetsValue"
+                className="Preferences--label"
+              >
+                {t("Block trustlines to malicious or fraudulent assets")}
+              </label>
+              <Toggle
+                checked={initialValues.isValidatingSafeAssetsValue}
+                customInput={<Field />}
+                id="isValidatingSafeAssetsValue"
               />
             </div>
           </div>

@@ -556,11 +556,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
+  isValidatingSafeAssetsEnabled,
   networkDetails,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  isValidatingSafeAssetsEnabled: boolean;
   networkDetails: NetworkDetails;
 }): Promise<Settings> => {
   let response = {
@@ -569,6 +571,7 @@ export const saveSettings = async ({
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isSafetyValidationEnabled: true,
+    isValidatingSafeAssetsEnabled: true,
     error: "",
   };
 
@@ -577,6 +580,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      isValidatingSafeAssetsEnabled,
       networkDetails,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
