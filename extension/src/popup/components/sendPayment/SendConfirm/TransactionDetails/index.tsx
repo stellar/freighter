@@ -14,6 +14,7 @@ import {
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
+  isCustomNetwork,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { AssetIcons } from "@shared/api/types";
@@ -259,6 +260,21 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const showMemo = !isSwap && !isMuxedAccount(destination);
 
+  const StellarExpertButton = () =>
+    !isCustomNetwork(networkDetails) ? (
+      <Button
+        fullWidth
+        variant={Button.variant.tertiary}
+        onClick={() =>
+          openTab(
+            `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
+          )
+        }
+      >
+        {t("View on")} Stellar.expert
+      </Button>
+    ) : null;
+
   return (
     <>
       {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
@@ -374,19 +390,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               t("The final amount is approximate and may change")}
           </div>
           {submission.submitStatus === ActionStatus.SUCCESS ? (
-            <Button
-              fullWidth
-              variant={Button.variant.tertiary}
-              onClick={() =>
-                openTab(
-                  `${getStellarExpertUrl(
-                    networkDetails,
-                  )}/tx/${transactionHash}`,
-                )
-              }
-            >
-              {t("View on")} Stellar.expert
-            </Button>
+            <StellarExpertButton />
           ) : (
             <div className="TransactionDetails__bottom-wrapper__buttons">
               <Button

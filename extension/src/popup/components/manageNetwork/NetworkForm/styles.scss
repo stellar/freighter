@@ -13,6 +13,10 @@
 
     &__body {
       margin-left: -1.5rem;
+
+      &:nth-of-type(3) {
+        margin-top: 0.5rem;
+      }
     }
   }
 
@@ -50,6 +54,6 @@
   }
 
   &__add-button {
-    margin-top: 5.625rem;
+    margin-top: 5.8rem;
   }
 }
