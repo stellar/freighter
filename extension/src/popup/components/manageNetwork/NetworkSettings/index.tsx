@@ -37,6 +37,7 @@ export const NetworkSettings = () => {
 
             return (
               <ListNavLink
+                key={network.networkName}
                 href={ROUTES.editNetwork}
                 searchParams={`?${NETWORK_INDEX_SEARCH_PARAM}=${i}`}
               >
