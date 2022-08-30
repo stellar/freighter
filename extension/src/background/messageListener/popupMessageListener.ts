@@ -17,6 +17,7 @@ import {
   DATA_SHARING_ID,
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
+  IS_VALIDATING_SAFE_ASSETS_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
@@ -38,6 +39,7 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
+  getIsValidatingSafeAssetsEnabled,
   getIsHardwareWalletActive,
   getSavedNetworks,
   getNetworkDetails,
@@ -838,6 +840,7 @@ export const popupMessageListener = (request: Request) => {
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      isValidatingSafeAssetsEnabled,
       networkDetails,
     } = request;
 
@@ -850,12 +853,18 @@ export const popupMessageListener = (request: Request) => {
       IS_VALIDATING_SAFETY_ID,
       JSON.stringify(isSafetyValidationEnabled),
     );
+    localStorage.setItem(
+      IS_VALIDATING_SAFE_ASSETS_ID,
+      JSON.stringify(isValidatingSafeAssetsEnabled),
+    );
+
     localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
 
     return {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
       networkDetails: getNetworkDetails(),
       networksList: getNetworksList(),
     };
@@ -869,6 +878,7 @@ export const popupMessageListener = (request: Request) => {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
       networkDetails: getNetworkDetails(),
       networksList: getNetworksList(),
     };

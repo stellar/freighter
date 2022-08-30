@@ -36,6 +36,7 @@ const initialState: Settings = {
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
+  isValidatingSafeAssetsEnabled: true,
   error: "",
 };
 
@@ -50,6 +51,7 @@ export const saveSettings = createAsyncThunk<
     isMemoValidationEnabled: boolean;
     isSafetyValidationEnabled: boolean;
     networkDetails: NetworkDetails;
+    isValidatingSafeAssetsEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -60,6 +62,7 @@ export const saveSettings = createAsyncThunk<
       networkDetails,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      isValidatingSafeAssetsEnabled,
     },
     thunkApi,
   ) => {
@@ -71,6 +74,7 @@ export const saveSettings = createAsyncThunk<
         networkDetails,
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
+        isValidatingSafeAssetsEnabled,
       });
     } catch (e) {
       console.error(e);
@@ -143,6 +147,7 @@ const settingsSlice = createSlice({
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
           networksList,
+          isValidatingSafeAssetsEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -152,6 +157,7 @@ const settingsSlice = createSlice({
           isDataSharingAllowed,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+          isValidatingSafeAssetsEnabled,
           networkDetails,
           networksList,
         };
@@ -166,6 +172,7 @@ const settingsSlice = createSlice({
           networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+          isValidatingSafeAssetsEnabled
         } = action?.payload || {
           ...initialState,
         };
@@ -177,6 +184,7 @@ const settingsSlice = createSlice({
           networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+          isValidatingSafeAssetsEnabled
         };
       },
     );
