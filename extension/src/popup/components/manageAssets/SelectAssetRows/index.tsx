@@ -10,9 +10,9 @@ import {
   transactionSubmissionSelector,
   saveAsset,
   saveDestinationAsset,
+  AssetSelectType,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { ASSET_SELECT } from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
 
@@ -23,16 +23,15 @@ import "./styles.scss";
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   maxHeight: number;
-  selectingAssetType: string;
 }
 
 export const SelectAssetRows = ({
   assetRows,
   maxHeight,
-  selectingAssetType,
 }: SelectAssetRowsProps) => {
   const {
     accountBalances: { balances = {} },
+    assetSelect,
   } = useSelector(transactionSubmissionSelector);
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
@@ -48,6 +47,11 @@ export const SelectAssetRows = ({
     return "";
   };
 
+  // hide balances for path pay dest asset
+  const hideBalances =
+    assetSelect.type === AssetSelectType.PATH_PAY &&
+    assetSelect.isSource === false;
+
   return (
     <SimpleBar
       className="SelectAssetRows__scrollbar"
@@ -61,10 +65,10 @@ export const SelectAssetRows = ({
             className="SelectAssetRows__row selectable"
             key={getCanonicalFromAsset(code, issuer)}
             onClick={() => {
-              if (selectingAssetType === ASSET_SELECT.SOURCE) {
+              if (assetSelect.isSource) {
                 dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
                 history.goBack();
-              } else if (selectingAssetType === ASSET_SELECT.DEST) {
+              } else {
                 dispatch(
                   saveDestinationAsset(getCanonicalFromAsset(code, issuer)),
                 );
@@ -87,7 +91,7 @@ export const SelectAssetRows = ({
                 {formatDomain(domain)}
               </div>
             </div>
-            {selectingAssetType === ASSET_SELECT.SOURCE && (
+            {!hideBalances && (
               <div>
                 {getAccountBalance(getCanonicalFromAsset(code, issuer))} {code}
               </div>

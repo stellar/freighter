@@ -4,7 +4,7 @@ import { Types } from "@stellar/wallet-sdk";
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
-import { NetworkDetails } from "../helpers/stellar";
+import { NetworkDetails } from "../constants/stellar";
 
 export interface Response {
   error: string;
@@ -32,12 +32,15 @@ export interface Response {
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
   allAccounts: Array<Account>;
   accountName: string;
   assetCode: string;
   assetCanonical: string;
   iconUrl: string;
   network: string;
+  networkIndex: number;
+  networkName: string;
   recentAddresses: Array<string>;
   hardwareWalletType: WalletType;
   bipPath: string;
@@ -62,6 +65,8 @@ export interface Settings {
   networkDetails: NetworkDetails;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  networksList: NetworkDetails[];
+  error: string;
 }
 
 export interface AssetIcons {

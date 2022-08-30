@@ -6,8 +6,6 @@ import {
 } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
-import * as Sentry from "@sentry/browser";
-import { Integrations } from "@sentry/tracing";
 import { BigNumber } from "bignumber.js";
 
 import { metricsMiddleware } from "helpers/metrics";
@@ -17,6 +15,7 @@ import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
 
 import { Loading } from "popup/components/Loading";
+import { ErrorTracking } from "popup/components/ErrorTracking";
 
 import { Router } from "./Router";
 
@@ -46,18 +45,10 @@ export const store = configureStore({
 });
 export type AppDispatch = typeof store.dispatch;
 
-if (process.env.SENTRY_KEY) {
-  Sentry.init({
-    dsn: process.env.SENTRY_KEY,
-    release: `freighter@${process.env.npm_package_version}`,
-    integrations: [new Integrations.BrowserTracing()],
-    tracesSampleRate: 1.0,
-  });
-}
-
 export function App() {
   return (
     <Provider store={store}>
+      <ErrorTracking />
       <Suspense fallback={<Loading />}>
         <Router />
       </Suspense>

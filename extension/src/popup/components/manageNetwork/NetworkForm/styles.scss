@@ -1,0 +1,59 @@
+.NetworkForm {
+  display: flex;
+  flex-direction: column;
+  height: var(--popup--height);
+  padding: var(--popup-vertical-padding) var(--popup--side-padding);
+
+  &__modal {
+    &__title {
+      color: var(--pal-brand-primary-on);
+      font-weight: var(--font-weight-medium);
+      text-transform: uppercase;
+    }
+
+    &__body {
+      margin-left: -1.5rem;
+
+      &:nth-of-type(3) {
+        margin-top: 0.5rem;
+      }
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: space-between;
+  }
+
+  &__remove-wrapper {
+    display: flex;
+    height: 2.2rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+  }
+
+  &__editing-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 4.6rem;
+  }
+
+  &__removal-buttons {
+    display: flex;
+    gap: 1rem;
+  }
+
+  &__remove-button {
+    width: 100%;
+    .BasicButton {
+      background: rgba(229, 72, 77, 1);
+      border-color: rgba(229, 72, 77, 1);
+    }
+  }
+
+  &__add-button {
+    margin-top: 5.8rem;
+  }
+}

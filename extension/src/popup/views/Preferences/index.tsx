@@ -1,13 +1,10 @@
 import React from "react";
-import { Icon, Toggle } from "@stellar/design-system";
+import { Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import {
-  MAINNET_NETWORK_DETAILS,
-  TESTNET_NETWORK_DETAILS,
-} from "@shared/helpers/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 import {
   saveSettings,
@@ -20,27 +17,6 @@ import { AutoSaveFields } from "popup/components/AutoSave";
 
 import "./styles.scss";
 
-interface RadioCheckProps {
-  name: string;
-  title: string;
-  value: string;
-}
-
-const RadioCheck = ({ name, title, value }: RadioCheckProps) => (
-  <label className="Preferences--label Preferences--radio-label">
-    {title}
-    <Field
-      className="Preferences--radio-field"
-      name={name}
-      type="radio"
-      value={value}
-    />
-    <div className="Preferences--radio-check">
-      <Icon.Check />
-    </div>
-  </label>
-);
-
 export const Preferences = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -49,17 +25,17 @@ export const Preferences = () => {
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
   } = useSelector(settingsSelector);
-  const { network } = useSelector(settingsNetworkDetailsSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   interface SettingValues {
-    networkSelected: string;
+    networkDetailsValue: NetworkDetails;
     isValidatingMemoValue: boolean;
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
   }
 
   const initialValues: SettingValues = {
-    networkSelected: network,
+    networkDetailsValue: networkDetails,
     isValidatingMemoValue: isMemoValidationEnabled,
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
@@ -67,7 +43,7 @@ export const Preferences = () => {
 
   const handleSubmit = async (formValue: SettingValues) => {
     const {
-      networkSelected,
+      networkDetailsValue,
       isValidatingMemoValue,
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
@@ -75,7 +51,7 @@ export const Preferences = () => {
 
     await dispatch(
       saveSettings({
-        isTestnet: networkSelected === TESTNET_NETWORK_DETAILS.network,
+        networkDetails: networkDetailsValue,
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
@@ -94,19 +70,6 @@ export const Preferences = () => {
         <Form>
           <AutoSaveFields />
           <div className="Preferences--section">
-            <div className="Preferences--section--title">{t("Network")}</div>
-            <RadioCheck
-              name="networkSelected"
-              title="Public Network"
-              value={MAINNET_NETWORK_DETAILS.network}
-            />
-            <RadioCheck
-              name="networkSelected"
-              title="Test Network"
-              value={TESTNET_NETWORK_DETAILS.network}
-            />
-          </div>
-          <div className="Preferences--section">
             <div className="Preferences--section--title">
               {t("Verification with")} stellar.expert
             </div>
@@ -115,7 +78,9 @@ export const Preferences = () => {
                 htmlFor="isValidatingMemoValue"
                 className="Preferences--label"
               >
-                {t("Validate addresses that require a memo")}
+                {t(
+                  "Validate addresses that require a memo (external app transactions only)",
+                )}
               </label>
               <Toggle
                 checked={initialValues.isValidatingMemoValue}
@@ -129,7 +94,9 @@ export const Preferences = () => {
                 htmlFor="isValidatingSafetyValue"
                 className="Preferences--label"
               >
-                {t("Block malicious or unsafe addresses and domains")}
+                {t(
+                  "Block malicious or unsafe addresses and domains (external app transactions only)",
+                )}
               </label>
               <Toggle
                 checked={initialValues.isValidatingSafetyValue}
