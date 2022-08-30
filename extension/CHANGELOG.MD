@@ -1,3 +1,13 @@
+# Release notes - Wallets - Version 2.4.1
+
+### Bug
+
+Disable Sentry tracking if Anonymous Data Sharing is not allowed
+
+### Story
+
+Update settings copy for stellar.expert validation
+
 # Release notes - Wallets - Version 2.4.0
 
 ### Bug
