@@ -471,12 +471,32 @@ export const popupMessageListener = (request: Request) => {
     const { networkDetails, networkIndex } = request;
 
     const savedNetworks = getSavedNetworks();
+    const activeNetworkDetails = JSON.parse(
+      localStorage.getItem(NETWORK_ID) ||
+        JSON.stringify(MAINNET_NETWORK_DETAILS),
+    );
+    const activeIndex =
+      savedNetworks.findIndex(
+        ({ networkName: savedNetworkName }) =>
+          savedNetworkName === activeNetworkDetails.networkName,
+      ) || 0;
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
 
     localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
 
-    return { networksList: savedNetworks };
+    if (activeIndex === networkIndex) {
+      // editing active network, so we need to update this in storage
+      localStorage.setItem(
+        NETWORK_ID,
+        JSON.stringify(savedNetworks[activeIndex]),
+      );
+    }
+
+    return {
+      networksList: savedNetworks,
+      networkDetails: savedNetworks[activeIndex],
+    };
   };
 
   const changeNetwork = () => {
