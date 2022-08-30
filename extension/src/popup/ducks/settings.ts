@@ -240,15 +240,18 @@ const settingsSlice = createSlice({
       (
         state,
         action: PayloadAction<{
+          networkDetails: NetworkDetails;
           networksList: NetworkDetails[];
         }>,
       ) => {
-        const { networksList } = action?.payload || {
+        const { networkDetails, networksList } = action?.payload || {
+          networkDetails: MAINNET_NETWORK_DETAILS,
           networksList: DEFAULT_NETWORKS,
         };
 
         return {
           ...state,
+          networkDetails,
           networksList,
         };
       },
