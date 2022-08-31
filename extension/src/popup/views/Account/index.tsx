@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Types } from "@stellar/wallet-sdk";
 import SimpleBar from "simplebar-react";
@@ -23,6 +22,8 @@ import {
   getAssetIcons,
   transactionSubmissionSelector,
   resetSubmission,
+  saveAssetSelectType,
+  AssetSelectType,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -30,7 +31,7 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { truncatedPublicKey } from "helpers/stellar";
+import { isTestnet, truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -177,17 +178,22 @@ export const Account = () => {
           </SimpleBar>
         ) : (
           <NotFundedMessage
-            isTestnet={networkDetails.isTestnet}
+            isTestnet={isTestnet(networkDetails)}
             setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
             publicKey={publicKey}
           />
         )}
         {isFunded ? (
-          <Link to={ROUTES.manageAssets}>
-            <Button fullWidth variant={Button.variant.tertiary}>
-              {t("Manage Assets")}
-            </Button>
-          </Link>
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => {
+              dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+              navigateTo(ROUTES.manageAssets);
+            }}
+          >
+            {t("Manage Assets")}
+          </Button>
         ) : null}
       </div>
       <BottomNav />

@@ -33,10 +33,13 @@ export const Settings = () => {
             <Heading5>Settings</Heading5>
             <div className="Settings__version">
               {/* TODO: Make this dynamic */}
-              v2.4.1
+              v2.5.0
             </div>
           </div>
           <ListNavLinkWrapper>
+            <ListNavLink href={ROUTES.networkSettings}>
+              {t("Network Settings")}
+            </ListNavLink>
             <ListNavLink href={ROUTES.preferences}>
               {t("Preferences")}
             </ListNavLink>

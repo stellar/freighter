@@ -1,4 +1,4 @@
-import { Horizon } from "stellar-sdk";
+import StellarSdk, { Horizon } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 import { BigNumber } from "bignumber.js";
 import {
@@ -6,8 +6,13 @@ import {
   Balances,
   HorizonOperation,
 } from "@shared/api/types";
+import { NetworkDetails } from "@shared/constants/stellar";
 
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isTestnet,
+} from "helpers/stellar";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -90,8 +95,10 @@ export const sortOperationsByAsset = ({
   return assetOperationMap;
 };
 
-export const getStellarExpertUrl = (isTestnet: boolean) =>
-  `https://stellar.expert/explorer/${isTestnet ? "testnet" : "public"}`;
+export const getStellarExpertUrl = (networkDetails: NetworkDetails) =>
+  `https://stellar.expert/explorer/${
+    isTestnet(networkDetails) ? "testnet" : "public"
+  }`;
 
 interface GetAvailableBalance {
   accountBalances: AccountBalancesInterface;
@@ -130,4 +137,17 @@ export const getAvailableBalance = ({
   }
 
   return availBalance;
+};
+
+export const isNetworkUrlValid = (networkUrl: string) => {
+  let isValid = true;
+
+  try {
+    // eslint-disable-next-line no-new
+    new StellarSdk.Server(networkUrl);
+  } catch (e) {
+    console.error(e);
+    isValid = false;
+  }
+  return isValid;
 };

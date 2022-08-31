@@ -1,19 +1,19 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import {
+  transactionSubmissionSelector,
+  saveAssetSelectSource,
+  saveAssetSelectType,
+  AssetSelectType,
+} from "popup/ducks/transactionSubmission";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 
 import "./styles.scss";
-
-export enum ASSET_SELECT {
-  QUERY_PARAM = "assetSelect",
-  SOURCE = "source",
-  DEST = "dest",
-}
 
 export function AssetSelect({
   assetCode,
@@ -22,13 +22,13 @@ export function AssetSelect({
   assetCode: string;
   issuerKey: string;
 }) {
+  const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
 
   const handleSelectAsset = () => {
-    navigateTo(
-      ROUTES.manageAssets,
-      `?${ASSET_SELECT.QUERY_PARAM}=${ASSET_SELECT.SOURCE}`,
-    );
+    dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
+    dispatch(saveAssetSelectSource(true));
+    navigateTo(ROUTES.manageAssets);
   };
 
   return (
@@ -61,20 +61,18 @@ export function PathPayAssetSelect({
   issuerKey: string;
   balance: string;
 }) {
+  const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
+  const isSwap = useIsSwap();
 
   const handleSelectAsset = () => {
-    if (source) {
-      navigateTo(
-        ROUTES.manageAssets,
-        `?${ASSET_SELECT.QUERY_PARAM}=${ASSET_SELECT.SOURCE}`,
-      );
-      return;
-    }
-    navigateTo(
-      ROUTES.manageAssets,
-      `?${ASSET_SELECT.QUERY_PARAM}=${ASSET_SELECT.DEST}`,
+    dispatch(
+      saveAssetSelectType(
+        isSwap ? AssetSelectType.SWAP : AssetSelectType.PATH_PAY,
+      ),
     );
+    dispatch(saveAssetSelectSource(source));
+    navigateTo(ROUTES.manageAssets);
   };
 
   const truncateLongAssetCode = (code: string) => {

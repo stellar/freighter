@@ -15,28 +15,35 @@ import {
   APPLICATION_ID,
   CACHED_ASSET_ICONS_ID,
   DATA_SHARING_ID,
-  IS_TESTNET_ID,
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
+  NETWORK_ID,
+  NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/constants/stellar";
 
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 import {
   addAccountName,
   getAccountNameList,
   getKeyIdList,
-  getIsTestnet,
+  getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
   getIsHardwareWalletActive,
+  getSavedNetworks,
+  getNetworkDetails,
+  getNetworksList,
   HW_PREFIX,
   getBipPath,
 } from "background/helpers/account";
-import { getNetworkDetails } from "@shared/helpers/stellar";
 import { SessionTimer } from "background/helpers/session";
 
 import { store } from "background/store";
@@ -219,7 +226,7 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    if (getIsTestnet()) {
+    if (!getIsMainnet()) {
       try {
         await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
@@ -416,6 +423,94 @@ export const popupMessageListener = (request: Request) => {
     return {
       allAccounts: allAccountsSelector(store.getState()),
     };
+  };
+
+  const addCustomNetwork = () => {
+    const { networkDetails } = request;
+    const savedNetworks = getSavedNetworks();
+
+    // Network Name already used
+    if (
+      savedNetworks.find(
+        ({ networkName }: { networkName: string }) =>
+          networkName === networkDetails.networkName,
+      )
+    ) {
+      return {
+        error: "Network name is already in use",
+      };
+    }
+
+    const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(networksList));
+
+    return {
+      networksList,
+    };
+  };
+
+  const removeCustomNetwork = () => {
+    const { networkName } = request;
+
+    const savedNetworks = getSavedNetworks();
+    const networkIndex = savedNetworks.findIndex(
+      ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
+    );
+
+    savedNetworks.splice(networkIndex, 1);
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
+
+    return {
+      networksList: savedNetworks,
+    };
+  };
+
+  const editCustomNetwork = () => {
+    const { networkDetails, networkIndex } = request;
+
+    const savedNetworks = getSavedNetworks();
+    const activeNetworkDetails = JSON.parse(
+      localStorage.getItem(NETWORK_ID) ||
+        JSON.stringify(MAINNET_NETWORK_DETAILS),
+    );
+    const activeIndex =
+      savedNetworks.findIndex(
+        ({ networkName: savedNetworkName }) =>
+          savedNetworkName === activeNetworkDetails.networkName,
+      ) || 0;
+
+    savedNetworks.splice(networkIndex, 1, networkDetails);
+
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
+
+    if (activeIndex === networkIndex) {
+      // editing active network, so we need to update this in storage
+      localStorage.setItem(
+        NETWORK_ID,
+        JSON.stringify(savedNetworks[activeIndex]),
+      );
+    }
+
+    return {
+      networksList: savedNetworks,
+      networkDetails: savedNetworks[activeIndex],
+    };
+  };
+
+  const changeNetwork = () => {
+    const { networkName } = request;
+
+    const savedNetworks = getSavedNetworks();
+    const networkDetails =
+      savedNetworks.find(
+        ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
+      ) || MAINNET_NETWORK_DETAILS;
+
+    localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
+
+    return { networkDetails };
   };
 
   const loadAccount = () => {
@@ -758,13 +853,12 @@ export const popupMessageListener = (request: Request) => {
   const saveSettings = () => {
     const {
       isDataSharingAllowed,
-      isTestnet,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      networkDetails,
     } = request;
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
-    localStorage.setItem(IS_TESTNET_ID, JSON.stringify(isTestnet));
     localStorage.setItem(
       IS_VALIDATING_MEMO_ID,
       JSON.stringify(isMemoValidationEnabled),
@@ -773,12 +867,14 @@ export const popupMessageListener = (request: Request) => {
       IS_VALIDATING_SAFETY_ID,
       JSON.stringify(isSafetyValidationEnabled),
     );
+    localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
 
     return {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
-      networkDetails: getNetworkDetails(isTestnet),
+      networkDetails: getNetworkDetails(),
+      networksList: getNetworksList(),
     };
   };
 
@@ -790,7 +886,8 @@ export const popupMessageListener = (request: Request) => {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
-      networkDetails: getNetworkDetails(getIsTestnet()),
+      networkDetails: getNetworkDetails(),
+      networksList: getNetworksList(),
     };
   };
 
@@ -825,6 +922,10 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.LOAD_ACCOUNT]: loadAccount,
     [SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE]: makeAccountActive,
     [SERVICE_TYPES.UPDATE_ACCOUNT_NAME]: updateAccountName,
+    [SERVICE_TYPES.ADD_CUSTOM_NETWORK]: addCustomNetwork,
+    [SERVICE_TYPES.REMOVE_CUSTOM_NETWORK]: removeCustomNetwork,
+    [SERVICE_TYPES.EDIT_CUSTOM_NETWORK]: editCustomNetwork,
+    [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,
     [SERVICE_TYPES.RECOVER_ACCOUNT]: recoverAccount,

@@ -418,7 +418,7 @@ export const SendAmount = ({
                         issuerKey={parsedDestAsset.issuer}
                         balance={
                           destinationAmount
-                            ? new BigNumber(destinationAmount).toFixed(2)
+                            ? new BigNumber(destinationAmount).toFixed()
                             : "0"
                         }
                       />

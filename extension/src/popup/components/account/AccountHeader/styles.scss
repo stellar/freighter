@@ -15,6 +15,7 @@
   }
 
   &__network-wrapper {
+    cursor: pointer;
     width: 6rem;
     display: flex;
     flex-flow: row nowrap;
@@ -22,71 +23,65 @@
     justify-content: right;
   }
 
-  &__network-icon {
-    border-radius: 2rem;
-    margin-right: 0.5rem;
-    height: 0.5rem;
-    width: 0.5rem;
-
-    &.testnet {
-      background: var(--pal-brand-primary);
-    }
-
-    &.mainnet {
-      background: var(--pal-success);
-    }
-  }
-
   &__network-copy {
     font-size: 0.875rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
   }
 
-  &__options-dropdown {
-    width: calc(100% - 2rem);
-    margin: 0.5rem 1rem;
-    padding: 0.25rem 1rem;
-    border-radius: 0.5rem;
-    background: var(--background-color);
-    overflow: hidden;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: calc(var(--z-index-tooltip) + 1);
-    transition: max-height var(--dropdown-animation);
+  &__network-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1rem 0 1.25rem 0;
 
-    // default max-height on page load
-    max-height: 0;
+    &__row {
+      cursor: pointer;
+      display: flex;
+      flex-flow: row nowrap;
+      align-items: center;
+      margin-left: 0.5rem;
+    }
+    &__check {
+      flex-grow: 2;
+      display: flex;
+      justify-content: flex-end;
+      margin-right: 0.5rem;
+    }
+  }
+
+  &__account-dropdown {
+    padding: 0;
 
     li::before {
       content: none;
     }
   }
 
-  &__option-list-item {
+  &__account-list-item {
     padding-bottom: 0.5rem;
-  }
 
-  &__option-link {
-    color: var(--pal-text-secondary);
-    display: flex;
-    align-items: center;
-  }
+    &__link {
+      color: var(--pal-text-secondary);
+      display: flex;
+      align-items: center;
+    }
 
-  &__option-link-copy {
-    margin-left: 0.75rem;
-    font-size: 0.875rem;
-    line-height: 1.5rem;
-  }
+    &__link-copy {
+      margin-left: 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.5rem;
+    }
 
-  &__option-icon {
-    display: flex;
-    align-items: center;
-    width: 0.875rem;
-    height: 0.875rem;
-    justify-content: center;
-    margin: 0.25rem;
+    &__icon {
+      display: flex;
+      align-items: center;
+      width: 0.875rem;
+      height: 0.875rem;
+      justify-content: center;
+      margin: 0.25rem;
+    }
   }
 
   &__img-cube-icon {
