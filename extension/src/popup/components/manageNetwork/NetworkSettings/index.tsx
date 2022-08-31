@@ -7,9 +7,13 @@ import { ROUTES } from "popup/constants/routes";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { Button } from "popup/basics/buttons/Button";
 
+import { isActiveNetwork } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 
-import { settingsNetworksListSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsNetworksListSelector,
+} from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
@@ -19,6 +23,7 @@ import "./styles.scss";
 
 export const NetworkSettings = () => {
   const networksList = useSelector(settingsNetworksListSelector);
+  const activeNetworkDetails = useSelector(settingsNetworkDetailsSelector);
   const { t } = useTranslation();
 
   return (
@@ -27,20 +32,34 @@ export const NetworkSettings = () => {
       <div className="NetworkSettings__header">{t("Network")}</div>
       <SimpleBar className="NetworkSettings__scrollbar">
         <ListNavLinkWrapper>
-          {networksList.map(({ networkName, networkUrl }, i) => (
-            <ListNavLink
-              href={ROUTES.editNetwork}
-              searchParams={`?${NETWORK_INDEX_SEARCH_PARAM}=${i}`}
-            >
-              <div key={networkName}>
-                <div className="NetworkSettings__name">
-                  <NetworkIcon index={i} />
-                  <div>{networkName}</div>
+          {networksList.map((network, i) => {
+            const isActive = isActiveNetwork(activeNetworkDetails, network);
+
+            return (
+              <ListNavLink
+                key={network.networkName}
+                href={ROUTES.editNetwork}
+                searchParams={`?${NETWORK_INDEX_SEARCH_PARAM}=${i}`}
+              >
+                <div key={network.networkName}>
+                  <div
+                    className={`NetworkSettings__name ${
+                      isActive ? "NetworkSettings__name--active" : ""
+                    }`}
+                  >
+                    {isActive ? (
+                      <div className="NetworkSettings__active-marker"></div>
+                    ) : null}
+                    <NetworkIcon index={i} />
+                    <div>{network.networkName}</div>
+                  </div>
+                  <div className="NetworkSettings__url">
+                    {network.networkUrl}
+                  </div>
                 </div>
-                <div className="NetworkSettings__url">{networkUrl}</div>
-              </div>
-            </ListNavLink>
-          ))}
+              </ListNavLink>
+            );
+          })}
         </ListNavLinkWrapper>
       </SimpleBar>
       <div className="NetworkSettings__bottom">

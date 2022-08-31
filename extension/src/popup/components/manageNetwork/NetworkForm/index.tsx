@@ -119,18 +119,14 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       return;
     }
 
-    if (isCurrentNetworkActive) {
-      setIsNetworkInUse(true);
-    } else {
-      const res = await dispatch(
-        editCustomNetwork({
-          networkDetails: getCustomNetworkDetailsFromFormValues(values),
-          networkIndex,
-        }),
-      );
-      if (editCustomNetwork.fulfilled.match(res)) {
-        navigateTo(ROUTES.account);
-      }
+    const res = await dispatch(
+      editCustomNetwork({
+        networkDetails: getCustomNetworkDetailsFromFormValues(values),
+        networkIndex,
+      }),
+    );
+    if (editCustomNetwork.fulfilled.match(res)) {
+      navigateTo(ROUTES.account);
     }
   };
 
@@ -164,7 +160,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
     if (addCustomNetworkFulfilled && changeNetworkFulfilled) {
       clearSettingsError();
-      navigateTo(ROUTES.account);
+      history.goBack();
     }
   };
 
@@ -250,7 +246,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               {t("Network is in use")}
             </div>
             <div className="NetworkForm__modal__body">
-              {t("Please select a different network.")}
+              {t("Please select a different network before removing it.")}
             </div>
           </div>
         </NetworkModal>
