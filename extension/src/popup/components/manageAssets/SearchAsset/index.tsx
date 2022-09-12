@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Input, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
@@ -13,6 +13,7 @@ import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { isCustomNetwork, isTestnet } from "helpers/stellar";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
@@ -71,12 +72,14 @@ const ResultsHeader = () => {
 
 export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
   const { t } = useTranslation();
-  const { isTestnet } = useSelector(settingsNetworkDetailsSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [maxHeight, setMaxHeight] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
+
+  const isNetworkTestnet = isTestnet(networkDetails);
 
   interface AssetRecord {
     asset: string;
@@ -96,7 +99,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
       try {
         res = await fetch(
           `https://api.stellar.expert/explorer/${
-            isTestnet ? "testnet" : "public"
+            isNetworkTestnet ? "testnet" : "public"
           }/asset?search=${asset}`,
         );
       } catch (e) {
@@ -133,6 +136,10 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
     setMaxHeight(ResultsRef?.current?.clientHeight || 600);
     setHasNoResults(!assetRows.length);
   }, [assetRows]);
+
+  if (isCustomNetwork(networkDetails)) {
+    return <Redirect to={ROUTES.addAsset} />;
+  }
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>

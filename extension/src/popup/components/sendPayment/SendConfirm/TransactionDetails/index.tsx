@@ -14,7 +14,9 @@ import {
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
+  isCustomNetwork,
 } from "helpers/stellar";
+import { getStellarExpertUrl } from "popup/helpers/account";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -96,7 +98,7 @@ const TwoAssetCard = ({
           {destAsset.code}
         </div>
         <div className="TwoAssetCard__row__right">
-          {new BigNumber(destAmount).toFixed(2)} {destAsset.code}
+          {new BigNumber(destAmount).toFixed()} {destAsset.code}
         </div>
       </div>
     </div>
@@ -258,6 +260,21 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const showMemo = !isSwap && !isMuxedAccount(destination);
 
+  const StellarExpertButton = () =>
+    !isCustomNetwork(networkDetails) ? (
+      <Button
+        fullWidth
+        variant={Button.variant.tertiary}
+        onClick={() =>
+          openTab(
+            `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
+          )
+        }
+      >
+        {t("View on")} Stellar.expert
+      </Button>
+    ) : null;
+
   return (
     <>
       {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
@@ -361,7 +378,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               {computeDestMinWithSlippage(
                 allowedSlippage,
                 destinationAmount,
-              ).toFixed(2)}{" "}
+              ).toFixed()}{" "}
               {sourceAsset.code}
             </div>
           </div>
@@ -373,19 +390,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               t("The final amount is approximate and may change")}
           </div>
           {submission.submitStatus === ActionStatus.SUCCESS ? (
-            <Button
-              fullWidth
-              variant={Button.variant.tertiary}
-              onClick={() =>
-                openTab(
-                  `https://stellar.expert/explorer/${
-                    networkDetails.isTestnet ? "testnet" : "public"
-                  }/tx/${transactionHash}`,
-                )
-              }
-            >
-              {t("View on")} Stellar.expert
-            </Button>
+            <StellarExpertButton />
           ) : (
             <div className="TransactionDetails__bottom-wrapper__buttons">
               <Button

@@ -1,0 +1,33 @@
+.NetworkModal {
+  &__content {
+    height: calc(var(--popup--height) - (var(--popup-vertical-padding) * 2));
+    position: absolute;
+    z-index: calc(var(--z-index-tooltip) + 1);
+    width: calc(100% - (var(--popup--side-padding) * 2));
+  }
+  &__infoBlock {
+    .InfoBlock--warning {
+      background: rgba(84, 27, 31, 1);
+
+      svg {
+        stroke: rgba(242, 85, 90, 1);
+      }
+    }
+
+    &--confirmation {
+      .InfoBlock--warning {
+        background: rgba(74, 41, 0, 1);
+
+        svg {
+          stroke: rgba(255, 178, 36, 1);
+        }
+      }
+    }
+  }
+
+  &__button-row {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+}

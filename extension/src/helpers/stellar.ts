@@ -1,5 +1,8 @@
 import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
+import isEqual from "lodash/isEqual";
+
+import { NETWORK_URLS, NetworkDetails } from "@shared/constants/stellar";
 
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
@@ -108,3 +111,34 @@ export const formatDomain = (domain: string) => {
 export const isMuxedAccount = (publicKey: string) => publicKey.startsWith("M");
 
 export const isFederationAddress = (address: string) => address.includes("*");
+
+export const isMainnet = (networkDetails: NetworkDetails) => {
+  const { networkPassphrase, networkUrl } = networkDetails;
+
+  return (
+    networkPassphrase === StellarSdk.Networks.PUBLIC &&
+    networkUrl === NETWORK_URLS.PUBLIC
+  );
+};
+
+export const isTestnet = (networkDetails: NetworkDetails) => {
+  const { networkPassphrase, networkUrl } = networkDetails;
+
+  return (
+    networkPassphrase === StellarSdk.Networks.TESTNET &&
+    networkUrl === NETWORK_URLS.TESTNET
+  );
+};
+
+export const isActiveNetwork = (
+  networkA: NetworkDetails,
+  networkB: NetworkDetails,
+) => isEqual(networkA, networkB);
+
+export const CUSTOM_NETWORK = "CUSTOM";
+
+export const isCustomNetwork = (networkDetails: NetworkDetails) => {
+  const { network } = networkDetails;
+
+  return network === CUSTOM_NETWORK;
+};

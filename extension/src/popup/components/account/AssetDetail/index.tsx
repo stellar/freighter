@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { IconButton, Icon } from "@stellar/design-system";
 
 import { AccountBalancesInterface, HorizonOperation } from "@shared/api/types";
-import { NetworkDetails } from "@shared/helpers/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
@@ -80,7 +80,7 @@ export const AssetDetail = ({
     selectedAsset,
   });
 
-  const stellarExpertUrl = getStellarExpertUrl(networkDetails.isTestnet);
+  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
