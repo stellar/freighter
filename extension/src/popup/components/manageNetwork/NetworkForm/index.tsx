@@ -80,9 +80,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       };
 
   const NetworkFormSchema = YupObject().shape({
-    networkName: YupString().required(),
-    networkPassphrase: YupString().required(),
-    networkUrl: YupString().required(),
+    networkName: YupString().required("Network name is required"),
+    networkPassphrase: YupString().required("Network passphrase is required"),
+    networkUrl: YupString().required("Network URL is required"),
   });
 
   const handleRemoveNetwork = async () => {
