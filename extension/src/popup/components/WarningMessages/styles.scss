@@ -148,6 +148,8 @@
     .BasicButton--primary {
       background: var(--pal-error-background);
       border-color: var(--pal-error-border);
+      --Button-color-background: var(--pal-error-background);
+      --Button-color-border: var(--pal-error-border);
     }
     .BasicButton--primary:hover {
       background-color: var(--pal-error);
