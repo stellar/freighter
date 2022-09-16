@@ -4,11 +4,27 @@ import { createPortal } from "react-dom";
 import { InfoBlock, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
+import StellarSdk, { Account } from "stellar-sdk";
 
+import { xlmToStroop, getCanonicalFromAsset } from "helpers/stellar";
+import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
-import { closeBlockedDomainWarning } from "popup/ducks/transactionSubmission";
-import { settingsSelector } from "popup/ducks/settings";
+import {
+  closeBlockedDomainWarning,
+  signFreighterTransaction,
+  submitFreighterTransaction,
+} from "popup/ducks/transactionSubmission";
+import {
+  settingsSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import { ManageAssetRow } from "popup/components/manageAssets/ManageAssetRows";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo } from "popup/helpers/navigate";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitMetric } from "helpers/metrics";
 
 import "./styles.scss";
 
@@ -210,16 +226,22 @@ export const ScamAssetWarning = ({
   code,
   issuer,
   image,
+  setErrorAsset,
 }: {
   domain: string;
   code: string;
   issuer: string;
   image: string;
+  setErrorAsset: (errorAsset: string) => void;
 }) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const warningRef = useRef<HTMLDivElement>(null);
   const { isValidatingSafeAssetsEnabled } = useSelector(settingsSelector);
+  const { recommendedFee } = useNetworkFees();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const closeOverlay = () => {
     if (warningRef.current) {
@@ -236,6 +258,48 @@ export const ScamAssetWarning = ({
       warningRef.current.style.bottom = "0";
     }
   }, [warningRef]);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: xlmToStroop(recommendedFee).toFixed(),
+      networkPassphrase: networkDetails.networkPassphrase,
+    })
+      .addOperation(
+        StellarSdk.Operation.changeTrust({
+          asset: new StellarSdk.Asset(code, issuer),
+        }),
+      )
+      .setTimeout(180)
+      .build()
+      .toXDR();
+
+    const res = await dispatch(
+      signFreighterTransaction({
+        transactionXDR,
+        network: networkDetails.networkPassphrase,
+      }),
+    );
+
+    if (signFreighterTransaction.fulfilled.match(res)) {
+      const submitResp = await dispatch(
+        submitFreighterTransaction({
+          signedXDR: res.payload.signedTransaction,
+          networkDetails,
+        }),
+      );
+      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        navigateTo(ROUTES.account);
+        emitMetric(METRIC_NAMES.manageAssetAddAsset, { code, issuer });
+      } else {
+        setErrorAsset(getCanonicalFromAsset(code, issuer));
+        navigateTo(ROUTES.trustlineError);
+      }
+    }
+  };
 
   return (
     <div className="ScamAssetWarning">
@@ -286,8 +350,12 @@ export const ScamAssetWarning = ({
               {t("Got it")}
             </Button>
             {!isValidatingSafeAssetsEnabled && (
-              <Button fullWidth onClick={closeOverlay} type="button">
-                {/* ALEC TODO - handle add anyway onclick */}
+              <Button
+                fullWidth
+                onClick={handleSubmit}
+                type="button"
+                isLoading={isSubmitting}
+              >
                 {t("Add anyway")}
               </Button>
             )}
