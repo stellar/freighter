@@ -173,7 +173,6 @@ export const ManageAssetRows = ({
       navigateTo(ROUTES.trustlineError);
     } else if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
-      // ALEC TODO - why was this trustlineError before?
       navigateTo(ROUTES.account);
     }
   }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
