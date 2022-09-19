@@ -1,3 +1,26 @@
+# Release notes - Wallets - Version 2.5.0
+
+### Bug
+
+Error message not following deisign
+
+When adding a network, return to the network selection screen
+
+Remove stellar.expert links/API for Custom network users
+
+Add "Network Invalid" modal if stellar-sdk throws an error on networkUrl
+
+\(tech debt\) use Redux when selecting assets in the send flow, instead of query
+params
+
+Swap won't work if there's no direct market between the selected assets
+
+Display balances when selecting swap destination asset
+
+### Story
+
+Include custom network selection
+
 # Release notes - Wallets - Version 2.4.1
 
 ### Bug
