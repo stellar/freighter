@@ -293,7 +293,7 @@ export const ScamAssetWarning = ({
       );
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         navigateTo(ROUTES.account);
-        emitMetric(METRIC_NAMES.manageAssetAddAsset, { code, issuer });
+        emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
       } else {
         setErrorAsset(getCanonicalFromAsset(code, issuer));
         navigateTo(ROUTES.trustlineError);
