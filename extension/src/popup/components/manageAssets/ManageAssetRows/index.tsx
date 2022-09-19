@@ -173,7 +173,7 @@ export const ManageAssetRows = ({
       navigateTo(ROUTES.trustlineError);
     } else if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
-      navigateTo(ROUTES.trustlineError);
+      navigateTo(ROUTES.account);
     }
   }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
 
@@ -196,6 +196,7 @@ export const ManageAssetRows = ({
           code={scamAssetData.code}
           issuer={scamAssetData.issuer}
           image={scamAssetData.image}
+          setErrorAsset={setErrorAsset}
         />
       )}
       <SimpleBar
@@ -229,7 +230,7 @@ export const ManageAssetRows = ({
                       isActionPending && assetSubmitting === canonicalAsset
                     }
                     onClick={() => {
-                      if (isBlockedDomain(domain)) {
+                      if (isBlockedDomain(domain) && !isTrustlineActive) {
                         handleBlockedDomain({ domain, image, code, issuer });
                       } else {
                         changeTrustline(code, issuer, !isTrustlineActive);
