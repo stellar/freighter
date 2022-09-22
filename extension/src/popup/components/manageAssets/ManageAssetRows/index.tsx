@@ -217,7 +217,7 @@ export const ManageAssetRows = ({
 
     // check if new asset
     // TODO: stellar expert asset rating endpoint giving 403, resolve with OL
-    let isNewAsset = false;
+    const isNewAsset = false;
 
     // check domain
     let isInvalidDomain = false;
@@ -234,11 +234,6 @@ export const ManageAssetRows = ({
       console.error(e);
       isInvalidDomain = true;
     }
-
-    // ALEC TODO - remove
-    isRevocable = true;
-    isNewAsset = true;
-    isInvalidDomain = true;
 
     return { isRevocable, isNewAsset, isInvalidDomain };
   };
