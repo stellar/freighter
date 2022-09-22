@@ -267,7 +267,6 @@ interface InitialState {
   };
   blockedDomains: {
     domains: Array<BlockedDomain>;
-    status: ShowOverlayStatus;
   };
 }
 
@@ -310,7 +309,6 @@ export const initialState: InitialState = {
   },
   blockedDomains: {
     domains: [],
-    status: ShowOverlayStatus.IDLE,
   },
 };
 
@@ -366,12 +364,6 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAssetSelectSource: (state, action) => {
       state.assetSelect.isSource = action.payload;
-    },
-    showBlockedDomainWarning: (state) => {
-      state.blockedDomains.status = ShowOverlayStatus.IN_PROGRESS;
-    },
-    closeBlockedDomainWarning: (state) => {
-      state.blockedDomains.status = ShowOverlayStatus.IDLE;
     },
   },
   extraReducers: (builder) => {
@@ -455,8 +447,6 @@ export const {
   closeHwOverlay,
   saveAssetSelectType,
   saveAssetSelectSource,
-  showBlockedDomainWarning,
-  closeBlockedDomainWarning,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

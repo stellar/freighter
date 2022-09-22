@@ -10,7 +10,6 @@ import { xlmToStroop, getCanonicalFromAsset } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
 import {
-  closeBlockedDomainWarning,
   signFreighterTransaction,
   submitFreighterTransaction,
 } from "popup/ducks/transactionSubmission";
@@ -18,13 +17,19 @@ import {
   settingsSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
-import { ManageAssetRow } from "popup/components/manageAssets/ManageAssetRows";
+import {
+  ManageAssetRow,
+  NewAssetFlags,
+} from "popup/components/manageAssets/ManageAssetRows";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
+import IconShieldCross from "popup/assets/icon-shield-cross.svg";
+import IconInvalid from "popup/assets/icon-invalid.svg";
+import IconWarning from "popup/assets/icon-warning.svg";
 
 import "./styles.scss";
 
@@ -226,12 +231,14 @@ export const ScamAssetWarning = ({
   code,
   issuer,
   image,
+  onClose,
   setErrorAsset,
 }: {
   domain: string;
   code: string;
   issuer: string;
   image: string;
+  onClose: () => void;
   setErrorAsset: (errorAsset: string) => void;
 }) => {
   const { t } = useTranslation();
@@ -248,14 +255,16 @@ export const ScamAssetWarning = ({
       warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
     }
     setTimeout(() => {
-      dispatch(closeBlockedDomainWarning());
+      onClose();
     }, 300);
   };
 
   // animate entry
   useEffect(() => {
     if (warningRef.current) {
-      warningRef.current.style.bottom = "0";
+      setTimeout(() => {
+        warningRef.current!.style.bottom = "0";
+      }, 10);
     }
   }, [warningRef]);
 
@@ -360,6 +369,191 @@ export const ScamAssetWarning = ({
               </Button>
             )}
           </div>{" "}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const NewAssetWarning = ({
+  domain,
+  code,
+  issuer,
+  image,
+  newAssetFlags,
+  onClose,
+  setErrorAsset,
+}: {
+  domain: string;
+  code: string;
+  issuer: string;
+  image: string;
+  newAssetFlags: NewAssetFlags;
+  onClose: () => void;
+  setErrorAsset: (errorAsset: string) => void;
+}) => {
+  const { t } = useTranslation();
+  const dispatch: AppDispatch = useDispatch();
+  const warningRef = useRef<HTMLDivElement>(null);
+  const { recommendedFee } = useNetworkFees();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
+
+  // animate entry
+  useEffect(() => {
+    if (warningRef.current) {
+      setTimeout(() => {
+        warningRef.current!.style.bottom = "0";
+      }, 10);
+    }
+  }, [warningRef]);
+
+  const closeOverlay = () => {
+    if (warningRef.current) {
+      warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
+    }
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: xlmToStroop(recommendedFee).toFixed(),
+      networkPassphrase: networkDetails.networkPassphrase,
+    })
+      .addOperation(
+        StellarSdk.Operation.changeTrust({
+          asset: new StellarSdk.Asset(code, issuer),
+        }),
+      )
+      .setTimeout(180)
+      .build()
+      .toXDR();
+
+    const res = await dispatch(
+      signFreighterTransaction({
+        transactionXDR,
+        network: networkDetails.networkPassphrase,
+      }),
+    );
+
+    if (signFreighterTransaction.fulfilled.match(res)) {
+      const submitResp = await dispatch(
+        submitFreighterTransaction({
+          signedXDR: res.payload.signedTransaction,
+          networkDetails,
+        }),
+      );
+      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        navigateTo(ROUTES.account);
+        emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+      } else {
+        setErrorAsset(getCanonicalFromAsset(code, issuer));
+        navigateTo(ROUTES.trustlineError);
+      }
+    }
+  };
+
+  return (
+    <div className="NewAssetWarning">
+      <div className="NewAssetWarning__wrapper" ref={warningRef}>
+        <div className="NewAssetWarning__header">
+          {t("Before You Add This Asset")}
+        </div>
+        <div className="NewAssetWarning__description">
+          {t(
+            "Please double-check its information and characteristics. This can help you identify fraudulent assets.",
+          )}
+        </div>
+        <div className="NewAssetWarning__row">
+          <ManageAssetRow
+            code={code}
+            issuer={issuer}
+            image={image}
+            domain={domain}
+          />
+        </div>
+        <hr className="NewAssetWarning__list-divider" />
+        <div className="NewAssetWarning__flags">
+          {isRevocable && (
+            <div className="NewAssetWarning__flag">
+              <div className="NewAssetWarning__flag__icon">
+                <img src={IconShieldCross} alt="revocable" />
+              </div>
+              <div className="NewAssetWarning__flag__content">
+                <div className="NewAssetWarning__flag__header">
+                  {t("Revocable Asset")}
+                </div>
+                <div className="NewAssetWarning__flag__description">
+                  {t(
+                    "The asset creator can revoke your access to this asset at anytime",
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <div>
+            {isNewAsset && (
+              <div className="NewAssetWarning__flag">
+                <div className="NewAssetWarning__flag__icon">
+                  <img src={IconInvalid} alt="new asset" />
+                </div>
+                <div className="NewAssetWarning__flag__content">
+                  <div className="NewAssetWarning__flag__header">
+                    {t("New Asset")}
+                  </div>
+                  <div className="NewAssetWarning__flag__description">
+                    {t("This is a relatively new asset.")}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div>
+            {isInvalidDomain && (
+              <div className="NewAssetWarning__flag">
+                <div className="NewAssetWarning__flag__icon">
+                  <img src={IconWarning} alt="invalid domain" />
+                </div>
+                <div className="NewAssetWarning__flag__content">
+                  <div className="NewAssetWarning__flag__header">
+                    {t("Invalid Format Asset")}
+                  </div>
+                  <div className="NewAssetWarning__flag__description">
+                    {t(
+                      "Asset home domain doesn't exist, TOML file format is invalid, or asset doesn't match currency description",
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="NewAssetWarning__btns">
+            <Button
+              fullWidth
+              variant={Button.variant.tertiary}
+              type="button"
+              onClick={closeOverlay}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              fullWidth
+              onClick={handleSubmit}
+              type="button"
+              isLoading={isSubmitting}
+            >
+              {t("Add asset")}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
