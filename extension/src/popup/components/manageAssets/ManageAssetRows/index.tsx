@@ -36,16 +36,24 @@ import {
   submitFreighterTransaction,
   transactionSubmissionSelector,
   startHwSign,
-  showBlockedDomainWarning,
   ShowOverlayStatus,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
-import { ScamAssetWarning } from "popup/components/WarningMessages";
+import {
+  ScamAssetWarning,
+  NewAssetWarning,
+} from "popup/components/WarningMessages";
 
 import "./styles.scss";
 
 export type ManageAssetCurrency = CURRENCY & { domain: string };
+
+export interface NewAssetFlags {
+  isInvalidDomain: boolean;
+  isRevocable: boolean;
+  isNewAsset: boolean;
+}
 
 interface ManageAssetRowsProps {
   children?: React.ReactNode;
@@ -76,14 +84,23 @@ export const ManageAssetRows = ({
   const { recommendedFee } = useNetworkFees();
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
-  const server = new StellarSdk.Server(networkDetails.networkUrl);
-
-  const [scamAssetData, setScamAssetData] = useState({
+  const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
+    false,
+  );
+  const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
+  const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
+    isNewAsset: false,
+    isInvalidDomain: false,
+    isRevocable: false,
+  });
+  const [suspiciousAssetData, setSuspiciousAssetData] = useState({
     domain: "",
     code: "",
     issuer: "",
     image: "",
   });
+
+  const server = new StellarSdk.Server(networkDetails.networkUrl);
 
   const changeTrustline = async (
     assetCode: string,
@@ -182,20 +199,75 @@ export const ManageAssetRows = ({
     return found.length > 0;
   };
 
-  const handleBlockedDomain = (assetData: AssetRowData) => {
-    dispatch(showBlockedDomainWarning());
-    setScamAssetData(assetData);
+  const checkForSuspiciousAsset = async (
+    code: string,
+    issuer: string,
+    domain: string,
+  ): Promise<NewAssetFlags> => {
+    // check revocable
+    let isRevocable = false;
+    try {
+      const resp = await server.assets().forCode(code).forIssuer(issuer).call();
+      isRevocable = resp.records[0]
+        ? resp.records[0].flags.auth_revocable
+        : false;
+    } catch (e) {
+      console.error(e);
+    }
+
+    // check if new asset
+    // TODO: stellar expert asset rating endpoint giving 403, resolve with OL
+    let isNewAsset = false;
+
+    // check domain
+    let isInvalidDomain = false;
+    try {
+      const resp = await StellarSdk.StellarTomlResolver.resolve(domain);
+      let found = false;
+      resp.CURRENCIES.forEach((c: { code: string; issuer: string }) => {
+        if (c.code === code && c.issuer === issuer) {
+          found = true;
+        }
+      });
+      isInvalidDomain = !found;
+    } catch (e) {
+      console.error(e);
+      isInvalidDomain = true;
+    }
+
+    // ALEC TODO - remove
+    isRevocable = true;
+    isNewAsset = true;
+    isInvalidDomain = true;
+
+    return { isRevocable, isNewAsset, isInvalidDomain };
   };
 
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      {blockedDomains.status === ShowOverlayStatus.IN_PROGRESS && (
+      {showBlockedDomainWarning && (
         <ScamAssetWarning
-          domain={scamAssetData.domain}
-          code={scamAssetData.code}
-          issuer={scamAssetData.issuer}
-          image={scamAssetData.image}
+          domain={suspiciousAssetData.domain}
+          code={suspiciousAssetData.code}
+          issuer={suspiciousAssetData.issuer}
+          image={suspiciousAssetData.image}
+          onClose={() => {
+            setShowBlockedDomainWarning(false);
+          }}
+          setErrorAsset={setErrorAsset}
+        />
+      )}
+      {showNewAssetWarning && (
+        <NewAssetWarning
+          domain={suspiciousAssetData.domain}
+          code={suspiciousAssetData.code}
+          issuer={suspiciousAssetData.issuer}
+          image={suspiciousAssetData.image}
+          newAssetFlags={newAssetFlags}
+          onClose={() => {
+            setShowNewAssetWarning(false);
+          }}
           setErrorAsset={setErrorAsset}
         />
       )}
@@ -229,9 +301,26 @@ export const ManageAssetRows = ({
                     isLoading={
                       isActionPending && assetSubmitting === canonicalAsset
                     }
-                    onClick={() => {
-                      if (isBlockedDomain(domain) && !isTrustlineActive) {
-                        handleBlockedDomain({ domain, image, code, issuer });
+                    onClick={async () => {
+                      const resp = await checkForSuspiciousAsset(
+                        code,
+                        issuer,
+                        domain,
+                      );
+                      if (
+                        resp.isInvalidDomain ||
+                        resp.isRevocable ||
+                        resp.isNewAsset
+                      ) {
+                        setShowNewAssetWarning(true);
+                        setNewAssetFlags(resp);
+                        setSuspiciousAssetData({ domain, image, code, issuer });
+                      } else if (
+                        isBlockedDomain(domain) &&
+                        !isTrustlineActive
+                      ) {
+                        setShowBlockedDomainWarning(true);
+                        setSuspiciousAssetData({ domain, image, code, issuer });
                       } else {
                         changeTrustline(code, issuer, !isTrustlineActive);
                       }
@@ -249,7 +338,7 @@ export const ManageAssetRows = ({
       </SimpleBar>
       <LoadingBackground
         onClick={() => {}}
-        isActive={blockedDomains.status === ShowOverlayStatus.IN_PROGRESS}
+        isActive={showNewAssetWarning || showBlockedDomainWarning}
       />
     </>
   );
