@@ -16,6 +16,7 @@
   "Add another asset": "Add another asset",
   "Add Another Asset": "Add Another Asset",
   "Add anyway": "Add anyway",
+  "Add asset": "Add asset",
   "Add asset manually": "Add asset manually",
   "Add custom network": "Add custom network",
   "Add Custom Network": "Add Custom Network",
@@ -43,6 +44,7 @@
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
   "Asset Code": "Asset Code",
   "Asset domain": "Asset domain",
+  "Asset home domain doesn't exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn't exist, TOML file format is invalid, or asset doesn't match currency description",
   "Asset Issuer": "Asset Issuer",
   "Asset not found": "Asset not found",
   "Assets found in this domain": "Assets found in this domain",
@@ -61,6 +63,7 @@
   },
   "Balance Id": "Balance Id",
   "Base fee": "Base fee",
+  "Before You Add This Asset": "Before You Add This Asset",
   "Block malicious or unsafe addresses and domains (external app transactions only)": "Block malicious or unsafe addresses and domains (external app transactions only)",
   "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
   "Bump To": "Bump To",
@@ -176,6 +179,7 @@
   "Insufficient Balance": "Insufficient Balance",
   "Insufficient Fee": "Insufficient Fee",
   "invalid federation address": "invalid federation address",
+  "Invalid Format Asset": "Invalid Format Asset",
   "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "is requesting approval to a": "is requesting approval to a",
@@ -229,6 +233,7 @@
   "Network is in use": "Network is in use",
   "Network Settings": "Network Settings",
   "Never disclose your recovery phrase": "Never disclose your recovery phrase",
+  "New Asset": "New Asset",
   "New password": "New password",
   "Next": "Next",
   "NEXT": "NEXT",
@@ -253,6 +258,9 @@
   },
   "Please check the new rate and try again": "Please check the new rate and try again.",
   "Please don’t close this window": "Please don’t close this window",
+  "Please double-check its information and characteristics": {
+    " This can help you identify fraudulent assets": "Please double-check its information and characteristics. This can help you identify fraudulent assets."
+  },
   "Please open the Stellar app on the device and try again": "Please open the Stellar app on the device and try again.",
   "Please proceed with caution": "Please proceed with caution.",
   "Please select a different network before removing it": "Please select a different network before removing it.",
@@ -275,6 +283,7 @@
   "Reserved Balance*": "Reserved Balance*",
   "Review": "Review",
   "Review transaction on device": "Review transaction on device",
+  "Revocable Asset": "Revocable Asset",
   "Same source and destination asset": "Same source and destination asset",
   "Save": "Save",
   "Search": "Search",
@@ -319,6 +328,7 @@
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
+  "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
   "The destination account does not accept the asset you’re sending": {
     " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
@@ -340,6 +350,7 @@
   "This asset was tagged as fraudulent by stellar": {
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
+  "This is a relatively new asset": "This is a relatively new asset.",
   "This transaction could not be completed": "This transaction could not be completed.",
   "This website wants to know your public key": "This website wants to know your public key",
   "To": "To",
