@@ -7,13 +7,18 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
-import { Account, Response as Request } from "@shared/api/types";
+import {
+  Account,
+  Response as Request,
+  BlockedDomains,
+} from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
 import {
   ALLOWLIST_ID,
   APPLICATION_ID,
   CACHED_ASSET_ICONS_ID,
+  CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
@@ -926,13 +931,46 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
   };
 
+  const getCachedAssetDomain = () => {
+    const { assetCanonical } = request;
+
+    const assetDomainCache = JSON.parse(
+      localStorage.getItem(CACHED_ASSET_DOMAINS_ID) || "{}",
+    );
+
+    return {
+      iconUrl: assetDomainCache[assetCanonical] || "",
+    };
+  };
+
+  const cacheAssetDomain = () => {
+    const { assetCanonical, assetDomain } = request;
+
+    const assetDomainCache = JSON.parse(
+      localStorage.getItem(CACHED_ASSET_DOMAINS_ID) || "{}",
+    );
+    assetDomainCache[assetCanonical] = assetDomain;
+    localStorage.setItem(
+      CACHED_ASSET_DOMAINS_ID,
+      JSON.stringify(assetDomainCache),
+    );
+  };
+
   const getBlockedDomains = async () => {
     try {
       const resp = await cachedFetch(
         STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
         CACHED_BLOCKED_DOMAINS_ID,
       );
-      return { blockedDomains: resp?._embedded?.records || [] };
+      const blockedDomains = (resp?._embedded?.records || []).reduce(
+        (bd: BlockedDomains, obj: { domain: string }) => {
+          const map = bd;
+          map[obj.domain] = true;
+          return map;
+        },
+        {},
+      );
+      return { blockedDomains };
     } catch (e) {
       console.error(e);
       return new Error("Error getting blocked domains");
@@ -970,6 +1008,8 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
     [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
+    [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
+    [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
   };
 

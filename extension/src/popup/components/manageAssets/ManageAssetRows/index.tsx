@@ -22,7 +22,7 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
-
+import { useIsScamAsset } from "popup/helpers/useIsScamAsset";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
@@ -44,6 +44,7 @@ import {
   ScamAssetWarning,
   NewAssetWarning,
 } from "popup/components/WarningMessages";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 
@@ -194,10 +195,7 @@ export const ManageAssetRows = ({
     }
   }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
 
-  const isBlockedDomain = (domain: string) => {
-    const found = blockedDomains.domains.filter((b) => b.domain === domain);
-    return found.length > 0;
-  };
+  const isBlockedDomain = (domain: string) => blockedDomains.domains[domain];
 
   const checkForSuspiciousAsset = async (
     code: string,
@@ -353,6 +351,7 @@ export const ManageAssetRow = ({
   domain,
 }: AssetRowData) => {
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
+  const isScamAsset = useIsScamAsset(code, issuer);
   return (
     <>
       <AssetIcon
@@ -360,8 +359,11 @@ export const ManageAssetRow = ({
         code={code}
         issuerKey={issuer}
       />
-      <div className="ManageAssetRows__code">
-        {code}
+      <div className="ManageAssetRows__row__info">
+        <div className="ManageAssetRows__row__info__header">
+          {code}
+          <ScamAssetIcon isScamAsset={isScamAsset} />
+        </div>
         <div className="ManageAssetRows__domain">{formatDomain(domain)}</div>
       </div>
     </>

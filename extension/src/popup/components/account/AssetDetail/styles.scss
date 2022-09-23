@@ -1,6 +1,7 @@
 .AssetDetail {
   height: var(--popup--height);
-  overflow: hidden;
+  overflow-y: scroll;
+  overflow-x: hidden;
   position: relative;
 
   &__wrapper {
@@ -29,6 +30,10 @@
         stroke: rgba(255, 255, 255, 0.6);
       }
     }
+  }
+
+  &__scam-warning {
+    margin-bottom: 2rem;
   }
 
   &__total {
