@@ -11,8 +11,8 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg";
-import IconWarning from "popup/assets/icon-warning-red.svg";
 
 import "./styles.scss";
 
@@ -207,9 +207,7 @@ export const AccountAssets = ({
                 isLPShare={!!rb.liquidityPoolId}
               />
               <span>{code}</span>
-              <span className="AccountAssets__scam-asset">
-                {isScamAsset && <img src={IconWarning} alt="warning" />}
-              </span>
+              <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
               <div>

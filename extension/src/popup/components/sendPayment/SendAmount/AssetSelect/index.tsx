@@ -13,7 +13,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { useIsScamAsset } from "popup/helpers/useIsScamAsset";
-import IconWarning from "popup/assets/icon-warning-red.svg";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 
@@ -103,10 +103,7 @@ export function PathPayAssetSelect({
           <span className="AssetSelect__medium-copy">
             {truncateLongAssetCode(assetCode)}
           </span>{" "}
-          {/* ALEC TODO - abstract to own component? */}
-          <span className="AssetSelect__scam-asset">
-            {isScamAsset && <img src={IconWarning} alt="warning" />}
-          </span>
+          <ScamAssetIcon isScamAsset={isScamAsset} />
           <Icon.ChevronDown />
         </div>
         <div className="AssetSelect__content__right">

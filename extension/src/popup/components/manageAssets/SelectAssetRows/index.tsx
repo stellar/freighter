@@ -15,7 +15,7 @@ import {
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
-import IconWarning from "popup/assets/icon-warning-red.svg";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { Balances } from "@shared/api/types";
 
 import "./styles.scss";
@@ -93,9 +93,7 @@ export const SelectAssetRows = ({
               <div className="SelectAssetRows__row__info">
                 <div className="SelectAssetRows__row__info__header">
                   {code}
-                  <span className="SelectAssetRows__scam-asset">
-                    {isScamAsset && <img src={IconWarning} alt="warning" />}
-                  </span>
+                  <ScamAssetIcon isScamAsset={isScamAsset} />
                 </div>
                 <div className="SelectAssetRows__domain">
                   {formatDomain(domain)}

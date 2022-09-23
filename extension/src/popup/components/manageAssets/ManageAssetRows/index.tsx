@@ -44,7 +44,7 @@ import {
   ScamAssetWarning,
   NewAssetWarning,
 } from "popup/components/WarningMessages";
-import IconWarning from "popup/assets/icon-warning-red.svg";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 
@@ -362,9 +362,7 @@ export const ManageAssetRow = ({
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
           {code}
-          <span className="ManageAssetRows__scam-asset">
-            {isScamAsset && <img src={IconWarning} alt="warning" />}
-          </span>
+          <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div className="ManageAssetRows__domain">{formatDomain(domain)}</div>
       </div>
