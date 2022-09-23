@@ -3,6 +3,8 @@ import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, InfoBlock } from "@stellar/design-system";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import { AccountBalancesInterface, HorizonOperation } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -168,49 +170,51 @@ export const AssetDetail = ({
             </>
           ) : null}
         </div>
-        <div className="AssetDetail__scam-warning">
-          {isScamAsset && (
-            <InfoBlock variant={InfoBlock.variant.error}>
-              <p>
-                This asset was tagged as fraudulent by stellar.expert, a
-                reliable community-maintained directory.
-              </p>
-              <p>
-                Trading or sending this asset is not recommended. Projects
-                related to this asset may be fraudulent even if the creators say
-                otherwise.
-              </p>
-            </InfoBlock>
-          )}
-        </div>
-
-        {assetOperations.length ? (
-          <HistoryList assetDetail>
-            <>
-              {assetOperations.map((operation) => {
-                const historyItemOperation = {
-                  ...operation,
-                  isPayment: getIsPayment(operation.type),
-                  isSwap: getIsSwap(operation),
-                };
-                return (
-                  <HistoryItem
-                    key={operation.id}
-                    operation={historyItemOperation}
-                    publicKey={publicKey}
-                    url={stellarExpertUrl}
-                    setDetailViewProps={setDetailViewProps}
-                    setIsDetailViewShowing={setIsDetailViewShowing}
-                  />
-                );
-              })}
-            </>
-          </HistoryList>
-        ) : (
-          <div className="AssetDetail__empty">
-            {t("No transactions to show")}
+        <SimpleBar>
+          <div className="AssetDetail__scam-warning">
+            {isScamAsset && (
+              <InfoBlock variant={InfoBlock.variant.error}>
+                <p>
+                  This asset was tagged as fraudulent by stellar.expert, a
+                  reliable community-maintained directory.
+                </p>
+                <p>
+                  Trading or sending this asset is not recommended. Projects
+                  related to this asset may be fraudulent even if the creators
+                  say otherwise.
+                </p>
+              </InfoBlock>
+            )}
           </div>
-        )}
+
+          {assetOperations.length ? (
+            <HistoryList assetDetail>
+              <>
+                {assetOperations.map((operation) => {
+                  const historyItemOperation = {
+                    ...operation,
+                    isPayment: getIsPayment(operation.type),
+                    isSwap: getIsSwap(operation),
+                  };
+                  return (
+                    <HistoryItem
+                      key={operation.id}
+                      operation={historyItemOperation}
+                      publicKey={publicKey}
+                      url={stellarExpertUrl}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  );
+                })}
+              </>
+            </HistoryList>
+          ) : (
+            <div className="AssetDetail__empty">
+              {t("No transactions to show")}
+            </div>
+          )}
+        </SimpleBar>
       </div>
       <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
         <div className="AssetDetail__info-modal">
