@@ -529,7 +529,7 @@ export const NewAssetWarning = ({
                   </div>
                   <div className="NewAssetWarning__flag__description">
                     {t(
-                      "Asset home domain doesn't exist, TOML file format is invalid, or asset doesn't match currency description",
+                      "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
                     )}
                   </div>
                 </div>

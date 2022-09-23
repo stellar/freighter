@@ -209,7 +209,7 @@ export const ManageAssetRows = ({
     try {
       const resp = await server.assets().forCode(code).forIssuer(issuer).call();
       isRevocable = resp.records[0]
-        ? resp.records[0].flags.auth_revocable
+        ? resp.records[0]?.flags?.auth_revocable
         : false;
     } catch (e) {
       console.error(e);
@@ -236,6 +236,35 @@ export const ManageAssetRows = ({
     }
 
     return { isRevocable, isNewAsset, isInvalidDomain };
+  };
+
+  const handleRowClick = async (
+    assetRowData: AssetRowData,
+    isTrustlineActive: boolean,
+  ) => {
+    const resp = await checkForSuspiciousAsset(
+      assetRowData.code,
+      assetRowData.issuer,
+      assetRowData.domain,
+    );
+    if (
+      (!isTrustlineActive && resp.isInvalidDomain) ||
+      resp.isRevocable ||
+      resp.isNewAsset
+    ) {
+      setShowNewAssetWarning(true);
+      setNewAssetFlags(resp);
+      setSuspiciousAssetData(assetRowData);
+    } else if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
+      setShowBlockedDomainWarning(true);
+      setSuspiciousAssetData(assetRowData);
+    } else {
+      changeTrustline(
+        assetRowData.code,
+        assetRowData.issuer,
+        !isTrustlineActive,
+      );
+    }
   };
 
   return (
@@ -296,30 +325,12 @@ export const ManageAssetRows = ({
                     isLoading={
                       isActionPending && assetSubmitting === canonicalAsset
                     }
-                    onClick={async () => {
-                      const resp = await checkForSuspiciousAsset(
-                        code,
-                        issuer,
-                        domain,
-                      );
-                      if (
-                        resp.isInvalidDomain ||
-                        resp.isRevocable ||
-                        resp.isNewAsset
-                      ) {
-                        setShowNewAssetWarning(true);
-                        setNewAssetFlags(resp);
-                        setSuspiciousAssetData({ domain, image, code, issuer });
-                      } else if (
-                        isBlockedDomain(domain) &&
-                        !isTrustlineActive
-                      ) {
-                        setShowBlockedDomainWarning(true);
-                        setSuspiciousAssetData({ domain, image, code, issuer });
-                      } else {
-                        changeTrustline(code, issuer, !isTrustlineActive);
-                      }
-                    }}
+                    onClick={() =>
+                      handleRowClick(
+                        { code, issuer, image, domain },
+                        isTrustlineActive,
+                      )
+                    }
                     type="button"
                   >
                     {isTrustlineActive ? t("Remove") : t("Add")}
