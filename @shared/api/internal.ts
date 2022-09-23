@@ -18,6 +18,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
+import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -410,6 +411,34 @@ export const retryAssetIcon = async ({
   const icon = await getIconUrlFromIssuer({ key, code, networkDetails });
   newAssetIcons[`${code}:${key}`] = icon;
   return newAssetIcons;
+};
+
+export const getAssetDomains = async ({
+  balances,
+  networkDetails,
+}: {
+  balances: Balances;
+  networkDetails: NetworkDetails;
+}) => {
+  const assetDomains = {} as { [code: string]: string };
+
+  if (balances) {
+    const balanceValues = Object.values(balances);
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < balanceValues.length; i++) {
+      const { token } = balanceValues[i];
+      if (token && "issuer" in token) {
+        const {
+          issuer: { key },
+          code,
+        } = token;
+        // eslint-disable-next-line no-await-in-loop
+        const domain = await getDomainFromIssuer({ key, code, networkDetails });
+        assetDomains[`${code}:${key}`] = domain;
+      }
+    }
+  }
+  return assetDomains;
 };
 
 export const rejectAccess = async (): Promise<void> => {

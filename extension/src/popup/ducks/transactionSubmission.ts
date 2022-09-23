@@ -8,15 +8,17 @@ import {
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
   getAssetIcons as getAssetIconsService,
+  getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
 } from "@shared/api/internal";
 
 import {
   AccountBalancesInterface,
   AssetIcons,
+  AssetDomains,
   Balances,
   ErrorMessage,
-  BlockedDomain,
+  BlockedDomains,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -169,6 +171,21 @@ export const getAssetIcons = createAsyncThunk<
   }) => getAssetIconsService({ balances, networkDetails }),
 );
 
+export const getAssetDomains = createAsyncThunk<
+  AssetDomains,
+  { balances: Balances; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/getAssetDomains",
+  ({
+    balances,
+    networkDetails,
+  }: {
+    balances: Balances;
+    networkDetails: NetworkDetails;
+  }) => getAssetDomainsService({ balances, networkDetails }),
+);
+
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
   ServerApi.PaymentPathRecord,
@@ -202,7 +219,7 @@ export const getBestPath = createAsyncThunk<
 );
 
 export const getBlockedDomains = createAsyncThunk<
-  Array<BlockedDomain>,
+  BlockedDomains,
   undefined,
   { rejectValue: ErrorMessage }
 >("getBlockedDomains", async (_, thunkApi) => {
@@ -261,12 +278,13 @@ interface InitialState {
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
+  assetDomains: AssetDomains;
   assetSelect: {
     type: AssetSelectType;
     isSource: boolean;
   };
   blockedDomains: {
-    domains: Array<BlockedDomain>;
+    domains: BlockedDomains;
   };
 }
 
@@ -303,12 +321,13 @@ export const initialState: InitialState = {
     subentryCount: 0,
   },
   assetIcons: {},
+  assetDomains: {},
   assetSelect: {
     type: AssetSelectType.MANAGE,
     isSource: true,
   },
   blockedDomains: {
-    domains: [],
+    domains: {},
   },
 };
 
@@ -406,6 +425,14 @@ const transactionSubmissionSlice = createSlice({
       return {
         ...state,
         assetIcons,
+      };
+    });
+    builder.addCase(getAssetDomains.fulfilled, (state, action) => {
+      const assetDomains = action.payload || {};
+
+      return {
+        ...state,
+        assetDomains,
       };
     });
     builder.addCase(getBestPath.fulfilled, (state, action) => {
