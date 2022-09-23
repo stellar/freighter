@@ -44,7 +44,7 @@
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
   "Asset Code": "Asset Code",
   "Asset domain": "Asset domain",
-  "Asset home domain doesn't exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn't exist, TOML file format is invalid, or asset doesn't match currency description",
+  "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
   "Asset Issuer": "Asset Issuer",
   "Asset not found": "Asset not found",
   "Assets found in this domain": "Assets found in this domain",
