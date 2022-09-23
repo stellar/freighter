@@ -8,6 +8,7 @@ export const ACCOUNT_NAME_LIST_ID = "accountNameList";
 export const CACHED_BLOCKED_ACCOUNTS_ID = "cachedBlockedAccountsId";
 export const CACHED_BLOCKED_DOMAINS_ID = "cachedBlockedDomainsId";
 export const CACHED_ASSET_ICONS_ID = "cachedAssetIconsId";
+export const CACHED_ASSET_DOMAINS_ID = "cachedAssetDomainsId";
 export const IS_VALIDATING_MEMO_ID = "isValidatingMemo";
 export const IS_VALIDATING_SAFETY_ID = "isValidatingSafety";
 export const IS_VALIDATING_SAFE_ASSETS_ID = "isValidatingSafeAssets";

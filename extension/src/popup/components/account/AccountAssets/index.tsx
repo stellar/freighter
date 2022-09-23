@@ -10,8 +10,9 @@ import { retryAssetIcon } from "@shared/api/internal";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import ImageMissingIcon from "popup/assets/image-missing.svg";
+import IconWarning from "popup/assets/icon-warning-red.svg";
 
 import "./styles.scss";
 
@@ -111,6 +112,9 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
+  const { assetDomains, blockedDomains } = useSelector(
+    transactionSubmissionSelector,
+  );
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);
@@ -181,6 +185,9 @@ export const AccountAssets = ({
         const isLP = issuer === "lp";
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
+        const assetDomain = assetDomains[canonicalAsset];
+        const isScamAsset = !!blockedDomains.domains[assetDomain];
+
         return (
           <div
             className={`AccountAssets__asset ${
@@ -200,6 +207,9 @@ export const AccountAssets = ({
                 isLPShare={!!rb.liquidityPoolId}
               />
               <span>{code}</span>
+              <span className="AccountAssets__scam-asset">
+                {isScamAsset && <img src={IconWarning} alt="warning" />}
+              </span>
             </div>
             <div className="AccountAssets__copy-right">
               <div>

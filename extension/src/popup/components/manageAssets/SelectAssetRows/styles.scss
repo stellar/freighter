@@ -20,6 +20,15 @@
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
+
+    &__info {
+      color: var(--pal-text-primary);
+      flex-grow: 1;
+      line-height: 1.5rem;
+      &__header {
+        display: flex;
+      }
+    }
   }
 
   &__icon {
@@ -32,15 +41,15 @@
     width: 1.5rem;
   }
 
-  &__code {
-    color: var(--pal-text-primary);
-    flex-grow: 1;
-    line-height: 1.5rem;
-  }
-
   &__domain {
     color: var(--pal-text-tertiary);
     font-size: var(--font-size-secondary);
     line-height: 1.375rem;
+  }
+
+  &__scam-asset {
+    margin-left: 0.25rem;
+    display: flex;
+    align-items: center;
   }
 }
