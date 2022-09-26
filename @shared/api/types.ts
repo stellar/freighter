@@ -45,12 +45,12 @@ export interface Response {
   recentAddresses: Array<string>;
   hardwareWalletType: WalletType;
   bipPath: string;
-  blockedDomains: Array<BlockedDomain>;
+  blockedDomains: BlockedDomains;
+  assetDomain: string;
 }
 
-export interface BlockedDomain {
-  domain: string;
-  paging_token: string;
+export interface BlockedDomains {
+  [key: string]: boolean;
 }
 
 export interface ExternalRequest {
@@ -78,6 +78,10 @@ export interface Settings {
 }
 
 export interface AssetIcons {
+  [code: string]: string;
+}
+
+export interface AssetDomains {
   [code: string]: string;
 }
 
