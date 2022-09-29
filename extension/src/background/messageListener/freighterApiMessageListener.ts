@@ -1,4 +1,5 @@
 import StellarSdk from "stellar-sdk";
+import SorobanSdk from "soroban-sdk";
 import { browser, Runtime } from "webextension-polyfill-ts";
 
 import { ExternalRequest as Request } from "@shared/api/types";
@@ -16,6 +17,7 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
+  getIsExperimentalModeEnabled,
   getNetworkDetails,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
@@ -78,10 +80,13 @@ export const freighterApiMessageListener = (
 
   const submitTransaction = async () => {
     const { transactionXdr, network: _network, accountToSign } = request;
+
     const network = _network ?? MAINNET_NETWORK_DETAILS.network;
     const isMainnet = getIsMainnet();
     const { networkUrl } = getNetworkDetails();
-    const transaction = StellarSdk.TransactionBuilder.fromXDR(
+    const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
       StellarSdk.Networks[network],
     );
