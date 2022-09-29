@@ -186,7 +186,15 @@ export const AccountAssets = ({
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
         const assetDomain = assetDomains[canonicalAsset];
-        const isScamAsset = !!blockedDomains.domains[assetDomain];
+        let isScamAsset = !!blockedDomains.domains[assetDomain];
+
+        // ALEC TODO - remove
+        if (
+          canonicalAsset ===
+          "A:GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II"
+        ) {
+          isScamAsset = true;
+        }
 
         return (
           <div

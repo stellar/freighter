@@ -227,18 +227,22 @@ export const BackupPhraseWarningMessage = () => {
 };
 
 export const ScamAssetWarning = ({
+  isSendWarning = false,
   domain,
   code,
   issuer,
   image,
   onClose,
+  onContinue = () => {},
   setErrorAsset,
 }: {
+  isSendWarning?: boolean;
   domain: string;
   code: string;
   issuer: string;
   image: string;
   onClose: () => void;
+  onContinue?: () => void;
   setErrorAsset: (errorAsset: string) => void;
 }) => {
   const { t } = useTranslation();
@@ -329,25 +333,35 @@ export const ScamAssetWarning = ({
         </div>
         <div className="ScamAssetWarning__bottom-content">
           <div>
-            <InfoBlock variant={InfoBlock.variant.error}>
-              <p>
-                {isValidatingSafeAssetsEnabled
-                  ? t(
-                      "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                    )
-                  : t(
-                      "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
-                    )}
-              </p>
-              <p>
-                {t("You can")}{" "}
-                {`${
-                  isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
-                }`}{" "}
-                {t("this alert by going to")}{" "}
-                <strong>{t("Settings > Security")}</strong>
-              </p>
-            </InfoBlock>
+            {isSendWarning ? (
+              <InfoBlock variant={InfoBlock.variant.error}>
+                <p>
+                  {t(
+                    "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                  )}
+                </p>
+              </InfoBlock>
+            ) : (
+              <InfoBlock variant={InfoBlock.variant.error}>
+                <p>
+                  {isValidatingSafeAssetsEnabled
+                    ? t(
+                        "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                      )
+                    : t(
+                        "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
+                      )}
+                </p>
+                <p>
+                  {t("You can")}{" "}
+                  {`${
+                    isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
+                  }`}{" "}
+                  {t("this alert by going to")}{" "}
+                  <strong>{t("Settings > Security")}</strong>
+                </p>
+              </InfoBlock>
+            )}
           </div>
           <div className="ScamAssetWarning__btns">
             <Button
@@ -358,7 +372,17 @@ export const ScamAssetWarning = ({
             >
               {t("Got it")}
             </Button>
-            {!isValidatingSafeAssetsEnabled && (
+            {isSendWarning && (
+              <Button
+                fullWidth
+                onClick={onContinue}
+                type="button"
+                isLoading={isSubmitting}
+              >
+                {t("Continue")}
+              </Button>
+            )}
+            {!isValidatingSafeAssetsEnabled && !isSendWarning && (
               <Button
                 fullWidth
                 onClick={handleSubmit}
