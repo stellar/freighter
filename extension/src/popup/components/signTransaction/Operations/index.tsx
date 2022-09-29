@@ -353,7 +353,6 @@ export const Operations = ({
           i: number,
         ) => {
           const operationIndex = i + 1;
-          console.log(operations);
           return (
             <div className="Operations--wrapper" key={operationIndex}>
               <div className="Operations--header">
