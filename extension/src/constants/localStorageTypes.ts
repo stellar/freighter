@@ -10,6 +10,7 @@ export const CACHED_DIRECTORY_DATE_ID = "cachedDirectoryDateId";
 export const CACHED_ASSET_ICONS_ID = "cachedAssetIconsId";
 export const IS_VALIDATING_MEMO_ID = "isValidatingMemo";
 export const IS_VALIDATING_SAFETY_ID = "isValidatingSafety";
+export const IS_EXPERIMENTAL_MODE_ID = "isExperimentalMode";
 export const RECENT_ADDRESSES = "recentAddresses";
 export const NETWORK_ID = "network";
 export const NETWORKS_LIST_ID = "networksList";
