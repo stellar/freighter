@@ -876,17 +876,17 @@ export const popupMessageListener = (request: Request) => {
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
       /* Disable Mainnet access and automatically switch the user to Futurenet 
       if user is enabling experimental mode and vice-versa */
-      const experimentalNetworksList = getNetworksList();
+      const currentNetworksList = getNetworksList();
 
       const defaultNetworkDetails = isExperimentalModeEnabled
         ? FUTURENET_NETWORK_DETAILS
         : MAINNET_NETWORK_DETAILS;
 
-      experimentalNetworksList.splice(0, 1, defaultNetworkDetails);
+      currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
       localStorage.setItem(
         NETWORKS_LIST_ID,
-        JSON.stringify(experimentalNetworksList),
+        JSON.stringify(currentNetworksList),
       );
       localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
     }
