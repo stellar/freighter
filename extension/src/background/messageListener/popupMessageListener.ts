@@ -780,15 +780,21 @@ export const popupMessageListener = (request: Request) => {
     const privateKey = privateKeySelector(store.getState());
 
     if (privateKey.length) {
-      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
 
       let response;
 
       const transactionToSign = transactionQueue.pop();
 
       if (transactionToSign) {
-        transactionToSign.sign(sourceKeys);
-        response = transactionToSign.toXDR();
+        try {
+          transactionToSign.sign(sourceKeys);
+          response = transactionToSign.toXDR();
+        } catch (e) {
+          return { error: e };
+        }
       }
 
       const transactionResponse = responseQueue.pop();
