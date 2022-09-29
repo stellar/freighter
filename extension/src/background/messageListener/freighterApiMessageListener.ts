@@ -7,10 +7,7 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import {
-  FUTURENET_NETWORK_DETAILS,
-  MAINNET_NETWORK_DETAILS,
-} from "@shared/constants/stellar";
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
