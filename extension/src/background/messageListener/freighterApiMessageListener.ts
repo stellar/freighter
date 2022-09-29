@@ -7,7 +7,10 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  FUTURENET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { STELLAR_DIRECTORY_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
@@ -88,7 +91,7 @@ export const freighterApiMessageListener = (
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
-      StellarSdk.Networks[network],
+      SDK.Networks[network],
     );
 
     const { tab, url: tabUrl = "" } = sender;
