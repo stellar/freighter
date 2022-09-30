@@ -13,10 +13,7 @@ const BUILD_PATH = path.resolve(__dirname, "./build");
 const commonConfig = (env = { EXPERIMENTAL: false }) => ({
   node: { global: true, fs: "empty" },
   entry: {
-    background: [
-      "babel-polyfill",
-      path.resolve(__dirname, "./public/background.ts"),
-    ],
+    background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
     contentScript: path.resolve(__dirname, "./public/contentScript.ts"),
   },
