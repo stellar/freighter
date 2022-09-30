@@ -6,6 +6,7 @@ import {
   IS_VALIDATING_SAFETY_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
+  IS_EXPERIMENTAL_MODE_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
@@ -55,6 +56,9 @@ export const getIsMemoValidationEnabled = () =>
 export const getIsSafetyValidationEnabled = () =>
   JSON.parse(localStorage.getItem(IS_VALIDATING_SAFETY_ID) || "true");
 
+export const getIsExperimentalModeEnabled = () =>
+  JSON.parse(localStorage.getItem(IS_EXPERIMENTAL_MODE_ID) || "false");
+
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";
 
@@ -73,6 +77,10 @@ export const getSavedNetworks = () =>
   ) as NetworkDetails[];
 
 export const getNetworkDetails = () => {
+  if (!localStorage.getItem(NETWORK_ID)) {
+    localStorage.setItem(NETWORK_ID, JSON.stringify(DEFAULT_NETWORKS[0]));
+  }
+
   const networkDetails = JSON.parse(
     localStorage.getItem(NETWORK_ID) || JSON.stringify(DEFAULT_NETWORKS[0]),
   ) as NetworkDetails;
@@ -81,6 +89,10 @@ export const getNetworkDetails = () => {
 };
 
 export const getNetworksList = () => {
+  if (!localStorage.getItem(NETWORKS_LIST_ID)) {
+    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(DEFAULT_NETWORKS));
+  }
+
   const networksList = JSON.parse(
     localStorage.getItem(NETWORKS_LIST_ID) || JSON.stringify(DEFAULT_NETWORKS),
   ) as NetworkDetails[];
