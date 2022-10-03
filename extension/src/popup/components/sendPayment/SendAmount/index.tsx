@@ -172,42 +172,21 @@ export const SendAmount = ({
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
     }
-
-    // ALEC TODO - remove
-    console.log({ values });
-
     // check for scam asset
-
-    // ALEC TODO - remove
-    const isSourceScamAsset =
-      values.asset ===
-      "A:GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
-    const isDestScamAsset =
-      values.destinationAsset ===
-      "A:GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II";
-
-    if (
-      blockedDomains.domains[assetDomains[values.asset]] ||
-      isSourceScamAsset
-    ) {
+    if (blockedDomains.domains[assetDomains[values.asset]]) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.asset).code,
         issuer: getAssetFromCanonical(values.asset).issuer,
         domain: assetDomains[values.asset],
-        // ALEC TODO - is this right?
         image: assetIcons[values.asset],
       });
-    } else if (
-      blockedDomains.domains[assetDomains[values.destinationAsset]] ||
-      isDestScamAsset
-    ) {
+    } else if (blockedDomains.domains[assetDomains[values.destinationAsset]]) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.destinationAsset).code,
         issuer: getAssetFromCanonical(values.destinationAsset).issuer,
         domain: assetDomains[values.destinationAsset],
-        // ALEC TODO - is this right?
         image: assetIcons[values.destinationAsset],
       });
     } else {

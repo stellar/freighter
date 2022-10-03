@@ -64,15 +64,7 @@ export const SelectAssetRows = ({
       <div className="SelectAssetRows__content">
         {assetRows.map(({ code, domain, image, issuer }) => {
           const assetDomain = assetDomains[getCanonicalFromAsset(code, issuer)];
-          let isScamAsset = !!blockedDomains.domains[assetDomain];
-
-          // ALEC TODO - remove
-          if (
-            issuer ===
-            "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II"
-          ) {
-            isScamAsset = true;
-          }
+          const isScamAsset = !!blockedDomains.domains[assetDomain];
 
           return (
             <div

@@ -7,11 +7,6 @@ export const useIsScamAsset = (code: string, issuer: string) => {
     transactionSubmissionSelector,
   );
 
-  // ALEC TODO - remove
-  if (issuer === "GD4PLJJJK4PN7BETZLVQBXMU6JQJADKHSAELZZVFBPLNRIXRQSM433II") {
-    return true;
-  }
-
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   const assetDomain = assetDomains[canonicalAsset];
   return !!blockedDomains.domains[assetDomain];
