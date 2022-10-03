@@ -65,6 +65,7 @@ export const SelectAssetRows = ({
         {assetRows.map(({ code, domain, image, issuer }) => {
           const assetDomain = assetDomains[getCanonicalFromAsset(code, issuer)];
           const isScamAsset = !!blockedDomains.domains[assetDomain];
+
           return (
             <div
               className="SelectAssetRows__row selectable"

@@ -216,52 +216,54 @@ export const AssetDetail = ({
           )}
         </SimpleBar>
       </div>
-      <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
-        <div className="AssetDetail__info-modal">
-          <div className="AssetDetail__info-modal__total-box">
-            <div className="AssetDetail__info-modal__asset-code">
-              <img src={StellarLogo} alt="Network icon" />{" "}
-              <div>{assetCode}</div>
-            </div>
-            <div>{balanceTotal}</div>
-          </div>
-          <div className="AssetDetail__info-modal__available-box">
-            <div className="AssetDetail__info-modal__balance-row">
-              <div>{t("Total Balance")}</div>
+      {isNative && (
+        <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
+          <div className="AssetDetail__info-modal">
+            <div className="AssetDetail__info-modal__total-box">
+              <div className="AssetDetail__info-modal__asset-code">
+                <img src={StellarLogo} alt="Network icon" />{" "}
+                <div>{assetCode}</div>
+              </div>
               <div>{balanceTotal}</div>
             </div>
-            <div className="AssetDetail__info-modal__balance-row">
-              <div>{t("Reserved Balance*")}</div>
-              {balance?.available && balance?.total ? (
+            <div className="AssetDetail__info-modal__available-box">
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Total Balance")}</div>
+                <div>{balanceTotal}</div>
+              </div>
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Reserved Balance*")}</div>
+                {balance?.available && balance?.total ? (
+                  <div>
+                    {new BigNumber(balanceAvailable)
+                      .minus(new BigNumber(balance?.total))
+                      .toString()}{" "}
+                    {assetCode}
+                  </div>
+                ) : null}
+              </div>
+              <div className="AssetDetail__info-modal__total-available-row">
+                <div>{t("Total Available")}</div>
                 <div>
-                  {new BigNumber(balanceAvailable)
-                    .minus(new BigNumber(balance?.total))
-                    .toString()}{" "}
-                  {assetCode}
+                  {balanceAvailable} {assetCode}
                 </div>
-              ) : null}
-            </div>
-            <div className="AssetDetail__info-modal__total-available-row">
-              <div>{t("Total Available")}</div>
-              <div>
-                {balanceAvailable} {assetCode}
               </div>
             </div>
+            <div className="AssetDetail__info-modal__footnote">
+              {t(
+                "* All Stellar accounts must maintain a minimum balance of lumens.",
+              )}{" "}
+              <a
+                href="https://developers.stellar.org/docs/glossary/minimum-balance/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("Learn More")}
+              </a>
+            </div>
           </div>
-          <div className="AssetDetail__info-modal__footnote">
-            {t(
-              "* All Stellar accounts must maintain a minimum balance of lumens.",
-            )}{" "}
-            <a
-              href="https://developers.stellar.org/docs/glossary/minimum-balance/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("Learn More")}
-            </a>
-          </div>
-        </div>
-      </SlideupModal>
+        </SlideupModal>
+      )}
     </div>
   );
 };

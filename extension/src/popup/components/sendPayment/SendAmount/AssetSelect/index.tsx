@@ -26,6 +26,7 @@ export function AssetSelect({
 }) {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
+  const isScamAsset = useIsScamAsset(assetCode, issuerKey);
 
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
@@ -43,6 +44,7 @@ export function AssetSelect({
             issuerKey={issuerKey}
           />
           <span className="AssetSelect__medium-copy">{assetCode}</span>
+          <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div className="AssetSelect__content__right">
           <Icon.ChevronDown />
