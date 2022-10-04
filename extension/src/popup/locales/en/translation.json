@@ -358,6 +358,9 @@
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
+  "Trading or sending this asset is not recommended": {
+    " Projects related to this asset may be fraudulent even if the creators say otherwise": "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise."
+  },
   "transaction": "transaction",
   "Transaction": "Transaction",
   "Transaction Details": "Transaction Details",
