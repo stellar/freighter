@@ -1,6 +1,8 @@
 import React from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import {
   CLAIM_PREDICATES,
@@ -57,6 +59,8 @@ interface TransactionInfoResponse {
   destination: string;
   destAsset: { code: string };
   flags: FLAGS;
+  footprint: any; // TODO: finalize schema
+  function: any; // TODO: finalize schema
   from: string;
   highThreshold: number;
   inflationDest: string;
@@ -77,6 +81,7 @@ interface TransactionInfoResponse {
   minAmountB: number;
   minPrice: number;
   offerId: number;
+  parameters: any; // TODO: finalize schema
   path: [Path];
   price: string;
   seller: string;
@@ -106,7 +111,7 @@ const KeyValueList = ({
   operationKey: string;
   operationValue: string | number | React.ReactNode;
 }) => (
-  <div className="Operations--pair">
+  <div className="Operations__pair">
     <div>
       {operationKey}
       {operationKey ? ":" : null}
@@ -126,6 +131,24 @@ const KeyValueWithPublicKey = ({
     operationKey={operationKey}
     operationValue={<KeyIdenticon publicKey={operationValue} isSmall />}
   />
+);
+
+const KeyValueWithScValue = ({
+  operationKey,
+  operationValue,
+}: {
+  operationKey: string;
+  operationValue: string | number | React.ReactNode;
+}) => (
+  <div className="Operations__pair">
+    <div>
+      {operationKey}
+      {operationKey ? ":" : null}
+    </div>
+    <SimpleBar className="Operations__scValue">
+      <div>{operationValue}</div>
+    </SimpleBar>
+  </div>
 );
 
 const PathList = ({ paths }: { paths: [Path] }) => {
@@ -265,6 +288,8 @@ export const Operations = ({
   }
 
   /*
+    Needed to translate enum strings:
+    
     t("Authorization Required")
     t("Authorization Revocable")
     t("Authorization Required; Authorization Required")
@@ -291,6 +316,8 @@ export const Operations = ({
             destination,
             destAsset,
             flags,
+            footprint,
+            function: scFunction,
             from,
             highThreshold,
             inflationDest,
@@ -308,6 +335,7 @@ export const Operations = ({
             medThreshold,
             name,
             offerId,
+            parameters,
             path,
             price,
             seller,
@@ -441,6 +469,13 @@ export const Operations = ({
                   <FlagList flags={flags} />
                 ) : null}
 
+                {footprint ? (
+                  <KeyValueWithScValue
+                    operationKey={t("Footprint")}
+                    operationValue={JSON.stringify(footprint)}
+                  />
+                ) : null}
+
                 {from ? (
                   <KeyValueWithPublicKey
                     operationKey={t("From")}
@@ -563,12 +598,26 @@ export const Operations = ({
                   />
                 ) : null}
 
+                {parameters ? (
+                  <KeyValueWithScValue
+                    operationKey={t("Parameters")}
+                    operationValue={JSON.stringify(parameters)}
+                  />
+                ) : null}
+
                 {path?.length ? <PathList paths={path} /> : null}
 
                 {price ? (
                   <KeyValueList
                     operationKey={t("Price")}
                     operationValue={price}
+                  />
+                ) : null}
+
+                {scFunction ? (
+                  <KeyValueWithScValue
+                    operationKey={t("Function")}
+                    operationValue={JSON.stringify(scFunction)}
                   />
                 ) : null}
 
