@@ -27,7 +27,10 @@ import {
   publicKeySelector,
   hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsPreferencesSelector,
+} from "popup/ducks/settings";
 
 import {
   ButtonsContainer,
@@ -156,6 +159,10 @@ export const SignTransaction = () => {
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
+  const { isExperimentalModeEnabled } = useSelector(
+    settingsPreferencesSelector,
+  );
+
   const allAccounts = useSelector(allAccountsSelector);
   const publicKey = useSelector(publicKeySelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
@@ -288,6 +295,15 @@ export const SignTransaction = () => {
           <ModalHeader>
             <strong>{t("Confirm Transaction")}</strong>
           </ModalHeader>
+          {isExperimentalModeEnabled ? (
+            <WarningMessage header="Experimental Mode" isHighAlert>
+              <p>
+                {t(
+                  "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk.",
+                )}
+              </p>
+            </WarningMessage>
+          ) : null}
           {flaggedKeyValues.length ? (
             <FlaggedWarningMessage
               isUnsafe={isUnsafe}

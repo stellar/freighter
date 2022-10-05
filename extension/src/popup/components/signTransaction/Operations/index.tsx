@@ -111,7 +111,7 @@ const KeyValueList = ({
   operationKey: string;
   operationValue: string | number | React.ReactNode;
 }) => (
-  <div className="Operations--pair">
+  <div className="Operations__pair">
     <div>
       {operationKey}
       {operationKey ? ":" : null}
@@ -290,6 +290,8 @@ export const Operations = ({
   }
 
   /*
+    Needed to translate enum strings:
+    
     t("Authorization Required")
     t("Authorization Revocable")
     t("Authorization Required; Authorization Required")
@@ -472,7 +474,7 @@ export const Operations = ({
                 {footprint ? (
                   <KeyValueWithScValue
                     operationKey={t("Footprint")}
-                    operationValue={footprint}
+                    operationValue={JSON.stringify(footprint)}
                   />
                 ) : null}
 
@@ -601,9 +603,10 @@ export const Operations = ({
                 {parameters ? (
                   <KeyValueWithScValue
                     operationKey={t("Parameters")}
-                    operationValue={parameters}
+                    operationValue={JSON.stringify(parameters)}
                   />
                 ) : null}
+
                 {path?.length ? <PathList paths={path} /> : null}
 
                 {price ? (
@@ -616,7 +619,7 @@ export const Operations = ({
                 {scFunction ? (
                   <KeyValueWithScValue
                     operationKey={t("Function")}
-                    operationValue={scFunction}
+                    operationValue={JSON.stringify(scFunction)}
                   />
                 ) : null}
 
