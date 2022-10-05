@@ -4,13 +4,7 @@ import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import { NetworkDetails } from "@shared/constants/stellar";
-
-import {
-  saveSettings,
-  settingsSelector,
-  settingsNetworkDetailsSelector,
-} from "popup/ducks/settings";
+import { saveSettings, settingsSelector } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
@@ -25,41 +19,41 @@ export const Preferences = () => {
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
     isValidatingSafeAssetsEnabled,
+    isExperimentalModeEnabled,
   } = useSelector(settingsSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   interface SettingValues {
-    networkDetailsValue: NetworkDetails;
     isValidatingMemoValue: boolean;
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
     isValidatingSafeAssetsValue: boolean;
+    isExperimentalModeEnabledValue: boolean;
   }
 
   const initialValues: SettingValues = {
-    networkDetailsValue: networkDetails,
     isValidatingMemoValue: isMemoValidationEnabled,
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
     isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
+    isExperimentalModeEnabledValue: isExperimentalModeEnabled,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
     const {
-      networkDetailsValue,
       isValidatingMemoValue,
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
       isValidatingSafeAssetsValue,
+      isExperimentalModeEnabledValue,
     } = formValue;
 
     await dispatch(
       saveSettings({
-        networkDetails: networkDetailsValue,
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
         isValidatingSafeAssetsEnabled: isValidatingSafeAssetsValue,
+        isExperimentalModeEnabled: isExperimentalModeEnabledValue,
       }),
     );
   };
@@ -142,6 +136,27 @@ export const Preferences = () => {
                 checked={initialValues.isDataSharingAllowedValue}
                 customInput={<Field />}
                 id="isDataSharingAllowedValue"
+              />
+            </div>
+          </div>
+          <div className="Preferences--section">
+            <div className="Preferences--section--title">
+              {t("Enable experimental mode")}{" "}
+            </div>
+
+            <div className="Preferences--toggle">
+              <label
+                htmlFor="isExperimentalModeEnabledValue"
+                className="Preferences--label"
+              >
+                {t(
+                  "Allow Freighter to use experimental API‘s on a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+                )}
+              </label>
+              <Toggle
+                checked={initialValues.isExperimentalModeEnabledValue}
+                customInput={<Field />}
+                id="isExperimentalModeEnabledValue"
               />
             </div>
           </div>

@@ -37,6 +37,7 @@ const initialState: Settings = {
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
   isValidatingSafeAssetsEnabled: true,
+  isExperimentalModeEnabled: false,
   error: "",
 };
 
@@ -50,8 +51,8 @@ export const saveSettings = createAsyncThunk<
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
     isSafetyValidationEnabled: boolean;
-    networkDetails: NetworkDetails;
     isValidatingSafeAssetsEnabled: boolean;
+    isExperimentalModeEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -59,10 +60,10 @@ export const saveSettings = createAsyncThunk<
   async (
     {
       isDataSharingAllowed,
-      networkDetails,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isExperimentalModeEnabled,
     },
     thunkApi,
   ) => {
@@ -71,10 +72,10 @@ export const saveSettings = createAsyncThunk<
     try {
       res = await saveSettingsService({
         isDataSharingAllowed,
-        networkDetails,
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
         isValidatingSafeAssetsEnabled,
+        isExperimentalModeEnabled,
       });
     } catch (e) {
       console.error(e);
@@ -148,6 +149,7 @@ const settingsSlice = createSlice({
           isSafetyValidationEnabled,
           networksList,
           isValidatingSafeAssetsEnabled,
+          isExperimentalModeEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -158,6 +160,7 @@ const settingsSlice = createSlice({
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
           isValidatingSafeAssetsEnabled,
+          isExperimentalModeEnabled,
           networkDetails,
           networksList,
         };
@@ -172,7 +175,8 @@ const settingsSlice = createSlice({
           networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled
+          isValidatingSafeAssetsEnabled,
+          isExperimentalModeEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -184,7 +188,8 @@ const settingsSlice = createSlice({
           networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled
+          isValidatingSafeAssetsEnabled,
+          isExperimentalModeEnabled,
         };
       },
     );
@@ -279,6 +284,11 @@ export const settingsDataSharingSelector = createSelector(
   (settings) => settings.isDataSharingAllowed,
 );
 
+export const settingsExperimentalModeSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.isExperimentalModeEnabled,
+);
+
 export const settingsNetworkDetailsSelector = createSelector(
   settingsSelector,
   (settings) => settings.networkDetails,
@@ -287,6 +297,21 @@ export const settingsNetworkDetailsSelector = createSelector(
 export const settingsNetworksListSelector = createSelector(
   settingsSelector,
   (settings) => settings.networksList,
+);
+
+export const settingsPreferencesSelector = createSelector(
+  settingsSelector,
+  ({
+    isDataSharingAllowed,
+    isMemoValidationEnabled,
+    isSafetyValidationEnabled,
+    isExperimentalModeEnabled,
+  }) => ({
+    isDataSharingAllowed,
+    isMemoValidationEnabled,
+    isSafetyValidationEnabled,
+    isExperimentalModeEnabled,
+  }),
 );
 
 export const settingsErrorSelector = createSelector(
