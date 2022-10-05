@@ -25,7 +25,7 @@ export const SignTransactionDemo = () => {
     try {
       signedTransaction = await signTransaction(
         transactionXdr,
-        network === "PUBLIC" || network === "TESTNET" ? network : null,
+        network,
         publicKey
       );
     } catch (e) {
@@ -40,7 +40,7 @@ export const SignTransactionDemo = () => {
         <PlaygroundTextarea onChange={xdrOnChangeHandler} />
       </div>
       <div>
-        Enter network - "TESTNET"|"PUBLIC" (optional):
+        Enter network (optional):
         <PlaygroundInput onChange={networkOnChangeHandler} />
       </div>
       <div>

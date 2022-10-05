@@ -195,15 +195,20 @@ export const freighterApiMessageListener = (
   };
 
   const requestNetwork = () => {
-    let network = "";
+    let networkDetails = {
+      network: "",
+      networkName: "",
+      networkUrl: "",
+      networkPassphrase: "",
+    };
 
     try {
-      ({ network } = getNetworkDetails());
+      networkDetails = getNetworkDetails();
     } catch (error) {
       console.error(error);
       return { error };
     }
-    return { network };
+    return { networkDetails };
   };
 
   const messageResponder: MessageResponder = {
