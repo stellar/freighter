@@ -140,7 +140,7 @@ const KeyValueWithScValue = ({
   operationKey: string;
   operationValue: string | number | React.ReactNode;
 }) => (
-  <div className="Operations__pair--sc">
+  <div className="Operations__pair--smart-contract">
     <div>
       {operationKey}
       {operationKey ? ":" : null}

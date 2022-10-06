@@ -47,7 +47,7 @@ export const SignTransactionDemo = () => {
         <PlaygroundTextarea onChange={xdrOnChangeHandler} />
       </div>
       <div>
-        Enter network (optional):
+        Enter network - "TESTNET"|"PUBLIC"|"FUTURENET" (optional):
         <PlaygroundInput onChange={networkOnChangeHandler} />
       </div>
       <div>
