@@ -2,6 +2,13 @@
   font-size: 0.875rem;
   padding: var(--popup-vertical-padding) var(--popup--side-padding);
 
+  &__simplebar {
+    height: calc(
+      var(--popup--height) - (var(--popup-vertical-padding) * 2) -
+        var(--subview--header--height)
+    );
+  }
+
   &--section {
     display: flex;
     flex-direction: column;

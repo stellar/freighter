@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import StellarSdk from "stellar-sdk";
 
-import { getIsAllowHttp } from "@shared/api/helpers/getIsAllowHttp";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { stroopToXlm } from "helpers/stellar";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -22,9 +21,7 @@ export const useNetworkFees = () => {
   useEffect(() => {
     (async () => {
       try {
-        const server = new StellarSdk.Server(networkUrl, {
-          allowHttp: getIsAllowHttp(networkUrl),
-        });
+        const server = stellarSdkServer(networkUrl);
         const {
           max_fee: maxFee,
           ledger_capacity_usage: ledgerCapacityUsage,

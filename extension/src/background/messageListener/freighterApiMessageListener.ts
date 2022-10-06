@@ -3,7 +3,7 @@ import SorobanSdk from "soroban-sdk";
 import { browser, Runtime } from "webextension-polyfill-ts";
 
 import { ExternalRequest as Request } from "@shared/api/types";
-import { getIsAllowHttp } from "@shared/api/helpers/getIsAllowHttp";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
@@ -91,7 +91,7 @@ export const freighterApiMessageListener = (
       _network === null || !_network
         ? MAINNET_NETWORK_DETAILS.network
         : _network;
-        
+
     const isMainnet = getIsMainnet();
     const { networkUrl } = getNetworkDetails();
     const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
@@ -152,9 +152,8 @@ export const freighterApiMessageListener = (
       });
     }
 
-    const server = new StellarSdk.Server(networkUrl, {
-      allowHttp: getIsAllowHttp(networkUrl),
-    });
+    const server = stellarSdkServer(networkUrl);
+
     try {
       await server.checkMemoRequired(transaction);
     } catch (e) {

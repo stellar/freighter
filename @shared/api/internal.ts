@@ -18,7 +18,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
-import { getIsAllowHttp } from "./helpers/getIsAllowHttp";
+import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -297,9 +297,7 @@ export const getAccountBalances = async ({
       const k = Object.keys(resp.balances)[i];
       const v: any = resp.balances[k];
       if (v.liquidity_pool_id) {
-        const server = new StellarSdk.Server(networkUrl, {
-          allowHttp: getIsAllowHttp(networkUrl),
-        });
+        const server = stellarSdkServer(networkUrl);
         const lp = await server
           .liquidityPools()
           .liquidityPoolId(v.liquidity_pool_id)
@@ -341,9 +339,8 @@ export const getAccountHistory = async ({
   let operations = [] as Array<HorizonOperation>;
 
   try {
-    const server = new StellarSdk.Server(networkUrl, {
-      allowHttp: getIsAllowHttp(networkUrl),
-    });
+    const server = stellarSdkServer(networkUrl);
+
     const operationsData = await server
       .operations()
       .forAccount(publicKey)
@@ -499,9 +496,8 @@ export const submitFreighterTransaction = async ({
     signedXDR,
     networkDetails.networkPassphrase,
   );
-  const server = new StellarSdk.Server(networkDetails.networkUrl, {
-    allowHttp: getIsAllowHttp(networkDetails.networkUrl),
-  });
+  const server = stellarSdkServer(networkDetails.networkUrl);
+
   return await server.submitTransaction(tx);
 };
 

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import StellarSdk from "stellar-sdk";
 import { Link } from "react-router-dom";
 import { Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -15,7 +14,7 @@ import {
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { getCanonicalFromAsset } from "helpers/stellar";
-import { getIsAllowHttp } from "@shared/api/helpers/getIsAllowHttp";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { Balances } from "@shared/api/types";
 
@@ -60,9 +59,7 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
         } = sortedBalances[i];
 
         if (code !== "XLM") {
-          const server = new StellarSdk.Server(networkUrl, {
-            allowHttp: getIsAllowHttp(networkUrl),
-          });
+          const server = stellarSdkServer(networkUrl);
 
           let domain = "";
 
