@@ -474,7 +474,7 @@ export const Operations = ({
                 {footprint ? (
                   <KeyValueWithScValue
                     operationKey={t("Footprint")}
-                    operationValue={JSON.stringify(footprint)}
+                    operationValue={footprint}
                   />
                 ) : null}
 
@@ -603,7 +603,7 @@ export const Operations = ({
                 {parameters ? (
                   <KeyValueWithScValue
                     operationKey={t("Parameters")}
-                    operationValue={JSON.stringify(parameters)}
+                    operationValue={parameters}
                   />
                 ) : null}
 
@@ -619,7 +619,7 @@ export const Operations = ({
                 {scFunction ? (
                   <KeyValueWithScValue
                     operationKey={t("Function")}
-                    operationValue={JSON.stringify(scFunction)}
+                    operationValue={scFunction}
                   />
                 ) : null}
 

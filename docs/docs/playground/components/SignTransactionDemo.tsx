@@ -5,6 +5,7 @@ import { PlaygroundInput, PlaygroundTextarea } from "./basics/inputs";
 export const SignTransactionDemo = () => {
   const [transactionXdr, setTransactionXdr] = useState("");
   const [network, setNetwork] = useState("");
+  const [networkPassphrase, setNetworkPassphrase] = useState("");
   const [publicKey, setPublicKey] = useState("");
   const [transactionResult, setTransactionResult] = useState("");
 
@@ -13,6 +14,11 @@ export const SignTransactionDemo = () => {
   };
   const networkOnChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNetwork(e.currentTarget.value);
+  };
+  const networkPassphraseOnChangeHandler = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setNetworkPassphrase(e.currentTarget.value);
   };
   const publicKeyOnChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPublicKey(e.currentTarget.value);
@@ -26,6 +32,7 @@ export const SignTransactionDemo = () => {
       signedTransaction = await signTransaction(
         transactionXdr,
         network,
+        networkPassphrase,
         publicKey
       );
     } catch (e) {
@@ -42,6 +49,10 @@ export const SignTransactionDemo = () => {
       <div>
         Enter network (optional):
         <PlaygroundInput onChange={networkOnChangeHandler} />
+      </div>
+      <div>
+        Enter network passphrase (optional):
+        <PlaygroundInput onChange={networkPassphraseOnChangeHandler} />
       </div>
       <div>
         Request signature from specific public key (optional):

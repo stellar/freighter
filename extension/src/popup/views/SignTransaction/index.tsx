@@ -260,7 +260,7 @@ export const SignTransaction = () => {
     );
   }
 
-  if (!isHttpsDomain) {
+  if (!isHttpsDomain && !isExperimentalModeEnabled) {
     return (
       <ModalWrapper>
         <WarningMessage
