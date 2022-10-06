@@ -38,6 +38,7 @@ interface FormValues {
   networkPassphrase: string;
   networkUrl: string;
   isSwitchSelected?: boolean;
+  isAllowHttpSelected: boolean;
 }
 
 interface NetworkFormProps {
@@ -71,12 +72,17 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     isEditing && (networkIndex === 0 || networkIndex === 1);
 
   const initialValues: FormValues = isEditing
-    ? { ...networkDetailsToEdit, isSwitchSelected: false }
+    ? {
+        ...networkDetailsToEdit,
+        isSwitchSelected: false,
+        isAllowHttpSelected: !networkDetailsToEdit.networkUrl.includes("https"),
+      }
     : {
         networkName: "",
         networkPassphrase: "",
         networkUrl: "",
         isSwitchSelected: false,
+        isAllowHttpSelected: false,
       };
 
   const NetworkFormSchema = YupObject().shape({
@@ -114,7 +120,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const handleEditNetwork = async (values: FormValues) => {
-    if (!isNetworkUrlValidHelper(values.networkUrl)) {
+    if (
+      !isNetworkUrlValidHelper(values.networkUrl, values.isAllowHttpSelected)
+    ) {
       showNetworkUrlInvalidModal(values.networkUrl);
       return;
     }
@@ -131,7 +139,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const handleAddNetwork = async (values: FormValues) => {
-    if (!isNetworkUrlValidHelper(values.networkUrl)) {
+    if (
+      !isNetworkUrlValidHelper(values.networkUrl, values.isAllowHttpSelected)
+    ) {
       showNetworkUrlInvalidModal(values.networkUrl);
       return;
     }
@@ -336,6 +346,21 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               name="networkPassphrase"
               placeholder={t("Enter passphrase")}
             />
+            <Field name="isAllowHttpSelected">
+              {({ field }: FieldProps) => (
+                <Checkbox
+                  checked={initialValues.isAllowHttpSelected}
+                  id="isAllowHttpSelected-input"
+                  error={
+                    errors.isAllowHttpSelected && touched.isAllowHttpSelected
+                      ? errors.isAllowHttpSelected
+                      : null
+                  }
+                  label={<span>{t("Allow HTTP connection")}</span>}
+                  {...field}
+                />
+              )}
+            </Field>
             {isEditing ? (
               <div className="NetworkForm__remove-wrapper">
                 {!isEditingMainnetOrTestnet && (

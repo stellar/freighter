@@ -1,5 +1,5 @@
 import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
-import { NETWORKS } from "../constants/stellar";
+import { NetworkDetails } from "../constants/stellar";
 import { sendMessageToContentScript } from "./helpers/extensionMessaging";
 
 export const requestPublicKey = async (): Promise<string> => {
@@ -22,19 +22,40 @@ export const requestPublicKey = async (): Promise<string> => {
 
 export const submitTransaction = async (
   transactionXdr: string,
-  network?: string | null,
+  opts?:
+    | string
+    | {
+        network?: string;
+        accountToSign?: string;
+        networkPassphrase?: string;
+      },
   accountToSign?: string,
 ): Promise<string> => {
-  let response = { signedTransaction: "", error: "" };
-  if (network && network !== NETWORKS.PUBLIC && network !== NETWORKS.TESTNET) {
-    const error = `Network must be ${NETWORKS.PUBLIC} or ${NETWORKS.TESTNET}`;
-    throw error;
+  let network = "";
+  let _accountToSign = "";
+  let networkPassphrase = "";
+
+  /* 
+  As of v1.3.0, this method now accepts an object as its second param. 
+  Previously, it accepted optional second and third string parameters.
+  This logic maintains backwards compatibility for older versions
+  */
+  if (typeof opts === "object") {
+    network = opts.network || "";
+    _accountToSign = opts.accountToSign || "";
+    networkPassphrase = opts.networkPassphrase || "";
+  } else {
+    network = opts || "";
+    _accountToSign = accountToSign || "";
   }
+
+  let response = { signedTransaction: "", error: "" };
   try {
     response = await sendMessageToContentScript({
       transactionXdr,
       network,
-      accountToSign,
+      networkPassphrase,
+      accountToSign: _accountToSign,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION,
     });
   } catch (e) {
@@ -48,8 +69,16 @@ export const submitTransaction = async (
   return signedTransaction;
 };
 
-export const requestNetwork = async (): Promise<string> => {
-  let response = { network: "", error: "" };
+export const requestNetwork = async (): Promise<NetworkDetails> => {
+  let response = {
+    networkDetails: {
+      network: "",
+      networkName: "",
+      networkUrl: "",
+      networkPassphrase: "",
+    },
+    error: "",
+  };
   try {
     response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK,
@@ -58,10 +87,10 @@ export const requestNetwork = async (): Promise<string> => {
     console.error(e);
   }
 
-  const { network, error } = response;
+  const { networkDetails, error } = response;
 
   if (error) {
     throw error;
   }
-  return network;
+  return networkDetails;
 };

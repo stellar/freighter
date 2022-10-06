@@ -824,7 +824,7 @@ export const popupMessageListener = (request: Request) => {
 
     const privateKey = privateKeySelector(store.getState());
     if (privateKey.length) {
-      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
