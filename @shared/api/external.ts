@@ -85,34 +85,3 @@ export const requestNetwork = async (): Promise<string> => {
   }
   return network;
 };
-
-export const requestNetworkDetails = async (): Promise<{
-  network: string;
-  networkUrl: string;
-  networkPassphrase: string;
-}> => {
-  let response = {
-    networkDetails: {
-      network: "",
-      networkName: "",
-      networkUrl: "",
-      networkPassphrase: "",
-    },
-    error: "",
-  };
-  try {
-    response = await sendMessageToContentScript({
-      type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS,
-    });
-  } catch (e) {
-    console.error(e);
-  }
-
-  const { networkDetails, error } = response;
-  const { network, networkUrl, networkPassphrase } = networkDetails;
-
-  if (error) {
-    throw error;
-  }
-  return { network, networkUrl, networkPassphrase };
-};

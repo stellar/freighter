@@ -222,28 +222,10 @@ export const freighterApiMessageListener = (
     return { network };
   };
 
-  const requestNetworkDetails = () => {
-    let networkDetails = {
-      network: "",
-      networkName: "",
-      networkUrl: "",
-      networkPassphrase: "",
-    };
-
-    try {
-      networkDetails = getNetworkDetails();
-    } catch (error) {
-      console.error(error);
-      return { error };
-    }
-    return { networkDetails };
-  };
-
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
-    [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
   };
 
   return messageResponder[request.type]();

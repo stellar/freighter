@@ -203,7 +203,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       const server = stellarSdkServer(networkDetails.networkUrl);
       const sourceAccount: Types.Account = await server.loadAccount(publicKey);
 
-      console.log(sourceAccount);
       const transactionXDR = await new StellarSdk.TransactionBuilder(
         sourceAccount,
         {
@@ -216,8 +215,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         .setTimeout(180)
         .build()
         .toXDR();
-
-      console.log(transactionXDR);
 
       if (isHardwareWallet) {
         dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
