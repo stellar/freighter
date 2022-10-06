@@ -91,6 +91,7 @@ export const freighterApiMessageListener = (
       _network === null || !_network
         ? MAINNET_NETWORK_DETAILS.network
         : _network;
+        
     const isMainnet = getIsMainnet();
     const { networkUrl } = getNetworkDetails();
     const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
