@@ -22,6 +22,14 @@
       justify-content: space-between;
       line-height: 1.5rem;
 
+      &--smart-contract {
+        flex-direction: column;
+
+        pre {
+          margin: 0;
+        }
+      }
+
       & > :nth-child(2) {
         color: var(--pal-text-primary);
       }
@@ -29,9 +37,12 @@
   }
 
   &__scValue {
-    width: 12rem;
+    background: var(--pal-example-details);
+    border-radius: 0.5rem;
     font-size: 0.875rem;
     height: 7rem;
+    margin: 0.5rem 0;
+    padding: 1rem;
   }
 
   &--list {
