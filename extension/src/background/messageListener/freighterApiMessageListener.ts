@@ -3,6 +3,7 @@ import SorobanSdk from "soroban-sdk";
 import { browser, Runtime } from "webextension-polyfill-ts";
 
 import { ExternalRequest as Request } from "@shared/api/types";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
@@ -79,16 +80,25 @@ export const freighterApiMessageListener = (
   };
 
   const submitTransaction = async () => {
-    const { transactionXdr, network: _network, accountToSign } = request;
+    const {
+      transactionXdr,
+      network: _network,
+      networkPassphrase,
+      accountToSign,
+    } = request;
 
-    const network = _network ?? MAINNET_NETWORK_DETAILS.network;
+    const network =
+      _network === null || !_network
+        ? MAINNET_NETWORK_DETAILS.network
+        : _network;
+
     const isMainnet = getIsMainnet();
     const { networkUrl } = getNetworkDetails();
     const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
-      SDK.Networks[network],
+      networkPassphrase || SDK.Networks[network],
     );
 
     const { tab, url: tabUrl = "" } = sender;
@@ -142,7 +152,8 @@ export const freighterApiMessageListener = (
       });
     }
 
-    const server = new StellarSdk.Server(networkUrl);
+    const server = stellarSdkServer(networkUrl);
+
     try {
       await server.checkMemoRequired(transaction);
     } catch (e) {
@@ -211,10 +222,28 @@ export const freighterApiMessageListener = (
     return { network };
   };
 
+  const requestNetworkDetails = () => {
+    let networkDetails = {
+      network: "",
+      networkName: "",
+      networkUrl: "",
+      networkPassphrase: "",
+    };
+
+    try {
+      networkDetails = getNetworkDetails();
+    } catch (error) {
+      console.error(error);
+      return { error };
+    }
+    return { networkDetails };
+  };
+
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
   };
 
   return messageResponder[request.type]();

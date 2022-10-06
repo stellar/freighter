@@ -1,5 +1,7 @@
-import StellarSdk, { StellarTomlResolver } from "stellar-sdk";
+import { StellarTomlResolver } from "stellar-sdk";
+
 import { sendMessageToBackground } from "./extensionMessaging";
+import { stellarSdkServer } from "./stellarSdkServer";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
 
@@ -56,7 +58,8 @@ export const getIconUrlFromIssuer = async ({
   try {
     /* Otherwise, 1. load their account from the API */
     const { networkUrl } = networkDetails;
-    const server = new StellarSdk.Server(networkUrl);
+    const server = stellarSdkServer(networkUrl);
+
     response = await server.loadAccount(key);
   } catch (e) {
     return iconUrl;

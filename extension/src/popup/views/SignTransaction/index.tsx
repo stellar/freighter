@@ -242,7 +242,7 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
-  if (_networkPassphrase === networkPassphrase) {
+  if (_networkPassphrase !== networkPassphrase) {
     return (
       <ModalWrapper>
         <WarningMessage
@@ -260,7 +260,7 @@ export const SignTransaction = () => {
     );
   }
 
-  if (!isHttpsDomain) {
+  if (!isHttpsDomain && !isExperimentalModeEnabled) {
     return (
       <ModalWrapper>
         <WarningMessage

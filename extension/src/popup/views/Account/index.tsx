@@ -108,7 +108,7 @@ export const Account = () => {
     fetchAccountHistory();
   }, [publicKey, networkDetails, sortedBalances]);
 
-  if (accountBalanceStatus !== ActionStatus.SUCCESS) {
+  if (accountBalanceStatus === ActionStatus.PENDING) {
     // waiting for account balances to load
     return null;
   }
