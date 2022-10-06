@@ -13,7 +13,7 @@ const prodConfig = (env = { PRODUCTION: false, TRANSLATIONS: false }) => ({
       // ignore non-index.min.js chunk
       chunks: (chunk) => chunk.name === "index",
       // Firefox addon store has a max file size of 4mb
-      maxSize: 4000000,
+      maxSize: 4500000,
     },
   },
 
