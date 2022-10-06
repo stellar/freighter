@@ -6,16 +6,16 @@ export const GetNetworkDemo = () => {
   const [networkResult, setNetworkResult] = useState("");
 
   const btnHandler = async () => {
-    let networkDetails;
+    let network;
     let error = "";
 
     try {
-      networkDetails = await getNetwork();
+      network = await getNetwork();
     } catch (e) {
       error = e;
     }
 
-    setNetworkResult(JSON.stringify(networkDetails) || error);
+    setNetworkResult(network || error);
   };
 
   return (

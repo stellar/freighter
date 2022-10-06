@@ -211,6 +211,18 @@ export const freighterApiMessageListener = (
   };
 
   const requestNetwork = () => {
+    let network = "";
+
+    try {
+      ({ network } = getNetworkDetails());
+    } catch (error) {
+      console.error(error);
+      return { error };
+    }
+    return { network };
+  };
+
+  const requestNetworkDetails = () => {
     let networkDetails = {
       network: "",
       networkName: "",
@@ -231,6 +243,7 @@ export const freighterApiMessageListener = (
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
   };
 
   return messageResponder[request.type]();

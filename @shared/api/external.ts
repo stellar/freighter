@@ -1,5 +1,4 @@
 import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
-import { NetworkDetails } from "../constants/stellar";
 import { sendMessageToContentScript } from "./helpers/extensionMessaging";
 
 export const requestPublicKey = async (): Promise<string> => {
@@ -69,7 +68,29 @@ export const submitTransaction = async (
   return signedTransaction;
 };
 
-export const requestNetwork = async (): Promise<NetworkDetails> => {
+export const requestNetwork = async (): Promise<string> => {
+  let response = { network: "", error: "" };
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const { network, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return network;
+};
+
+export const requestNetworkDetails = async (): Promise<{
+  network: string;
+  networkUrl: string;
+  networkPassphrase: string;
+}> => {
   let response = {
     networkDetails: {
       network: "",
@@ -81,16 +102,17 @@ export const requestNetwork = async (): Promise<NetworkDetails> => {
   };
   try {
     response = await sendMessageToContentScript({
-      type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK,
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS,
     });
   } catch (e) {
     console.error(e);
   }
 
   const { networkDetails, error } = response;
+  const { network, networkUrl, networkPassphrase } = networkDetails;
 
   if (error) {
     throw error;
   }
-  return networkDetails;
+  return { network, networkUrl, networkPassphrase };
 };
