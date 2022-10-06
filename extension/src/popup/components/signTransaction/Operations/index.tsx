@@ -140,13 +140,15 @@ const KeyValueWithScValue = ({
   operationKey: string;
   operationValue: string | number | React.ReactNode;
 }) => (
-  <div className="Operations__pair">
+  <div className="Operations__pair--smart-contract">
     <div>
       {operationKey}
       {operationKey ? ":" : null}
     </div>
     <SimpleBar className="Operations__scValue">
-      <div>{operationValue}</div>
+      <div>
+        <pre>{JSON.stringify(operationValue, null, 2)}</pre>
+      </div>
     </SimpleBar>
   </div>
 );
@@ -472,7 +474,7 @@ export const Operations = ({
                 {footprint ? (
                   <KeyValueWithScValue
                     operationKey={t("Footprint")}
-                    operationValue={JSON.stringify(footprint)}
+                    operationValue={footprint}
                   />
                 ) : null}
 
@@ -601,7 +603,7 @@ export const Operations = ({
                 {parameters ? (
                   <KeyValueWithScValue
                     operationKey={t("Parameters")}
-                    operationValue={JSON.stringify(parameters)}
+                    operationValue={parameters}
                   />
                 ) : null}
 
@@ -617,7 +619,7 @@ export const Operations = ({
                 {scFunction ? (
                   <KeyValueWithScValue
                     operationKey={t("Function")}
-                    operationValue={JSON.stringify(scFunction)}
+                    operationValue={scFunction}
                   />
                 ) : null}
 
