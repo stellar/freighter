@@ -8,6 +8,7 @@ import { CURRENCY } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
+import { getIsAllowHttp } from "@shared/api/helpers/getIsAllowHttp";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -72,7 +73,9 @@ export const ManageAssetRows = ({
   const { recommendedFee } = useNetworkFees();
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
-  const server = new StellarSdk.Server(networkDetails.networkUrl);
+  const server = new StellarSdk.Server(networkDetails.networkUrl, {
+    allowHttp: getIsAllowHttp(networkDetails.networkUrl),
+  });
 
   const changeTrustline = async (
     assetCode: string,
