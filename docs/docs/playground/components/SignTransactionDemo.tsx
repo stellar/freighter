@@ -29,12 +29,11 @@ export const SignTransactionDemo = () => {
     let error = "";
 
     try {
-      signedTransaction = await signTransaction(
-        transactionXdr,
+      signedTransaction = await signTransaction(transactionXdr, {
         network,
+        accountToSign: publicKey,
         networkPassphrase,
-        publicKey
-      );
+      });
     } catch (e) {
       error = e;
     }
