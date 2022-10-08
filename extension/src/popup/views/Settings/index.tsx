@@ -33,7 +33,7 @@ export const Settings = () => {
             <Heading5>Settings</Heading5>
             <div className="Settings__version">
               {/* TODO: Make this dynamic */}
-              v2.5.0
+              v2.6.0
             </div>
           </div>
           <ListNavLinkWrapper>

@@ -16,19 +16,25 @@ const DirectoryLink = () => {
   );
 };
 
+export enum WarningMessageVariant {
+  default = "",
+  highAlert = "high-alert",
+  warning = "warning",
+}
+
 interface WarningMessageProps {
   header: string;
   children: React.ReactNode;
   handleCloseClick?: () => void;
   isActive?: boolean;
-  isHighAlert?: boolean;
+  variant: WarningMessageVariant;
 }
 
 export const WarningMessage = ({
   handleCloseClick,
   header,
   isActive = false,
-  isHighAlert = false,
+  variant,
   children,
 }: WarningMessageProps) => {
   const { t } = useTranslation();
@@ -40,9 +46,7 @@ export const WarningMessage = ({
     children?: React.ReactNode;
   }) => (
     <div
-      className={`WarningMessage__infoBlock ${
-        isHighAlert ? "WarningMessage__infoBlock--high-alert" : ""
-      }`}
+      className={`WarningMessage__infoBlock WarningMessage__infoBlock--${variant}`}
       data-testid="WarningMessage"
     >
       <div className="WarningMessage__header">
@@ -96,7 +100,10 @@ const DangerousAccountWarning = ({
 
   if (isMalicious) {
     return (
-      <WarningMessage header="Malicious account detected" isHighAlert>
+      <WarningMessage
+        header="Malicious account detected"
+        variant={WarningMessageVariant.highAlert}
+      >
         <p>
           {t("An account you’re interacting with is tagged as malicious on")}{" "}
           <DirectoryLink />.
@@ -107,7 +114,10 @@ const DangerousAccountWarning = ({
   }
   if (isUnsafe) {
     return (
-      <WarningMessage header="Unsafe account">
+      <WarningMessage
+        header="Unsafe account"
+        variant={WarningMessageVariant.warning}
+      >
         <p>
           {t("An account you’re interacting with is tagged as unsafe on")}{" "}
           <DirectoryLink />. {t("Please proceed with caution.")}
@@ -127,7 +137,10 @@ const MemoWarningMessage = ({
   const { t } = useTranslation();
 
   return isMemoRequired ? (
-    <WarningMessage header="Memo is required" isHighAlert>
+    <WarningMessage
+      header="Memo is required"
+      variant={WarningMessageVariant.highAlert}
+    >
       <p>
         {t(
           "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction.",
@@ -164,7 +177,10 @@ export const FirstTimeWarningMessage = () => {
   const { t } = useTranslation();
 
   return (
-    <WarningMessage header="First Time Interaction">
+    <WarningMessage
+      header="First Time Interaction"
+      variant={WarningMessageVariant.warning}
+    >
       <p>
         {t(
           "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
