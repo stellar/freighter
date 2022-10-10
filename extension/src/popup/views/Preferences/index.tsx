@@ -134,7 +134,7 @@ export const Preferences = () => {
                   className="Preferences--label"
                 >
                   {t(
-                    "Allow Freighter to use experimental API‘s on a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+                    "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
                   )}
                 </label>
                 <Toggle
