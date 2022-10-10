@@ -55,6 +55,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
+
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
   const [isNetworkUrlValid, setIsNetworkUrlValid] = useState(false);
@@ -70,7 +71,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     networkDetailsToEdit,
     networkDetails,
   );
-  const isEditingMainnetOrTestnet =
+  const isEditingDefaultNetworks =
     isEditing && (networkIndex === 0 || networkIndex === 1);
 
   const initialValues: FormValues = isEditing
@@ -228,7 +229,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   }
 
   const EditingButtons = ({ isValid, isSubmitting }: EditingButtonsProps) =>
-    !isEditingMainnetOrTestnet ? (
+    !isEditingDefaultNetworks ? (
       <div className="NetworkForm__editing-buttons">
         <Button
           onClick={() => history.goBack()}
@@ -309,7 +310,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
           {({ dirty, errors, isSubmitting, isValid, touched }) => (
             <Form className="NetworkForm__form">
               <Input
-                disabled={isEditingMainnetOrTestnet}
+                disabled={isEditingDefaultNetworks}
                 id="networkName"
                 autoComplete="off"
                 error={
@@ -324,7 +325,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 placeholder={t("Enter network name")}
               />
               <Input
-                disabled={isEditingMainnetOrTestnet}
+                disabled={isEditingDefaultNetworks}
                 id="networkUrl"
                 autoComplete="off"
                 error={
@@ -338,7 +339,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 placeholder={t("Enter network URL")}
               />
               <Input
-                disabled={isEditingMainnetOrTestnet}
+                disabled={isEditingDefaultNetworks}
                 id="networkPassphrase"
                 autoComplete="off"
                 error={
@@ -351,24 +352,32 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 name="networkPassphrase"
                 placeholder={t("Enter passphrase")}
               />
-              <Field name="isAllowHttpSelected">
-                {({ field }: FieldProps) => (
-                  <Checkbox
-                    checked={initialValues.isAllowHttpSelected}
-                    id="isAllowHttpSelected-input"
-                    error={
-                      errors.isAllowHttpSelected && touched.isAllowHttpSelected
-                        ? errors.isAllowHttpSelected
-                        : null
-                    }
-                    label={<span>{t("Allow HTTP connection")}</span>}
-                    {...field}
-                  />
-                )}
-              </Field>
+              {!isEditingDefaultNetworks ? (
+                <Field name="isAllowHttpSelected">
+                  {({ field }: FieldProps) => (
+                    <Checkbox
+                      checked={field.value}
+                      id="isAllowHttpSelected-input"
+                      error={
+                        errors.isAllowHttpSelected &&
+                        touched.isAllowHttpSelected
+                          ? errors.isAllowHttpSelected
+                          : null
+                      }
+                      label={
+                        <span>
+                          {t("Allow connecting to non-HTTPS networks")}
+                        </span>
+                      }
+                      {...field}
+                    />
+                  )}
+                </Field>
+              ) : null}
+
               {isEditing ? (
                 <div className="NetworkForm__remove-wrapper">
-                  {!isEditingMainnetOrTestnet && (
+                  {!isEditingDefaultNetworks && (
                     <PillButton
                       type="button"
                       onClick={() => {

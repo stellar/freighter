@@ -44,6 +44,7 @@ import { AccountListIdenticon } from "popup/components/identicons/AccountListIde
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
+  WarningMessageVariant,
   WarningMessage,
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
@@ -246,6 +247,7 @@ export const SignTransaction = () => {
     return (
       <ModalWrapper>
         <WarningMessage
+          variant={WarningMessageVariant.warning}
           handleCloseClick={() => window.close()}
           isActive
           header={`${t("Freighter is set to")} ${networkName}`}
@@ -266,7 +268,7 @@ export const SignTransaction = () => {
         <WarningMessage
           handleCloseClick={() => window.close()}
           isActive
-          isHighAlert
+          variant={WarningMessageVariant.warning}
           header={t("WEBSITE CONNECTION IS NOT SECURE")}
         >
           <p>
@@ -296,7 +298,10 @@ export const SignTransaction = () => {
             <strong>{t("Confirm Transaction")}</strong>
           </ModalHeader>
           {isExperimentalModeEnabled ? (
-            <WarningMessage header="Experimental Mode" isHighAlert>
+            <WarningMessage
+              header="Experimental Mode"
+              variant={WarningMessageVariant.default}
+            >
               <p>
                 {t(
                   "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk.",
