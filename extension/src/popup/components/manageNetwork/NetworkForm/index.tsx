@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 import { useHistory, useLocation } from "react-router-dom";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import { AppDispatch } from "popup/App";
 
@@ -38,6 +40,7 @@ interface FormValues {
   networkPassphrase: string;
   networkUrl: string;
   isSwitchSelected?: boolean;
+  isAllowHttpSelected: boolean;
 }
 
 interface NetworkFormProps {
@@ -52,6 +55,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
+
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
   const [isNetworkUrlValid, setIsNetworkUrlValid] = useState(false);
@@ -67,16 +71,21 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     networkDetailsToEdit,
     networkDetails,
   );
-  const isEditingMainnetOrTestnet =
+  const isEditingDefaultNetworks =
     isEditing && (networkIndex === 0 || networkIndex === 1);
 
   const initialValues: FormValues = isEditing
-    ? { ...networkDetailsToEdit, isSwitchSelected: false }
+    ? {
+        ...networkDetailsToEdit,
+        isSwitchSelected: false,
+        isAllowHttpSelected: !networkDetailsToEdit.networkUrl.includes("https"),
+      }
     : {
         networkName: "",
         networkPassphrase: "",
         networkUrl: "",
         isSwitchSelected: false,
+        isAllowHttpSelected: false,
       };
 
   const NetworkFormSchema = YupObject().shape({
@@ -114,7 +123,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const handleEditNetwork = async (values: FormValues) => {
-    if (!isNetworkUrlValidHelper(values.networkUrl)) {
+    if (
+      !isNetworkUrlValidHelper(values.networkUrl, values.isAllowHttpSelected)
+    ) {
       showNetworkUrlInvalidModal(values.networkUrl);
       return;
     }
@@ -131,7 +142,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const handleAddNetwork = async (values: FormValues) => {
-    if (!isNetworkUrlValidHelper(values.networkUrl)) {
+    if (
+      !isNetworkUrlValidHelper(values.networkUrl, values.isAllowHttpSelected)
+    ) {
       showNetworkUrlInvalidModal(values.networkUrl);
       return;
     }
@@ -216,7 +229,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   }
 
   const EditingButtons = ({ isValid, isSubmitting }: EditingButtonsProps) =>
-    !isEditingMainnetOrTestnet ? (
+    !isEditingDefaultNetworks ? (
       <div className="NetworkForm__editing-buttons">
         <Button
           onClick={() => history.goBack()}
@@ -288,105 +301,132 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       <SubviewHeader
         title={isEditing ? t("Add Custom Network") : t("Network Details")}
       />
-      <Formik
-        onSubmit={handleSubmit}
-        initialValues={initialValues}
-        validationSchema={NetworkFormSchema}
-      >
-        {({ dirty, errors, isSubmitting, isValid, touched }) => (
-          <Form className="NetworkForm__form">
-            <Input
-              disabled={isEditingMainnetOrTestnet}
-              id="networkName"
-              autoComplete="off"
-              error={
-                settingsError ||
-                (errors.networkName && touched.networkName
-                  ? errors.networkName
-                  : "")
-              }
-              customInput={<Field />}
-              label={t("Name")}
-              name="networkName"
-              placeholder={t("Enter network name")}
-            />
-            <Input
-              disabled={isEditingMainnetOrTestnet}
-              id="networkUrl"
-              autoComplete="off"
-              error={
-                errors.networkUrl && touched.networkUrl ? errors.networkUrl : ""
-              }
-              customInput={<Field />}
-              label={t("URL")}
-              name="networkUrl"
-              placeholder={t("Enter network URL")}
-            />
-            <Input
-              disabled={isEditingMainnetOrTestnet}
-              id="networkPassphrase"
-              autoComplete="off"
-              error={
-                errors.networkPassphrase && touched.networkPassphrase
-                  ? errors.networkPassphrase
-                  : ""
-              }
-              customInput={<Field />}
-              label={t("Passphrase")}
-              name="networkPassphrase"
-              placeholder={t("Enter passphrase")}
-            />
-            {isEditing ? (
-              <div className="NetworkForm__remove-wrapper">
-                {!isEditingMainnetOrTestnet && (
-                  <PillButton
-                    type="button"
-                    onClick={() => {
-                      if (isCurrentNetworkActive) {
-                        setIsNetworkInUse(true);
-                      } else {
-                        setIsConfirmingRemoval(true);
+      <SimpleBar className="NetworkForm__simplebar">
+        <Formik
+          onSubmit={handleSubmit}
+          initialValues={initialValues}
+          validationSchema={NetworkFormSchema}
+        >
+          {({ dirty, errors, isSubmitting, isValid, touched }) => (
+            <Form className="NetworkForm__form">
+              <Input
+                disabled={isEditingDefaultNetworks}
+                id="networkName"
+                autoComplete="off"
+                error={
+                  settingsError ||
+                  (errors.networkName && touched.networkName
+                    ? errors.networkName
+                    : "")
+                }
+                customInput={<Field />}
+                label={t("Name")}
+                name="networkName"
+                placeholder={t("Enter network name")}
+              />
+              <Input
+                disabled={isEditingDefaultNetworks}
+                id="networkUrl"
+                autoComplete="off"
+                error={
+                  errors.networkUrl && touched.networkUrl
+                    ? errors.networkUrl
+                    : ""
+                }
+                customInput={<Field />}
+                label={t("URL")}
+                name="networkUrl"
+                placeholder={t("Enter network URL")}
+              />
+              <Input
+                disabled={isEditingDefaultNetworks}
+                id="networkPassphrase"
+                autoComplete="off"
+                error={
+                  errors.networkPassphrase && touched.networkPassphrase
+                    ? errors.networkPassphrase
+                    : ""
+                }
+                customInput={<Field />}
+                label={t("Passphrase")}
+                name="networkPassphrase"
+                placeholder={t("Enter passphrase")}
+              />
+              {!isEditingDefaultNetworks ? (
+                <Field name="isAllowHttpSelected">
+                  {({ field }: FieldProps) => (
+                    <Checkbox
+                      checked={field.value}
+                      id="isAllowHttpSelected-input"
+                      error={
+                        errors.isAllowHttpSelected &&
+                        touched.isAllowHttpSelected
+                          ? errors.isAllowHttpSelected
+                          : null
                       }
-                    }}
+                      label={
+                        <span>
+                          {t("Allow connecting to non-HTTPS networks")}
+                        </span>
+                      }
+                      {...field}
+                    />
+                  )}
+                </Field>
+              ) : null}
+
+              {isEditing ? (
+                <div className="NetworkForm__remove-wrapper">
+                  {!isEditingDefaultNetworks && (
+                    <PillButton
+                      type="button"
+                      onClick={() => {
+                        if (isCurrentNetworkActive) {
+                          setIsNetworkInUse(true);
+                        } else {
+                          setIsConfirmingRemoval(true);
+                        }
+                      }}
+                    >
+                      {t("Remove")}
+                    </PillButton>
+                  )}
+                </div>
+              ) : (
+                <Field name="isSwitchSelected">
+                  {({ field }: FieldProps) => (
+                    <Checkbox
+                      autoComplete="off"
+                      id="isSwitchSelected-input"
+                      error={
+                        errors.isSwitchSelected && touched.isSwitchSelected
+                          ? errors.isSwitchSelected
+                          : null
+                      }
+                      label={<span>{t("Switch to this network")}</span>}
+                      {...field}
+                    />
+                  )}
+                </Field>
+              )}
+              {isEditing ? (
+                <EditingButtons isValid={isValid} isSubmitting={isSubmitting} />
+              ) : (
+                <div className="NetworkForm__add-button">
+                  <Button
+                    disabled={!(isValid && dirty)}
+                    fullWidth
+                    isLoading={isSubmitting}
+                    type="submit"
                   >
-                    {t("Remove")}
-                  </PillButton>
-                )}
-              </div>
-            ) : (
-              <Field name="isSwitchSelected">
-                {({ field }: FieldProps) => (
-                  <Checkbox
-                    autoComplete="off"
-                    id="isSwitchSelected-input"
-                    error={
-                      errors.isSwitchSelected && touched.isSwitchSelected
-                        ? errors.isSwitchSelected
-                        : null
-                    }
-                    label={<span>{t("Switch to this network")}</span>}
-                    {...field}
-                  />
-                )}
-              </Field>
-            )}
-            {isEditing ? (
-              <EditingButtons isValid={isValid} isSubmitting={isSubmitting} />
-            ) : (
-              <div className="NetworkForm__add-button">
-                <Button
-                  disabled={!(isValid && dirty)}
-                  fullWidth
-                  isLoading={isSubmitting}
-                  type="submit"
-                >
-                  {t("Add network")}
-                </Button>
-              </div>
-            )}
-          </Form>
-        )}
-      </Formik>
+                    {t("Add network")}
+                  </Button>
+                </div>
+              )}
+            </Form>
+          )}
+        </Formik>
+      </SimpleBar>
     </div>
   );
 };

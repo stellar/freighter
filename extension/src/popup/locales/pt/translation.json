@@ -24,11 +24,9 @@
   "Addresses are uppercase and begin with letters “G“ or “M“": "Addresses are uppercase and begin with letters “G“ or “M“.",
   "ALL": "TUDO",
   "ALL DONE": "ALL DONE",
+  "Allow connecting to non-HTTPS networks": "Allow connecting to non-HTTPS networks",
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
-  },
-  "Allow Freighter to use experimental API‘s on a test network": {
-    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Allow Freighter to use experimental API‘s on a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
   },
   "Allowed downward variation in the destination amount": "Allowed downward variation in the destination amount",
   "Allowed slippage": "Allowed slippage",
@@ -144,6 +142,9 @@
   },
   "Freighter is set to": "Freighter is set to",
   "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website": "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
+  "Freighter will use experimental API‘s and connect to the Futurenet, a test network": {
+    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
+  },
   "From": "From",
   "Function": "Function",
   "Fund with Friendbot": "Fund with Friendbot",

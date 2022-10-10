@@ -80,7 +80,7 @@ const result = retrievePublicKey();
 
 ### getNetwork
 
-#### `getNetwork() -> <Promise<"PUBLIC" | "TESTNET">>`
+#### `getNetwork() -> <Promise<string>>`
 
 This function is useful for determining what network the user has configured Freighter to use. Freighter will be configured to either `PUBLIC` or `TESTNET`.
 
@@ -117,7 +117,7 @@ const result = retrieveNetwork();
 
 ### signTransaction
 
-#### `signTransaction(xdr: string, network:? string, publicKey:? string) -> <Promise<string>>`
+#### `signTransaction(xdr: string, opts?: { network?: string, networkPassphrase?: string, accountToSign?: string }) -> <Promise<string>>`
 
 This function accepts a transaction XDR string as the first parameter, which it will decode, sign as the user, and then return the signed transaction to your application.
 
@@ -125,11 +125,13 @@ The user will need to provide their password if the extension does not currently
 
 _NOTE:_ The user must provide a valid transaction XDR string for the extension to properly sign.
 
-The second parameter is an optional string that you may pass to indicate what network you’re intending this transaction to be signed on. The network must be either `PUBLIC` or `TESTNET`. If you choose not to pass a network, freighter-api will default to `PUBLIC`. You may also pass `null` here if you choose not to pass a network param, but you would like to pass the third param available.
+The second parameter is an optional `opts` object where you can specify the network you are intending the transaction to be signed on. This `network` name maps to the Networks enum in js-stellar-sdk. Freighter will use this network name to derive the network passphrase from js-stellar-sdk.
 
-This is useful in the case that the user's Freighter is configured to the wrong network. Freighter will be able to throw a blocking error message communicating that you intended this transaction to be signed on a different network.
+If the passphrase you need can't be found in js-stellar-sdk, you can simply pass a custom `networkPassphrase` for Freighter to use. In the event both are passed, Freighter will default to using `network` to derive the passphrase from js-stellar-sdk and ignore `networkPassphrase`.
 
-The third parameter is another optional parameter that gives you the ability to specify which account's signature you’re requesting. If Freighter has the public key, it will switch to that account. If not, it will alert the user that they do not have the requested account.
+These 2 configurations are useful in the case that the user's Freighter is configured to the wrong network. Freighter will be able to throw a blocking error message communicating that you intended this transaction to be signed on a different network.
+
+You can also use this `opts` to specify which account's signature you’re requesting. If Freighter has the public key requested, it will switch to that account. If not, it will alert the user that they do not have the requested account.
 
 ```javascript
 import {
@@ -170,7 +172,10 @@ const userSignTransaction = async (
   let error = "";
 
   try {
-    signedTransaction = await signTransaction(xdr, network, signWith);
+    signedTransaction = await signTransaction(xdr, {
+      network,
+      accountToSign: signWith,
+    });
   } catch (e) {
     error = e;
   }
@@ -200,7 +205,10 @@ const userSignTransaction = async (
   let error = "";
 
   try {
-    signedTransaction = await signTransaction(xdr, network, signWith);
+    signedTransaction = await signTransaction(xdr, {
+      network,
+      accountToSign: signWith,
+    });
   } catch (e) {
     error = e;
   }

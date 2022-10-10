@@ -3,6 +3,7 @@ const playgroundPaths = [
   "isConnected",
   "getPublicKey",
   "getNetwork",
+  "getNetworkDetails",
   "signTransaction",
 ];
 
