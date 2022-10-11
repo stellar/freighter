@@ -3154,6 +3154,11 @@
   resolved "https://registry.yarnpkg.com/@stellar/eslint-config/-/eslint-config-1.0.5.tgz#00616eb6342e839ffa5c0d9e2539dccd64ede764"
   integrity sha512-RpkhdJffBU1oEsdyAJgfKHDSRJCWbyNOp08F1UP0yGp1tBLp0FopURl7m1Nx2Xd1o1PkN6h01wV6lpdiCbZWYQ==
 
+"@stellar/freighter-api@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@stellar/freighter-api/-/freighter-api-1.2.0.tgz#614782e8b4bc80718a06f5a9c0bd3845bdb64f5d"
+  integrity sha512-0lRdbs5d+PopERKjk8kGP/z6k9hBAos+hALFd9LU7uHOXkxAs23THrDb2TIZOgYEc7EuPxQA+tnPcu3fJGMXqw==
+
 "@stellar/prettier-config@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@stellar/prettier-config/-/prettier-config-1.0.1.tgz#498a66dc13c66859e3787dabdf958233ddbe9253"

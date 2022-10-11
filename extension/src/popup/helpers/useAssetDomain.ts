@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import StellarSdk from "stellar-sdk";
 
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 interface UseAssetDomain {
@@ -15,7 +15,8 @@ export const useAssetDomain = ({ assetIssuer }: UseAssetDomain) => {
   useEffect(() => {
     const fetchAssetDomain = async () => {
       const { networkUrl } = networkDetails;
-      const server = new StellarSdk.Server(networkUrl);
+      const server = stellarSdkServer(networkUrl);
+
       let assetDomain = "";
 
       try {
