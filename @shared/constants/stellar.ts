@@ -36,6 +36,13 @@ export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
   networkPassphrase: StellarSdk.Networks.TESTNET,
 };
 
+export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
+  network: "Futurenet",
+  networkName: "Future Net",
+  networkUrl: "https://horizon-futurenet.stellar.org/",
+  networkPassphrase: "Test SDF Future Network ; October 2022",
+};
+
 export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,

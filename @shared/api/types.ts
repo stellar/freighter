@@ -32,6 +32,7 @@ export interface Response {
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
+  isExperimentalModeEnabled: boolean;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
@@ -67,15 +68,21 @@ export interface Account {
   hardwareWalletType?: WalletType;
 }
 
-export interface Settings {
+export interface Preferences {
   isDataSharingAllowed: boolean;
-  networkDetails: NetworkDetails;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   error: string;
+  isExperimentalModeEnabled: boolean;
 }
+
+export type Settings = {
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  error: string;
+} & Preferences;
 
 export interface AssetIcons {
   [code: string]: string;

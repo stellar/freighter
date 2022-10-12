@@ -1,4 +1,5 @@
 import StellarSdk from "stellar-sdk";
+import SorobanSdk from "soroban-sdk";
 import { browser, Runtime } from "webextension-polyfill-ts";
 
 import { ExternalRequest as Request } from "@shared/api/types";
@@ -6,7 +7,7 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar.ts";
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import {
@@ -19,6 +20,7 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
+  getIsExperimentalModeEnabled,
   getNetworkDetails,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
@@ -81,12 +83,15 @@ export const freighterApiMessageListener = (
 
   const submitTransaction = async () => {
     const { transactionXdr, network: _network, accountToSign } = request;
+
     const network = _network ?? MAINNET_NETWORK_DETAILS.network;
     const isMainnet = getIsMainnet();
     const { networkUrl } = getNetworkDetails();
-    const transaction = StellarSdk.TransactionBuilder.fromXDR(
+    const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
-      StellarSdk.Networks[network],
+      SDK.Networks[network],
     );
 
     const { tab, url: tabUrl = "" } = sender;

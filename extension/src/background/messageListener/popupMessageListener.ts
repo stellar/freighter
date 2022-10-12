@@ -1,5 +1,6 @@
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import StellarSdk from "stellar-sdk";
+import SorobanSdk from "soroban-sdk";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
@@ -23,6 +24,7 @@ import {
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
   IS_VALIDATING_SAFE_ASSETS_ID,
+  IS_EXPERIMENTAL_MODE_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
@@ -32,6 +34,7 @@ import {
   NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
 import {
+  FUTURENET_NETWORK_DETAILS,
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
 } from "@shared/constants/stellar";
@@ -45,6 +48,7 @@ import {
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
   getIsValidatingSafeAssetsEnabled,
+  getIsExperimentalModeEnabled,
   getIsHardwareWalletActive,
   getSavedNetworks,
   getNetworkDetails,
@@ -786,15 +790,21 @@ export const popupMessageListener = (request: Request) => {
     const privateKey = privateKeySelector(store.getState());
 
     if (privateKey.length) {
-      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
 
       let response;
 
       const transactionToSign = transactionQueue.pop();
 
       if (transactionToSign) {
-        transactionToSign.sign(sourceKeys);
-        response = transactionToSign.toXDR();
+        try {
+          transactionToSign.sign(sourceKeys);
+          response = transactionToSign.toXDR();
+        } catch (e) {
+          return { error: e };
+        }
       }
 
       const transactionResponse = responseQueue.pop();
@@ -818,10 +828,9 @@ export const popupMessageListener = (request: Request) => {
 
   const signFreighterTransaction = () => {
     const { transactionXDR, network } = request;
-    const transaction = StellarSdk.TransactionBuilder.fromXDR(
-      transactionXDR,
-      network,
-    );
+    const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(store.getState());
     if (privateKey.length) {
@@ -866,8 +875,10 @@ export const popupMessageListener = (request: Request) => {
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
-      networkDetails,
+      isExperimentalModeEnabled,
     } = request;
+
+    const currentIsExperimentalModeEnabled = getIsExperimentalModeEnabled();
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
     localStorage.setItem(
@@ -883,13 +894,35 @@ export const popupMessageListener = (request: Request) => {
       JSON.stringify(isValidatingSafeAssetsEnabled),
     );
 
-    localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
+    if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
+      /* Disable Mainnet access and automatically switch the user to Futurenet 
+      if user is enabling experimental mode and vice-versa */
+      const currentNetworksList = getNetworksList();
+
+      const defaultNetworkDetails = isExperimentalModeEnabled
+        ? FUTURENET_NETWORK_DETAILS
+        : MAINNET_NETWORK_DETAILS;
+
+      currentNetworksList.splice(0, 1, defaultNetworkDetails);
+
+      localStorage.setItem(
+        NETWORKS_LIST_ID,
+        JSON.stringify(currentNetworksList),
+      );
+      localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
+    }
+
+    localStorage.setItem(
+      IS_EXPERIMENTAL_MODE_ID,
+      JSON.stringify(isExperimentalModeEnabled),
+    );
 
     return {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
       isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
+      isExperimentalModeEnabled: getIsExperimentalModeEnabled(),
       networkDetails: getNetworkDetails(),
       networksList: getNetworksList(),
     };
@@ -904,6 +937,7 @@ export const popupMessageListener = (request: Request) => {
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
       isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
+      isExperimentalModeEnabled: getIsExperimentalModeEnabled(),
       networkDetails: getNetworkDetails(),
       networksList: getNetworksList(),
     };
