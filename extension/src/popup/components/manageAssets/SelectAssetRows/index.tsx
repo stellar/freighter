@@ -54,62 +54,62 @@ export const SelectAssetRows = ({
     assetSelect.type === AssetSelectType.PATH_PAY &&
     assetSelect.isSource === false;
 
-  return (
-    <SimpleBar
-      className="SelectAssetRows__scrollbar"
-      style={{
-        maxHeight: `${maxHeight}px`,
-      }}
-    >
-      <div className="SelectAssetRows__content">
-        {assetRows.map(({ code, domain, image, issuer }) => {
-          const assetDomain = assetDomains[getCanonicalFromAsset(code, issuer)];
-          const isScamAsset = !!blockedDomains.domains[assetDomain];
-          
-          return (
-            <div
-              className="SelectAssetRows__row selectable"
-              key={getCanonicalFromAsset(code, issuer)}
-              onClick={() => {
-                if (assetSelect.isSource) {
-                  dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
-                  history.goBack();
-                } else {
-                  dispatch(
-                    saveDestinationAsset(getCanonicalFromAsset(code, issuer)),
-                  );
-                  history.goBack();
-                }
-              }}
-            >
-              <AssetIcon
-                assetIcons={
-                  code !== "XLM"
-                    ? { [getCanonicalFromAsset(code, issuer)]: image }
-                    : {}
-                }
-                code={code}
-                issuerKey={issuer}
-              />
-              <div className="SelectAssetRows__row__info">
-                <div className="SelectAssetRows__row__info__header">
-                  {code}
-                  <ScamAssetIcon isScamAsset={isScamAsset} />
+    return (
+      <SimpleBar
+        className="SelectAssetRows__scrollbar"
+        style={{
+          maxHeight: `${maxHeight}px`,
+        }}
+      >
+        <div className="SelectAssetRows__content">
+          {assetRows.map(({ code, domain, image, issuer }) => {
+            const assetDomain = assetDomains[getCanonicalFromAsset(code, issuer)];
+            const isScamAsset = !!blockedDomains.domains[assetDomain];
+            
+            return (
+              <div
+                className="SelectAssetRows__row selectable"
+                key={getCanonicalFromAsset(code, issuer)}
+                onClick={() => {
+                  if (assetSelect.isSource) {
+                    dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
+                    history.goBack();
+                  } else {
+                    dispatch(
+                      saveDestinationAsset(getCanonicalFromAsset(code, issuer)),
+                    );
+                    history.goBack();
+                  }
+                }}
+              >
+                <AssetIcon
+                  assetIcons={
+                    code !== "XLM"
+                      ? { [getCanonicalFromAsset(code, issuer)]: image }
+                      : {}
+                  }
+                  code={code}
+                  issuerKey={issuer}
+                />
+                <div className="SelectAssetRows__row__info">
+                  <div className="SelectAssetRows__row__info__header">
+                    {code}
+                    <ScamAssetIcon isScamAsset={isScamAsset} />
+                  </div>
+                  <div className="SelectAssetRows__domain">
+                    {formatDomain(domain)}
+                  </div>
                 </div>
-                <div className="SelectAssetRows__domain">
-                  {formatDomain(domain)}
-                </div>
+                {!hideBalances && (
+                  <div>
+                    {getAccountBalance(getCanonicalFromAsset(code, issuer))}{" "}
+                    {code}
+                  </div>
+                )}
               </div>
-              {!hideBalances && (
-                <div>
-                  {getAccountBalance(getCanonicalFromAsset(code, issuer))}{" "}
-                  {code}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </SimpleBar>
-  );
+            );
+          })}
+        </div>
+      </SimpleBar>
+    );
 };

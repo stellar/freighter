@@ -412,6 +412,9 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(getAccountBalances.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
     });
+    builder.addCase(getAccountBalances.rejected, (state) => {
+      state.accountBalanceStatus = ActionStatus.ERROR;
+    });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
       state.accountBalanceStatus = ActionStatus.SUCCESS;

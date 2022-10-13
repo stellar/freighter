@@ -24,7 +24,7 @@
   }
 
   &__infoBlock {
-    background: rgba(241, 165, 50, 0.32);
+    background: #32275f;
     border: none;
     border-radius: 0.5rem;
     color: var(--pal-brand-primary-on) !important;
@@ -39,6 +39,14 @@
         color: rgba(241, 50, 50, 1);
       }
     }
+
+    &--warning {
+      background: rgba(241, 165, 50, 0.32);
+
+      .WarningMessage__icon {
+        color: rgba(241, 165, 50, 1);
+      }
+    }
   }
 
   &__header {
@@ -50,7 +58,7 @@
   }
 
   &__icon {
-    color: rgba(241, 165, 50, 1);
+    color: #6432f1;
     width: 0.875rem;
   }
 

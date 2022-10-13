@@ -17,6 +17,7 @@ import {
   isCustomNetwork,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -199,8 +200,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   // handles signing and submitting
   const handleSend = async () => {
     try {
-      const server = new StellarSdk.Server(networkDetails.networkUrl);
+      const server = stellarSdkServer(networkDetails.networkUrl);
       const sourceAccount: Types.Account = await server.loadAccount(publicKey);
+
       const transactionXDR = await new StellarSdk.TransactionBuilder(
         sourceAccount,
         {

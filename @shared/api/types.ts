@@ -57,6 +57,7 @@ export interface BlockedDomains {
 export interface ExternalRequest {
   transactionXdr: string;
   network: string;
+  networkPassphrase: string;
   accountToSign: string;
   type: EXTERNAL_SERVICE_TYPES;
 }

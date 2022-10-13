@@ -834,7 +834,7 @@ export const popupMessageListener = (request: Request) => {
 
     const privateKey = privateKeySelector(store.getState());
     if (privateKey.length) {
-      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -892,6 +892,29 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(
       IS_VALIDATING_SAFE_ASSETS_ID,
       JSON.stringify(isValidatingSafeAssetsEnabled),
+    );
+
+    if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
+      /* Disable Mainnet access and automatically switch the user to Futurenet 
+      if user is enabling experimental mode and vice-versa */
+      const currentNetworksList = getNetworksList();
+
+      const defaultNetworkDetails = isExperimentalModeEnabled
+        ? FUTURENET_NETWORK_DETAILS
+        : MAINNET_NETWORK_DETAILS;
+
+      currentNetworksList.splice(0, 1, defaultNetworkDetails);
+
+      localStorage.setItem(
+        NETWORKS_LIST_ID,
+        JSON.stringify(currentNetworksList),
+      );
+      localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
+    }
+
+    localStorage.setItem(
+      IS_EXPERIMENTAL_MODE_ID,
+      JSON.stringify(isExperimentalModeEnabled),
     );
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {

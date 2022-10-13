@@ -139,12 +139,15 @@ export const getAvailableBalance = ({
   return availBalance;
 };
 
-export const isNetworkUrlValid = (networkUrl: string) => {
+export const isNetworkUrlValid = (
+  networkUrl: string,
+  isHttpAllowed: boolean,
+) => {
   let isValid = true;
 
   try {
     // eslint-disable-next-line no-new
-    new StellarSdk.Server(networkUrl);
+    new StellarSdk.Server(networkUrl, { allowHttp: isHttpAllowed });
   } catch (e) {
     console.error(e);
     isValid = false;
