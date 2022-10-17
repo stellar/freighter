@@ -2,7 +2,7 @@ import { useSelector } from "react-redux";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
-export const useIsScamAsset = (code: string, issuer: string) => {
+export const useIsOwnedScamAsset = (code: string, issuer: string) => {
   const { assetDomains, blockedDomains } = useSelector(
     transactionSubmissionSelector,
   );
