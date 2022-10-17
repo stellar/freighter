@@ -30,9 +30,6 @@
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
   },
-  "Allow Freighter to use experimental API‘s on a test network": {
-    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Allow Freighter to use experimental API‘s on a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
-  },
   "Allowed downward variation in the destination amount": "Allowed downward variation in the destination amount",
   "Allowed slippage": "Allowed slippage",
   "Always check the domain of websites you’re using Freighter with": "Always check the domain of websites you’re using Freighter with",
