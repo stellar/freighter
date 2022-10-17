@@ -1,5 +1,5 @@
 import StellarSdk from "stellar-sdk";
-import SorobanSdk from "soroban-sdk";
+import SorobanSdk from "soroban-client";
 import { browser, Runtime } from "webextension-polyfill-ts";
 
 import { ExternalRequest as Request } from "@shared/api/types";
