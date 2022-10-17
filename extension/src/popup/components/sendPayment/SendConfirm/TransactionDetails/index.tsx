@@ -31,7 +31,7 @@ import {
   transactionSubmissionSelector,
   addRecentAddress,
   isPathPaymentSelector,
-  HwOverlayStatus,
+  ShowOverlayStatus,
   startHwSign,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -279,7 +279,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <>
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
       <div className="TransactionDetails">
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
@@ -405,7 +405,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               </Button>
               <Button
                 onClick={handleSend}
-                isLoading={hwStatus === HwOverlayStatus.IN_PROGRESS}
+                isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
               >
                 {isSwap ? t("Swap") : t("Send")}
               </Button>

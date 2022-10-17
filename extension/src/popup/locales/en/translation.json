@@ -15,6 +15,8 @@
   "Add address": "Add address",
   "Add another asset": "Add another asset",
   "Add Another Asset": "Add Another Asset",
+  "Add anyway": "Add anyway",
+  "Add asset": "Add asset",
   "Add asset manually": "Add asset manually",
   "Add custom network": "Add custom network",
   "Add Custom Network": "Add Custom Network",
@@ -27,6 +29,9 @@
   "Allow connecting to non-HTTPS networks": "Allow connecting to non-HTTPS networks",
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
+  },
+  "Allow Freighter to use experimental API‘s on a test network": {
+    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Allow Freighter to use experimental API‘s on a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
   },
   "Allowed downward variation in the destination amount": "Allowed downward variation in the destination amount",
   "Allowed slippage": "Allowed slippage",
@@ -43,6 +48,7 @@
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
   "Asset Code": "Asset Code",
   "Asset domain": "Asset domain",
+  "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
   "Asset Issuer": "Asset Issuer",
   "Asset not found": "Asset not found",
   "Assets found in this domain": "Assets found in this domain",
@@ -61,7 +67,9 @@
   },
   "Balance Id": "Balance Id",
   "Base fee": "Base fee",
+  "Before You Add This Asset": "Before You Add This Asset",
   "Block malicious or unsafe addresses and domains (external app transactions only)": "Block malicious or unsafe addresses and domains (external app transactions only)",
+  "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
   "Bump To": "Bump To",
   "Buying": "Buying",
   "Can’t find the asset you’re looking for?": "Can’t find the asset you’re looking for?",
@@ -104,10 +112,12 @@
   "Different source and destination assets": "Different source and destination assets",
   "digits after the decimal allowed": "digits after the decimal allowed",
   "directory": "directory",
+  "disable": "disable",
   "Done": "Done",
   "Double check the domain name": {
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
   },
+  "enable": "enable",
   "Enable experimental mode": "Enable experimental mode",
   "Enter network name": "Enter network name",
   "Enter network URL": "Enter network URL",
@@ -131,6 +141,9 @@
   "Footprint": "Footprint",
   "For your safety, signing this transaction is disabled": "For your safety, signing this transaction is disabled",
   "For your security, we'll check if you got it right in the next step": "For your security, we'll check if you got it right in the next step.",
+  "Freighter automatically blocked this asset": {
+    " Projects related to this asset may be fraudulent even if the creators say otherwise": "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise."
+  },
   "Freighter can’t recover your imported secret key using your recovery phrase": {
     " Storing your secret key is your responsibility": {
       " Freighter will never ask for your secret key outside of the extension": "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension."
@@ -176,6 +189,7 @@
   "Insufficient Balance": "Insufficient Balance",
   "Insufficient Fee": "Insufficient Fee",
   "invalid federation address": "invalid federation address",
+  "Invalid Format Asset": "Invalid Format Asset",
   "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "is requesting approval to a": "is requesting approval to a",
@@ -229,6 +243,7 @@
   "Network is in use": "Network is in use",
   "Network Settings": "Network Settings",
   "Never disclose your recovery phrase": "Never disclose your recovery phrase",
+  "New Asset": "New Asset",
   "New password": "New password",
   "Next": "Next",
   "NEXT": "NEXT",
@@ -254,6 +269,9 @@
   },
   "Please check the new rate and try again": "Please check the new rate and try again.",
   "Please don’t close this window": "Please don’t close this window",
+  "Please double-check its information and characteristics": {
+    " This can help you identify fraudulent assets": "Please double-check its information and characteristics. This can help you identify fraudulent assets."
+  },
   "Please open the Stellar app on the device and try again": "Please open the Stellar app on the device and try again.",
   "Please proceed with caution": "Please proceed with caution.",
   "Please select a different network before removing it": "Please select a different network before removing it.",
@@ -263,6 +281,9 @@
   "Price": "Price",
   "Privacy Policy": "Privacy Policy",
   "Processing": "Processing",
+  "Projects related to this asset may be fraudulent even if the creators say otherwise": {
+    " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
+  },
   "read before importing your key": "read before importing your key",
   "Received": "Received",
   "RECEIVED": "RECEIVED",
@@ -273,6 +294,7 @@
   "Reserved Balance*": "Reserved Balance*",
   "Review": "Review",
   "Review transaction on device": "Review transaction on device",
+  "Revocable Asset": "Revocable Asset",
   "Same source and destination asset": "Same source and destination asset",
   "Save": "Save",
   "Search": "Search",
@@ -295,6 +317,7 @@
   "SET MAX": "SET MAX",
   "Set recommended": "Set recommended",
   "Settings": "Settings",
+  "Settings > Security": "Settings > Security",
   "Share": "Share",
   "Share Public Key": "Share Public Key",
   "Show recovery phrase": "Show recovery phrase",
@@ -316,6 +339,7 @@
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
+  "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
   "The destination account does not accept the asset you’re sending": {
     " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
@@ -331,8 +355,13 @@
     " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{{domain}}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
   },
   "them noted to confirm you go them right": "them noted to confirm you go them right",
+  "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
   "This asset has a balance of": "This asset has a balance of",
+  "This asset was tagged as fraudulent by stellar": {
+    "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
+  },
+  "This is a relatively new asset": "This is a relatively new asset.",
   "This transaction could not be completed": "This transaction could not be completed.",
   "This website wants to know your public key": "This website wants to know your public key",
   "To": "To",
@@ -340,6 +369,9 @@
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
+  "Trading or sending this asset is not recommended": {
+    " Projects related to this asset may be fraudulent even if the creators say otherwise": "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise."
+  },
   "transaction": "transaction",
   "Transaction": "Transaction",
   "Transaction Details": "Transaction Details",
@@ -373,6 +405,7 @@
   "You are interacting with a transaction that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk."
   },
+  "You can": "You can",
   "You can fund this account on the test network using the friendbot tool": {
     " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens on the test network": "You can fund this account on the test network using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens on the test network."
   },

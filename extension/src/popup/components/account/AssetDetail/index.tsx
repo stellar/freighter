@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { IconButton, Icon } from "@stellar/design-system";
+import { IconButton, Icon, InfoBlock } from "@stellar/design-system";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 import { AccountBalancesInterface, HorizonOperation } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -34,6 +36,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { saveAsset } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
+import { useIsScamAsset } from "popup/helpers/useIsScamAsset";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -59,6 +62,10 @@ export const AssetDetail = ({
   const dispatch: AppDispatch = useDispatch();
   const isNative = selectedAsset === "native";
   const assetCode = getAssetFromCanonical(selectedAsset).code;
+  const isScamAsset = useIsScamAsset(
+    assetCode,
+    getAssetFromCanonical(selectedAsset).issuer,
+  );
 
   const balanceKey = Object.keys(accountBalances?.balances || {}).find((k) =>
     k.includes(selectedAsset),
@@ -163,80 +170,100 @@ export const AssetDetail = ({
             </>
           ) : null}
         </div>
-        {assetOperations.length ? (
-          <HistoryList assetDetail>
-            <>
-              {assetOperations.map((operation) => {
-                const historyItemOperation = {
-                  ...operation,
-                  isPayment: getIsPayment(operation.type),
-                  isSwap: getIsSwap(operation),
-                };
-                return (
-                  <HistoryItem
-                    key={operation.id}
-                    operation={historyItemOperation}
-                    publicKey={publicKey}
-                    url={stellarExpertUrl}
-                    setDetailViewProps={setDetailViewProps}
-                    setIsDetailViewShowing={setIsDetailViewShowing}
-                  />
-                );
-              })}
-            </>
-          </HistoryList>
-        ) : (
-          <div className="AssetDetail__empty">
-            {t("No transactions to show")}
+        <SimpleBar>
+          <div className="AssetDetail__scam-warning">
+            {isScamAsset && (
+              <InfoBlock variant={InfoBlock.variant.error}>
+                <p>
+                  This asset was tagged as fraudulent by stellar.expert, a
+                  reliable community-maintained directory.
+                </p>
+                <p>
+                  Trading or sending this asset is not recommended. Projects
+                  related to this asset may be fraudulent even if the creators
+                  say otherwise.
+                </p>
+              </InfoBlock>
+            )}
           </div>
-        )}
-      </div>
-      <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
-        <div className="AssetDetail__info-modal">
-          <div className="AssetDetail__info-modal__total-box">
-            <div className="AssetDetail__info-modal__asset-code">
-              <img src={StellarLogo} alt="Network icon" />{" "}
-              <div>{assetCode}</div>
+
+          {assetOperations.length ? (
+            <HistoryList assetDetail>
+              <>
+                {assetOperations.map((operation) => {
+                  const historyItemOperation = {
+                    ...operation,
+                    isPayment: getIsPayment(operation.type),
+                    isSwap: getIsSwap(operation),
+                  };
+                  return (
+                    <HistoryItem
+                      key={operation.id}
+                      operation={historyItemOperation}
+                      publicKey={publicKey}
+                      url={stellarExpertUrl}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  );
+                })}
+              </>
+            </HistoryList>
+          ) : (
+            <div className="AssetDetail__empty">
+              {t("No transactions to show")}
             </div>
-            <div>{balanceTotal}</div>
-          </div>
-          <div className="AssetDetail__info-modal__available-box">
-            <div className="AssetDetail__info-modal__balance-row">
-              <div>{t("Total Balance")}</div>
+          )}
+        </SimpleBar>
+      </div>
+      {isNative && (
+        <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
+          <div className="AssetDetail__info-modal">
+            <div className="AssetDetail__info-modal__total-box">
+              <div className="AssetDetail__info-modal__asset-code">
+                <img src={StellarLogo} alt="Network icon" />{" "}
+                <div>{assetCode}</div>
+              </div>
               <div>{balanceTotal}</div>
             </div>
-            <div className="AssetDetail__info-modal__balance-row">
-              <div>{t("Reserved Balance*")}</div>
-              {balance?.available && balance?.total ? (
+            <div className="AssetDetail__info-modal__available-box">
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Total Balance")}</div>
+                <div>{balanceTotal}</div>
+              </div>
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Reserved Balance*")}</div>
+                {balance?.available && balance?.total ? (
+                  <div>
+                    {new BigNumber(balanceAvailable)
+                      .minus(new BigNumber(balance?.total))
+                      .toString()}{" "}
+                    {assetCode}
+                  </div>
+                ) : null}
+              </div>
+              <div className="AssetDetail__info-modal__total-available-row">
+                <div>{t("Total Available")}</div>
                 <div>
-                  {new BigNumber(balanceAvailable)
-                    .minus(new BigNumber(balance?.total))
-                    .toString()}{" "}
-                  {assetCode}
+                  {balanceAvailable} {assetCode}
                 </div>
-              ) : null}
-            </div>
-            <div className="AssetDetail__info-modal__total-available-row">
-              <div>{t("Total Available")}</div>
-              <div>
-                {balanceAvailable} {assetCode}
               </div>
             </div>
+            <div className="AssetDetail__info-modal__footnote">
+              {t(
+                "* All Stellar accounts must maintain a minimum balance of lumens.",
+              )}{" "}
+              <a
+                href="https://developers.stellar.org/docs/glossary/minimum-balance/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("Learn More")}
+              </a>
+            </div>
           </div>
-          <div className="AssetDetail__info-modal__footnote">
-            {t(
-              "* All Stellar accounts must maintain a minimum balance of lumens.",
-            )}{" "}
-            <a
-              href="https://developers.stellar.org/docs/glossary/minimum-balance/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("Learn More")}
-            </a>
-          </div>
-        </div>
-      </SlideupModal>
+        </SlideupModal>
+      )}
     </div>
   );
 };

@@ -36,6 +36,7 @@ const initialState: Settings = {
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
+  isValidatingSafeAssetsEnabled: true,
   isExperimentalModeEnabled: false,
   error: "",
 };
@@ -50,6 +51,7 @@ export const saveSettings = createAsyncThunk<
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
     isSafetyValidationEnabled: boolean;
+    isValidatingSafeAssetsEnabled: boolean;
     isExperimentalModeEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
@@ -60,6 +62,7 @@ export const saveSettings = createAsyncThunk<
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      isValidatingSafeAssetsEnabled,
       isExperimentalModeEnabled,
     },
     thunkApi,
@@ -71,6 +74,7 @@ export const saveSettings = createAsyncThunk<
         isDataSharingAllowed,
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
+        isValidatingSafeAssetsEnabled,
         isExperimentalModeEnabled,
       });
     } catch (e) {
@@ -143,8 +147,9 @@ const settingsSlice = createSlice({
           networkDetails,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
-          isExperimentalModeEnabled,
           networksList,
+          isValidatingSafeAssetsEnabled,
+          isExperimentalModeEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -154,6 +159,7 @@ const settingsSlice = createSlice({
           isDataSharingAllowed,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+          isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
           networkDetails,
           networksList,
@@ -169,6 +175,7 @@ const settingsSlice = createSlice({
           networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+          isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
         } = action?.payload || {
           ...initialState,
@@ -181,6 +188,7 @@ const settingsSlice = createSlice({
           networksList,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
+          isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
         };
       },

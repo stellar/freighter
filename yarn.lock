@@ -15183,10 +15183,10 @@ sodium-native@^3.3.0:
   dependencies:
     node-gyp-build "^4.3.0"
 
-soroban-sdk@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/soroban-sdk/-/soroban-sdk-1.0.2.tgz#41dcf91a5453427457de0b1644d49aad5771f04c"
-  integrity sha512-jq0XOWC090ThLL3wspDL3oeW8Ek3Xe7R5g90M1gsaegXb9smreeLz/1wJvakizxIdlvcZ/4CFYjApSzTqSQrJQ==
+soroban-client@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/soroban-client/-/soroban-client-0.1.2.tgz#dfe8b51b489978d945f0be4808d6bac32d30d48b"
+  integrity sha512-WpCzHiLtzpBvYbONhGWtQ/DclTwYFgk4WOnq00Jq2vlea7BlrpTixHboyImOC/mobBt99l0nn/yn01s5DjXBeQ==
   dependencies:
     "@types/eventsource" "^1.1.2"
     "@types/node" ">= 8"
@@ -15195,7 +15195,7 @@ soroban-sdk@^1.0.2:
     axios "0.25.0"
     es6-promise "^4.2.4"
     lodash "^4.17.21"
-    stellar-base "8.0.1-soroban.1"
+    stellar-base "8.0.1-soroban.3"
     urijs "^1.19.1"
 
 sort-css-media-queries@1.5.0:
@@ -15406,10 +15406,10 @@ std-env@^2.2.1:
   dependencies:
     ci-info "^1.6.0"
 
-stellar-base@8.0.1-soroban.1:
-  version "8.0.1-soroban.1"
-  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-8.0.1-soroban.1.tgz#c8646fd6f22d9be8cf0a2256c401dfdfd3957d9e"
-  integrity sha512-GTLg9Sbvu1V+961vR+hgO15vgraycrm7GpDIHjl8ubkVBphaRn7bzFkphtoh4DTWzJDC6a3IaFE3aM2hC5JjTA==
+stellar-base@8.0.1-soroban.3:
+  version "8.0.1-soroban.3"
+  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-8.0.1-soroban.3.tgz#f55a3f5cac14c344036670d74e3fbdfb944e382f"
+  integrity sha512-k3Gwt4f8qiBnBrcUNsfe1tSAhL0jWnqGhoMXG5QMAv0O11Hghmw4y2iRWbaOFdtHij4SGsVnG3IfzTKVDdsNiQ==
   dependencies:
     base32.js "^0.1.0"
     bignumber.js "^4.0.0"
