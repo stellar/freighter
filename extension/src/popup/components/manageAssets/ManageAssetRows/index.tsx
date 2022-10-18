@@ -23,7 +23,6 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
-import { useIsScamAsset } from "popup/helpers/useIsScamAsset";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
@@ -362,8 +361,10 @@ export const ManageAssetRow = ({
   image,
   domain,
 }: AssetRowData) => {
+  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  const isScamAsset = useIsScamAsset(code, issuer);
+  const isScamAsset = !!blockedDomains.domains[domain];
+
   return (
     <>
       <AssetIcon
