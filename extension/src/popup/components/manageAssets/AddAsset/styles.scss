@@ -18,6 +18,7 @@
   &__results {
     flex-grow: 1;
     height: var(--AddAsset--results-height);
+    overflow: hidden;
 
     &__rows {
       height: calc(
