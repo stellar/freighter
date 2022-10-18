@@ -62,7 +62,7 @@ export const AssetDetail = ({
   const dispatch: AppDispatch = useDispatch();
   const isNative = selectedAsset === "native";
   const assetCode = getAssetFromCanonical(selectedAsset).code;
-  const isScamAsset = useIsOwnedScamAsset(
+  const isOwnedScamAsset = useIsOwnedScamAsset(
     assetCode,
     getAssetFromCanonical(selectedAsset).issuer,
   );
@@ -172,7 +172,7 @@ export const AssetDetail = ({
         </div>
         <SimpleBar>
           <div className="AssetDetail__scam-warning">
-            {isScamAsset && (
+            {isOwnedScamAsset && (
               <InfoBlock variant={InfoBlock.variant.error}>
                 <p>
                   This asset was tagged as fraudulent by stellar.expert, a

@@ -26,7 +26,7 @@ export function AssetSelect({
 }) {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
-  const isScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
+  const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
 
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
@@ -44,7 +44,7 @@ export function AssetSelect({
             issuerKey={issuerKey}
           />
           <span className="AssetSelect__medium-copy">{assetCode}</span>
-          <ScamAssetIcon isScamAsset={isScamAsset} />
+          <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
         </div>
         <div className="AssetSelect__content__right">
           <Icon.ChevronDown />
@@ -68,7 +68,7 @@ export function PathPayAssetSelect({
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
-  const isScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
+  const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
 
   const handleSelectAsset = () => {
     dispatch(
@@ -105,7 +105,7 @@ export function PathPayAssetSelect({
           <span className="AssetSelect__medium-copy">
             {truncateLongAssetCode(assetCode)}
           </span>{" "}
-          <ScamAssetIcon isScamAsset={isScamAsset} />
+          <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
           <Icon.ChevronDown />
         </div>
         <div className="AssetSelect__content__right">
