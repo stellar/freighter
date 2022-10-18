@@ -17,7 +17,7 @@ interface InfoBlockProps extends React.InputHTMLAttributes<HTMLInputElement> {
   children: string | React.ReactNode;
 }
 
-// TODO - using red triangle icon for error info blocks until SDS overhaul
+// TODO - reconcile with SDS, for now using local triangle icon for error info blocks
 const ErrorInfoBlock = ({
   children,
 }: {
