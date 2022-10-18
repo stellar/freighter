@@ -19,10 +19,10 @@ import {
 } from "helpers/stellar";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
-
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
@@ -35,15 +35,26 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
-  HwOverlayStatus,
   startHwSign,
+  ShowOverlayStatus,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import {
+  ScamAssetWarning,
+  NewAssetWarning,
+} from "popup/components/WarningMessages";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 
 export type ManageAssetCurrency = CURRENCY & { domain: string };
+
+export interface NewAssetFlags {
+  isInvalidDomain: boolean;
+  isRevocable: boolean;
+  isNewAsset: boolean;
+}
 
 interface ManageAssetRowsProps {
   children?: React.ReactNode;
@@ -67,11 +78,28 @@ export const ManageAssetRows = ({
     accountBalances: { balances = {} },
     submitStatus,
     hardwareWalletData: { status: hwStatus },
+    blockedDomains,
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+
+  const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
+    false,
+  );
+  const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
+  const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
+    isNewAsset: false,
+    isInvalidDomain: false,
+    isRevocable: false,
+  });
+  const [suspiciousAssetData, setSuspiciousAssetData] = useState({
+    domain: "",
+    code: "",
+    issuer: "",
+    image: "",
+  });
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -163,13 +191,108 @@ export const ManageAssetRows = ({
       navigateTo(ROUTES.trustlineError);
     } else if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
-      navigateTo(ROUTES.trustlineError);
+      navigateTo(ROUTES.account);
     }
   }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
 
+  const isBlockedDomain = (domain: string) => blockedDomains.domains[domain];
+
+  const checkForSuspiciousAsset = async (
+    code: string,
+    issuer: string,
+    domain: string,
+  ): Promise<NewAssetFlags> => {
+    // check revocable
+    let isRevocable = false;
+    try {
+      const resp = await server.assets().forCode(code).forIssuer(issuer).call();
+      isRevocable = resp.records[0]
+        ? resp.records[0]?.flags?.auth_revocable
+        : false;
+    } catch (e) {
+      console.error(e);
+    }
+
+    // check if new asset
+    // TODO: stellar expert asset rating endpoint giving 403, resolve with OL
+    const isNewAsset = false;
+
+    // check domain
+    let isInvalidDomain = false;
+    try {
+      const resp = await StellarSdk.StellarTomlResolver.resolve(domain);
+      let found = false;
+      resp.CURRENCIES.forEach((c: { code: string; issuer: string }) => {
+        if (c.code === code && c.issuer === issuer) {
+          found = true;
+        }
+      });
+      isInvalidDomain = !found;
+    } catch (e) {
+      console.error(e);
+      isInvalidDomain = true;
+    }
+
+    return { isRevocable, isNewAsset, isInvalidDomain };
+  };
+
+  const handleRowClick = async (
+    assetRowData: AssetRowData,
+    isTrustlineActive: boolean,
+  ) => {
+    const resp = await checkForSuspiciousAsset(
+      assetRowData.code,
+      assetRowData.issuer,
+      assetRowData.domain,
+    );
+    if (
+      (!isTrustlineActive && resp.isInvalidDomain) ||
+      resp.isRevocable ||
+      resp.isNewAsset
+    ) {
+      setShowNewAssetWarning(true);
+      setNewAssetFlags(resp);
+      setSuspiciousAssetData(assetRowData);
+    } else if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
+      setShowBlockedDomainWarning(true);
+      setSuspiciousAssetData(assetRowData);
+    } else {
+      changeTrustline(
+        assetRowData.code,
+        assetRowData.issuer,
+        !isTrustlineActive,
+      );
+    }
+  };
+
   return (
     <>
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {showBlockedDomainWarning && (
+        <ScamAssetWarning
+          domain={suspiciousAssetData.domain}
+          code={suspiciousAssetData.code}
+          issuer={suspiciousAssetData.issuer}
+          image={suspiciousAssetData.image}
+          onClose={() => {
+            setShowBlockedDomainWarning(false);
+          }}
+          setErrorAsset={setErrorAsset}
+        />
+      )}
+      {showNewAssetWarning && (
+        <NewAssetWarning
+          domain={suspiciousAssetData.domain}
+          code={suspiciousAssetData.code}
+          issuer={suspiciousAssetData.issuer}
+          image={suspiciousAssetData.image}
+          newAssetFlags={newAssetFlags}
+          onClose={() => {
+            setShowNewAssetWarning(false);
+          }}
+          setErrorAsset={setErrorAsset}
+        />
+      )}
       <SimpleBar
         className="ManageAssetRows__scrollbar"
         style={{
@@ -188,17 +311,12 @@ export const ManageAssetRows = ({
 
             return (
               <div className="ManageAssetRows__row" key={canonicalAsset}>
-                <AssetIcon
-                  assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+                <ManageAssetRow
                   code={code}
-                  issuerKey={issuer}
+                  issuer={issuer}
+                  image={image}
+                  domain={domain}
                 />
-                <div className="ManageAssetRows__code">
-                  {code}
-                  <div className="ManageAssetRows__domain">
-                    {formatDomain(domain)}
-                  </div>
-                </div>
                 <div className="ManageAssetRows__button">
                   <PillButton
                     disabled={isActionPending}
@@ -206,7 +324,10 @@ export const ManageAssetRows = ({
                       isActionPending && assetSubmitting === canonicalAsset
                     }
                     onClick={() =>
-                      changeTrustline(code, issuer, !isTrustlineActive)
+                      handleRowClick(
+                        { code, issuer, image, domain },
+                        isTrustlineActive,
+                      )
                     }
                     type="button"
                   >
@@ -219,6 +340,45 @@ export const ManageAssetRows = ({
         </div>
         {children}
       </SimpleBar>
+      <LoadingBackground
+        onClick={() => {}}
+        isActive={showNewAssetWarning || showBlockedDomainWarning}
+      />
+    </>
+  );
+};
+
+interface AssetRowData {
+  code: string;
+  issuer: string;
+  image: string;
+  domain: string;
+}
+
+export const ManageAssetRow = ({
+  code,
+  issuer,
+  image,
+  domain,
+}: AssetRowData) => {
+  const { blockedDomains } = useSelector(transactionSubmissionSelector);
+  const canonicalAsset = getCanonicalFromAsset(code, issuer);
+  const isScamAsset = !!blockedDomains.domains[domain];
+
+  return (
+    <>
+      <AssetIcon
+        assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+        code={code}
+        issuerKey={issuer}
+      />
+      <div className="ManageAssetRows__row__info">
+        <div className="ManageAssetRows__row__info__header">
+          {code}
+          <ScamAssetIcon isScamAsset={isScamAsset} />
+        </div>
+        <div className="ManageAssetRows__domain">{formatDomain(domain)}</div>
+      </div>
     </>
   );
 };

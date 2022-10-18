@@ -1,7 +1,10 @@
 .ManageAssetRows {
   &__scrollbar {
     padding-right: var(--popup--side-padding);
-    width: calc(var(--popup--width) - var(--popup--side-padding));
+    width: calc(
+      var(--popup--width) - var(--popup--side-padding) -
+        var(--popup--side-padding)
+    );
   }
 
   &__content {
@@ -19,6 +22,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    &__info {
+      color: var(--pal-text-primary);
+      flex-grow: 1;
+      line-height: 1.5rem;
+      &__header {
+        display: flex;
+      }
+    }
   }
 
   &__icon {
@@ -29,12 +41,6 @@
     background: var(--pal-brand-primary);
     height: 1.5rem;
     width: 1.5rem;
-  }
-
-  &__code {
-    color: var(--pal-text-primary);
-    flex-grow: 1;
-    line-height: 1.5rem;
   }
 
   &__domain {
