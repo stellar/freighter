@@ -50,6 +50,8 @@ import {
   AssetIcon,
 } from "popup/components/account/AccountAssets";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 
@@ -71,6 +73,12 @@ const TwoAssetCard = ({
   const sourceAsset = getAssetFromCanonical(sourceCanon);
   const destAsset = getAssetFromCanonical(destCanon);
 
+  const isSourceAssetScam = useIsOwnedScamAsset(
+    sourceAsset.code,
+    sourceAsset.issuer,
+  );
+  const isDestAssetScam = useIsOwnedScamAsset(destAsset.code, destAsset.issuer);
+
   return (
     <div className="TwoAssetCard">
       <div className="TwoAssetCard__row">
@@ -81,6 +89,7 @@ const TwoAssetCard = ({
             issuerKey={sourceAsset.issuer}
           />
           {sourceAsset.code}
+          <ScamAssetIcon isScamAsset={isSourceAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
           {sourceAmount} {sourceAsset.code}
@@ -97,6 +106,7 @@ const TwoAssetCard = ({
             issuerKey={destAsset.issuer}
           />
           {destAsset.code}
+          <ScamAssetIcon isScamAsset={isDestAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
           {new BigNumber(destAmount).toFixed()} {destAsset.code}

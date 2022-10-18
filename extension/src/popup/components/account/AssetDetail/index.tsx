@@ -36,7 +36,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { saveAsset } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
-import { useIsScamAsset } from "popup/helpers/useIsScamAsset";
+import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -62,7 +62,7 @@ export const AssetDetail = ({
   const dispatch: AppDispatch = useDispatch();
   const isNative = selectedAsset === "native";
   const assetCode = getAssetFromCanonical(selectedAsset).code;
-  const isScamAsset = useIsScamAsset(
+  const isOwnedScamAsset = useIsOwnedScamAsset(
     assetCode,
     getAssetFromCanonical(selectedAsset).issuer,
   );
@@ -172,7 +172,7 @@ export const AssetDetail = ({
         </div>
         <SimpleBar>
           <div className="AssetDetail__scam-warning">
-            {isScamAsset && (
+            {isOwnedScamAsset && (
               <InfoBlock variant={InfoBlock.variant.error}>
                 <p>
                   This asset was tagged as fraudulent by stellar.expert, a
