@@ -58,6 +58,7 @@ import {
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
+import { dataStorage } from "background/helpers/dataStorage";
 
 import { store } from "background/store";
 import {
@@ -951,9 +952,35 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const loadSettings = () => {
-    const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "true";
-    const isDataSharingAllowed = JSON.parse(dataSharingValue);
+  const _migrateLocalStorageToBrowserStorage = () => {
+    const storage: { [key: string]: any } = {};
+    Object.entries(localStorage).forEach(([k, v]) => {
+      let value = v;
+      try {
+        const parsedValue = JSON.parse(v);
+        value = parsedValue;
+      } catch (e) {
+        // do not transform v
+      }
+
+      storage[k] = value;
+    });
+
+    return storage;
+  };
+
+  const loadSettings = async () => {
+    // test changes
+    const storageItem = _migrateLocalStorageToBrowserStorage();
+
+    await dataStorage.setItem(storageItem);
+
+    const isDataSharingAllowed = await dataStorage.getItem({
+      key: DATA_SHARING_ID,
+    });
+    console.log(isDataSharingAllowed);
+
+    // const isDataSharingAllowed = JSON.parse(dataSharingValue);
 
     return {
       isDataSharingAllowed,
