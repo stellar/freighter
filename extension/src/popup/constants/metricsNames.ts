@@ -63,6 +63,7 @@ export const METRIC_NAMES = {
   viewNetworkSettings: "loaded screen: network settings",
 
   manageAssetAddAsset: "manage asset: add asset",
+  manageAssetAddUnsafeAsset: "manage asset: add unsafe asset",
   manageAssetRemoveAsset: "manage asset: remove asset",
   manageAssetError: "manage asset: error",
 

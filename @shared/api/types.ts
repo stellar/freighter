@@ -31,6 +31,7 @@ export interface Response {
   isTestnet: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
@@ -45,6 +46,12 @@ export interface Response {
   recentAddresses: Array<string>;
   hardwareWalletType: WalletType;
   bipPath: string;
+  blockedDomains: BlockedDomains;
+  assetDomain: string;
+}
+
+export interface BlockedDomains {
+  [key: string]: boolean;
 }
 
 export interface ExternalRequest {
@@ -66,6 +73,9 @@ export interface Preferences {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  isValidatingSafeAssetsEnabled: boolean;
+  networksList: NetworkDetails[];
+  error: string;
   isExperimentalModeEnabled: boolean;
 }
 
@@ -76,6 +86,10 @@ export type Settings = {
 } & Preferences;
 
 export interface AssetIcons {
+  [code: string]: string;
+}
+
+export interface AssetDomains {
   [code: string]: string;
 }
 

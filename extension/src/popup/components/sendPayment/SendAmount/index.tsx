@@ -16,6 +16,7 @@ import {
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
@@ -40,6 +41,7 @@ import {
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
 import { BottomNav } from "popup/components/BottomNav";
+import { ScamAssetWarning } from "popup/components/WarningMessages";
 
 import "../styles.scss";
 
@@ -100,9 +102,14 @@ export const SendAmount = ({
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  const { accountBalances, destinationBalances, transactionData } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const {
+    accountBalances,
+    destinationBalances,
+    transactionData,
+    assetDomains,
+    blockedDomains,
+    assetIcons,
+  } = useSelector(transactionSubmissionSelector);
   const {
     amount,
     asset,
@@ -113,6 +120,15 @@ export const SendAmount = ({
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
   const [loadingRate, setLoadingRate] = useState(false);
+  const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
+    false,
+  );
+  const [suspiciousAssetData, setSuspiciousAssetData] = useState({
+    domain: "",
+    code: "",
+    issuer: "",
+    image: "",
+  });
 
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
@@ -156,8 +172,26 @@ export const SendAmount = ({
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
     }
-
-    navigateTo(next);
+    // check for scam asset
+    if (blockedDomains.domains[assetDomains[values.asset]]) {
+      setShowBlockedDomainWarning(true);
+      setSuspiciousAssetData({
+        code: getAssetFromCanonical(values.asset).code,
+        issuer: getAssetFromCanonical(values.asset).issuer,
+        domain: assetDomains[values.asset],
+        image: assetIcons[values.asset],
+      });
+    } else if (blockedDomains.domains[assetDomains[values.destinationAsset]]) {
+      setShowBlockedDomainWarning(true);
+      setSuspiciousAssetData({
+        code: getAssetFromCanonical(values.destinationAsset).code,
+        issuer: getAssetFromCanonical(values.destinationAsset).issuer,
+        domain: assetDomains[values.destinationAsset],
+        image: assetIcons[values.destinationAsset],
+      });
+    } else {
+      navigateTo(next);
+    }
   };
 
   const validate = (values: { amount: string }) => {
@@ -314,6 +348,18 @@ export const SendAmount = ({
 
   return (
     <>
+      {showBlockedDomainWarning && (
+        <ScamAssetWarning
+          isSendWarning
+          domain={suspiciousAssetData.domain}
+          code={suspiciousAssetData.code}
+          issuer={suspiciousAssetData.issuer}
+          image={suspiciousAssetData.image}
+          onClose={() => setShowBlockedDomainWarning(false)}
+          onContinue={() => navigateTo(next)}
+          setErrorAsset={() => {}}
+        />
+      )}
       <div className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}>
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
@@ -447,6 +493,10 @@ export const SendAmount = ({
         </div>
       </div>
       {isSwap && <BottomNav />}
+      <LoadingBackground
+        onClick={() => {}}
+        isActive={showBlockedDomainWarning}
+      />
     </>
   );
 };

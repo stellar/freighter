@@ -64,7 +64,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
       setAssetRows(
         assetDomainToml.CURRENCIES.map((currency) => ({
           ...currency,
-          domain: assetDomainToml.DOCUMENTATION?.ORG_URL || "",
+          domain: assetDomainUrl.host,
         })),
       );
     }
