@@ -376,7 +376,7 @@ export const ScamAssetWarning = ({
                       isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
                     }`}{" "}
                     {t("this alert by going to")}{" "}
-                    <strong>{t("Settings > Security")}</strong>
+                    <strong>{t("Settings > Preferences")}</strong>
                   </p>
                 </div>
               </InfoBlock>
@@ -389,7 +389,7 @@ export const ScamAssetWarning = ({
               type="button"
               onClick={closeOverlay}
             >
-              {t("Got it")}
+              {isValidatingSafeAssetsEnabled ? t("Got it") : t("Cancel")}
             </Button>
             {isSendWarning && (
               <Button

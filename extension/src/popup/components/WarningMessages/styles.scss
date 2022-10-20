@@ -154,14 +154,8 @@
 
     // TODO - use new SDS button when ready
     .BasicButton--primary {
-      background: var(--pal-error-background);
-      border-color: var(--pal-error-border);
-      --Button-color-background: var(--pal-error-background);
-      --Button-color-border: var(--pal-error-border);
-    }
-    .BasicButton--primary:hover {
-      background-color: var(--pal-error);
-      border-color: var(--pal-error);
+      background: #e5484d;
+      border-color: #e5484d;
     }
   }
 }
