@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { Input } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
 import StellarSdk from "stellar-sdk";
@@ -7,6 +8,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
+
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
@@ -37,6 +40,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isCurrencyNotFound, setIsCurrencyNotFound] = useState(false);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleSubmit = async (values: FormValues) => {
     setIsCurrencyNotFound(false);
@@ -61,12 +65,40 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
     if (!assetDomainToml.CURRENCIES) {
       setIsCurrencyNotFound(true);
     } else {
-      setAssetRows(
-        assetDomainToml.CURRENCIES.map((currency) => ({
-          ...currency,
-          domain: assetDomainUrl.host,
-        })),
-      );
+      const { networkUrl } = networkDetails;
+
+      const server = new StellarSdk.Server(networkUrl);
+
+      /* Let's test to make sure these assets exist on our current network.
+        Unfortunately, the toml does not tell us what network this is being issued on
+      */
+
+      // take the first currency of the list
+      const testCurrency = assetDomainToml.CURRENCIES[0];
+      const testCurrencyIssuer = testCurrency.issuer;
+
+      // load it's issuer account from the Horizon network we're configured to
+      let account;
+      try {
+        account = await server.loadAccount(testCurrencyIssuer);
+      } catch (e) {
+        console.error(e);
+        // the account may not even exist
+        setIsCurrencyNotFound(true);
+      }
+
+      // if the account lists the same domain as the one we searched for, it exists on our network
+      if (account.home_domain === assetDomain) {
+        setAssetRows(
+          assetDomainToml.CURRENCIES.map((currency) => ({
+            ...currency,
+            domain: assetDomainUrl.host,
+          })),
+        );
+      } else {
+        // otherwise, discount all found results
+        setIsCurrencyNotFound(true);
+      }
     }
   };
 
