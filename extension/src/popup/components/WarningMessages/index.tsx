@@ -13,6 +13,9 @@ import { InfoBlock } from "popup/basics/InfoBlock";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
+  startHwSign,
+  ActionStatus,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsSelector,
@@ -23,7 +26,10 @@ import {
   NewAssetFlags,
 } from "popup/components/manageAssets/ManageAssetRows";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import {
+  publicKeySelector,
+  hardwareWalletTypeSelector,
+} from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -269,7 +275,9 @@ export const ScamAssetWarning = ({
   const { recommendedFee } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
   const closeOverlay = () => {
     if (warningRef.current) {
@@ -307,28 +315,34 @@ export const ScamAssetWarning = ({
       .build()
       .toXDR();
 
-    const res = await dispatch(
-      signFreighterTransaction({
-        transactionXDR,
-        network: networkDetails.networkPassphrase,
-      }),
-    );
-
-    if (signFreighterTransaction.fulfilled.match(res)) {
-      const submitResp = await dispatch(
-        submitFreighterTransaction({
-          signedXDR: res.payload.signedTransaction,
-          networkDetails,
+    if (isHardwareWallet) {
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+    } else {
+      const res = await dispatch(
+        signFreighterTransaction({
+          transactionXDR,
+          network: networkDetails.networkPassphrase,
         }),
       );
-      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        navigateTo(ROUTES.account);
-        emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
-      } else {
-        setErrorAsset(getCanonicalFromAsset(code, issuer));
-        navigateTo(ROUTES.trustlineError);
+
+      if (signFreighterTransaction.fulfilled.match(res)) {
+        const submitResp = await dispatch(
+          submitFreighterTransaction({
+            signedXDR: res.payload.signedTransaction,
+            networkDetails,
+          }),
+        );
+        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+          navigateTo(ROUTES.account);
+          emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+        } else {
+          setErrorAsset(getCanonicalFromAsset(code, issuer));
+          navigateTo(ROUTES.trustlineError);
+        }
       }
     }
+    setIsSubmitting(false);
   };
 
   return (
@@ -396,7 +410,9 @@ export const ScamAssetWarning = ({
                 fullWidth
                 onClick={onContinue}
                 type="button"
-                isLoading={isSubmitting}
+                isLoading={
+                  isSubmitting || submitStatus === ActionStatus.PENDING
+                }
               >
                 {t("Continue")}
               </Button>
@@ -406,7 +422,9 @@ export const ScamAssetWarning = ({
                 fullWidth
                 onClick={handleSubmit}
                 type="button"
-                isLoading={isSubmitting}
+                isLoading={
+                  isSubmitting || submitStatus === ActionStatus.PENDING
+                }
               >
                 {t("Add anyway")}
               </Button>
