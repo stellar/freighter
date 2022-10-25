@@ -29,6 +29,7 @@ const initialValues: FormValues = {
 interface AssetDomainToml {
   CURRENCIES?: CURRENCY[];
   DOCUMENTATION?: { ORG_URL: string };
+  NETWORK_PASSPHRASE?: string;
 }
 
 interface AddAssetProps {
@@ -65,30 +66,13 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
     if (!assetDomainToml.CURRENCIES) {
       setIsCurrencyNotFound(true);
     } else {
-      const { networkUrl } = networkDetails;
+      const { networkPassphrase } = networkDetails;
 
-      const server = new StellarSdk.Server(networkUrl);
+      // check toml file for network passphrase
+      const tomlNetworkPassphrase =
+        assetDomainToml.NETWORK_PASSPHRASE || StellarSdk.Networks.PUBLIC;
 
-      /* Let's test to make sure these assets exist on our current network.
-        Unfortunately, the toml does not tell us what network this is being issued on
-      */
-
-      // take the first currency of the list
-      const testCurrency = assetDomainToml.CURRENCIES[0];
-      const testCurrencyIssuer = testCurrency.issuer;
-
-      // load it's issuer account from the Horizon network we're configured to
-      let account;
-      try {
-        account = await server.loadAccount(testCurrencyIssuer);
-      } catch (e) {
-        console.error(e);
-        // the account may not even exist
-        setIsCurrencyNotFound(true);
-      }
-
-      // if the account lists the same domain as the one we searched for, it exists on our network
-      if (account.home_domain === assetDomain) {
+      if (tomlNetworkPassphrase === networkPassphrase) {
         setAssetRows(
           assetDomainToml.CURRENCIES.map((currency) => ({
             ...currency,
