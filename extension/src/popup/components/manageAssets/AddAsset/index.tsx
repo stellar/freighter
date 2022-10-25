@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { Input } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
 import StellarSdk from "stellar-sdk";
@@ -7,6 +8,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
+
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
@@ -26,6 +29,7 @@ const initialValues: FormValues = {
 interface AssetDomainToml {
   CURRENCIES?: CURRENCY[];
   DOCUMENTATION?: { ORG_URL: string };
+  NETWORK_PASSPHRASE?: string;
 }
 
 interface AddAssetProps {
@@ -37,6 +41,7 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isCurrencyNotFound, setIsCurrencyNotFound] = useState(false);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleSubmit = async (values: FormValues) => {
     setIsCurrencyNotFound(false);
@@ -61,12 +66,23 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
     if (!assetDomainToml.CURRENCIES) {
       setIsCurrencyNotFound(true);
     } else {
-      setAssetRows(
-        assetDomainToml.CURRENCIES.map((currency) => ({
-          ...currency,
-          domain: assetDomainUrl.host,
-        })),
-      );
+      const { networkPassphrase } = networkDetails;
+
+      // check toml file for network passphrase
+      const tomlNetworkPassphrase =
+        assetDomainToml.NETWORK_PASSPHRASE || StellarSdk.Networks.PUBLIC;
+
+      if (tomlNetworkPassphrase === networkPassphrase) {
+        setAssetRows(
+          assetDomainToml.CURRENCIES.map((currency) => ({
+            ...currency,
+            domain: assetDomainUrl.host,
+          })),
+        );
+      } else {
+        // otherwise, discount all found results
+        setIsCurrencyNotFound(true);
+      }
     }
   };
 
