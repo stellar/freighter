@@ -20,10 +20,12 @@ import {
   ActionStatus,
   getAccountBalances,
   getAssetIcons,
+  getAssetDomains,
   transactionSubmissionSelector,
   resetSubmission,
   saveAssetSelectType,
   AssetSelectType,
+  getBlockedDomains,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -81,6 +83,7 @@ export const Account = () => {
         networkDetails,
       }),
     );
+    dispatch(getBlockedDomains());
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
@@ -89,6 +92,7 @@ export const Account = () => {
     setSortedBalances(sortBalances(balances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
+    dispatch(getAssetDomains({ balances, networkDetails }));
   }, [balances, networkDetails, dispatch]);
 
   useEffect(() => {

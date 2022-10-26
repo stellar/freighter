@@ -20,6 +20,7 @@ export const Preferences = () => {
     isDataSharingAllowed,
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
+    isValidatingSafeAssetsEnabled,
     isExperimentalModeEnabled,
   } = useSelector(settingsSelector);
 
@@ -27,6 +28,7 @@ export const Preferences = () => {
     isValidatingMemoValue: boolean;
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
+    isValidatingSafeAssetsValue: boolean;
     isExperimentalModeEnabledValue: boolean;
   }
 
@@ -34,6 +36,7 @@ export const Preferences = () => {
     isValidatingMemoValue: isMemoValidationEnabled,
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
+    isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
     isExperimentalModeEnabledValue: isExperimentalModeEnabled,
   };
 
@@ -42,6 +45,7 @@ export const Preferences = () => {
       isValidatingMemoValue,
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
+      isValidatingSafeAssetsValue,
       isExperimentalModeEnabledValue,
     } = formValue;
 
@@ -50,6 +54,7 @@ export const Preferences = () => {
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
+        isValidatingSafeAssetsEnabled: isValidatingSafeAssetsValue,
         isExperimentalModeEnabled: isExperimentalModeEnabledValue,
       }),
     );
@@ -85,7 +90,6 @@ export const Preferences = () => {
                   id="isValidatingMemoValue"
                 />
               </div>
-
               <div className="Preferences--toggle">
                 <label
                   htmlFor="isValidatingSafetyValue"
@@ -101,7 +105,22 @@ export const Preferences = () => {
                   id="isValidatingSafetyValue"
                 />
               </div>
+
+              <div className="Preferences--toggle">
+                <label
+                  htmlFor="isValidatingSafeAssetsValue"
+                  className="Preferences--label"
+                >
+                  {t("Block trustlines to malicious or fraudulent assets")}
+                </label>
+                <Toggle
+                  checked={initialValues.isValidatingSafeAssetsValue}
+                  customInput={<Field />}
+                  id="isValidatingSafeAssetsValue"
+                />
+              </div>
             </div>
+
             <div className="Preferences--section">
               <div className="Preferences--section--title">
                 {t("Anonymous data sharing")}{" "}

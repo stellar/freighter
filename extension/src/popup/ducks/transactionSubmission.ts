@@ -8,13 +8,17 @@ import {
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
   getAssetIcons as getAssetIconsService,
+  getAssetDomains as getAssetDomainsService,
+  getBlockedDomains as internalGetBlockedDomains,
 } from "@shared/api/internal";
 
 import {
   AccountBalancesInterface,
   AssetIcons,
+  AssetDomains,
   Balances,
   ErrorMessage,
+  BlockedDomains,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -167,6 +171,21 @@ export const getAssetIcons = createAsyncThunk<
   }) => getAssetIconsService({ balances, networkDetails }),
 );
 
+export const getAssetDomains = createAsyncThunk<
+  AssetDomains,
+  { balances: Balances; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/getAssetDomains",
+  ({
+    balances,
+    networkDetails,
+  }: {
+    balances: Balances;
+    networkDetails: NetworkDetails;
+  }) => getAssetDomainsService({ balances, networkDetails }),
+);
+
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
   ServerApi.PaymentPathRecord,
@@ -199,7 +218,20 @@ export const getBestPath = createAsyncThunk<
   },
 );
 
-export enum HwOverlayStatus {
+export const getBlockedDomains = createAsyncThunk<
+  BlockedDomains,
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getBlockedDomains", async (_, thunkApi) => {
+  try {
+    const resp = await internalGetBlockedDomains();
+    return resp.blockedDomains || [];
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
+export enum ShowOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
 }
@@ -225,7 +257,7 @@ interface TransactionData {
 }
 
 interface HardwareWalletData {
-  status: HwOverlayStatus;
+  status: ShowOverlayStatus;
   transactionXDR: string;
   shouldSubmit: boolean;
 }
@@ -246,9 +278,13 @@ interface InitialState {
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
+  assetDomains: AssetDomains;
   assetSelect: {
     type: AssetSelectType;
     isSource: boolean;
+  };
+  blockedDomains: {
+    domains: BlockedDomains;
   };
 }
 
@@ -270,7 +306,7 @@ export const initialState: InitialState = {
     allowedSlippage: "1",
   },
   hardwareWalletData: {
-    status: HwOverlayStatus.IDLE,
+    status: ShowOverlayStatus.IDLE,
     transactionXDR: "",
     shouldSubmit: true,
   },
@@ -285,9 +321,13 @@ export const initialState: InitialState = {
     subentryCount: 0,
   },
   assetIcons: {},
+  assetDomains: {},
   assetSelect: {
     type: AssetSelectType.MANAGE,
     isSource: true,
+  },
+  blockedDomains: {
+    domains: {},
   },
 };
 
@@ -325,16 +365,16 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.allowedSlippage = action.payload;
     },
     startHwConnect: (state) => {
-      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
       state.hardwareWalletData.transactionXDR = "";
     },
     startHwSign: (state, action) => {
-      state.hardwareWalletData.status = HwOverlayStatus.IN_PROGRESS;
+      state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
       state.hardwareWalletData.transactionXDR = action.payload.transactionXDR;
       state.hardwareWalletData.shouldSubmit = action.payload.shouldSubmit;
     },
     closeHwOverlay: (state) => {
-      state.hardwareWalletData.status = HwOverlayStatus.IDLE;
+      state.hardwareWalletData.status = ShowOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
     },
@@ -390,6 +430,14 @@ const transactionSubmissionSlice = createSlice({
         assetIcons,
       };
     });
+    builder.addCase(getAssetDomains.fulfilled, (state, action) => {
+      const assetDomains = action.payload || {};
+
+      return {
+        ...state,
+        assetDomains,
+      };
+    });
     builder.addCase(getBestPath.fulfilled, (state, action) => {
       if (!action.payload) {
         state.transactionData.path = [];
@@ -406,6 +454,9 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.path = path;
       state.transactionData.destinationAmount =
         action.payload.destination_amount;
+    });
+    builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
+      state.blockedDomains.domains = action.payload;
     });
   },
 });
