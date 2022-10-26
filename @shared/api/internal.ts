@@ -18,6 +18,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
+import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
@@ -414,6 +415,34 @@ export const retryAssetIcon = async ({
   return newAssetIcons;
 };
 
+export const getAssetDomains = async ({
+  balances,
+  networkDetails,
+}: {
+  balances: Balances;
+  networkDetails: NetworkDetails;
+}) => {
+  const assetDomains = {} as { [code: string]: string };
+
+  if (balances) {
+    const balanceValues = Object.values(balances);
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < balanceValues.length; i++) {
+      const { token } = balanceValues[i];
+      if (token && "issuer" in token) {
+        const {
+          issuer: { key },
+          code,
+        } = token;
+        // eslint-disable-next-line no-await-in-loop
+        const domain = await getDomainFromIssuer({ key, code, networkDetails });
+        assetDomains[`${code}:${key}`] = domain;
+      }
+    }
+  }
+  return assetDomains;
+};
+
 export const rejectAccess = async (): Promise<void> => {
   try {
     await sendMessageToBackground({
@@ -559,11 +588,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
+  isValidatingSafeAssetsEnabled,
   isExperimentalModeEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
+  isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
 }): Promise<Settings> => {
   let response = {
@@ -572,6 +603,7 @@ export const saveSettings = async ({
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isSafetyValidationEnabled: true,
+    isValidatingSafeAssetsEnabled: true,
     isExperimentalModeEnabled: false,
     error: "",
   };
@@ -581,6 +613,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      isValidatingSafeAssetsEnabled,
       isExperimentalModeEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
@@ -689,3 +722,10 @@ export const loadSettings = (): Promise<Settings> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
+
+export const getBlockedDomains = async () => {
+  const resp = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
+  });
+  return resp;
+};

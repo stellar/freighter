@@ -1,6 +1,6 @@
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import StellarSdk from "stellar-sdk";
-import SorobanSdk from "soroban-sdk";
+import SorobanSdk from "soroban-client";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
@@ -8,21 +8,28 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
-import { Account, Response as Request } from "@shared/api/types";
+import {
+  Account,
+  Response as Request,
+  BlockedDomains,
+} from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
 import {
   ALLOWLIST_ID,
   APPLICATION_ID,
   CACHED_ASSET_ICONS_ID,
+  CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
+  IS_VALIDATING_SAFE_ASSETS_ID,
   IS_EXPERIMENTAL_MODE_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
+  CACHED_BLOCKED_DOMAINS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
@@ -40,6 +47,7 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
+  getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
   getIsHardwareWalletActive,
   getSavedNetworks,
@@ -49,6 +57,7 @@ import {
   getBipPath,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
+import { cachedFetch } from "background/helpers/cachedFetch";
 
 import { store } from "background/store";
 import {
@@ -64,6 +73,7 @@ import {
   timeoutAccountAccess,
   updateAllAccountsAccountName,
 } from "background/ducks/session";
+import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL } from "background/constants/apiUrls";
 
 const sessionTimer = new SessionTimer();
 
@@ -864,6 +874,7 @@ export const popupMessageListener = (request: Request) => {
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
+      isValidatingSafeAssetsEnabled,
       isExperimentalModeEnabled,
     } = request;
 
@@ -877,6 +888,33 @@ export const popupMessageListener = (request: Request) => {
     localStorage.setItem(
       IS_VALIDATING_SAFETY_ID,
       JSON.stringify(isSafetyValidationEnabled),
+    );
+    localStorage.setItem(
+      IS_VALIDATING_SAFE_ASSETS_ID,
+      JSON.stringify(isValidatingSafeAssetsEnabled),
+    );
+
+    if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
+      /* Disable Mainnet access and automatically switch the user to Futurenet 
+      if user is enabling experimental mode and vice-versa */
+      const currentNetworksList = getNetworksList();
+
+      const defaultNetworkDetails = isExperimentalModeEnabled
+        ? FUTURENET_NETWORK_DETAILS
+        : MAINNET_NETWORK_DETAILS;
+
+      currentNetworksList.splice(0, 1, defaultNetworkDetails);
+
+      localStorage.setItem(
+        NETWORKS_LIST_ID,
+        JSON.stringify(currentNetworksList),
+      );
+      localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
+    }
+
+    localStorage.setItem(
+      IS_EXPERIMENTAL_MODE_ID,
+      JSON.stringify(isExperimentalModeEnabled),
     );
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
@@ -906,6 +944,7 @@ export const popupMessageListener = (request: Request) => {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: getIsExperimentalModeEnabled(),
       networkDetails: getNetworkDetails(),
       networksList: getNetworksList(),
@@ -920,6 +959,7 @@ export const popupMessageListener = (request: Request) => {
       isDataSharingAllowed,
       isMemoValidationEnabled: getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: getIsExperimentalModeEnabled(),
       networkDetails: getNetworkDetails(),
       networksList: getNetworksList(),
@@ -946,6 +986,52 @@ export const popupMessageListener = (request: Request) => {
     );
     assetIconCache[assetCanonical] = iconUrl;
     localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
+  };
+
+  const getCachedAssetDomain = () => {
+    const { assetCanonical } = request;
+
+    const assetDomainCache = JSON.parse(
+      localStorage.getItem(CACHED_ASSET_DOMAINS_ID) || "{}",
+    );
+
+    return {
+      iconUrl: assetDomainCache[assetCanonical] || "",
+    };
+  };
+
+  const cacheAssetDomain = () => {
+    const { assetCanonical, assetDomain } = request;
+
+    const assetDomainCache = JSON.parse(
+      localStorage.getItem(CACHED_ASSET_DOMAINS_ID) || "{}",
+    );
+    assetDomainCache[assetCanonical] = assetDomain;
+    localStorage.setItem(
+      CACHED_ASSET_DOMAINS_ID,
+      JSON.stringify(assetDomainCache),
+    );
+  };
+
+  const getBlockedDomains = async () => {
+    try {
+      const resp = await cachedFetch(
+        STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
+        CACHED_BLOCKED_DOMAINS_ID,
+      );
+      const blockedDomains = (resp?._embedded?.records || []).reduce(
+        (bd: BlockedDomains, obj: { domain: string }) => {
+          const map = bd;
+          map[obj.domain] = true;
+          return map;
+        },
+        {},
+      );
+      return { blockedDomains };
+    } catch (e) {
+      console.error(e);
+      return new Error("Error getting blocked domains");
+    }
   };
 
   const messageResponder: MessageResponder = {
@@ -979,6 +1065,9 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
     [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
+    [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
+    [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
+    [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
   };
 
   return messageResponder[request.type]();
