@@ -31,7 +31,7 @@ import {
   transactionSubmissionSelector,
   addRecentAddress,
   isPathPaymentSelector,
-  HwOverlayStatus,
+  ShowOverlayStatus,
   startHwSign,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -50,6 +50,8 @@ import {
   AssetIcon,
 } from "popup/components/account/AccountAssets";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 
@@ -71,6 +73,12 @@ const TwoAssetCard = ({
   const sourceAsset = getAssetFromCanonical(sourceCanon);
   const destAsset = getAssetFromCanonical(destCanon);
 
+  const isSourceAssetScam = useIsOwnedScamAsset(
+    sourceAsset.code,
+    sourceAsset.issuer,
+  );
+  const isDestAssetScam = useIsOwnedScamAsset(destAsset.code, destAsset.issuer);
+
   return (
     <div className="TwoAssetCard">
       <div className="TwoAssetCard__row">
@@ -81,6 +89,7 @@ const TwoAssetCard = ({
             issuerKey={sourceAsset.issuer}
           />
           {sourceAsset.code}
+          <ScamAssetIcon isScamAsset={isSourceAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
           {sourceAmount} {sourceAsset.code}
@@ -97,6 +106,7 @@ const TwoAssetCard = ({
             issuerKey={destAsset.issuer}
           />
           {destAsset.code}
+          <ScamAssetIcon isScamAsset={isDestAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
           {new BigNumber(destAmount).toFixed()} {destAsset.code}
@@ -279,7 +289,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <>
-      {hwStatus === HwOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
       <div className="TransactionDetails">
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
@@ -405,7 +415,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               </Button>
               <Button
                 onClick={handleSend}
-                isLoading={hwStatus === HwOverlayStatus.IN_PROGRESS}
+                isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
               >
                 {isSwap ? t("Swap") : t("Send")}
               </Button>
