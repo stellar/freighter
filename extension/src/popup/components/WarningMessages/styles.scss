@@ -154,10 +154,10 @@
 
     // TODO - use new SDS button when ready
     .BasicButton--primary {
-      background: #e5484d;
-      border-color: #e5484d;
       --Button-color-background: #e5484d;
       --Button-color-border: #e5484d;
+      background: var(--Button-color-background);
+      border-color: var(--Button-color-border);
     }
 
     .BasicButton--primary:hover {
