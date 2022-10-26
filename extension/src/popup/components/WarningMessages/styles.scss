@@ -156,6 +156,13 @@
     .BasicButton--primary {
       background: #e5484d;
       border-color: #e5484d;
+      --Button-color-background: #e5484d;
+      --Button-color-border: #e5484d;
+    }
+
+    .BasicButton--primary:hover {
+      border-color: #e5484d;
+      background-color: var(--pal-error);
     }
   }
 }
@@ -172,7 +179,6 @@
     z-index: calc(var(--z-index--scam-warning) + 1);
     position: absolute;
     bottom: calc(-1 * var(--popup--height));
-    height: calc(var(--popup--height) - 2rem);
     display: flex;
     flex-direction: column;
     background: var(--background-color);
