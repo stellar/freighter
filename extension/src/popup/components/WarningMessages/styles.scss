@@ -186,8 +186,7 @@
     transition: bottom var(--dropdown-animation);
     border-top-right-radius: 1rem;
     border-top-left-radius: 1rem;
-    padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
-      var(--account-view-padding-side);
+    padding: var(--popup-vertical-padding) var(--account-view-padding-side);
   }
 
   &__header {
