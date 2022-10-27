@@ -1,9 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { POPUP_HEIGHT } from "constants/dimensions";
+import StellarSdk, { Account } from "stellar-sdk";
 
+import { xlmToStroop, getCanonicalFromAsset } from "helpers/stellar";
+import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
+import { InfoBlock } from "popup/basics/InfoBlock";
+import {
+  signFreighterTransaction,
+  submitFreighterTransaction,
+  startHwSign,
+  ActionStatus,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
+import {
+  settingsSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
+import {
+  ManageAssetRow,
+  NewAssetFlags,
+} from "popup/components/manageAssets/ManageAssetRows";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import {
+  publicKeySelector,
+  hardwareWalletTypeSelector,
+} from "popup/ducks/accountServices";
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo } from "popup/helpers/navigate";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitMetric } from "helpers/metrics";
+import IconShieldCross from "popup/assets/icon-shield-cross.svg";
+import IconInvalid from "popup/assets/icon-invalid.svg";
+import IconWarning from "popup/assets/icon-warning.svg";
 
 import "./styles.scss";
 
@@ -211,6 +244,378 @@ export const BackupPhraseWarningMessage = () => {
             "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
           )}
         </p>
+      </div>
+    </div>
+  );
+};
+
+export const ScamAssetWarning = ({
+  isSendWarning = false,
+  domain,
+  code,
+  issuer,
+  image,
+  onClose,
+  onContinue = () => {},
+  setErrorAsset,
+}: {
+  isSendWarning?: boolean;
+  domain: string;
+  code: string;
+  issuer: string;
+  image: string;
+  onClose: () => void;
+  onContinue?: () => void;
+  setErrorAsset: (errorAsset: string) => void;
+}) => {
+  const { t } = useTranslation();
+  const dispatch: AppDispatch = useDispatch();
+  const warningRef = useRef<HTMLDivElement>(null);
+  const { isValidatingSafeAssetsEnabled } = useSelector(settingsSelector);
+  const { recommendedFee } = useNetworkFees();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const { submitStatus } = useSelector(transactionSubmissionSelector);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+
+  const closeOverlay = () => {
+    if (warningRef.current) {
+      warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
+    }
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  // animate entry
+  useEffect(() => {
+    if (warningRef.current) {
+      setTimeout(() => {
+        warningRef.current!.style.bottom = "0";
+      }, 10);
+    }
+  }, [warningRef]);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: xlmToStroop(recommendedFee).toFixed(),
+      networkPassphrase: networkDetails.networkPassphrase,
+    })
+      .addOperation(
+        StellarSdk.Operation.changeTrust({
+          asset: new StellarSdk.Asset(code, issuer),
+        }),
+      )
+      .setTimeout(180)
+      .build()
+      .toXDR();
+
+    if (isHardwareWallet) {
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+    } else {
+      const res = await dispatch(
+        signFreighterTransaction({
+          transactionXDR,
+          network: networkDetails.networkPassphrase,
+        }),
+      );
+
+      if (signFreighterTransaction.fulfilled.match(res)) {
+        const submitResp = await dispatch(
+          submitFreighterTransaction({
+            signedXDR: res.payload.signedTransaction,
+            networkDetails,
+          }),
+        );
+        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+          navigateTo(ROUTES.account);
+          emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+        } else {
+          setErrorAsset(getCanonicalFromAsset(code, issuer));
+          navigateTo(ROUTES.trustlineError);
+        }
+      }
+    }
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="ScamAssetWarning">
+      <div className="ScamAssetWarning__wrapper" ref={warningRef}>
+        <div className="ScamAssetWarning__header">Warning</div>
+        <div className="ScamAssetWarning__description">
+          {t(
+            "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
+          )}
+        </div>
+        <div className="ScamAssetWarning__row">
+          <ManageAssetRow
+            code={code}
+            issuer={issuer}
+            image={image}
+            domain={domain}
+          />
+        </div>
+        <div className="ScamAssetWarning__bottom-content">
+          <div>
+            {isSendWarning ? (
+              <InfoBlock variant={InfoBlock.variant.error}>
+                <p>
+                  {t(
+                    "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                  )}
+                </p>
+              </InfoBlock>
+            ) : (
+              <InfoBlock variant={InfoBlock.variant.error}>
+                <div>
+                  <p>
+                    {isValidatingSafeAssetsEnabled
+                      ? t(
+                          "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                        )
+                      : t(
+                          "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
+                        )}
+                  </p>
+                  <p>
+                    {t("You can")}{" "}
+                    {`${
+                      isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
+                    }`}{" "}
+                    {t("this alert by going to")}{" "}
+                    <strong>{t("Settings > Preferences")}</strong>
+                  </p>
+                </div>
+              </InfoBlock>
+            )}
+          </div>
+          <div className="ScamAssetWarning__btns">
+            <Button
+              fullWidth
+              variant={Button.variant.tertiary}
+              type="button"
+              onClick={closeOverlay}
+            >
+              {isValidatingSafeAssetsEnabled ? t("Got it") : t("Cancel")}
+            </Button>
+            {isSendWarning && (
+              <Button
+                fullWidth
+                onClick={onContinue}
+                type="button"
+                isLoading={
+                  isSubmitting || submitStatus === ActionStatus.PENDING
+                }
+              >
+                {t("Continue")}
+              </Button>
+            )}
+            {!isValidatingSafeAssetsEnabled && !isSendWarning && (
+              <Button
+                fullWidth
+                onClick={handleSubmit}
+                type="button"
+                isLoading={
+                  isSubmitting || submitStatus === ActionStatus.PENDING
+                }
+              >
+                {t("Add anyway")}
+              </Button>
+            )}
+          </div>{" "}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const NewAssetWarning = ({
+  domain,
+  code,
+  issuer,
+  image,
+  newAssetFlags,
+  onClose,
+  setErrorAsset,
+}: {
+  domain: string;
+  code: string;
+  issuer: string;
+  image: string;
+  newAssetFlags: NewAssetFlags;
+  onClose: () => void;
+  setErrorAsset: (errorAsset: string) => void;
+}) => {
+  const { t } = useTranslation();
+  const dispatch: AppDispatch = useDispatch();
+  const warningRef = useRef<HTMLDivElement>(null);
+  const { recommendedFee } = useNetworkFees();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
+
+  // animate entry
+  useEffect(() => {
+    if (warningRef.current) {
+      setTimeout(() => {
+        warningRef.current!.style.bottom = "0";
+      }, 10);
+    }
+  }, [warningRef]);
+
+  const closeOverlay = () => {
+    if (warningRef.current) {
+      warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
+    }
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: xlmToStroop(recommendedFee).toFixed(),
+      networkPassphrase: networkDetails.networkPassphrase,
+    })
+      .addOperation(
+        StellarSdk.Operation.changeTrust({
+          asset: new StellarSdk.Asset(code, issuer),
+        }),
+      )
+      .setTimeout(180)
+      .build()
+      .toXDR();
+
+    const res = await dispatch(
+      signFreighterTransaction({
+        transactionXDR,
+        network: networkDetails.networkPassphrase,
+      }),
+    );
+
+    if (signFreighterTransaction.fulfilled.match(res)) {
+      const submitResp = await dispatch(
+        submitFreighterTransaction({
+          signedXDR: res.payload.signedTransaction,
+          networkDetails,
+        }),
+      );
+      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        navigateTo(ROUTES.account);
+        emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+      } else {
+        setErrorAsset(getCanonicalFromAsset(code, issuer));
+        navigateTo(ROUTES.trustlineError);
+      }
+    }
+  };
+
+  return (
+    <div className="NewAssetWarning">
+      <div className="NewAssetWarning__wrapper" ref={warningRef}>
+        <div className="NewAssetWarning__header">
+          {t("Before You Add This Asset")}
+        </div>
+        <div className="NewAssetWarning__description">
+          {t(
+            "Please double-check its information and characteristics. This can help you identify fraudulent assets.",
+          )}
+        </div>
+        <div className="NewAssetWarning__row">
+          <ManageAssetRow
+            code={code}
+            issuer={issuer}
+            image={image}
+            domain={domain}
+          />
+        </div>
+        <hr className="NewAssetWarning__list-divider" />
+        <div className="NewAssetWarning__flags">
+          {isRevocable && (
+            <div className="NewAssetWarning__flag">
+              <div className="NewAssetWarning__flag__icon">
+                <img src={IconShieldCross} alt="revocable" />
+              </div>
+              <div className="NewAssetWarning__flag__content">
+                <div className="NewAssetWarning__flag__header">
+                  {t("Revocable Asset")}
+                </div>
+                <div className="NewAssetWarning__flag__description">
+                  {t(
+                    "The asset creator can revoke your access to this asset at anytime",
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <div>
+            {isNewAsset && (
+              <div className="NewAssetWarning__flag">
+                <div className="NewAssetWarning__flag__icon">
+                  <img src={IconInvalid} alt="new asset" />
+                </div>
+                <div className="NewAssetWarning__flag__content">
+                  <div className="NewAssetWarning__flag__header">
+                    {t("New Asset")}
+                  </div>
+                  <div className="NewAssetWarning__flag__description">
+                    {t("This is a relatively new asset.")}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div>
+            {isInvalidDomain && (
+              <div className="NewAssetWarning__flag">
+                <div className="NewAssetWarning__flag__icon">
+                  <img src={IconWarning} alt="invalid domain" />
+                </div>
+                <div className="NewAssetWarning__flag__content">
+                  <div className="NewAssetWarning__flag__header">
+                    {t("Invalid Format Asset")}
+                  </div>
+                  <div className="NewAssetWarning__flag__description">
+                    {t(
+                      "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="NewAssetWarning__btns">
+            <Button
+              fullWidth
+              variant={Button.variant.tertiary}
+              type="button"
+              onClick={closeOverlay}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              fullWidth
+              onClick={handleSubmit}
+              type="button"
+              isLoading={isSubmitting}
+            >
+              {t("Add asset")}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
