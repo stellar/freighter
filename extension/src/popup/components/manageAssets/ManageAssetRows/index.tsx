@@ -245,16 +245,16 @@ export const ManageAssetRows = ({
       assetRowData.issuer,
       assetRowData.domain,
     );
-    if (
-      (!isTrustlineActive && resp.isInvalidDomain) ||
-      resp.isRevocable ||
-      resp.isNewAsset
+
+    if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
+      setShowBlockedDomainWarning(true);
+      setSuspiciousAssetData(assetRowData);
+    } else if (
+      !isTrustlineActive &&
+      (resp.isInvalidDomain || resp.isRevocable || resp.isNewAsset)
     ) {
       setShowNewAssetWarning(true);
       setNewAssetFlags(resp);
-      setSuspiciousAssetData(assetRowData);
-    } else if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
-      setShowBlockedDomainWarning(true);
       setSuspiciousAssetData(assetRowData);
     } else {
       changeTrustline(
