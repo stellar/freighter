@@ -976,6 +976,7 @@ export const popupMessageListener = (request: Request) => {
 
     const isDataSharingAllowed = await dataStorage.getItem({
       key: DATA_SHARING_ID,
+      defaultValue: "true",
     });
 
     return {
