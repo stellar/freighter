@@ -970,7 +970,6 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const loadSettings = async () => {
-    // test changes
     const storageItem = _migrateLocalStorageToBrowserStorage();
 
     await dataStorage.setItem(storageItem);
@@ -978,9 +977,6 @@ export const popupMessageListener = (request: Request) => {
     const isDataSharingAllowed = await dataStorage.getItem({
       key: DATA_SHARING_ID,
     });
-    console.log(isDataSharingAllowed);
-
-    // const isDataSharingAllowed = JSON.parse(dataSharingValue);
 
     return {
       isDataSharingAllowed,
