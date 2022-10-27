@@ -154,14 +154,15 @@
 
     // TODO - use new SDS button when ready
     .BasicButton--primary {
-      background: var(--pal-error-background);
-      border-color: var(--pal-error-border);
-      --Button-color-background: var(--pal-error-background);
-      --Button-color-border: var(--pal-error-border);
+      --Button-color-background: #e5484d;
+      --Button-color-border: #e5484d;
+      background: var(--Button-color-background);
+      border-color: var(--Button-color-border);
     }
+
     .BasicButton--primary:hover {
+      border-color: #e5484d;
       background-color: var(--pal-error);
-      border-color: var(--pal-error);
     }
   }
 }
@@ -178,7 +179,6 @@
     z-index: calc(var(--z-index--scam-warning) + 1);
     position: absolute;
     bottom: calc(-1 * var(--popup--height));
-    height: calc(var(--popup--height) - 2rem);
     display: flex;
     flex-direction: column;
     background: var(--background-color);
@@ -186,8 +186,7 @@
     transition: bottom var(--dropdown-animation);
     border-top-right-radius: 1rem;
     border-top-left-radius: 1rem;
-    padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
-      var(--account-view-padding-side);
+    padding: var(--popup-vertical-padding) var(--account-view-padding-side);
   }
 
   &__header {

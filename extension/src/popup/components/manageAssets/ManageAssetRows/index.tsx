@@ -23,7 +23,6 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
-import { useIsScamAsset } from "popup/helpers/useIsScamAsset";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
@@ -246,16 +245,16 @@ export const ManageAssetRows = ({
       assetRowData.issuer,
       assetRowData.domain,
     );
-    if (
-      (!isTrustlineActive && resp.isInvalidDomain) ||
-      resp.isRevocable ||
-      resp.isNewAsset
+
+    if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
+      setShowBlockedDomainWarning(true);
+      setSuspiciousAssetData(assetRowData);
+    } else if (
+      !isTrustlineActive &&
+      (resp.isInvalidDomain || resp.isRevocable || resp.isNewAsset)
     ) {
       setShowNewAssetWarning(true);
       setNewAssetFlags(resp);
-      setSuspiciousAssetData(assetRowData);
-    } else if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
-      setShowBlockedDomainWarning(true);
       setSuspiciousAssetData(assetRowData);
     } else {
       changeTrustline(
@@ -362,8 +361,10 @@ export const ManageAssetRow = ({
   image,
   domain,
 }: AssetRowData) => {
+  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  const isScamAsset = useIsScamAsset(code, issuer);
+  const isScamAsset = !!blockedDomains.domains[domain];
+
   return (
     <>
       <AssetIcon

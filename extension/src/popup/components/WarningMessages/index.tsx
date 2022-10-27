@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import { InfoBlock, Icon } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import StellarSdk, { Account } from "stellar-sdk";
@@ -9,6 +9,7 @@ import StellarSdk, { Account } from "stellar-sdk";
 import { xlmToStroop, getCanonicalFromAsset } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
+import { InfoBlock } from "popup/basics/InfoBlock";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
@@ -359,23 +360,25 @@ export const ScamAssetWarning = ({
               </InfoBlock>
             ) : (
               <InfoBlock variant={InfoBlock.variant.error}>
-                <p>
-                  {isValidatingSafeAssetsEnabled
-                    ? t(
-                        "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                      )
-                    : t(
-                        "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
-                      )}
-                </p>
-                <p>
-                  {t("You can")}{" "}
-                  {`${
-                    isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
-                  }`}{" "}
-                  {t("this alert by going to")}{" "}
-                  <strong>{t("Settings > Security")}</strong>
-                </p>
+                <div>
+                  <p>
+                    {isValidatingSafeAssetsEnabled
+                      ? t(
+                          "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                        )
+                      : t(
+                          "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
+                        )}
+                  </p>
+                  <p>
+                    {t("You can")}{" "}
+                    {`${
+                      isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
+                    }`}{" "}
+                    {t("this alert by going to")}{" "}
+                    <strong>{t("Settings > Preferences")}</strong>
+                  </p>
+                </div>
               </InfoBlock>
             )}
           </div>
@@ -386,7 +389,7 @@ export const ScamAssetWarning = ({
               type="button"
               onClick={closeOverlay}
             >
-              {t("Got it")}
+              {isValidatingSafeAssetsEnabled ? t("Got it") : t("Cancel")}
             </Button>
             {isSendWarning && (
               <Button

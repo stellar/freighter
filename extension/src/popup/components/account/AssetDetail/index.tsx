@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { IconButton, Icon, InfoBlock } from "@stellar/design-system";
+import { IconButton, Icon } from "@stellar/design-system";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
@@ -36,8 +36,8 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { saveAsset } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
-import { useIsScamAsset } from "popup/helpers/useIsScamAsset";
-
+import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
+import { InfoBlock } from "popup/basics/InfoBlock";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 import "./styles.scss";
@@ -62,7 +62,7 @@ export const AssetDetail = ({
   const dispatch: AppDispatch = useDispatch();
   const isNative = selectedAsset === "native";
   const assetCode = getAssetFromCanonical(selectedAsset).code;
-  const isScamAsset = useIsScamAsset(
+  const isOwnedScamAsset = useIsOwnedScamAsset(
     assetCode,
     getAssetFromCanonical(selectedAsset).issuer,
   );
@@ -172,17 +172,19 @@ export const AssetDetail = ({
         </div>
         <SimpleBar>
           <div className="AssetDetail__scam-warning">
-            {isScamAsset && (
+            {isOwnedScamAsset && (
               <InfoBlock variant={InfoBlock.variant.error}>
-                <p>
-                  This asset was tagged as fraudulent by stellar.expert, a
-                  reliable community-maintained directory.
-                </p>
-                <p>
-                  Trading or sending this asset is not recommended. Projects
-                  related to this asset may be fraudulent even if the creators
-                  say otherwise.
-                </p>
+                <div>
+                  <p>
+                    This asset was tagged as fraudulent by stellar.expert, a
+                    reliable community-maintained directory.
+                  </p>
+                  <p>
+                    Trading or sending this asset is not recommended. Projects
+                    related to this asset may be fraudulent even if the creators
+                    say otherwise.
+                  </p>
+                </div>
               </InfoBlock>
             )}
           </div>
