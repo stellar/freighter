@@ -58,7 +58,10 @@ import {
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
-import { dataStorage } from "background/helpers/dataStorage";
+import {
+  dataStorage,
+  migrateLocalStorageToBrowserStorage,
+} from "background/helpers/dataStorage";
 
 import { store } from "background/store";
 import {
@@ -870,7 +873,7 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     const {
       isDataSharingAllowed,
       isMemoValidationEnabled,
@@ -880,6 +883,13 @@ export const popupMessageListener = (request: Request) => {
     } = request;
 
     const currentIsExperimentalModeEnabled = getIsExperimentalModeEnabled();
+
+    await dataStorage.setItem({
+      [DATA_SHARING_ID]: isDataSharingAllowed,
+      [IS_VALIDATING_MEMO_ID]: isMemoValidationEnabled,
+      [IS_VALIDATING_SAFETY_ID]: isSafetyValidationEnabled,
+      [IS_VALIDATING_SAFE_ASSETS_ID]: isValidatingSafeAssetsEnabled,
+    });
 
     localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
     localStorage.setItem(
@@ -911,35 +921,19 @@ export const popupMessageListener = (request: Request) => {
         JSON.stringify(currentNetworksList),
       );
       localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
+      await dataStorage.setItem({
+        [NETWORKS_LIST_ID]: currentNetworksList,
+        [NETWORK_ID]: defaultNetworkDetails,
+      });
     }
 
     localStorage.setItem(
       IS_EXPERIMENTAL_MODE_ID,
       JSON.stringify(isExperimentalModeEnabled),
     );
-
-    if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
-      /* Disable Mainnet access and automatically switch the user to Futurenet 
-      if user is enabling experimental mode and vice-versa */
-      const currentNetworksList = getNetworksList();
-
-      const defaultNetworkDetails = isExperimentalModeEnabled
-        ? FUTURENET_NETWORK_DETAILS
-        : MAINNET_NETWORK_DETAILS;
-
-      currentNetworksList.splice(0, 1, defaultNetworkDetails);
-
-      localStorage.setItem(
-        NETWORKS_LIST_ID,
-        JSON.stringify(currentNetworksList),
-      );
-      localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
-    }
-
-    localStorage.setItem(
-      IS_EXPERIMENTAL_MODE_ID,
-      JSON.stringify(isExperimentalModeEnabled),
-    );
+    await dataStorage.setItem({
+      [IS_EXPERIMENTAL_MODE_ID]: isExperimentalModeEnabled,
+    });
 
     return {
       isDataSharingAllowed,
@@ -952,31 +946,13 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const _migrateLocalStorageToBrowserStorage = () => {
-    const storage: { [key: string]: any } = {};
-    Object.entries(localStorage).forEach(([k, v]) => {
-      let value = v;
-      try {
-        const parsedValue = JSON.parse(v);
-        value = parsedValue;
-      } catch (e) {
-        // do not transform v
-      }
-
-      storage[k] = value;
-    });
-
-    return storage;
-  };
-
   const loadSettings = async () => {
-    const storageItem = _migrateLocalStorageToBrowserStorage();
+    await migrateLocalStorageToBrowserStorage();
 
-    await dataStorage.setItem(storageItem);
-
-    const isDataSharingAllowed = await dataStorage.getItem({
-      key: DATA_SHARING_ID,
-      defaultValue: "true",
+    const {
+      [DATA_SHARING_ID]: isDataSharingAllowed,
+    } = await dataStorage.getItem({
+      [DATA_SHARING_ID]: true,
     });
 
     return {
