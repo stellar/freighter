@@ -3,7 +3,9 @@ import { Middleware, AnyAction } from "redux";
 import { createAsyncThunk, createAction } from "@reduxjs/toolkit";
 
 import { store } from "popup/App";
+import { METRICS_DATA } from "constants/localStorageTypes";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
+import { AccountType } from "@shared/api/types";
 
 type metricHandler<AppState> = (state: AppState, action: AnyAction) => void;
 const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
@@ -61,7 +63,21 @@ interface event {
   event_properties: { [key: string]: any };
   user_id: string;
   device_id: string;
+  freighter_account_funded: boolean;
+  hw_connected: boolean;
+  secret_key_account: boolean;
+  secret_key_account_funded: boolean;
   /* eslint-enable camelcase */
+}
+
+export interface MetricsData {
+  accountType: AccountType;
+  hwExists: boolean;
+  importedExists: boolean;
+  hwFunded: boolean;
+  importedFunded: boolean;
+  freighterFunded: boolean;
+  unfundedFreighterAccounts: Array<string>;
 }
 
 const METRICS_ENDPOINT = "https://api.amplitude.com/2/httpapi";
@@ -109,12 +125,21 @@ const getUserId = () => {
 export const emitMetric = (name: string, body?: any) => {
   const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
   if (!isDataSharingAllowed) return;
+
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+
   cache.push({
     /* eslint-disable camelcase */
     event_type: name,
     event_properties: body,
     user_id: getUserId(),
     device_id: window.navigator.userAgent,
+    freighter_account_funded: metricsData.freighterFunded,
+    hw_connected: metricsData.hwExists,
+    secret_key_account: metricsData.importedExists,
+    secret_key_account_funded: metricsData.importedFunded,
     /* eslint-enable camelcase */
   });
   uploadMetrics();
