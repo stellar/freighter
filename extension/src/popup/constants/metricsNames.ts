@@ -84,7 +84,10 @@ export const METRIC_NAMES = {
 
   accountScreenAddAccount: "account screen: created new account",
   accountScreenCopyPublickKey: "account screen: copied public key",
-  accountScreenImportAccount: "account screen: created new account",
+  accountScreenImportAccount: "account screen: imported new account",
+  accountScreenImportAccountFail: "account screen: imported new account: error",
+
+  freighterAccountFunded: "freighter created account funded",
 
   confirmPasswordSuccess: "re-auth: success",
   confirmPasswordFail: "re-auth: error",
