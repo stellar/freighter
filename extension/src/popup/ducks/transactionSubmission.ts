@@ -19,6 +19,7 @@ import {
   Balances,
   ErrorMessage,
   BlockedDomains,
+  AccountType,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -26,6 +27,9 @@ import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import { METRICS_DATA } from "constants/localStorageTypes";
+import { MetricsData, emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -132,13 +136,49 @@ export const loadRecentAddresses = createAsyncThunk<
   }
 });
 
+const storeBalanceMetricData = (publicKey: string, accountFunded: boolean) => {
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+  const accountType = metricsData.accountType;
+
+  if (accountFunded && accountType === AccountType.HW) {
+    metricsData.hwFunded = true;
+  }
+  if (accountFunded && accountType === AccountType.IMPORTED) {
+    metricsData.importedFunded = true;
+  }
+  if (accountType === AccountType.FREIGHTER) {
+    // check if we found a previously unfunded freighter account for metrics
+    const unfundedFreighterAccounts =
+      metricsData.unfundedFreighterAccounts || [];
+    const idx = unfundedFreighterAccounts.indexOf(publicKey);
+
+    if (accountFunded) {
+      metricsData.freighterFunded = true;
+      if (idx !== -1) {
+        emitMetric(METRIC_NAMES.freighterAccountFunded, { publicKey });
+        unfundedFreighterAccounts.splice(idx, 1);
+      }
+    }
+    if (!accountFunded && idx === -1) {
+      unfundedFreighterAccounts.push(publicKey);
+    }
+    metricsData.unfundedFreighterAccounts = unfundedFreighterAccounts;
+  }
+
+  localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
+};
+
 export const getAccountBalances = createAsyncThunk<
   AccountBalancesInterface,
   { publicKey: string; networkDetails: NetworkDetails },
   { rejectValue: ErrorMessage }
 >("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
-    return await internalGetAccountBalances({ publicKey, networkDetails });
+    const res = await internalGetAccountBalances({ publicKey, networkDetails });
+    storeBalanceMetricData(publicKey, res.isFunded || false);
+    return res;
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e });
   }
