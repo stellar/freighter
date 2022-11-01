@@ -4,6 +4,7 @@ import {
   KEY_ID,
   IS_VALIDATING_MEMO_ID,
   IS_VALIDATING_SAFETY_ID,
+  IS_VALIDATING_SAFE_ASSETS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
@@ -55,6 +56,9 @@ export const getIsMemoValidationEnabled = () =>
 
 export const getIsSafetyValidationEnabled = () =>
   JSON.parse(localStorage.getItem(IS_VALIDATING_SAFETY_ID) || "true");
+
+export const getIsValidatingSafeAssetsEnabled = () =>
+  JSON.parse(localStorage.getItem(IS_VALIDATING_SAFE_ASSETS_ID) || "true");
 
 export const getIsExperimentalModeEnabled = () =>
   JSON.parse(localStorage.getItem(IS_EXPERIMENTAL_MODE_ID) || "false");

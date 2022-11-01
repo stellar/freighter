@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 import "./styles.scss";
@@ -22,7 +24,9 @@ export const AssetNetworkInfo = ({
   assetDomain,
 }: AssetNetworkInfoProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const [networkIconUrl, setNetworkIconUrl] = useState("");
+  const isBlockedDomain = blockedDomains.domains[assetDomain];
 
   useEffect(() => {
     const fetchIconUrl = async () => {
@@ -45,15 +49,21 @@ export const AssetNetworkInfo = ({
       fetchIconUrl();
     }
   }, [assetCode, assetIssuer, networkDetails]);
+
+  const decideNetworkIcon = () => {
+    if (isBlockedDomain) {
+      return <ScamAssetIcon isScamAsset={true} />;
+    }
+    if (networkIconUrl || assetType === "native") {
+      return <img src={networkIconUrl || StellarLogo} alt="Network icon" />;
+    }
+    return <div className="AssetNetworkInfo__network__icon" />;
+  };
+
   return (
     <div className="AssetNetworkInfo__network">
       <>
-        {networkIconUrl || assetType === "native" ? (
-          <img src={networkIconUrl || StellarLogo} alt="Network icon" />
-        ) : (
-          <div className="AssetNetworkInfo__network__icon" />
-        )}
-
+        {decideNetworkIcon()}
         <span>{assetDomain || "Stellar Lumens"}</span>
       </>
     </div>
