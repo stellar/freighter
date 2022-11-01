@@ -72,8 +72,8 @@ registerHandler<AppState>(navigate, (_, a) => {
   }
 
   // "/sign-transaction" and "/grant-access" require additionak metrics on loaded page
-  const { url } = parsedSearchParam(search);
   if (pathname === ROUTES.grantAccess) {
+    const { url } = parsedSearchParam(search);
     const METRIC_OPTION_DOMAIN = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
@@ -81,6 +81,7 @@ registerHandler<AppState>(navigate, (_, a) => {
 
     emitMetric(eventName, METRIC_OPTION_DOMAIN);
   } else if (pathname === ROUTES.signTransaction) {
+    const { url } = parsedSearchParam(search);
     const { operations, operationTypes } = getTransactionInfo(search);
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
