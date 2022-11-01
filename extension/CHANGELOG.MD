@@ -1,3 +1,25 @@
+# Release notes - Wallets - Version 2.7.0
+
+### Bug
+
+Adding asset manual allows user to add assets not on their selected network
+
+Scam asset warning should use `basics/Infoblock` instead of SDS InfoBlock
+
+Scam Asset alert icon should show when search results include a scam asset
+
+Better error messages for Add Custom Network
+
+### Story
+
+Scam assets prevention measures
+
+# Release notes - Wallets - Version 2.6.0
+
+### Story
+
+Sign new XDR containing smart contracts
+
 # Release notes - Wallets - Version 2.5.0
 
 ### Bug
