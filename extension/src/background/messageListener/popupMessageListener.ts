@@ -884,6 +884,7 @@ export const popupMessageListener = (request: Request) => {
 
     const currentIsExperimentalModeEnabled = getIsExperimentalModeEnabled();
 
+    // TODO: duplicate dataStorage and localStorage updates while we're testing the new data store
     await dataStorage.setItem({
       [DATA_SHARING_ID]: isDataSharingAllowed,
       [IS_VALIDATING_MEMO_ID]: isMemoValidationEnabled,
@@ -916,6 +917,7 @@ export const popupMessageListener = (request: Request) => {
 
       currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
+      // TODO: duplicate dataStorage and localStorage updates while we're testing the new data store
       localStorage.setItem(
         NETWORKS_LIST_ID,
         JSON.stringify(currentNetworksList),
@@ -927,6 +929,7 @@ export const popupMessageListener = (request: Request) => {
       });
     }
 
+    // TODO: duplicate dataStorage and localStorage updates while we're testing the new data store
     localStorage.setItem(
       IS_EXPERIMENTAL_MODE_ID,
       JSON.stringify(isExperimentalModeEnabled),
