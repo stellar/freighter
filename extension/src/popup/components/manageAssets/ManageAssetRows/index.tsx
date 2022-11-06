@@ -12,6 +12,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { getApiStellarExpertUrl } from "popup/helpers/account";
 import {
   formatDomain,
   getCanonicalFromAsset,
@@ -214,8 +215,21 @@ export const ManageAssetRows = ({
     }
 
     // check if new asset
-    // TODO: stellar expert asset rating endpoint giving 403, resolve with OL
-    const isNewAsset = false;
+    let isNewAsset = false;
+    try {
+      const resp = await fetch(
+        `${getApiStellarExpertUrl(
+          networkDetails,
+        )}/asset/${code}-${issuer}/rating`,
+      );
+      const json = await resp.json();
+      const age = json.rating?.age;
+      if (!age || age <= 3) {
+        isNewAsset = true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
 
     // check domain
     let isInvalidDomain = false;
