@@ -27,7 +27,7 @@ import {
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
-
+import { freighterLocalStorage } from "background/helpers/dataStorage";
 import { store } from "background/store";
 import { publicKeySelector } from "background/ducks/session";
 
@@ -108,7 +108,7 @@ export const freighterApiMessageListener = (
     const domain = getUrlHostname(tabUrl);
     const punycodedDomain = getPunycodedDomain(domain);
 
-    const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
+    const allowListStr = freighterLocalStorage.getItem(ALLOWLIST_ID) || "";
     const allowList = allowListStr.split(",");
 
     const isDomainListedAllowed = isSenderAllowed({ sender });
@@ -204,7 +204,7 @@ export const freighterApiMessageListener = (
         if (signedTransaction) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
-            localStorage.setItem(ALLOWLIST_ID, allowList.join());
+            freighterLocalStorage.setItem(ALLOWLIST_ID, allowList.join());
           }
           resolve({ signedTransaction });
         }
