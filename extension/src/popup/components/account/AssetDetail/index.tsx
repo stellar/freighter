@@ -34,7 +34,10 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { saveAsset } from "popup/ducks/transactionSubmission";
+import {
+  saveAsset,
+  saveDestinationAsset,
+} from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { InfoBlock } from "popup/basics/InfoBlock";
@@ -168,7 +171,16 @@ export const AssetDetail = ({
                 {t(" SWAP")}
               </PillButton>
             </>
-          ) : null}
+          ) : (
+            <PillButton
+              onClick={() => {
+                dispatch(saveDestinationAsset(selectedAsset));
+                navigateTo(ROUTES.swap);
+              }}
+            >
+              {t(" SWAP")}
+            </PillButton>
+          )}
         </div>
         <SimpleBar>
           <div className="AssetDetail__scam-warning">
