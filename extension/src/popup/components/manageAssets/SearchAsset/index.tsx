@@ -13,7 +13,8 @@ import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { isCustomNetwork, isTestnet } from "helpers/stellar";
+import { isCustomNetwork } from "helpers/stellar";
+import { getApiStellarExpertUrl } from "popup/helpers/account";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
@@ -79,8 +80,6 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
 
-  const isNetworkTestnet = isTestnet(networkDetails);
-
   interface AssetRecord {
     asset: string;
     domain?: string;
@@ -98,9 +97,7 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
 
       try {
         res = await fetch(
-          `https://api.stellar.expert/explorer/${
-            isNetworkTestnet ? "testnet" : "public"
-          }/asset?search=${asset}`,
+          `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
         );
       } catch (e) {
         console.error(e);
