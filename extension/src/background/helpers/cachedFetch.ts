@@ -9,7 +9,7 @@ export const cachedFetch = async (url: string, storageKey: string) => {
   const sevenDaysAgo = time - 7 * 24 * 60 * 60 * 1000;
 
   let directoryLookupJson = JSON.parse(
-    freighterLocalStorage.getItem(storageKey) || "{}",
+    (await freighterLocalStorage.getItem(storageKey)) || "{}",
   );
 
   if (cachedDate < sevenDaysAgo) {
@@ -17,11 +17,11 @@ export const cachedFetch = async (url: string, storageKey: string) => {
       const res = await fetch(url);
       directoryLookupJson = await res.json();
 
-      freighterLocalStorage.setItem(
+      await freighterLocalStorage.setItem(
         storageKey,
         JSON.stringify(directoryLookupJson),
       );
-      freighterLocalStorage.setItem(cachedDateId, time.toString());
+      await freighterLocalStorage.setItem(cachedDateId, time.toString());
     } catch (e) {
       console.error(e);
     }

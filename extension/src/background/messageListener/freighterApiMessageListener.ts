@@ -49,12 +49,12 @@ export const freighterApiMessageListener = (
   request: Request,
   sender: Runtime.MessageSender,
 ) => {
-  const requestAccess = () => {
+  const requestAccess = async () => {
     const publicKey = publicKeySelector(store.getState());
 
     const { tab, url: tabUrl = "" } = sender;
 
-    if (isSenderAllowed({ sender }) && publicKey) {
+    if ((await isSenderAllowed({ sender })) && publicKey) {
       // okay, the requester checks out and we have public key, send it
       return { publicKey };
     }
@@ -96,7 +96,7 @@ export const freighterApiMessageListener = (
         : _network;
 
     const isMainnet = getIsMainnet();
-    const { networkUrl } = getNetworkDetails();
+    const { networkUrl } = await getNetworkDetails();
     const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(
@@ -108,10 +108,11 @@ export const freighterApiMessageListener = (
     const domain = getUrlHostname(tabUrl);
     const punycodedDomain = getPunycodedDomain(domain);
 
-    const allowListStr = freighterLocalStorage.getItem(ALLOWLIST_ID) || "";
+    const allowListStr =
+      (await freighterLocalStorage.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
 
-    const isDomainListedAllowed = isSenderAllowed({ sender });
+    const isDomainListedAllowed = await isSenderAllowed({ sender });
 
     const directoryLookupJson = await cachedFetch(
       STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
@@ -216,11 +217,11 @@ export const freighterApiMessageListener = (
     });
   };
 
-  const requestNetwork = () => {
+  const requestNetwork = async () => {
     let network = "";
 
     try {
-      ({ network } = getNetworkDetails());
+      ({ network } = await getNetworkDetails());
     } catch (error) {
       console.error(error);
       return { error };
@@ -228,7 +229,7 @@ export const freighterApiMessageListener = (
     return { network };
   };
 
-  const requestNetworkDetails = () => {
+  const requestNetworkDetails = async () => {
     let networkDetails = {
       network: "",
       networkName: "",
@@ -237,7 +238,7 @@ export const freighterApiMessageListener = (
     };
 
     try {
-      networkDetails = getNetworkDetails();
+      networkDetails = await getNetworkDetails();
     } catch (error) {
       console.error(error);
       return { error };

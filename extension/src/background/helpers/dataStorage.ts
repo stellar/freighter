@@ -38,7 +38,13 @@ export const migrateLocalStorageToBrowserStorage = async () => {
 // TODO - temporary wrapper around localStorage until we replace
 // localStorage all together
 export const freighterLocalStorage = {
-  getItem: (keyId: string) => localStorage.getItem(keyId),
-  setItem: (keyId: string, value: string) => localStorage.setItem(keyId, value),
+  getItem: async (keyId: string) => {
+    await dataStorage.getItem({ [keyId]: "" });
+    return localStorage.getItem(keyId);
+  },
+  setItem: async (keyId: string, value: string) => {
+    await dataStorage.setItem({ [keyId]: value });
+    localStorage.setItem(keyId, value);
+  },
   clear: () => localStorage.clear(),
 };
