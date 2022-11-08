@@ -61,7 +61,7 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   dataStorage,
   migrateLocalStorageToBrowserStorage,
-  freighterLocalStorage,
+  dataStorageAccess,
 } from "background/helpers/dataStorage";
 
 import { store } from "background/store";
@@ -145,7 +145,7 @@ export const popupMessageListener = (request: Request) => {
 
     if (keyIdListArr.indexOf(keyId) === -1) {
       keyIdListArr.push(keyId);
-      await freighterLocalStorage.setItem(
+      await dataStorageAccess.setItem(
         KEY_ID_LIST,
         JSON.stringify(keyIdListArr),
       );
@@ -153,7 +153,7 @@ export const popupMessageListener = (request: Request) => {
         bipPath,
         publicKey,
       };
-      await freighterLocalStorage.setItem(keyId, JSON.stringify(hwData));
+      await dataStorageAccess.setItem(keyId, JSON.stringify(hwData));
       addAccountName({
         keyId,
         accountName,
@@ -169,7 +169,7 @@ export const popupMessageListener = (request: Request) => {
       ];
     }
 
-    await freighterLocalStorage.setItem(KEY_ID, keyId);
+    await dataStorageAccess.setItem(KEY_ID, keyId);
 
     store.dispatch(
       logIn({
@@ -237,11 +237,8 @@ export const popupMessageListener = (request: Request) => {
     const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
 
-    await freighterLocalStorage.setItem(
-      KEY_ID_LIST,
-      JSON.stringify(keyIdListArr),
-    );
-    await freighterLocalStorage.setItem(KEY_ID, keyStore.id);
+    await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+    await dataStorageAccess.setItem(KEY_ID, keyStore.id);
     addAccountName({
       keyId: keyStore.id,
       accountName,
@@ -273,7 +270,7 @@ export const popupMessageListener = (request: Request) => {
 
     const KEY_DERIVATION_NUMBER = 0;
 
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       KEY_DERIVATION_NUMBER_ID,
       KEY_DERIVATION_NUMBER.toString(),
     );
@@ -288,7 +285,7 @@ export const popupMessageListener = (request: Request) => {
       keyPair,
       mnemonicPhrase,
     });
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       APPLICATION_ID,
       APPLICATION_STATE.PASSWORD_CREATED,
     );
@@ -311,7 +308,7 @@ export const popupMessageListener = (request: Request) => {
 
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()
-      : (await freighterLocalStorage.getItem(KEY_ID)) || "";
+      : (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -322,7 +319,7 @@ export const popupMessageListener = (request: Request) => {
 
     const wallet = fromMnemonic(mnemonicPhrase);
     const keyNumber =
-      Number(await freighterLocalStorage.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
+      Number(await dataStorageAccess.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
 
     const keyPair = {
       publicKey: wallet.getPublicKey(keyNumber),
@@ -335,7 +332,7 @@ export const popupMessageListener = (request: Request) => {
       mnemonicPhrase,
     });
 
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       KEY_DERIVATION_NUMBER_ID,
       keyNumber.toString(),
     );
@@ -359,7 +356,7 @@ export const popupMessageListener = (request: Request) => {
     let sourceKeys;
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()
-      : (await freighterLocalStorage.getItem(KEY_ID)) || "";
+      : (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -428,7 +425,7 @@ export const popupMessageListener = (request: Request) => {
 
     const activeKeyId = keyIdList[publicKeyIndex];
 
-    await freighterLocalStorage.setItem(KEY_ID, activeKeyId);
+    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
 
     store.dispatch(setActivePublicKey({ publicKey }));
     store.dispatch(timeoutAccountAccess());
@@ -444,7 +441,7 @@ export const popupMessageListener = (request: Request) => {
 
   const updateAccountName = async () => {
     const { accountName } = request;
-    const keyId = (await freighterLocalStorage.getItem(KEY_ID)) || "";
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     store.dispatch(
       updateAllAccountsAccountName({ updatedAccountName: accountName }),
@@ -474,7 +471,7 @@ export const popupMessageListener = (request: Request) => {
 
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       NETWORKS_LIST_ID,
       JSON.stringify(networksList),
     );
@@ -494,7 +491,7 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1);
 
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       NETWORKS_LIST_ID,
       JSON.stringify(savedNetworks),
     );
@@ -509,7 +506,7 @@ export const popupMessageListener = (request: Request) => {
 
     const savedNetworks = await getSavedNetworks();
     const activeNetworkDetails = JSON.parse(
-      (await freighterLocalStorage.getItem(NETWORK_ID)) ||
+      (await dataStorageAccess.getItem(NETWORK_ID)) ||
         JSON.stringify(MAINNET_NETWORK_DETAILS),
     );
     const activeIndex =
@@ -520,14 +517,14 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
 
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       NETWORKS_LIST_ID,
       JSON.stringify(savedNetworks),
     );
 
     if (activeIndex === networkIndex) {
       // editing active network, so we need to update this in storage
-      await freighterLocalStorage.setItem(
+      await dataStorageAccess.setItem(
         NETWORK_ID,
         JSON.stringify(savedNetworks[activeIndex]),
       );
@@ -548,10 +545,7 @@ export const popupMessageListener = (request: Request) => {
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
-    await freighterLocalStorage.setItem(
-      NETWORK_ID,
-      JSON.stringify(networkDetails),
-    );
+    await dataStorageAccess.setItem(NETWORK_ID, JSON.stringify(networkDetails));
 
     return { networkDetails };
   };
@@ -562,8 +556,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       hasPrivateKey: hasPrivateKeySelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState:
-        (await freighterLocalStorage.getItem(APPLICATION_ID)) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: getBipPath(),
     };
@@ -582,12 +575,11 @@ export const popupMessageListener = (request: Request) => {
       ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
       : APPLICATION_STATE.MNEMONIC_PHRASE_FAILED;
 
-    await freighterLocalStorage.setItem(APPLICATION_ID, applicationState);
+    await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
 
     return {
       isCorrectPhrase,
-      applicationState:
-        (await freighterLocalStorage.getItem(APPLICATION_ID)) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
     };
   };
 
@@ -607,17 +599,17 @@ export const popupMessageListener = (request: Request) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
-      freighterLocalStorage.clear();
-      await freighterLocalStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+      dataStorageAccess.clear();
+      await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
 
       // if we don't have an application state, assign them one
       applicationState =
-        (await freighterLocalStorage.getItem(APPLICATION_ID)) ||
+        (await dataStorageAccess.getItem(APPLICATION_ID)) ||
         APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
-      await freighterLocalStorage.setItem(APPLICATION_ID, applicationState);
+      await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
 
       // start the timer now that we have active private key
       sessionTimer.startSession();
@@ -629,8 +621,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState:
-        (await freighterLocalStorage.getItem(APPLICATION_ID)) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
@@ -640,7 +631,7 @@ export const popupMessageListener = (request: Request) => {
 
     try {
       await _unlockKeystore({
-        keyID: (await freighterLocalStorage.getItem(KEY_ID)) || "",
+        keyID: (await dataStorageAccess.getItem(KEY_ID)) || "",
         password,
       });
       return {};
@@ -705,14 +696,11 @@ export const popupMessageListener = (request: Request) => {
 
     /* migration needed to v1.0.6-beta data model */
     if (!keyIdList.length) {
-      const keyId = await freighterLocalStorage.getItem(KEY_ID);
+      const keyId = await dataStorageAccess.getItem(KEY_ID);
       if (keyId) {
         keyIdList.push(keyId);
-        await freighterLocalStorage.setItem(
-          KEY_ID_LIST,
-          JSON.stringify(keyIdList),
-        );
-        await freighterLocalStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+        await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
+        await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
         addAccountName({ keyId, accountName: "Account 1" });
       }
     }
@@ -720,7 +708,7 @@ export const popupMessageListener = (request: Request) => {
 
     // if active hw then use the first non-hw keyID to check password
     // with keyManager
-    let keyID = (await freighterLocalStorage.getItem(KEY_ID)) || "";
+    let keyID = (await dataStorageAccess.getItem(KEY_ID)) || "";
     let hwPublicKey = "";
     if (await getIsHardwareWalletActive()) {
       hwPublicKey = keyID.split(":")[1];
@@ -774,8 +762,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(store.getState()),
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
-      applicationState:
-        (await freighterLocalStorage.getItem(APPLICATION_ID)) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(store.getState()),
       bipPath: getBipPath(),
     };
@@ -789,12 +776,11 @@ export const popupMessageListener = (request: Request) => {
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
-    const allowListStr =
-      (await freighterLocalStorage.getItem(ALLOWLIST_ID)) || "";
+    const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
     allowList.push(punycodedDomain);
 
-    await freighterLocalStorage.setItem(ALLOWLIST_ID, allowList.join());
+    await dataStorageAccess.setItem(ALLOWLIST_ID, allowList.join());
 
     if (typeof response === "function") {
       return response(url);
@@ -882,12 +868,12 @@ export const popupMessageListener = (request: Request) => {
   const addRecentAddress = async () => {
     const { publicKey } = request;
     const storedJSON =
-      (await freighterLocalStorage.getItem(RECENT_ADDRESSES)) || "[]";
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
     const recentAddresses = JSON.parse(storedJSON);
     if (recentAddresses.indexOf(publicKey) === -1) {
       recentAddresses.push(publicKey);
     }
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       RECENT_ADDRESSES,
       JSON.stringify(recentAddresses),
     );
@@ -897,7 +883,7 @@ export const popupMessageListener = (request: Request) => {
 
   const loadRecentAddresses = async () => {
     const storedJSON =
-      (await freighterLocalStorage.getItem(RECENT_ADDRESSES)) || "[]";
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
     const recentAddresses = JSON.parse(storedJSON);
     return { recentAddresses };
   };
@@ -907,8 +893,7 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       publicKey: publicKeySelector(store.getState()),
-      applicationState:
-        (await freighterLocalStorage.getItem(APPLICATION_ID)) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
     };
   };
 
@@ -923,19 +908,19 @@ export const popupMessageListener = (request: Request) => {
 
     const currentIsExperimentalModeEnabled = await await getIsExperimentalModeEnabled();
 
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       DATA_SHARING_ID,
       JSON.stringify(isDataSharingAllowed),
     );
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       IS_VALIDATING_MEMO_ID,
       JSON.stringify(isMemoValidationEnabled),
     );
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       IS_VALIDATING_SAFETY_ID,
       JSON.stringify(isSafetyValidationEnabled),
     );
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       IS_VALIDATING_SAFE_ASSETS_ID,
       JSON.stringify(isValidatingSafeAssetsEnabled),
     );
@@ -951,17 +936,17 @@ export const popupMessageListener = (request: Request) => {
 
       currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
-      await freighterLocalStorage.setItem(
+      await dataStorageAccess.setItem(
         NETWORKS_LIST_ID,
         JSON.stringify(currentNetworksList),
       );
-      await freighterLocalStorage.setItem(
+      await dataStorageAccess.setItem(
         NETWORK_ID,
         JSON.stringify(defaultNetworkDetails),
       );
     }
 
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       IS_EXPERIMENTAL_MODE_ID,
       JSON.stringify(isExperimentalModeEnabled),
     );
@@ -1001,7 +986,7 @@ export const popupMessageListener = (request: Request) => {
     const { assetCanonical } = request;
 
     const assetIconCache = JSON.parse(
-      (await freighterLocalStorage.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
     );
 
     return {
@@ -1013,10 +998,10 @@ export const popupMessageListener = (request: Request) => {
     const { assetCanonical, iconUrl } = request;
 
     const assetIconCache = JSON.parse(
-      (await freighterLocalStorage.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
     );
     assetIconCache[assetCanonical] = iconUrl;
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       CACHED_ASSET_ICONS_ID,
       JSON.stringify(assetIconCache),
     );
@@ -1026,7 +1011,7 @@ export const popupMessageListener = (request: Request) => {
     const { assetCanonical } = request;
 
     const assetDomainCache = JSON.parse(
-      (await freighterLocalStorage.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
     );
 
     return {
@@ -1038,10 +1023,10 @@ export const popupMessageListener = (request: Request) => {
     const { assetCanonical, assetDomain } = request;
 
     const assetDomainCache = JSON.parse(
-      (await freighterLocalStorage.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
     );
     assetDomainCache[assetCanonical] = assetDomain;
-    await freighterLocalStorage.setItem(
+    await dataStorageAccess.setItem(
       CACHED_ASSET_DOMAINS_ID,
       JSON.stringify(assetDomainCache),
     );
