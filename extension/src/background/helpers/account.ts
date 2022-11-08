@@ -12,93 +12,118 @@ import {
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet } from "helpers/stellar";
+import { freighterLocalStorage } from "background/helpers/dataStorage";
 
-export const getKeyIdList = () =>
-  JSON.parse(localStorage.getItem(KEY_ID_LIST) || "[]");
+export const getKeyIdList = async () =>
+  JSON.parse((await freighterLocalStorage.getItem(KEY_ID_LIST)) || "[]");
 
-export const getAccountNameList = () => {
+export const getAccountNameList = async () => {
   const encodedaccountNameList =
-    localStorage.getItem(ACCOUNT_NAME_LIST_ID) || encodeObject({});
+    (await freighterLocalStorage.getItem(ACCOUNT_NAME_LIST_ID)) ||
+    encodeObject({});
 
   return JSON.parse(decodeString(encodedaccountNameList));
 };
 
-export const addAccountName = ({
+export const addAccountName = async ({
   keyId,
   accountName,
 }: {
   keyId: string;
   accountName: string;
 }) => {
-  const accountNameList = getAccountNameList();
+  const accountNameList = await getAccountNameList();
 
   accountNameList[keyId] = accountName;
 
   const encodedaccountNameList = encodeObject(accountNameList);
 
-  localStorage.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
+  await freighterLocalStorage.setItem(
+    ACCOUNT_NAME_LIST_ID,
+    encodedaccountNameList,
+  );
 };
 
-export const getIsMainnet = () => {
-  const networkDetails = getNetworkDetails();
+export const getIsMainnet = async () => {
+  const networkDetails = await getNetworkDetails();
 
   return isMainnet(networkDetails);
 };
 
-export const getIsTestnet = () => {
-  const networkDetails = getNetworkDetails();
+export const getIsTestnet = async () => {
+  const networkDetails = await getNetworkDetails();
 
   return isTestnet(networkDetails);
 };
 
-export const getIsMemoValidationEnabled = () =>
-  JSON.parse(localStorage.getItem(IS_VALIDATING_MEMO_ID) || "true");
+export const getIsMemoValidationEnabled = async () =>
+  JSON.parse(
+    (await freighterLocalStorage.getItem(IS_VALIDATING_MEMO_ID)) || "true",
+  );
 
-export const getIsSafetyValidationEnabled = () =>
-  JSON.parse(localStorage.getItem(IS_VALIDATING_SAFETY_ID) || "true");
+export const getIsSafetyValidationEnabled = async () =>
+  JSON.parse(
+    (await freighterLocalStorage.getItem(IS_VALIDATING_SAFETY_ID)) || "true",
+  );
 
-export const getIsValidatingSafeAssetsEnabled = () =>
-  JSON.parse(localStorage.getItem(IS_VALIDATING_SAFE_ASSETS_ID) || "true");
+export const getIsValidatingSafeAssetsEnabled = async () =>
+  JSON.parse(
+    (await freighterLocalStorage.getItem(IS_VALIDATING_SAFE_ASSETS_ID)) ||
+      "true",
+  );
 
-export const getIsExperimentalModeEnabled = () =>
-  JSON.parse(localStorage.getItem(IS_EXPERIMENTAL_MODE_ID) || "false");
+export const getIsExperimentalModeEnabled = async () =>
+  JSON.parse(
+    (await freighterLocalStorage.getItem(IS_EXPERIMENTAL_MODE_ID)) || "false",
+  );
 
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";
 
-export const getIsHardwareWalletActive = () =>
-  (localStorage.getItem(KEY_ID) || "").indexOf(HW_PREFIX) > -1;
+export const getIsHardwareWalletActive = async () =>
+  ((await freighterLocalStorage.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
-export const getBipPath = () => {
-  const keyId = localStorage.getItem(KEY_ID) || "";
-  const hwData = JSON.parse(localStorage.getItem(keyId) || "{}");
+export const getBipPath = async () => {
+  const keyId = (await freighterLocalStorage.getItem(KEY_ID)) || "";
+  const hwData = JSON.parse(
+    (await freighterLocalStorage.getItem(keyId)) || "{}",
+  );
   return hwData.bipPath || "";
 };
 
-export const getSavedNetworks = () =>
+export const getSavedNetworks = async () =>
   JSON.parse(
-    localStorage.getItem(NETWORKS_LIST_ID) || JSON.stringify(DEFAULT_NETWORKS),
+    (await freighterLocalStorage.getItem(NETWORKS_LIST_ID)) ||
+      JSON.stringify(DEFAULT_NETWORKS),
   ) as NetworkDetails[];
 
-export const getNetworkDetails = () => {
-  if (!localStorage.getItem(NETWORK_ID)) {
-    localStorage.setItem(NETWORK_ID, JSON.stringify(DEFAULT_NETWORKS[0]));
+export const getNetworkDetails = async () => {
+  if (!(await freighterLocalStorage.getItem(NETWORK_ID))) {
+    await freighterLocalStorage.setItem(
+      NETWORK_ID,
+      JSON.stringify(DEFAULT_NETWORKS[0]),
+    );
   }
 
   const networkDetails = JSON.parse(
-    localStorage.getItem(NETWORK_ID) || JSON.stringify(DEFAULT_NETWORKS[0]),
+    (await freighterLocalStorage.getItem(NETWORK_ID)) ||
+      JSON.stringify(DEFAULT_NETWORKS[0]),
   ) as NetworkDetails;
 
   return networkDetails;
 };
 
-export const getNetworksList = () => {
-  if (!localStorage.getItem(NETWORKS_LIST_ID)) {
-    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(DEFAULT_NETWORKS));
+export const getNetworksList = async () => {
+  if (!(await freighterLocalStorage.getItem(NETWORKS_LIST_ID))) {
+    await freighterLocalStorage.setItem(
+      NETWORKS_LIST_ID,
+      JSON.stringify(DEFAULT_NETWORKS),
+    );
   }
 
   const networksList = JSON.parse(
-    localStorage.getItem(NETWORKS_LIST_ID) || JSON.stringify(DEFAULT_NETWORKS),
+    (await freighterLocalStorage.getItem(NETWORKS_LIST_ID)) ||
+      JSON.stringify(DEFAULT_NETWORKS),
   ) as NetworkDetails[];
 
   return networksList;
