@@ -100,6 +100,11 @@ export const getStellarExpertUrl = (networkDetails: NetworkDetails) =>
     isTestnet(networkDetails) ? "testnet" : "public"
   }`;
 
+export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
+  `https://api.stellar.expert/explorer/${
+    isTestnet(networkDetails) ? "testnet" : "public"
+  }`;
+
 interface GetAvailableBalance {
   accountBalances: AccountBalancesInterface;
   selectedAsset: string;
