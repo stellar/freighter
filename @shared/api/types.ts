@@ -69,6 +69,12 @@ export interface Account {
   hardwareWalletType?: WalletType;
 }
 
+export enum AccountType {
+  HW = "HW",
+  IMPORTED = "IMPORTED",
+  FREIGHTER = "FREIGHTER",
+}
+
 export interface Preferences {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;

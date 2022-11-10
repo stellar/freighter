@@ -6,6 +6,7 @@ import {
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
+import { migrateLocalStorageToBrowserStorage } from "./helpers/dataStorage";
 
 export const initMessageListener = () => {
   // returning true is very important in these message listeners. It tells the listener that the callback
@@ -23,4 +24,6 @@ export const initMessageListener = () => {
 
     return res;
   });
+
+  browser.runtime.onInstalled.addListener(migrateLocalStorageToBrowserStorage);
 };

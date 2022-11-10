@@ -58,6 +58,11 @@ import {
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
+import {
+  dataStorage,
+  migrateLocalStorageToBrowserStorage,
+  dataStorageAccess,
+} from "background/helpers/dataStorage";
 
 import { store } from "background/store";
 import {
@@ -106,8 +111,8 @@ export const popupMessageListener = (request: Request) => {
 
   // this returns the first non hardware wallet (Hw) keyID, if it exists.
   // Used for things like checking a password when a Hw is active.
-  const _getNonHwKeyID = () => {
-    const keyIdList = getKeyIdList();
+  const _getNonHwKeyID = async () => {
+    const keyIdList = await getKeyIdList();
     const nonHwKeyIds = keyIdList.filter(
       (k: string) => k.indexOf(HW_PREFIX) === -1,
     );
@@ -120,7 +125,7 @@ export const popupMessageListener = (request: Request) => {
   //   publicKey: "",
   //   bipPath: "",
   // }
-  const _storeHardwareWalletAccount = ({
+  const _storeHardwareWalletAccount = async ({
     publicKey,
     hardwareWalletType,
     bipPath,
@@ -133,19 +138,22 @@ export const popupMessageListener = (request: Request) => {
     let allAccounts = allAccountsSelector(store.getState());
 
     const keyId = `${HW_PREFIX}${publicKey}`;
-    const keyIdListArr = getKeyIdList();
+    const keyIdListArr = await getKeyIdList();
     const accountName = `${hardwareWalletType} ${
       keyIdListArr.filter((k: string) => k.indexOf(HW_PREFIX) !== -1).length + 1
     }`;
 
     if (keyIdListArr.indexOf(keyId) === -1) {
       keyIdListArr.push(keyId);
-      localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+      await dataStorageAccess.setItem(
+        KEY_ID_LIST,
+        JSON.stringify(keyIdListArr),
+      );
       const hwData = {
         bipPath,
         publicKey,
       };
-      localStorage.setItem(keyId, JSON.stringify(hwData));
+      await dataStorageAccess.setItem(keyId, JSON.stringify(hwData));
       addAccountName({
         keyId,
         accountName,
@@ -161,7 +169,7 @@ export const popupMessageListener = (request: Request) => {
       ];
     }
 
-    localStorage.setItem(KEY_ID, keyId);
+    await dataStorageAccess.setItem(KEY_ID, keyId);
 
     store.dispatch(
       logIn({
@@ -226,11 +234,11 @@ export const popupMessageListener = (request: Request) => {
       console.error(e);
     }
 
-    const keyIdListArr = getKeyIdList();
+    const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
 
-    localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
-    localStorage.setItem(KEY_ID, keyStore.id);
+    await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+    await dataStorageAccess.setItem(KEY_ID, keyStore.id);
     addAccountName({
       keyId: keyStore.id,
       accountName,
@@ -262,7 +270,7 @@ export const popupMessageListener = (request: Request) => {
 
     const KEY_DERIVATION_NUMBER = 0;
 
-    localStorage.setItem(
+    await dataStorageAccess.setItem(
       KEY_DERIVATION_NUMBER_ID,
       KEY_DERIVATION_NUMBER.toString(),
     );
@@ -277,7 +285,10 @@ export const popupMessageListener = (request: Request) => {
       keyPair,
       mnemonicPhrase,
     });
-    localStorage.setItem(APPLICATION_ID, APPLICATION_STATE.PASSWORD_CREATED);
+    await dataStorageAccess.setItem(
+      APPLICATION_ID,
+      APPLICATION_STATE.PASSWORD_CREATED,
+    );
 
     const currentState = store.getState();
 
@@ -295,9 +306,9 @@ export const popupMessageListener = (request: Request) => {
       return { error: "Mnemonic phrase not found" };
     }
 
-    const keyID = getIsHardwareWalletActive()
-      ? _getNonHwKeyID()
-      : localStorage.getItem(KEY_ID) || "";
+    const keyID = (await getIsHardwareWalletActive())
+      ? await _getNonHwKeyID()
+      : (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -308,7 +319,7 @@ export const popupMessageListener = (request: Request) => {
 
     const wallet = fromMnemonic(mnemonicPhrase);
     const keyNumber =
-      Number(localStorage.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
+      Number(await dataStorageAccess.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
 
     const keyPair = {
       publicKey: wallet.getPublicKey(keyNumber),
@@ -321,7 +332,10 @@ export const popupMessageListener = (request: Request) => {
       mnemonicPhrase,
     });
 
-    localStorage.setItem(KEY_DERIVATION_NUMBER_ID, keyNumber.toString());
+    await dataStorageAccess.setItem(
+      KEY_DERIVATION_NUMBER_ID,
+      keyNumber.toString(),
+    );
 
     store.dispatch(timeoutAccountAccess());
 
@@ -340,9 +354,9 @@ export const popupMessageListener = (request: Request) => {
   const importAccount = async () => {
     const { password, privateKey } = request;
     let sourceKeys;
-    const keyID = getIsHardwareWalletActive()
-      ? _getNonHwKeyID()
-      : localStorage.getItem(KEY_ID) || "";
+    const keyID = (await getIsHardwareWalletActive())
+      ? await _getNonHwKeyID()
+      : (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -399,7 +413,7 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const makeAccountActive = () => {
+  const makeAccountActive = async () => {
     const { publicKey } = request;
 
     const allAccounts = allAccountsSelector(store.getState());
@@ -407,11 +421,11 @@ export const popupMessageListener = (request: Request) => {
       (account: Account) => account.publicKey === publicKey,
     );
     publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
-    const keyIdList = getKeyIdList();
+    const keyIdList = await getKeyIdList();
 
     const activeKeyId = keyIdList[publicKeyIndex];
 
-    localStorage.setItem(KEY_ID, activeKeyId);
+    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
 
     store.dispatch(setActivePublicKey({ publicKey }));
     store.dispatch(timeoutAccountAccess());
@@ -425,9 +439,9 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const updateAccountName = () => {
+  const updateAccountName = async () => {
     const { accountName } = request;
-    const keyId = localStorage.getItem(KEY_ID) || "";
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     store.dispatch(
       updateAllAccountsAccountName({ updatedAccountName: accountName }),
@@ -439,9 +453,9 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const addCustomNetwork = () => {
+  const addCustomNetwork = async () => {
     const { networkDetails } = request;
-    const savedNetworks = getSavedNetworks();
+    const savedNetworks = await getSavedNetworks();
 
     // Network Name already used
     if (
@@ -457,36 +471,42 @@ export const popupMessageListener = (request: Request) => {
 
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
-    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(networksList));
+    await dataStorageAccess.setItem(
+      NETWORKS_LIST_ID,
+      JSON.stringify(networksList),
+    );
 
     return {
       networksList,
     };
   };
 
-  const removeCustomNetwork = () => {
+  const removeCustomNetwork = async () => {
     const { networkName } = request;
 
-    const savedNetworks = getSavedNetworks();
+    const savedNetworks = await getSavedNetworks();
     const networkIndex = savedNetworks.findIndex(
       ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
     );
 
     savedNetworks.splice(networkIndex, 1);
 
-    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
+    await dataStorageAccess.setItem(
+      NETWORKS_LIST_ID,
+      JSON.stringify(savedNetworks),
+    );
 
     return {
       networksList: savedNetworks,
     };
   };
 
-  const editCustomNetwork = () => {
+  const editCustomNetwork = async () => {
     const { networkDetails, networkIndex } = request;
 
-    const savedNetworks = getSavedNetworks();
+    const savedNetworks = await getSavedNetworks();
     const activeNetworkDetails = JSON.parse(
-      localStorage.getItem(NETWORK_ID) ||
+      (await dataStorageAccess.getItem(NETWORK_ID)) ||
         JSON.stringify(MAINNET_NETWORK_DETAILS),
     );
     const activeIndex =
@@ -497,11 +517,14 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
 
-    localStorage.setItem(NETWORKS_LIST_ID, JSON.stringify(savedNetworks));
+    await dataStorageAccess.setItem(
+      NETWORKS_LIST_ID,
+      JSON.stringify(savedNetworks),
+    );
 
     if (activeIndex === networkIndex) {
       // editing active network, so we need to update this in storage
-      localStorage.setItem(
+      await dataStorageAccess.setItem(
         NETWORK_ID,
         JSON.stringify(savedNetworks[activeIndex]),
       );
@@ -513,27 +536,27 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const changeNetwork = () => {
+  const changeNetwork = async () => {
     const { networkName } = request;
 
-    const savedNetworks = getSavedNetworks();
+    const savedNetworks = await getSavedNetworks();
     const networkDetails =
       savedNetworks.find(
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
-    localStorage.setItem(NETWORK_ID, JSON.stringify(networkDetails));
+    await dataStorageAccess.setItem(NETWORK_ID, JSON.stringify(networkDetails));
 
     return { networkDetails };
   };
 
-  const loadAccount = () => {
+  const loadAccount = async () => {
     const currentState = store.getState();
 
     return {
       hasPrivateKey: hasPrivateKeySelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: getBipPath(),
     };
@@ -543,7 +566,7 @@ export const popupMessageListener = (request: Request) => {
     mnemonicPhrase: mnemonicPhraseSelector(store.getState()),
   });
 
-  const confirmMnemonicPhrase = () => {
+  const confirmMnemonicPhrase = async () => {
     const isCorrectPhrase =
       mnemonicPhraseSelector(store.getState()) ===
       request.mnemonicPhraseToConfirm;
@@ -552,15 +575,15 @@ export const popupMessageListener = (request: Request) => {
       ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
       : APPLICATION_STATE.MNEMONIC_PHRASE_FAILED;
 
-    localStorage.setItem(APPLICATION_ID, applicationState);
+    await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
 
     return {
       isCorrectPhrase,
-      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
     };
   };
 
-  const recoverAccount = () => {
+  const recoverAccount = async () => {
     const { password, recoverMnemonic } = request;
     let wallet;
     let applicationState;
@@ -576,17 +599,17 @@ export const popupMessageListener = (request: Request) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
-      localStorage.clear();
-      localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+      dataStorageAccess.clear();
+      await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
 
       // if we don't have an application state, assign them one
       applicationState =
-        localStorage.getItem(APPLICATION_ID) ||
+        (await dataStorageAccess.getItem(APPLICATION_ID)) ||
         APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
-      localStorage.setItem(APPLICATION_ID, applicationState);
+      await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
 
       // start the timer now that we have active private key
       sessionTimer.startSession();
@@ -598,7 +621,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       hasPrivateKey: hasPrivateKeySelector(currentState),
     };
   };
@@ -608,7 +631,7 @@ export const popupMessageListener = (request: Request) => {
 
     try {
       await _unlockKeystore({
-        keyID: localStorage.getItem(KEY_ID) || "",
+        keyID: (await dataStorageAccess.getItem(KEY_ID)) || "",
         password,
       });
       return {};
@@ -618,8 +641,8 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const _getLocalStorageAccounts = async (password: string) => {
-    const keyIdList = getKeyIdList();
-    const accountNameList = getAccountNameList();
+    const keyIdList = await getKeyIdList();
+    const accountNameList = await getAccountNameList();
     const unlockedAccounts = [] as Array<Account>;
 
     // for loop to preserve order of accounts
@@ -669,15 +692,15 @@ export const popupMessageListener = (request: Request) => {
     <UnlockAccount /> calls this method to fill in any missing data */
 
     const { password } = request;
-    const keyIdList = getKeyIdList();
+    const keyIdList = await getKeyIdList();
 
     /* migration needed to v1.0.6-beta data model */
     if (!keyIdList.length) {
-      const keyId = localStorage.getItem(KEY_ID);
+      const keyId = await dataStorageAccess.getItem(KEY_ID);
       if (keyId) {
         keyIdList.push(keyId);
-        localStorage.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
-        localStorage.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+        await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
+        await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
         addAccountName({ keyId, accountName: "Account 1" });
       }
     }
@@ -685,11 +708,11 @@ export const popupMessageListener = (request: Request) => {
 
     // if active hw then use the first non-hw keyID to check password
     // with keyManager
-    let keyID = localStorage.getItem(KEY_ID) || "";
+    let keyID = (await dataStorageAccess.getItem(KEY_ID)) || "";
     let hwPublicKey = "";
-    if (getIsHardwareWalletActive()) {
+    if (await getIsHardwareWalletActive()) {
       hwPublicKey = keyID.split(":")[1];
-      keyID = _getNonHwKeyID();
+      keyID = await _getNonHwKeyID();
     }
 
     let activeAccountKeystore;
@@ -732,20 +755,20 @@ export const popupMessageListener = (request: Request) => {
 
     // start the timer now that we have active private key
     sessionTimer.startSession();
-    if (!getIsHardwareWalletActive()) {
+    if (!(await getIsHardwareWalletActive())) {
       store.dispatch(setActivePrivateKey({ privateKey: activePrivateKey }));
     }
 
     return {
       publicKey: publicKeySelector(store.getState()),
       hasPrivateKey: hasPrivateKeySelector(store.getState()),
-      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(store.getState()),
       bipPath: getBipPath(),
     };
   };
 
-  const grantAccess = () => {
+  const grantAccess = async () => {
     const { url = "" } = request;
     const sanitizedUrl = getUrlHostname(url);
     const punycodedDomain = getPunycodedDomain(sanitizedUrl);
@@ -753,11 +776,11 @@ export const popupMessageListener = (request: Request) => {
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
-    const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
+    const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
     allowList.push(punycodedDomain);
 
-    localStorage.setItem(ALLOWLIST_ID, allowList.join());
+    await dataStorageAccess.setItem(ALLOWLIST_ID, allowList.join());
 
     if (typeof response === "function") {
       return response(url);
@@ -786,11 +809,11 @@ export const popupMessageListener = (request: Request) => {
     return { error: "Session timed out" };
   };
 
-  const signTransaction = () => {
+  const signTransaction = async () => {
     const privateKey = privateKeySelector(store.getState());
 
     if (privateKey.length) {
-      const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
       const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
       const sourceKeys = SDK.Keypair.fromSecret(privateKey);
 
@@ -826,9 +849,9 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
-  const signFreighterTransaction = () => {
+  const signFreighterTransaction = async () => {
     const { transactionXDR, network } = request;
-    const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
 
@@ -842,34 +865,39 @@ export const popupMessageListener = (request: Request) => {
     return { error: "Session timed out" };
   };
 
-  const addRecentAddress = () => {
+  const addRecentAddress = async () => {
     const { publicKey } = request;
-    const storedJSON = localStorage.getItem(RECENT_ADDRESSES) || "[]";
+    const storedJSON =
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
     const recentAddresses = JSON.parse(storedJSON);
     if (recentAddresses.indexOf(publicKey) === -1) {
       recentAddresses.push(publicKey);
     }
-    localStorage.setItem(RECENT_ADDRESSES, JSON.stringify(recentAddresses));
+    await dataStorageAccess.setItem(
+      RECENT_ADDRESSES,
+      JSON.stringify(recentAddresses),
+    );
 
     return { recentAddresses };
   };
 
-  const loadRecentAddresses = () => {
-    const storedJSON = localStorage.getItem(RECENT_ADDRESSES) || "[]";
+  const loadRecentAddresses = async () => {
+    const storedJSON =
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
     const recentAddresses = JSON.parse(storedJSON);
     return { recentAddresses };
   };
 
-  const signOut = () => {
+  const signOut = async () => {
     store.dispatch(logOut());
 
     return {
       publicKey: publicKeySelector(store.getState()),
-      applicationState: localStorage.getItem(APPLICATION_ID) || "",
+      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
     };
   };
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     const {
       isDataSharingAllowed,
       isMemoValidationEnabled,
@@ -878,18 +906,21 @@ export const popupMessageListener = (request: Request) => {
       isExperimentalModeEnabled,
     } = request;
 
-    const currentIsExperimentalModeEnabled = getIsExperimentalModeEnabled();
+    const currentIsExperimentalModeEnabled = await await getIsExperimentalModeEnabled();
 
-    localStorage.setItem(DATA_SHARING_ID, JSON.stringify(isDataSharingAllowed));
-    localStorage.setItem(
+    await dataStorageAccess.setItem(
+      DATA_SHARING_ID,
+      JSON.stringify(isDataSharingAllowed),
+    );
+    await dataStorageAccess.setItem(
       IS_VALIDATING_MEMO_ID,
       JSON.stringify(isMemoValidationEnabled),
     );
-    localStorage.setItem(
+    await dataStorageAccess.setItem(
       IS_VALIDATING_SAFETY_ID,
       JSON.stringify(isSafetyValidationEnabled),
     );
-    localStorage.setItem(
+    await dataStorageAccess.setItem(
       IS_VALIDATING_SAFE_ASSETS_ID,
       JSON.stringify(isValidatingSafeAssetsEnabled),
     );
@@ -897,7 +928,7 @@ export const popupMessageListener = (request: Request) => {
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
       /* Disable Mainnet access and automatically switch the user to Futurenet 
       if user is enabling experimental mode and vice-versa */
-      const currentNetworksList = getNetworksList();
+      const currentNetworksList = await getNetworksList();
 
       const defaultNetworkDetails = isExperimentalModeEnabled
         ? FUTURENET_NETWORK_DETAILS
@@ -905,72 +936,57 @@ export const popupMessageListener = (request: Request) => {
 
       currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
-      localStorage.setItem(
+      await dataStorageAccess.setItem(
         NETWORKS_LIST_ID,
         JSON.stringify(currentNetworksList),
       );
-      localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
-    }
-
-    localStorage.setItem(
-      IS_EXPERIMENTAL_MODE_ID,
-      JSON.stringify(isExperimentalModeEnabled),
-    );
-
-    if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
-      /* Disable Mainnet access and automatically switch the user to Futurenet 
-      if user is enabling experimental mode and vice-versa */
-      const currentNetworksList = getNetworksList();
-
-      const defaultNetworkDetails = isExperimentalModeEnabled
-        ? FUTURENET_NETWORK_DETAILS
-        : MAINNET_NETWORK_DETAILS;
-
-      currentNetworksList.splice(0, 1, defaultNetworkDetails);
-
-      localStorage.setItem(
-        NETWORKS_LIST_ID,
-        JSON.stringify(currentNetworksList),
+      await dataStorageAccess.setItem(
+        NETWORK_ID,
+        JSON.stringify(defaultNetworkDetails),
       );
-      localStorage.setItem(NETWORK_ID, JSON.stringify(defaultNetworkDetails));
     }
 
-    localStorage.setItem(
+    await dataStorageAccess.setItem(
       IS_EXPERIMENTAL_MODE_ID,
       JSON.stringify(isExperimentalModeEnabled),
     );
 
     return {
       isDataSharingAllowed,
-      isMemoValidationEnabled: getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
-      isExperimentalModeEnabled: getIsExperimentalModeEnabled(),
-      networkDetails: getNetworkDetails(),
-      networksList: getNetworksList(),
+      isMemoValidationEnabled: await getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
+      isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
+      networkDetails: await getNetworkDetails(),
+      networksList: await getNetworksList(),
     };
   };
 
-  const loadSettings = () => {
-    const dataSharingValue = localStorage.getItem(DATA_SHARING_ID) || "true";
-    const isDataSharingAllowed = JSON.parse(dataSharingValue);
+  const loadSettings = async () => {
+    await migrateLocalStorageToBrowserStorage();
+
+    const {
+      [DATA_SHARING_ID]: isDataSharingAllowed,
+    } = await await dataStorage.getItem({
+      [DATA_SHARING_ID]: true,
+    });
 
     return {
       isDataSharingAllowed,
-      isMemoValidationEnabled: getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: getIsValidatingSafeAssetsEnabled(),
-      isExperimentalModeEnabled: getIsExperimentalModeEnabled(),
-      networkDetails: getNetworkDetails(),
-      networksList: getNetworksList(),
+      isMemoValidationEnabled: await getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
+      isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
+      networkDetails: await getNetworkDetails(),
+      networksList: await getNetworksList(),
     };
   };
 
-  const getCachedAssetIcon = () => {
+  const getCachedAssetIcon = async () => {
     const { assetCanonical } = request;
 
     const assetIconCache = JSON.parse(
-      localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
     );
 
     return {
@@ -978,21 +994,24 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const cacheAssetIcon = () => {
+  const cacheAssetIcon = async () => {
     const { assetCanonical, iconUrl } = request;
 
     const assetIconCache = JSON.parse(
-      localStorage.getItem(CACHED_ASSET_ICONS_ID) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
     );
     assetIconCache[assetCanonical] = iconUrl;
-    localStorage.setItem(CACHED_ASSET_ICONS_ID, JSON.stringify(assetIconCache));
+    await dataStorageAccess.setItem(
+      CACHED_ASSET_ICONS_ID,
+      JSON.stringify(assetIconCache),
+    );
   };
 
-  const getCachedAssetDomain = () => {
+  const getCachedAssetDomain = async () => {
     const { assetCanonical } = request;
 
     const assetDomainCache = JSON.parse(
-      localStorage.getItem(CACHED_ASSET_DOMAINS_ID) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
     );
 
     return {
@@ -1000,14 +1019,14 @@ export const popupMessageListener = (request: Request) => {
     };
   };
 
-  const cacheAssetDomain = () => {
+  const cacheAssetDomain = async () => {
     const { assetCanonical, assetDomain } = request;
 
     const assetDomainCache = JSON.parse(
-      localStorage.getItem(CACHED_ASSET_DOMAINS_ID) || "{}",
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
     );
     assetDomainCache[assetCanonical] = assetDomain;
-    localStorage.setItem(
+    await dataStorageAccess.setItem(
       CACHED_ASSET_DOMAINS_ID,
       JSON.stringify(assetDomainCache),
     );
