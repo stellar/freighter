@@ -224,13 +224,20 @@ export const recoverAccount = async (
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
+  error: string;
 }> => {
   let publicKey = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
+  let error = "";
 
   try {
-    ({ allAccounts, publicKey, hasPrivateKey } = await sendMessageToBackground({
+    ({
+      allAccounts,
+      publicKey,
+      hasPrivateKey,
+      error,
+    } = await sendMessageToBackground({
       password,
       recoverMnemonic,
       type: SERVICE_TYPES.RECOVER_ACCOUNT,
@@ -239,7 +246,7 @@ export const recoverAccount = async (
     console.error(e);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey };
+  return { allAccounts, publicKey, hasPrivateKey, error };
 };
 
 export const confirmPassword = async (

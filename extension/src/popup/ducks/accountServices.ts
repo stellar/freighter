@@ -151,7 +151,12 @@ export const updateAccountName = createAsyncThunk(
 );
 
 export const recoverAccount = createAsyncThunk<
-  { allAccounts: Array<Account>; hasPrivateKey: boolean; publicKey: string },
+  {
+    allAccounts: Array<Account>;
+    hasPrivateKey: boolean;
+    publicKey: string;
+    error: string;
+  },
   {
     password: string;
     mnemonicPhrase: string;
@@ -162,6 +167,7 @@ export const recoverAccount = createAsyncThunk<
     allAccounts: [] as Array<Account>,
     publicKey: "",
     hasPrivateKey: false,
+    error: "",
   };
 
   try {
@@ -173,7 +179,7 @@ export const recoverAccount = createAsyncThunk<
     });
   }
 
-  if (!res.publicKey) {
+  if (!res.publicKey || res.error) {
     return thunkApi.rejectWithValue({
       errorMessage: "The phrase you entered is incorrect",
     });
@@ -288,13 +294,22 @@ const storeAccountMetricsData = (
 export const loadAccount = createAsyncThunk(
   "auth/loadAccount",
   async (_arg, thunkApi) => {
+    let res;
+    let error;
     try {
-      const res = await loadAccountService();
+      res = await loadAccountService();
       storeAccountMetricsData(res.publicKey, res.allAccounts);
       return res;
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+      console.error(e);
+      error = e;
     }
+
+    if (!res) {
+      return thunkApi.rejectWithValue({ errorMessage: error });
+    }
+
+    return res;
   },
 );
 

@@ -95,9 +95,9 @@ export const freighterApiMessageListener = (
         ? MAINNET_NETWORK_DETAILS.network
         : _network;
 
-    const isMainnet = getIsMainnet();
+    const isMainnet = await getIsMainnet();
     const { networkUrl } = await getNetworkDetails();
-    const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
@@ -124,8 +124,9 @@ export const freighterApiMessageListener = (
 
     const flaggedKeys: FlaggedKeys = {};
 
-    const isValidatingMemo = getIsMemoValidationEnabled() && isMainnet;
-    const isValidatingSafety = getIsSafetyValidationEnabled() && isMainnet;
+    const isValidatingMemo = (await getIsMemoValidationEnabled()) && isMainnet;
+    const isValidatingSafety =
+      (await getIsSafetyValidationEnabled()) && isMainnet;
 
     if (isValidatingMemo || isValidatingSafety) {
       _operations.forEach((operation: { destination: string }) => {
