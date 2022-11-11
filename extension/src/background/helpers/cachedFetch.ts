@@ -3,7 +3,9 @@ import { dataStorageAccess } from "background/helpers/dataStorage";
 export const cachedFetch = async (url: string, storageKey: string) => {
   const cachedDateId = `${storageKey}_date`;
 
-  const cachedDate = Number(dataStorageAccess.getItem(cachedDateId) || "");
+  const cachedDate = Number(
+    (await dataStorageAccess.getItem(cachedDateId)) || "",
+  );
   const date = new Date();
   const time = date.getTime();
   const sevenDaysAgo = time - 7 * 24 * 60 * 60 * 1000;
