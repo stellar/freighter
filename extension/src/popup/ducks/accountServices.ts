@@ -181,7 +181,7 @@ export const recoverAccount = createAsyncThunk<
 
   if (!res.publicKey || res.error) {
     return thunkApi.rejectWithValue({
-      errorMessage: "The phrase you entered is incorrect",
+      errorMessage: res.error || "The phrase you entered is incorrect",
     });
   }
 
