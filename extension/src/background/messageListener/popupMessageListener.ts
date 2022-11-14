@@ -245,6 +245,21 @@ export const popupMessageListener = (request: Request) => {
     });
   };
 
+  const _makeAccountActive = async ({ publicKey }: { publicKey: string }) => {
+    const allAccounts = allAccountsSelector(store.getState());
+    let publicKeyIndex = allAccounts.findIndex(
+      (account: Account) => account.publicKey === publicKey,
+    );
+    publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
+    const keyIdList = await getKeyIdList();
+
+    const activeKeyId = keyIdList[publicKeyIndex];
+
+    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
+
+    store.dispatch(setActivePublicKey({ publicKey }));
+  };
+
   const fundAccount = async () => {
     const { publicKey } = request;
 
@@ -415,19 +430,8 @@ export const popupMessageListener = (request: Request) => {
 
   const makeAccountActive = async () => {
     const { publicKey } = request;
+    await _makeAccountActive({ publicKey });
 
-    const allAccounts = allAccountsSelector(store.getState());
-    let publicKeyIndex = allAccounts.findIndex(
-      (account: Account) => account.publicKey === publicKey,
-    );
-    publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
-    const keyIdList = await getKeyIdList();
-
-    const activeKeyId = keyIdList[publicKeyIndex];
-
-    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
-
-    store.dispatch(setActivePublicKey({ publicKey }));
     store.dispatch(timeoutAccountAccess());
 
     const currentState = store.getState();
@@ -614,6 +618,39 @@ export const popupMessageListener = (request: Request) => {
       // start the timer now that we have active private key
       sessionTimer.startSession();
       store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
+
+      // lets check first couple of accounts and pre-load them if funded on mainnet
+      const numOfPublicKeysToCheck = 5;
+      // eslint-disable-next-line no-restricted-syntax
+      for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
+        try {
+          const publicKey = wallet.getPublicKey(i);
+          const privateKey = wallet.getSecret(i);
+
+          const server = new StellarSdk.Server(
+            MAINNET_NETWORK_DETAILS.networkUrl,
+          );
+          // eslint-disable-next-line no-await-in-loop
+          await server.accounts().accountId(publicKey).call();
+          const newKeyPair = {
+            publicKey,
+            privateKey,
+          };
+
+          // eslint-disable-next-line no-await-in-loop
+          await _storeAccount({
+            password,
+            keyPair: newKeyPair,
+            mnemonicPhrase: recoverMnemonic,
+            imported: true,
+          });
+        } catch {
+          // continue
+        }
+      }
+
+      // let's make the first public key the active one
+      await _makeAccountActive({ publicKey: wallet.getPublicKey(0) });
     }
 
     const currentState = store.getState();
