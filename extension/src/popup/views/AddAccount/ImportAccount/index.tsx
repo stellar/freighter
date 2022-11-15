@@ -52,6 +52,10 @@ export const ImportAccount = () => {
         number_of_accounts: res.payload.allAccounts.length,
       });
       navigateTo(ROUTES.account);
+    } else {
+      emitMetric(METRIC_NAMES.accountScreenImportAccountFail, {
+        error_type: res.payload?.errorMessage || "",
+      });
     }
   };
 
