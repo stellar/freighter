@@ -113,7 +113,10 @@ export const allAccountsSelector = createSelector(
 );
 export const hasPrivateKeySelector = createSelector(
   sessionSelector,
-  (session) => getIsHardwareWalletActive() || !!session.privateKey.length,
+  async (session) => {
+    const isHardwareWalletActive = await getIsHardwareWalletActive();
+    return isHardwareWalletActive || !!session.privateKey.length;
+  },
 );
 export const privateKeySelector = createSelector(
   sessionSelector,
