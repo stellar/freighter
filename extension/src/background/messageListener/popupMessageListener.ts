@@ -154,7 +154,7 @@ export const popupMessageListener = (request: Request) => {
         publicKey,
       };
       await dataStorageAccess.setItem(keyId, JSON.stringify(hwData));
-      addAccountName({
+      await addAccountName({
         keyId,
         accountName,
       });
@@ -239,7 +239,7 @@ export const popupMessageListener = (request: Request) => {
 
     await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
     await dataStorageAccess.setItem(KEY_ID, keyStore.id);
-    addAccountName({
+    await addAccountName({
       keyId: keyStore.id,
       accountName,
     });
@@ -263,7 +263,9 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    if (!getIsMainnet()) {
+    const isMainnet = await getIsMainnet();
+
+    if (!isMainnet) {
       try {
         await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
@@ -362,7 +364,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
-      hasPrivateKey: hasPrivateKeySelector(currentState),
+      hasPrivateKey: await hasPrivateKeySelector(currentState),
     };
   };
 
@@ -407,7 +409,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
-      hasPrivateKey: hasPrivateKeySelector(currentState),
+      hasPrivateKey: await hasPrivateKeySelector(currentState),
     };
   };
 
@@ -423,8 +425,8 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(store.getState()),
       allAccounts: allAccountsSelector(store.getState()),
-      hasPrivateKey: hasPrivateKeySelector(store.getState()),
-      bipPath: getBipPath(),
+      hasPrivateKey: await hasPrivateKeySelector(store.getState()),
+      bipPath: await getBipPath(),
     };
   };
 
@@ -438,8 +440,8 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       publicKey: publicKeySelector(currentState),
-      hasPrivateKey: hasPrivateKeySelector(currentState),
-      bipPath: getBipPath(),
+      hasPrivateKey: await hasPrivateKeySelector(currentState),
+      bipPath: await getBipPath(),
     };
   };
 
@@ -450,7 +452,7 @@ export const popupMessageListener = (request: Request) => {
     store.dispatch(
       updateAllAccountsAccountName({ updatedAccountName: accountName }),
     );
-    addAccountName({ keyId, accountName });
+    await addAccountName({ keyId, accountName });
 
     return {
       allAccounts: allAccountsSelector(store.getState()),
@@ -558,11 +560,11 @@ export const popupMessageListener = (request: Request) => {
     const currentState = store.getState();
 
     return {
-      hasPrivateKey: hasPrivateKeySelector(currentState),
+      hasPrivateKey: await hasPrivateKeySelector(currentState),
       publicKey: publicKeySelector(currentState),
       applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
-      bipPath: getBipPath(),
+      bipPath: await getBipPath(),
     };
   };
 
@@ -591,11 +593,13 @@ export const popupMessageListener = (request: Request) => {
     const { password, recoverMnemonic } = request;
     let wallet;
     let applicationState;
+    let error = "";
 
     try {
       wallet = fromMnemonic(recoverMnemonic);
     } catch (e) {
       console.error(e);
+      error = e;
     }
 
     if (wallet) {
@@ -659,7 +663,8 @@ export const popupMessageListener = (request: Request) => {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
       applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
-      hasPrivateKey: hasPrivateKeySelector(currentState),
+      hasPrivateKey: await hasPrivateKeySelector(currentState),
+      error,
     };
   };
 
@@ -738,7 +743,7 @@ export const popupMessageListener = (request: Request) => {
         keyIdList.push(keyId);
         await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
         await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
-        addAccountName({ keyId, accountName: "Account 1" });
+        await addAccountName({ keyId, accountName: "Account 1" });
       }
     }
     /* end migration script */
@@ -798,10 +803,10 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       publicKey: publicKeySelector(store.getState()),
-      hasPrivateKey: hasPrivateKeySelector(store.getState()),
+      hasPrivateKey: await hasPrivateKeySelector(store.getState()),
       applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(store.getState()),
-      bipPath: getBipPath(),
+      bipPath: await getBipPath(),
     };
   };
 
@@ -863,6 +868,7 @@ export const popupMessageListener = (request: Request) => {
           transactionToSign.sign(sourceKeys);
           response = transactionToSign.toXDR();
         } catch (e) {
+          console.error(e);
           return { error: e };
         }
       }
@@ -943,7 +949,7 @@ export const popupMessageListener = (request: Request) => {
       isExperimentalModeEnabled,
     } = request;
 
-    const currentIsExperimentalModeEnabled = await await getIsExperimentalModeEnabled();
+    const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
     await dataStorageAccess.setItem(
       DATA_SHARING_ID,
