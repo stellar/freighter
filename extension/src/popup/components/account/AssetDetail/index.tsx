@@ -168,7 +168,7 @@ export const AssetDetail = ({
                   navigateTo(ROUTES.swap);
                 }}
               >
-                {t(" SWAP")}
+                {t("SWAP")}
               </PillButton>
             </>
           ) : (
@@ -178,7 +178,7 @@ export const AssetDetail = ({
                 navigateTo(ROUTES.swap);
               }}
             >
-              {t(" SWAP")}
+              {t("SWAP")}
             </PillButton>
           )}
         </div>
