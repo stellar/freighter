@@ -18,8 +18,25 @@ export const parsedSearchParam = (param: string): TransactionInfo => {
 };
 
 export const getUrlHostname = (url: string) => {
-  const u = new URL(url);
-  return u.hostname;
+  try {
+    const u = new URL(url);
+    return u.hostname;
+  } catch {
+    return "";
+  }
+};
+
+export const getUrlDomain = (url: string) => {
+  try {
+    const u = new URL(url);
+    const split = u.hostname.split(".");
+    if (split.length > 2) {
+      return `${split[split.length - 2]}.${split[split.length - 1]}`;
+    }
+    return u.hostname;
+  } catch {
+    return "";
+  }
 };
 
 export const getPunycodedDomain = (url: string) => punycode.toASCII(url);

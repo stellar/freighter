@@ -27,7 +27,7 @@ import {
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
-
+import { dataStorageAccess } from "background/helpers/dataStorage";
 import { store } from "background/store";
 import { publicKeySelector } from "background/ducks/session";
 
@@ -49,12 +49,12 @@ export const freighterApiMessageListener = (
   request: Request,
   sender: Runtime.MessageSender,
 ) => {
-  const requestAccess = () => {
+  const requestAccess = async () => {
     const publicKey = publicKeySelector(store.getState());
 
     const { tab, url: tabUrl = "" } = sender;
 
-    if (isSenderAllowed({ sender }) && publicKey) {
+    if ((await isSenderAllowed({ sender })) && publicKey) {
       // okay, the requester checks out and we have public key, send it
       return { publicKey };
     }
@@ -95,9 +95,9 @@ export const freighterApiMessageListener = (
         ? MAINNET_NETWORK_DETAILS.network
         : _network;
 
-    const isMainnet = getIsMainnet();
-    const { networkUrl } = getNetworkDetails();
-    const isExperimentalModeEnabled = getIsExperimentalModeEnabled();
+    const isMainnet = await getIsMainnet();
+    const { networkUrl } = await getNetworkDetails();
+    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
@@ -108,10 +108,10 @@ export const freighterApiMessageListener = (
     const domain = getUrlHostname(tabUrl);
     const punycodedDomain = getPunycodedDomain(domain);
 
-    const allowListStr = localStorage.getItem(ALLOWLIST_ID) || "";
+    const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
 
-    const isDomainListedAllowed = isSenderAllowed({ sender });
+    const isDomainListedAllowed = await isSenderAllowed({ sender });
 
     const directoryLookupJson = await cachedFetch(
       STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
@@ -124,8 +124,9 @@ export const freighterApiMessageListener = (
 
     const flaggedKeys: FlaggedKeys = {};
 
-    const isValidatingMemo = getIsMemoValidationEnabled() && isMainnet;
-    const isValidatingSafety = getIsSafetyValidationEnabled() && isMainnet;
+    const isValidatingMemo = (await getIsMemoValidationEnabled()) && isMainnet;
+    const isValidatingSafety =
+      (await getIsSafetyValidationEnabled()) && isMainnet;
 
     if (isValidatingMemo || isValidatingSafety) {
       _operations.forEach((operation: { destination: string }) => {
@@ -204,7 +205,7 @@ export const freighterApiMessageListener = (
         if (signedTransaction) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
-            localStorage.setItem(ALLOWLIST_ID, allowList.join());
+            dataStorageAccess.setItem(ALLOWLIST_ID, allowList.join());
           }
           resolve({ signedTransaction });
         }
@@ -216,11 +217,11 @@ export const freighterApiMessageListener = (
     });
   };
 
-  const requestNetwork = () => {
+  const requestNetwork = async () => {
     let network = "";
 
     try {
-      ({ network } = getNetworkDetails());
+      ({ network } = await getNetworkDetails());
     } catch (error) {
       console.error(error);
       return { error };
@@ -228,7 +229,7 @@ export const freighterApiMessageListener = (
     return { network };
   };
 
-  const requestNetworkDetails = () => {
+  const requestNetworkDetails = async () => {
     let networkDetails = {
       network: "",
       networkName: "",
@@ -237,7 +238,7 @@ export const freighterApiMessageListener = (
     };
 
     try {
-      networkDetails = getNetworkDetails();
+      networkDetails = await getNetworkDetails();
     } catch (error) {
       console.error(error);
       return { error };
