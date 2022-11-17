@@ -18,8 +18,12 @@ import {
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
 } from "@shared/api/internal";
-import { Account, ErrorMessage } from "@shared/api/types";
+import { Account, AccountType, ErrorMessage } from "@shared/api/types";
 import { WalletType } from "@shared/constants/hardwareWallet";
+
+import { AppState } from "popup/App";
+import { METRICS_DATA } from "constants/localStorageTypes";
+import { MetricsData } from "helpers/metrics";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },
@@ -126,10 +130,20 @@ export const importHardwareWallet = createAsyncThunk<
   },
 );
 
-export const makeAccountActive = createAsyncThunk(
-  "auth/makeAccountActive",
-  (publicKey: string) => makeAccountActiveService(publicKey),
-);
+export const makeAccountActive = createAsyncThunk<
+  { publicKey: string; hasPrivateKey: boolean; bipPath: string },
+  string,
+  { rejectValue: ErrorMessage; state: AppState }
+>("auth/makeAccountActive", async (publicKey: string, thunkApi) => {
+  try {
+    const res = await makeAccountActiveService(publicKey);
+    const { allAccounts } = authSelector(thunkApi.getState());
+    storeAccountMetricsData(publicKey, allAccounts);
+    return res;
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
 
 export const updateAccountName = createAsyncThunk(
   "auth/updateAccountName",
@@ -137,7 +151,12 @@ export const updateAccountName = createAsyncThunk(
 );
 
 export const recoverAccount = createAsyncThunk<
-  { allAccounts: Array<Account>; hasPrivateKey: boolean; publicKey: string },
+  {
+    allAccounts: Array<Account>;
+    hasPrivateKey: boolean;
+    publicKey: string;
+    error: string;
+  },
   {
     password: string;
     mnemonicPhrase: string;
@@ -148,6 +167,7 @@ export const recoverAccount = createAsyncThunk<
     allAccounts: [] as Array<Account>,
     publicKey: "",
     hasPrivateKey: false,
+    error: "",
   };
 
   try {
@@ -159,9 +179,9 @@ export const recoverAccount = createAsyncThunk<
     });
   }
 
-  if (!res.publicKey) {
+  if (!res.publicKey || res.error) {
     return thunkApi.rejectWithValue({
-      errorMessage: "The phrase you entered is incorrect",
+      errorMessage: res.error || "The phrase you entered is incorrect",
     });
   }
 
@@ -241,8 +261,56 @@ export const confirmPassword = createAsyncThunk<
   return res;
 });
 
-export const loadAccount = createAsyncThunk("auth/loadAccount", () =>
-  loadAccountService(),
+const storeAccountMetricsData = (
+  publicKey: string,
+  allAccounts: Array<Account>,
+) => {
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+
+  let accountType = AccountType.FREIGHTER;
+  allAccounts.forEach((acc: Account) => {
+    if (acc.hardwareWalletType) {
+      metricsData.hwExists = true;
+    } else if (acc.imported) {
+      metricsData.importedExists = true;
+    }
+
+    if (acc.publicKey === publicKey) {
+      if (acc.hardwareWalletType) {
+        accountType = AccountType.HW;
+      } else if (acc.imported) {
+        accountType = AccountType.IMPORTED;
+      } else {
+        accountType = AccountType.FREIGHTER;
+      }
+    }
+  });
+  metricsData.accountType = accountType;
+  localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
+};
+
+export const loadAccount = createAsyncThunk(
+  "auth/loadAccount",
+  async (_arg, thunkApi) => {
+    let res;
+    let error;
+    try {
+      res = await loadAccountService();
+      storeAccountMetricsData(res.publicKey, res.allAccounts);
+      return res;
+    } catch (e) {
+      console.error(e);
+      error = e;
+    }
+
+    if (!res) {
+      return thunkApi.rejectWithValue({ errorMessage: error });
+    }
+
+    return res;
+  },
 );
 
 export const signOut = createAsyncThunk<
