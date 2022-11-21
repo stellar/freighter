@@ -80,15 +80,15 @@ jobs:
           asset_path: ./extension/build/build.zip
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
-      # - name: Submit extension to Firefox
-      #   uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
-      #   with:
-      #     cmd: sign
-      #     source: ./extension/build/build.zip
-      #     channel: listed
-      #     apiKey: ${{ secrets.AMO_SIGN_KEY }}
-      #     apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
-      #     timeout: 900000
+      - name: Submit extension to Firefox
+        uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
+        with:
+          cmd: sign
+          source: ./extension/build/build.zip
+          channel: listed
+          apiKey: ${{ secrets.AMO_SIGN_KEY }}
+          apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
+          timeout: 900000
       - name: Submit extension to Chrome
         uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
         with:
