@@ -648,6 +648,8 @@ export const popupMessageListener = (request: Request) => {
             mnemonicPhrase: recoverMnemonic,
             imported: true,
           });
+          // eslint-disable-next-line no-await-in-loop
+          await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
         } catch {
           // continue
         }
