@@ -245,7 +245,7 @@ export const popupMessageListener = (request: Request) => {
     });
   };
 
-  const _makeAccountActive = async ({ publicKey }: { publicKey: string }) => {
+  const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
     const allAccounts = allAccountsSelector(store.getState());
     let publicKeyIndex = allAccounts.findIndex(
       (account: Account) => account.publicKey === publicKey,
@@ -432,7 +432,7 @@ export const popupMessageListener = (request: Request) => {
 
   const makeAccountActive = async () => {
     const { publicKey } = request;
-    await _makeAccountActive({ publicKey });
+    await _activatePublicKey({ publicKey });
 
     store.dispatch(timeoutAccountAccess());
 
@@ -654,7 +654,7 @@ export const popupMessageListener = (request: Request) => {
       }
 
       // let's make the first public key the active one
-      await _makeAccountActive({ publicKey: wallet.getPublicKey(0) });
+      await _activatePublicKey({ publicKey: wallet.getPublicKey(0) });
     }
 
     const currentState = store.getState();
