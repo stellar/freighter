@@ -1,5 +1,4 @@
 {
-  " SWAP": " SWAP",
   "{{srcAssetCode}} for {{destAssetCode}}": "{{srcAssetCode}} for {{destAssetCode}}",
   "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
@@ -327,6 +326,7 @@
   "Successfuly": "Successfuly",
   "swap": "swap",
   "Swap": "Swap",
+  "SWAP": "SWAP",
   "Swap • {{date}}": "Swap • {{date}}",
   "Swap failed": "Swap failed",
   "swapped": "swapped",
