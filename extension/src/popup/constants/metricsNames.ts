@@ -1,5 +1,6 @@
 export const METRIC_NAMES = {
   viewDebug: "loaded screen: debug",
+  viewIntegrationTest: "loaded screen: integration test",
   viewWelcome: "loaded screen: welcome",
   viewAccount: "loaded screen: account",
   viewAccountHistory: "loaded screen: account history",

@@ -44,3 +44,22 @@ jest.mock("react-dom", () => ({
   ...jest.requireActual("react-dom"),
   createPortal: (element: React.ReactElement) => element,
 }));
+
+// Alec TODO - remove?
+
+jest.mock("webextension-polyfill-ts", () => ({
+  browser: {
+    storage: {
+      local: {
+        set: (val) => {
+          // ALEC TODO - remove
+          console.log("setting:", val);
+        },
+        get: (val) => {
+          // ALEC TODO - remove
+          console.log("getting:", val);
+        },
+      },
+    },
+  },
+}));

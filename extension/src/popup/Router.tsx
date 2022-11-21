@@ -49,6 +49,7 @@ import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
+import { IntegrationTest } from "popup/views/IntegrationTest";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
@@ -63,6 +64,9 @@ import { PinExtension } from "popup/views/PinExtension";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
+
+// ALEC TODO - remove
+console.log({ DEV_SERVER });
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -322,12 +326,19 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.manageNetwork}>
           <ManageNetwork />
         </PublicKeyRoute>
-        <HomeRoute />
+
         {DEV_SERVER && (
-          <Route path={ROUTES.debug}>
-            <Debug />
-          </Route>
+          <>
+            <Route path={ROUTES.debug}>
+              <Debug />
+            </Route>
+            {/* ALEC TODO - combine with above? */}
+            <Route path={ROUTES.integrationTest}>
+              <IntegrationTest />
+            </Route>
+          </>
         )}
+        <HomeRoute />
       </Switch>
     </HashRouter>
   );
