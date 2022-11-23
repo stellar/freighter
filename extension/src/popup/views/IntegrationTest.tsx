@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import StellarSdk from "stellar-sdk";
 
 import {
@@ -72,294 +72,280 @@ const testCustomNetwork = {
 };
 
 export const IntegrationTest = () => {
-  // ALEC TODO - why does this run twice?
-  // const [isDone, setIsDone] = useState(false);
+  const [isDone, setIsDone] = useState(false);
   // ALEC TODO - remove
   console.log("running integration tests");
 
   // ALEC TODO - check that no errors occurred anywhere
   // ALEC TODO - add some sort of confirmation that a test completed
-  const runTests = async () => {
-    await resetDevData();
+  useEffect(() => {
+    const runTests = async () => {
+      await resetDevData();
 
-    let res: any;
+      let res: any;
 
-    // changeNetwork
-    res = await changeNetwork(NETWORK_NAMES.TESTNET);
-    assertEq(res, TESTNET_NETWORK_DETAILS);
+      // changeNetwork
+      res = await changeNetwork(NETWORK_NAMES.TESTNET);
+      assertEq(res, TESTNET_NETWORK_DETAILS);
 
-    // create account
-    res = await createAccount(testPassword);
-    assertArray(res.allAccounts);
-    assertString(res.publicKey);
-    // ALEC TODO - remove
-    console.log("create account", { res });
+      // create account
+      res = await createAccount(testPassword);
+      assertArray(res.allAccounts);
+      assertString(res.publicKey);
 
-    // fundAccount
-    await fundAccount(testPublicKey);
+      // fundAccount
+      await fundAccount(testPublicKey);
 
-    // addAccount
-    res = await addAccount(testPassword);
-    assertArray(res.allAccounts);
-    assertString(res.publicKey);
-    assertBoolean(res.hasPrivateKey);
+      // addAccount
+      res = await addAccount(testPassword);
+      assertArray(res.allAccounts);
+      assertString(res.publicKey);
+      assertBoolean(res.hasPrivateKey);
 
-    // importAccount
-    res = await importAccount(testPassword, testSecretKey);
-    assertArray(res.allAccounts);
-    assertString(res.publicKey);
-    assertBoolean(res.hasPrivateKey);
+      // importAccount
+      res = await importAccount(testPassword, testSecretKey);
+      assertArray(res.allAccounts);
+      assertString(res.publicKey);
+      assertBoolean(res.hasPrivateKey);
 
-    // importHardwareWallet
-    res = await importHardwareWallet(
-      testPublicKey,
-      WalletType.LEDGER,
-      "44'/148'/1'",
-    );
-    assertArray(res.allAccounts);
-    assertString(res.publicKey);
-    assertString(res.bipPath);
-    assertBoolean(res.hasPrivateKey);
+      // importHardwareWallet
+      res = await importHardwareWallet(
+        testPublicKey,
+        WalletType.LEDGER,
+        "44'/148'/1'",
+      );
+      assertArray(res.allAccounts);
+      assertString(res.publicKey);
+      assertString(res.bipPath);
+      assertBoolean(res.hasPrivateKey);
 
-    // makeAccountActive
-    res = await makeAccountActive(testPublicKey);
-    assertString(res.publicKey);
-    assertString(res.bipPath);
-    assertBoolean(res.hasPrivateKey);
+      // makeAccountActive
+      res = await makeAccountActive(testPublicKey);
+      assertString(res.publicKey);
+      assertString(res.bipPath);
+      assertBoolean(res.hasPrivateKey);
 
-    // updateAccountName
-    res = await updateAccountName("new-name");
-    assertArray(res.allAccounts);
+      // updateAccountName
+      res = await updateAccountName("new-name");
+      assertArray(res.allAccounts);
 
-    // loadAccount
-    res = await loadAccount();
-    assertArray(res.allAccounts);
-    assertString(res.publicKey);
-    assertString(res.bipPath);
-    assertBoolean(res.hasPrivateKey);
-    assertString(res.applicationState);
+      // loadAccount
+      res = await loadAccount();
+      assertArray(res.allAccounts);
+      assertString(res.publicKey);
+      assertString(res.bipPath);
+      assertBoolean(res.hasPrivateKey);
+      assertString(res.applicationState);
 
-    // getMnemonicPhrase
-    res = await getMnemonicPhrase();
-    assertString(res.mnemonicPhrase);
-    // ALEC TODO - remove
-    console.log("getMnemonicPhrase", { res });
-    const mnemonicPhrase = res.mnemonicPhrase;
+      // getMnemonicPhrase
+      res = await getMnemonicPhrase();
+      assertString(res.mnemonicPhrase);
+      const mnemonicPhrase = res.mnemonicPhrase;
 
-    // confirmMnemonicPhrase
-    // ALEC TODO - works?
-    res = await confirmMnemonicPhrase(mnemonicPhrase);
-    assertString(res.applicationState);
-    assertBoolean(res.isCorrectPhrase);
-    assertEq(res.isCorrectPhrase, true);
-    // ALEC TODO - remove
-    console.log("confirmMnemonicPhrase", { res });
+      // confirmMnemonicPhrase
+      res = await confirmMnemonicPhrase(mnemonicPhrase);
+      assertString(res.applicationState);
+      assertBoolean(res.isCorrectPhrase);
+      assertEq(res.isCorrectPhrase, true);
 
-    await resetDevData();
+      await resetDevData();
 
-    // recoverAccount
-    res = await recoverAccount(testPassword, mnemonicPhrase);
-    assertArray(res.allAccounts);
-    assertString(res.publicKey);
-    assertBoolean(res.hasPrivateKey);
-    assertEq(res.error, "");
-    // ALEC TODO - remove
-    console.log("recoverAccount", { res });
+      // recoverAccount
+      res = await recoverAccount(testPassword, mnemonicPhrase);
+      assertArray(res.allAccounts);
+      assertString(res.publicKey);
+      assertBoolean(res.hasPrivateKey);
+      assertEq(res.error, "");
 
-    // confirmPassword
-    res = await confirmPassword(testPassword);
-    assertArray(res.allAccounts);
-    assertString(res.publicKey);
-    assertString(res.bipPath);
-    assertBoolean(res.hasPrivateKey);
-    assertString(res.applicationState);
-    // ALEC TODO - remove
-    console.log("confirmPassword", { res });
+      // confirmPassword
+      res = await confirmPassword(testPassword);
+      assertArray(res.allAccounts);
+      assertString(res.publicKey);
+      assertString(res.bipPath);
+      assertBoolean(res.hasPrivateKey);
+      assertString(res.applicationState);
 
-    // getAccountBalances
-    res = await getAccountBalances({
-      publicKey: testPublicKey,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-    // ALEC TODO - better way of doing?
-    assertEq(Object.keys(res.balances).length > 0, true);
-    assertBoolean(res.isFunded);
-    assertNumber(res.subentryCount);
+      // getAccountBalances
+      res = await getAccountBalances({
+        publicKey: testPublicKey,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      assertEq(Object.keys(res.balances).length > 0, true);
+      assertBoolean(res.isFunded);
+      assertNumber(res.subentryCount);
 
-    // getAccountHistory
-    res = await getAccountHistory({
-      publicKey: testPublicKey,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-    assertArray(res.operations);
+      // getAccountHistory
+      res = await getAccountHistory({
+        publicKey: testPublicKey,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      assertArray(res.operations);
 
-    // getAssetIcons
-    const hold = {
-      native: {
-        token: { type: "native", code: "XLM" },
-      },
-      "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-        token: {
-          type: "credit_alphanum4",
-          code: "USDC",
-          issuer: {
-            key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      // getAssetIcons
+      const hold = {
+        native: {
+          token: { type: "native", code: "XLM" },
+        },
+        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+          token: {
+            type: "credit_alphanum4",
             code: "USDC",
+            issuer: {
+              key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+              code: "USDC",
+            },
           },
         },
-      },
+      };
+      const testBalances = (hold as unknown) as Balances;
+      res = await getAssetIcons({
+        balances: testBalances,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      assertEq(Object.keys(res).length > 0, true);
+
+      // retryAssetIcon
+      res = await retryAssetIcon({
+        key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        code: "USDC",
+        assetIcons: {},
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      assertEq(Object.keys(res).length > 0, true);
+
+      // getAssetDomains
+      res = await getAssetDomains({
+        balances: testBalances,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      assertEq(Object.keys(res).length > 0, true);
+
+      // rejectAccess
+      await rejectAccess();
+
+      // grantAccess
+      await grantAccess("https://laboratory.stellar.org");
+
+      // handleSignedHwTransaction
+      await handleSignedHwTransaction({ signedTransaction: "" });
+
+      // signTransaction
+      await signTransaction({ transaction: testTxXDR });
+
+      // signFreighterTransaction
+      res = await signFreighterTransaction({
+        transactionXDR: testTxXDR,
+        network: TESTNET_NETWORK_DETAILS.networkPassphrase,
+      });
+      assertString(res.signedTransaction);
+
+      // addRecentAddress
+      res = await addRecentAddress({ publicKey: testPublicKey });
+      assertArray(res.recentAddresses);
+
+      // loadRecentAddresses
+      res = await loadRecentAddresses();
+      assertArray(res.recentAddresses);
+
+      // signOut
+      res = await signOut();
+      assertString(res.publicKey);
+      assertString(res.applicationState);
+
+      // saveSettings
+      res = await saveSettings({
+        isDataSharingAllowed: true,
+        isMemoValidationEnabled: true,
+        isSafetyValidationEnabled: true,
+        isValidatingSafeAssetsEnabled: true,
+        isExperimentalModeEnabled: true,
+      });
+      assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
+      assertArray(res.networksList);
+      assertEq(res.error, undefined);
+      assertEq(res.isDataSharingAllowed, true);
+      assertEq(res.isMemoValidationEnabled, true);
+      assertEq(res.isSafetyValidationEnabled, true);
+      assertEq(res.isValidatingSafeAssetsEnabled, true);
+      assertEq(res.isExperimentalModeEnabled, true);
+
+      // loadSettings
+      res = await loadSettings();
+      assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
+      assertArray(res.networksList);
+      assertEq(res.error, undefined);
+      assertEq(res.isDataSharingAllowed, true);
+      assertEq(res.isMemoValidationEnabled, true);
+      assertEq(res.isSafetyValidationEnabled, true);
+      assertEq(res.isValidatingSafeAssetsEnabled, true);
+      assertEq(res.isExperimentalModeEnabled, true);
+
+      // showBackupPhrase
+      res = await showBackupPhrase(testPassword);
+      assertEq(res.error, undefined);
+
+      // addCustomNetwork
+      res = await addCustomNetwork(testCustomNetwork);
+      const networksListLength = res.networksList.length;
+      assertArray(res.networksList);
+      assertEq(
+        res.networksList[networksListLength - 1].networkName,
+        testCustomNetwork.networkName,
+      );
+
+      // editCustomNetwork
+      res = await editCustomNetwork({
+        networkDetails: {
+          ...testCustomNetwork,
+          networkName: `new network ${random}`,
+        },
+        networkIndex: networksListLength - 1,
+      });
+      assertArray(res.networksList);
+      assertEq(
+        res.networksList[networksListLength - 1].networkName,
+        `new network ${random}`,
+      );
+
+      // removeCustomNetwork
+      res = await removeCustomNetwork(testCustomNetwork.networkName);
+      assertArray(res.networksList);
+      assertEq(res.networksList.length, networksListLength - 1);
+
+      // getBlockedDomains
+      res = await getBlockedDomains();
+      assertEq(Object.keys(res.blockedDomains).length > 0, true);
+
+      // changeNetwork
+      res = await changeNetwork(NETWORK_NAMES.PUBNET);
+
+      // requestPublicKey
+      res = await requestPublicKey();
+      assertString(res);
+
+      // submitTransaction
+      res = await submitTransaction(testTxXDR);
+      assertString(res);
+
+      // requestNetwork
+      res = await requestNetwork();
+      assertString(res);
+
+      // requestNetworkDetails
+      res = await requestNetworkDetails();
+      assertString(res.network);
+      assertString(res.networkPassphrase);
+      assertString(res.networkUrl);
+
+      setIsDone(true);
     };
-    const testBalances = (hold as unknown) as Balances;
-    res = await getAssetIcons({
-      balances: testBalances,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-    // ALEC TODO - abstract this?
-    assertEq(Object.keys(res).length > 0, true);
-
-    // retryAssetIcon
-    res = await retryAssetIcon({
-      key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-      code: "USDC",
-      assetIcons: {},
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-    assertEq(Object.keys(res).length > 0, true);
-
-    // getAssetDomains
-    res = await getAssetDomains({
-      balances: testBalances,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-    assertEq(Object.keys(res).length > 0, true);
-
-    // rejectAccess
-    await rejectAccess();
-
-    // grantAccess
-    await grantAccess("https://laboratory.stellar.org");
-
-    // handleSignedHwTransaction
-    await handleSignedHwTransaction({ signedTransaction: "" });
-
-    // signTransaction
-    await signTransaction({ transaction: testTxXDR });
-
-    // signFreighterTransaction
-    res = await signFreighterTransaction({
-      transactionXDR: testTxXDR,
-      network: TESTNET_NETWORK_DETAILS.networkPassphrase,
-    });
-    assertString(res.signedTransaction);
-
-    // addRecentAddress
-    res = await addRecentAddress({ publicKey: testPublicKey });
-    assertArray(res.recentAddresses);
-
-    // loadRecentAddresses
-    res = await loadRecentAddresses();
-    assertArray(res.recentAddresses);
-
-    // signOut
-    res = await signOut();
-    assertString(res.publicKey);
-    assertString(res.applicationState);
-
-    // saveSettings
-    res = await saveSettings({
-      isDataSharingAllowed: true,
-      isMemoValidationEnabled: true,
-      isSafetyValidationEnabled: true,
-      isValidatingSafeAssetsEnabled: true,
-      isExperimentalModeEnabled: true,
-    });
-    assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
-    assertArray(res.networksList);
-    assertEq(res.error, undefined);
-    assertEq(res.isDataSharingAllowed, true);
-    assertEq(res.isMemoValidationEnabled, true);
-    assertEq(res.isSafetyValidationEnabled, true);
-    assertEq(res.isValidatingSafeAssetsEnabled, true);
-    assertEq(res.isExperimentalModeEnabled, true);
-
-    // loadSettings
-    res = await loadSettings();
-    assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
-    assertArray(res.networksList);
-    assertEq(res.error, undefined);
-    assertEq(res.isDataSharingAllowed, true);
-    assertEq(res.isMemoValidationEnabled, true);
-    assertEq(res.isSafetyValidationEnabled, true);
-    assertEq(res.isValidatingSafeAssetsEnabled, true);
-    assertEq(res.isExperimentalModeEnabled, true);
-
-    // showBackupPhrase
-    res = await showBackupPhrase(testPassword);
-    assertEq(res.error, undefined);
-
-    // addCustomNetwork
-    res = await addCustomNetwork(testCustomNetwork);
-    const networksListLength = res.networksList.length;
-    assertArray(res.networksList);
-    assertEq(
-      res.networksList[networksListLength - 1].networkName,
-      testCustomNetwork.networkName,
-    );
-
-    // editCustomNetwork
-    res = await editCustomNetwork({
-      networkDetails: {
-        ...testCustomNetwork,
-        networkName: `new network ${random}`,
-      },
-      networkIndex: networksListLength - 1,
-    });
-    assertArray(res.networksList);
-    assertEq(
-      res.networksList[networksListLength - 1].networkName,
-      `new network ${random}`,
-    );
-
-    // removeCustomNetwork
-    res = await removeCustomNetwork(testCustomNetwork.networkName);
-    assertArray(res.networksList);
-    assertEq(res.networksList.length, networksListLength - 1);
-
-    // getBlockedDomains
-    res = await getBlockedDomains();
-    assertEq(Object.keys(res.blockedDomains).length > 0, true);
-
-    // changeNetwork
-    res = await changeNetwork(NETWORK_NAMES.PUBNET);
-
-    // requestPublicKey
-    res = await requestPublicKey();
-    assertString(res);
-
-    // submitTransaction
-    res = await submitTransaction(testTxXDR);
-    assertString(res);
-
-    // requestNetwork
-    res = await requestNetwork();
-    assertString(res);
-
-    // requestNetworkDetails
-    res = await requestNetworkDetails();
-    assertString(res.network);
-    assertString(res.networkPassphrase);
-    assertString(res.networkUrl);
-
-    // setIsDone(true);
-    // ALEC TODO - remove
-    console.log("done");
-  };
-  runTests();
+    runTests();
+  }, []);
 
   return (
     <div>
       <div>Running integration tests ...</div>
-      {/* <div>{isDone ? "Done" : ""}</div> */}
+      <div>{isDone ? "Done" : ""}</div>
     </div>
   );
 };
@@ -381,12 +367,6 @@ const assertEq = (have: any, want: any) => {
     console.error(`[${haveString}]: incorrect value. Want ${wantString}`);
   }
 };
-
-// const assertTruthy = (val: any) => {
-//   if (!val) {
-//     console.error(`[${val}]: incorrect value. Want truthey but found ${val}`);
-//   }
-// };
 
 const assertBoolean = (val: any) => {
   if (!(typeof val === "boolean")) {
