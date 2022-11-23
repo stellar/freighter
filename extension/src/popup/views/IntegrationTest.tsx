@@ -111,7 +111,7 @@ export const IntegrationTest = () => {
       });
 
       await fundAccount(testPublicKey);
-      runAsserts("fundAccount(", () => {});
+      runAsserts("fundAccount", () => {});
 
       res = await addAccount(testPassword);
       runAsserts("addAccount", () => {
