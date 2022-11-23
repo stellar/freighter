@@ -115,3 +115,29 @@ yarn start:experimental
 
 This will enable some features hidden by the `experimental` feature flag that
 are still under development.
+
+### Integration Tests
+
+_WARNING: running the intergration tests will clear the apps data_
+
+Steps:
+
+1. Build the extension in experimental mode
+
+```
+yarn build:experimental
+```
+
+2. Start the dev server
+
+```
+yarn start
+```
+
+3. Go to the integration tests route
+
+```
+localhost:9000/#/integration-test
+```
+
+Errors, if any, will be in the console logs.

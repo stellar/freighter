@@ -94,7 +94,7 @@ export const IntegrationTest = () => {
     }
 
     const runTests = async () => {
-      console.log("starting integration tests 🧪");
+      console.log("🧪 starting integration tests 🧪");
       await resetDevData();
 
       let res: any;
@@ -369,6 +369,7 @@ export const IntegrationTest = () => {
         assertString(res.networkUrl);
       });
 
+      console.log("👍 Done 👍");
       setIsDone(true);
     };
     runTests();
