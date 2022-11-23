@@ -4,7 +4,7 @@ import SorobanSdk from "soroban-client";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
-import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
+import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
@@ -39,6 +39,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 
+import { EXPERIMENTAL } from "constants/featureFlag";
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 import {
   addAccountName,
@@ -249,30 +250,14 @@ export const popupMessageListener = (request: Request) => {
   const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
     const allAccounts = allAccountsSelector(store.getState());
 
-    // ALEC TODO - remove
-    console.log({ publicKey });
-
-    // ALEC TODO - remove
-    console.log("in _activatePublicKey");
-    console.log({ allAccounts });
-
     let publicKeyIndex = allAccounts.findIndex(
       (account: Account) => account.publicKey === publicKey,
     );
     publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
 
-    // ALEC TODO - remove
-    console.log({ publicKeyIndex });
-
     const keyIdList = await getKeyIdList();
 
-    // ALEC TODO - remove
-    console.log({ keyIdList });
-
     const activeKeyId = keyIdList[publicKeyIndex];
-
-    // ALEC TODO - remove
-    console.log({ activeKeyId });
 
     await dataStorageAccess.setItem(KEY_ID, activeKeyId);
 
@@ -282,23 +267,13 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    // ALEC TODO - remove
-    console.log("in popupMessageListener fundAccount", publicKey);
-
     const isMainnet = await getIsMainnet();
 
-    // ALEC TODO - remove
-    console.log({ isMainnet });
-
     if (!isMainnet) {
-      // ALEC TODO - remove
-      console.log("fetching");
       try {
         await fetch(
           `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
         );
-        // ALEC TODO - remove
-        console.log("fetched");
       } catch (e) {
         console.error(e);
         throw new Error("Error creating account");
@@ -638,9 +613,6 @@ export const popupMessageListener = (request: Request) => {
       };
       dataStorageAccess.clear();
 
-      // ALEC TODO - remove
-      console.log("keyID 1:", await dataStorageAccess.getItem(KEY_ID));
-
       await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
@@ -655,9 +627,6 @@ export const popupMessageListener = (request: Request) => {
       // start the timer now that we have active private key
       sessionTimer.startSession();
       store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
-
-      // ALEC TODO - remove
-      console.log("keyID 2:", await dataStorageAccess.getItem(KEY_ID));
 
       // lets check first couple of accounts and pre-load them if funded on mainnet
       const numOfPublicKeysToCheck = 5;
@@ -684,25 +653,14 @@ export const popupMessageListener = (request: Request) => {
             mnemonicPhrase: recoverMnemonic,
             imported: true,
           });
-
-          // ALEC TODO - remove
-          // eslint-disable-next-line no-await-in-loop
-          console.log("keyID 3:", await dataStorageAccess.getItem(KEY_ID));
         } catch {
           // continue
         }
       }
 
-      // ALEC TODO - remove
-      console.log("keyID 4:", await dataStorageAccess.getItem(KEY_ID));
-
       // let's make the first public key the active one
       await _activatePublicKey({ publicKey: wallet.getPublicKey(0) });
     }
-
-    // ALEC TODO - remove
-    const keyid = await dataStorageAccess.getItem(KEY_ID);
-    console.log("keyID at end of recover account:", keyid);
 
     const currentState = store.getState();
 
@@ -1143,25 +1101,11 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
-  // ALEC TODO - allow only for dev somehow ...
-  const resetDevData = async () => {
-    // ALEC TODO - remove
-    console.log({ DEV_SERVER });
-    console.log(process.env);
-
-    // // ALEC TODO - safe to use DEV_SERVER?
-    // if (!DEV_SERVER) {
-    //   return;
-    // }
-
-    // ALEC TODO - remove
-    console.log("clearing dev data");
-
-    await dataStorageAccess.clear();
-    store.dispatch(reset());
-
-    // ALEC TODO - remove
-    console.log(store.getState());
+  const resetExperimentalData = async () => {
+    if (EXPERIMENTAL === true) {
+      await dataStorageAccess.clear();
+      store.dispatch(reset());
+    }
   };
 
   const messageResponder: MessageResponder = {
@@ -1198,7 +1142,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
-    [SERVICE_TYPES.RESET_DEV_DATA]: resetDevData,
+    [SERVICE_TYPES.RESET_DEV_DATA]: resetExperimentalData,
   };
 
   return messageResponder[request.type]();

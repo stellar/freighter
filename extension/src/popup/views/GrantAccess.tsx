@@ -33,9 +33,6 @@ export const GrantAccess = () => {
     url,
   } = parsedSearchParam(location.search);
 
-  // ALEC TODO - remove
-  console.log({ url }, { title });
-
   const domain = getUrlHostname(url);
   const publicKey = useSelector(publicKeySelector);
 

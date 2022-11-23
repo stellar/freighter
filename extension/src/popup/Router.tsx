@@ -65,9 +65,6 @@ import { PinExtension } from "popup/views/PinExtension";
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 
-// ALEC TODO - remove
-console.log({ DEV_SERVER });
-
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
@@ -332,7 +329,6 @@ export const Router = () => {
             <Route path={ROUTES.debug}>
               <Debug />
             </Route>
-            {/* ALEC TODO - combine with above? */}
             <Route path={ROUTES.integrationTest}>
               <IntegrationTest />
             </Route>
