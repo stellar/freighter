@@ -9,16 +9,11 @@ export const dataStorage = {
     // Passing an object (for ex: {myKey: "aValue"}) will return the key's (myKey) value from storage.
     // If the key is not found in storage, it will return the the value passed along in object as a default (in this case, "aValue")
 
-    // ALEC TODO - remove
-    console.log("in dataStorage getItem:", browser);
-
     const storageResult = await browser.storage.local.get(key);
 
     return storageResult;
   },
   setItem: async (setItemParams: SetItemParams) => {
-    // ALEC TODO - remove
-    console.log("in dataStorage setItem:", browser);
     await browser.storage.local.set(setItemParams);
   },
 };

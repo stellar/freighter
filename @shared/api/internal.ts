@@ -42,6 +42,8 @@ export const createAccount = async (
 };
 
 export const fundAccount = async (publicKey: string): Promise<void> => {
+  // ALEC TODO - remove
+  console.log("in fund account");
   try {
     await sendMessageToBackground({
       publicKey,
@@ -735,4 +737,10 @@ export const getBlockedDomains = async () => {
     type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
   });
   return resp;
+};
+
+export const resetDevData = async () => {
+  await sendMessageToBackground({
+    type: SERVICE_TYPES.RESET_DEV_DATA,
+  });
 };
