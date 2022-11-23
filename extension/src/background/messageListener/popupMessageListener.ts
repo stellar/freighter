@@ -39,6 +39,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 
+import { EXPERIMENTAL } from "constants/featureFlag";
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 import {
   addAccountName,
@@ -77,6 +78,7 @@ import {
   setActivePrivateKey,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
+  reset,
 } from "background/ducks/session";
 import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL } from "background/constants/apiUrls";
 
@@ -247,10 +249,12 @@ export const popupMessageListener = (request: Request) => {
 
   const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
     const allAccounts = allAccountsSelector(store.getState());
+
     let publicKeyIndex = allAccounts.findIndex(
       (account: Account) => account.publicKey === publicKey,
     );
     publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
+
     const keyIdList = await getKeyIdList();
 
     const activeKeyId = keyIdList[publicKeyIndex];
@@ -608,6 +612,7 @@ export const popupMessageListener = (request: Request) => {
         privateKey: wallet.getSecret(0),
       };
       dataStorageAccess.clear();
+
       await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
@@ -1096,6 +1101,15 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const resetExperimentalData = async () => {
+    if (EXPERIMENTAL !== true) {
+      return { error: "Not in experimental mode" };
+    }
+    await dataStorageAccess.clear();
+    store.dispatch(reset());
+    return {};
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1130,6 +1144,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
+    [SERVICE_TYPES.RESET_DEV_DATA]: resetExperimentalData,
   };
 
   return messageResponder[request.type]();

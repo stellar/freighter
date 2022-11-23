@@ -35,6 +35,7 @@ const routeToEventName = {
   [ROUTES.about]: METRIC_NAMES.viewAbout,
   [ROUTES.viewPublicKey]: METRIC_NAMES.viewPublicKey,
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
+  [ROUTES.integrationTest]: METRIC_NAMES.viewIntegrationTest,
   [ROUTES.sendPayment]: METRIC_NAMES.viewSendPayment,
   [ROUTES.sendPaymentTo]: METRIC_NAMES.sendPaymentTo,
   [ROUTES.sendPaymentAmount]: METRIC_NAMES.sendPaymentAmount,
