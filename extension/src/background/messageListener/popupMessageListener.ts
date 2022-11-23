@@ -249,7 +249,6 @@ export const popupMessageListener = (request: Request) => {
 
   const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
     const allAccounts = allAccountsSelector(store.getState());
-
     let publicKeyIndex = allAccounts.findIndex(
       (account: Account) => account.publicKey === publicKey,
     );
@@ -612,7 +611,6 @@ export const popupMessageListener = (request: Request) => {
         privateKey: wallet.getSecret(0),
       };
       dataStorageAccess.clear();
-
       await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
@@ -1144,7 +1142,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
-    [SERVICE_TYPES.RESET_DEV_DATA]: resetExperimentalData,
+    [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
   };
 
   return messageResponder[request.type]();

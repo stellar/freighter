@@ -443,5 +443,5 @@ const assertArray = (val: any, allowEmpty: boolean = false) => {
 
 const resetDevData = () =>
   sendMessageToBackground({
-    type: SERVICE_TYPES.RESET_DEV_DATA,
+    type: SERVICE_TYPES.RESET_EXP_DATA,
   });
