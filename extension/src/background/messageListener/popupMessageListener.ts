@@ -1102,10 +1102,12 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const resetExperimentalData = async () => {
-    if (EXPERIMENTAL === true) {
-      await dataStorageAccess.clear();
-      store.dispatch(reset());
+    if (EXPERIMENTAL !== true) {
+      return { error: "Not in experimental mode" };
     }
+    await dataStorageAccess.clear();
+    store.dispatch(reset());
+    return {};
   };
 
   const messageResponder: MessageResponder = {

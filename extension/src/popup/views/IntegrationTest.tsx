@@ -94,10 +94,15 @@ export const IntegrationTest = () => {
     }
 
     const runTests = async () => {
-      console.log("🧪 starting integration tests 🧪");
-      await resetDevData();
-
       let res: any;
+      console.log("🧪 starting integration tests 🧪");
+      res = await resetDevData();
+      if (res.error) {
+        console.error(
+          "extension must be built in experimental mode to run integration tests",
+        );
+        return;
+      }
 
       res = await changeNetwork(NETWORK_NAMES.TESTNET);
       runAsserts("changeNetwork", () => {
@@ -436,8 +441,7 @@ const assertArray = (val: any, allowEmpty: boolean = false) => {
   }
 };
 
-const resetDevData = async () => {
-  await sendMessageToBackground({
+const resetDevData = () =>
+  sendMessageToBackground({
     type: SERVICE_TYPES.RESET_DEV_DATA,
   });
-};
