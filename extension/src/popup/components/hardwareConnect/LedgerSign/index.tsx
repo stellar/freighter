@@ -47,6 +47,7 @@ export const LedgerSign = () => {
     LEDGER_ERROR.NONE,
   );
   const isSwap = useIsSwap();
+  const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
 
   const closeOverlay = () => {
     if (ledgerConnectRef.current) {
@@ -144,12 +145,15 @@ export const LedgerSign = () => {
           </div>
         </div>
         <div className="LedgerSign__bottom">
-          <LedgerErrorBlock error={connectError} />
+          {isDetectBtnDirty && <LedgerErrorBlock error={connectError} />}
           {!ledgerConnectSuccessful && (
             <Button
               fullWidth
               variant={Button.variant.tertiary}
-              onClick={handleSign}
+              onClick={() => {
+                setIsDetectBtnDirty(true);
+                handleSign();
+              }}
               isLoading={isDetecting}
             >
               {isDetecting ? t("Detecting") : t("Detect device")}
