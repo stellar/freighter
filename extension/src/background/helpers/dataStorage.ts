@@ -4,6 +4,8 @@ interface SetItemParams {
   [key: string]: any;
 }
 
+export const browserStorage = browser.storage.local;
+
 export const dataStorage = {
   getItem: async (key: null | string | string[] | { [s: string]: any }) => {
     // Passing an object (for ex: {myKey: "aValue"}) will return the key's (myKey) value from storage.
