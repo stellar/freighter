@@ -59,6 +59,7 @@ import {
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
+  browserStorage,
   dataStorage,
   migrateLocalStorageToBrowserStorage,
   dataStorageAccess,
@@ -94,8 +95,8 @@ interface KeyPair {
 }
 
 export const popupMessageListener = (request: Request) => {
-  const localKeyStore = new KeyManagerPlugins.LocalStorageKeyStore();
-  localKeyStore.configure({ storage: localStorage });
+  const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
+  localKeyStore.configure({ storage: browserStorage });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
