@@ -49,7 +49,7 @@ export const LedgerErrorBlock = ({ error }: { error: LEDGER_ERROR }) => {
   switch (error) {
     case LEDGER_ERROR.NOT_OPEN:
       errorMessage = t(
-        "Please open the Stellar app on the device and try again.",
+        "Connect device to computer and open the Stellar app on it.",
       );
       break;
     case LEDGER_ERROR.NO_DEVICE:

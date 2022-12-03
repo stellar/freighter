@@ -460,6 +460,7 @@ export const NewAssetWarning = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
   const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
 
@@ -499,28 +500,34 @@ export const NewAssetWarning = ({
       .build()
       .toXDR();
 
-    const res = await dispatch(
-      signFreighterTransaction({
-        transactionXDR,
-        network: networkDetails.networkPassphrase,
-      }),
-    );
-
-    if (signFreighterTransaction.fulfilled.match(res)) {
-      const submitResp = await dispatch(
-        submitFreighterTransaction({
-          signedXDR: res.payload.signedTransaction,
-          networkDetails,
+    if (isHardwareWallet) {
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+    } else {
+      const res = await dispatch(
+        signFreighterTransaction({
+          transactionXDR,
+          network: networkDetails.networkPassphrase,
         }),
       );
-      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        navigateTo(ROUTES.account);
-        emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
-      } else {
-        setErrorAsset(getCanonicalFromAsset(code, issuer));
-        navigateTo(ROUTES.trustlineError);
+
+      if (signFreighterTransaction.fulfilled.match(res)) {
+        const submitResp = await dispatch(
+          submitFreighterTransaction({
+            signedXDR: res.payload.signedTransaction,
+            networkDetails,
+          }),
+        );
+        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+          navigateTo(ROUTES.account);
+          emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
+        } else {
+          setErrorAsset(getCanonicalFromAsset(code, issuer));
+          navigateTo(ROUTES.trustlineError);
+        }
       }
     }
+    setIsSubmitting(false);
   };
 
   return (

@@ -39,6 +39,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 
+import { EXPERIMENTAL } from "constants/featureFlag";
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 import {
   addAccountName,
@@ -77,6 +78,7 @@ import {
   setActivePrivateKey,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
+  reset,
 } from "background/ducks/session";
 import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL } from "background/constants/apiUrls";
 
@@ -243,6 +245,22 @@ export const popupMessageListener = (request: Request) => {
       keyId: keyStore.id,
       accountName,
     });
+  };
+
+  const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
+    const allAccounts = allAccountsSelector(store.getState());
+    let publicKeyIndex = allAccounts.findIndex(
+      (account: Account) => account.publicKey === publicKey,
+    );
+    publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
+
+    const keyIdList = await getKeyIdList();
+
+    const activeKeyId = keyIdList[publicKeyIndex];
+
+    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
+
+    store.dispatch(setActivePublicKey({ publicKey }));
   };
 
   const fundAccount = async () => {
@@ -417,19 +435,8 @@ export const popupMessageListener = (request: Request) => {
 
   const makeAccountActive = async () => {
     const { publicKey } = request;
+    await _activatePublicKey({ publicKey });
 
-    const allAccounts = allAccountsSelector(store.getState());
-    let publicKeyIndex = allAccounts.findIndex(
-      (account: Account) => account.publicKey === publicKey,
-    );
-    publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
-    const keyIdList = await getKeyIdList();
-
-    const activeKeyId = keyIdList[publicKeyIndex];
-
-    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
-
-    store.dispatch(setActivePublicKey({ publicKey }));
     store.dispatch(timeoutAccountAccess());
 
     const currentState = store.getState();
@@ -618,6 +625,41 @@ export const popupMessageListener = (request: Request) => {
       // start the timer now that we have active private key
       sessionTimer.startSession();
       store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
+
+      // lets check first couple of accounts and pre-load them if funded on mainnet
+      const numOfPublicKeysToCheck = 5;
+      // eslint-disable-next-line no-restricted-syntax
+      for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
+        try {
+          const publicKey = wallet.getPublicKey(i);
+          const privateKey = wallet.getSecret(i);
+
+          const server = new StellarSdk.Server(
+            MAINNET_NETWORK_DETAILS.networkUrl,
+          );
+          // eslint-disable-next-line no-await-in-loop
+          await server.accounts().accountId(publicKey).call();
+          const newKeyPair = {
+            publicKey,
+            privateKey,
+          };
+
+          // eslint-disable-next-line no-await-in-loop
+          await _storeAccount({
+            password,
+            keyPair: newKeyPair,
+            mnemonicPhrase: recoverMnemonic,
+            imported: true,
+          });
+          // eslint-disable-next-line no-await-in-loop
+          await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
+        } catch {
+          // continue
+        }
+      }
+
+      // let's make the first public key the active one
+      await _activatePublicKey({ publicKey: wallet.getPublicKey(0) });
     }
 
     const currentState = store.getState();
@@ -1059,6 +1101,15 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const resetExperimentalData = async () => {
+    if (EXPERIMENTAL !== true) {
+      return { error: "Not in experimental mode" };
+    }
+    await dataStorageAccess.clear();
+    store.dispatch(reset());
+    return {};
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1093,6 +1144,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
+    [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
   };
 
   return messageResponder[request.type]();
