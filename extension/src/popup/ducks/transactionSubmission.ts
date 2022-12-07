@@ -326,6 +326,7 @@ interface InitialState {
   blockedDomains: {
     domains: BlockedDomains;
   };
+  buyAsset: string;
 }
 
 export const initialState: InitialState = {
@@ -369,6 +370,7 @@ export const initialState: InitialState = {
   blockedDomains: {
     domains: {},
   },
+  buyAsset: "native",
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -423,6 +425,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAssetSelectSource: (state, action) => {
       state.assetSelect.isSource = action.payload;
+    },
+    saveBuyAsset: (state, action) => {
+      state.buyAsset = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -517,6 +522,7 @@ export const {
   closeHwOverlay,
   saveAssetSelectType,
   saveAssetSelectSource,
+  saveBuyAsset,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
