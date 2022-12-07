@@ -119,4 +119,7 @@ export const METRIC_NAMES = {
   viewPublicKeyAccountRenamed: "viewPublicKey: renamed account",
   viewPublicKeyCopy: "viewPublicKey: copied public key",
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
+
+  buyAsset: "loaded screen: buy asset",
+  buyMoneyGram: "loaded screen: buy moneygram",
 };
