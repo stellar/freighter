@@ -18,7 +18,7 @@ const devConfig = {
     new ModuleReplaceWebpackPlugin({
       modules: [
         {
-          test: /webextension-polyfill-ts/,
+          test: /webextension-polyfill/,
           replace: "../config/shims/webextension-polyfill.ts",
         },
       ],
