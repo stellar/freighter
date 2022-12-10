@@ -20,9 +20,7 @@ export const initContentScriptMessageListener = () => {
 
 export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
-    console.log(2);
     // todo this is kinda ugly
-    console.log(request);
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type)) {
       res = await popupMessageListener(request);
