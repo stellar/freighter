@@ -62,7 +62,6 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   browserStorage,
   dataStorage,
-  migrateLocalStorageToBrowserStorage,
   dataStorageAccess,
 } from "background/helpers/dataStorage";
 
@@ -1012,13 +1011,8 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const loadSettings = async () => {
-    await migrateLocalStorageToBrowserStorage();
-
-    const {
-      [DATA_SHARING_ID]: isDataSharingAllowed,
-    } = await await dataStorage.getItem({
-      [DATA_SHARING_ID]: true,
-    });
+    const isDataSharingAllowed =
+      (await dataStorage.getItem(DATA_SHARING_ID)) || true;
 
     return {
       isDataSharingAllowed,
