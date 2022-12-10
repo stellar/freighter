@@ -19,6 +19,7 @@ import {
   submitFreighterTransaction,
   transactionSubmissionSelector,
   closeHwOverlay,
+  addRecentAddress,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -27,6 +28,7 @@ import {
   parseLedgerError,
   LedgerErrorBlock,
 } from "popup/views/AddAccount/connect/LedgerConnect";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 
 import "./styles.scss";
 
@@ -37,12 +39,15 @@ export const LedgerSign = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
     hardwareWalletData: { transactionXDR, shouldSubmit },
+    transactionData: { destination },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
   const [ledgerConnectSuccessful, setLedgerConnectSuccessful] = useState(false);
   const [connectError, setConnectError] = useState<LEDGER_ERROR>(
     LEDGER_ERROR.NONE,
   );
+  const isSwap = useIsSwap();
+  const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
 
   const closeOverlay = () => {
     if (ledgerConnectRef.current) {
@@ -80,12 +85,18 @@ export const LedgerSign = () => {
       );
       if (signWithLedger.fulfilled.match(res)) {
         if (shouldSubmit) {
-          dispatch(
+          const submitResp = await dispatch(
             submitFreighterTransaction({
               signedXDR: res.payload,
               networkDetails,
             }),
           );
+          if (
+            submitFreighterTransaction.fulfilled.match(submitResp) &&
+            !isSwap
+          ) {
+            dispatch(addRecentAddress({ publicKey: destination }));
+          }
         } else {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
@@ -134,12 +145,15 @@ export const LedgerSign = () => {
           </div>
         </div>
         <div className="LedgerSign__bottom">
-          <LedgerErrorBlock error={connectError} />
+          {isDetectBtnDirty && <LedgerErrorBlock error={connectError} />}
           {!ledgerConnectSuccessful && (
             <Button
               fullWidth
               variant={Button.variant.tertiary}
-              onClick={handleSign}
+              onClick={() => {
+                setIsDetectBtnDirty(true);
+                handleSign();
+              }}
               isLoading={isDetecting}
             >
               {isDetecting ? t("Detecting") : t("Detect device")}

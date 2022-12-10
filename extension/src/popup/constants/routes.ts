@@ -1,5 +1,6 @@
 export enum ROUTES {
   debug = "/debug",
+  integrationTest = "/integration-test",
   welcome = "/",
   account = "/account",
   viewPublicKey = "/account/view-public-key",
