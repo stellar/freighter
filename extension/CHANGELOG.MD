@@ -20,6 +20,24 @@ Automatically recreate user accounts if they are funded
 
 If asset balance is 0, display swap button in the asset page
 
+# Release notes - Wallets - 2.8.0
+
+## Bug
+
+Add a scam asset using a hardware wallet causes error
+
+## Story
+
+Implement necessary analytics updates
+
+Replace localStorage calls with abstracted function
+
+# Release notes - Wallets - 2.7.1
+
+## Bug
+
+Unable to sign transactions on Main Net
+
 # Release notes - Wallets - Version 2.7.0
 
 ### Bug
