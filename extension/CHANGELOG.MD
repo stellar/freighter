@@ -1,3 +1,25 @@
+# Release notes - Wallets - 2.9.1
+
+## Bug
+
+Upgrade soroban-client
+
+# Release notes - Wallets - 2.9.0
+
+## Bug
+
+\[Ledger\] Freighter is not saving recent accounts the user sent to when Ledger
+is used
+
+\[Ledger\] When sending, if the device is not connected the screen already opens
+with a warning message
+
+## Story
+
+Automatically recreate user accounts if they are funded
+
+If asset balance is 0, display swap button in the asset page
+
 # Release notes - Wallets - Version 2.7.0
 
 ### Bug
