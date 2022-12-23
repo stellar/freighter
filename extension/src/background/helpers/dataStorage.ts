@@ -25,7 +25,7 @@ export const dataStorage = {
 
 export const dataStorageAccess = {
   getItem: (keyId: string) => dataStorage.getItem(keyId),
-  setItem: async (keyId: string, value: string) => {
+  setItem: async (keyId: string, value: any) => {
     await dataStorage.setItem({ [keyId]: value });
   },
   clear: () => dataStorage.clear(),
