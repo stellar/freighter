@@ -300,6 +300,7 @@ interface HardwareWalletData {
   status: ShowOverlayStatus;
   transactionXDR: string;
   shouldSubmit: boolean;
+  lastSignedXDR: string;
 }
 
 export enum AssetSelectType {
@@ -350,6 +351,7 @@ export const initialState: InitialState = {
     status: ShowOverlayStatus.IDLE,
     transactionXDR: "",
     shouldSubmit: true,
+    lastSignedXDR: "",
   },
   accountBalances: {
     balances: null,
@@ -502,6 +504,12 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
       state.blockedDomains.domains = action.payload;
+    });
+    builder.addCase(signWithLedger.pending, (state) => {
+      state.hardwareWalletData.lastSignedXDR = "";
+    });
+    builder.addCase(signWithLedger.fulfilled, (state, action) => {
+      state.hardwareWalletData.lastSignedXDR = action.payload;
     });
   },
 });
