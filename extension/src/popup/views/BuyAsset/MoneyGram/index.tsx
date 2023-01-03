@@ -61,7 +61,6 @@ export const MoneyGram = () => {
         startSep24Deposit(token);
       }
     })();
-    // ALEC TODO - safe?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hwSignedXDR, freighterSignedXDR]);
 
@@ -133,11 +132,8 @@ export const MoneyGram = () => {
     );
     const j = await response.json();
 
-    // ALEC TODO - remove
-    console.log({ j });
-
     // TODO - when polling starts will have to change,
-    // since the extension closes on new tab
+    // since the extension closes on new tab.
     openTab(j.url);
     startPolling(j.id, token);
   };
@@ -159,18 +155,12 @@ export const MoneyGram = () => {
       // eslint-disable-next-line no-await-in-loop
       const txJson = await res.json();
 
-      // ALEC TODO - remove
-      console.log(txJson);
-      console.log(txJson.transaction.status);
-
       if (txJson.transaction.status !== currentStatus) {
         currentStatus = txJson.transaction.status;
-
         if (currentStatus === Sep24Status.PENDING_TRUST) {
           // eslint-disable-next-line no-await-in-loop
           await addTrustline();
         }
-
         if (currentStatus === Sep24Status.COMPLETED) {
           navigateTo(ROUTES.account);
           break;
