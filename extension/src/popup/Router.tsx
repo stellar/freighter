@@ -328,9 +328,9 @@ export const Router = () => {
         <PublicKeyRoute exact path={ROUTES.buyAsset}>
           <BuyAsset />
         </PublicKeyRoute>
-        <PublicKeyRoute path={ROUTES.buyMoneyGram}>
+        <VerifiedAccountRoute path={ROUTES.buyMoneyGram}>
           <MoneyGram />
-        </PublicKeyRoute>
+        </VerifiedAccountRoute>
 
         {DEV_SERVER && (
           <>
