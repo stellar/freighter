@@ -1,0 +1,62 @@
+.BuyAsset {
+  &__card {
+    margin-bottom: 1rem;
+    border: 1px solid var(--pal-background-secondary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    column-gap: 0.75rem;
+    align-items: center;
+    cursor: pointer;
+
+    &__row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      column-gap: 0.75rem;
+    }
+
+    &__icon {
+      min-width: 1.5rem;
+      min-height: 0.1rem;
+      display: inline-block;
+    }
+  }
+
+  &__card:hover {
+    background: var(--pal-background-secondary);
+  }
+
+  &__title {
+    color: var(--pal-text-primary);
+    font-size: 0.875rem;
+  }
+
+  &__caption {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--pal-text-tertiary);
+  }
+
+  &__prompt {
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+  }
+
+  &__qr-icon {
+    width: 1.5rem;
+    border: 1px solid var(--pal-background-secondary);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 0.75rem;
+      fill: var(--pal-text-secondary);
+      stroke: none;
+    }
+  }
+}

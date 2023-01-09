@@ -300,6 +300,7 @@ interface HardwareWalletData {
   status: ShowOverlayStatus;
   transactionXDR: string;
   shouldSubmit: boolean;
+  lastSignedXDR: string;
 }
 
 export enum AssetSelectType {
@@ -326,6 +327,7 @@ interface InitialState {
   blockedDomains: {
     domains: BlockedDomains;
   };
+  buyAsset: string;
 }
 
 export const initialState: InitialState = {
@@ -349,6 +351,7 @@ export const initialState: InitialState = {
     status: ShowOverlayStatus.IDLE,
     transactionXDR: "",
     shouldSubmit: true,
+    lastSignedXDR: "",
   },
   accountBalances: {
     balances: null,
@@ -369,6 +372,7 @@ export const initialState: InitialState = {
   blockedDomains: {
     domains: {},
   },
+  buyAsset: "native",
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -423,6 +427,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAssetSelectSource: (state, action) => {
       state.assetSelect.isSource = action.payload;
+    },
+    saveBuyAsset: (state, action) => {
+      state.buyAsset = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -498,6 +505,12 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
       state.blockedDomains.domains = action.payload;
     });
+    builder.addCase(signWithLedger.pending, (state) => {
+      state.hardwareWalletData.lastSignedXDR = "";
+    });
+    builder.addCase(signWithLedger.fulfilled, (state, action) => {
+      state.hardwareWalletData.lastSignedXDR = action.payload;
+    });
   },
 });
 
@@ -517,6 +530,7 @@ export const {
   closeHwOverlay,
   saveAssetSelectType,
   saveAssetSelectSource,
+  saveBuyAsset,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
