@@ -1,1 +1,3 @@
-export const isConnected = () => !!window.freighter;
+import { requestConnectionStatus } from "@shared/api/external";
+
+export const isConnected = () => requestConnectionStatus();

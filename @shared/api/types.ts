@@ -48,6 +48,7 @@ export interface Response {
   bipPath: string;
   blockedDomains: BlockedDomains;
   assetDomain: string;
+  isConnected: boolean;
 }
 
 export interface BlockedDomains {
