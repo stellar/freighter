@@ -1,0 +1,31 @@
+.Sep24Todo {
+  padding: 0.75rem;
+  width: 100%;
+  border-radius: 8px;
+  background: #303448;
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  cursor: pointer;
+  height: 4.75rem;
+
+  &__disabled {
+    cursor: auto !important;
+    opacity: 0.75;
+  }
+
+  &__title {
+    text-transform: uppercase;
+    color: var(--pal-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+}

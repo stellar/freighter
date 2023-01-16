@@ -12,4 +12,5 @@ export enum Sep24Status {
   PENDING_TRUST = "pending_trust",
   PENDING_USER = "pending_user",
   PENDING_USER_TRANSFER_START = "pending_user_transfer_start",
+  PENDING_HARDWARE_WALLET_SIGN = "pending_hardware_wallet_sign",
 }

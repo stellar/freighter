@@ -9,12 +9,15 @@ import "simplebar-react/dist/simplebar.min.css";
 import { getAccountHistory } from "@shared/api/internal";
 import { AccountBalancesInterface } from "@shared/api/types";
 
+import { AppDispatch } from "popup/App";
+import { Sep24Status } from "popup/constants/sep24";
 import { Button } from "popup/basics/buttons/Button";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
+  hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import {
   ActionStatus,
@@ -26,6 +29,9 @@ import {
   saveAssetSelectType,
   AssetSelectType,
   getBlockedDomains,
+  loadSep24Data,
+  clearSep24Data,
+  signFreighterTransaction,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -35,6 +41,12 @@ import {
 } from "popup/helpers/account";
 import { isTestnet, truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
+import {
+  getAuthToken,
+  startSep24Polling,
+  getAnchorSep24Data,
+} from "popup/helpers/sep24";
+import { Sep24Todo } from "popup/components/sep24";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
@@ -52,10 +64,22 @@ export const defaultAccountBalances = {
 
 export const Account = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const dispatch: AppDispatch = useDispatch();
+  const {
+    accountBalances,
+    assetIcons,
+    accountBalanceStatus,
+    hardwareWalletData: { lastSignedXDR: hwSignedXDR },
+    sep24Data: {
+      sep10Url,
+      sep24Url,
+      txId: sep24TxId,
+      status: sep24Status,
+      anchorDomain,
+      asset: sep24Asset,
+    },
+  } = useSelector(transactionSubmissionSelector);
+
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -68,8 +92,94 @@ export const Account = () => {
   );
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
+  const [sep24Todo, setSep24Todo] = useState("");
+  const [sep10Token, setSep10Token] = useState("");
+  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const [freighterSignedXDR, setFreighterSignedXDR] = useState("");
 
   const accountDropDownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    (async () => {
+      const signedXdr = freighterSignedXDR || hwSignedXDR;
+      if (sep24TxId) {
+        if (!signedXdr) {
+          if (isHardwareWallet) {
+            setSep24Todo(Sep24Status.PENDING_HARDWARE_WALLET_SIGN);
+            return;
+          }
+          const {
+            challengeTx: transactionXDR,
+            networkPassphrase,
+          } = await getAnchorSep24Data({
+            anchorDomain,
+            publicKey,
+          });
+
+          if (networkPassphrase !== networkDetails.networkPassphrase) {
+            return;
+          }
+
+          const res = await dispatch(
+            signFreighterTransaction({
+              transactionXDR,
+              network: networkPassphrase,
+            }),
+          );
+
+          if (signFreighterTransaction.fulfilled.match(res)) {
+            const { signedTransaction } = res.payload;
+            setFreighterSignedXDR(signedTransaction);
+          }
+        }
+      }
+    })();
+  }, [
+    dispatch,
+    publicKey,
+    isHardwareWallet,
+    networkDetails.networkPassphrase,
+    sep24TxId,
+    anchorDomain,
+    freighterSignedXDR,
+    hwSignedXDR,
+  ]);
+
+  useEffect(() => {
+    (async () => {
+      const signedXdr = freighterSignedXDR || hwSignedXDR;
+      if (signedXdr) {
+        const token = await getAuthToken({
+          signedXdr,
+          sep10Url,
+        });
+
+        setSep10Token(token);
+        const _sep24Todo = await startSep24Polling({
+          dispatch,
+          sep24Url,
+          txId: sep24TxId,
+          token,
+          status: sep24Status,
+        });
+
+        if (_sep24Todo === Sep24Status.COMPLETED) {
+          dispatch(clearSep24Data());
+          setSep24Todo("");
+        } else {
+          setSep24Todo(_sep24Todo);
+        }
+      }
+    })();
+  }, [
+    hwSignedXDR,
+    freighterSignedXDR,
+    sep24Url,
+    sep10Url,
+    sep24TxId,
+    sep24Status,
+    dispatch,
+  ]);
 
   const { balances, isFunded } = accountBalances;
 
@@ -84,6 +194,7 @@ export const Account = () => {
       }),
     );
     dispatch(getBlockedDomains());
+    dispatch(loadSep24Data());
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
@@ -179,6 +290,13 @@ export const Account = () => {
               assetIcons={assetIcons}
               setSelectedAsset={setSelectedAsset}
             />
+            {sep24Todo && (
+              <Sep24Todo
+                todo={sep24Todo}
+                asset={sep24Asset}
+                token={sep10Token}
+              />
+            )}
           </SimpleBar>
         ) : (
           <NotFundedMessage
