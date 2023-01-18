@@ -125,6 +125,7 @@
   "Enter your account password to authorize this transaction": "Enter your account password to authorize this transaction.",
   "Enter your account password to verify your account": "Enter your account password to verify your account.",
   "Enter your password": "Enter your password",
+  "Entered amount is higher than the maximum send amount": "Entered amount is higher than the maximum send amount",
   "Entered amount is higher than your balance": "Entered amount is higher than your balance",
   "Error": "Error",
   "Error code": "Error code",
