@@ -131,6 +131,8 @@ export const SendAmount = ({
     issuer: "",
     image: "",
   });
+  const [inputCursor, setInputCursor] = useState(1); // sets initial cursor after placeholder
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
@@ -292,6 +294,14 @@ export const SendAmount = ({
     formik.values.asset,
   ]);
 
+  // hold input cursor placement after sanitize
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input) {
+      input.setSelectionRange(inputCursor, inputCursor);
+    }
+  }, [inputRef, inputCursor, formik.values.amount]);
+
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
     if (length <= 9) {
@@ -424,6 +434,7 @@ export const SendAmount = ({
             >
               <div className="SendAmount__simplebar__content">
                 <input
+                  ref={inputRef}
                   className={`SendAmount__input-amount ${
                     isSwap ? "SendAmount__input-amount__full-height" : ""
                   } SendAmount__${getAmountFontSize()}`}
@@ -431,9 +442,13 @@ export const SendAmount = ({
                   type="text"
                   placeholder="0"
                   value={formik.values.amount}
-                  onChange={(e) =>
-                    formik.setFieldValue("amount", formatAmount(e.target.value))
-                  }
+                  onChange={(e) => {
+                    setInputCursor(e.target.selectionStart || 1);
+                    formik.setFieldValue(
+                      "amount",
+                      formatAmount(e.target.value),
+                    );
+                  }}
                   autoFocus
                   autoComplete="off"
                 />
