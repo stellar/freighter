@@ -42,12 +42,14 @@ import {
 } from "popup/components/sendPayment/SendTo";
 import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
+import { TX_SEND_MAX } from "popup/constants/transaction";
 
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
   DEC_MAX = "too many decimal digits",
+  SEND_MAX = "amount higher than send max",
 }
 
 const ConversionRate = ({
@@ -202,6 +204,9 @@ export const SendAmount = ({
     if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
     }
+    if (new BigNumber(val).gt(new BigNumber(TX_SEND_MAX))) {
+      return { amount: AMOUNT_ERROR.SEND_MAX };
+    }
     return {};
   };
 
@@ -303,7 +308,7 @@ export const SendAmount = ({
 
   const formatAmount = (val: string) => {
     const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
-    const maxDigits = 16;
+    const maxDigits = 12;
     const cleaned = cleanAmount(val);
     // add commas to pre decimal digits
     if (cleaned.indexOf(".") !== -1) {
@@ -340,6 +345,14 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           7 {t("digits after the decimal allowed")}
+        </InfoBlock>
+      );
+    }
+    if (formik.errors.amount === AMOUNT_ERROR.SEND_MAX) {
+      return (
+        <InfoBlock variant={InfoBlock.variant.error}>
+          {t("Entered amount is higher than the maximum send amount")} (
+          {formatAmount(TX_SEND_MAX)})
         </InfoBlock>
       );
     }
