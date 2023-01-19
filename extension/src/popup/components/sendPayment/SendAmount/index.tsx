@@ -303,6 +303,31 @@ export const SendAmount = ({
   // remove non digits and decimal
   const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
 
+  const preserveCursor = (
+    val: string, // raw value from input,
+    previousVal: string, // previous state for val
+    cleanedVal: string, // string after format/sanitize
+  ) => {
+    const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
+    const formatted = cleanedVal.includes(",")
+      ? cleanedVal
+      : decimal.format(Number(cleanedVal)).toString();
+    const previousCommas = (previousVal.match(/,/g) || []).length;
+    const newCommas = (formatted.match(/,/g) || []).length;
+    const commaDiff = Math.abs(newCommas - previousCommas);
+    const cleanedDiff = val.includes(",") // compare formatted vals if previous val had formatting
+      ? val.length - formatted.length
+      : val.length - cleanedVal.length;
+
+    console.log(val, formatted, previousVal, cleanedVal);
+    console.log(commaDiff, cleanedDiff);
+
+    return {
+      commaDiff,
+      cleanedDiff,
+    };
+  };
+
   const formatAmount = (val: string, cursorPosition: number) => {
     const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
     const maxDigits = 16;
@@ -318,17 +343,14 @@ export const SendAmount = ({
       // To preserve cursor -
       // need to account for commas and filtered chars before dot
       // and need to account for filtered chars after dot
-      const previousVal = formik.values.amount.split(".");
       const uncleanedCurrentAmount = val.split(".");
+      const previousVal = formik.values.amount.split(".");
 
-      const formatted = parts[0];
-      const previousCommas = (previousVal[0].match(/,/g) || []).length;
-      const newCommas = (formatted.match(/,/g) || []).length;
-      const commaDiff = Math.abs(newCommas - previousCommas);
-      const cleanedDiff = uncleanedCurrentAmount[0].includes(",") // compare formatted vals if previous val had formatting
-        ? uncleanedCurrentAmount[0].length - formatted.length
-        : uncleanedCurrentAmount[0].length -
-          parts[0].slice(0, maxDigits).length;
+      const { commaDiff, cleanedDiff } = preserveCursor(
+        uncleanedCurrentAmount[0],
+        previousVal[0],
+        parts[0].slice(0, maxDigits),
+      );
 
       // after dot, need to account for filtered chars moving the cursor
       const afterDotCleanedDiff =
@@ -341,18 +363,14 @@ export const SendAmount = ({
     }
 
     // no decimals, need to account for newly added commas and for chars lost to cleanAmount which moved the cursor
-    const formatted = decimal
-      .format(Number(cleaned.slice(0, maxDigits)))
-      .toString();
-    const previousCommas = (formik.values.amount.match(/,/g) || []).length;
-    const newCommas = (formatted.match(/,/g) || []).length;
-    const commaDiff = Math.abs(newCommas - previousCommas);
-    const cleanedDiff = val.includes(",") // compare formatted vals if previous val had formatting
-      ? val.length - formatted.length
-      : val.length - cleaned.slice(0, maxDigits).length;
+    const { commaDiff, cleanedDiff } = preserveCursor(
+      val,
+      formik.values.amount,
+      cleaned.slice(0, maxDigits),
+    );
 
     return {
-      amount: formatted,
+      amount: decimal.format(Number(cleaned.slice(0, maxDigits))).toString(),
       newCursor: cursorPosition + commaDiff - cleanedDiff,
     };
   };
