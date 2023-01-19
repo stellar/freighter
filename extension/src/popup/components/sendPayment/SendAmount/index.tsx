@@ -324,9 +324,6 @@ export const SendAmount = ({
       ? val.length - formatted.length
       : val.length - cleanedVal.length;
 
-    console.log(val, formatted, previousVal, cleanedVal);
-    console.log(commaDiff, cleanedDiff);
-
     return {
       commaDiff,
       cleanedDiff,
