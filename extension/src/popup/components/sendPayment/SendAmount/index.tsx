@@ -26,6 +26,7 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
+import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -103,6 +104,7 @@ export const SendAmount = ({
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const runAfterUpdate = useRunAfterUpdate();
 
   const {
     accountBalances,
@@ -131,8 +133,6 @@ export const SendAmount = ({
     issuer: "",
     image: "",
   });
-  const [inputCursor, setInputCursor] = useState(1); // sets initial cursor after placeholder
-  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
@@ -294,14 +294,6 @@ export const SendAmount = ({
     formik.values.asset,
   ]);
 
-  // hold input cursor placement after sanitize
-  useEffect(() => {
-    const input = inputRef.current;
-    if (input) {
-      input.setSelectionRange(inputCursor, inputCursor);
-    }
-  }, [inputRef, inputCursor, formik.values.amount]);
-
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
     if (length <= 9) {
@@ -316,7 +308,7 @@ export const SendAmount = ({
   // remove non digits and decimal
   const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
 
-  const formatAmount = (val: string) => {
+  const formatAmount = (val: string, cursorPosition: number) => {
     const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
     const maxDigits = 12;
     const cleaned = cleanAmount(val);
@@ -327,9 +319,47 @@ export const SendAmount = ({
         .format(Number(parts[0].slice(0, maxDigits)))
         .toString();
       parts[1] = parts[1].slice(0, 7);
-      return `${parts[0]}.${parts[1]}`;
+
+      // To preserve cursor -
+      // need to account for commas and filtered chars before dot
+      // and need to account for filtered chars after dot
+      const previousVal = formik.values.amount.split(".");
+      const uncleanedCurrentAmount = val.split(".");
+
+      const formatted = parts[0];
+      const previousCommas = (previousVal[0].match(/,/g) || []).length;
+      const newCommas = (formatted.match(/,/g) || []).length;
+      const commaDiff = Math.abs(newCommas - previousCommas);
+      const cleanedDiff = uncleanedCurrentAmount[0].includes(",") // compare formatted vals if previous val had formatting
+        ? uncleanedCurrentAmount[0].length - formatted.length
+        : uncleanedCurrentAmount[0].length -
+          parts[0].slice(0, maxDigits).length;
+
+      // after dot, need to account for filtered chars moving the cursor
+      const afterDotCleanedDiff =
+        uncleanedCurrentAmount[1].length - parts[1].length;
+      return {
+        amount: `${parts[0]}.${parts[1]}`,
+        newCursor:
+          cursorPosition + commaDiff - cleanedDiff - afterDotCleanedDiff,
+      };
     }
-    return decimal.format(Number(cleaned.slice(0, maxDigits))).toString();
+
+    // no decimals, need to account for newly added commas and for chars lost to cleanAmount which moved the cursor
+    const formatted = decimal
+      .format(Number(cleaned.slice(0, maxDigits)))
+      .toString();
+    const previousCommas = (formik.values.amount.match(/,/g) || []).length;
+    const newCommas = (formatted.match(/,/g) || []).length;
+    const commaDiff = Math.abs(newCommas - previousCommas);
+    const cleanedDiff = val.includes(",") // compare formatted vals if previous val had formatting
+      ? val.length - formatted.length
+      : val.length - cleaned.slice(0, maxDigits).length;
+
+    return {
+      amount: formatted,
+      newCursor: cursorPosition + commaDiff - cleanedDiff,
+    };
   };
 
   const DecideWarning = () => {
@@ -434,7 +464,6 @@ export const SendAmount = ({
             >
               <div className="SendAmount__simplebar__content">
                 <input
-                  ref={inputRef}
                   className={`SendAmount__input-amount ${
                     isSwap ? "SendAmount__input-amount__full-height" : ""
                   } SendAmount__${getAmountFontSize()}`}
@@ -443,11 +472,16 @@ export const SendAmount = ({
                   placeholder="0"
                   value={formik.values.amount}
                   onChange={(e) => {
-                    setInputCursor(e.target.selectionStart || 1);
-                    formik.setFieldValue(
-                      "amount",
-                      formatAmount(e.target.value),
+                    const input = e.target;
+                    const { amount: newAmount, newCursor } = formatAmount(
+                      e.target.value,
+                      e.target.selectionStart || 1,
                     );
+                    formik.setFieldValue("amount", newAmount);
+                    runAfterUpdate(() => {
+                      input.selectionStart = newCursor;
+                      input.selectionEnd = newCursor;
+                    });
                   }}
                   autoFocus
                   autoComplete="off"
