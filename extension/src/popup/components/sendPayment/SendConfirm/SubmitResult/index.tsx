@@ -73,7 +73,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   return (
     <div className="SubmitResult">
       <div className="SubmitResult__header">
-        {t("Successfuly")} {isSwap ? t("swapped") : t("sent")}
+        {t("Successfully")} {isSwap ? t("swapped") : t("sent")}
       </div>
       <div className="SubmitResult__amount">
         {amount} {sourceAsset.code}

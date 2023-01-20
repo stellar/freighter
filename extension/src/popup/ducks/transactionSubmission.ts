@@ -48,18 +48,37 @@ export const signFreighterTransaction = createAsyncThunk<
 
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
-  { signedXDR: string; networkDetails: NetworkDetails },
+  {
+    publicKey: string;
+    signedXDR: string;
+    networkDetails: NetworkDetails;
+    refreshBalances?: boolean;
+  },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterTransaction",
-  async ({ signedXDR, networkDetails }, thunkApi) => {
+  async (
+    { publicKey, signedXDR, networkDetails, refreshBalances = false },
+    thunkApi,
+  ) => {
     try {
-      return await internalSubmitFreighterTransaction({
-        signedXDR,
-        networkDetails,
-      });
+      if (refreshBalances) {
+        const txRes = await internalSubmitFreighterTransaction({
+          signedXDR,
+          networkDetails,
+        });
+
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
+
+        return txRes;
+      } else {
+        return await internalSubmitFreighterTransaction({
+          signedXDR,
+          networkDetails,
+        });
+      }
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
