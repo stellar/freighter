@@ -73,12 +73,11 @@ export const submitFreighterTransaction = createAsyncThunk<
         thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
 
         return txRes;
-      } else {
-        return await internalSubmitFreighterTransaction({
-          signedXDR,
-          networkDetails,
-        });
       }
+      return await internalSubmitFreighterTransaction({
+        signedXDR,
+        networkDetails,
+      });
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
