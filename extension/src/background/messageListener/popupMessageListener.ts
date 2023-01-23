@@ -32,6 +32,7 @@ import {
   CACHED_BLOCKED_DOMAINS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
+  SEP24_DATA,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -1110,6 +1111,58 @@ export const popupMessageListener = (request: Request) => {
     return {};
   };
 
+  const storeSep24Data = async () => {
+    const {
+      publicKey,
+      txId,
+      sep10Url,
+      sep24Url,
+      status,
+      anchorDomain,
+      asset,
+    } = request.sep24Data;
+
+    await dataStorageAccess.setItem(
+      `${SEP24_DATA}:${publicKey}`,
+      JSON.stringify({
+        publicKey,
+        txId,
+        sep10Url,
+        sep24Url,
+        status,
+        anchorDomain,
+        asset,
+      }),
+    );
+  };
+
+  const loadSep24Data = async () => {
+    const publicKey = publicKeySelector(store.getState());
+
+    const res = JSON.parse(
+      (await dataStorageAccess.getItem(`${SEP24_DATA}:${publicKey}`)) || "{}",
+    );
+    return { sep24Data: res };
+  };
+
+  const storeSep24Status = async () => {
+    const { status } = request;
+    const publicKey = publicKeySelector(store.getState());
+    const res = JSON.parse(
+      (await dataStorageAccess.getItem(`${SEP24_DATA}:${publicKey}`)) || "{}",
+    );
+
+    await dataStorageAccess.setItem(
+      `${SEP24_DATA}:${publicKey}`,
+      JSON.stringify({ ...res, status }),
+    );
+  };
+
+  const clearSep24Data = async () => {
+    const publicKey = publicKeySelector(store.getState());
+    await dataStorageAccess.remoteItem(`${SEP24_DATA}:${publicKey}`);
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1145,6 +1198,10 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
+    [SERVICE_TYPES.STORE_SEP24_DATA]: storeSep24Data,
+    [SERVICE_TYPES.LOAD_SEP24_DATA]: loadSep24Data,
+    [SERVICE_TYPES.STORE_SEP24_STATUS]: storeSep24Status,
+    [SERVICE_TYPES.CLEAR_SEP24_DATA]: clearSep24Data,
   };
 
   return messageResponder[request.type]();
