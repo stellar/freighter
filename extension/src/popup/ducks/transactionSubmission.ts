@@ -488,6 +488,10 @@ const transactionSubmissionSlice = createSlice({
     saveBuyAsset: (state, action) => {
       state.buyAsset = action.payload;
     },
+    // TODO - separate sign status from submit status so shouldnt need this method
+    setSubmitStatus: (state, action) => {
+      state.submitStatus = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -594,6 +598,7 @@ export const {
   saveAssetSelectType,
   saveAssetSelectSource,
   saveBuyAsset,
+  setSubmitStatus,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

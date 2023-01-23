@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { startSep24Deposit } from "@shared/api/internal";
@@ -18,6 +18,7 @@ import {
   startHwSign,
   ShowOverlayStatus,
   transactionSubmissionSelector,
+  storeSep24Data,
 } from "popup/ducks/transactionSubmission";
 import { openTab } from "popup/helpers/navigate";
 import { Sep24Status } from "popup/constants/sep24";
@@ -35,7 +36,7 @@ export const Sep24Todo = ({
   token: string;
 }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { sep24Url, anchorDomain } = useSelector(sep24DataSelector);
+  const { sep10Url, sep24Url, anchorDomain } = useSelector(sep24DataSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const { recommendedFee } = useNetworkFees();
@@ -46,6 +47,10 @@ export const Sep24Todo = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const { code, issuer } = getAssetFromCanonical(asset);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, [todo]);
 
   let message = null;
   let onClick = () => {};
@@ -70,6 +75,17 @@ export const Sep24Todo = ({
         });
         if (res.url) {
           openTab(res.url);
+          dispatch(
+            storeSep24Data({
+              txId: res.id,
+              sep10Url,
+              sep24Url,
+              publicKey,
+              status: Sep24Status.INCOMPLETE,
+              anchorDomain,
+              asset,
+            }),
+          );
           window.location.reload();
         }
       };
@@ -94,7 +110,9 @@ export const Sep24Todo = ({
           fee: recommendedFee,
           isHardwareWallet,
         });
-        window.location.reload();
+        if (!isHardwareWallet) {
+          window.location.reload();
+        }
       };
       break;
     case Sep24Status.PENDING_HARDWARE_WALLET_SIGN:
@@ -119,6 +137,7 @@ export const Sep24Todo = ({
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {/* TODO - change to Button from SDS 2.0 */}
       <div
         className={`Sep24Todo ${isLoading ? "Sep24Todo__disabled" : ""}`}
         onClick={isLoading ? () => {} : onClick}

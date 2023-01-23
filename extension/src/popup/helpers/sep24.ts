@@ -13,6 +13,7 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   storeSep24Status,
+  clearSep24Data,
 } from "popup/ducks/transactionSubmission";
 
 export const getAuthToken = async ({
@@ -82,7 +83,6 @@ export const startSep24Polling = async ({
     Sep24Status.INCOMPLETE,
     Sep24Status.PENDING_TRUST,
     Sep24Status.ERROR,
-    Sep24Status.COMPLETED,
   ];
 
   // eslint-disable-next-line no-constant-condition
@@ -96,6 +96,11 @@ export const startSep24Polling = async ({
 
     // eslint-disable-next-line no-await-in-loop
     const txJson = await res.json();
+
+    if (txJson.transaction.status === Sep24Status.COMPLETED) {
+      dispatch(clearSep24Data());
+      return Sep24Status.COMPLETED;
+    }
 
     if (txJson.transaction.status !== currentStatus) {
       currentStatus = txJson.transaction.status;

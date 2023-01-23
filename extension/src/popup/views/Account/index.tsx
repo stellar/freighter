@@ -30,8 +30,8 @@ import {
   AssetSelectType,
   getBlockedDomains,
   loadSep24Data,
-  clearSep24Data,
   signFreighterTransaction,
+  setSubmitStatus,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -99,88 +99,6 @@ export const Account = () => {
 
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    (async () => {
-      const signedXdr = freighterSignedXDR || hwSignedXDR;
-      if (sep24TxId) {
-        if (!signedXdr) {
-          if (isHardwareWallet) {
-            setSep24Todo(Sep24Status.PENDING_HARDWARE_WALLET_SIGN);
-            return;
-          }
-          const {
-            challengeTx: transactionXDR,
-            networkPassphrase,
-          } = await getAnchorSep24Data({
-            anchorDomain,
-            publicKey,
-          });
-
-          if (networkPassphrase !== networkDetails.networkPassphrase) {
-            return;
-          }
-
-          const res = await dispatch(
-            signFreighterTransaction({
-              transactionXDR,
-              network: networkPassphrase,
-            }),
-          );
-
-          if (signFreighterTransaction.fulfilled.match(res)) {
-            const { signedTransaction } = res.payload;
-            setFreighterSignedXDR(signedTransaction);
-          }
-        }
-      }
-    })();
-  }, [
-    dispatch,
-    publicKey,
-    isHardwareWallet,
-    networkDetails.networkPassphrase,
-    sep24TxId,
-    anchorDomain,
-    freighterSignedXDR,
-    hwSignedXDR,
-  ]);
-
-  useEffect(() => {
-    (async () => {
-      const signedXdr = freighterSignedXDR || hwSignedXDR;
-      if (signedXdr) {
-        const token = await getAuthToken({
-          signedXdr,
-          sep10Url,
-        });
-
-        setSep10Token(token);
-        const _sep24Todo = await startSep24Polling({
-          dispatch,
-          sep24Url,
-          txId: sep24TxId,
-          token,
-          status: sep24Status,
-        });
-
-        if (_sep24Todo === Sep24Status.COMPLETED) {
-          dispatch(clearSep24Data());
-          setSep24Todo("");
-        } else {
-          setSep24Todo(_sep24Todo);
-        }
-      }
-    })();
-  }, [
-    hwSignedXDR,
-    freighterSignedXDR,
-    sep24Url,
-    sep10Url,
-    sep24TxId,
-    sep24Status,
-    dispatch,
-  ]);
-
   const { balances, isFunded } = accountBalances;
 
   useEffect(() => {
@@ -222,6 +140,66 @@ export const Account = () => {
     };
     fetchAccountHistory();
   }, [publicKey, networkDetails, sortedBalances]);
+
+  // if we have sep24 txid then start polling
+  useEffect(() => {
+    (async () => {
+      if (!sep24TxId) {
+        return;
+      }
+      const signedXdr = freighterSignedXDR || hwSignedXDR;
+      if (signedXdr) {
+        const token = await getAuthToken({
+          signedXdr,
+          sep10Url,
+        });
+        setSep10Token(token);
+        const _sep24Todo = await startSep24Polling({
+          dispatch,
+          sep24Url,
+          txId: sep24TxId,
+          token,
+          status: sep24Status,
+        });
+        setSep24Todo(_sep24Todo === Sep24Status.COMPLETED ? "" : _sep24Todo);
+      } else {
+        // need to get signed Xdr first
+        if (isHardwareWallet) {
+          setSep24Todo(Sep24Status.PENDING_HARDWARE_WALLET_SIGN);
+          return;
+        }
+        const {
+          challengeTx: transactionXDR,
+          networkPassphrase,
+        } = await getAnchorSep24Data({
+          anchorDomain,
+          publicKey,
+        });
+        const res = await dispatch(
+          signFreighterTransaction({
+            transactionXDR,
+            network: networkPassphrase,
+          }),
+        );
+        if (signFreighterTransaction.fulfilled.match(res)) {
+          const { signedTransaction } = res.payload;
+          setFreighterSignedXDR(signedTransaction);
+        }
+        dispatch(setSubmitStatus(ActionStatus.IDLE));
+      }
+    })();
+  }, [
+    dispatch,
+    sep10Url,
+    sep24Url,
+    sep24Status,
+    publicKey,
+    isHardwareWallet,
+    sep24TxId,
+    anchorDomain,
+    freighterSignedXDR,
+    hwSignedXDR,
+  ]);
 
   if (accountBalanceStatus === ActionStatus.PENDING) {
     // waiting for account balances to load

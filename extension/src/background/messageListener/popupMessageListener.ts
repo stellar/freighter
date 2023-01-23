@@ -1160,7 +1160,7 @@ export const popupMessageListener = (request: Request) => {
 
   const clearSep24Data = async () => {
     const publicKey = publicKeySelector(store.getState());
-    await dataStorageAccess.setItem(`${SEP24_DATA}:${publicKey}`, "");
+    await dataStorageAccess.remoteItem(`${SEP24_DATA}:${publicKey}`);
   };
 
   const messageResponder: MessageResponder = {
