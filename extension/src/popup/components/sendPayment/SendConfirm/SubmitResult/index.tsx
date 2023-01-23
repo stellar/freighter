@@ -56,6 +56,7 @@ const SwapAssetsIcon = ({
 
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const {
+    accountBalances,
     transactionData: {
       destination,
       federationAddress,
@@ -69,6 +70,10 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const isSwap = useIsSwap();
 
   const sourceAsset = getAssetFromCanonical(asset);
+
+  const suggestRemoveTrustline =
+    accountBalances.balances &&
+    accountBalances.balances[asset].available.isZero();
 
   return (
     <div className="SubmitResult">
@@ -95,13 +100,21 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           />
         )}
       </div>
+      <div className="SubmitResult__suggest-remove-tl">
+        {suggestRemoveTrustline && (
+          <InfoBlock>
+            Your {sourceAsset.code} balance is now empty. Would you like to
+            remove the {sourceAsset.code} trustline?
+            <br />
+            Remove Trustline
+          </InfoBlock>
+        )}
+      </div>
       <div className="SubmitResult__button-rows__success">
-        <Button fullWidth onClick={() => viewDetails()}>
-          {t("Transaction Details")}
+        <Button variant={Button.variant.tertiary} onClick={() => viewDetails()}>
+          {t("Details")}
         </Button>
         <Button
-          fullWidth
-          variant={Button.variant.tertiary}
           onClick={() => {
             navigateTo(ROUTES.account);
           }}
