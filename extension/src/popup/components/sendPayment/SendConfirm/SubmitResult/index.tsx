@@ -1,20 +1,36 @@
 import React, { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
 import { Icon, TextLink } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import StellarSdk, { Account } from "stellar-sdk";
+import { AppDispatch } from "popup/App";
 
 import { AssetIcons, ErrorMessage } from "@shared/api/types";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { useIsSwap } from "popup/helpers/useIsSwap";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import {
+  publicKeySelector,
+  hardwareWalletTypeSelector,
+} from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  getAccountBalances,
+  resetSubmission,
+  startHwSign,
+  signFreighterTransaction,
+  submitFreighterTransaction,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -56,6 +72,7 @@ const SwapAssetsIcon = ({
 
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const {
+    accountBalances,
     transactionData: {
       destination,
       federationAddress,
@@ -67,13 +84,98 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   } = useSelector(transactionSubmissionSelector);
   const { t } = useTranslation();
   const isSwap = useIsSwap();
+  const dispatch: AppDispatch = useDispatch();
 
   const sourceAsset = getAssetFromCanonical(asset);
+  const { recommendedFee } = useNetworkFees();
+  const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  const server = stellarSdkServer(networkDetails.networkUrl);
+  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+
+  const removeTrustline = async (assetCode: string, assetIssuer: string) => {
+    const changeParams = { limit: "0" };
+    const sourceAccount: Account = await server.loadAccount(publicKey);
+    // const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
+
+    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: xlmToStroop(recommendedFee).toFixed(),
+      networkPassphrase: networkDetails.networkPassphrase,
+    })
+      .addOperation(
+        StellarSdk.Operation.changeTrust({
+          asset: new StellarSdk.Asset(assetCode, assetIssuer),
+          ...changeParams,
+        }),
+      )
+      .setTimeout(180)
+      .build()
+      .toXDR();
+
+    const trackRemoveTrustline = () => {
+      emitMetric(METRIC_NAMES.manageAssetRemoveAsset, {
+        assetCode,
+        assetIssuer,
+      });
+    };
+
+    if (isHardwareWallet) {
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      trackRemoveTrustline();
+    } else {
+      await signAndSubmit(transactionXDR, trackRemoveTrustline);
+    }
+  };
+
+  const signAndSubmit = async (
+    transactionXDR: string,
+    trackChangeTrustline: () => void,
+  ) => {
+    const res = await dispatch(
+      signFreighterTransaction({
+        transactionXDR,
+        network: networkDetails.networkPassphrase,
+      }),
+    );
+
+    if (signFreighterTransaction.fulfilled.match(res)) {
+      const submitResp = await dispatch(
+        submitFreighterTransaction({
+          publicKey,
+          signedXDR: res.payload.signedTransaction,
+          networkDetails,
+        }),
+      );
+
+      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        dispatch(
+          getAccountBalances({
+            publicKey,
+            networkDetails,
+          }),
+        );
+        trackChangeTrustline();
+        dispatch(resetSubmission());
+        navigateTo(ROUTES.account);
+      }
+
+      if (submitFreighterTransaction.rejected.match(submitResp)) {
+        // TODO: need to be able to set error asset from outside of the render tree, eg: store
+        // setErrorAsset(asset);
+        // navigateTo(ROUTES.trustlineError);
+      }
+    }
+  };
+
+  const suggestRemoveTrustline =
+    accountBalances.balances &&
+    accountBalances.balances[asset].available.isZero();
 
   return (
     <div className="SubmitResult">
       <div className="SubmitResult__header">
-        {t("Successfuly")} {isSwap ? t("swapped") : t("sent")}
+        {t("Successfully")} {isSwap ? t("swapped") : t("sent")}
       </div>
       <div className="SubmitResult__amount">
         {amount} {sourceAsset.code}
@@ -95,13 +197,30 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           />
         )}
       </div>
+      <div className="SubmitResult__suggest-remove-tl">
+        {suggestRemoveTrustline && (
+          <InfoBlock>
+            <span className="remove-tl-contents">
+              <p>
+                Your {sourceAsset.code} balance is now empty. Would you like to
+                remove the {sourceAsset.code} trustline?
+              </p>
+              <button
+                onClick={() =>
+                  removeTrustline(sourceAsset.code, sourceAsset.issuer)
+                }
+              >
+                Remove Trustline
+              </button>
+            </span>
+          </InfoBlock>
+        )}
+      </div>
       <div className="SubmitResult__button-rows__success">
-        <Button fullWidth onClick={() => viewDetails()}>
-          {t("Transaction Details")}
+        <Button variant={Button.variant.tertiary} onClick={() => viewDetails()}>
+          {t("Details")}
         </Button>
         <Button
-          fullWidth
-          variant={Button.variant.tertiary}
           onClick={() => {
             navigateTo(ROUTES.account);
           }}
