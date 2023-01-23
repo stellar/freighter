@@ -92,6 +92,28 @@
     position: absolute;
     top: calc(var(--popup--height) - 3.75 * var(--continue-btn-height));
     width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
+
+    .remove-tl-contents {
+      display: flex;
+      flex-direction: column;
+
+      p {
+        font-size: 14px;
+        margin: 0;
+        line-height: 1.375rem;
+      }
+
+      button {
+        font-size: 14px;
+        font-weight: bold;
+        border: 0;
+        padding: 0;
+        text-align: initial;
+        margin-top: 10px;
+        background-color: transparent;
+        text-decoration: underline;
+      }
+    }
   }
 
   &__button-rows {
