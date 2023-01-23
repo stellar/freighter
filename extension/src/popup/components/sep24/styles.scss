@@ -9,7 +9,7 @@
   font-size: 0.875rem;
   line-height: 1.375rem;
   cursor: pointer;
-  height: 4.75rem;
+  min-height: 4.75rem;
 
   &__disabled {
     cursor: auto !important;
