@@ -32,11 +32,7 @@ interface AssetDomainToml {
   NETWORK_PASSPHRASE?: string;
 }
 
-interface AddAssetProps {
-  setErrorAsset: (errorAsset: string) => void;
-}
-
-export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
+export const AddAsset = () => {
   const { t } = useTranslation();
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isCurrencyNotFound, setIsCurrencyNotFound] = useState(false);
@@ -125,7 +121,6 @@ export const AddAsset = ({ setErrorAsset }: AddAssetProps) => {
                     >
                       <ManageAssetRows
                         assetRows={assetRows}
-                        setErrorAsset={setErrorAsset}
                         maxHeight={
                           ManageAssetRowsWrapperRef?.current?.clientHeight ||
                           600

@@ -25,10 +25,9 @@ import "./styles.scss";
 
 interface ChooseAssetProps {
   balances: Balances;
-  setErrorAsset: (errorAsset: string) => void;
 }
 
-export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
+export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { t } = useTranslation();
   const { assetIcons, assetSelect } = useSelector(
     transactionSubmissionSelector,
@@ -112,7 +111,6 @@ export const ChooseAsset = ({ balances, setErrorAsset }: ChooseAssetProps) => {
           {managingAssets ? (
             <ManageAssetRows
               assetRows={assetRows}
-              setErrorAsset={setErrorAsset}
               maxHeight={
                 ManageAssetRowsWrapperRef?.current?.clientHeight || 600
               }

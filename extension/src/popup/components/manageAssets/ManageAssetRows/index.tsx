@@ -61,7 +61,6 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
-  setErrorAsset: (errorAsset: string) => void;
   maxHeight: number;
 }
 
@@ -69,7 +68,6 @@ export const ManageAssetRows = ({
   children,
   header,
   assetRows,
-  setErrorAsset,
   maxHeight,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
@@ -180,7 +178,6 @@ export const ManageAssetRows = ({
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setErrorAsset(assetSubmitting);
         navigateTo(ROUTES.trustlineError);
       }
     }
@@ -189,13 +186,12 @@ export const ManageAssetRows = ({
   // watch submitStatus if used ledger to send transaction
   useEffect(() => {
     if (submitStatus === ActionStatus.ERROR) {
-      setErrorAsset(assetSubmitting);
       navigateTo(ROUTES.trustlineError);
     } else if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
       navigateTo(ROUTES.account);
     }
-  }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
+  }, [submitStatus, assetSubmitting, dispatch]);
 
   const isBlockedDomain = (domain: string) => blockedDomains.domains[domain];
 
@@ -292,7 +288,6 @@ export const ManageAssetRows = ({
           onClose={() => {
             setShowBlockedDomainWarning(false);
           }}
-          setErrorAsset={setErrorAsset}
         />
       )}
       {showNewAssetWarning && (
@@ -305,7 +300,6 @@ export const ManageAssetRows = ({
           onClose={() => {
             setShowNewAssetWarning(false);
           }}
-          setErrorAsset={setErrorAsset}
         />
       )}
       <SimpleBar
