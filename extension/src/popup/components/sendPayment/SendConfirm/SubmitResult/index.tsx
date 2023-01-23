@@ -97,7 +97,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
     const changeParams = { limit: "0" };
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    // const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
@@ -161,9 +160,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
-        // TODO: need to be able to set error asset from outside of the render tree, eg: store
-        // setErrorAsset(asset);
-        // navigateTo(ROUTES.trustlineError);
+        navigateTo(ROUTES.trustlineError);
       }
     }
   };
