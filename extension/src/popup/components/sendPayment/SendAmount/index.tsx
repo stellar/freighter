@@ -370,7 +370,6 @@ export const SendAmount = ({
           image={suspiciousAssetData.image}
           onClose={() => setShowBlockedDomainWarning(false)}
           onContinue={() => navigateTo(next)}
-          setErrorAsset={() => {}}
         />
       )}
       <div className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}>
