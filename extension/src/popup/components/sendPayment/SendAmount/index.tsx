@@ -13,6 +13,7 @@ import {
   AssetSelect,
   PathPayAssetSelect,
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
+import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -49,21 +50,6 @@ enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
   DEC_MAX = "too many decimal digits",
 }
-
-const useRunAfterUpdate = () => {
-  const afterPaintRef = React.useRef<any>(null);
-  React.useLayoutEffect(() => {
-    if (afterPaintRef.current) {
-      afterPaintRef.current();
-      afterPaintRef.current = null;
-    }
-  });
-  const runAfterUpdate = (fn: () => unknown) => {
-    afterPaintRef.current = fn;
-    return null;
-  };
-  return runAfterUpdate;
-};
 
 const ConversionRate = ({
   source,
