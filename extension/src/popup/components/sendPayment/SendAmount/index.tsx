@@ -29,6 +29,7 @@ import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { cleanAmount, formatAmount } from "popup/helpers/formatters";
 import {
   transactionSubmissionSelector,
   saveAmount,
@@ -305,78 +306,6 @@ export const SendAmount = ({
     return "small";
   };
 
-  // remove non digits and decimal
-  const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
-
-  const preserveCursor = (
-    val: string, // raw value from input,
-    previousVal: string, // previous state for val
-    cleanedVal: string, // string after format/sanitize
-  ) => {
-    const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
-    const formatted = cleanedVal.includes(",")
-      ? cleanedVal
-      : decimal.format(Number(cleanedVal)).toString();
-    const previousCommas = (previousVal.match(/,/g) || []).length;
-    const newCommas = (formatted.match(/,/g) || []).length;
-    const commaDiff = Math.abs(newCommas - previousCommas);
-    const cleanedDiff = val.includes(",") // compare formatted vals if previous val had formatting
-      ? val.length - formatted.length
-      : val.length - cleanedVal.length;
-
-    return {
-      commaDiff,
-      cleanedDiff,
-    };
-  };
-
-  const formatAmount = (val: string, cursorPosition: number) => {
-    const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
-    const maxDigits = 12;
-    const cleaned = cleanAmount(val);
-    // add commas to pre decimal digits
-    if (cleaned.indexOf(".") !== -1) {
-      const parts = cleaned.split(".");
-      parts[0] = decimal
-        .format(Number(parts[0].slice(0, maxDigits)))
-        .toString();
-      parts[1] = parts[1].slice(0, 7);
-
-      // To preserve cursor -
-      // need to account for commas and filtered chars before dot
-      // and need to account for filtered chars after dot
-      const uncleanedCurrentAmount = val.split(".");
-      const previousVal = formik.values.amount.split(".");
-
-      const { commaDiff, cleanedDiff } = preserveCursor(
-        uncleanedCurrentAmount[0],
-        previousVal[0],
-        parts[0].slice(0, maxDigits),
-      );
-
-      // after dot, need to account for filtered chars moving the cursor
-      const afterDotCleanedDiff =
-        uncleanedCurrentAmount[1].length - parts[1].length;
-      return {
-        amount: `${parts[0]}.${parts[1]}`,
-        newCursor:
-          cursorPosition + commaDiff - cleanedDiff - afterDotCleanedDiff,
-      };
-    }
-
-    // no decimals, need to account for newly added commas and for chars lost to cleanAmount which moved the cursor
-    const { commaDiff, cleanedDiff } = preserveCursor(
-      val,
-      formik.values.amount,
-      cleaned.slice(0, maxDigits),
-    );
-
-    return {
-      amount: decimal.format(Number(cleaned.slice(0, maxDigits))).toString(),
-      newCursor: cursorPosition + commaDiff - cleanedDiff,
-    };
-  };
-
   const DecideWarning = () => {
     // unfunded destination
     if (
@@ -407,7 +336,7 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(TX_SEND_MAX)})
+          {formatAmount(TX_SEND_MAX, formik.values.amount)})
         </InfoBlock>
       );
     }
@@ -490,6 +419,7 @@ export const SendAmount = ({
                     const input = e.target;
                     const { amount: newAmount, newCursor } = formatAmount(
                       e.target.value,
+                      formik.values.amount,
                       e.target.selectionStart || 1,
                     );
                     formik.setFieldValue("amount", newAmount);
