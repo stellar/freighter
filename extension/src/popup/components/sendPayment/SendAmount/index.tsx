@@ -13,6 +13,7 @@ import {
   AssetSelect,
   PathPayAssetSelect,
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
+import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -42,14 +43,12 @@ import {
 } from "popup/components/sendPayment/SendTo";
 import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
-import { TX_SEND_MAX } from "popup/constants/transaction";
 
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
   DEC_MAX = "too many decimal digits",
-  SEND_MAX = "amount higher than send max",
 }
 
 const ConversionRate = ({
@@ -103,6 +102,7 @@ export const SendAmount = ({
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const runAfterUpdate = useRunAfterUpdate();
 
   const {
     accountBalances,
@@ -204,9 +204,6 @@ export const SendAmount = ({
     if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
     }
-    if (new BigNumber(val).gt(new BigNumber(TX_SEND_MAX))) {
-      return { amount: AMOUNT_ERROR.SEND_MAX };
-    }
     return {};
   };
 
@@ -306,9 +303,31 @@ export const SendAmount = ({
   // remove non digits and decimal
   const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
 
-  const formatAmount = (val: string) => {
+  const preserveCursor = (
+    val: string, // raw value from input,
+    previousVal: string, // previous state for val
+    cleanedVal: string, // string after format/sanitize
+  ) => {
     const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
-    const maxDigits = 12;
+    const formatted = cleanedVal.includes(",")
+      ? cleanedVal
+      : decimal.format(Number(cleanedVal)).toString();
+    const previousCommas = (previousVal.match(/,/g) || []).length;
+    const newCommas = (formatted.match(/,/g) || []).length;
+    const commaDiff = Math.abs(newCommas - previousCommas);
+    const cleanedDiff = val.includes(",") // compare formatted vals if previous val had formatting
+      ? val.length - formatted.length
+      : val.length - cleanedVal.length;
+
+    return {
+      commaDiff,
+      cleanedDiff,
+    };
+  };
+
+  const formatAmount = (val: string, cursorPosition: number) => {
+    const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
+    const maxDigits = 16;
     const cleaned = cleanAmount(val);
     // add commas to pre decimal digits
     if (cleaned.indexOf(".") !== -1) {
@@ -317,9 +336,40 @@ export const SendAmount = ({
         .format(Number(parts[0].slice(0, maxDigits)))
         .toString();
       parts[1] = parts[1].slice(0, 7);
-      return `${parts[0]}.${parts[1]}`;
+
+      // To preserve cursor -
+      // need to account for commas and filtered chars before dot
+      // and need to account for filtered chars after dot
+      const uncleanedCurrentAmount = val.split(".");
+      const previousVal = formik.values.amount.split(".");
+
+      const { commaDiff, cleanedDiff } = preserveCursor(
+        uncleanedCurrentAmount[0],
+        previousVal[0],
+        parts[0].slice(0, maxDigits),
+      );
+
+      // after dot, need to account for filtered chars moving the cursor
+      const afterDotCleanedDiff =
+        uncleanedCurrentAmount[1].length - parts[1].length;
+      return {
+        amount: `${parts[0]}.${parts[1]}`,
+        newCursor:
+          cursorPosition + commaDiff - cleanedDiff - afterDotCleanedDiff,
+      };
     }
-    return decimal.format(Number(cleaned.slice(0, maxDigits))).toString();
+
+    // no decimals, need to account for newly added commas and for chars lost to cleanAmount which moved the cursor
+    const { commaDiff, cleanedDiff } = preserveCursor(
+      val,
+      formik.values.amount,
+      cleaned.slice(0, maxDigits),
+    );
+
+    return {
+      amount: decimal.format(Number(cleaned.slice(0, maxDigits))).toString(),
+      newCursor: cursorPosition + commaDiff - cleanedDiff,
+    };
   };
 
   const DecideWarning = () => {
@@ -345,14 +395,6 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           7 {t("digits after the decimal allowed")}
-        </InfoBlock>
-      );
-    }
-    if (formik.errors.amount === AMOUNT_ERROR.SEND_MAX) {
-      return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(TX_SEND_MAX)})
         </InfoBlock>
       );
     }
@@ -431,9 +473,18 @@ export const SendAmount = ({
                   type="text"
                   placeholder="0"
                   value={formik.values.amount}
-                  onChange={(e) =>
-                    formik.setFieldValue("amount", formatAmount(e.target.value))
-                  }
+                  onChange={(e) => {
+                    const input = e.target;
+                    const { amount: newAmount, newCursor } = formatAmount(
+                      e.target.value,
+                      e.target.selectionStart || 1,
+                    );
+                    formik.setFieldValue("amount", newAmount);
+                    runAfterUpdate(() => {
+                      input.selectionStart = newCursor;
+                      input.selectionEnd = newCursor;
+                    });
+                  }}
                   autoFocus
                   autoComplete="off"
                 />
