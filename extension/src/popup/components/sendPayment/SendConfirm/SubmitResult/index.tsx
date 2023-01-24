@@ -24,8 +24,6 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  getAccountBalances,
-  resetSubmission,
   startHwSign,
   signFreighterTransaction,
   submitFreighterTransaction,
@@ -148,6 +146,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        trackChangeTrustline();
         navigateTo(ROUTES.account);
       }
 
