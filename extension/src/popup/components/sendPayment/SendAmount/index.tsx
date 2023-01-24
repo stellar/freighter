@@ -407,7 +407,7 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(TX_SEND_MAX)})
+          {formatAmount(TX_SEND_MAX, 1)})
         </InfoBlock>
       );
     }
