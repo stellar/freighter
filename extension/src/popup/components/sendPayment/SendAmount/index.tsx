@@ -306,7 +306,8 @@ export const SendAmount = ({
   // remove non digits and decimal
   const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
 
-  const formatAmount = (val: string) => {
+  const formatAmount = (val: string, blank: any) => {
+    console.log({ blank }); // ALEC TODO - remove
     const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
     const maxDigits = 12;
     const cleaned = cleanAmount(val);
@@ -352,7 +353,7 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(TX_SEND_MAX)})
+          {formatAmount(TX_SEND_MAX, "blank")})
         </InfoBlock>
       );
     }
@@ -432,7 +433,10 @@ export const SendAmount = ({
                   placeholder="0"
                   value={formik.values.amount}
                   onChange={(e) =>
-                    formik.setFieldValue("amount", formatAmount(e.target.value))
+                    formik.setFieldValue(
+                      "amount",
+                      formatAmount(e.target.value, "blank"),
+                    )
                   }
                   autoFocus
                   autoComplete="off"
