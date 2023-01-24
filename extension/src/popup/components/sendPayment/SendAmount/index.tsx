@@ -26,8 +26,10 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
+import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { cleanAmount, formatAmount } from "popup/helpers/formatters";
 import {
   transactionSubmissionSelector,
   saveAmount,
@@ -103,6 +105,7 @@ export const SendAmount = ({
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const runAfterUpdate = useRunAfterUpdate();
 
   const {
     accountBalances,
@@ -303,25 +306,6 @@ export const SendAmount = ({
     return "small";
   };
 
-  // remove non digits and decimal
-  const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
-
-  const formatAmount = (val: string) => {
-    const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
-    const maxDigits = 12;
-    const cleaned = cleanAmount(val);
-    // add commas to pre decimal digits
-    if (cleaned.indexOf(".") !== -1) {
-      const parts = cleaned.split(".");
-      parts[0] = decimal
-        .format(Number(parts[0].slice(0, maxDigits)))
-        .toString();
-      parts[1] = parts[1].slice(0, 7);
-      return `${parts[0]}.${parts[1]}`;
-    }
-    return decimal.format(Number(cleaned.slice(0, maxDigits))).toString();
-  };
-
   const DecideWarning = () => {
     // unfunded destination
     if (
@@ -352,7 +336,7 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(TX_SEND_MAX)})
+          {formatAmount(TX_SEND_MAX, formik.values.amount)})
         </InfoBlock>
       );
     }
@@ -431,9 +415,19 @@ export const SendAmount = ({
                   type="text"
                   placeholder="0"
                   value={formik.values.amount}
-                  onChange={(e) =>
-                    formik.setFieldValue("amount", formatAmount(e.target.value))
-                  }
+                  onChange={(e) => {
+                    const input = e.target;
+                    const { amount: newAmount, newCursor } = formatAmount(
+                      e.target.value,
+                      formik.values.amount,
+                      e.target.selectionStart || 1,
+                    );
+                    formik.setFieldValue("amount", newAmount);
+                    runAfterUpdate(() => {
+                      input.selectionStart = newCursor;
+                      input.selectionEnd = newCursor;
+                    });
+                  }}
                   autoFocus
                   autoComplete="off"
                 />
