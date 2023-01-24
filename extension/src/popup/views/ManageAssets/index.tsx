@@ -26,7 +26,7 @@ export const ManageAssets = () => {
   const [errorAsset, setErrorAsset] = useState("");
 
   React.useEffect(() => {
-    async function parseXdr() {
+    const parseXdr = async () => {
       const { networkPassphrase } = await getNetworkDetails();
       const xdrEnvelope = error?.response?.extras.envelope_xdr;
       if (xdrEnvelope) {
@@ -38,7 +38,7 @@ export const ManageAssets = () => {
         const asset = `${code}:${issuer}`;
         setErrorAsset(asset);
       }
-    }
+    };
 
     parseXdr();
   }, [error]);

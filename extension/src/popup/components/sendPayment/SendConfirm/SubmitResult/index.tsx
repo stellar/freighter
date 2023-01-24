@@ -148,14 +148,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        dispatch(
-          getAccountBalances({
-            publicKey,
-            networkDetails,
-          }),
-        );
-        trackChangeTrustline();
-        dispatch(resetSubmission());
         navigateTo(ROUTES.account);
       }
 
