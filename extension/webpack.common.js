@@ -15,7 +15,10 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
   entry: {
     background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
-    contentScript: path.resolve(__dirname, "./public/contentScript.ts"),
+    contentScript: [
+      "babel-polyfill",
+      path.resolve(__dirname, "./public/contentScript.ts"),
+    ],
   },
   watchOptions: {
     ignored: ["node_modules/**/*", "build/**/*"],
@@ -54,6 +57,11 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
         test: /\.(ts|tsx)$/,
         use: ["ts-loader"],
         exclude: /node-modules/,
+      },
+      {
+        test: /\.(js)$/,
+        use: ["babel-loader"],
+        include: /webextension-polyfill/,
       },
       {
         test: /\.png$/,
