@@ -1,57 +1,32 @@
-import { browser } from "webextension-polyfill-ts";
+import browser from "webextension-polyfill";
 
 interface SetItemParams {
   [key: string]: any;
 }
 
+export const browserStorage = browser.storage?.local;
+
 export const dataStorage = {
-  getItem: async (key: null | string | string[] | { [s: string]: any }) => {
-    // Passing an object (for ex: {myKey: "aValue"}) will return the key's (myKey) value from storage.
-    // If the key is not found in storage, it will return the the value passed along in object as a default (in this case, "aValue")
+  getItem: async (key: string) => {
+    // TODO: re-enable defaults by passing an object. The value of the key-value pair will be the default
 
     const storageResult = await browser.storage.local.get(key);
 
-    return storageResult;
+    return storageResult[key];
   },
   setItem: async (setItemParams: SetItemParams) => {
     await browser.storage.local.set(setItemParams);
   },
-  removeItem: async (key: string) => {
-    await browser.storage.local.remove(key);
+
+  clear: async () => {
+    await browser.storage.local.clear();
   },
 };
 
-export const migrateLocalStorageToBrowserStorage = async () => {
-  const storage: { [key: string]: any } = {};
-  Object.entries(localStorage).forEach(([k, v]) => {
-    let value = v;
-    try {
-      const parsedValue = JSON.parse(v);
-      value = parsedValue;
-    } catch (e) {
-      // do not transform v
-    }
-
-    storage[k] = value;
-  });
-
-  await dataStorage.setItem(storage);
-};
-
-// TODO - temporary wrapper around localStorage until we replace
-// localStorage all together
 export const dataStorageAccess = {
-  getItem: async (keyId: string) => {
-    await dataStorage.getItem({ [keyId]: "" });
-    return localStorage.getItem(keyId);
-  },
-  setItem: async (keyId: string, value: string) => {
+  getItem: (keyId: string) => dataStorage.getItem(keyId),
+  setItem: async (keyId: string, value: any) => {
     await dataStorage.setItem({ [keyId]: value });
-    localStorage.setItem(keyId, value);
   },
-  remoteItem: async (keyId: string) => {
-    await dataStorage.removeItem(keyId);
-    localStorage.removeItem(keyId);
-  },
-  clear: () => localStorage.clear(),
+  clear: () => dataStorage.clear(),
 };
