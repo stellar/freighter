@@ -17,7 +17,9 @@ export const dataStorage = {
   setItem: async (setItemParams: SetItemParams) => {
     await browser.storage.local.set(setItemParams);
   },
-
+  removeItem: async (key: string) => {
+    await browser.storage.local.remove(key);
+  },
   clear: async () => {
     await browser.storage.local.clear();
   },
@@ -28,5 +30,6 @@ export const dataStorageAccess = {
   setItem: async (keyId: string, value: any) => {
     await dataStorage.setItem({ [keyId]: value });
   },
+  removeItem: (keyId: string) => dataStorage.removeItem(keyId),
   clear: () => dataStorage.clear(),
 };

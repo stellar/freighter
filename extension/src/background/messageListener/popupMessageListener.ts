@@ -1114,9 +1114,9 @@ export const popupMessageListener = (request: Request) => {
     );
   };
 
-  const clearSep24Data = async () => {
+  const clearSep24Data = () => {
     const publicKey = publicKeySelector(store.getState());
-    await dataStorageAccess.remoteItem(`${SEP24_DATA}:${publicKey}`);
+    dataStorageAccess.removeItem(`${SEP24_DATA}:${publicKey}`);
   };
 
   const messageResponder: MessageResponder = {
