@@ -48,6 +48,19 @@ export const Sep24Todo = ({
 
   const { code, issuer } = getAssetFromCanonical(asset);
 
+  const Message = ({
+    title,
+    actionCopy,
+  }: {
+    title: string;
+    actionCopy: string;
+  }) => (
+    <>
+      <div className="Sep24Todo__title">{title}</div>
+      <div>{actionCopy}</div>
+    </>
+  );
+
   useEffect(() => {
     setIsLoading(false);
   }, [todo]);
@@ -58,12 +71,10 @@ export const Sep24Todo = ({
   switch (todo) {
     case Sep24Status.INCOMPLETE:
       message = (
-        <>
-          <div className="Sep24Todo__title">
-            You have an unfinished deposit form
-          </div>
-          <div>click here to finish</div>
-        </>
+        <Message
+          title="You have an unfinished deposit form"
+          actionCopy="click here to finish"
+        />
       );
       onClick = async () => {
         setIsLoading(true);
@@ -92,13 +103,12 @@ export const Sep24Todo = ({
       break;
     case Sep24Status.PENDING_TRUST:
       message = (
-        <>
-          <div className="Sep24Todo__title">
-            Trustline needed to finish deposit of SRT
-          </div>
-          <div>click here to add trustline</div>
-        </>
+        <Message
+          title="Trustline needed to finish deposit of SRT"
+          actionCopy="click here to add trustline"
+        />
       );
+
       onClick = async () => {
         setIsLoading(true);
         await addTrustline({
@@ -117,10 +127,10 @@ export const Sep24Todo = ({
       break;
     case Sep24Status.PENDING_HARDWARE_WALLET_SIGN:
       message = (
-        <>
-          <div className="Sep24Todo__title">You may have a pending deposit</div>
-          <div>click here to check</div>
-        </>
+        <Message
+          title="You may have a pending deposit"
+          actionCopy="click here to check"
+        />
       );
       onClick = async () => {
         setIsLoading(true);
