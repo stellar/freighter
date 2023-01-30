@@ -1,3 +1,17 @@
+# Release notes - Wallets - Freighter-2.9.2
+
+### Bug
+
+Limit the number of chars in the amount field
+
+Fetch correct asset icon if TOML has multiple assets with the asset code
+
+### Story
+
+Suggest removing trustline after sending entire balance
+
+Fix cursor reset on amount fields
+
 # Release notes - Wallets - 2.9.1
 
 ## Bug
