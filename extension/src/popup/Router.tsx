@@ -244,9 +244,9 @@ export const Router = () => {
     <HashRouter>
       <RouteListener />
       <Switch>
-        <PublicKeyRoute exact path={ROUTES.account}>
+        <PrivateKeyRoute exact path={ROUTES.account}>
           <Account />
-        </PublicKeyRoute>
+        </PrivateKeyRoute>
         <PublicKeyRoute path={ROUTES.accountHistory}>
           <AccountHistory />
         </PublicKeyRoute>
