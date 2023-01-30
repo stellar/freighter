@@ -16,6 +16,9 @@ export const dataStorage = {
   setItem: async (setItemParams: SetItemParams) => {
     await browser.storage.local.set(setItemParams);
   },
+  removeItem: async (key: string) => {
+    await browser.storage.local.remove(key);
+  },
 };
 
 export const migrateLocalStorageToBrowserStorage = async () => {
@@ -45,6 +48,10 @@ export const dataStorageAccess = {
   setItem: async (keyId: string, value: string) => {
     await dataStorage.setItem({ [keyId]: value });
     localStorage.setItem(keyId, value);
+  },
+  remoteItem: async (keyId: string) => {
+    await dataStorage.removeItem(keyId);
+    localStorage.removeItem(keyId);
   },
   clear: () => localStorage.clear(),
 };

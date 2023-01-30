@@ -1,0 +1,56 @@
+.MoneyGram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: var(--popup--height);
+  padding: 2rem var(--popup--side-padding) var(--popup-vertical-padding);
+
+  &__logo {
+    margin-bottom: 3rem;
+    &__caption {
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+      font-weight: var(--font-weight-medium);
+      color: var(--pal-text-tertiary);
+    }
+  }
+
+  &__title {
+    color: var(--pal-text-primary);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+
+  &__bullet {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--pal-text-secondary);
+    margin-bottom: 1rem;
+    width: 100%;
+    display: flex;
+    column-gap: 0.9rem;
+    align-items: center;
+
+    &__item {
+      height: 100%;
+    }
+  }
+
+  &__bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &__terms {
+      text-align: center;
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+      margin-bottom: 1.5rem;
+    }
+    &__btn {
+      width: 100%;
+    }
+  }
+}
