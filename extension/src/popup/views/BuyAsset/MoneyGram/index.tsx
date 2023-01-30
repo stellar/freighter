@@ -2,16 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { TextLink } from "@stellar/design-system";
-import StellarSdk, { Account, StellarTomlResolver } from "stellar-sdk";
+import { startSep24Deposit } from "@shared/api/internal";
 
-import { xlmToStroop } from "helpers/stellar";
-import { emitMetric } from "helpers/metrics";
+import { getCanonicalFromAsset } from "helpers/stellar";
+import { getAuthToken, getAnchorSep24Data } from "popup/helpers/sep24";
+import { Sep24Status } from "popup/constants/sep24";
 import {
   signFreighterTransaction,
-  submitFreighterTransaction,
   startHwSign,
   ShowOverlayStatus,
   transactionSubmissionSelector,
+  storeSep24Data,
 } from "popup/ducks/transactionSubmission";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -24,18 +25,14 @@ import { Button } from "popup/basics/buttons/Button";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import IconGreenCheck from "popup/assets/icon-green-check.svg";
 import MoneyGramLogo from "popup/assets/moneygram-logo.svg";
-import { openTab, navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { Sep24Status } from "popup/constants/sep24";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { openTab } from "popup/helpers/navigate";
 
 import "./styles.scss";
 
 // TODO - only can buy using test anchor for now
-const testAnchorDomain = "testanchor.stellar.org";
-const testAnchorCode = "SRT";
-const testAnchorIssuer =
+export const testAnchorDomain = "testanchor.stellar.org";
+export const testAnchorCode = "SRT";
+export const testAnchorIssuer =
   "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B";
 
 export const MoneyGram = () => {
@@ -44,177 +41,73 @@ export const MoneyGram = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const [isLoading, setIsLoading] = useState(false);
-  const { recommendedFee } = useNetworkFees();
   const {
     hardwareWalletData: { status: hwStatus, lastSignedXDR: hwSignedXDR },
   } = useSelector(transactionSubmissionSelector);
   const [freighterSignedXDR, setFreighterSignedXDR] = useState("");
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
   const [sep24Url, setSep24Url] = useState("");
-  const [authEndpoint, setAuthEndpoint] = useState("");
+  const [sep10Url, setSep10Url] = useState("");
 
   useEffect(() => {
     (async () => {
       const signedXdr = freighterSignedXDR || hwSignedXDR;
       if (signedXdr) {
-        const token = await getAuthToken(signedXdr);
-        startSep24Deposit(token);
+        const token = await getAuthToken({ signedXdr, sep10Url });
+
+        const res = await startSep24Deposit({
+          sep24Url,
+          token,
+          publicKey,
+          code: testAnchorCode,
+        });
+        if (res.id) {
+          await dispatch(
+            storeSep24Data({
+              txId: res.id,
+              sep10Url,
+              sep24Url,
+              publicKey,
+              status: Sep24Status.INCOMPLETE,
+              anchorDomain: testAnchorDomain,
+              asset: getCanonicalFromAsset(testAnchorCode, testAnchorIssuer),
+            }),
+          );
+          openTab(res.url);
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hwSignedXDR, freighterSignedXDR]);
 
-  const getAuthToken = async (signedXdr: string) => {
-    const authRes = await fetch(authEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ transaction: signedXdr }),
-    });
-    const resJson = await authRes.json();
-    return resJson.token;
-  };
-
   const handleContinue = async () => {
     setIsLoading(true);
-    const tomlRes = await StellarTomlResolver.resolve(testAnchorDomain);
-    setAuthEndpoint(tomlRes.WEB_AUTH_ENDPOINT);
-    const anchorSigningKey = tomlRes.SIGNING_KEY;
-    setSep24Url(tomlRes.TRANSFER_SERVER_SEP0024);
 
-    const auth = await fetch(
-      `${tomlRes.WEB_AUTH_ENDPOINT}?account=${publicKey}`,
-    );
-    const authJson = await auth.json();
-    const challengeTx = authJson.transaction;
-
-    const { tx } = StellarSdk.Utils.readChallengeTx(
+    const {
+      sep10Url: _sep10Url,
+      sep24Url: _sep24Url,
       challengeTx,
-      anchorSigningKey,
-      authJson.network_passphrase,
-      testAnchorDomain,
-      testAnchorDomain,
-    );
-    const transactionXDR = tx.toXDR();
+    } = await getAnchorSep24Data({
+      anchorDomain: testAnchorDomain,
+      publicKey,
+    });
+
+    setSep10Url(_sep10Url);
+    setSep24Url(_sep24Url);
 
     if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: false }));
+      await dispatch(
+        startHwSign({ transactionXDR: challengeTx, shouldSubmit: false }),
+      );
     } else {
       const res = await dispatch(
         signFreighterTransaction({
-          transactionXDR,
+          transactionXDR: challengeTx,
           network: networkDetails.networkPassphrase,
         }),
       );
       if (signFreighterTransaction.fulfilled.match(res)) {
         setFreighterSignedXDR(res.payload.signedTransaction);
-      }
-    }
-  };
-
-  const startSep24Deposit = async (token: string) => {
-    const response = await fetch(
-      `${sep24Url}/transactions/deposit/interactive`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          asset_code: "SRT",
-          account: publicKey,
-          lang: "en",
-          claimable_balance_supported: false,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-    const j = await response.json();
-
-    // TODO - when polling starts will have to change,
-    // since the extension closes on new tab.
-    openTab(j.url);
-    startPolling(j.id, token);
-  };
-
-  const startPolling = async (transactionId: string, token: string) => {
-    let currentStatus = Sep24Status.INCOMPLETE;
-    const endStatuses = [
-      Sep24Status.PENDING_EXTERNAL,
-      Sep24Status.COMPLETED,
-      Sep24Status.ERROR,
-    ];
-    while (!endStatuses.includes(currentStatus)) {
-      // eslint-disable-next-line no-await-in-loop
-      const res = await fetch(`${sep24Url}/transaction?id=${transactionId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      // eslint-disable-next-line no-await-in-loop
-      const txJson = await res.json();
-
-      if (txJson.transaction.status !== currentStatus) {
-        currentStatus = txJson.transaction.status;
-        if (currentStatus === Sep24Status.PENDING_TRUST) {
-          // eslint-disable-next-line no-await-in-loop
-          await addTrustline();
-        }
-        if (currentStatus === Sep24Status.COMPLETED) {
-          navigateTo(ROUTES.account);
-          break;
-        }
-      }
-
-      // eslint-disable-next-line no-await-in-loop
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    }
-  };
-
-  const addTrustline = async () => {
-    const server = new StellarSdk.Server(networkDetails.networkUrl);
-    const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: xlmToStroop(recommendedFee).toFixed(),
-      networkPassphrase: networkDetails.networkPassphrase,
-    })
-      .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: new StellarSdk.Asset(testAnchorCode, testAnchorIssuer),
-        }),
-      )
-      .setTimeout(180)
-      .build()
-      .toXDR();
-
-    const trackAddTrustline = () => {
-      emitMetric(METRIC_NAMES.manageAssetAddAsset, {
-        testAnchorCode,
-        testAnchorIssuer,
-      });
-    };
-
-    if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
-      trackAddTrustline();
-    } else {
-      const res = await dispatch(
-        signFreighterTransaction({
-          transactionXDR,
-          network: networkDetails.networkPassphrase,
-        }),
-      );
-      if (signFreighterTransaction.fulfilled.match(res)) {
-        const submitResp = await dispatch(
-          submitFreighterTransaction({
-            signedXDR: res.payload.signedTransaction,
-            networkDetails,
-          }),
-        );
-        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          trackAddTrustline();
-        }
       }
     }
   };

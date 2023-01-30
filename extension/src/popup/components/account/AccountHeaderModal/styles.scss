@@ -8,7 +8,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: calc(var(--z-index-tooltip) + 1);
+  z-index: var(--z-index-account-list);
   transition: max-height var(--dropdown-animation);
 
   // default max-height on page load
