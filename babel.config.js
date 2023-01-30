@@ -1,5 +1,5 @@
 module.exports = {
-  plugins: ["dynamic-import-node"],
+  plugins: ["dynamic-import-node", "@babel/plugin-proposal-optional-chaining"],
   presets: [
     "@babel/preset-typescript",
     "@babel/preset-react",

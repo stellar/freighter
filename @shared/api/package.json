@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@stellar/wallet-sdk": "^0.6.0-rc.1",
+    "@stellar/wallet-sdk": "^0.8.0",
     "prettier": "^2.0.5",
     "stellar-sdk": "^10.1.0",
     "typescript": "~3.7.2",
-    "webextension-polyfill-ts": "^0.22.0"
+    "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
     "@stellar/prettier-config": "^1.0.1"
