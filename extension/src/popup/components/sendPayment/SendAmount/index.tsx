@@ -45,6 +45,8 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 
 import "../styles.scss";
 
+const BASE_RESERVE = 0.5 as const;
+
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
   DEC_MAX = "too many decimal digits",
@@ -132,28 +134,34 @@ export const SendAmount = ({
 
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let availBalance = "0";
+      let availBalance = new BigNumber("0");
       if (accountBalances.balances) {
-        if (selectedAsset === "native") {
-          // take base reserve into account for XLM payments
-          const baseReserve = (2 + accountBalances.subentryCount) * 0.5;
+        // take base reserve into account for XLM payments
+        const minBalance = new BigNumber(
+          (2 + accountBalances.subentryCount) * BASE_RESERVE,
+        );
 
+        if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(
             accountBalances.balances[selectedAsset].total.toFixed(),
           );
+
           availBalance = currentBal
-            .minus(new BigNumber(baseReserve))
-            .minus(new BigNumber(Number(recommendedFee)))
-            .toFixed();
+            .minus(minBalance)
+            .minus(new BigNumber(Number(recommendedFee)));
         } else {
-          availBalance = accountBalances.balances[
-            selectedAsset
-          ].total.toFixed();
+          availBalance = new BigNumber(
+            accountBalances.balances[selectedAsset].total,
+          );
+        }
+
+        if (availBalance.lt(minBalance)) {
+          return "0";
         }
       }
 
-      return availBalance;
+      return availBalance.toString();
     },
     [accountBalances.balances, accountBalances.subentryCount, recommendedFee],
   );
@@ -239,7 +247,8 @@ export const SendAmount = ({
 
   // on asset select get conversion rate
   useEffect(() => {
-    if (!formik.values.destinationAsset) return;
+    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0)
+      return;
     setLoadingRate(true);
     // clear dest amount before re-calculating for UI
     dispatch(resetDestinationAmount());
