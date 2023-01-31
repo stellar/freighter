@@ -14,6 +14,7 @@ module.exports = {
     },
   ],
   rules: {
+    "arrow-body-style": "off",
     "no-shadow": "off",
     "@typescript-eslint/no-shadow": ["error"],
     "no-unused-vars": "off",

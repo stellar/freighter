@@ -16,7 +16,11 @@ import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
-import { addAccount, authErrorSelector } from "popup/ducks/accountServices";
+import {
+  addAccount,
+  authErrorSelector,
+  clearApiError,
+} from "popup/ducks/accountServices";
 
 import "./styles.scss";
 
@@ -45,6 +49,12 @@ export const AddAccount = () => {
       navigateTo(ROUTES.account);
     }
   };
+
+  React.useEffect(() => {
+    return function cleanup() {
+      dispatch(clearApiError());
+    };
+  }, [dispatch]);
 
   return (
     <>
