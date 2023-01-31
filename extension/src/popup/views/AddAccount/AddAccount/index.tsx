@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
@@ -50,11 +50,9 @@ export const AddAccount = () => {
     }
   };
 
-  React.useEffect(() => {
-    return function cleanup() {
-      dispatch(clearApiError());
-    };
-  }, [dispatch]);
+  useEffect(() => () => (dispatch(clearApiError()) as unknown) as void, [
+    dispatch,
+  ]);
 
   return (
     <>
