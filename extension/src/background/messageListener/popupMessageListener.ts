@@ -619,7 +619,7 @@ export const popupMessageListener = (request: Request) => {
 
           // eslint-disable-next-line no-await-in-loop
           const resp = await fetch(
-            `https://horizon.stellar.org/accounts/${publicKey}`,
+            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
           );
           // eslint-disable-next-line no-await-in-loop
           const j = await resp.json();
