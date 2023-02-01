@@ -116,3 +116,19 @@ export const requestNetworkDetails = async (): Promise<{
   }
   return { network, networkUrl, networkPassphrase };
 };
+
+export const requestConnectionStatus = async (): Promise<boolean> => {
+  let response = {
+    isConnected: false,
+  };
+
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response.isConnected;
+};
