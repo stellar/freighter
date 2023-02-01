@@ -23,6 +23,7 @@ import {
   getAssetDomains,
   transactionSubmissionSelector,
   resetSubmission,
+  resetAccountBalanceStatus,
   saveAssetSelectType,
   AssetSelectType,
   getBlockedDomains,
@@ -84,6 +85,10 @@ export const Account = () => {
       }),
     );
     dispatch(getBlockedDomains());
+
+    return () => {
+      dispatch(resetAccountBalanceStatus());
+    };
   }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
@@ -112,10 +117,9 @@ export const Account = () => {
     fetchAccountHistory();
   }, [publicKey, networkDetails, sortedBalances]);
 
-  if (accountBalanceStatus === ActionStatus.PENDING) {
-    // waiting for account balances to load
-    return null;
-  }
+  const isLoading =
+    accountBalanceStatus === ActionStatus.PENDING ||
+    accountBalanceStatus === ActionStatus.IDLE;
 
   return selectedAsset ? (
     <AssetDetail
@@ -128,78 +132,80 @@ export const Account = () => {
     />
   ) : (
     <>
-      <div className="AccountView">
-        <AccountHeader
-          accountDropDownRef={accountDropDownRef}
-          allAccounts={allAccounts}
-          currentAccountName={currentAccountName}
-          publicKey={publicKey}
-        />
-        <div className="AccountView__account-actions">
-          <div className="AccountView__name-key-display">
-            <div className="AccountView__account-name">
-              {currentAccountName}
-            </div>
-            <CopyText
-              textToCopy={publicKey}
-              showTooltip
-              tooltipPosition={CopyText.tooltipPosition.RIGHT}
-            >
-              <div className="AccountView__account-num">
-                {truncatedPublicKey(publicKey)}
-                <Icon.Copy />
-              </div>
-            </CopyText>
-          </div>
-          <div className="AccountView__send-receive-display">
-            <div className="AccountView__send-receive-button">
-              <NavButton
-                showBorder
-                title={t("View public key")}
-                id="nav-btn-qr"
-                icon={<Icon.QrCode />}
-                onClick={() => navigateTo(ROUTES.viewPublicKey)}
-              />
-            </div>
-            <div className="AccountView__send-receive-button">
-              <NavButton
-                showBorder
-                title={t("Send Payment")}
-                id="nav-btn-send"
-                icon={<Icon.Send />}
-                onClick={() => navigateTo(ROUTES.sendPayment)}
-              />
-            </div>
-          </div>
-        </div>
-        {isFunded ? (
-          <SimpleBar className="AccountView__assets-wrapper">
-            <AccountAssets
-              sortedBalances={sortedBalances}
-              assetIcons={assetIcons}
-              setSelectedAsset={setSelectedAsset}
-            />
-          </SimpleBar>
-        ) : (
-          <NotFundedMessage
-            isTestnet={isTestnet(networkDetails)}
-            setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+      {isLoading ? null : (
+        <div className="AccountView">
+          <AccountHeader
+            accountDropDownRef={accountDropDownRef}
+            allAccounts={allAccounts}
+            currentAccountName={currentAccountName}
             publicKey={publicKey}
           />
-        )}
-        {isFunded ? (
-          <Button
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={() => {
-              dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-              navigateTo(ROUTES.manageAssets);
-            }}
-          >
-            {t("Manage Assets")}
-          </Button>
-        ) : null}
-      </div>
+          <div className="AccountView__account-actions">
+            <div className="AccountView__name-key-display">
+              <div className="AccountView__account-name">
+                {currentAccountName}
+              </div>
+              <CopyText
+                textToCopy={publicKey}
+                showTooltip
+                tooltipPosition={CopyText.tooltipPosition.RIGHT}
+              >
+                <div className="AccountView__account-num">
+                  {truncatedPublicKey(publicKey)}
+                  <Icon.Copy />
+                </div>
+              </CopyText>
+            </div>
+            <div className="AccountView__send-receive-display">
+              <div className="AccountView__send-receive-button">
+                <NavButton
+                  showBorder
+                  title={t("View public key")}
+                  id="nav-btn-qr"
+                  icon={<Icon.QrCode />}
+                  onClick={() => navigateTo(ROUTES.viewPublicKey)}
+                />
+              </div>
+              <div className="AccountView__send-receive-button">
+                <NavButton
+                  showBorder
+                  title={t("Send Payment")}
+                  id="nav-btn-send"
+                  icon={<Icon.Send />}
+                  onClick={() => navigateTo(ROUTES.sendPayment)}
+                />
+              </div>
+            </div>
+          </div>
+          {isFunded ? (
+            <SimpleBar className="AccountView__assets-wrapper">
+              <AccountAssets
+                sortedBalances={sortedBalances}
+                assetIcons={assetIcons}
+                setSelectedAsset={setSelectedAsset}
+              />
+            </SimpleBar>
+          ) : (
+            <NotFundedMessage
+              isTestnet={isTestnet(networkDetails)}
+              setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+              publicKey={publicKey}
+            />
+          )}
+          {isFunded ? (
+            <Button
+              fullWidth
+              variant={Button.variant.tertiary}
+              onClick={() => {
+                dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                navigateTo(ROUTES.manageAssets);
+              }}
+            >
+              {t("Manage Assets")}
+            </Button>
+          ) : null}
+        </div>
+      )}
       <BottomNav />
     </>
   );
