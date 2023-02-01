@@ -125,53 +125,56 @@ export const AccountHistory = () => {
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
-      {isLoading && (
+      {isLoading ? (
         <div className="AccountHistory__loader">
           <Loader size="2rem" />
         </div>
+      ) : (
+        <div className="AccountHistory__wrapper">
+          <header className="AccountHistory__header">
+            {t("Transactions")}
+          </header>
+          <div className="AccountHistory__selector">
+            {Object.values(SELECTOR_OPTIONS).map((option) => (
+              <div
+                key={option}
+                className={`AccountHistory__selector__item ${
+                  option === selectedSegment
+                    ? "AccountHistory__selector__item--active"
+                    : ""
+                }`}
+                onClick={() => setSelectedSegment(option)}
+              >
+                {t(option)}
+              </div>
+            ))}
+          </div>
+          <div className="AccountHistory__list">
+            {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
+              <HistoryList>
+                <>
+                  {historySegments![SELECTOR_OPTIONS[selectedSegment]].map(
+                    (operation: HistoryItemOperation) => (
+                      <HistoryItem
+                        key={operation.id}
+                        operation={operation}
+                        publicKey={publicKey}
+                        url={stellarExpertUrl}
+                        setDetailViewProps={setDetailViewProps}
+                        setIsDetailViewShowing={setIsDetailViewShowing}
+                      />
+                    ),
+                  )}
+                </>
+              </HistoryList>
+            ) : (
+              <div>
+                {isAccountHistoryLoading ? null : t("No transactions to show")}
+              </div>
+            )}
+          </div>
+        </div>
       )}
-      <div className="AccountHistory__wrapper">
-        <header className="AccountHistory__header">{t("Transactions")}</header>
-        <div className="AccountHistory__selector">
-          {Object.values(SELECTOR_OPTIONS).map((option) => (
-            <div
-              key={option}
-              className={`AccountHistory__selector__item ${
-                option === selectedSegment
-                  ? "AccountHistory__selector__item--active"
-                  : ""
-              }`}
-              onClick={() => setSelectedSegment(option)}
-            >
-              {t(option)}
-            </div>
-          ))}
-        </div>
-        <div className="AccountHistory__list">
-          {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
-            <HistoryList>
-              <>
-                {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-                  (operation: HistoryItemOperation) => (
-                    <HistoryItem
-                      key={operation.id}
-                      operation={operation}
-                      publicKey={publicKey}
-                      url={stellarExpertUrl}
-                      setDetailViewProps={setDetailViewProps}
-                      setIsDetailViewShowing={setIsDetailViewShowing}
-                    />
-                  ),
-                )}
-              </>
-            </HistoryList>
-          ) : (
-            <div>
-              {isAccountHistoryLoading ? null : t("No transactions to show")}
-            </div>
-          )}
-        </div>
-      </div>
       <BottomNav />
     </div>
   );
