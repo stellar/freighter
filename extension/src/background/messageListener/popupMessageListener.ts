@@ -617,26 +617,32 @@ export const popupMessageListener = (request: Request) => {
           const publicKey = wallet.getPublicKey(i);
           const privateKey = wallet.getSecret(i);
 
-          const server = new StellarSdk.Server(
-            MAINNET_NETWORK_DETAILS.networkUrl,
+          // eslint-disable-next-line no-await-in-loop
+          const resp = await fetch(
+            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
           );
           // eslint-disable-next-line no-await-in-loop
-          await server.accounts().accountId(publicKey).call();
-          const newKeyPair = {
-            publicKey,
-            privateKey,
-          };
+          const j = await resp.json();
+          if (j.account_id) {
+            const newKeyPair = {
+              publicKey,
+              privateKey,
+            };
 
-          // eslint-disable-next-line no-await-in-loop
-          await _storeAccount({
-            password,
-            keyPair: newKeyPair,
-            mnemonicPhrase: recoverMnemonic,
-            imported: true,
-          });
-          // eslint-disable-next-line no-await-in-loop
-          await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
-        } catch {
+            // eslint-disable-next-line no-await-in-loop
+            await _storeAccount({
+              password,
+              keyPair: newKeyPair,
+              mnemonicPhrase: recoverMnemonic,
+              imported: true,
+            });
+            // eslint-disable-next-line no-await-in-loop
+            await dataStorageAccess.setItem(
+              KEY_DERIVATION_NUMBER_ID,
+              String(i),
+            );
+          }
+        } catch (e) {
           // continue
         }
       }
