@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CopyText, Icon, NavButton, Loader } from "@stellar/design-system";
+import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Types } from "@stellar/wallet-sdk";
 import SimpleBar from "simplebar-react";
@@ -132,11 +132,7 @@ export const Account = () => {
     />
   ) : (
     <>
-      {isLoading ? (
-        <div className="AccountView__loader">
-          <Loader size="2rem" />
-        </div>
-      ) : (
+      {isLoading ? null : (
         <div className="AccountView">
           <AccountHeader
             accountDropDownRef={accountDropDownRef}
