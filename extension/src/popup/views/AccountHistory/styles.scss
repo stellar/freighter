@@ -4,7 +4,7 @@
   }
 
   &__loader {
-    height: var(--popup--height);
+    height: calc(var(--popup--height) - var(--bottom-nav--height));
     width: var(--popup--width);
     z-index: calc(var(--back--button-z-index) + 1);
     position: absolute;
