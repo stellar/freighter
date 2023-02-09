@@ -41,7 +41,7 @@ jobs:
       - name: Build extension
         uses: actions/setup-node@v1
         with:
-          node-version: "12"
+          node-version: "16.14"
       - run: yarn install && yarn build:freighter-api && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
       - name: Install zip
         uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
