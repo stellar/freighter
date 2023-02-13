@@ -1,3 +1,13 @@
+# Release notes - Wallets - Freighter-2.9.3
+
+### Story
+
+Bug: negative balance on send/swap
+
+Bug: stale error state on add additional account
+
+More consistent loading on accounts tab
+
 # Release notes - Wallets - Freighter-2.9.2
 
 ### Bug
