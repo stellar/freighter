@@ -4143,6 +4143,11 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.6.tgz#146d3da57b3c636cc0d1769396ce1cfa8991147f"
   integrity sha512-6QlRuqsQ/Ox/aJEQWBEJG7A9+u7oSYl3mem/K8IzxXG/kAGbV1YPD9Bg9Zw3vyxC/YP+zONKwy8hGkSt1jxFMw==
 
+"@types/node@18.11.9":
+  version "18.11.9"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.11.9.tgz#02d013de7058cea16d36168ef2fc653464cfbad4"
+  integrity sha512-CRpX21/kGdzjOpFsZSkcrXMGIBWMGNIHXXBVFSH+ggkftxg+XYP20TESbh+zFvFj3EQOl5byk0HTRn1IL6hbqg==
+
 "@types/node@^12.0.0":
   version "12.19.3"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.19.3.tgz#a6e252973214079155f749e8bef99cc80af182fa"
@@ -15143,19 +15148,19 @@ sodium-native@^3.3.0:
   dependencies:
     node-gyp-build "^4.3.0"
 
-soroban-client@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/soroban-client/-/soroban-client-0.2.1.tgz#c90686a623e53f0bd7fd965e27d2f476f210d891"
-  integrity sha512-80vNTY6gkkyfTvCHAJTPPnkl+nDH6hjtFrIIdw0QB3PeVz9P8w/UaOSzxj+Zf8yPSYSHiVegXe7px+D+pXHRfw==
+soroban-client@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/soroban-client/-/soroban-client-0.4.0.tgz#738a402ab440cd9c34d14380150192f309866263"
+  integrity sha512-4t+SioFeUnG9dptkEzRzSgFKXTuRMz1abtxmzE461QVUCLIDayMIjY8B3vloKiWNSx9y/wNBIA5IA8PtAIm8rQ==
   dependencies:
     "@types/eventsource" "^1.1.2"
-    "@types/node" ">= 8"
+    "@types/node" "18.11.9"
     "@types/randombytes" "^2.0.0"
     "@types/urijs" "^1.19.6"
     axios "0.25.0"
     es6-promise "^4.2.4"
     lodash "4.17.21"
-    stellar-base "8.0.1-soroban.6"
+    stellar-base "8.2.2-soroban.11"
     urijs "^1.19.1"
 
 sort-css-media-queries@2.1.0:
@@ -15355,10 +15360,10 @@ std-env@^3.0.1:
   resolved "https://registry.yarnpkg.com/std-env/-/std-env-3.3.2.tgz#af27343b001616015534292178327b202b9ee955"
   integrity sha512-uUZI65yrV2Qva5gqE0+A7uVAvO40iPo6jGhs7s8keRfHCmtg+uB2X6EiLGCI9IgL1J17xGhvoOqSz79lzICPTA==
 
-stellar-base@8.0.1-soroban.6:
-  version "8.0.1-soroban.6"
-  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-8.0.1-soroban.6.tgz#cf5c07224c2fda7df12f659cc2ae5890dbe1590d"
-  integrity sha512-LQhre31jzZBNXTaiUfkLlEcC2g2TQOrKJEsY1rbsUv9urlvUsTTIGRmvaw2TH8406FOJZolBtizN/VnZqLqnvg==
+stellar-base@8.2.2-soroban.11:
+  version "8.2.2-soroban.11"
+  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-8.2.2-soroban.11.tgz#6706c3e2eb694ffb190cabb1a0f2e6ecf1c3aac1"
+  integrity sha512-pizPJj/4Vg75n4slk3L66pzJS1+bCXsWWG7GgYiuNmzl2bKwY7cS/87PypBEDUx7msOF/ZEocGg9kJ7sU6wupg==
   dependencies:
     base32.js "^0.1.0"
     bignumber.js "^4.0.0"
