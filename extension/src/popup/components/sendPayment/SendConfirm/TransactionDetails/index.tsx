@@ -313,7 +313,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           }
           customBackAction={goBack}
           customBackIcon={
-            submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
+            submission.submitStatus === ActionStatus.SUCCESS ? (
+              <Icon.X />
+            ) : null
           }
         />
         {!(isPathPayment || isSwap) && (
