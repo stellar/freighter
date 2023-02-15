@@ -18,14 +18,13 @@ import {
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, RequestStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
 import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
-  ActionStatus,
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
@@ -293,7 +292,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
       <div className="TransactionDetails">
-        {submission.submitStatus === ActionStatus.PENDING && (
+        {submission.submitStatus === RequestStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
               <Loader />{" "}
@@ -308,13 +307,15 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         )}
         <SubviewHeader
           title={
-            submission.submitStatus === ActionStatus.SUCCESS
+            submission.submitStatus === RequestStatus.SUCCESS
               ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
               : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
           }
           customBackAction={goBack}
           customBackIcon={
-            submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
+            submission.submitStatus === RequestStatus.SUCCESS ? (
+              <Icon.X />
+            ) : null
           }
         />
         {!(isPathPayment || isSwap) && (
@@ -400,10 +401,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <div className="TransactionDetails__bottom-wrapper">
           <div className="TransactionDetails__bottom-wrapper__copy">
             {(isPathPayment || isSwap) &&
-              submission.submitStatus !== ActionStatus.SUCCESS &&
+              submission.submitStatus !== RequestStatus.SUCCESS &&
               t("The final amount is approximate and may change")}
           </div>
-          {submission.submitStatus === ActionStatus.SUCCESS ? (
+          {submission.submitStatus === RequestStatus.SUCCESS ? (
             <StellarExpertButton />
           ) : (
             <div className="TransactionDetails__bottom-wrapper__buttons">

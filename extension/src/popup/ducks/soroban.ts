@@ -2,15 +2,7 @@ import * as SorobanClient from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { getSorobanTokenBalances as internalGetSorobanTokenBalances } from "@shared/api/internal";
-
-import { ErrorMessage } from "@shared/api/types";
-
-export enum RequestStatus {
-  IDLE = "IDLE",
-  PENDING = "PENDING",
-  SUCCESS = "SUCCESS",
-  ERROR = "ERROR",
-}
+import { ErrorMessage, RequestStatus } from "@shared/api/types";
 
 type TokenBalances = any;
 

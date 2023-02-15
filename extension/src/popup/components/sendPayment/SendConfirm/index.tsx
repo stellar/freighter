@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { RequestStatus } from "@shared/api/types";
+
 import {
-  ActionStatus,
   transactionSubmissionSelector,
   resetSubmission,
 } from "popup/ducks/transactionSubmission";
@@ -32,13 +33,13 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
       );
     }
     switch (submission.submitStatus) {
-      case ActionStatus.IDLE:
+      case RequestStatus.IDLE:
         return <TransactionDetails goBack={() => navigateTo(previous)} />;
-      case ActionStatus.PENDING:
+      case RequestStatus.PENDING:
         return <TransactionDetails goBack={() => navigateTo(previous)} />;
-      case ActionStatus.SUCCESS:
+      case RequestStatus.SUCCESS:
         return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;
-      case ActionStatus.ERROR:
+      case RequestStatus.ERROR:
         return <SubmitFail />;
       default:
         return <TransactionDetails goBack={() => navigateTo(previous)} />;

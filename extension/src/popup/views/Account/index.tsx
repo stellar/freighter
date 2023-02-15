@@ -8,7 +8,8 @@ import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { AccountBalancesInterface } from "@shared/api/types";
+import { AccountBalancesInterface, RequestStatus } from "@shared/api/types";
+import { accountIdentifier } from "@shared/api/helpers/soroban";
 
 import { Button } from "popup/basics/buttons/Button";
 import {
@@ -21,7 +22,6 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import {
-  ActionStatus,
   getAccountBalances,
   getAssetIcons,
   getAssetDomains,
@@ -46,25 +46,11 @@ import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
+import { SorobanContext } from "../../SorobanContext";
 
 import "popup/metrics/authServices";
 
 import "./styles.scss";
-
-import { SorobanContext } from "../../SorobanContext";
-
-const xdr = SorobanClient.xdr;
-
-function accountIdentifier(account: Buffer) {
-  return xdr.ScVal.scvObject(
-    xdr.ScObject.scoVec([
-      xdr.ScVal.scvSymbol("Account"),
-      xdr.ScVal.scvObject(
-        xdr.ScObject.scoAccountId(xdr.PublicKey.publicKeyTypeEd25519(account)),
-      ),
-    ]),
-  );
-}
 
 export const defaultAccountBalances = {
   balances: null,
@@ -169,8 +155,8 @@ export const Account = () => {
   }, [publicKey, networkDetails, sortedBalances]);
 
   const isLoading =
-    accountBalanceStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.IDLE;
+    accountBalanceStatus === RequestStatus.PENDING ||
+    accountBalanceStatus === RequestStatus.IDLE;
 
   return selectedAsset ? (
     <AssetDetail

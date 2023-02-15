@@ -6,6 +6,13 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
 
+export enum RequestStatus {
+  IDLE = "IDLE",
+  PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
+  ERROR = "ERROR",
+}
+
 export interface Response {
   error: string;
   messagedId: number;

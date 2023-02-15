@@ -22,6 +22,8 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
+import { decodeAccountIdentifier } from "./helpers/soroban";
+
 const TRANSACTIONS_LIMIT = 100;
 
 export const createAccount = async (
@@ -760,5 +762,5 @@ export const getSorobanTokenBalances = async (
     throw new Error("Invalid response from simulateTransaction");
   }
   const result = results[0];
-  return SorobanClient.xdr.ScVal.fromXDR(Buffer.from(result.xdr, "base64"));
+  return decodeAccountIdentifier(Buffer.from(result.xdr, "base64"));
 };
