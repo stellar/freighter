@@ -47,3 +47,7 @@ export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 ];
+
+export const SOROBAN_RPC_URLS = {
+  futureNet: "http://localhost:8000/soroban/rpc",
+};

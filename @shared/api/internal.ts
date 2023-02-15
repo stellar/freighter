@@ -1,4 +1,5 @@
 import StellarSdk from "stellar-sdk";
+import * as SorobanClient from "soroban-client";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
   Account,
@@ -20,6 +21,8 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
+
+import { decodeAccountIdentifier } from "./helpers/soroban";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -735,4 +738,29 @@ export const getBlockedDomains = async () => {
     type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
   });
   return resp;
+};
+
+export const getSorobanTokenBalances = async (
+  server: SorobanClient.Server,
+  contractId: string,
+  txBuilder: SorobanClient.TransactionBuilder,
+  params: SorobanClient.xdr.ScVal[],
+) => {
+  const contract = new SorobanClient.Contract(contractId);
+
+  // How do we call methods with no args?
+  const transaction = txBuilder
+    .addOperation(contract.call("balance", ...params))
+    // .addOperation(contract.call('name', SorobanClient.xdr.ScVal.scvObject(null)))
+    // .addOperation(contract.call('symbol'))
+    // .addOperation(contract.call('decimals'))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const { results } = await server.simulateTransaction(transaction);
+  if (!results || results.length !== 1) {
+    throw new Error("Invalid response from simulateTransaction");
+  }
+  const result = results[0];
+  return decodeAccountIdentifier(Buffer.from(result.xdr, "base64"));
 };
