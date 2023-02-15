@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import * as SorobanClient from "soroban-client";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -10,7 +11,10 @@ import { getAccountHistory } from "@shared/api/internal";
 import { AccountBalancesInterface } from "@shared/api/types";
 
 import { Button } from "popup/basics/buttons/Button";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import {
   accountNameSelector,
   allAccountsSelector,
@@ -28,6 +32,7 @@ import {
   AssetSelectType,
   getBlockedDomains,
 } from "popup/ducks/transactionSubmission";
+import { sorobanSelector, getTokenBalances } from "popup/ducks/soroban";
 import { ROUTES } from "popup/constants/routes";
 import {
   AssetOperations,
@@ -46,6 +51,21 @@ import "popup/metrics/authServices";
 
 import "./styles.scss";
 
+import { SorobanContext } from "../../SorobanContext";
+
+const xdr = SorobanClient.xdr;
+
+function accountIdentifier(account: Buffer) {
+  return xdr.ScVal.scvObject(
+    xdr.ScObject.scoVec([
+      xdr.ScVal.scvSymbol("Account"),
+      xdr.ScVal.scvObject(
+        xdr.ScObject.scoAccountId(xdr.PublicKey.publicKeyTypeEd25519(account)),
+      ),
+    ]),
+  );
+}
+
 export const defaultAccountBalances = {
   balances: null,
   isFunded: null,
@@ -57,9 +77,14 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
+  const { tokenBalances } = useSelector(sorobanSelector);
+  console.log(tokenBalances);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
+
+  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
+
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
@@ -74,6 +99,8 @@ export const Account = () => {
 
   const { balances, isFunded } = accountBalances;
 
+  const builder = React.useContext(SorobanContext);
+
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
@@ -86,10 +113,34 @@ export const Account = () => {
     );
     dispatch(getBlockedDomains());
 
+    if (isExperimentalModeEnabled) {
+      const contractId =
+        "b8b98b350f5e3a3516beece0f1534c5d2ed788dfd8b3e45453c17d73f01b9c30";
+      const params = accountIdentifier(
+        SorobanClient.StrKey.decodeEd25519PublicKey(publicKey),
+      );
+      const txBuilder = builder.newTxBuilder();
+      dispatch(
+        getTokenBalances({
+          server: builder.server,
+          contractId,
+          txBuilder,
+          params: [params],
+        }),
+      );
+    }
+
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+  }, [
+    builder,
+    isExperimentalModeEnabled,
+    publicKey,
+    networkDetails,
+    isAccountFriendbotFunded,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!balances) return;
