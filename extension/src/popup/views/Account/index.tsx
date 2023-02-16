@@ -8,7 +8,7 @@ import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { AccountBalancesInterface, RequestStatus } from "@shared/api/types";
+import { AccountBalancesInterface, ActionStatus } from "@shared/api/types";
 import { accountIdentifier } from "@shared/api/helpers/soroban";
 
 import { Button } from "popup/basics/buttons/Button";
@@ -32,7 +32,11 @@ import {
   AssetSelectType,
   getBlockedDomains,
 } from "popup/ducks/transactionSubmission";
-import { sorobanSelector, getTokenBalances } from "popup/ducks/soroban";
+import {
+  sorobanSelector,
+  getTokenBalances,
+  resetSorobanTokens,
+} from "popup/ducks/soroban";
 import { ROUTES } from "popup/constants/routes";
 import {
   AssetOperations,
@@ -105,19 +109,31 @@ export const Account = () => {
       const params = accountIdentifier(
         SorobanClient.StrKey.decodeEd25519PublicKey(publicKey),
       );
-      const txBuilder = builder.newTxBuilder();
+
       dispatch(
         getTokenBalances({
           server: builder.server,
-          contractId,
-          txBuilder,
-          params: [params],
+          operations: [
+            {
+              contractId,
+              params: [params],
+              txBuilders: {
+                balance: builder.newTxBuilder(),
+                name: builder.newTxBuilder(),
+                decimals: builder.newTxBuilder(),
+                symbol: builder.newTxBuilder(),
+              },
+            },
+          ],
         }),
       );
     }
 
     return () => {
       dispatch(resetAccountBalanceStatus());
+      if (isExperimentalModeEnabled) {
+        dispatch(resetSorobanTokens());
+      }
     };
   }, [
     builder,
@@ -155,8 +171,8 @@ export const Account = () => {
   }, [publicKey, networkDetails, sortedBalances]);
 
   const isLoading =
-    accountBalanceStatus === RequestStatus.PENDING ||
-    accountBalanceStatus === RequestStatus.IDLE;
+    accountBalanceStatus === ActionStatus.PENDING ||
+    accountBalanceStatus === ActionStatus.IDLE;
 
   return selectedAsset ? (
     <AssetDetail

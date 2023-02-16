@@ -1,66 +1,75 @@
 import * as SorobanClient from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { getSorobanTokenBalances as internalGetSorobanTokenBalances } from "@shared/api/internal";
-import { ErrorMessage, RequestStatus } from "@shared/api/types";
+import { getSorobanTokenBalance as internalGetSorobanTokenBalance } from "@shared/api/internal";
+import { ErrorMessage, ActionStatus } from "@shared/api/types";
 
-type TokenBalances = any;
+type TokenBalances = Record<string, string | number>[];
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
   {
     server: SorobanClient.Server;
-    contractId: string;
-    txBuilder: SorobanClient.TransactionBuilder;
-    params: SorobanClient.xdr.ScVal[];
+    operations: {
+      contractId: string;
+      params: SorobanClient.xdr.ScVal[];
+      txBuilders: {
+        // see notes for getSorobanTokenBalance in @shared/api/internals
+        balance: SorobanClient.TransactionBuilder;
+        name: SorobanClient.TransactionBuilder;
+        decimals: SorobanClient.TransactionBuilder;
+        symbol: SorobanClient.TransactionBuilder;
+      };
+    }[];
   },
   { rejectValue: ErrorMessage }
->(
-  "getTokenBalances",
-  async ({ server, contractId, txBuilder, params }, thunkApi) => {
-    try {
-      const _server = server as any; // ??
-      const res = await internalGetSorobanTokenBalances(
-        _server,
-        contractId,
-        txBuilder,
-        params,
-      );
-      console.log(res);
-      return res;
-    } catch (e) {
-      console.log(e);
-      return thunkApi.rejectWithValue({ errorMessage: e as string });
-    }
-  },
-);
+>("getTokenBalances", async ({ server, operations }, thunkApi) => {
+  try {
+    const results = await Promise.all(
+      operations.map(async ({ contractId, params, txBuilders }) => {
+        const res = await internalGetSorobanTokenBalance(
+          server,
+          contractId,
+          txBuilders,
+          params,
+        );
+        return res;
+      }),
+    );
+
+    return results;
+  } catch (e) {
+    console.log(e);
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
 
 const initialState = {
-  getTokenBalancesStatus: RequestStatus.IDLE,
-  tokenBalances: [],
+  getTokenBalancesStatus: ActionStatus.IDLE,
+  tokenBalances: [] as TokenBalances,
 };
 
 const sorobanSlice = createSlice({
   name: "soroban",
   initialState,
   reducers: {
-    reset: () => initialState,
+    resetSorobanTokens: () => initialState,
   },
   extraReducers: (builder) => {
     builder.addCase(getTokenBalances.pending, (state) => {
-      state.getTokenBalancesStatus = RequestStatus.PENDING;
+      state.getTokenBalancesStatus = ActionStatus.PENDING;
     });
     builder.addCase(getTokenBalances.rejected, (state) => {
-      state.getTokenBalancesStatus = RequestStatus.ERROR;
+      state.getTokenBalancesStatus = ActionStatus.ERROR;
     });
     builder.addCase(getTokenBalances.fulfilled, (state, action) => {
       state.tokenBalances = action.payload;
-      state.getTokenBalancesStatus = RequestStatus.SUCCESS;
+      state.getTokenBalancesStatus = ActionStatus.SUCCESS;
     });
   },
 });
 
-export const { reset } = sorobanSlice.actions;
+export const { resetSorobanTokens } = sorobanSlice.actions;
 
 export const { reducer } = sorobanSlice;
 

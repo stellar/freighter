@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import StellarSdk, { Account } from "stellar-sdk";
 
-import { RequestStatus } from "@shared/api/types";
+import { ActionStatus } from "@shared/api/types";
 
 import { xlmToStroop } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
@@ -410,7 +410,7 @@ export const ScamAssetWarning = ({
                 onClick={onContinue}
                 type="button"
                 isLoading={
-                  isSubmitting || submitStatus === RequestStatus.PENDING
+                  isSubmitting || submitStatus === ActionStatus.PENDING
                 }
               >
                 {t("Continue")}
@@ -422,7 +422,7 @@ export const ScamAssetWarning = ({
                 onClick={handleSubmit}
                 type="button"
                 isLoading={
-                  isSubmitting || submitStatus === RequestStatus.PENDING
+                  isSubmitting || submitStatus === ActionStatus.PENDING
                 }
               >
                 {t("Add anyway")}

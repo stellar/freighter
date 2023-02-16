@@ -8,21 +8,28 @@ import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
 export const SorobanContext = React.createContext({} as SorobanTxBuilder);
 
-class SorobanTxBuilder {
+export class SorobanTxBuilder {
   public source: SorobanClient.Account;
   private fee: string;
+  private pubKey: string;
   private networkPassphrase: string;
   public server: SorobanClient.Server;
 
   constructor(pubKey: string, fee: string, networkPassphrase: string) {
-    this.source = new SorobanClient.Account(pubKey, "0");
     this.fee = fee;
+    this.pubKey = pubKey;
     this.networkPassphrase = networkPassphrase;
 
     this.server = new SorobanClient.Server(SOROBAN_RPC_URLS.futureNet, {
       allowHttp: SOROBAN_RPC_URLS.futureNet.startsWith("http://"),
     });
+    this.source = new SorobanClient.Account(this.pubKey, "0");
   }
+
+  setAccountSequence = async () => {
+    const { sequence } = await this.server.getAccount(this.pubKey);
+    this.source = new SorobanClient.Account(this.pubKey, sequence);
+  };
 
   newTxBuilder = () => {
     const builder = new SorobanClient.TransactionBuilder(this.source, {
@@ -42,7 +49,9 @@ export const SorobanProvider = ({
   pubKey: string;
 }) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  // fee doesn't matter, we're not submitting
+
+  // Were only simluating so the fee here should not matter
+  // AFAIK there is no fee stats for Soroban yet either
   const TxBuilder = new SorobanTxBuilder(
     pubKey,
     "100",

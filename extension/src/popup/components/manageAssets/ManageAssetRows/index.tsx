@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import SimpleBar from "simplebar-react";
 import { useTranslation } from "react-i18next";
 import "simplebar-react/dist/simplebar.min.css";
-import { CURRENCY, RequestStatus } from "@shared/api/types";
+import { CURRENCY, ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -185,9 +185,9 @@ export const ManageAssetRows = ({
 
   // watch submitStatus if used ledger to send transaction
   useEffect(() => {
-    if (submitStatus === RequestStatus.ERROR) {
+    if (submitStatus === ActionStatus.ERROR) {
       navigateTo(ROUTES.trustlineError);
-    } else if (submitStatus === RequestStatus.SUCCESS) {
+    } else if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
       navigateTo(ROUTES.account);
     }
@@ -316,7 +316,7 @@ export const ManageAssetRows = ({
             const isTrustlineActive = Object.keys(balances).some(
               (balance) => balance === canonicalAsset,
             );
-            const isActionPending = submitStatus === RequestStatus.PENDING;
+            const isActionPending = submitStatus === ActionStatus.PENDING;
 
             return (
               <div className="ManageAssetRows__row" key={canonicalAsset}>

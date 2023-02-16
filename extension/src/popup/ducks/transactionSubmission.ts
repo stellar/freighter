@@ -20,7 +20,7 @@ import {
   ErrorMessage,
   BlockedDomains,
   AccountType,
-  RequestStatus,
+  ActionStatus,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -321,8 +321,8 @@ export enum AssetSelectType {
   SWAP = "SWAP",
 }
 interface InitialState {
-  submitStatus: RequestStatus;
-  accountBalanceStatus: RequestStatus;
+  submitStatus: ActionStatus;
+  accountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
   response: Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
@@ -341,8 +341,8 @@ interface InitialState {
 }
 
 export const initialState: InitialState = {
-  submitStatus: RequestStatus.IDLE,
-  accountBalanceStatus: RequestStatus.IDLE,
+  submitStatus: ActionStatus.IDLE,
+  accountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
@@ -442,17 +442,17 @@ const transactionSubmissionSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
-      state.submitStatus = RequestStatus.PENDING;
+      state.submitStatus = ActionStatus.PENDING;
     });
     builder.addCase(signFreighterTransaction.pending, (state) => {
-      state.submitStatus = RequestStatus.PENDING;
+      state.submitStatus = ActionStatus.PENDING;
     });
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
-      state.submitStatus = RequestStatus.ERROR;
+      state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
     });
     builder.addCase(signFreighterTransaction.rejected, (state, action) => {
-      state.submitStatus = RequestStatus.ERROR;
+      state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
     });
     builder.addCase(getBestPath.rejected, (state) => {
@@ -461,18 +461,18 @@ const transactionSubmissionSlice = createSlice({
         initialState.transactionData.destinationAmount;
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
-      state.submitStatus = RequestStatus.SUCCESS;
+      state.submitStatus = ActionStatus.SUCCESS;
       state.response = action.payload;
     });
     builder.addCase(getAccountBalances.pending, (state) => {
-      state.accountBalanceStatus = RequestStatus.PENDING;
+      state.accountBalanceStatus = ActionStatus.PENDING;
     });
     builder.addCase(getAccountBalances.rejected, (state) => {
-      state.accountBalanceStatus = RequestStatus.ERROR;
+      state.accountBalanceStatus = ActionStatus.ERROR;
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
-      state.accountBalanceStatus = RequestStatus.SUCCESS;
+      state.accountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;

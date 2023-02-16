@@ -6,7 +6,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
 
-export enum RequestStatus {
+export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
   SUCCESS = "SUCCESS",

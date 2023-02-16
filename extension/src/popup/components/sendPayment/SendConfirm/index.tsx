@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { RequestStatus } from "@shared/api/types";
+import { ActionStatus } from "@shared/api/types";
 
 import {
   transactionSubmissionSelector,
@@ -33,13 +33,13 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
       );
     }
     switch (submission.submitStatus) {
-      case RequestStatus.IDLE:
+      case ActionStatus.IDLE:
         return <TransactionDetails goBack={() => navigateTo(previous)} />;
-      case RequestStatus.PENDING:
+      case ActionStatus.PENDING:
         return <TransactionDetails goBack={() => navigateTo(previous)} />;
-      case RequestStatus.SUCCESS:
+      case ActionStatus.SUCCESS:
         return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;
-      case RequestStatus.ERROR:
+      case ActionStatus.ERROR:
         return <SubmitFail />;
       default:
         return <TransactionDetails goBack={() => navigateTo(previous)} />;
