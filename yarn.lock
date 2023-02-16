@@ -15143,10 +15143,10 @@ sodium-native@^3.3.0:
   dependencies:
     node-gyp-build "^4.3.0"
 
-soroban-client@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/soroban-client/-/soroban-client-0.2.1.tgz#c90686a623e53f0bd7fd965e27d2f476f210d891"
-  integrity sha512-80vNTY6gkkyfTvCHAJTPPnkl+nDH6hjtFrIIdw0QB3PeVz9P8w/UaOSzxj+Zf8yPSYSHiVegXe7px+D+pXHRfw==
+soroban-client@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/soroban-client/-/soroban-client-0.3.0.tgz#e0d61ee700f67f89dad6988288d4980f6f2d4137"
+  integrity sha512-BxwQpW/ZpPaIyZ7mq2dBIRPHzOsp6M9/Co64BPbwW6Kt30NUormIiIKzGFCCWInjk4/9C80jFYeoo5WE7zHHwA==
   dependencies:
     "@types/eventsource" "^1.1.2"
     "@types/node" ">= 8"

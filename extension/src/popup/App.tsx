@@ -13,6 +13,7 @@ import { metricsMiddleware } from "helpers/metrics";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
+import { reducer as soroban } from "popup/ducks/soroban";
 
 import { Loading } from "popup/components/Loading";
 import { ErrorTracking } from "popup/components/ErrorTracking";
@@ -30,6 +31,7 @@ const rootReducer = combineReducers({
   auth,
   settings,
   transactionSubmission,
+  soroban,
 });
 export type AppState = ReturnType<typeof rootReducer>;
 export const store = configureStore({
@@ -43,6 +45,7 @@ export const store = configureStore({
     }),
   ].concat(metricsMiddleware<AppState>()),
 });
+
 export type AppDispatch = typeof store.dispatch;
 
 export function App() {
