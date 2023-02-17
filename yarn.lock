@@ -15169,13 +15169,13 @@ soroban-client@^0.3.0:
   integrity sha512-BxwQpW/ZpPaIyZ7mq2dBIRPHzOsp6M9/Co64BPbwW6Kt30NUormIiIKzGFCCWInjk4/9C80jFYeoo5WE7zHHwA==
   dependencies:
     "@types/eventsource" "^1.1.2"
-    "@types/node" ">= 8"
+    "@types/node" "18.11.9"
     "@types/randombytes" "^2.0.0"
     "@types/urijs" "^1.19.6"
     axios "0.25.0"
     es6-promise "^4.2.4"
     lodash "4.17.21"
-    stellar-base "8.0.1-soroban.6"
+    stellar-base "8.2.2-soroban.11"
     urijs "^1.19.1"
 
 sort-css-media-queries@2.1.0:
