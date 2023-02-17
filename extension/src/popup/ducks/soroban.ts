@@ -2,9 +2,7 @@ import * as SorobanClient from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { getSorobanTokenBalance as internalGetSorobanTokenBalance } from "@shared/api/internal";
-import { ErrorMessage, ActionStatus } from "@shared/api/types";
-
-type TokenBalances = Record<string, string | number>[];
+import { ErrorMessage, ActionStatus, TokenBalances } from "@shared/api/types";
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
@@ -12,7 +10,7 @@ export const getTokenBalances = createAsyncThunk<
     server: SorobanClient.Server;
     operations: {
       contractId: string;
-      params: SorobanClient.xdr.ScVal[];
+      params: any[];
       txBuilders: {
         // see notes for getSorobanTokenBalance in @shared/api/internals
         balance: SorobanClient.TransactionBuilder;

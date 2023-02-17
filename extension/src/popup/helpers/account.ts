@@ -5,6 +5,7 @@ import {
   AccountBalancesInterface,
   Balances,
   HorizonOperation,
+  TokenBalances,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
@@ -16,7 +17,10 @@ import {
 
 export const LP_IDENTIFIER = ":lp";
 
-export const sortBalances = (balances: Balances) => {
+export const sortBalances = (
+  balances: Balances,
+  sorobanBalances: TokenBalances = [],
+) => {
   const collection = [] as Array<any>;
   const lpBalances = [] as Array<any>;
   if (!balances) return collection;
@@ -31,7 +35,8 @@ export const sortBalances = (balances: Balances) => {
       collection.push(v);
     }
   });
-
+  console.log(sorobanBalances);
+  // .concat(sorobanBalances)
   return collection.concat(lpBalances);
 };
 

@@ -67,8 +67,7 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const { tokenBalances } = useSelector(sorobanSelector);
-  console.log(tokenBalances);
+  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -106,9 +105,7 @@ export const Account = () => {
     if (isExperimentalModeEnabled) {
       const contractId =
         "b8b98b350f5e3a3516beece0f1534c5d2ed788dfd8b3e45453c17d73f01b9c30";
-      const params = accountIdentifier(
-        SorobanClient.StrKey.decodeEd25519PublicKey(publicKey),
-      );
+      const params = accountIdentifier(publicKey);
 
       dispatch(
         getTokenBalances({
@@ -147,11 +144,11 @@ export const Account = () => {
   useEffect(() => {
     if (!balances) return;
 
-    setSortedBalances(sortBalances(balances));
+    setSortedBalances(sortBalances(balances, sorobanBalances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch]);
+  }, [sorobanBalances, balances, networkDetails, dispatch]);
 
   useEffect(() => {
     const fetchAccountHistory = async () => {

@@ -26,8 +26,7 @@ export class SorobanTxBuilder {
     this.source = new SorobanClient.Account(this.pubKey, "0");
   }
 
-  setAccountSequence = async () => {
-    const { sequence } = await this.server.getAccount(this.pubKey);
+  setAccountSequence = async (sequence: string) => {
     this.source = new SorobanClient.Account(this.pubKey, sequence);
   };
 

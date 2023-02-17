@@ -1,14 +1,14 @@
-import { xdr } from "soroban-client";
+import { xdr, StrKey } from "soroban-client";
 
-// To be used for the Identifier type from soroban-auth
-export function accountIdentifier(account: Buffer) {
+// To be used for the Address type from soroban-sdk
+export function accountIdentifier(account: string) {
+  const buf = StrKey.decodeEd25519PublicKey(account);
   return xdr.ScVal.scvObject(
-    xdr.ScObject.scoVec([
-      xdr.ScVal.scvSymbol("Account"),
-      xdr.ScVal.scvObject(
-        xdr.ScObject.scoAccountId(xdr.PublicKey.publicKeyTypeEd25519(account)),
+    xdr.ScObject.scoAddress(
+      xdr.ScAddress.scAddressTypeAccount(
+        xdr.PublicKey.publicKeyTypeEd25519(buf),
       ),
-    ]),
+    ),
   );
 }
 

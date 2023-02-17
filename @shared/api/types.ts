@@ -108,6 +108,8 @@ export interface AssetDomains {
 
 export type Balances = Types.BalanceMap | null;
 
+export type TokenBalances = Record<string, string | number>[];
+
 /* eslint-disable camelcase */
 export type HorizonOperation = any;
 /* eslint-enable camelcase */
