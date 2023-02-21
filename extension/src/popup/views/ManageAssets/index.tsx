@@ -11,6 +11,7 @@ import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
+import { AddToken } from "popup/components/manageAssets/AddToken";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
@@ -78,6 +79,9 @@ export const ManageAssets = () => {
         </PrivateKeyRoute>
         <Route exact path={ROUTES.trustlineError}>
           <TrustlineError balances={balances} errorAsset={errorAsset} />
+        </Route>
+        <Route exact path={ROUTES.addToken}>
+          <AddToken />
         </Route>
       </Switch>
     </>
