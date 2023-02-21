@@ -1116,13 +1116,14 @@ export const popupMessageListener = (request: Request) => {
 
   const addTokenId = async () => {
     const { tokenId } = request;
-
     const tokenIdList = JSON.parse(
       (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
     );
+
     if (tokenIdList.includes(tokenId)) {
       return { error: "Token ID already exists" };
     }
+
     tokenIdList.push(tokenId);
     await dataStorageAccess.setItem(TOKEN_ID_LIST, JSON.stringify(tokenIdList));
 

@@ -18,8 +18,6 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { addTokenId, authErrorSelector } from "popup/ducks/accountServices";
 
-import "./styles.scss";
-
 interface FormValues {
   tokenId: string;
 }
@@ -35,7 +33,6 @@ export const AddToken = () => {
 
   const handleSubmit = async (values: FormValues) => {
     const { tokenId } = values;
-
     const res = await dispatch(addTokenId(tokenId));
 
     if (addTokenId.fulfilled.match(res)) {
