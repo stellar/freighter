@@ -17,6 +17,7 @@ import {
   loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
+  addTokenId as addTokenIdService,
 } from "@shared/api/internal";
 import { Account, AccountType, ErrorMessage } from "@shared/api/types";
 import { WalletType } from "@shared/constants/hardwareWallet";
@@ -337,6 +338,26 @@ export const signOut = createAsyncThunk<
   return res?.applicationState;
 });
 
+export const addTokenId = createAsyncThunk<
+  { tokenIdList: string[] },
+  string,
+  { rejectValue: ErrorMessage }
+>("auth/addToken", async (tokenId, thunkApi) => {
+  let res = {
+    tokenIdList: [] as string[],
+  };
+
+  try {
+    res = await addTokenIdService(tokenId);
+  } catch (e) {
+    console.error("Failed when adding a token: ", e.message);
+    return thunkApi.rejectWithValue({
+      errorMessage: e.message,
+    });
+  }
+  return res;
+});
+
 interface InitialState {
   allAccounts: Array<Account>;
   applicationState: APPLICATION_STATE;
@@ -344,6 +365,7 @@ interface InitialState {
   publicKey: string;
   connectingWalletType: WalletType;
   bipPath: string;
+  tokenIdList: string[];
   error: string;
 }
 
@@ -354,6 +376,7 @@ const initialState: InitialState = {
   publicKey: "",
   connectingWalletType: WalletType.NONE,
   bipPath: "",
+  tokenIdList: [],
   error: "",
 };
 
@@ -550,12 +573,14 @@ const authSlice = createSlice({
         applicationState,
         allAccounts,
         bipPath,
+        tokenIdList,
       } = action.payload || {
         hasPrivateKey: false,
         publicKey: "",
         applicationState: APPLICATION_STATE.APPLICATION_STARTED,
         allAccounts: [],
         bipPath: "",
+        tokenIdList: [],
       };
       return {
         ...state,
@@ -565,6 +590,7 @@ const authSlice = createSlice({
         publicKey,
         allAccounts,
         bipPath,
+        tokenIdList,
       };
     });
     builder.addCase(loadAccount.rejected, (state, action) => {
@@ -618,6 +644,25 @@ const authSlice = createSlice({
         ...initialState,
         applicationState:
           applicationState || APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      };
+    });
+    builder.addCase(addTokenId.fulfilled, (state, action) => {
+      const { tokenIdList } = action.payload || {
+        tokenIdList: [],
+      };
+
+      return {
+        ...state,
+        error: "",
+        tokenIdList,
+      };
+    });
+    builder.addCase(addTokenId.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
       };
     });
   },

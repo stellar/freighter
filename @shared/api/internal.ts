@@ -175,6 +175,7 @@ export const loadAccount = (): Promise<{
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
   bipPath: string;
+  tokenIdList: string[];
 }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_ACCOUNT,
@@ -735,4 +736,28 @@ export const getBlockedDomains = async () => {
     type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
   });
   return resp;
+};
+
+export const addTokenId = async (
+  tokenId: string,
+): Promise<{
+  tokenIdList: string[];
+}> => {
+  let error = "";
+  let tokenIdList = [] as string[];
+
+  try {
+    ({ tokenIdList, error } = await sendMessageToBackground({
+      tokenId,
+      type: SERVICE_TYPES.ADD_TOKEN_ID,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return { tokenIdList };
 };

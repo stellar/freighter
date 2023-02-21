@@ -32,6 +32,7 @@ import {
   CACHED_BLOCKED_DOMAINS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
+  TOKEN_ID_LIST,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -568,6 +569,9 @@ export const popupMessageListener = (request: Request) => {
       applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: await getBipPath(),
+      tokenIdList: JSON.parse(
+        (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+      ),
     };
   };
 
@@ -1110,6 +1114,22 @@ export const popupMessageListener = (request: Request) => {
     return {};
   };
 
+  const addTokenId = async () => {
+    const { tokenId } = request;
+    const tokenIdList = JSON.parse(
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+    );
+
+    if (tokenIdList.includes(tokenId)) {
+      return { error: "Token ID already exists" };
+    }
+
+    tokenIdList.push(tokenId);
+    await dataStorageAccess.setItem(TOKEN_ID_LIST, JSON.stringify(tokenIdList));
+
+    return { tokenIdList };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1145,6 +1165,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
+    [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
   };
 
   return messageResponder[request.type]();
