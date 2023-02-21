@@ -22,6 +22,17 @@
   &__assets {
     flex-grow: 1;
     height: 27.75rem;
+
+    &--short {
+      flex-grow: 1;
+      height: 22.5rem;
+    }
+  }
+
+  &__button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
   &__button {
