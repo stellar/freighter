@@ -1148,6 +1148,14 @@ export const popupMessageListener = (request: Request) => {
     return { tokenIdList: tokenIdList[keyId] || [] };
   };
 
+  const getTokenIds = async () => {
+    const tokenIdList = JSON.parse(
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+    );
+
+    return tokenIdList;
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
