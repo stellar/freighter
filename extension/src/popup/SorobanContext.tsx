@@ -6,12 +6,12 @@ import { SOROBAN_RPC_URLS } from "@shared/constants/stellar";
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
-interface SororbaContext {
+export interface SororbanContext {
   server: SorobanClient.Server;
   newTxBuilder: () => SorobanClient.TransactionBuilder;
 }
 
-export const SorobanContext = React.createContext({} as SororbaContext);
+export const SorobanContext = React.createContext({} as SororbanContext);
 
 export const SorobanProvider = ({
   children,
@@ -37,12 +37,11 @@ export const SorobanProvider = ({
     allowHttp: SOROBAN_RPC_URLS.futureNet.startsWith("http://"),
   });
 
-  const newTxBuilder = () => {
-    return new SorobanClient.TransactionBuilder(source, {
+  const newTxBuilder = () =>
+    new SorobanClient.TransactionBuilder(source, {
       fee,
       networkPassphrase: networkDetails.networkPassphrase,
     });
-  };
 
   return (
     <SorobanContext.Provider value={{ server, newTxBuilder }}>

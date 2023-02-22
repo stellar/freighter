@@ -8,11 +8,11 @@ import {
 } from "@shared/api/internal";
 import { ErrorMessage, ActionStatus, TokenBalances } from "@shared/api/types";
 import { accountIdentifier } from "@shared/api/helpers/soroban";
-import { SorobanTxBuilder } from "popup/SorobanContext";
+import { SororbanContext } from "popup/SorobanContext";
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
-  { sorobanClient: SorobanTxBuilder },
+  { sorobanClient: SororbanContext },
   { rejectValue: ErrorMessage }
 >("getTokenBalances", async ({ sorobanClient }, thunkApi) => {
   try {
