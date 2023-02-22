@@ -858,3 +858,10 @@ export const addTokenId = async (
 
   return { tokenIdList };
 };
+
+export const getTokenIds = async () => {
+  const resp = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_TOKEN_IDS,
+  });
+  return resp;
+};

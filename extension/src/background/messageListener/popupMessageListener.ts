@@ -1130,6 +1130,14 @@ export const popupMessageListener = (request: Request) => {
     return { tokenIdList };
   };
 
+  const getTokenIds = async () => {
+    const tokenIdList = JSON.parse(
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+    );
+
+    return tokenIdList;
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1166,6 +1174,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
+    [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
   };
 
   return messageResponder[request.type]();
