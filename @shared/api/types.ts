@@ -109,6 +109,8 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
+export type Issuer = Types.Issuer;
+
 export type Balances = Types.BalanceMap | null;
 
 export interface SorobanBalance {
