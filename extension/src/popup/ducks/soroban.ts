@@ -1,40 +1,48 @@
-import * as SorobanClient from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { getSorobanTokenBalance as internalGetSorobanTokenBalance } from "@shared/api/internal";
+import {
+  getSorobanTokenBalance as internalGetSorobanTokenBalance,
+  loadAccount as internalLoadAccount,
+  getTokenIds as internalGetTokenIds,
+} from "@shared/api/internal";
 import { ErrorMessage, ActionStatus, TokenBalances } from "@shared/api/types";
+import { accountIdentifier } from "@shared/api/helpers/soroban";
+import { SorobanTxBuilder } from "popup/SorobanContext";
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
-  {
-    server: SorobanClient.Server;
-    operations: {
-      contractId: string;
-      params: any[];
-      txBuilders: {
-        // see notes for getSorobanTokenBalance in @shared/api/internals
-        balance: SorobanClient.TransactionBuilder;
-        name: SorobanClient.TransactionBuilder;
-        decimals: SorobanClient.TransactionBuilder;
-        symbol: SorobanClient.TransactionBuilder;
-      };
-    }[];
-  },
+  { sorobanClient: SorobanTxBuilder },
   { rejectValue: ErrorMessage }
->("getTokenBalances", async ({ server, operations }, thunkApi) => {
+>("getTokenBalances", async ({ sorobanClient }, thunkApi) => {
   try {
+    const { publicKey } = await internalLoadAccount();
+    const tokenIdList = await internalGetTokenIds();
+
+    const params = [accountIdentifier(publicKey)];
+
     const results = await Promise.all(
-      operations.map(async ({ contractId, params, txBuilders }) => {
+      tokenIdList.map(async (tokenId) => {
+        /*
+          Right now, Soroban transactions only support 1 operation per tx
+          so we need a builder per value from the contract,
+          once multi-op transactions are supported this can send
+          1 tx with an operation for each value.
+        */
         const { balance, ...rest } = await internalGetSorobanTokenBalance(
-          server,
-          contractId,
-          txBuilders,
+          sorobanClient.server,
+          tokenId,
+          {
+            balance: sorobanClient.newTxBuilder(),
+            name: sorobanClient.newTxBuilder(),
+            decimals: sorobanClient.newTxBuilder(),
+            symbol: sorobanClient.newTxBuilder(),
+          },
           params,
         );
         const total = new BigNumber(balance);
         return {
-          contractId,
+          contractId: tokenId,
           total,
           ...rest,
         };

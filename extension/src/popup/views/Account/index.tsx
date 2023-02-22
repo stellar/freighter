@@ -8,7 +8,6 @@ import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { AccountBalancesInterface, ActionStatus } from "@shared/api/types";
-import { accountIdentifier } from "@shared/api/helpers/soroban";
 
 import { Button } from "popup/basics/buttons/Button";
 import {
@@ -102,27 +101,7 @@ export const Account = () => {
     dispatch(getBlockedDomains());
 
     if (isExperimentalModeEnabled) {
-      const contractId =
-        "4a7a254e803102a2da255e634f26b9b9fe5655ad89bf578dd04f8fcbdecf0d95";
-      const params = accountIdentifier(publicKey);
-
-      dispatch(
-        getTokenBalances({
-          server: builder.server,
-          operations: [
-            {
-              contractId,
-              params: [params],
-              txBuilders: {
-                balance: builder.newTxBuilder(),
-                name: builder.newTxBuilder(),
-                decimals: builder.newTxBuilder(),
-                symbol: builder.newTxBuilder(),
-              },
-            },
-          ],
-        }),
-      );
+      dispatch(getTokenBalances({ sorobanClient: builder }));
     }
 
     return () => {

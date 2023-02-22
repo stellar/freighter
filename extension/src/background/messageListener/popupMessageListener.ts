@@ -1135,7 +1135,7 @@ export const popupMessageListener = (request: Request) => {
       (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
     );
 
-    return tokenIdList;
+    return { tokenIdList };
   };
 
   const messageResponder: MessageResponder = {
