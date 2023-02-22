@@ -210,12 +210,16 @@ export const AccountAssets = ({
         return (
           <div
             className={`AccountAssets__asset ${
-              setSelectedAsset && !isLP
+              setSelectedAsset && !isLP && !isSorobanToken
                 ? "AccountAssets__asset--has-detail"
                 : ""
             }`}
             key={canonicalAsset}
-            onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
+            onClick={
+              isLP || isSorobanToken
+                ? () => null
+                : () => handleClick(canonicalAsset)
+            }
           >
             <div className="AccountAssets__copy-left">
               <AssetIcon
