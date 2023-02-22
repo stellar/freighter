@@ -20,6 +20,7 @@ import {
   ErrorMessage,
   BlockedDomains,
   AccountType,
+  ActionStatus,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -292,13 +293,6 @@ export const getBlockedDomains = createAsyncThunk<
 export enum ShowOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
-}
-
-export enum ActionStatus {
-  IDLE = "IDLE",
-  PENDING = "PENDING",
-  SUCCESS = "SUCCESS",
-  ERROR = "ERROR",
 }
 
 interface TransactionData {
