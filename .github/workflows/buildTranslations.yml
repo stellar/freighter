@@ -13,6 +13,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "16.14.0"
       - name: Run translation job
         run: |
           yarn && yarn build:freighter-api && yarn build:extension:translations

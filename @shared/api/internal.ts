@@ -182,6 +182,7 @@ export const loadAccount = (): Promise<{
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
   bipPath: string;
+  tokenIdList: string[];
 }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_ACCOUNT,
@@ -754,6 +755,14 @@ type TxToOp = {
   };
 };
 
+interface SorobanTokenRecord {
+  [key: string]: unknown;
+  balance: number;
+  name: string;
+  symbol: string;
+  decimals: string;
+}
+
 export const getSorobanTokenBalance = async (
   server: SorobanClient.Server,
   contractId: string,
@@ -810,14 +819,6 @@ export const getSorobanTokenBalance = async (
     },
   };
 
-  interface SorobanTokenRecord {
-    [key: string]: unknown;
-    balance: number;
-    name: string;
-    symbol: string;
-    decimals: string;
-  }
-
   const tokenBalanceInfo = Object.keys(txs).reduce(async (prev, curr) => {
     const _prev = await prev;
     const { tx, decoder } = txs[curr];
@@ -832,4 +833,28 @@ export const getSorobanTokenBalance = async (
   }, Promise.resolve({} as SorobanTokenRecord));
 
   return tokenBalanceInfo;
+};
+
+export const addTokenId = async (
+  tokenId: string,
+): Promise<{
+  tokenIdList: string[];
+}> => {
+  let error = "";
+  let tokenIdList = [] as string[];
+
+  try {
+    ({ tokenIdList, error } = await sendMessageToBackground({
+      tokenId,
+      type: SERVICE_TYPES.ADD_TOKEN_ID,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return { tokenIdList };
 };

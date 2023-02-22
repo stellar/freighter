@@ -55,6 +55,8 @@ export interface Response {
   bipPath: string;
   blockedDomains: BlockedDomains;
   assetDomain: string;
+  tokenId: string;
+  tokenIdList: string[];
 }
 
 export interface BlockedDomains {

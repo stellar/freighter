@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-2.10.0
+
+### Story
+
+Upgrade soroban-client with v0.4.0
+
 # Release notes - Wallets - Freighter-2.9.3
 
 ### Story
