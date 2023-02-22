@@ -26,10 +26,6 @@ export class SorobanTxBuilder {
     this.source = new SorobanClient.Account(this.pubKey, "0");
   }
 
-  setAccountSequence = async (sequence: string) => {
-    this.source = new SorobanClient.Account(this.pubKey, sequence);
-  };
-
   newTxBuilder = () => {
     const builder = new SorobanClient.TransactionBuilder(this.source, {
       fee: this.fee,

@@ -24,12 +24,14 @@ export const AssetIcon = ({
   issuerKey,
   retryAssetIconFetch,
   isLPShare = false,
+  isSorobanToken = false,
 }: {
   assetIcons: AssetIcons;
   code: string;
   issuerKey: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
+  isSorobanToken?: boolean;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -56,6 +58,15 @@ export const AssetIcon = ({
     return (
       <div className="AccountAssets__asset--logo AccountAssets__asset--lp-share">
         LP
+      </div>
+    );
+  }
+
+  // Placeholder for Soroban tokens
+  if (isSorobanToken) {
+    return (
+      <div className="AccountAssets__asset--logo AccountAssets__asset--lp-share">
+        S
       </div>
     );
   }
@@ -167,6 +178,8 @@ export const AccountAssets = ({
     return `${assetA} / ${assetB} `;
   };
 
+  console.log(sortedBalances);
+
   return (
     <>
       {sortedBalances.map((rb: any) => {
@@ -177,12 +190,17 @@ export const AccountAssets = ({
           issuer = "lp";
           code = getLPShareCode(rb.reserves);
           amountUnit = "shares";
+        } else if (rb.contractId) {
+          issuer = rb.contractId;
+          code = rb.symbol;
+          amountUnit = rb.symbol;
         } else {
           issuer = rb.token.issuer;
           code = rb.token.code;
           amountUnit = rb.token.code;
         }
         const isLP = issuer === "lp";
+        const isSorobanToken = rb.contractId;
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
         const assetDomain = assetDomains[canonicalAsset];
@@ -191,12 +209,16 @@ export const AccountAssets = ({
         return (
           <div
             className={`AccountAssets__asset ${
-              setSelectedAsset && !isLP
+              setSelectedAsset && !isLP && !isSorobanToken
                 ? "AccountAssets__asset--has-detail"
                 : ""
             }`}
             key={canonicalAsset}
-            onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
+            onClick={
+              isLP || isSorobanToken
+                ? () => null
+                : () => handleClick(canonicalAsset)
+            }
           >
             <div className="AccountAssets__copy-left">
               <AssetIcon
@@ -205,6 +227,7 @@ export const AccountAssets = ({
                 issuerKey={issuer?.key}
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={!!rb.liquidityPoolId}
+                isSorobanToken={isSorobanToken}
               />
               <span>{code}</span>
               <ScamAssetIcon isScamAsset={isScamAsset} />

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import * as SorobanClient from "soroban-client";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -104,7 +103,7 @@ export const Account = () => {
 
     if (isExperimentalModeEnabled) {
       const contractId =
-        "b8b98b350f5e3a3516beece0f1534c5d2ed788dfd8b3e45453c17d73f01b9c30";
+        "4a7a254e803102a2da255e634f26b9b9fe5655ad89bf578dd04f8fcbdecf0d95";
       const params = accountIdentifier(publicKey);
 
       dispatch(

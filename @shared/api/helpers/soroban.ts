@@ -1,15 +1,7 @@
-import { xdr, StrKey } from "soroban-client";
+import { xdr, Address } from "soroban-client";
 
-// To be used for the Address type from soroban-sdk
 export function accountIdentifier(account: string) {
-  const buf = StrKey.decodeEd25519PublicKey(account);
-  return xdr.ScVal.scvObject(
-    xdr.ScObject.scoAddress(
-      xdr.ScAddress.scAddressTypeAccount(
-        xdr.PublicKey.publicKeyTypeEd25519(buf),
-      ),
-    ),
-  );
+  return new Address(account).toScVal();
 }
 
 // How do we decode these in a more generic way?

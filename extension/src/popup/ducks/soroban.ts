@@ -1,4 +1,5 @@
 import * as SorobanClient from "soroban-client";
+import BigNumber from "bignumber.js";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { getSorobanTokenBalance as internalGetSorobanTokenBalance } from "@shared/api/internal";
@@ -25,13 +26,18 @@ export const getTokenBalances = createAsyncThunk<
   try {
     const results = await Promise.all(
       operations.map(async ({ contractId, params, txBuilders }) => {
-        const res = await internalGetSorobanTokenBalance(
+        const { balance, ...rest } = await internalGetSorobanTokenBalance(
           server,
           contractId,
           txBuilders,
           params,
         );
-        return res;
+        const total = new BigNumber(balance);
+        return {
+          contractId,
+          total,
+          ...rest,
+        };
       }),
     );
 

@@ -19,10 +19,11 @@ export const LP_IDENTIFIER = ":lp";
 
 export const sortBalances = (
   balances: Balances,
-  sorobanBalances: TokenBalances = [],
+  sorobanBalances?: TokenBalances,
 ) => {
   const collection = [] as Array<any>;
   const lpBalances = [] as Array<any>;
+  const _sorobanBalances = sorobanBalances || [];
   if (!balances) return collection;
 
   // put XLM at the top of the balance list, LP shares last
@@ -35,9 +36,7 @@ export const sortBalances = (
       collection.push(v);
     }
   });
-  console.log(sorobanBalances);
-  // .concat(sorobanBalances)
-  return collection.concat(lpBalances);
+  return collection.concat(_sorobanBalances).concat(lpBalances);
 };
 
 export const getIsPayment = (type: Horizon.OperationResponseType) =>
