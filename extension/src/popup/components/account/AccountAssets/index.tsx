@@ -178,8 +178,6 @@ export const AccountAssets = ({
     return `${assetA} / ${assetB} `;
   };
 
-  console.log(sortedBalances);
-
   return (
     <>
       {sortedBalances.map((rb: any) => {

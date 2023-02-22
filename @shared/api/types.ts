@@ -106,11 +106,16 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
-export type Issuer = Types.Issuer;
-
 export type Balances = Types.BalanceMap | null;
 
-export type TokenBalances = Record<string, any>[];
+interface SorobanBalance {
+  total: unknown; // BigNumber
+  name: string;
+  symbol: string;
+  decimals: string;
+}
+
+export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */
 export type HorizonOperation = any;

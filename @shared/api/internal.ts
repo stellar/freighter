@@ -810,6 +810,14 @@ export const getSorobanTokenBalance = async (
     },
   };
 
+  interface SorobanTokenRecord {
+    [key: string]: unknown;
+    balance: number;
+    name: string;
+    symbol: string;
+    decimals: string;
+  }
+
   const tokenBalanceInfo = Object.keys(txs).reduce(async (prev, curr) => {
     const _prev = await prev;
     const { tx, decoder } = txs[curr];
@@ -821,7 +829,7 @@ export const getSorobanTokenBalance = async (
     _prev[curr] = decoder(Buffer.from(result.xdr, "base64"));
 
     return _prev;
-  }, Promise.resolve({}) as Record<string, any>);
+  }, Promise.resolve({} as SorobanTokenRecord));
 
   return tokenBalanceInfo;
 };
