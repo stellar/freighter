@@ -49,5 +49,5 @@ export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
 ];
 
 export const SOROBAN_RPC_URLS = {
-  futureNet: "http://localhost:8000/soroban/rpc",
+  futureNet: "https://stellar-futurenet.4d63.com/soroban/rpc",
 };
