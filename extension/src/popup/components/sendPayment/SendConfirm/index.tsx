@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+import { ActionStatus } from "@shared/api/types";
+
 import {
-  ActionStatus,
   transactionSubmissionSelector,
   resetSubmission,
 } from "popup/ducks/transactionSubmission";

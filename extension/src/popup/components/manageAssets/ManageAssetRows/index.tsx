@@ -4,11 +4,12 @@ import { useDispatch, useSelector } from "react-redux";
 import SimpleBar from "simplebar-react";
 import { useTranslation } from "react-i18next";
 import "simplebar-react/dist/simplebar.min.css";
-import { CURRENCY } from "@shared/api/types";
+import { CURRENCY, ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -30,7 +31,6 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  ActionStatus,
   getAccountBalances,
   resetSubmission,
   signFreighterTransaction,
