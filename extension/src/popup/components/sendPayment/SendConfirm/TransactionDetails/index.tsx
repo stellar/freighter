@@ -31,6 +31,7 @@ import {
   signFreighterTransaction,
   signFreighterSorobanTransaction,
   submitFreighterTransaction,
+  submitFreighterSorobanTransaction,
   transactionSubmissionSelector,
   addRecentAddress,
   isPathPaymentSelector,
@@ -245,9 +246,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         networkDetails.networkPassphrase,
       );
 
+      console.log(preparedTransaction);
+
       const res = await dispatch(
         signFreighterSorobanTransaction({
-          transaction: preparedTransaction,
+          transaction: preparedTransaction.toXDR(),
           network: networkDetails.networkPassphrase,
         }),
       );
@@ -257,7 +260,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         res.payload.signedTransaction
       ) {
         const submitResp = await dispatch(
-          submitFreighterTransaction({
+          submitFreighterSorobanTransaction({
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
