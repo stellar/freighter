@@ -72,13 +72,19 @@ export const AccountHistory = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    const createSegments = (operations: HorizonOperation[]) => {
+    const createSegments = (
+      operations: HorizonOperation[],
+      showSorobanTxs = false,
+    ) => {
+      const _operations = showSorobanTxs
+        ? operations
+        : operations.filter((op) => op.type_i !== 24);
       const segments = {
         [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
         [SELECTOR_OPTIONS.SENT]: [] as HistoryItemOperation[],
         [SELECTOR_OPTIONS.RECEIVED]: [] as HistoryItemOperation[],
       };
-      operations.forEach((operation) => {
+      _operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
         const isSwap = getIsSwap(operation);
         const isCreateExternalAccount =
