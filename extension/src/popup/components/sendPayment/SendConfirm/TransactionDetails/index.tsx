@@ -242,6 +242,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
       const preparedTransaction = await sorobanServer.prepareTransaction(
         transaction,
+        networkDetails.networkPassphrase,
       );
 
       const res = await dispatch(
