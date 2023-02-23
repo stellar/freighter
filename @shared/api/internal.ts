@@ -13,6 +13,7 @@ import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
   NetworkDetails,
+  SOROBAN_RPC_URLS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -572,11 +573,19 @@ export const submitFreighterSorobanTransaction = async ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
-  const tx = StellarSdk.TransactionBuilder.fromXDR(
-    signedXDR,
-    networkDetails.networkPassphrase,
-  );
-  const server = new SorobanClient.Server(networkDetails.networkUrl, {
+  console.log("sub");
+  let tx = {} as SorobanClient.Transaction | SorobanClient.FeeBumpTransaction;
+
+  try {
+    tx = SorobanClient.TransactionBuilder.fromXDR(
+      signedXDR,
+      networkDetails.networkPassphrase,
+    );
+  } catch (e) {
+    console.error(e);
+  }
+
+  const server = new SorobanClient.Server(SOROBAN_RPC_URLS.futureNet, {
     allowHttp: true,
   });
 
