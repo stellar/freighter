@@ -529,6 +529,26 @@ export const signFreighterTransaction = async ({
   return { signedTransaction };
 };
 
+export const signFreighterSorobanTransaction = async ({
+  transaction,
+  network,
+}: {
+  transaction: string;
+  network: string;
+}): Promise<{ signedTransaction: string }> => {
+  const { signedTransaction, error } = await sendMessageToBackground({
+    transaction,
+    network,
+    type: SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION,
+  });
+
+  if (error || !signedTransaction) {
+    throw new Error(error);
+  }
+
+  return { signedTransaction };
+};
+
 export const submitFreighterTransaction = async ({
   signedXDR,
   networkDetails,
@@ -543,6 +563,43 @@ export const submitFreighterTransaction = async ({
   const server = stellarSdkServer(networkDetails.networkUrl);
 
   return await server.submitTransaction(tx);
+};
+
+export const submitFreighterSorobanTransaction = async ({
+  signedXDR,
+  networkDetails,
+}: {
+  signedXDR: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const tx = StellarSdk.TransactionBuilder.fromXDR(
+    signedXDR,
+    networkDetails.networkPassphrase,
+  );
+  const server = new SorobanClient.Server(networkDetails.networkUrl, {
+    allowHttp: true,
+  });
+
+  let response = (await server.sendTransaction(tx)) as any;
+
+  try {
+    console.log("Sent! Transaction ID:", console.log(response.id));
+    // Poll this until the status is not "pending"
+    while (response.status === "pending") {
+      // See if the transaction is complete
+      // eslint-disable-next-line no-await-in-loop
+      response = await server.getTransactionStatus(response.id);
+      // Wait a second
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    console.log("Transaction status:", response.status);
+    console.log(JSON.stringify(response));
+  } catch (e) {
+    throw new Error(e);
+  }
+
+  return response;
 };
 
 export const addRecentAddress = async ({
@@ -763,7 +820,7 @@ interface SorobanTokenRecord {
   decimals: string;
 }
 
-export const getSorobanTokenBalance = async (
+export const getSorobanTokenBalance = (
   server: SorobanClient.Server,
   contractId: string,
   txBuilders: {

@@ -917,6 +917,19 @@ export const popupMessageListener = (request: Request) => {
     return { error: "Session timed out" };
   };
 
+  const signFreighterSorobanTransaction = () => {
+    const { transaction } = request;
+
+    const privateKey = privateKeySelector(store.getState());
+    if (privateKey.length) {
+      const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
+      transaction.sign(sourceKeys);
+      return { signedTransaction: transaction };
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const addRecentAddress = async () => {
     const { publicKey } = request;
     const storedJSON =
@@ -1179,6 +1192,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]: signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,

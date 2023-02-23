@@ -1,5 +1,8 @@
 module.exports = {
   extends: ["@stellar/eslint-config"],
+  env: {
+    es2020: true,
+  },
   globals: {
     chrome: "readonly",
     DEV_SERVER: "readonly",
