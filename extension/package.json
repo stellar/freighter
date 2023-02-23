@@ -37,7 +37,7 @@
     "@types/redux": "^3.6.0",
     "@types/testing-library__jest-dom": "^5.14.5",
     "@types/yup": "^0.29.2",
-    "bignumber.js": "^9.0.1",
+    "bignumber.js": "^9.1.1",
     "buffer": "^5.6.0",
     "concurrently": "^5.1.0",
     "copy-webpack-plugin": "^5.1.1",

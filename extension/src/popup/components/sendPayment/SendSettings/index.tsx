@@ -36,9 +36,13 @@ export const SendSettings = ({
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { destination, transactionFee, memo, allowedSlippage } = useSelector(
-    transactionDataSelector,
-  );
+  const {
+    destination,
+    transactionFee,
+    memo,
+    allowedSlippage,
+    isToken,
+  } = useSelector(transactionDataSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
@@ -78,49 +82,52 @@ export const SendSettings = ({
           {({ submitForm }) => (
             <Form>
               <FormRows>
-                <div className="SendSettings__row">
-                  <div className="SendSettings__row__left">
-                    <span
-                      className="SendSettings__row__title SendSettings__clickable"
+                {!isToken ? (
+                  <div className="SendSettings__row">
+                    <div className="SendSettings__row__left">
+                      <span
+                        className="SendSettings__row__title SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleTxFeeNav();
+                        }}
+                      >
+                        {t("Transaction fee")}
+                      </span>
+                      <DetailsTooltip
+                        tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
+                        details={
+                          <span>
+                            {t("Maximum network transaction fee to be paid")}{" "}
+                            <TextLink
+                              variant={TextLink.variant.secondary}
+                              href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              {t("Learn more")}
+                            </TextLink>
+                          </span>
+                        }
+                      >
+                        <span></span>
+                      </DetailsTooltip>
+                    </div>
+                    <div
+                      className="SendSettings__row__right SendSettings__clickable"
                       onClick={() => {
                         submitForm();
                         handleTxFeeNav();
                       }}
                     >
-                      {t("Transaction fee")}
-                    </span>
-                    <DetailsTooltip
-                      tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
-                      details={
-                        <span>
-                          {t("Maximum network transaction fee to be paid")}{" "}
-                          <TextLink
-                            variant={TextLink.variant.secondary}
-                            href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            {t("Learn more")}
-                          </TextLink>
-                        </span>
-                      }
-                    >
-                      <span></span>
-                    </DetailsTooltip>
-                  </div>
-                  <div
-                    className="SendSettings__row__right SendSettings__clickable"
-                    onClick={() => {
-                      submitForm();
-                      handleTxFeeNav();
-                    }}
-                  >
-                    <span>{transactionFee} XLM</span>
-                    <div>
-                      <Icon.ChevronRight />
+                      <span>{transactionFee} XLM</span>
+                      <div>
+                        <Icon.ChevronRight />
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : null}
+
                 {showSlippage && (
                   <div className="SendSettings__row">
                     <div className="SendSettings__row__left">
