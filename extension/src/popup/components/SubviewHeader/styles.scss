@@ -13,6 +13,12 @@
     text-align: center;
   }
 
+  &--subtitle {
+    flex-grow: 1;
+    font-size: var(--font-size-secondary);
+    text-align: center;
+  }
+
   &--spacer {
     width: var(--back--button-dimension);
   }

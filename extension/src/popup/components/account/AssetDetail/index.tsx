@@ -73,7 +73,7 @@ export const AssetDetail = ({
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
-  const isSorobanAsset = canonical.issuer && canonical.issuer.length > 12;
+  const isSorobanAsset = !!canonical.issuer && canonical.issuer.length > 12;
   const isOwnedScamAsset = useIsOwnedScamAsset(
     canonical.code,
     canonical.issuer,
@@ -129,6 +129,9 @@ export const AssetDetail = ({
           title={canonical.code}
           customBackAction={() => setSelectedAsset("")}
         />
+        {balance && "name" in balance && (
+          <span className="AssetDetail__token-name">{balance.name}</span>
+        )}
         {isNative ? (
           <div className="AssetDetail__available">
             <span className="AssetDetail__available__copy">
@@ -152,28 +155,38 @@ export const AssetDetail = ({
                 (balance && "token" in balance && balance?.token.type) || ""
               }
               assetDomain={assetDomain}
+              contractId={
+                balance && "contractId" in balance
+                  ? balance.contractId
+                  : undefined
+              }
             />
           </div>
         </div>
         <div className="AssetDetail__actions">
           {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
             <>
-              <PillButton
-                onClick={() => {
-                  dispatch(saveAsset(selectedAsset));
-                  navigateTo(ROUTES.sendPayment);
-                }}
-              >
-                {t("SEND")}
-              </PillButton>
-              <PillButton
-                onClick={() => {
-                  dispatch(saveAsset(selectedAsset));
-                  navigateTo(ROUTES.swap);
-                }}
-              >
-                {t("SWAP")}
-              </PillButton>
+              {/* Hide send until send work is ready */}
+              {!isSorobanAsset && (
+                <PillButton
+                  onClick={() => {
+                    dispatch(saveAsset(selectedAsset));
+                    navigateTo(ROUTES.sendPayment);
+                  }}
+                >
+                  {t("SEND")}
+                </PillButton>
+              )}
+              {!isSorobanAsset && (
+                <PillButton
+                  onClick={() => {
+                    dispatch(saveAsset(selectedAsset));
+                    navigateTo(ROUTES.swap);
+                  }}
+                >
+                  {t("SWAP")}
+                </PillButton>
+              )}
             </>
           ) : (
             <PillButton
