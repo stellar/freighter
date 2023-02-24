@@ -20,15 +20,18 @@ export const getTokenBalances = createAsyncThunk<
     const tokenIdList = await internalGetTokenIds();
 
     const params = [accountIdentifier(publicKey)];
+    const results = [] as TokenBalances;
 
-    const results = await Promise.all(
-      tokenIdList.map(async (tokenId) => {
-        /*
+    for (let i = 0; i < tokenIdList.length; i += 1) {
+      const tokenId = tokenIdList[i];
+      /*
           Right now, Soroban transactions only support 1 operation per tx
           so we need a builder per value from the contract,
           once multi-op transactions are supported this can send
           1 tx with an operation for each value.
         */
+      try {
+        // eslint-disable-next-line no-await-in-loop
         const { balance, ...rest } = await internalGetSorobanTokenBalance(
           sorobanClient.server,
           tokenId,
@@ -41,13 +44,16 @@ export const getTokenBalances = createAsyncThunk<
           params,
         );
         const total = new BigNumber(balance) as any; // ?? why can't the BigNumber type work here
-        return {
+
+        results.push({
           contractId: tokenId,
           total,
           ...rest,
-        };
-      }),
-    );
+        });
+      } catch (e) {
+        console.error(`Token "${tokenId}" missing data on RPC server`);
+      }
+    }
 
     return results;
   } catch (e) {
