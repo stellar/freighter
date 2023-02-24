@@ -40,7 +40,7 @@ export const getTokenBalances = createAsyncThunk<
           },
           params,
         );
-        const total = new BigNumber(balance);
+        const total = new BigNumber(balance) as any; // ?? why can't the BigNumebr type work here
         return {
           contractId: tokenId,
           total,

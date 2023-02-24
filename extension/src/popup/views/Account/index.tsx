@@ -7,7 +7,11 @@ import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { AccountBalancesInterface, ActionStatus } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  ActionStatus,
+  SorobanBalance,
+} from "@shared/api/types";
 
 import { Button } from "popup/basics/buttons/Button";
 import {
@@ -77,7 +81,7 @@ export const Account = () => {
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
   const [sortedBalances, setSortedBalances] = useState(
-    [] as Array<Types.AssetBalance | Types.NativeBalance>,
+    [] as Array<Types.AssetBalance | Types.NativeBalance | SorobanBalance>,
   );
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
@@ -151,12 +155,13 @@ export const Account = () => {
 
   return selectedAsset ? (
     <AssetDetail
-      accountBalances={accountBalances}
+      accountBalances={sortedBalances}
       assetOperations={assetOperations[selectedAsset]}
       networkDetails={networkDetails}
       publicKey={publicKey}
       selectedAsset={selectedAsset}
       setSelectedAsset={setSelectedAsset}
+      subentryCount={accountBalances.subentryCount}
     />
   ) : (
     <>
