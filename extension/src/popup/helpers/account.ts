@@ -1,7 +1,7 @@
 import StellarSdk, { Horizon } from "stellar-sdk";
-import { Types } from "@stellar/wallet-sdk";
 import { BigNumber } from "bignumber.js";
 import {
+  AssetType,
   Balances,
   HorizonOperation,
   TokenBalances,
@@ -51,7 +51,7 @@ export const getIsSwap = (operation: HorizonOperation) =>
 
 interface SortOperationsByAsset {
   operations: Array<HorizonOperation>;
-  balances: Array<Types.AssetBalance | Types.NativeBalance | SorobanBalance>;
+  balances: Array<AssetType>;
 }
 
 export interface AssetOperations {
@@ -116,9 +116,7 @@ export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
   }`;
 
 interface GetAvailableBalance {
-  accountBalances: Array<
-    Types.AssetBalance | Types.NativeBalance | SorobanBalance
-  >;
+  accountBalances: Array<AssetType>;
   selectedAsset: string;
   recommendedFee?: string;
   subentryCount: number;
@@ -158,9 +156,7 @@ export const getAvailableBalance = ({
 };
 
 export const getRawBalance = (
-  accountBalances: Array<
-    Types.AssetBalance | Types.NativeBalance | SorobanBalance
-  >,
+  accountBalances: Array<AssetType>,
   asset: string,
 ) =>
   accountBalances.find((balance) => {
@@ -183,9 +179,7 @@ export const getRawBalance = (
     throw new Error("Asset type not supported");
   });
 
-export const getIssuerFromBalance = (
-  balance: Types.AssetBalance | Types.NativeBalance | SorobanBalance,
-) => {
+export const getIssuerFromBalance = (balance: AssetType) => {
   if ("token" in balance && "issuer" in balance?.token) {
     return balance.token.issuer.key.toString();
   }

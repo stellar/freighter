@@ -119,6 +119,11 @@ export interface SorobanBalance {
   decimals: string;
 }
 
+export type AssetType =
+  | Types.AssetBalance
+  | Types.NativeBalance
+  | SorobanBalance;
+
 export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */

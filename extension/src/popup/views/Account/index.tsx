@@ -2,15 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Types } from "@stellar/wallet-sdk";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
 import {
+  AssetType,
   AccountBalancesInterface,
   ActionStatus,
-  SorobanBalance,
 } from "@shared/api/types";
 
 import { Button } from "popup/basics/buttons/Button";
@@ -80,9 +79,7 @@ export const Account = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState(
-    [] as Array<Types.AssetBalance | Types.NativeBalance | SorobanBalance>,
-  );
+  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 

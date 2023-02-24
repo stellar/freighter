@@ -3,11 +3,10 @@ import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon } from "@stellar/design-system";
-import { Types } from "@stellar/wallet-sdk";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
-import { SorobanBalance, HorizonOperation } from "@shared/api/types";
+import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
@@ -50,9 +49,7 @@ import "./styles.scss";
 
 interface AssetDetailProps {
   assetOperations: Array<HorizonOperation>;
-  accountBalances: Array<
-    Types.AssetBalance | Types.NativeBalance | SorobanBalance
-  >;
+  accountBalances: Array<AssetType>;
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
@@ -166,7 +163,7 @@ export const AssetDetail = ({
         <div className="AssetDetail__actions">
           {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
             <>
-              {/* Hide send until send work is ready */}
+              {/* Hide send until send work is ready for Soroban tokens */}
               {!isSorobanAsset && (
                 <PillButton
                   onClick={() => {
