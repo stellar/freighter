@@ -6,6 +6,13 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
 
+export enum ActionStatus {
+  IDLE = "IDLE",
+  PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
+  ERROR = "ERROR",
+}
+
 export interface Response {
   error: string;
   messagedId: number;
@@ -48,6 +55,8 @@ export interface Response {
   bipPath: string;
   blockedDomains: BlockedDomains;
   assetDomain: string;
+  tokenId: string;
+  tokenIdList: string[];
 }
 
 export interface BlockedDomains {
@@ -100,6 +109,16 @@ export interface AssetDomains {
 }
 
 export type Balances = Types.BalanceMap | null;
+
+export interface SorobanBalance {
+  contractId: string;
+  total: unknown; // BigNumber
+  name: string;
+  symbol: string;
+  decimals: string;
+}
+
+export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */
 export type HorizonOperation = any;

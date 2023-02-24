@@ -11,7 +11,10 @@ import {
   transactionSubmissionSelector,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -32,6 +35,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { assetIcons, assetSelect } = useSelector(
     transactionSubmissionSelector,
   );
+  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
@@ -107,7 +111,12 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         customBackIcon={!managingAssets ? <Icon.X /> : undefined}
       />
       <div className="ChooseAsset__wrapper">
-        <div className="ChooseAsset__assets" ref={ManageAssetRowsWrapperRef}>
+        <div
+          className={`ChooseAsset__assets${
+            managingAssets && isExperimentalModeEnabled ? "--short" : ""
+          }`}
+          ref={ManageAssetRowsWrapperRef}
+        >
           {managingAssets ? (
             <ManageAssetRows
               assetRows={assetRows}
@@ -125,12 +134,23 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           )}
         </div>
         {managingAssets && (
-          <div className="ChooseAsset__button">
-            <Link to={ROUTES.searchAsset}>
-              <Button fullWidth variant={Button.variant.tertiary}>
-                {t("Add another asset")}
-              </Button>
-            </Link>
+          <div className="ChooseAsset__button-container">
+            {isExperimentalModeEnabled ? (
+              <div className="ChooseAsset__button">
+                <Link to={ROUTES.addToken}>
+                  <Button fullWidth variant={Button.variant.tertiary}>
+                    {t("Add Soroban token")}
+                  </Button>
+                </Link>
+              </div>
+            ) : null}
+            <div className="ChooseAsset__button">
+              <Link to={ROUTES.searchAsset}>
+                <Button fullWidth variant={Button.variant.tertiary}>
+                  {t("Add another asset")}
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
       </div>
