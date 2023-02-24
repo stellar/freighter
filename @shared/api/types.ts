@@ -110,7 +110,8 @@ export interface AssetDomains {
 
 export type Balances = Types.BalanceMap | null;
 
-interface SorobanBalance {
+export interface SorobanBalance {
+  contractId: string;
   total: unknown; // BigNumber
   name: string;
   symbol: string;

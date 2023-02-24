@@ -1117,25 +1117,35 @@ export const popupMessageListener = (request: Request) => {
   const addTokenId = async () => {
     const { tokenId } = request;
     const tokenIdList = JSON.parse(
-      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
     );
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
 
-    if (tokenIdList.includes(tokenId)) {
+    const accountTokenIdList = tokenIdList[keyId] || [];
+
+    if (accountTokenIdList.includes(tokenId)) {
       return { error: "Token ID already exists" };
     }
 
-    tokenIdList.push(tokenId);
-    await dataStorageAccess.setItem(TOKEN_ID_LIST, JSON.stringify(tokenIdList));
+    accountTokenIdList.push(tokenId);
+    await dataStorageAccess.setItem(
+      TOKEN_ID_LIST,
+      JSON.stringify({
+        ...tokenIdList,
+        [keyId]: accountTokenIdList,
+      }),
+    );
 
-    return { tokenIdList };
+    return { accountTokenIdList };
   };
 
   const getTokenIds = async () => {
     const tokenIdList = JSON.parse(
-      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
     );
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
 
-    return { tokenIdList };
+    return { tokenIdList: tokenIdList[keyId] || [] };
   };
 
   const messageResponder: MessageResponder = {
