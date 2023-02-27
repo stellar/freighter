@@ -392,7 +392,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 allowedSlippage,
                 destinationAmount,
               ).toFixed()}{" "}
-              {sourceAsset.code}
+              {destAsset.code}
             </div>
           </div>
         )}
