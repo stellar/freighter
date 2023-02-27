@@ -60,11 +60,18 @@ export const getAssetFromCanonical = (canonical: string) => {
     return StellarSdk.Asset.native();
   }
   if (canonical.includes(":")) {
-    return new StellarSdk.Asset(
-      canonical.split(":")[0],
-      canonical.split(":")[1],
-    );
+    const [code, issuer] = canonical.split(":");
+
+    // Soroban issuer is a contractId, longer than classic issuer
+    if (issuer.length > 12) {
+      return {
+        code,
+        issuer,
+      };
+    }
+    return new StellarSdk.Asset(code, issuer);
   }
+
   throw new Error(`invalid asset canonical id: ${canonical}`);
 };
 
@@ -75,6 +82,7 @@ export const getCanonicalFromAsset = (
   if (assetCode === "XLM" && !assetIssuer) {
     return "native";
   }
+
   return `${assetCode}:${assetIssuer}`;
 };
 
