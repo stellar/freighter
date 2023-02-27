@@ -18,14 +18,13 @@ import {
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
 import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
-  ActionStatus,
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
@@ -393,7 +392,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 allowedSlippage,
                 destinationAmount,
               ).toFixed()}{" "}
-              {sourceAsset.code}
+              {destAsset.code}
             </div>
           </div>
         )}

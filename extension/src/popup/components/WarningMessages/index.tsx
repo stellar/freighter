@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import StellarSdk, { Account } from "stellar-sdk";
 
+import { ActionStatus } from "@shared/api/types";
+
 import { xlmToStroop } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
@@ -14,7 +16,6 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   startHwSign,
-  ActionStatus,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {

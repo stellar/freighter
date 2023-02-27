@@ -2,22 +2,27 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Types } from "@stellar/wallet-sdk";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { AccountBalancesInterface } from "@shared/api/types";
+import {
+  AssetType,
+  AccountBalancesInterface,
+  ActionStatus,
+} from "@shared/api/types";
 
 import { Button } from "popup/basics/buttons/Button";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import {
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import {
-  ActionStatus,
   getAccountBalances,
   getAssetIcons,
   getAssetDomains,
@@ -28,6 +33,11 @@ import {
   AssetSelectType,
   getBlockedDomains,
 } from "popup/ducks/transactionSubmission";
+import {
+  sorobanSelector,
+  getTokenBalances,
+  resetSorobanTokens,
+} from "popup/ducks/soroban";
 import { ROUTES } from "popup/constants/routes";
 import {
   AssetOperations,
@@ -41,6 +51,7 @@ import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
+import { SorobanContext } from "../../SorobanContext";
 
 import "popup/metrics/authServices";
 
@@ -57,22 +68,26 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
+  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
+
+  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
+
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState(
-    [] as Array<Types.AssetBalance | Types.NativeBalance>,
-  );
+  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
   const { balances, isFunded } = accountBalances;
+
+  const builder = React.useContext(SorobanContext);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -86,19 +101,33 @@ export const Account = () => {
     );
     dispatch(getBlockedDomains());
 
+    if (isExperimentalModeEnabled) {
+      dispatch(getTokenBalances({ sorobanClient: builder }));
+    }
+
     return () => {
       dispatch(resetAccountBalanceStatus());
+      if (isExperimentalModeEnabled) {
+        dispatch(resetSorobanTokens());
+      }
     };
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+  }, [
+    builder,
+    isExperimentalModeEnabled,
+    publicKey,
+    networkDetails,
+    isAccountFriendbotFunded,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!balances) return;
 
-    setSortedBalances(sortBalances(balances));
+    setSortedBalances(sortBalances(balances, sorobanBalances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch]);
+  }, [sorobanBalances, balances, networkDetails, dispatch]);
 
   useEffect(() => {
     const fetchAccountHistory = async () => {
@@ -123,12 +152,13 @@ export const Account = () => {
 
   return selectedAsset ? (
     <AssetDetail
-      accountBalances={accountBalances}
+      accountBalances={sortedBalances}
       assetOperations={assetOperations[selectedAsset]}
       networkDetails={networkDetails}
       publicKey={publicKey}
       selectedAsset={selectedAsset}
       setSelectedAsset={setSelectedAsset}
+      subentryCount={accountBalances.subentryCount}
     />
   ) : (
     <>

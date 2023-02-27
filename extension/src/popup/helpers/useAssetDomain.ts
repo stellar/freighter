@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { isSorobanIssuer } from "./account";
 
 interface UseAssetDomain {
   assetIssuer?: string;
@@ -27,7 +28,7 @@ export const useAssetDomain = ({ assetIssuer }: UseAssetDomain) => {
       setNetworkDomain(assetDomain || " ");
     };
 
-    if (assetIssuer) {
+    if (assetIssuer && !isSorobanIssuer(assetIssuer)) {
       fetchAssetDomain();
     }
   }, [assetIssuer, networkDetails]);
