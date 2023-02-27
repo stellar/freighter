@@ -7,7 +7,7 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import { displaySorobanId } from "popup/helpers/account";
+import { displaySorobanId, isSorobanIssuer } from "popup/helpers/account";
 
 import "./styles.scss";
 
@@ -48,7 +48,7 @@ export const AssetNetworkInfo = ({
       setNetworkIconUrl(iconUrl);
     };
 
-    if (assetIssuer) {
+    if (assetIssuer && !isSorobanIssuer(assetIssuer)) {
       fetchIconUrl();
     }
   }, [assetCode, assetIssuer, networkDetails]);

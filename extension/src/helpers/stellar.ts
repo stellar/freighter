@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
+import { isSorobanIssuer } from "popup/helpers/account";
 import { NETWORK_URLS, NetworkDetails } from "@shared/constants/stellar";
 
 import { parsedSearchParam, getUrlHostname } from "./urls";
@@ -62,8 +63,7 @@ export const getAssetFromCanonical = (canonical: string) => {
   if (canonical.includes(":")) {
     const [code, issuer] = canonical.split(":");
 
-    // Soroban issuer is a contractId, longer than classic issuer
-    if (issuer.length > 12) {
+    if (isSorobanIssuer(issuer)) {
       return {
         code,
         issuer,
