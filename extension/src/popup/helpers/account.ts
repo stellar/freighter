@@ -88,14 +88,14 @@ export const sortOperationsByAsset = ({
           (op.asset_code === assetCode && op.asset_issuer === assetIssuer) ||
           op.asset_type === assetCode
         ) {
-          assetOperationMap[asset].push(op);
+          assetOperationMap[assetKey].push(op);
         } else if ("source_asset_type" in op || "source_asset_code" in op) {
           if (
             op.source_asset_type === assetCode ||
             (op.source_asset_code === assetCode &&
               op.source_asset_issuer === assetIssuer)
           ) {
-            assetOperationMap[asset].push(op);
+            assetOperationMap[assetKey].push(op);
           }
         }
       });
@@ -225,3 +225,5 @@ export const displaySorobanId = (
     fullStr.substring(fullStr.length - backChars)
   );
 };
+
+export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");

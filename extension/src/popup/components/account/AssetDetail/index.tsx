@@ -163,7 +163,7 @@ export const AssetDetail = ({
         <div className="AssetDetail__actions">
           {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
             <>
-              {/* Hide send until send work is ready for Soroban tokens */}
+              {/* Hide send for Soroban until send work is ready for Soroban tokens */}
               {!isSorobanAsset && (
                 <PillButton
                   onClick={() => {
