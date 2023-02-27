@@ -189,7 +189,9 @@ export const AccountAssets = ({
           code = getLPShareCode(rb.reserves);
           amountUnit = "shares";
         } else if (rb.contractId) {
-          issuer = rb.contractId;
+          issuer = {
+            key: rb.contractId,
+          };
           code = rb.symbol;
           amountUnit = rb.symbol;
         } else {
@@ -197,8 +199,9 @@ export const AccountAssets = ({
           code = rb.token.code;
           amountUnit = rb.token.code;
         }
+
         const isLP = issuer === "lp";
-        const isSorobanToken = rb.contractId;
+        const isSorobanToken = !!rb.contractId;
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
         const assetDomain = assetDomains[canonicalAsset];
@@ -207,16 +210,12 @@ export const AccountAssets = ({
         return (
           <div
             className={`AccountAssets__asset ${
-              setSelectedAsset && !isLP && !isSorobanToken
+              setSelectedAsset && !isLP
                 ? "AccountAssets__asset--has-detail"
                 : ""
             }`}
             key={canonicalAsset}
-            onClick={
-              isLP || isSorobanToken
-                ? () => null
-                : () => handleClick(canonicalAsset)
-            }
+            onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
           >
             <div className="AccountAssets__copy-left">
               <AssetIcon

@@ -43,7 +43,7 @@ export const getTokenBalances = createAsyncThunk<
           },
           params,
         );
-        const total = new BigNumber(balance);
+        const total = new BigNumber(balance) as any; // ?? why can't the BigNumber type work here
 
         results.push({
           contractId: tokenId,
@@ -51,7 +51,6 @@ export const getTokenBalances = createAsyncThunk<
           ...rest,
         });
       } catch (e) {
-        console.error(e);
         console.error(`Token "${tokenId}" missing data on RPC server`);
       }
     }

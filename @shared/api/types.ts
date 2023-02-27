@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Horizon } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 
@@ -112,11 +113,16 @@ export type Balances = Types.BalanceMap | null;
 
 export interface SorobanBalance {
   contractId: string;
-  total: unknown; // BigNumber
+  total: BigNumber;
   name: string;
   symbol: string;
   decimals: string;
 }
+
+export type AssetType =
+  | Types.AssetBalance
+  | Types.NativeBalance
+  | SorobanBalance;
 
 export type TokenBalances = SorobanBalance[];
 
