@@ -52,8 +52,8 @@ export const SelectAssetRows = ({
     return "";
   };
 
-  const calculateTokenBalance = (code: string) =>
-    getTokenBalance(tokenBalances, code);
+  const calculateTokenBalance = (contractId: string) =>
+    getTokenBalance(tokenBalances, contractId);
 
   // hide balances for path pay dest asset
   const hideBalances =
@@ -70,32 +70,28 @@ export const SelectAssetRows = ({
       <div className="SelectAssetRows__content">
         {assetRows.map(({ code, domain, image, issuer, contractId, name }) => {
           const isScamAsset = !!blockedDomains.domains[domain];
+          const _issuer = contractId || issuer;
+          const canonical = getCanonicalFromAsset(code, _issuer);
 
           return (
             <div
               className="SelectAssetRows__row selectable"
-              key={getCanonicalFromAsset(code, issuer)}
+              key={canonical}
               onClick={() => {
                 if (assetSelect.isSource) {
-                  dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
+                  dispatch(saveAsset(canonical));
                   if (contractId) {
                     dispatch(saveIsToken(true));
                   }
                   history.goBack();
                 } else {
-                  dispatch(
-                    saveDestinationAsset(getCanonicalFromAsset(code, issuer)),
-                  );
+                  dispatch(saveDestinationAsset(canonical));
                   history.goBack();
                 }
               }}
             >
               <AssetIcon
-                assetIcons={
-                  code !== "XLM"
-                    ? { [getCanonicalFromAsset(code, issuer)]: image }
-                    : {}
-                }
+                assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
                 code={code}
                 issuerKey={issuer}
               />
@@ -111,10 +107,8 @@ export const SelectAssetRows = ({
               {!hideBalances && (
                 <div>
                   {contractId
-                    ? calculateTokenBalance(code)
-                    : getAccountBalance(
-                        getCanonicalFromAsset(code, issuer),
-                      )}{" "}
+                    ? calculateTokenBalance(contractId)
+                    : getAccountBalance(canonical)}{" "}
                   {code}
                 </div>
               )}
