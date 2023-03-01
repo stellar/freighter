@@ -1,3 +1,13 @@
+# Release notes - Wallets - Freighter-2.11.0
+
+### Story
+
+Show Soroban Token balance on Account screen
+
+Show Asset Details screen for Soroban Token
+
+Create UI for adding Soroban token by contract id
+
 # Release notes - Wallets - Freighter-2.10.0
 
 ### Story
