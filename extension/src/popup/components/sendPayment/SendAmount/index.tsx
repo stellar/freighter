@@ -144,7 +144,8 @@ export const SendAmount = ({
     (selectedAsset: string) => {
       let availBalance = "0";
       if (isToken) {
-        return getTokenBalance(tokenBalances, selectedAsset);
+        const contractId = selectedAsset.split(":")[1];
+        return getTokenBalance(tokenBalances, contractId);
       }
       if (accountBalances.balances) {
         if (selectedAsset === "native") {
@@ -235,9 +236,7 @@ export const SendAmount = ({
   });
 
   const showSourceAndDestAsset = !!formik.values.destinationAsset;
-  const parsedSourceAsset = isToken
-    ? { code: formik.values.asset, issuer: formik.values.asset }
-    : getAssetFromCanonical(formik.values.asset);
+  const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const parsedDestAsset = getAssetFromCanonical(
     formik.values.destinationAsset || "native",
   );

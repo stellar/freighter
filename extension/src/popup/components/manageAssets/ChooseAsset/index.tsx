@@ -95,8 +95,13 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
           if (isExperimentalModeEnabled && sorobanBalances.length) {
             sorobanBalances.forEach(({ symbol, contractId, name }) => {
+              // TODO:
+              // interestingly, if an ascii value is set for symbol
+              // it gets parsed and doesn't
+              // match the original value after this. How to escape this?
+              console.log(`${symbol}`);
               collection.push({
-                code: symbol,
+                code: `${symbol}`,
                 issuer: "",
                 image: "",
                 domain: "",

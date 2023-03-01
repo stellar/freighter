@@ -4,11 +4,12 @@ import { TokenBalances } from "@shared/api/types";
 
 export const getTokenBalance = (
   tokenBalances: TokenBalances,
-  symbol: string,
+  contractId: string,
 ) => {
-  const balance = tokenBalances.find(
-    ({ symbol: tokenSymbol }) => tokenSymbol === symbol,
-  );
+  console.log(tokenBalances, contractId);
+  const balance = tokenBalances.find(({ contractId: id }) => id === contractId);
+
+  console.log(balance);
 
   const total = (balance?.total as any) as BigNumber; // TODO
 
