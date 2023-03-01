@@ -29,7 +29,6 @@ import {
   submitFreighterTransaction,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import IconFail from "popup/assets/icon-fail.svg";
@@ -80,6 +79,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     },
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
+
   const { t } = useTranslation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
@@ -158,6 +158,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
 
   const suggestRemoveTrustline =
     accountBalances.balances &&
+    accountBalances.balances[asset] &&
     accountBalances.balances[asset].available.isZero();
 
   return (
