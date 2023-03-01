@@ -929,7 +929,7 @@ export const popupMessageListener = (request: Request) => {
     if (privateKey.length) {
       const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
       transaction2.sign(sourceKeys);
-      return { signedTransaction: transaction2 };
+      return { signedTransaction: transaction2.toXDR() };
     }
 
     return { error: "Session timed out" };
@@ -1164,14 +1164,6 @@ export const popupMessageListener = (request: Request) => {
     const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     return { tokenIdList: tokenIdList[keyId] || [] };
-  };
-
-  const getTokenIds = async () => {
-    const tokenIdList = JSON.parse(
-      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
-    );
-
-    return { tokenIdList };
   };
 
   const messageResponder: MessageResponder = {

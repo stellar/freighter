@@ -10,7 +10,7 @@ export const getTokenBalance = (
     ({ symbol: tokenSymbol }) => tokenSymbol === symbol,
   );
 
-  const total = balance?.total as BigNumber;
+  const total = (balance?.total as any) as BigNumber; // TODO
 
   return total.toString();
 };
