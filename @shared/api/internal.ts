@@ -573,7 +573,6 @@ export const submitFreighterSorobanTransaction = async ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
-  console.log("sub");
   let tx = {} as SorobanClient.Transaction | SorobanClient.FeeBumpTransaction;
 
   try {
@@ -884,14 +883,6 @@ export const getSorobanTokenBalance = (
       decoder: decodeScVal,
     },
   };
-
-  interface SorobanTokenRecord {
-    [key: string]: unknown;
-    balance: number;
-    name: string;
-    symbol: string;
-    decimals: string;
-  }
 
   const tokenBalanceInfo = Object.keys(txs).reduce(async (prev, curr) => {
     const _prev = await prev;
