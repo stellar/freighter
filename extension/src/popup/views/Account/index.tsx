@@ -68,7 +68,10 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
+  const {
+    tokenBalances: sorobanBalances,
+    getTokenBalancesStatus,
+  } = useSelector(sorobanSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -121,13 +124,24 @@ export const Account = () => {
   ]);
 
   useEffect(() => {
-    if (!balances) return;
+    const hasFetchedSorobanTokens =
+      isExperimentalModeEnabled &&
+      (getTokenBalancesStatus === ActionStatus.IDLE ||
+        getTokenBalancesStatus === ActionStatus.PENDING);
+    if (!balances || hasFetchedSorobanTokens) return;
 
     setSortedBalances(sortBalances(balances, sorobanBalances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [sorobanBalances, balances, networkDetails, dispatch]);
+  }, [
+    isExperimentalModeEnabled,
+    getTokenBalancesStatus,
+    sorobanBalances,
+    balances,
+    networkDetails,
+    dispatch,
+  ]);
 
   useEffect(() => {
     const fetchAccountHistory = async () => {
