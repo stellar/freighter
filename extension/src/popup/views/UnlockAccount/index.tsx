@@ -1,7 +1,7 @@
 import React from "react";
 import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useHistory } from "react-router-dom";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { Input, TextLink } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ import "./styles.scss";
 export const UnlockAccount = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const history = useHistory();
   const from = get(location, "state.from.pathname", "") as ROUTES;
   const queryParams = get(location, "search", "");
   const destination = from || ROUTES.account;
@@ -39,6 +40,8 @@ export const UnlockAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
     await dispatch(confirmPassword(password));
+    // skip this location in history stack in case next location tries to go back
+    history.replace(destination);
     navigateTo(destination, queryParams);
   };
 
