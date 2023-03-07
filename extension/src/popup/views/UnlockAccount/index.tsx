@@ -40,7 +40,7 @@ export const UnlockAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
     await dispatch(confirmPassword(password));
-    // skip this location in history stack in case next location tries to go back
+    // skip this location in history, we won't need to come back here after unlocking account
     history.replace(destination);
     navigateTo(destination, queryParams);
   };
