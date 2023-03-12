@@ -32,6 +32,7 @@ import {
   CACHED_BLOCKED_DOMAINS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
+  SEP24_DATA,
   TOKEN_ID_LIST,
 } from "constants/localStorageTypes";
 import {
@@ -61,8 +62,8 @@ import {
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
+  browserStorage,
   dataStorage,
-  migrateLocalStorageToBrowserStorage,
   dataStorageAccess,
 } from "background/helpers/dataStorage";
 
@@ -97,8 +98,8 @@ interface KeyPair {
 }
 
 export const popupMessageListener = (request: Request) => {
-  const localKeyStore = new KeyManagerPlugins.LocalStorageKeyStore();
-  localKeyStore.configure({ storage: localStorage });
+  const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
+  localKeyStore.configure({ storage: browserStorage });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
@@ -148,15 +149,12 @@ export const popupMessageListener = (request: Request) => {
 
     if (keyIdListArr.indexOf(keyId) === -1) {
       keyIdListArr.push(keyId);
-      await dataStorageAccess.setItem(
-        KEY_ID_LIST,
-        JSON.stringify(keyIdListArr),
-      );
+      await dataStorageAccess.setItem(KEY_ID_LIST, keyIdListArr);
       const hwData = {
         bipPath,
         publicKey,
       };
-      await dataStorageAccess.setItem(keyId, JSON.stringify(hwData));
+      await dataStorageAccess.setItem(keyId, hwData);
       await addAccountName({
         keyId,
         accountName,
@@ -240,7 +238,7 @@ export const popupMessageListener = (request: Request) => {
     const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
 
-    await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
+    await dataStorageAccess.setItem(KEY_ID_LIST, keyIdListArr);
     await dataStorageAccess.setItem(KEY_ID, keyStore.id);
     await addAccountName({
       keyId: keyStore.id,
@@ -481,10 +479,7 @@ export const popupMessageListener = (request: Request) => {
 
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
-    await dataStorageAccess.setItem(
-      NETWORKS_LIST_ID,
-      JSON.stringify(networksList),
-    );
+    await dataStorageAccess.setItem(NETWORKS_LIST_ID, networksList);
 
     return {
       networksList,
@@ -501,10 +496,7 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1);
 
-    await dataStorageAccess.setItem(
-      NETWORKS_LIST_ID,
-      JSON.stringify(savedNetworks),
-    );
+    await dataStorageAccess.setItem(NETWORKS_LIST_ID, savedNetworks);
 
     return {
       networksList: savedNetworks,
@@ -515,10 +507,8 @@ export const popupMessageListener = (request: Request) => {
     const { networkDetails, networkIndex } = request;
 
     const savedNetworks = await getSavedNetworks();
-    const activeNetworkDetails = JSON.parse(
-      (await dataStorageAccess.getItem(NETWORK_ID)) ||
-        JSON.stringify(MAINNET_NETWORK_DETAILS),
-    );
+    const activeNetworkDetails =
+      (await dataStorageAccess.getItem(NETWORK_ID)) || MAINNET_NETWORK_DETAILS;
     const activeIndex =
       savedNetworks.findIndex(
         ({ networkName: savedNetworkName }) =>
@@ -527,17 +517,11 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
 
-    await dataStorageAccess.setItem(
-      NETWORKS_LIST_ID,
-      JSON.stringify(savedNetworks),
-    );
+    await dataStorageAccess.setItem(NETWORKS_LIST_ID, savedNetworks);
 
     if (activeIndex === networkIndex) {
       // editing active network, so we need to update this in storage
-      await dataStorageAccess.setItem(
-        NETWORK_ID,
-        JSON.stringify(savedNetworks[activeIndex]),
-      );
+      await dataStorageAccess.setItem(NETWORK_ID, savedNetworks[activeIndex]);
     }
 
     return {
@@ -555,7 +539,7 @@ export const popupMessageListener = (request: Request) => {
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
-    await dataStorageAccess.setItem(NETWORK_ID, JSON.stringify(networkDetails));
+    await dataStorageAccess.setItem(NETWORK_ID, networkDetails);
 
     return { networkDetails };
   };
@@ -750,7 +734,7 @@ export const popupMessageListener = (request: Request) => {
       const keyId = await dataStorageAccess.getItem(KEY_ID);
       if (keyId) {
         keyIdList.push(keyId);
-        await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
+        await dataStorageAccess.setItem(KEY_ID_LIST, keyIdList);
         await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
         await addAccountName({ keyId, accountName: "Account 1" });
       }
@@ -919,24 +903,21 @@ export const popupMessageListener = (request: Request) => {
 
   const addRecentAddress = async () => {
     const { publicKey } = request;
-    const storedJSON =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
-    const recentAddresses = JSON.parse(storedJSON);
+    const storedData =
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || [];
+    const recentAddresses = storedData;
     if (recentAddresses.indexOf(publicKey) === -1) {
       recentAddresses.push(publicKey);
     }
-    await dataStorageAccess.setItem(
-      RECENT_ADDRESSES,
-      JSON.stringify(recentAddresses),
-    );
+    await dataStorageAccess.setItem(RECENT_ADDRESSES, recentAddresses);
 
     return { recentAddresses };
   };
 
   const loadRecentAddresses = async () => {
-    const storedJSON =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
-    const recentAddresses = JSON.parse(storedJSON);
+    const storedData =
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || [];
+    const recentAddresses = storedData;
     return { recentAddresses };
   };
 
@@ -960,21 +941,18 @@ export const popupMessageListener = (request: Request) => {
 
     const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
-    await dataStorageAccess.setItem(
-      DATA_SHARING_ID,
-      JSON.stringify(isDataSharingAllowed),
-    );
+    await dataStorageAccess.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await dataStorageAccess.setItem(
       IS_VALIDATING_MEMO_ID,
-      JSON.stringify(isMemoValidationEnabled),
+      isMemoValidationEnabled,
     );
     await dataStorageAccess.setItem(
       IS_VALIDATING_SAFETY_ID,
-      JSON.stringify(isSafetyValidationEnabled),
+      isSafetyValidationEnabled,
     );
     await dataStorageAccess.setItem(
       IS_VALIDATING_SAFE_ASSETS_ID,
-      JSON.stringify(isValidatingSafeAssetsEnabled),
+      isValidatingSafeAssetsEnabled,
     );
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
@@ -988,19 +966,13 @@ export const popupMessageListener = (request: Request) => {
 
       currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
-      await dataStorageAccess.setItem(
-        NETWORKS_LIST_ID,
-        JSON.stringify(currentNetworksList),
-      );
-      await dataStorageAccess.setItem(
-        NETWORK_ID,
-        JSON.stringify(defaultNetworkDetails),
-      );
+      await dataStorageAccess.setItem(NETWORKS_LIST_ID, currentNetworksList);
+      await dataStorageAccess.setItem(NETWORK_ID, defaultNetworkDetails);
     }
 
     await dataStorageAccess.setItem(
       IS_EXPERIMENTAL_MODE_ID,
-      JSON.stringify(isExperimentalModeEnabled),
+      isExperimentalModeEnabled,
     );
 
     return {
@@ -1015,13 +987,8 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const loadSettings = async () => {
-    await migrateLocalStorageToBrowserStorage();
-
-    const {
-      [DATA_SHARING_ID]: isDataSharingAllowed,
-    } = await await dataStorage.getItem({
-      [DATA_SHARING_ID]: true,
-    });
+    const isDataSharingAllowed =
+      (await dataStorage.getItem(DATA_SHARING_ID)) || true;
 
     return {
       isDataSharingAllowed,
@@ -1037,9 +1004,8 @@ export const popupMessageListener = (request: Request) => {
   const getCachedAssetIcon = async () => {
     const { assetCanonical } = request;
 
-    const assetIconCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
-    );
+    const assetIconCache =
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || {};
 
     return {
       iconUrl: assetIconCache[assetCanonical] || "",
@@ -1049,22 +1015,17 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetIcon = async () => {
     const { assetCanonical, iconUrl } = request;
 
-    const assetIconCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
-    );
+    const assetIconCache =
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || {};
     assetIconCache[assetCanonical] = iconUrl;
-    await dataStorageAccess.setItem(
-      CACHED_ASSET_ICONS_ID,
-      JSON.stringify(assetIconCache),
-    );
+    await dataStorageAccess.setItem(CACHED_ASSET_ICONS_ID, assetIconCache);
   };
 
   const getCachedAssetDomain = async () => {
     const { assetCanonical } = request;
 
-    const assetDomainCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
-    );
+    const assetDomainCache =
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
 
     return {
       iconUrl: assetDomainCache[assetCanonical] || "",
@@ -1074,14 +1035,10 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetDomain = async () => {
     const { assetCanonical, assetDomain } = request;
 
-    const assetDomainCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
-    );
+    const assetDomainCache =
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
     assetDomainCache[assetCanonical] = assetDomain;
-    await dataStorageAccess.setItem(
-      CACHED_ASSET_DOMAINS_ID,
-      JSON.stringify(assetDomainCache),
-    );
+    await dataStorageAccess.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
 
   const getBlockedDomains = async () => {
@@ -1112,6 +1069,58 @@ export const popupMessageListener = (request: Request) => {
     await dataStorageAccess.clear();
     store.dispatch(reset());
     return {};
+  };
+
+  const storeSep24Data = async () => {
+    const {
+      publicKey,
+      txId,
+      sep10Url,
+      sep24Url,
+      status,
+      anchorDomain,
+      asset,
+    } = request.sep24Data;
+
+    await dataStorageAccess.setItem(
+      `${SEP24_DATA}:${publicKey}`,
+      JSON.stringify({
+        publicKey,
+        txId,
+        sep10Url,
+        sep24Url,
+        status,
+        anchorDomain,
+        asset,
+      }),
+    );
+  };
+
+  const loadSep24Data = async () => {
+    const publicKey = publicKeySelector(store.getState());
+
+    const res = JSON.parse(
+      (await dataStorageAccess.getItem(`${SEP24_DATA}:${publicKey}`)) || "{}",
+    );
+    return { sep24Data: res };
+  };
+
+  const storeSep24Status = async () => {
+    const { status } = request;
+    const publicKey = publicKeySelector(store.getState());
+    const res = JSON.parse(
+      (await dataStorageAccess.getItem(`${SEP24_DATA}:${publicKey}`)) || "{}",
+    );
+
+    await dataStorageAccess.setItem(
+      `${SEP24_DATA}:${publicKey}`,
+      JSON.stringify({ ...res, status }),
+    );
+  };
+
+  const clearSep24Data = () => {
+    const publicKey = publicKeySelector(store.getState());
+    dataStorageAccess.removeItem(`${SEP24_DATA}:${publicKey}`);
   };
 
   const addTokenId = async () => {
@@ -1183,6 +1192,10 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
     [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
+    [SERVICE_TYPES.STORE_SEP24_DATA]: storeSep24Data,
+    [SERVICE_TYPES.LOAD_SEP24_DATA]: loadSep24Data,
+    [SERVICE_TYPES.STORE_SEP24_STATUS]: storeSep24Status,
+    [SERVICE_TYPES.CLEAR_SEP24_DATA]: clearSep24Data,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
   };

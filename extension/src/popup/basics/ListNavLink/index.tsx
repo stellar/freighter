@@ -23,7 +23,9 @@ export const ListNavLink = ({
     <div className="ListNavLink">
       {Object.values(ROUTES).includes(href as ROUTES) ? (
         <Link to={fullHref}>
-          {children} <Icon.ChevronRight className="ListNavLink__icon" />
+          <>
+            {children} <Icon.ChevronRight className="ListNavLink__icon" />
+          </>
         </Link>
       ) : (
         <a rel="noreferrer" target="_blank" href={fullHref}>

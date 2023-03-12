@@ -39,6 +39,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveAsset,
   saveDestinationAsset,
+  saveBuyAsset,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
@@ -195,6 +196,14 @@ export const AssetDetail = ({
               {t("SWAP")}
             </PillButton>
           )}
+          <PillButton
+            onClick={() => {
+              dispatch(saveBuyAsset(selectedAsset));
+              navigateTo(ROUTES.buyAsset);
+            }}
+          >
+            {t("BUY")}
+          </PillButton>
         </div>
         <SimpleBar>
           <div className="AssetDetail__scam-warning">

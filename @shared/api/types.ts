@@ -56,6 +56,8 @@ export interface Response {
   bipPath: string;
   blockedDomains: BlockedDomains;
   assetDomain: string;
+  status: string;
+  sep24Data: Sep24Data;
   tokenId: string;
   tokenIdList: string[];
 }
@@ -138,6 +140,16 @@ export interface AccountBalancesInterface {
 
 export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];
+}
+
+export interface Sep24Data {
+  sep10Url: string;
+  sep24Url: string;
+  publicKey: string;
+  txId: string;
+  status: string;
+  anchorDomain: string;
+  asset: string;
 }
 
 export interface ErrorMessage {

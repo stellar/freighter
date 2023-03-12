@@ -49,4 +49,6 @@ export enum ROUTES {
   addNetwork = "/manage-network/add-network",
   editNetwork = "/manage-network/edit-network",
   networkSettings = "/manage-network/network-settings",
+  buyAsset = "/buy",
+  buyMoneyGram = "/buy/moneygram",
 }
