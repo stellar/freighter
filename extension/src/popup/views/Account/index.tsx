@@ -2,17 +2,23 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Types } from "@stellar/wallet-sdk";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { AccountBalancesInterface } from "@shared/api/types";
+import {
+  AssetType,
+  AccountBalancesInterface,
+  ActionStatus,
+} from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 import { Sep24Status } from "popup/constants/sep24";
 import { Button } from "popup/basics/buttons/Button";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import {
   accountNameSelector,
   allAccountsSelector,
@@ -20,12 +26,12 @@ import {
   hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import {
-  ActionStatus,
   getAccountBalances,
   getAssetIcons,
   getAssetDomains,
   transactionSubmissionSelector,
   resetSubmission,
+  resetAccountBalanceStatus,
   saveAssetSelectType,
   AssetSelectType,
   getBlockedDomains,
@@ -33,6 +39,11 @@ import {
   signFreighterTransaction,
   setSubmitStatus,
 } from "popup/ducks/transactionSubmission";
+import {
+  sorobanSelector,
+  getTokenBalances,
+  resetSorobanTokens,
+} from "popup/ducks/soroban";
 import { ROUTES } from "popup/constants/routes";
 import {
   AssetOperations,
@@ -52,6 +63,7 @@ import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
+import { SorobanContext } from "../../SorobanContext";
 
 import "popup/metrics/authServices";
 
@@ -79,17 +91,18 @@ export const Account = () => {
       asset: sep24Asset,
     },
   } = useSelector(transactionSubmissionSelector);
-
+  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
+
+  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
+
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState(
-    [] as Array<Types.AssetBalance | Types.NativeBalance>,
-  );
+  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
   const [sep24Todo, setSep24Todo] = useState("");
@@ -100,6 +113,8 @@ export const Account = () => {
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
   const { balances, isFunded } = accountBalances;
+
+  const builder = React.useContext(SorobanContext);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -113,16 +128,34 @@ export const Account = () => {
     );
     dispatch(getBlockedDomains());
     dispatch(loadSep24Data());
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+
+    if (isExperimentalModeEnabled) {
+      dispatch(getTokenBalances({ sorobanClient: builder }));
+    }
+
+    return () => {
+      dispatch(resetAccountBalanceStatus());
+      if (isExperimentalModeEnabled) {
+        dispatch(resetSorobanTokens());
+      }
+    };
+  }, [
+    builder,
+    isExperimentalModeEnabled,
+    publicKey,
+    networkDetails,
+    isAccountFriendbotFunded,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!balances) return;
 
-    setSortedBalances(sortBalances(balances));
+    setSortedBalances(sortBalances(balances, sorobanBalances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch]);
+  }, [sorobanBalances, balances, networkDetails, dispatch]);
 
   useEffect(() => {
     const fetchAccountHistory = async () => {
@@ -201,101 +234,103 @@ export const Account = () => {
     hwSignedXDR,
   ]);
 
-  if (accountBalanceStatus === ActionStatus.PENDING) {
-    // waiting for account balances to load
-    return null;
-  }
+  const isLoading =
+    accountBalanceStatus === ActionStatus.PENDING ||
+    accountBalanceStatus === ActionStatus.IDLE;
 
   return selectedAsset ? (
     <AssetDetail
-      accountBalances={accountBalances}
+      accountBalances={sortedBalances}
       assetOperations={assetOperations[selectedAsset]}
       networkDetails={networkDetails}
       publicKey={publicKey}
       selectedAsset={selectedAsset}
       setSelectedAsset={setSelectedAsset}
+      subentryCount={accountBalances.subentryCount}
     />
   ) : (
     <>
-      <div className="AccountView">
-        <AccountHeader
-          accountDropDownRef={accountDropDownRef}
-          allAccounts={allAccounts}
-          currentAccountName={currentAccountName}
-          publicKey={publicKey}
-        />
-        <div className="AccountView__account-actions">
-          <div className="AccountView__name-key-display">
-            <div className="AccountView__account-name">
-              {currentAccountName}
-            </div>
-            <CopyText
-              textToCopy={publicKey}
-              showTooltip
-              tooltipPosition={CopyText.tooltipPosition.RIGHT}
-            >
-              <div className="AccountView__account-num">
-                {truncatedPublicKey(publicKey)}
-                <Icon.Copy />
-              </div>
-            </CopyText>
-          </div>
-          <div className="AccountView__send-receive-display">
-            <div className="AccountView__send-receive-button">
-              <NavButton
-                showBorder
-                title={t("View public key")}
-                id="nav-btn-qr"
-                icon={<Icon.QrCode />}
-                onClick={() => navigateTo(ROUTES.viewPublicKey)}
-              />
-            </div>
-            <div className="AccountView__send-receive-button">
-              <NavButton
-                showBorder
-                title={t("Send Payment")}
-                id="nav-btn-send"
-                icon={<Icon.Send />}
-                onClick={() => navigateTo(ROUTES.sendPayment)}
-              />
-            </div>
-          </div>
-        </div>
-        {isFunded ? (
-          <SimpleBar className="AccountView__assets-wrapper">
-            <AccountAssets
-              sortedBalances={sortedBalances}
-              assetIcons={assetIcons}
-              setSelectedAsset={setSelectedAsset}
-            />
-            {sep24Todo && (
-              <Sep24Todo
-                todo={sep24Todo}
-                asset={sep24Asset}
-                token={sep10Token}
-              />
-            )}
-          </SimpleBar>
-        ) : (
-          <NotFundedMessage
-            isTestnet={isTestnet(networkDetails)}
-            setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+      {isLoading ? null : (
+        <div className="AccountView">
+          <AccountHeader
+            accountDropDownRef={accountDropDownRef}
+            allAccounts={allAccounts}
+            currentAccountName={currentAccountName}
             publicKey={publicKey}
           />
-        )}
-        {isFunded ? (
-          <Button
-            fullWidth
-            variant={Button.variant.tertiary}
-            onClick={() => {
-              dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-              navigateTo(ROUTES.manageAssets);
-            }}
-          >
-            {t("Manage Assets")}
-          </Button>
-        ) : null}
-      </div>
+          <div className="AccountView__account-actions">
+            <div className="AccountView__name-key-display">
+              <div className="AccountView__account-name">
+                {currentAccountName}
+              </div>
+              <CopyText
+                textToCopy={publicKey}
+                showTooltip
+                tooltipPosition={CopyText.tooltipPosition.RIGHT}
+              >
+                <div className="AccountView__account-num">
+                  {truncatedPublicKey(publicKey)}
+                  <Icon.Copy />
+                </div>
+              </CopyText>
+            </div>
+            <div className="AccountView__send-receive-display">
+              <div className="AccountView__send-receive-button">
+                <NavButton
+                  showBorder
+                  title={t("View public key")}
+                  id="nav-btn-qr"
+                  icon={<Icon.QrCode />}
+                  onClick={() => navigateTo(ROUTES.viewPublicKey)}
+                />
+              </div>
+              <div className="AccountView__send-receive-button">
+                <NavButton
+                  showBorder
+                  title={t("Send Payment")}
+                  id="nav-btn-send"
+                  icon={<Icon.Send />}
+                  onClick={() => navigateTo(ROUTES.sendPayment)}
+                />
+              </div>
+            </div>
+          </div>
+          {isFunded ? (
+            <SimpleBar className="AccountView__assets-wrapper">
+              <AccountAssets
+                sortedBalances={sortedBalances}
+                assetIcons={assetIcons}
+                setSelectedAsset={setSelectedAsset}
+              />
+              {sep24Todo && (
+                <Sep24Todo
+                  todo={sep24Todo}
+                  asset={sep24Asset}
+                  token={sep10Token}
+                />
+              )}
+            </SimpleBar>
+          ) : (
+            <NotFundedMessage
+              isTestnet={isTestnet(networkDetails)}
+              setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+              publicKey={publicKey}
+            />
+          )}
+          {isFunded ? (
+            <Button
+              fullWidth
+              variant={Button.variant.tertiary}
+              onClick={() => {
+                dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                navigateTo(ROUTES.manageAssets);
+              }}
+            >
+              {t("Manage Assets")}
+            </Button>
+          ) : null}
+        </div>
+      )}
       <BottomNav />
     </>
   );

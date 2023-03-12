@@ -15,7 +15,7 @@ jobs:
       - name: Build extension
         uses: actions/setup-node@v1
         with:
-          node-version: "12"
+          node-version: "16.14.0"
       - run: yarn install && yarn build:extension-preview
       - name: Zip extension build
         uses: montudor/action-zip@v0.1.0

@@ -49,6 +49,7 @@ const routeToEventName = {
   [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
   [ROUTES.searchAsset]: METRIC_NAMES.viewSearchAsset,
   [ROUTES.trustlineError]: METRIC_NAMES.viewTrustlineError,
+  [ROUTES.addToken]: METRIC_NAMES.viewAddToken,
   [ROUTES.swap]: METRIC_NAMES.viewSwap,
   [ROUTES.swapAmount]: METRIC_NAMES.swapAmount,
   [ROUTES.swapSettings]: METRIC_NAMES.swapSettings,

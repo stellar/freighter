@@ -6,13 +6,15 @@ import { IconButton, Icon } from "@stellar/design-system";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 
-import { AccountBalancesInterface, HorizonOperation } from "@shared/api/types";
+import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
   getIsSwap,
   getStellarExpertUrl,
+  getRawBalance,
+  getIssuerFromBalance,
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
@@ -48,10 +50,11 @@ import "./styles.scss";
 
 interface AssetDetailProps {
   assetOperations: Array<HorizonOperation>;
-  accountBalances: AccountBalancesInterface;
+  accountBalances: Array<AssetType>;
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
+  subentryCount: number;
   setSelectedAsset: (selectedAsset: string) => void;
 }
 
@@ -62,33 +65,29 @@ export const AssetDetail = ({
   publicKey,
   selectedAsset,
   setSelectedAsset,
+  subentryCount,
 }: AssetDetailProps) => {
   const dispatch: AppDispatch = useDispatch();
   const isNative = selectedAsset === "native";
-  const assetCode = getAssetFromCanonical(selectedAsset).code;
+
+  const canonical = getAssetFromCanonical(selectedAsset);
+  const isSorobanAsset = !!canonical.issuer && canonical.issuer.length > 12;
   const isOwnedScamAsset = useIsOwnedScamAsset(
-    assetCode,
-    getAssetFromCanonical(selectedAsset).issuer,
+    canonical.code,
+    canonical.issuer,
   );
 
-  const balanceKey = Object.keys(accountBalances?.balances || {}).find((k) =>
-    k.includes(selectedAsset),
-  );
-  const balance =
-    accountBalances?.balances && balanceKey
-      ? accountBalances.balances[balanceKey]
-      : null;
-  const assetIssuer =
-    balance && "issuer" in balance?.token
-      ? balance.token.issuer.key.toString()
-      : "";
-  const balanceTotal = balance?.total
-    ? `${new BigNumber(balance?.total).toString()} ${assetCode}`
-    : `0 ${assetCode}`;
+  const balance = getRawBalance(accountBalances, selectedAsset) || null;
+  const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
+  const balanceTotal =
+    balance && balance?.total
+      ? `${new BigNumber(balance?.total).toString()} ${canonical.code}`
+      : `0 ${canonical.code}`;
 
   const balanceAvailable = getAvailableBalance({
     accountBalances,
     selectedAsset,
+    subentryCount,
   });
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
@@ -110,11 +109,11 @@ export const AssetDetail = ({
     assetIssuer,
   });
 
-  if (!assetOperations) {
+  if (!assetOperations && !isSorobanAsset) {
     return null;
   }
 
-  if (assetIssuer && !assetDomain) {
+  if (assetIssuer && !assetDomain && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return null;
   }
@@ -125,13 +124,16 @@ export const AssetDetail = ({
     <div className="AssetDetail">
       <div className="AssetDetail__wrapper">
         <SubviewHeader
-          title={assetCode}
+          title={canonical.code}
           customBackAction={() => setSelectedAsset("")}
         />
+        {balance && "name" in balance && (
+          <span className="AssetDetail__token-name">{balance.name}</span>
+        )}
         {isNative ? (
           <div className="AssetDetail__available">
             <span className="AssetDetail__available__copy">
-              {balanceAvailable} {assetCode} {t("available")}
+              {balanceAvailable} {canonical.code} {t("available")}
             </span>
             <span
               className="AssetDetail__available__icon"
@@ -145,32 +147,44 @@ export const AssetDetail = ({
           <div className="AssetDetail__total__copy">{balanceTotal}</div>
           <div className="AssetDetail__total__network">
             <AssetNetworkInfo
-              assetCode={assetCode}
+              assetCode={canonical.code}
               assetIssuer={assetIssuer}
-              assetType={balance?.token.type || ""}
+              assetType={
+                (balance && "token" in balance && balance?.token.type) || ""
+              }
               assetDomain={assetDomain}
+              contractId={
+                balance && "contractId" in balance
+                  ? balance.contractId
+                  : undefined
+              }
             />
           </div>
         </div>
         <div className="AssetDetail__actions">
           {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
             <>
-              <PillButton
-                onClick={() => {
-                  dispatch(saveAsset(selectedAsset));
-                  navigateTo(ROUTES.sendPayment);
-                }}
-              >
-                {t("SEND")}
-              </PillButton>
-              <PillButton
-                onClick={() => {
-                  dispatch(saveAsset(selectedAsset));
-                  navigateTo(ROUTES.swap);
-                }}
-              >
-                {t("SWAP")}
-              </PillButton>
+              {/* Hide send for Soroban until send work is ready for Soroban tokens */}
+              {!isSorobanAsset && (
+                <PillButton
+                  onClick={() => {
+                    dispatch(saveAsset(selectedAsset));
+                    navigateTo(ROUTES.sendPayment);
+                  }}
+                >
+                  {t("SEND")}
+                </PillButton>
+              )}
+              {!isSorobanAsset && (
+                <PillButton
+                  onClick={() => {
+                    dispatch(saveAsset(selectedAsset));
+                    navigateTo(ROUTES.swap);
+                  }}
+                >
+                  {t("SWAP")}
+                </PillButton>
+              )}
             </>
           ) : (
             <PillButton
@@ -245,7 +259,7 @@ export const AssetDetail = ({
             <div className="AssetDetail__info-modal__total-box">
               <div className="AssetDetail__info-modal__asset-code">
                 <img src={StellarLogo} alt="Network icon" />{" "}
-                <div>{assetCode}</div>
+                <div>{canonical.code}</div>
               </div>
               <div>{balanceTotal}</div>
             </div>
@@ -256,19 +270,22 @@ export const AssetDetail = ({
               </div>
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Reserved Balance*")}</div>
-                {balance?.available && balance?.total ? (
+                {balance &&
+                "available" in balance &&
+                balance?.available &&
+                balance?.total ? (
                   <div>
                     {new BigNumber(balanceAvailable)
                       .minus(new BigNumber(balance?.total))
                       .toString()}{" "}
-                    {assetCode}
+                    {canonical.code}
                   </div>
                 ) : null}
               </div>
               <div className="AssetDetail__info-modal__total-available-row">
                 <div>{t("Total Available")}</div>
                 <div>
-                  {balanceAvailable} {assetCode}
+                  {balanceAvailable} {canonical.code}
                 </div>
               </div>
             </div>

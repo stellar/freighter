@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Horizon } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
 
@@ -5,6 +6,13 @@ import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
+
+export enum ActionStatus {
+  IDLE = "IDLE",
+  PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
+  ERROR = "ERROR",
+}
 
 export interface Response {
   error: string;
@@ -50,6 +58,8 @@ export interface Response {
   assetDomain: string;
   status: string;
   sep24Data: Sep24Data;
+  tokenId: string;
+  tokenIdList: string[];
 }
 
 export interface BlockedDomains {
@@ -102,6 +112,21 @@ export interface AssetDomains {
 }
 
 export type Balances = Types.BalanceMap | null;
+
+export interface SorobanBalance {
+  contractId: string;
+  total: BigNumber;
+  name: string;
+  symbol: string;
+  decimals: string;
+}
+
+export type AssetType =
+  | Types.AssetBalance
+  | Types.NativeBalance
+  | SorobanBalance;
+
+export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */
 export type HorizonOperation = any;

@@ -67,6 +67,8 @@ import { MoneyGram } from "popup/views/BuyAsset/MoneyGram";
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 
+import { SorobanProvider } from "./SorobanContext";
+
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
@@ -101,7 +103,11 @@ export const PublicKeyRoute = (props: RouteProps) => {
       />
     );
   }
-  return <Route {...props} />;
+  return (
+    <SorobanProvider pubKey={publicKey}>
+      <Route {...props} />
+    </SorobanProvider>
+  );
 };
 
 export const PrivateKeyRoute = (props: RouteProps) => {

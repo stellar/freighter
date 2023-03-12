@@ -57,6 +57,7 @@ export const METRIC_NAMES = {
   viewAddAsset: "loaded screen: add asset",
   viewSearchAsset: "loaded screen: search asset",
   viewTrustlineError: "loaded screen: trustline error",
+  viewAddToken: "loaded screen: add token",
 
   viewManageNetwork: "loaded screen: manage network",
   viewAddNetwork: "loaded screen: add network",
@@ -64,6 +65,7 @@ export const METRIC_NAMES = {
   viewNetworkSettings: "loaded screen: network settings",
 
   manageAssetAddAsset: "manage asset: add asset",
+  manageAssetAddToken: "manage asset: add token",
   manageAssetAddUnsafeAsset: "manage asset: add unsafe asset",
   manageAssetRemoveAsset: "manage asset: remove asset",
   manageAssetError: "manage asset: error",

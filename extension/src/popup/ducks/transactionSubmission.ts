@@ -25,6 +25,7 @@ import {
   BlockedDomains,
   AccountType,
   Sep24Data,
+  ActionStatus,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -53,14 +54,32 @@ export const signFreighterTransaction = createAsyncThunk<
 
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
-  { signedXDR: string; networkDetails: NetworkDetails },
+  {
+    publicKey: string;
+    signedXDR: string;
+    networkDetails: NetworkDetails;
+    refreshBalances?: boolean;
+  },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterTransaction",
-  async ({ signedXDR, networkDetails }, thunkApi) => {
+  async (
+    { publicKey, signedXDR, networkDetails, refreshBalances = false },
+    thunkApi,
+  ) => {
     try {
+      if (refreshBalances) {
+        const txRes = await internalSubmitFreighterTransaction({
+          signedXDR,
+          networkDetails,
+        });
+
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
+
+        return txRes;
+      }
       return await internalSubmitFreighterTransaction({
         signedXDR,
         networkDetails,
@@ -323,13 +342,6 @@ export enum ShowOverlayStatus {
   IN_PROGRESS = "IN_PROGRESS",
 }
 
-export enum ActionStatus {
-  IDLE = "IDLE",
-  PENDING = "PENDING",
-  SUCCESS = "SUCCESS",
-  ERROR = "ERROR",
-}
-
 interface TransactionData {
   amount: string;
   asset: string;
@@ -437,6 +449,9 @@ const transactionSubmissionSlice = createSlice({
   initialState,
   reducers: {
     resetSubmission: () => initialState,
+    resetAccountBalanceStatus: (state) => {
+      state.accountBalanceStatus = initialState.accountBalanceStatus;
+    },
     resetDestinationAmount: (state) => {
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
@@ -583,6 +598,7 @@ const transactionSubmissionSlice = createSlice({
 
 export const {
   resetSubmission,
+  resetAccountBalanceStatus,
   resetDestinationAmount,
   saveDestination,
   saveFederationAddress,

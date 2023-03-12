@@ -1,6 +1,9 @@
 {
   "license": "Apache-2.0",
   "private": true,
+  "engines": {
+    "node": ">=16.14.0 <17.0.0"
+  },
   "workspaces": [
     "@shared/api",
     "@shared/constants",
@@ -9,6 +12,9 @@
     "extension",
     "@stellar/freighter-api"
   ],
+  "resolutions": {
+    "**/terser-webpack-plugin": "^1.4.3"
+  },
   "scripts": {
     "build": "run-p --print-label build:freighter-api build:docs build:extension",
     "build:netlify": "cd docs && npm i && npm run build",
@@ -95,7 +101,7 @@
     "npm-run-all": "^4.1.5",
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
-    "ts-loader": "8.0.7",
+    "ts-loader": "^8.0.7",
     "typescript": "^4.2.3",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10",

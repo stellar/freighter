@@ -1,3 +1,43 @@
+# Release notes - Wallets - Freighter-2.11.0
+
+### Story
+
+Show Soroban Token balance on Account screen
+
+Show Asset Details screen for Soroban Token
+
+Create UI for adding Soroban token by contract id
+
+# Release notes - Wallets - Freighter-2.10.0
+
+### Story
+
+Upgrade soroban-client with v0.4.0
+
+# Release notes - Wallets - Freighter-2.9.3
+
+### Story
+
+Bug: negative balance on send/swap
+
+Bug: stale error state on add additional account
+
+More consistent loading on accounts tab
+
+# Release notes - Wallets - Freighter-2.9.2
+
+### Bug
+
+Limit the number of chars in the amount field
+
+Fetch correct asset icon if TOML has multiple assets with the asset code
+
+### Story
+
+Suggest removing trustline after sending entire balance
+
+Fix cursor reset on amount fields
+
 # Release notes - Wallets - 2.9.1
 
 ## Bug

@@ -81,12 +81,14 @@ export const getIconUrlFromIssuer = async ({
     toml.CURRENCIES.every(
       async ({
         code: currencyCode,
+        issuer,
         image,
       }: {
         code: string;
+        issuer: string;
         image: string;
       }) => {
-        if (currencyCode === code && image) {
+        if (currencyCode === code && issuer == key && image) {
           /* We found the currency listing in the toml. 3. Get the image url from it */
           iconUrl = image;
           /* And also save into the cache to prevent having to do this process again */

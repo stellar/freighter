@@ -29,10 +29,6 @@ const initialValues: FormValues = {
   asset: "",
 };
 
-interface SearchAssetProps {
-  setErrorAsset: (errorAsset: string) => void;
-}
-
 const AddManualAssetLink = () => {
   const { t } = useTranslation();
 
@@ -71,7 +67,7 @@ const ResultsHeader = () => {
   );
 };
 
-export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
+export const SearchAsset = () => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -190,7 +186,6 @@ export const SearchAsset = ({ setErrorAsset }: SearchAssetProps) => {
                   <ManageAssetRows
                     header={assetRows.length > 1 ? <ResultsHeader /> : null}
                     assetRows={assetRows}
-                    setErrorAsset={setErrorAsset}
                     maxHeight={maxHeight}
                   >
                     <AddManualAssetLink />

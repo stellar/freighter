@@ -1,4 +1,5 @@
 import StellarSdk from "stellar-sdk";
+import * as SorobanClient from "soroban-client";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
   Account,
@@ -21,6 +22,12 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
+
+import {
+  decodeAccountIdentifier,
+  decodeScVal,
+  decodeBytesN,
+} from "./helpers/soroban";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -176,6 +183,7 @@ export const loadAccount = (): Promise<{
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
   bipPath: string;
+  tokenIdList: string[];
 }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_ACCOUNT,
@@ -799,3 +807,124 @@ export const clearSep24Data = () =>
   sendMessageToBackground({
     type: SERVICE_TYPES.CLEAR_SEP24_DATA,
   });
+
+type TxToOp = {
+  [index: string]: {
+    tx: SorobanClient.Transaction<
+      SorobanClient.Memo<SorobanClient.MemoType>,
+      SorobanClient.Operation[]
+    >;
+    decoder: (val: Buffer) => string | number;
+  };
+};
+
+interface SorobanTokenRecord {
+  [key: string]: unknown;
+  balance: number;
+  name: string;
+  symbol: string;
+  decimals: string;
+}
+
+export const getSorobanTokenBalance = async (
+  server: SorobanClient.Server,
+  contractId: string,
+  txBuilders: {
+    // need a builder per operation until multi-op transactions are released
+    balance: SorobanClient.TransactionBuilder;
+    name: SorobanClient.TransactionBuilder;
+    decimals: SorobanClient.TransactionBuilder;
+    symbol: SorobanClient.TransactionBuilder;
+  },
+  params: SorobanClient.xdr.ScVal[],
+) => {
+  const contract = new SorobanClient.Contract(contractId);
+
+  // Right now we can only have 1 operation per TX in Soroban
+  // There is ongoing work to lift this restriction
+  // but for now we need to do 4 txs to show 1 user balance. :(
+  const balanceTx = txBuilders.balance
+    .addOperation(contract.call("balance", ...params))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const nameTx = txBuilders.name
+    .addOperation(contract.call("name"))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const symbolTx = txBuilders.symbol
+    .addOperation(contract.call("symbol"))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const decimalsTx = txBuilders.decimals
+    .addOperation(contract.call("decimals"))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const txs: TxToOp = {
+    balance: {
+      tx: balanceTx,
+      decoder: decodeAccountIdentifier,
+    },
+    name: {
+      tx: nameTx,
+      decoder: decodeBytesN,
+    },
+    symbol: {
+      tx: symbolTx,
+      decoder: decodeBytesN,
+    },
+    decimals: {
+      tx: decimalsTx,
+      decoder: decodeScVal,
+    },
+  };
+
+  const tokenBalanceInfo = Object.keys(txs).reduce(async (prev, curr) => {
+    const _prev = await prev;
+    const { tx, decoder } = txs[curr];
+    const { results } = await server.simulateTransaction(tx);
+    if (!results || results.length !== 1) {
+      throw new Error("Invalid response from simulateTransaction");
+    }
+    const result = results[0];
+    _prev[curr] = decoder(Buffer.from(result.xdr, "base64"));
+
+    return _prev;
+  }, Promise.resolve({} as SorobanTokenRecord));
+
+  return tokenBalanceInfo;
+};
+
+export const addTokenId = async (
+  tokenId: string,
+): Promise<{
+  tokenIdList: string[];
+}> => {
+  let error = "";
+  let tokenIdList = [] as string[];
+
+  try {
+    ({ tokenIdList, error } = await sendMessageToBackground({
+      tokenId,
+      type: SERVICE_TYPES.ADD_TOKEN_ID,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return { tokenIdList };
+};
+
+export const getTokenIds = async (): Promise<string[]> => {
+  const resp = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_TOKEN_IDS,
+  });
+  return resp.tokenIdList;
+};

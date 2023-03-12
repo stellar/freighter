@@ -33,6 +33,7 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
   SEP24_DATA,
+  TOKEN_ID_LIST,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -552,6 +553,9 @@ export const popupMessageListener = (request: Request) => {
       applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: await getBipPath(),
+      tokenIdList: JSON.parse(
+        (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+      ),
     };
   };
 
@@ -1119,6 +1123,40 @@ export const popupMessageListener = (request: Request) => {
     dataStorageAccess.removeItem(`${SEP24_DATA}:${publicKey}`);
   };
 
+  const addTokenId = async () => {
+    const { tokenId } = request;
+    const tokenIdList = JSON.parse(
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
+    );
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+
+    const accountTokenIdList = tokenIdList[keyId] || [];
+
+    if (accountTokenIdList.includes(tokenId)) {
+      return { error: "Token ID already exists" };
+    }
+
+    accountTokenIdList.push(tokenId);
+    await dataStorageAccess.setItem(
+      TOKEN_ID_LIST,
+      JSON.stringify({
+        ...tokenIdList,
+        [keyId]: accountTokenIdList,
+      }),
+    );
+
+    return { accountTokenIdList };
+  };
+
+  const getTokenIds = async () => {
+    const tokenIdList = JSON.parse(
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
+    );
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+
+    return { tokenIdList: tokenIdList[keyId] || [] };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1158,6 +1196,8 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.LOAD_SEP24_DATA]: loadSep24Data,
     [SERVICE_TYPES.STORE_SEP24_STATUS]: storeSep24Status,
     [SERVICE_TYPES.CLEAR_SEP24_DATA]: clearSep24Data,
+    [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
+    [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
   };
 
   return messageResponder[request.type]();

@@ -26,8 +26,10 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
+import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { cleanAmount, formatAmount } from "popup/helpers/formatters";
 import {
   transactionSubmissionSelector,
   saveAmount,
@@ -42,12 +44,14 @@ import {
 } from "popup/components/sendPayment/SendTo";
 import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
+import { TX_SEND_MAX } from "popup/constants/transaction";
 
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
   DEC_MAX = "too many decimal digits",
+  SEND_MAX = "amount higher than send max",
 }
 
 const ConversionRate = ({
@@ -101,6 +105,7 @@ export const SendAmount = ({
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const runAfterUpdate = useRunAfterUpdate();
 
   const {
     accountBalances,
@@ -202,6 +207,9 @@ export const SendAmount = ({
     if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
     }
+    if (new BigNumber(val).gt(new BigNumber(TX_SEND_MAX))) {
+      return { amount: AMOUNT_ERROR.SEND_MAX };
+    }
     return {};
   };
 
@@ -298,25 +306,6 @@ export const SendAmount = ({
     return "small";
   };
 
-  // remove non digits and decimal
-  const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
-
-  const formatAmount = (val: string) => {
-    const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
-    const maxDigits = 16;
-    const cleaned = cleanAmount(val);
-    // add commas to pre decimal digits
-    if (cleaned.indexOf(".") !== -1) {
-      const parts = cleaned.split(".");
-      parts[0] = decimal
-        .format(Number(parts[0].slice(0, maxDigits)))
-        .toString();
-      parts[1] = parts[1].slice(0, 7);
-      return `${parts[0]}.${parts[1]}`;
-    }
-    return decimal.format(Number(cleaned.slice(0, maxDigits))).toString();
-  };
-
   const DecideWarning = () => {
     // unfunded destination
     if (
@@ -343,6 +332,14 @@ export const SendAmount = ({
         </InfoBlock>
       );
     }
+    if (formik.errors.amount === AMOUNT_ERROR.SEND_MAX) {
+      return (
+        <InfoBlock variant={InfoBlock.variant.error}>
+          {t("Entered amount is higher than the maximum send amount")} (
+          {formatAmount(TX_SEND_MAX, formik.values.amount)})
+        </InfoBlock>
+      );
+    }
     return null;
   };
 
@@ -357,7 +354,6 @@ export const SendAmount = ({
           image={suspiciousAssetData.image}
           onClose={() => setShowBlockedDomainWarning(false)}
           onContinue={() => navigateTo(next)}
-          setErrorAsset={() => {}}
         />
       )}
       <div className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}>
@@ -418,9 +414,19 @@ export const SendAmount = ({
                   type="text"
                   placeholder="0"
                   value={formik.values.amount}
-                  onChange={(e) =>
-                    formik.setFieldValue("amount", formatAmount(e.target.value))
-                  }
+                  onChange={(e) => {
+                    const input = e.target;
+                    const { amount: newAmount, newCursor } = formatAmount(
+                      e.target.value,
+                      formik.values.amount,
+                      e.target.selectionStart || 1,
+                    );
+                    formik.setFieldValue("amount", newAmount);
+                    runAfterUpdate(() => {
+                      input.selectionStart = newCursor;
+                      input.selectionEnd = newCursor;
+                    });
+                  }}
                   autoFocus
                   autoComplete="off"
                 />

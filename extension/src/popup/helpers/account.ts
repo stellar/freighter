@@ -1,10 +1,11 @@
 import StellarSdk, { Horizon } from "stellar-sdk";
-import { Types } from "@stellar/wallet-sdk";
 import { BigNumber } from "bignumber.js";
 import {
-  AccountBalancesInterface,
+  AssetType,
   Balances,
   HorizonOperation,
+  TokenBalances,
+  SorobanBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
@@ -16,9 +17,13 @@ import {
 
 export const LP_IDENTIFIER = ":lp";
 
-export const sortBalances = (balances: Balances) => {
+export const sortBalances = (
+  balances: Balances,
+  sorobanBalances?: TokenBalances,
+) => {
   const collection = [] as Array<any>;
   const lpBalances = [] as Array<any>;
+  const _sorobanBalances = sorobanBalances || [];
   if (!balances) return collection;
 
   // put XLM at the top of the balance list, LP shares last
@@ -31,8 +36,7 @@ export const sortBalances = (balances: Balances) => {
       collection.push(v);
     }
   });
-
-  return collection.concat(lpBalances);
+  return collection.concat(_sorobanBalances).concat(lpBalances);
 };
 
 export const getIsPayment = (type: Horizon.OperationResponseType) =>
@@ -47,7 +51,7 @@ export const getIsSwap = (operation: HorizonOperation) =>
 
 interface SortOperationsByAsset {
   operations: Array<HorizonOperation>;
-  balances: Array<Types.AssetBalance | Types.NativeBalance>;
+  balances: Array<AssetType>;
 }
 
 export interface AssetOperations {
@@ -61,9 +65,15 @@ export const sortOperationsByAsset = ({
   const assetOperationMap = {} as AssetOperations;
 
   balances.forEach((bal) => {
-    if (bal.token) {
+    if ("token" in bal) {
       const issuer = "issuer" in bal.token ? bal.token.issuer.key : "";
       assetOperationMap[getCanonicalFromAsset(bal.token.code, issuer)] = [];
+    }
+    if ("contractId" in bal) {
+      const _bal = bal as SorobanBalance;
+      assetOperationMap[
+        getCanonicalFromAsset(_bal.symbol, _bal.contractId)
+      ] = [];
     }
   });
 
@@ -78,14 +88,14 @@ export const sortOperationsByAsset = ({
           (op.asset_code === assetCode && op.asset_issuer === assetIssuer) ||
           op.asset_type === assetCode
         ) {
-          assetOperationMap[asset].push(op);
+          assetOperationMap[assetKey].push(op);
         } else if ("source_asset_type" in op || "source_asset_code" in op) {
           if (
             op.source_asset_type === assetCode ||
             (op.source_asset_code === assetCode &&
               op.source_asset_issuer === assetIssuer)
           ) {
-            assetOperationMap[asset].push(op);
+            assetOperationMap[assetKey].push(op);
           }
         }
       });
@@ -106,29 +116,30 @@ export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
   }`;
 
 interface GetAvailableBalance {
-  accountBalances: AccountBalancesInterface;
+  accountBalances: Array<AssetType>;
   selectedAsset: string;
   recommendedFee?: string;
+  subentryCount: number;
 }
 
 export const getAvailableBalance = ({
   accountBalances,
   selectedAsset,
   recommendedFee,
+  subentryCount,
 }: GetAvailableBalance) => {
   let availBalance = "0";
-  if (accountBalances.balances) {
-    if (!accountBalances.balances[selectedAsset]) {
+  if (accountBalances.length) {
+    const balance = getRawBalance(accountBalances, selectedAsset);
+    if (!balance) {
       return availBalance;
     }
     if (selectedAsset === "native") {
       // take base reserve into account for XLM payments
-      const baseReserve = (2 + accountBalances.subentryCount) * 0.5;
+      const baseReserve = (2 + subentryCount) * 0.5;
 
       // needed for different wallet-sdk bignumber.js version
-      const currentBal = new BigNumber(
-        accountBalances.balances[selectedAsset].total.toFixed(),
-      );
+      const currentBal = new BigNumber(balance.total.toFixed());
       let newBalance = currentBal.minus(new BigNumber(baseReserve));
 
       if (recommendedFee) {
@@ -137,11 +148,47 @@ export const getAvailableBalance = ({
 
       availBalance = newBalance.toFixed();
     } else {
-      availBalance = accountBalances.balances[selectedAsset].total.toFixed();
+      availBalance = balance.total.toFixed();
     }
   }
 
   return availBalance;
+};
+
+export const getRawBalance = (
+  accountBalances: Array<AssetType>,
+  asset: string,
+) =>
+  accountBalances.find((balance) => {
+    if ("token" in balance) {
+      if (balance.token.type === "native") {
+        return asset === balance.token.type;
+      }
+
+      if ("issuer" in balance.token) {
+        return asset === `${balance.token.code}:${balance.token.issuer.key}`;
+      }
+
+      throw new Error("Asset type not supported");
+    }
+
+    if ("contractId" in balance) {
+      return asset === `${balance.symbol}:${balance.contractId}`;
+    }
+
+    throw new Error("Asset type not supported");
+  });
+
+export const getIssuerFromBalance = (balance: AssetType) => {
+  if ("token" in balance && "issuer" in balance?.token) {
+    return balance.token.issuer.key.toString();
+  }
+
+  if (balance && "contractId" in balance) {
+    return balance.contractId;
+  }
+
+  return "";
 };
 
 export const isNetworkUrlValid = (
@@ -159,3 +206,24 @@ export const isNetworkUrlValid = (
   }
   return isValid;
 };
+
+export const displaySorobanId = (
+  fullStr: string,
+  strLen: number,
+  separator = "...",
+) => {
+  if (fullStr.length <= strLen) return fullStr;
+
+  const sepLen = separator.length;
+  const charsToShow = strLen - sepLen;
+  const frontChars = Math.ceil(charsToShow / 2);
+  const backChars = Math.floor(charsToShow / 2);
+
+  return (
+    fullStr.substring(0, frontChars) +
+    separator +
+    fullStr.substring(fullStr.length - backChars)
+  );
+};
+
+export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
