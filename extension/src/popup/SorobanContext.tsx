@@ -34,7 +34,7 @@ export const SorobanProvider = ({
       : networkDetails.networkUrl;
 
   const server = new SorobanClient.Server(serverUrl, {
-    allowHttp: SOROBAN_RPC_URLS.futureNet.startsWith("http://"),
+    allowHttp: networkDetails.networkUrl.startsWith("http://"),
   });
 
   const newTxBuilder = () =>
