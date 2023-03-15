@@ -1,3 +1,15 @@
+# Release notes - Wallets - Freighter-2.11.1
+
+### Bug
+
+Make Settings version number dynamic
+
+Switching account causes authentication gore on asset select screen
+
+Connecting to an insecure Soroban-RPC throws error
+
+Token and asset balances not loading at same time
+
 # Release notes - Wallets - Freighter-2.11.0
 
 ### Story
