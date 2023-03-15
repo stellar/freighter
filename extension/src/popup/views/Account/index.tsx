@@ -36,7 +36,7 @@ import {
 import {
   sorobanSelector,
   getTokenBalances,
-  // resetSorobanTokens,
+  resetSorobanTokensStatus,
 } from "popup/ducks/soroban";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -110,9 +110,9 @@ export const Account = () => {
 
     return () => {
       dispatch(resetAccountBalanceStatus());
-      // if (isExperimentalModeEnabled) {
-      //   dispatch(resetSorobanTokens());
-      // }
+      if (isExperimentalModeEnabled) {
+        dispatch(resetSorobanTokensStatus());
+      }
     };
   }, [
     builder,
