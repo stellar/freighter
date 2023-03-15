@@ -588,10 +588,10 @@ export const submitFreighterSorobanTransaction = async ({
     allowHttp: true,
   });
 
+  // TODO: fixed in Sorobanclient, not yet released
   let response = (await server.sendTransaction(tx)) as any;
 
   try {
-    console.log("Sent! Transaction ID:", console.log(response.id));
     // Poll this until the status is not "pending"
     while (response.status === "pending") {
       // See if the transaction is complete
@@ -601,8 +601,6 @@ export const submitFreighterSorobanTransaction = async ({
       // eslint-disable-next-line no-await-in-loop
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    console.log("Transaction status:", response.status);
-    console.log(JSON.stringify(response));
   } catch (e) {
     throw new Error(e);
   }

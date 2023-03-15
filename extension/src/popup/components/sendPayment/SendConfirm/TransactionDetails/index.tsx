@@ -216,10 +216,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
     try {
+      const assetAddress = asset.split(":")[1];
       const sourceAccount = await sorobanServer.getAccount(publicKey);
-      const contract = new SorobanClient.Contract(
-        "4a7a254e803102a2da255e634f26b9b9fe5655ad89bf578dd04f8fcbdecf0d95",
-      );
+      const contract = new SorobanClient.Contract(assetAddress);
       const contractOp = contract.call(
         "xfer",
         ...[
@@ -351,7 +350,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const showMemo = !isSwap && !isMuxedAccount(destination);
 
   const StellarExpertButton = () =>
-    !isCustomNetwork(networkDetails) ? (
+    !isCustomNetwork(networkDetails) && !isToken ? (
       <Button
         fullWidth
         variant={Button.variant.tertiary}
@@ -385,14 +384,14 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <SubviewHeader
           title={
             submission.submitStatus === ActionStatus.SUCCESS
-              ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
+              ? `${isSwap ? t("Swapped") : t("Sent")} ${
+                  isToken ? asset.split(":")[0] : sourceAsset.code
+                }`
               : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
           }
           customBackAction={goBack}
           customBackIcon={
-            submission.submitStatus === ActionStatus.SUCCESS ? (
-              <Icon.X />
-            ) : null
+            submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
           }
         />
         {!(isPathPayment || isSwap) && (
