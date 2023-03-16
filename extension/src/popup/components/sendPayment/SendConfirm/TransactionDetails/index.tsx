@@ -247,7 +247,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
       const res = await dispatch(
         signFreighterSorobanTransaction({
-          transaction: preparedTransaction.toXDR(),
+          transactionXDR: preparedTransaction.toXDR(),
           network: networkDetails.networkPassphrase,
         }),
       );
