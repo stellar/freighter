@@ -531,14 +531,14 @@ export const signFreighterTransaction = async ({
 };
 
 export const signFreighterSorobanTransaction = async ({
-  transaction,
+  transactionXDR,
   network,
 }: {
-  transaction: string;
+  transactionXDR: string;
   network: string;
 }): Promise<{ signedTransaction: string }> => {
   const { signedTransaction, error } = await sendMessageToBackground({
-    transaction,
+    transactionXDR,
     network,
     type: SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION,
   });

@@ -51,14 +51,14 @@ export const signFreighterTransaction = createAsyncThunk<
 
 export const signFreighterSorobanTransaction = createAsyncThunk<
   { signedTransaction: string },
-  { transaction: any; network: string },
+  { transactionXDR: string; network: string },
   { rejectValue: ErrorMessage }
 >(
   "signFreighterSorobanTransaction",
-  async ({ transaction, network }, thunkApi) => {
+  async ({ transactionXDR, network }, thunkApi) => {
     try {
       return await internalSignFreighterSorobanTransaction({
-        transaction,
+        transactionXDR,
         network,
       });
     } catch (e) {
