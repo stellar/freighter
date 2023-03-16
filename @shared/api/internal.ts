@@ -8,6 +8,7 @@ import {
   Balances,
   HorizonOperation,
   Settings,
+  SorobanTxStatus,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -593,7 +594,7 @@ export const submitFreighterSorobanTransaction = async ({
 
   try {
     // Poll this until the status is not "pending"
-    while (response.status === "pending") {
+    while (response.status === SorobanTxStatus.PENDING) {
       // See if the transaction is complete
       // eslint-disable-next-line no-await-in-loop
       response = await server.getTransactionStatus(response.id);
