@@ -918,18 +918,18 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const signFreighterSorobanTransaction = () => {
-    const { transaction, network } = request;
+    const { transactionXDR, network } = request;
 
-    const transaction2 = SorobanSdk.TransactionBuilder.fromXDR(
-      transaction,
+    const transaction = SorobanSdk.TransactionBuilder.fromXDR(
+      transactionXDR,
       network,
     );
 
     const privateKey = privateKeySelector(store.getState());
     if (privateKey.length) {
       const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
-      transaction2.sign(sourceKeys);
-      return { signedTransaction: transaction2.toXDR() };
+      transaction.sign(sourceKeys);
+      return { signedTransaction: transaction.toXDR() };
     }
 
     return { error: "Session timed out" };
