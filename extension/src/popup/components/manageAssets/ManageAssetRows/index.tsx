@@ -4,11 +4,12 @@ import { useDispatch, useSelector } from "react-redux";
 import SimpleBar from "simplebar-react";
 import { useTranslation } from "react-i18next";
 import "simplebar-react/dist/simplebar.min.css";
-import { CURRENCY } from "@shared/api/types";
+import { CURRENCY, ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -30,7 +31,6 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  ActionStatus,
   getAccountBalances,
   resetSubmission,
   signFreighterTransaction,
@@ -61,7 +61,6 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
-  setErrorAsset: (errorAsset: string) => void;
   maxHeight: number;
 }
 
@@ -69,7 +68,6 @@ export const ManageAssetRows = ({
   children,
   header,
   assetRows,
-  setErrorAsset,
   maxHeight,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
@@ -160,6 +158,7 @@ export const ManageAssetRows = ({
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
+          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
         }),
@@ -179,7 +178,6 @@ export const ManageAssetRows = ({
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setErrorAsset(assetSubmitting);
         navigateTo(ROUTES.trustlineError);
       }
     }
@@ -188,13 +186,12 @@ export const ManageAssetRows = ({
   // watch submitStatus if used ledger to send transaction
   useEffect(() => {
     if (submitStatus === ActionStatus.ERROR) {
-      setErrorAsset(assetSubmitting);
       navigateTo(ROUTES.trustlineError);
     } else if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
       navigateTo(ROUTES.account);
     }
-  }, [submitStatus, assetSubmitting, setErrorAsset, dispatch]);
+  }, [submitStatus, assetSubmitting, dispatch]);
 
   const isBlockedDomain = (domain: string) => blockedDomains.domains[domain];
 
@@ -291,7 +288,6 @@ export const ManageAssetRows = ({
           onClose={() => {
             setShowBlockedDomainWarning(false);
           }}
-          setErrorAsset={setErrorAsset}
         />
       )}
       {showNewAssetWarning && (
@@ -304,7 +300,6 @@ export const ManageAssetRows = ({
           onClose={() => {
             setShowNewAssetWarning(false);
           }}
-          setErrorAsset={setErrorAsset}
         />
       )}
       <SimpleBar

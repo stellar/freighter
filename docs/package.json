@@ -23,8 +23,8 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-alpha.68",
-    "@docusaurus/preset-classic": "2.0.0-alpha.68",
+    "@docusaurus/core": "2.3.0",
+    "@docusaurus/preset-classic": "2.3.0",
     "@mdx-js/react": "^1.6.19",
     "@stellar/freighter-api": "1.3.1",
     "clsx": "^1.1.1",

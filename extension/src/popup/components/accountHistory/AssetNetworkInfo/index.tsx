@@ -7,6 +7,7 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import StellarLogo from "popup/assets/stellar-logo.png";
+import { displaySorobanId, isSorobanIssuer } from "popup/helpers/account";
 
 import "./styles.scss";
 
@@ -15,6 +16,7 @@ interface AssetNetworkInfoProps {
   assetCode: string;
   assetType: string;
   assetDomain: string;
+  contractId?: string;
 }
 
 export const AssetNetworkInfo = ({
@@ -22,6 +24,7 @@ export const AssetNetworkInfo = ({
   assetCode,
   assetType,
   assetDomain,
+  contractId,
 }: AssetNetworkInfoProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { blockedDomains } = useSelector(transactionSubmissionSelector);
@@ -45,7 +48,7 @@ export const AssetNetworkInfo = ({
       setNetworkIconUrl(iconUrl);
     };
 
-    if (assetIssuer) {
+    if (assetIssuer && !isSorobanIssuer(assetIssuer)) {
       fetchIconUrl();
     }
   }, [assetCode, assetIssuer, networkDetails]);
@@ -64,7 +67,11 @@ export const AssetNetworkInfo = ({
     <div className="AssetNetworkInfo__network">
       <>
         {decideNetworkIcon()}
-        <span>{assetDomain || "Stellar Lumens"}</span>
+        {contractId ? (
+          <span>{displaySorobanId(contractId, 32)}</span>
+        ) : (
+          <span>{assetDomain || "Stellar Lumens"}</span>
+        )}
       </>
     </div>
   );

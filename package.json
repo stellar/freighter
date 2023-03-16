@@ -1,6 +1,9 @@
 {
   "license": "Apache-2.0",
   "private": true,
+  "engines": {
+    "node": ">=16.14.0 <17.0.0"
+  },
   "workspaces": [
     "@shared/api",
     "@shared/constants",
@@ -9,6 +12,9 @@
     "extension",
     "@stellar/freighter-api"
   ],
+  "resolutions": {
+    "**/terser-webpack-plugin": "^1.4.3"
+  },
   "scripts": {
     "build": "run-p --print-label build:freighter-api build:docs build:extension",
     "build:netlify": "cd docs && npm i && npm run build",

@@ -13,6 +13,8 @@ import { BottomNav } from "popup/components/BottomNav";
 
 import { signOut } from "popup/ducks/accountServices";
 
+import { version } from "../../../../package.json";
+
 import "./styles.scss";
 
 export const Settings = () => {
@@ -31,10 +33,7 @@ export const Settings = () => {
         <div>
           <div className="Settings__header">
             <Heading5>Settings</Heading5>
-            <div className="Settings__version">
-              {/* TODO: Make this dynamic */}
-              v2.8.0
-            </div>
+            <div className="Settings__version">{version}</div>
           </div>
           <ListNavLinkWrapper>
             <ListNavLink href={ROUTES.networkSettings}>

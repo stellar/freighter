@@ -6,7 +6,9 @@ import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import StellarSdk, { Account } from "stellar-sdk";
 
-import { xlmToStroop, getCanonicalFromAsset } from "helpers/stellar";
+import { ActionStatus } from "@shared/api/types";
+
+import { xlmToStroop } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
@@ -14,7 +16,6 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   startHwSign,
-  ActionStatus,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
@@ -257,7 +258,6 @@ export const ScamAssetWarning = ({
   image,
   onClose,
   onContinue = () => {},
-  setErrorAsset,
 }: {
   isSendWarning?: boolean;
   domain: string;
@@ -266,7 +266,6 @@ export const ScamAssetWarning = ({
   image: string;
   onClose: () => void;
   onContinue?: () => void;
-  setErrorAsset: (errorAsset: string) => void;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -329,6 +328,7 @@ export const ScamAssetWarning = ({
       if (signFreighterTransaction.fulfilled.match(res)) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
           }),
@@ -337,7 +337,6 @@ export const ScamAssetWarning = ({
           navigateTo(ROUTES.account);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
-          setErrorAsset(getCanonicalFromAsset(code, issuer));
           navigateTo(ROUTES.trustlineError);
         }
       }
@@ -443,7 +442,6 @@ export const NewAssetWarning = ({
   image,
   newAssetFlags,
   onClose,
-  setErrorAsset,
 }: {
   domain: string;
   code: string;
@@ -451,7 +449,6 @@ export const NewAssetWarning = ({
   image: string;
   newAssetFlags: NewAssetFlags;
   onClose: () => void;
-  setErrorAsset: (errorAsset: string) => void;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -514,6 +511,7 @@ export const NewAssetWarning = ({
       if (signFreighterTransaction.fulfilled.match(res)) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
           }),
@@ -522,7 +520,6 @@ export const NewAssetWarning = ({
           navigateTo(ROUTES.account);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
-          setErrorAsset(getCanonicalFromAsset(code, issuer));
           navigateTo(ROUTES.trustlineError);
         }
       }

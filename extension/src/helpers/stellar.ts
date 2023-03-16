@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
+import { isSorobanIssuer } from "popup/helpers/account";
 import { NETWORK_URLS, NetworkDetails } from "@shared/constants/stellar";
 
 import { parsedSearchParam, getUrlHostname } from "./urls";
@@ -60,11 +61,17 @@ export const getAssetFromCanonical = (canonical: string) => {
     return StellarSdk.Asset.native();
   }
   if (canonical.includes(":")) {
-    return new StellarSdk.Asset(
-      canonical.split(":")[0],
-      canonical.split(":")[1],
-    );
+    const [code, issuer] = canonical.split(":");
+
+    if (isSorobanIssuer(issuer)) {
+      return {
+        code,
+        issuer,
+      };
+    }
+    return new StellarSdk.Asset(code, issuer);
   }
+
   throw new Error(`invalid asset canonical id: ${canonical}`);
 };
 
@@ -75,6 +82,7 @@ export const getCanonicalFromAsset = (
   if (assetCode === "XLM" && !assetIssuer) {
     return "native";
   }
+
   return `${assetCode}:${assetIssuer}`;
 };
 
