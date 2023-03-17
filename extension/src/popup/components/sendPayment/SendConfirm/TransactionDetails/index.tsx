@@ -18,7 +18,7 @@ import {
   truncatedFedAddress,
   isCustomNetwork,
 } from "helpers/stellar";
-import { getStellarExpertUrl, isSorobanIssuer } from "popup/helpers/account";
+import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -91,9 +91,6 @@ const TwoAssetCard = ({
             assetIcons={sourceAssetIcons}
             code={sourceAsset.code}
             issuerKey={sourceAsset.issuer}
-            isSorobanToken={
-              !!(sourceAsset.issuer && isSorobanIssuer(sourceAsset.issuer))
-            }
           />
           {sourceAsset.code}
           <ScamAssetIcon isScamAsset={isSourceAssetScam} />
@@ -111,9 +108,6 @@ const TwoAssetCard = ({
             assetIcons={destAssetIcons}
             code={destAsset.code}
             issuerKey={destAsset.issuer}
-            isSorobanToken={
-              !!(destAsset.issuer && isSorobanIssuer(destAsset.issuer))
-            }
           />
           {destAsset.code}
           <ScamAssetIcon isScamAsset={isDestAssetScam} />

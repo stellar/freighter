@@ -16,7 +16,6 @@ import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
-import { isSorobanIssuer } from "popup/helpers/account";
 
 export function AssetSelect({
   assetCode,
@@ -43,7 +42,6 @@ export function AssetSelect({
             assetIcons={assetIcons}
             code={assetCode}
             issuerKey={issuerKey}
-            isSorobanToken={!!(issuerKey && isSorobanIssuer(issuerKey))}
           />
           <span className="AssetSelect__medium-copy">{assetCode}</span>
           <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
@@ -103,7 +101,6 @@ export function PathPayAssetSelect({
             assetIcons={assetIcons}
             code={assetCode}
             issuerKey={issuerKey}
-            isSorobanToken={!!(issuerKey && isSorobanIssuer(issuerKey))}
           />
           <span className="AssetSelect__medium-copy">
             {truncateLongAssetCode(assetCode)}
