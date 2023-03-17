@@ -95,8 +95,7 @@ export const SelectAssetRows = ({
               <AssetIcon
                 assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
                 code={code}
-                issuerKey={issuer}
-                isSorobanToken={contractId !== undefined}
+                issuerKey={_issuer}
               />
               <div className="SelectAssetRows__row__info">
                 <div className="SelectAssetRows__row__info__header">
