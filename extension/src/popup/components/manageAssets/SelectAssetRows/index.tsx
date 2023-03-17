@@ -82,6 +82,8 @@ export const SelectAssetRows = ({
                   dispatch(saveAsset(canonical));
                   if (contractId) {
                     dispatch(saveIsToken(true));
+                  } else {
+                    dispatch(saveIsToken(false));
                   }
                   history.goBack();
                 } else {
@@ -93,7 +95,7 @@ export const SelectAssetRows = ({
               <AssetIcon
                 assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
                 code={code}
-                issuerKey={issuer}
+                issuerKey={_issuer}
               />
               <div className="SelectAssetRows__row__info">
                 <div className="SelectAssetRows__row__info__header">
