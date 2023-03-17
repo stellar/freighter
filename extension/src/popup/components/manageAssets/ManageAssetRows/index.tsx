@@ -13,7 +13,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { getApiStellarExpertUrl } from "popup/helpers/account";
+import { getApiStellarExpertUrl, isSorobanIssuer } from "popup/helpers/account";
 import {
   formatDomain,
   getCanonicalFromAsset,
@@ -384,6 +384,7 @@ export const ManageAssetRow = ({
         assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
         code={code}
         issuerKey={issuer}
+        isSorobanToken={!!(issuer && isSorobanIssuer(issuer))}
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">

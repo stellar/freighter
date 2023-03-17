@@ -236,9 +236,7 @@ export const SendAmount = ({
   });
 
   const showSourceAndDestAsset = !!formik.values.destinationAsset;
-  const parsedSourceAsset = isToken
-    ? { code: formik.values.asset, issuer: formik.values.asset }
-    : getAssetFromCanonical(formik.values.asset);
+  const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const parsedDestAsset = getAssetFromCanonical(
     formik.values.destinationAsset || "native",
   );
