@@ -18,6 +18,7 @@ import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
+import { isSorobanIssuer } from "popup/helpers/account";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
@@ -54,6 +55,7 @@ const SwapAssetsIcon = ({
         assetIcons={assetIcons}
         code={source.code}
         issuerKey={source.issuer}
+        isSorobanToken={!!(source.issuer && isSorobanIssuer(source.issuer))}
       />
       {source.code}
       <Icon.ArrowRight />
@@ -61,6 +63,7 @@ const SwapAssetsIcon = ({
         assetIcons={assetIcons}
         code={dest.code}
         issuerKey={dest.issuer}
+        isSorobanToken={!!(dest.issuer && isSorobanIssuer(dest.issuer))}
       />
       {dest.code}
     </div>
