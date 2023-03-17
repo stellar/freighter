@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -36,7 +36,7 @@ import {
 import {
   sorobanSelector,
   getTokenBalances,
-  resetSorobanTokens,
+  resetSorobanTokensStatus,
 } from "popup/ducks/soroban";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -90,7 +90,7 @@ export const Account = () => {
 
   const { balances, isFunded } = accountBalances;
 
-  const builder = React.useContext(SorobanContext);
+  const builder = useContext(SorobanContext);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -111,7 +111,7 @@ export const Account = () => {
     return () => {
       dispatch(resetAccountBalanceStatus());
       if (isExperimentalModeEnabled) {
-        dispatch(resetSorobanTokens());
+        dispatch(resetSorobanTokensStatus());
       }
     };
   }, [

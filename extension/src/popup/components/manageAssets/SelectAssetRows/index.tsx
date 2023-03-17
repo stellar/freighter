@@ -10,11 +10,14 @@ import {
   transactionSubmissionSelector,
   saveAsset,
   saveDestinationAsset,
+  saveIsToken,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
+import { sorobanSelector } from "popup/ducks/soroban";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
+import { getTokenBalance } from "popup/helpers/soroban";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { Balances } from "@shared/api/types";
 
@@ -34,6 +37,7 @@ export const SelectAssetRows = ({
     assetSelect,
     blockedDomains,
   } = useSelector(transactionSubmissionSelector);
+  const { tokenBalances } = useSelector(sorobanSelector);
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
 
@@ -48,6 +52,9 @@ export const SelectAssetRows = ({
     return "";
   };
 
+  const calculateTokenBalance = (contractId: string) =>
+    getTokenBalance(tokenBalances, contractId);
+
   // hide balances for path pay dest asset
   const hideBalances =
     assetSelect.type === AssetSelectType.PATH_PAY &&
@@ -61,37 +68,36 @@ export const SelectAssetRows = ({
       }}
     >
       <div className="SelectAssetRows__content">
-        {assetRows.map(({ code, domain, image, issuer }) => {
+        {assetRows.map(({ code, domain, image, issuer, contractId, name }) => {
           const isScamAsset = !!blockedDomains.domains[domain];
+          const _issuer = contractId || issuer;
+          const canonical = getCanonicalFromAsset(code, _issuer);
 
           return (
             <div
               className="SelectAssetRows__row selectable"
-              key={getCanonicalFromAsset(code, issuer)}
+              key={canonical}
               onClick={() => {
                 if (assetSelect.isSource) {
-                  dispatch(saveAsset(getCanonicalFromAsset(code, issuer)));
+                  dispatch(saveAsset(canonical));
+                  if (contractId) {
+                    dispatch(saveIsToken(true));
+                  }
                   history.goBack();
                 } else {
-                  dispatch(
-                    saveDestinationAsset(getCanonicalFromAsset(code, issuer)),
-                  );
+                  dispatch(saveDestinationAsset(canonical));
                   history.goBack();
                 }
               }}
             >
               <AssetIcon
-                assetIcons={
-                  code !== "XLM"
-                    ? { [getCanonicalFromAsset(code, issuer)]: image }
-                    : {}
-                }
+                assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
                 code={code}
                 issuerKey={issuer}
               />
               <div className="SelectAssetRows__row__info">
                 <div className="SelectAssetRows__row__info__header">
-                  {code}
+                  {contractId ? name : code}
                   <ScamAssetIcon isScamAsset={isScamAsset} />
                 </div>
                 <div className="SelectAssetRows__domain">
@@ -100,7 +106,9 @@ export const SelectAssetRows = ({
               </div>
               {!hideBalances && (
                 <div>
-                  {getAccountBalance(getCanonicalFromAsset(code, issuer))}{" "}
+                  {contractId
+                    ? calculateTokenBalance(contractId)
+                    : getAccountBalance(canonical)}{" "}
                   {code}
                 </div>
               )}
