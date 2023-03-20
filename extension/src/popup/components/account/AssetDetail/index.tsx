@@ -231,6 +231,7 @@ export const AssetDetail = ({
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       url={stellarExpertUrl}
+                      networkDetails={networkDetails}
                       setDetailViewProps={setDetailViewProps}
                       setIsDetailViewShowing={setIsDetailViewShowing}
                     />
