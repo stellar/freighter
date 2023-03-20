@@ -165,7 +165,10 @@ export const SendAmount = ({
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
         } else {
-          availBalance = accountBalances.balances[selectedAsset].total;
+          // needed for different wallet-sdk bignumber.js version
+          availBalance = new BigNumber(
+            accountBalances.balances[selectedAsset].total,
+          );
         }
 
         if (availBalance.lt(minBalance)) {
