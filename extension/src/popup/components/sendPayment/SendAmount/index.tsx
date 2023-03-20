@@ -144,7 +144,7 @@ export const SendAmount = ({
 
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let availBalance = "0";
+      let availBalance = new BigNumber("0");
       if (isToken) {
         const contractId = selectedAsset.split(":")[1];
         return getTokenBalance(tokenBalances, contractId);
@@ -165,9 +165,7 @@ export const SendAmount = ({
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
         } else {
-          availBalance = new BigNumber(
-            accountBalances.balances[selectedAsset].total,
-          );
+          availBalance = accountBalances.balances[selectedAsset].total;
         }
 
         if (availBalance.lt(minBalance)) {
@@ -175,7 +173,7 @@ export const SendAmount = ({
         }
       }
 
-      return availBalance.toString();
+      return availBalance.toFixed().toString();
     },
     [
       accountBalances.balances,
