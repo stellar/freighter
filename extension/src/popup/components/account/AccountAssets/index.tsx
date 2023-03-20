@@ -8,6 +8,7 @@ import { AssetIcons } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
+import { isSorobanIssuer } from "popup/helpers/account";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
@@ -53,6 +54,10 @@ export const AssetIcon = ({
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
   const imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
 
+  const _isSorobanToken = !isSorobanToken
+    ? issuerKey && isSorobanIssuer(issuerKey)
+    : isSorobanToken;
+
   // If an LP share return early w/ hardcoded icon
   if (isLPShare) {
     return (
@@ -63,7 +68,7 @@ export const AssetIcon = ({
   }
 
   // Placeholder for Soroban tokens
-  if (isSorobanToken) {
+  if (_isSorobanToken) {
     return (
       <div className="AccountAssets__asset--logo AccountAssets__asset--lp-share">
         S
@@ -201,7 +206,6 @@ export const AccountAssets = ({
         }
 
         const isLP = issuer === "lp";
-        const isSorobanToken = !!rb.contractId;
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
         const assetDomain = assetDomains[canonicalAsset];
@@ -224,7 +228,6 @@ export const AccountAssets = ({
                 issuerKey={issuer?.key}
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={!!rb.liquidityPoolId}
-                isSorobanToken={isSorobanToken}
               />
               <span>{code}</span>
               <ScamAssetIcon isScamAsset={isScamAsset} />

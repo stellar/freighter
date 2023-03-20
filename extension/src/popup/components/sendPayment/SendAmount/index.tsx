@@ -27,6 +27,7 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
+import { getTokenBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { cleanAmount, formatAmount } from "popup/helpers/formatters";
@@ -38,6 +39,7 @@ import {
   getBestPath,
   resetDestinationAmount,
 } from "popup/ducks/transactionSubmission";
+import { sorobanSelector } from "popup/ducks/soroban";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
@@ -115,11 +117,14 @@ export const SendAmount = ({
     blockedDomains,
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
+  const { tokenBalances } = useSelector(sorobanSelector);
+
   const {
     amount,
     asset,
     destinationAmount,
     destinationAsset,
+    isToken,
   } = transactionData;
 
   const isSwap = useIsSwap();
@@ -138,6 +143,10 @@ export const SendAmount = ({
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
       let availBalance = "0";
+      if (isToken) {
+        const contractId = selectedAsset.split(":")[1];
+        return getTokenBalance(tokenBalances, contractId);
+      }
       if (accountBalances.balances) {
         if (selectedAsset === "native") {
           // take base reserve into account for XLM payments
@@ -160,7 +169,13 @@ export const SendAmount = ({
 
       return availBalance;
     },
-    [accountBalances.balances, accountBalances.subentryCount, recommendedFee],
+    [
+      accountBalances.balances,
+      accountBalances.subentryCount,
+      recommendedFee,
+      isToken,
+      tokenBalances,
+    ],
   );
 
   const [availBalance, setAvailBalance] = useState(

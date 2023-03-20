@@ -15,6 +15,7 @@ import {
   settingsNetworkDetailsSelector,
   settingsSelector,
 } from "popup/ducks/settings";
+import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -37,6 +38,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   );
   const { isExperimentalModeEnabled } = useSelector(settingsSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
+  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
+
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +92,23 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             image: "",
             domain: "",
           });
+
+          if (isExperimentalModeEnabled && sorobanBalances.length) {
+            sorobanBalances.forEach(({ symbol, contractId, name }) => {
+              // TODO:
+              // interestingly, if an ascii value is set for symbol
+              // it gets parsed and doesn't
+              // match the original value after this. How to escape this?
+              collection.push({
+                code: `${symbol}`,
+                issuer: "",
+                image: "",
+                domain: "",
+                contractId,
+                name,
+              });
+            });
+          }
         }
       }
 
@@ -97,7 +117,14 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     };
 
     fetchDomains();
-  }, [assetIcons, balances, networkUrl, managingAssets]);
+  }, [
+    assetIcons,
+    balances,
+    networkUrl,
+    managingAssets,
+    isExperimentalModeEnabled,
+    sorobanBalances,
+  ]);
 
   return (
     <div className="ChooseAsset">

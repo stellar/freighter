@@ -3,7 +3,9 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
+  signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
+  submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
@@ -47,6 +49,24 @@ export const signFreighterTransaction = createAsyncThunk<
   }
 });
 
+export const signFreighterSorobanTransaction = createAsyncThunk<
+  { signedTransaction: string },
+  { transactionXDR: string; network: string },
+  { rejectValue: ErrorMessage }
+>(
+  "signFreighterSorobanTransaction",
+  async ({ transactionXDR, network }, thunkApi) => {
+    try {
+      return await internalSignFreighterSorobanTransaction({
+        transactionXDR,
+        network,
+      });
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+    }
+  },
+);
+
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
   {
@@ -76,6 +96,47 @@ export const submitFreighterTransaction = createAsyncThunk<
         return txRes;
       }
       return await internalSubmitFreighterTransaction({
+        signedXDR,
+        networkDetails,
+      });
+    } catch (e) {
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message || e,
+        response: e.response?.data,
+      });
+    }
+  },
+);
+
+export const submitFreighterSorobanTransaction = createAsyncThunk<
+  Horizon.TransactionResponse,
+  {
+    publicKey: string;
+    signedXDR: string;
+    networkDetails: NetworkDetails;
+    refreshBalances?: boolean;
+  },
+  {
+    rejectValue: ErrorMessage;
+  }
+>(
+  "submitFreighterSorobanTransaction",
+  async (
+    { publicKey, signedXDR, networkDetails, refreshBalances = false },
+    thunkApi,
+  ) => {
+    try {
+      if (refreshBalances) {
+        const txRes = await internalSubmitFreighterSorobanTransaction({
+          signedXDR,
+          networkDetails,
+        });
+
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
+
+        return txRes;
+      }
+      return await internalSubmitFreighterSorobanTransaction({
         signedXDR,
         networkDetails,
       });
@@ -306,6 +367,7 @@ interface TransactionData {
   destinationAmount: string;
   path: Array<string>;
   allowedSlippage: string;
+  isToken: boolean;
 }
 
 interface HardwareWalletData {
@@ -356,6 +418,7 @@ export const initialState: InitialState = {
     destinationAmount: "",
     path: [],
     allowedSlippage: "1",
+    isToken: false,
   },
   hardwareWalletData: {
     status: ShowOverlayStatus.IDLE,
@@ -419,6 +482,9 @@ const transactionSubmissionSlice = createSlice({
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
     },
+    saveIsToken: (state, action) => {
+      state.transactionData.isToken = action.payload;
+    },
     startHwConnect: (state) => {
       state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
       state.hardwareWalletData.transactionXDR = "";
@@ -444,25 +510,52 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(submitFreighterTransaction.pending, (state) => {
       state.submitStatus = ActionStatus.PENDING;
     });
-    builder.addCase(signFreighterTransaction.pending, (state) => {
-      state.submitStatus = ActionStatus.PENDING;
-    });
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
       state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
+    });
+    builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
+      state.submitStatus = ActionStatus.SUCCESS;
+      state.response = action.payload;
+    });
+    builder.addCase(submitFreighterSorobanTransaction.pending, (state) => {
+      state.submitStatus = ActionStatus.PENDING;
+    });
+    builder.addCase(
+      submitFreighterSorobanTransaction.rejected,
+      (state, action) => {
+        state.submitStatus = ActionStatus.ERROR;
+        state.error = action.payload;
+      },
+    );
+    builder.addCase(
+      submitFreighterSorobanTransaction.fulfilled,
+      (state, action) => {
+        state.submitStatus = ActionStatus.SUCCESS;
+        state.response = action.payload;
+      },
+    );
+    builder.addCase(signFreighterTransaction.pending, (state) => {
+      state.submitStatus = ActionStatus.PENDING;
+    });
+    builder.addCase(signFreighterSorobanTransaction.pending, (state) => {
+      state.submitStatus = ActionStatus.PENDING;
     });
     builder.addCase(signFreighterTransaction.rejected, (state, action) => {
       state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
     });
+    builder.addCase(
+      signFreighterSorobanTransaction.rejected,
+      (state, action) => {
+        state.submitStatus = ActionStatus.ERROR;
+        state.error = action.payload;
+      },
+    );
     builder.addCase(getBestPath.rejected, (state) => {
       state.transactionData.path = initialState.transactionData.path;
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
-    });
-    builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
-      state.submitStatus = ActionStatus.SUCCESS;
-      state.response = action.payload;
     });
     builder.addCase(getAccountBalances.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
@@ -532,6 +625,7 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveAllowedSlippage,
+  saveIsToken,
   startHwConnect,
   startHwSign,
   closeHwOverlay,

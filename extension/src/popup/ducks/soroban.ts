@@ -25,11 +25,11 @@ export const getTokenBalances = createAsyncThunk<
     for (let i = 0; i < tokenIdList.length; i += 1) {
       const tokenId = tokenIdList[i];
       /*
-          Right now, Soroban transactions only support 1 operation per tx
-          so we need a builder per value from the contract,
-          once multi-op transactions are supported this can send
-          1 tx with an operation for each value.
-        */
+        Right now, Soroban transactions only support 1 operation per tx
+        so we need a builder per value from the contract,
+        once multi-op transactions are supported this can send
+        1 tx with an operation for each value.
+      */
       try {
         // eslint-disable-next-line no-await-in-loop
         const { balance, ...rest } = await internalGetSorobanTokenBalance(
@@ -71,7 +71,9 @@ const sorobanSlice = createSlice({
   name: "soroban",
   initialState,
   reducers: {
-    resetSorobanTokens: () => initialState,
+    resetSorobanTokensStatus: (state) => {
+      state.getTokenBalancesStatus = initialState.getTokenBalancesStatus;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(getTokenBalances.pending, (state) => {
@@ -87,7 +89,7 @@ const sorobanSlice = createSlice({
   },
 });
 
-export const { resetSorobanTokens } = sorobanSlice.actions;
+export const { resetSorobanTokensStatus } = sorobanSlice.actions;
 
 export const { reducer } = sorobanSlice;
 
