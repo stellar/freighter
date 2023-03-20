@@ -8,9 +8,13 @@ import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation } from "@shared/api/types";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import {
   getIsPayment,
+  getIsSorobanTransfer,
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
@@ -50,6 +54,7 @@ export const AccountHistory = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
     null as HistorySegments,
@@ -86,6 +91,7 @@ export const AccountHistory = () => {
       };
       _operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
+        const isSorobanXfer = getIsSorobanTransfer(operation, networkDetails);
         const isSwap = getIsSwap(operation);
         const isCreateExternalAccount =
           operation.type === Horizon.OperationResponseType.createAccount &&
@@ -97,7 +103,7 @@ export const AccountHistory = () => {
           isCreateExternalAccount,
         };
 
-        if (isPayment && !isSwap) {
+        if (isPayment || (isSorobanXfer && !isSwap)) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
           } else if (operation.to === publicKey) {
@@ -118,14 +124,16 @@ export const AccountHistory = () => {
     const fetchAccountHistory = async () => {
       try {
         const res = await getAccountHistory({ publicKey, networkDetails });
-        setHistorySegments(createSegments(res.operations));
+        setHistorySegments(
+          createSegments(res.operations, isExperimentalModeEnabled),
+        );
       } catch (e) {
         console.error(e);
       }
       setIsLoading(false);
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails]);
+  }, [publicKey, networkDetails, isExperimentalModeEnabled]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
@@ -166,6 +174,7 @@ export const AccountHistory = () => {
                         operation={operation}
                         publicKey={publicKey}
                         url={stellarExpertUrl}
+                        networkDetails={networkDetails}
                         setDetailViewProps={setDetailViewProps}
                         setIsDetailViewShowing={setIsDetailViewShowing}
                       />

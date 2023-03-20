@@ -8,8 +8,10 @@ import { OPERATION_TYPES } from "constants/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
+import { getAttrsFromSorobanOp } from "popup/helpers/soroban";
 
 import { HorizonOperation } from "@shared/api/types";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
@@ -36,6 +38,7 @@ interface HistoryItemProps {
   operation: HistoryItemOperation;
   publicKey: string;
   url: string;
+  networkDetails: NetworkDetails;
   setDetailViewProps: (props: TransactionDetailProps) => void;
   setIsDetailViewShowing: (isDetailViewShowing: boolean) => void;
 }
@@ -44,6 +47,7 @@ export const HistoryItem = ({
   operation,
   publicKey,
   url,
+  networkDetails,
   setDetailViewProps,
   setIsDetailViewShowing,
 }: HistoryItemProps) => {
@@ -58,6 +62,7 @@ export const HistoryItem = ({
     from,
     starting_balance: startingBalance,
     type,
+    type_i: typeI,
     transaction_attr: { operation_count: operationCount },
     isCreateExternalAccount = false,
     isPayment = false,
@@ -85,6 +90,11 @@ export const HistoryItem = ({
   let dateText = date;
   let IconComponent = <Icon.Shuffle className="HistoryItem__icon--default" />;
   let PaymentComponent = null as React.ReactElement | null;
+  const isSorobanTx = typeI === 24;
+
+  if (isSorobanTx) {
+    console.log(getAttrsFromSorobanOp(operation, networkDetails));
+  }
 
   let transactionDetailProps: TransactionDetailProps = {
     operation,
