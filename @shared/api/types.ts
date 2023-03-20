@@ -14,6 +14,11 @@ export enum ActionStatus {
   ERROR = "ERROR",
 }
 
+export enum SorobanTxStatus {
+  PENDING = "pending",
+  SUCCESS = "success",
+}
+
 export interface Response {
   error: string;
   messagedId: number;

@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
+import SorobanClient from "soroban-client";
 import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { SorobanContext } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -20,13 +22,16 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { accountIdentifier, numberToI128 } from "@shared/api/helpers/soroban";
 
 import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
   signFreighterTransaction,
+  signFreighterSorobanTransaction,
   submitFreighterTransaction,
+  submitFreighterSorobanTransaction,
   transactionSubmissionSelector,
   addRecentAddress,
   isPathPaymentSelector,
@@ -131,6 +136,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       destinationAsset,
       destinationAmount,
       path,
+      isToken,
     },
     assetIcons,
     hardwareWalletData: { status: hwStatus },
@@ -141,13 +147,15 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const isSwap = useIsSwap();
   const { t } = useTranslation();
 
+  const { server: sorobanServer } = useContext(SorobanContext);
+
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
 
-  const sourceAsset = getAssetFromCanonical(asset);
+  const sourceAsset = isToken ? asset : getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
 
   // load destination asset icons
@@ -206,8 +214,67 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     });
   };
 
-  // handles signing and submitting
-  const handleSend = async () => {
+  const handleXferTransaction = async () => {
+    try {
+      const assetAddress = asset.split(":")[1];
+      const sourceAccount = await sorobanServer.getAccount(publicKey);
+      const contract = new SorobanClient.Contract(assetAddress);
+      const contractOp = contract.call(
+        "xfer",
+        ...[
+          accountIdentifier(publicKey), // from
+          accountIdentifier(destination), // to
+          numberToI128(Number(amount)), // amount
+        ],
+      );
+
+      const transaction = await new SorobanClient.TransactionBuilder(
+        sourceAccount,
+        {
+          fee: xlmToStroop(transactionFee).toFixed(),
+          networkPassphrase: networkDetails.networkPassphrase,
+        },
+      )
+        .addOperation(contractOp)
+        .addMemo(SorobanClient.Memo.text(memo))
+        .setTimeout(180)
+        .build();
+
+      const preparedTransaction = await sorobanServer.prepareTransaction(
+        transaction,
+        networkDetails.networkPassphrase,
+      );
+
+      const res = await dispatch(
+        signFreighterSorobanTransaction({
+          transactionXDR: preparedTransaction.toXDR(),
+          network: networkDetails.networkPassphrase,
+        }),
+      );
+
+      if (
+        signFreighterSorobanTransaction.fulfilled.match(res) &&
+        res.payload.signedTransaction
+      ) {
+        const submitResp = await dispatch(
+          submitFreighterSorobanTransaction({
+            publicKey,
+            signedXDR: res.payload.signedTransaction,
+            networkDetails,
+            refreshBalances: true,
+          }),
+        );
+
+        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+          emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handlePaymentTransaction = async () => {
     try {
       const server = stellarSdkServer(networkDetails.networkUrl);
       const sourceAccount: Types.Account = await server.loadAccount(publicKey);
@@ -271,10 +338,19 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     }
   };
 
+  // handles signing and submitting
+  const handleSend = async () => {
+    if (isToken) {
+      await handleXferTransaction();
+    } else {
+      await handlePaymentTransaction();
+    }
+  };
+
   const showMemo = !isSwap && !isMuxedAccount(destination);
 
   const StellarExpertButton = () =>
-    !isCustomNetwork(networkDetails) ? (
+    !isCustomNetwork(networkDetails) && !isToken ? (
       <Button
         fullWidth
         variant={Button.variant.tertiary}
@@ -308,7 +384,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <SubviewHeader
           title={
             submission.submitStatus === ActionStatus.SUCCESS
-              ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
+              ? `${isSwap ? t("Swapped") : t("Sent")} ${
+                  isToken ? asset.split(":")[0] : sourceAsset.code
+                }`
               : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
           }
           customBackAction={goBack}

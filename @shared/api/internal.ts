@@ -8,11 +8,13 @@ import {
   Balances,
   HorizonOperation,
   Settings,
+  SorobanTxStatus,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
   NetworkDetails,
+  SOROBAN_RPC_URLS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -529,6 +531,26 @@ export const signFreighterTransaction = async ({
   return { signedTransaction };
 };
 
+export const signFreighterSorobanTransaction = async ({
+  transactionXDR,
+  network,
+}: {
+  transactionXDR: string;
+  network: string;
+}): Promise<{ signedTransaction: string }> => {
+  const { signedTransaction, error } = await sendMessageToBackground({
+    transactionXDR,
+    network,
+    type: SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION,
+  });
+
+  if (error || !signedTransaction) {
+    throw new Error(error);
+  }
+
+  return { signedTransaction };
+};
+
 export const submitFreighterTransaction = async ({
   signedXDR,
   networkDetails,
@@ -543,6 +565,48 @@ export const submitFreighterTransaction = async ({
   const server = stellarSdkServer(networkDetails.networkUrl);
 
   return await server.submitTransaction(tx);
+};
+
+export const submitFreighterSorobanTransaction = async ({
+  signedXDR,
+  networkDetails,
+}: {
+  signedXDR: string;
+  networkDetails: NetworkDetails;
+}) => {
+  let tx = {} as SorobanClient.Transaction | SorobanClient.FeeBumpTransaction;
+
+  try {
+    tx = SorobanClient.TransactionBuilder.fromXDR(
+      signedXDR,
+      networkDetails.networkPassphrase,
+    );
+  } catch (e) {
+    console.error(e);
+  }
+
+  const server = new SorobanClient.Server(SOROBAN_RPC_URLS.futureNet, {
+    allowHttp: true,
+  });
+
+  // TODO: fixed in Sorobanclient, not yet released
+  let response = (await server.sendTransaction(tx)) as any;
+
+  try {
+    // Poll this until the status is not "pending"
+    while (response.status === SorobanTxStatus.PENDING) {
+      // See if the transaction is complete
+      // eslint-disable-next-line no-await-in-loop
+      response = await server.getTransactionStatus(response.id);
+      // Wait a second
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  } catch (e) {
+    throw new Error(e);
+  }
+
+  return response;
 };
 
 export const addRecentAddress = async ({
@@ -763,7 +827,7 @@ interface SorobanTokenRecord {
   decimals: string;
 }
 
-export const getSorobanTokenBalance = async (
+export const getSorobanTokenBalance = (
   server: SorobanClient.Server,
   contractId: string,
   txBuilders: {

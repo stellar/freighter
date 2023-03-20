@@ -49,7 +49,11 @@ import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 
-export type ManageAssetCurrency = CURRENCY & { domain: string };
+export type ManageAssetCurrency = CURRENCY & {
+  domain: string;
+  contractId?: string;
+  name?: string;
+};
 
 export interface NewAssetFlags {
   isInvalidDomain: boolean;
