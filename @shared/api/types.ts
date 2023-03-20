@@ -63,6 +63,7 @@ export interface Response {
   assetDomain: string;
   tokenId: string;
   tokenIdList: string[];
+  isConnected: boolean;
 }
 
 export interface BlockedDomains {
