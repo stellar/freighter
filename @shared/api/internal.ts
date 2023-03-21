@@ -8,6 +8,7 @@ import {
   Balances,
   HorizonOperation,
   Settings,
+  Sep24Data,
   SorobanTxStatus,
 } from "./types";
 import {
@@ -808,6 +809,68 @@ export const getBlockedDomains = async () => {
   });
   return resp;
 };
+
+export const startSep24Deposit = async ({
+  sep24Url,
+  token,
+  publicKey,
+  code,
+}: {
+  sep24Url: string;
+  token: string;
+  publicKey: string;
+  code: string;
+}) => {
+  let response = { url: "", id: "" };
+
+  try {
+    const res = await fetch(`${sep24Url}/transactions/deposit/interactive`, {
+      method: "POST",
+      body: JSON.stringify({
+        asset_code: code,
+        account: publicKey,
+        lang: "en",
+        claimable_balance_supported: false,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    response = await res.json();
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
+export const storeSep24Data = async (sep24Data: Sep24Data) => {
+  await sendMessageToBackground({
+    sep24Data,
+    type: SERVICE_TYPES.STORE_SEP24_DATA,
+  });
+
+  return sep24Data;
+};
+
+export const loadSep24Data = async () => {
+  const { sep24Data } = await sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_SEP24_DATA,
+  });
+  return sep24Data;
+};
+
+export const setSep24Status = async (status: string) => {
+  await sendMessageToBackground({
+    status,
+    type: SERVICE_TYPES.STORE_SEP24_STATUS,
+  });
+};
+
+export const clearSep24Data = () =>
+  sendMessageToBackground({
+    type: SERVICE_TYPES.CLEAR_SEP24_DATA,
+  });
 
 type TxToOp = {
   [index: string]: {

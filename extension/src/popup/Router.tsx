@@ -61,6 +61,8 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
 import { PinExtension } from "popup/views/PinExtension";
+import { BuyAsset } from "popup/views/BuyAsset/BuyAsset";
+import { MoneyGram } from "popup/views/BuyAsset/MoneyGram";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -248,9 +250,9 @@ export const Router = () => {
     <HashRouter>
       <RouteListener />
       <Switch>
-        <PublicKeyRoute exact path={ROUTES.account}>
+        <PrivateKeyRoute exact path={ROUTES.account}>
           <Account />
-        </PublicKeyRoute>
+        </PrivateKeyRoute>
         <PublicKeyRoute path={ROUTES.accountHistory}>
           <AccountHistory />
         </PublicKeyRoute>
@@ -329,6 +331,12 @@ export const Router = () => {
         <PublicKeyRoute path={ROUTES.manageNetwork}>
           <ManageNetwork />
         </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.buyAsset}>
+          <BuyAsset />
+        </PublicKeyRoute>
+        <VerifiedAccountRoute path={ROUTES.buyMoneyGram}>
+          <MoneyGram />
+        </VerifiedAccountRoute>
 
         {DEV_SERVER && (
           <>

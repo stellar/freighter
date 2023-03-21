@@ -12,6 +12,8 @@ import {
   ActionStatus,
 } from "@shared/api/types";
 
+import { AppDispatch } from "popup/App";
+import { Sep24Status } from "popup/constants/sep24";
 import { Button } from "popup/basics/buttons/Button";
 import {
   settingsNetworkDetailsSelector,
@@ -21,6 +23,7 @@ import {
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
+  hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import {
   getAccountBalances,
@@ -32,6 +35,9 @@ import {
   saveAssetSelectType,
   AssetSelectType,
   getBlockedDomains,
+  loadSep24Data,
+  signFreighterTransaction,
+  setSubmitStatus,
 } from "popup/ducks/transactionSubmission";
 import {
   sorobanSelector,
@@ -46,6 +52,12 @@ import {
 } from "popup/helpers/account";
 import { isTestnet, truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
+import {
+  getAuthToken,
+  startSep24Polling,
+  getAnchorSep24Data,
+} from "popup/helpers/sep24";
+import { Sep24Todo } from "popup/components/sep24";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
@@ -64,10 +76,21 @@ export const defaultAccountBalances = {
 
 export const Account = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const dispatch: AppDispatch = useDispatch();
+  const {
+    accountBalances,
+    assetIcons,
+    accountBalanceStatus,
+    hardwareWalletData: { lastSignedXDR: hwSignedXDR },
+    sep24Data: {
+      sep10Url,
+      sep24Url,
+      txId: sep24TxId,
+      status: sep24Status,
+      anchorDomain,
+      asset: sep24Asset,
+    },
+  } = useSelector(transactionSubmissionSelector);
   const {
     tokenBalances: sorobanBalances,
     getTokenBalancesStatus,
@@ -85,6 +108,10 @@ export const Account = () => {
   const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
+  const [sep24Todo, setSep24Todo] = useState("");
+  const [sep10Token, setSep10Token] = useState("");
+  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const [freighterSignedXDR, setFreighterSignedXDR] = useState("");
 
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
@@ -103,6 +130,7 @@ export const Account = () => {
       }),
     );
     dispatch(getBlockedDomains());
+    dispatch(loadSep24Data());
 
     if (isExperimentalModeEnabled) {
       dispatch(getTokenBalances({ sorobanClient: builder }));
@@ -159,6 +187,66 @@ export const Account = () => {
     };
     fetchAccountHistory();
   }, [publicKey, networkDetails, sortedBalances]);
+
+  // if we have sep24 txid then start polling
+  useEffect(() => {
+    (async () => {
+      if (!sep24TxId) {
+        return;
+      }
+      const signedXdr = freighterSignedXDR || hwSignedXDR;
+      if (signedXdr) {
+        const token = await getAuthToken({
+          signedXdr,
+          sep10Url,
+        });
+        setSep10Token(token);
+        const _sep24Todo = await startSep24Polling({
+          dispatch,
+          sep24Url,
+          txId: sep24TxId,
+          token,
+          status: sep24Status,
+        });
+        setSep24Todo(_sep24Todo === Sep24Status.COMPLETED ? "" : _sep24Todo);
+      } else {
+        // need to get signed Xdr first
+        if (isHardwareWallet) {
+          setSep24Todo(Sep24Status.PENDING_HARDWARE_WALLET_SIGN);
+          return;
+        }
+        const {
+          challengeTx: transactionXDR,
+          networkPassphrase,
+        } = await getAnchorSep24Data({
+          anchorDomain,
+          publicKey,
+        });
+        const res = await dispatch(
+          signFreighterTransaction({
+            transactionXDR,
+            network: networkPassphrase,
+          }),
+        );
+        if (signFreighterTransaction.fulfilled.match(res)) {
+          const { signedTransaction } = res.payload;
+          setFreighterSignedXDR(signedTransaction);
+        }
+        dispatch(setSubmitStatus(ActionStatus.IDLE));
+      }
+    })();
+  }, [
+    dispatch,
+    sep10Url,
+    sep24Url,
+    sep24Status,
+    publicKey,
+    isHardwareWallet,
+    sep24TxId,
+    anchorDomain,
+    freighterSignedXDR,
+    hwSignedXDR,
+  ]);
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
@@ -228,6 +316,13 @@ export const Account = () => {
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />
+              {sep24Todo && (
+                <Sep24Todo
+                  todo={sep24Todo}
+                  asset={sep24Asset}
+                  token={sep10Token}
+                />
+              )}
             </SimpleBar>
           ) : (
             <NotFundedMessage
