@@ -1,3 +1,27 @@
+# Release notes - Wallets - Freighter-2.12.0
+
+### Bug
+
+Asset Details doesn't show Send/Swap buttons properly
+
+Inconsistent token icons
+
+### Story
+
+When Sending payment, choosing Token Asset should use \`InvokeHostFunctionOp\` instead of classic \`Payment\` op
+
+# Release notes - Wallets - Freighter-2.11.1
+
+### Bug
+
+Make Settings version number dynamic
+
+Switching account causes authentication gore on asset select screen
+
+Connecting to an insecure Soroban-RPC throws error
+
+Token and asset balances not loading at same time
+
 # Release notes - Wallets - Freighter-2.11.0
 
 ### Story

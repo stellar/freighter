@@ -15,6 +15,7 @@ import {
   getStellarExpertUrl,
   getRawBalance,
   getIssuerFromBalance,
+  isSorobanIssuer,
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
@@ -71,7 +72,7 @@ export const AssetDetail = ({
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
-  const isSorobanAsset = !!canonical.issuer && canonical.issuer.length > 12;
+  const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
   const isOwnedScamAsset = useIsOwnedScamAsset(
     canonical.code,
     canonical.issuer,
