@@ -10,7 +10,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import { getAttrsFromSorobanOp } from "popup/helpers/soroban";
 
-import { HorizonOperation } from "@shared/api/types";
+import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 import { TransactionDetailProps } from "../TransactionDetail";
@@ -35,6 +35,7 @@ export type HistoryItemOperation = HorizonOperation & {
 };
 
 interface HistoryItemProps {
+  tokenBalances: TokenBalances;
   operation: HistoryItemOperation;
   publicKey: string;
   url: string;
@@ -45,6 +46,7 @@ interface HistoryItemProps {
 
 export const HistoryItem = ({
   operation,
+  tokenBalances,
   publicKey,
   url,
   networkDetails,
@@ -91,10 +93,6 @@ export const HistoryItem = ({
   let IconComponent = <Icon.Shuffle className="HistoryItem__icon--default" />;
   let PaymentComponent = null as React.ReactElement | null;
   const isSorobanTx = typeI === 24;
-
-  if (isSorobanTx) {
-    console.log(getAttrsFromSorobanOp(operation, networkDetails));
-  }
 
   let transactionDetailProps: TransactionDetailProps = {
     operation,
@@ -170,6 +168,47 @@ export const HistoryItem = ({
       },
       operationText: `-${new BigNumber(startingBalance)} XLM`,
     };
+  } else if (isSorobanTx) {
+    const { transaction_attr: transactionAttrs } = operation;
+    const attrs = getAttrsFromSorobanOp(operation, networkDetails);
+    const token = tokenBalances.find(
+      (balance) => balance.contractId === attrs.contractId,
+    );
+
+    if (!token || !attrs.amount) {
+      rowText = operationString;
+      transactionDetailProps = {
+        ...transactionDetailProps,
+        headerTitle: t("Transaction"),
+        operationText: operationString,
+      };
+    } else {
+      isRecipient = transactionAttrs.source_account !== publicKey;
+      paymentDifference = isRecipient ? "+" : "-";
+      PaymentComponent = (
+        <>
+          {paymentDifference}
+          {new BigNumber(attrs.amount).toFixed(2, 1)} {token.symbol}
+        </>
+      );
+      IconComponent = isRecipient ? (
+        <Icon.ArrowDown className="HistoryItem__icon--received" />
+      ) : (
+        <Icon.ArrowUp className="HistoryItem__icon--sent" />
+      );
+      rowText = token.symbol;
+      dateText = `${isRecipient ? t("Received") : t("Sent")} \u2022 ${date}`;
+      transactionDetailProps = {
+        ...transactionDetailProps,
+        isRecipient,
+        headerTitle: `${isRecipient ? t("Received") : t("Sent")} ${
+          token.symbol
+        }`,
+        operationText: `${paymentDifference}${new BigNumber(attrs.amount)} ${
+          token.symbol
+        }`,
+      };
+    }
   } else {
     rowText = operationString;
     transactionDetailProps = {

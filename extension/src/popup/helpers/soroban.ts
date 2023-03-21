@@ -4,6 +4,10 @@ import { BigNumber } from "bignumber.js";
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
+export enum SorobanTokenInterface {
+  xfer = "xfer",
+}
+
 export const getTokenBalance = (
   tokenBalances: TokenBalances,
   contractId: string,
@@ -23,6 +27,14 @@ export const contractIdAttrToHex = (byteArray: number[]) =>
     })
     .join("");
 
+export const getXferArgs = (args: any[]): Record<string, string> => {
+  // xfer(to, from, amount)
+  const amount = args[2];
+  return {
+    amount: amount._switch.value,
+  };
+};
+
 export const getAttrsFromSorobanOp = (
   operation: HorizonOperation,
   networkDetails: NetworkDetails,
@@ -31,6 +43,7 @@ export const getAttrsFromSorobanOp = (
     return {};
   }
 
+  // TODO: Tx Envelope types are not caught up for Soroban yet
   const txEnvelope = SorobanClient.TransactionBuilder.fromXDR(
     operation.transaction_attr.envelope_xdr,
     networkDetails.networkPassphrase,
@@ -41,12 +54,12 @@ export const getAttrsFromSorobanOp = (
     return {};
   }
 
+  const attrs = txAuth._attributes.rootInvocation._attributes;
+  const { amount } = getXferArgs(attrs.args);
+
   return {
-    fnName: new TextDecoder().decode(
-      txAuth._attributes.rootInvocation._attributes.functionName,
-    ),
-    contractId: contractIdAttrToHex(
-      txAuth._attributes.rootInvocation._attributes.contractId,
-    ),
+    fnName: new TextDecoder().decode(attrs.functionName),
+    contractId: contractIdAttrToHex(attrs.contractId),
+    amount,
   };
 };

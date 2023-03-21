@@ -228,6 +228,7 @@ export const AssetDetail = ({
                   return (
                     <HistoryItem
                       key={operation.id}
+                      tokenBalances={[]}
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       url={stellarExpertUrl}
