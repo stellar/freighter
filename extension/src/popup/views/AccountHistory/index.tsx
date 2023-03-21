@@ -1,16 +1,25 @@
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect, useState, useContext } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { HorizonOperation } from "@shared/api/types";
+import { HorizonOperation, ActionStatus } from "@shared/api/types";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  sorobanSelector,
+  getTokenBalances,
+  resetSorobanTokensStatus,
+} from "popup/ducks/soroban";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import {
   getIsPayment,
+  getIsSorobanTransfer,
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
@@ -26,6 +35,7 @@ import {
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { BottomNav } from "popup/components/BottomNav";
+import { SorobanContext } from "../../SorobanContext";
 
 import "./styles.scss";
 
@@ -47,9 +57,17 @@ export const AccountHistory = () => {
       }
     | null;
 
+  const sorobanClient = useContext(SorobanContext);
+
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
+  const { tokenBalances, getTokenBalancesStatus } = useSelector(
+    sorobanSelector,
+  );
+
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
     null as HistorySegments,
@@ -68,16 +86,26 @@ export const AccountHistory = () => {
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   // differentiate between if data is still loading and if no account history results came back from Horizon
-  const isAccountHistoryLoading = historySegments === null;
+  const isAccountHistoryLoading = isExperimentalModeEnabled
+    ? historySegments === null ||
+      getTokenBalancesStatus === ActionStatus.IDLE ||
+      getTokenBalancesStatus === ActionStatus.PENDING
+    : historySegments === null;
 
   useEffect(() => {
+    const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
+      // TODO: add mint and other common token interactions
+      getIsSorobanTransfer(operation, networkDetails);
+
     setIsLoading(true);
     const createSegments = (
       operations: HorizonOperation[],
       showSorobanTxs = false,
     ) => {
       const _operations = showSorobanTxs
-        ? operations
+        ? operations.filter(
+            (op) => op.type_i !== 24 || isSupportedSorobanAccountItem(op),
+          )
         : operations.filter((op) => op.type_i !== 24);
       const segments = {
         [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
@@ -86,6 +114,7 @@ export const AccountHistory = () => {
       };
       _operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
+        const isSorobanXfer = getIsSorobanTransfer(operation, networkDetails);
         const isSwap = getIsSwap(operation);
         const isCreateExternalAccount =
           operation.type === Horizon.OperationResponseType.createAccount &&
@@ -97,7 +126,7 @@ export const AccountHistory = () => {
           isCreateExternalAccount,
         };
 
-        if (isPayment && !isSwap) {
+        if (isPayment || (isSorobanXfer && !isSwap)) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
           } else if (operation.to === publicKey) {
@@ -118,14 +147,32 @@ export const AccountHistory = () => {
     const fetchAccountHistory = async () => {
       try {
         const res = await getAccountHistory({ publicKey, networkDetails });
-        setHistorySegments(createSegments(res.operations));
+        setHistorySegments(
+          createSegments(res.operations, isExperimentalModeEnabled),
+        );
+
+        if (isExperimentalModeEnabled) {
+          dispatch(getTokenBalances({ sorobanClient }));
+        }
       } catch (e) {
         console.error(e);
       }
       setIsLoading(false);
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails]);
+
+    return () => {
+      if (isExperimentalModeEnabled) {
+        dispatch(resetSorobanTokensStatus());
+      }
+    };
+  }, [
+    publicKey,
+    networkDetails,
+    isExperimentalModeEnabled,
+    sorobanClient,
+    dispatch,
+  ]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
@@ -163,9 +210,11 @@ export const AccountHistory = () => {
                     (operation: HistoryItemOperation) => (
                       <HistoryItem
                         key={operation.id}
+                        tokenBalances={tokenBalances}
                         operation={operation}
                         publicKey={publicKey}
                         url={stellarExpertUrl}
+                        networkDetails={networkDetails}
                         setDetailViewProps={setDetailViewProps}
                         setIsDetailViewShowing={setIsDetailViewShowing}
                       />

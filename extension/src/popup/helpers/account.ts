@@ -14,6 +14,7 @@ import {
   getCanonicalFromAsset,
   isTestnet,
 } from "helpers/stellar";
+import { getAttrsFromSorobanOp, SorobanTokenInterface } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -45,6 +46,14 @@ export const getIsPayment = (type: Horizon.OperationResponseType) =>
     Horizon.OperationResponseType.pathPayment,
     Horizon.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
+
+export const getIsSorobanTransfer = (
+  operation: HorizonOperation,
+  networkDetails: NetworkDetails,
+) => {
+  const attrs = getAttrsFromSorobanOp(operation, networkDetails);
+  return !!attrs.fnName && attrs.fnName === SorobanTokenInterface.xfer;
+};
 
 export const getIsSwap = (operation: HorizonOperation) =>
   operation.type_i === 13 && operation.source_account === operation.to;
