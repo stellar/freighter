@@ -14,7 +14,7 @@ import {
   getCanonicalFromAsset,
   isTestnet,
 } from "helpers/stellar";
-import { getAttrsFromSorobanOp } from "./soroban";
+import { getAttrsFromSorobanOp, SorobanTokenInterface } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -52,7 +52,7 @@ export const getIsSorobanTransfer = (
   networkDetails: NetworkDetails,
 ) => {
   const attrs = getAttrsFromSorobanOp(operation, networkDetails);
-  return attrs.fnName && attrs.fnName === "xfer";
+  return !!attrs.fnName && attrs.fnName === SorobanTokenInterface.xfer;
 };
 
 export const getIsSwap = (operation: HorizonOperation) =>
