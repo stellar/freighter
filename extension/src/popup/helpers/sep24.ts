@@ -58,8 +58,8 @@ export const getAnchorSep24Data = async ({
   const transactionXDR = tx.toXDR();
 
   return {
-    sep10Url: tomlRes.WEB_AUTH_ENDPOINT,
-    sep24Url: tomlRes.TRANSFER_SERVER_SEP0024,
+    sep10Url: tomlRes.WEB_AUTH_ENDPOINT || "",
+    sep24Url: tomlRes.TRANSFER_SERVER_SEP0024 || "",
     challengeTx: transactionXDR,
     networkPassphrase: authJson.network_passphrase,
   };
