@@ -68,10 +68,9 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const {
-    tokenBalances: sorobanBalances,
-    getTokenBalancesStatus,
-  } = useSelector(sorobanSelector);
+  const { tokenBalances, getTokenBalancesStatus } = useSelector(
+    sorobanSelector,
+  );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -90,7 +89,7 @@ export const Account = () => {
 
   const { balances, isFunded } = accountBalances;
 
-  const builder = useContext(SorobanContext);
+  const sorobanClient = useContext(SorobanContext);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -105,7 +104,7 @@ export const Account = () => {
     dispatch(getBlockedDomains());
 
     if (isExperimentalModeEnabled) {
-      dispatch(getTokenBalances({ sorobanClient: builder }));
+      dispatch(getTokenBalances({ sorobanClient }));
     }
 
     return () => {
@@ -115,7 +114,7 @@ export const Account = () => {
       }
     };
   }, [
-    builder,
+    sorobanClient,
     isExperimentalModeEnabled,
     publicKey,
     networkDetails,
@@ -130,14 +129,14 @@ export const Account = () => {
         getTokenBalancesStatus === ActionStatus.PENDING);
     if (!balances || hasFetchedSorobanTokens) return;
 
-    setSortedBalances(sortBalances(balances, sorobanBalances));
+    setSortedBalances(sortBalances(balances, tokenBalances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
   }, [
     isExperimentalModeEnabled,
     getTokenBalancesStatus,
-    sorobanBalances,
+    tokenBalances,
     balances,
     networkDetails,
     dispatch,
