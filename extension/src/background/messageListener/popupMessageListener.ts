@@ -552,9 +552,7 @@ export const popupMessageListener = (request: Request) => {
       applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: await getBipPath(),
-      tokenIdList: JSON.parse(
-        (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
-      ),
+      tokenIdList: (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || {},
     };
   };
 
@@ -1120,9 +1118,7 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const getTokenIds = async () => {
-    const tokenIdList = JSON.parse(
-      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
-    );
+    const tokenIdList = (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || {};
     const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     return { tokenIdList: tokenIdList[keyId] || [] };
