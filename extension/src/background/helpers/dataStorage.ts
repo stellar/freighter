@@ -1,4 +1,5 @@
 import { browser } from "webextension-polyfill-ts";
+import { KEY_ID } from "constants/localStorageTypes";
 
 interface SetItemParams {
   [key: string]: any;
@@ -33,6 +34,19 @@ export const migrateLocalStorageToBrowserStorage = async () => {
   });
 
   await dataStorage.setItem(storage);
+
+  /* 
+    The above migration mistakenly sets keyId as a number, which causes issues downstream:
+    - we need to be able to use String.indexOf to determine if the keyId belongs to a hardware wallet
+    - @stellar/walet-sdk expects a string when dealing unlocking a keystore by keyId
+    - in other places in code where we save keyId, we do so as a string
+
+    Let's solve the issue at its source
+  */
+  const keyId = (await dataStorageAccess.getItem(KEY_ID)) as string | number;
+  if (typeof keyId === "number") {
+    await dataStorageAccess.setItem(KEY_ID, keyId.toString());
+  }
 };
 
 // TODO - temporary wrapper around localStorage until we replace
