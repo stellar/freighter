@@ -150,6 +150,8 @@ export const Account = () => {
           sortOperationsByAsset({
             operations: res.operations,
             balances: sortedBalances,
+            networkDetails,
+            publicKey,
           }),
         );
       } catch (e) {
