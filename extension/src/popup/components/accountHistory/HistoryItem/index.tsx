@@ -92,6 +92,7 @@ export const HistoryItem = ({
   let dateText = date;
   let IconComponent = <Icon.Shuffle className="HistoryItem__icon--default" />;
   let PaymentComponent = null as React.ReactElement | null;
+  // TODO should be combined with isPayment
   const isSorobanTx = typeI === 24;
 
   let transactionDetailProps: TransactionDetailProps = {
@@ -172,10 +173,10 @@ export const HistoryItem = ({
     const { transaction_attr: transactionAttrs } = operation;
     const attrs = getAttrsFromSorobanOp(operation, networkDetails);
     const token = tokenBalances.find(
-      (balance) => balance.contractId === attrs.contractId,
+      (balance) => attrs && balance.contractId === attrs.contractId,
     );
 
-    if (!token || !attrs.amount) {
+    if (!token || !attrs) {
       rowText = operationString;
       transactionDetailProps = {
         ...transactionDetailProps,
