@@ -126,7 +126,7 @@ export const AccountHistory = () => {
           isCreateExternalAccount,
         };
 
-        if (isPayment || (isSorobanXfer && !isSwap)) {
+        if ((isPayment || isSorobanXfer) && !isSwap) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
           } else if (operation.to === publicKey) {

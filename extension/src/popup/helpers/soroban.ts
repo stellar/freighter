@@ -1,5 +1,4 @@
 import * as SorobanClient from "soroban-client";
-import { BigNumber } from "bignumber.js";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -14,20 +13,30 @@ export const getTokenBalance = (
 ) => {
   const balance = tokenBalances.find(({ contractId: id }) => id === contractId);
 
-  const total = (balance?.total as any) as BigNumber; // TODO
+  if (!balance) {
+    throw new Error("Balance not found");
+  }
 
-  return total.toString();
+  return balance.total.toString();
 };
 
 export const contractIdAttrToHex = (byteArray: number[]) =>
-  Array.prototype.map
-    .call(byteArray, function decodeBytes(byte) {
+  byteArray.reduce(
+    (prev, curr) =>
       // eslint-disable-next-line
-      return ("0" + (byte & 0xff).toString(16)).slice(-2);
-    })
-    .join("");
+      prev + ("0" + (curr & 0xff).toString(16)).slice(-2),
+    "",
+  );
 
-export const getXferArgs = (args: any[]): Record<string, string> => {
+interface AmountArg {
+  _switch: {
+    value: string;
+  };
+}
+
+type TxEnvXferArgs = [Uint32Array, Uint32Array, AmountArg];
+
+export const getXferArgs = (args: TxEnvXferArgs): Record<string, string> => {
   // xfer(to, from, amount)
   const amount = args[2];
   return {
@@ -40,18 +49,23 @@ export const getAttrsFromSorobanOp = (
   networkDetails: NetworkDetails,
 ) => {
   if (operation.type_i !== 24) {
-    return {};
+    return null;
   }
 
   // TODO: Tx Envelope types are not caught up for Soroban yet
   const txEnvelope = SorobanClient.TransactionBuilder.fromXDR(
     operation.transaction_attr.envelope_xdr,
     networkDetails.networkPassphrase,
-  ) as any;
+  ) as Record<string, any>;
   const op = txEnvelope._operations[0]; // only one op per tx in Soroban right now
+
+  if (!op) {
+    return null;
+  }
+
   const txAuth = op.auth[0];
   if (!txAuth) {
-    return {};
+    return null;
   }
 
   const attrs = txAuth._attributes.rootInvocation._attributes;
