@@ -546,16 +546,6 @@ export const popupMessageListener = (request: Request) => {
   const loadAccount = async () => {
     const currentState = store.getState();
 
-    /* in migrating localStorage to browser.storage, we mistakenly saved KEY_ID as a Number when it needs to be a String.
-      We  use String.indexOf to determine if it's a Hardware Wallet key. Also, @stellar/wallet-sdk expects a String when dealing with the keystore.
-      This small migration script will fix that for us
-    */
-
-    const keyId = await dataStorageAccess.getItem(KEY_ID);
-    if (typeof keyId === "number") {
-      await dataStorageAccess.setItem(KEY_ID, keyId.toString());
-    }
-
     return {
       hasPrivateKey: await hasPrivateKeySelector(currentState),
       publicKey: publicKeySelector(currentState),
