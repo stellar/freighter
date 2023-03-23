@@ -3,11 +3,17 @@ import {
   DEV_SERVER,
   EXTERNAL_MSG_RESPONSE,
   EXTERNAL_MSG_REQUEST,
+  EXTERNAL_SERVICE_TYPES,
+  SERVICE_TYPES,
 } from "../../constants/services";
 import { Response } from "../types";
-import { NoExtensionInstalledError } from "../../constants/errors";
 
-export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
+interface Msg {
+  [key: string]: any;
+  type: EXTERNAL_SERVICE_TYPES | SERVICE_TYPES;
+}
+
+export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
   /* 
     In the case of multiple calls coming in sequentially, we use this MESSAGE_ID to make sure we're responding to
     the appropriate message sender. Otherwise, we can run into race conditions where we simply resolve all 
@@ -19,9 +25,22 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
     { source: EXTERNAL_MSG_REQUEST, messageId: MESSAGE_ID, ...msg },
     window.location.origin,
   );
-  return new Promise((resolve, reject) => {
-    if (!window.freighter) {
-      reject(new NoExtensionInstalledError());
+  return new Promise((resolve) => {
+    let requestTimeout = 0;
+
+    /* 
+      In the case that Freighter is not installed at all, any messages to 
+      background from freighter-api will hang forever and not respond in any way. 
+      This is especially a problem for the isConnected method, because this is 
+      likely to be called in a situation where Freighter isn't installed.
+      To prevent this, we add a timeout to automatically resolve in the event 
+      Freighter doesn't respond in a timely fashion to this method.
+    */
+    if (msg.type === EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS) {
+      requestTimeout = setTimeout(() => {
+        resolve({ isConnected: false } as Response);
+        window.removeEventListener("message", messageListener);
+      }, 2000);
     }
 
     const messageListener = (event: { source: any; data: Response }) => {
@@ -34,12 +53,13 @@ export const sendMessageToContentScript = (msg: {}): Promise<Response> => {
 
       resolve(event.data);
       window.removeEventListener("message", messageListener);
+      clearTimeout(requestTimeout);
     };
     window.addEventListener("message", messageListener, false);
   });
 };
 
-export const sendMessageToBackground = async (msg: {}): Promise<Response> => {
+export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
   let res;
   if (DEV_SERVER) {
     // treat this as an external call because we're making the call from the browser, not the popup
