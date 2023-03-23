@@ -26,7 +26,7 @@ The call signatures will be exactly the same as the [node version](./usingFreigh
 For example:
 
 ```javascript
-if (window.freighterApi.isConnected()) {
+if (await window.freighterApi.isConnected()) {
   alert("User has Freighter!");
 }
 ```
