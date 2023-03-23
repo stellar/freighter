@@ -20,7 +20,7 @@ export const getTokenBalance = (
   return balance.total.toString();
 };
 
-export const contractIdAttrToHex = (byteArray: number[]) =>
+export const contractIdAttrToHex = (byteArray: Buffer) =>
   byteArray.reduce(
     (prev, curr) =>
       // eslint-disable-next-line
@@ -28,21 +28,23 @@ export const contractIdAttrToHex = (byteArray: number[]) =>
     "",
   );
 
-interface AmountArg {
-  _switch: {
-    value: string;
-  };
-}
-
-type TxEnvXferArgs = [Uint32Array, Uint32Array, AmountArg];
-
-export const getXferArgs = (args: TxEnvXferArgs): Record<string, string> => {
+export const getXferArgs = (args: SorobanClient.xdr.ScVal[]): Record<string, string|number> => {
   // xfer(to, from, amount)
   const amount = args[2];
+  const value = amount.value() as SorobanClient.xdr.ScObject
   return {
-    amount: amount._switch.value,
+    amount: value.i128().lo().low,
   };
 };
+
+interface RootInvocation {
+  _attributes: {
+    contractId: Buffer;
+    functionName: Buffer;
+    args: SorobanClient.xdr.ScVal[];
+    subInvocations: SorobanClient.xdr.AuthorizedInvocation[];
+  }
+}
 
 export const getAttrsFromSorobanOp = (
   operation: HorizonOperation,
@@ -52,12 +54,12 @@ export const getAttrsFromSorobanOp = (
     return null;
   }
 
-  // TODO: Tx Envelope types are not caught up for Soroban yet
   const txEnvelope = SorobanClient.TransactionBuilder.fromXDR(
     operation.transaction_attr.envelope_xdr,
     networkDetails.networkPassphrase,
-  ) as Record<string, any>;
-  const op = txEnvelope._operations[0]; // only one op per tx in Soroban right now
+  ) as SorobanClient.Transaction<SorobanClient.Memo<SorobanClient.MemoType>, SorobanClient.Operation.InvokeHostFunction[]>;
+
+  const op = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
   if (!op) {
     return null;
@@ -68,7 +70,8 @@ export const getAttrsFromSorobanOp = (
     return null;
   }
 
-  const attrs = txAuth._attributes.rootInvocation._attributes;
+  // TODO: figure out how to better work with the AuthorizedInvocation interface
+  const { _attributes: attrs } = txAuth.rootInvocation() as unknown as RootInvocation
   const { amount } = getXferArgs(attrs.args);
 
   return {
