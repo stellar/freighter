@@ -42,8 +42,10 @@ export const getTransactionInfo = (search: string) => {
     (operation: { type: string }) => operation.type,
   );
 
+  const _accountToSign = accountToSign && accountToSign.length > 0 ? accountToSign : transaction._source
+
   return {
-    accountToSign,
+    accountToSign: _accountToSign,
     transaction,
     transactionXdr,
     domain: hostname,
