@@ -40,68 +40,41 @@ jobs:
       - name: Build extension
         uses: actions/setup-node@v1
         with:
-          node-version: "12"
+          node-version: "16.14"
       - run: yarn install && yarn build:freighter-api && yarn build:extension:production
+      - name: Use BETA icons
+        run: |
+          rm -rf ./extension/build/images
+          mv ./extension/build/beta_images ./extension/build/images
       - name: Install zip
         uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
       - name: Zip extension build
         run: zip -qq -r ./build.zip *
         working-directory: ./extension/build
-      # - name: Create GitHub Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #   with:
-      #     tag_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
-      #     release_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
-      #     body: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
-      #     draft: false
-      #     prerelease: true
-      # - name: Upload Release Asset
-      #   id: upload-release-asset
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./extension/build/build.zip
-      #     asset_name: build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.zip
-      #     asset_content_type: application/zip
-      # - name: Update built manifest.json version for Firefox
-      #   uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-      #   with:
-      #     file: ./extension/build/manifest.json
-      #     field: version
-      #     value: ${{ github.event.inputs.release }}beta${{ github.event.inputs.version }}
-      # - name: Build xpi for Firefox
-      #   id: firefox-build
-      #   uses: kewisch/action-web-ext@20ee9837f7352d4770b93868a0aa59292eb43d8c #v1
-      #   with:
-      #     cmd: build
-      #     source: ./extension/build
-      #     filename: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.xpi
-      # - name: Sign extension for Firefox
-      #   id: firefox-sign
-      #   uses: kewisch/action-web-ext@20ee9837f7352d4770b93868a0aa59292eb43d8c #v1
-      #   with:
-      #     cmd: sign
-      #     source: ${{ steps.firefox-build.outputs.target }}
-      #     channel: unlisted
-      #     apiKey: ${{ secrets.AMO_SIGN_KEY }}
-      #     apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
-      #     timeout: 1800000
-      # - name: Upload Firefox xpi
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ${{ steps.firefox-sign.outputs.target }}
-      #     asset_name: ${{ github.event.inputs.release }}-${{ github.event.inputs.version }}.xpi
-      #     asset_content_type: application/xpi
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          release_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          body: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          draft: false
+          prerelease: true
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./extension/build/build.zip
+          asset_name: build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.zip
+          asset_content_type: application/zip
+      # - name:
       - name: Submit extension to Chrome
-        uses: mnao305/chrome-extension-upload@4061bc03cde1feaec8b153654495c88857fb76c3 #v2.2.0
+        uses: ./.github/actions/chrome-extension-upload
         with:
           file-path: ./extension/build/build.zip
           extension-id: "kcigoalhjaghfigblagmiopnefgenfjb"
