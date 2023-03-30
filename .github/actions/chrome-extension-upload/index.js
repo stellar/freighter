@@ -1,7 +1,7 @@
-import * as core from '@actions/core'
-import fs from 'fs'
-import glob from 'glob'
-import chromeWebstoreUpload from './chrome-extension-upload'
+const core = require('@actions/core')
+const fs = require('fs')
+const glob = require('glob')
+const chromeWebstoreUpload = require('./chrome-extension-upload')
 
 /*
   Forked from https://github.com/mnao305/chrome-extension-upload
