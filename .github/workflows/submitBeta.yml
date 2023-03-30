@@ -37,15 +37,15 @@ jobs:
           file: ./extension/public/static/manifest.json
           field: version
           value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
-      - name: Use BETA icons
-        run: |
-          rm -rf ./extension/build/images
-          mv ./extension/build/beta_images ./extension/build/images
       - name: Build extension
         uses: actions/setup-node@v1
         with:
           node-version: "16.14"
       - run: yarn install && yarn build:freighter-api && yarn build:extension:production
+      - name: Use BETA icons
+        run: |
+          rm -rf ./extension/build/images
+          mv ./extension/build/beta_images ./extension/build/images
       - name: Install zip
         uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
       - name: Zip extension build
