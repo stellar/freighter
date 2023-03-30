@@ -38,10 +38,9 @@ jobs:
           field: version
           value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
       - name: Use BETA icons
-        working-directory: extension/build
         run: |
-          rm -rf ./images
-          mv ./beta_images ./images
+          rm -rf ./extension/build/images
+          mv ./extension/build/beta_images ./extension/build/images
       - name: Build extension
         uses: actions/setup-node@v1
         with:
