@@ -38,7 +38,7 @@ jobs:
           field: version
           value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
       - name: Use BETA icons
-        working-directory: ./extension/build
+        working-directory: extension/build
         run: |
           rm -rf ./images
           mv ./beta_images ./images
