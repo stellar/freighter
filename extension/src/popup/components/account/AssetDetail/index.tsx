@@ -11,6 +11,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
+  getIsSorobanTransfer,
   getIsSwap,
   getStellarExpertUrl,
   getRawBalance,
@@ -225,12 +226,21 @@ export const AssetDetail = ({
                     isPayment: getIsPayment(operation.type),
                     isSwap: getIsSwap(operation),
                   };
+
+                  const tokenBalances =
+                    balance &&
+                    "contractId" in balance &&
+                    getIsSorobanTransfer(operation, networkDetails)
+                      ? [balance]
+                      : [];
                   return (
                     <HistoryItem
                       key={operation.id}
+                      tokenBalances={tokenBalances}
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       url={stellarExpertUrl}
+                      networkDetails={networkDetails}
                       setDetailViewProps={setDetailViewProps}
                       setIsDetailViewShowing={setIsDetailViewShowing}
                     />
