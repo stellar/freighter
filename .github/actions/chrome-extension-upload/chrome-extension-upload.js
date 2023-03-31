@@ -7,83 +7,90 @@ const got = require('got');
 
 const rootURI = 'https://www.googleapis.com';
 const refreshTokenURI = 'https://accounts.google.com/o/oauth2/token';
-const uploadExistingURI = id => `${rootURI}/upload/chromewebstore/v1.1/items/${id}`;
-const publishURI = (id, target) => (
-  `${rootURI}/chromewebstore/v1.1/items/${id}/publish?publishTarget=${target}`
-);
+const uploadExistingURI = id =>
+    `${rootURI}/upload/chromewebstore/v1.1/items/${id}`;
+const publishURI = (id, target) =>
+    `${rootURI}/chromewebstore/v1.1/items/${id}/publish?publishTarget=${target}`;
+const getURI = (id, projection) =>
+    `${rootURI}/chromewebstore/v1.1/items/${id}?projection=${projection}`;
 
-const requiredFields = [
-  'extensionId',
-  'clientId',
-  'clientSecret',
-  'refreshToken'
-];
+const requiredFields = ['extensionId', 'clientId', 'refreshToken'];
 
 class APIClient {
-  constructor(opts) {
-    requiredFields.forEach(field => {
-      if (!opts[field]) {
-        throw new Error(`Option "${field}" is required`);
-      }
+    constructor(options) {
+        for (const field of requiredFields) {
+            if (!options[field]) {
+                throw new Error(`Option "${field}" is required`);
+            }
 
-      this[field] = opts[field];
-    });
-  }
+            this[field] = options[field];
+        }
 
-  uploadExisting(readStream, token) {
-    if (!readStream) {
-      return Promise.reject(new Error('Read stream missing'));
+        if ('clientSecret' in options) {
+            this.clientSecret = options.clientSecret;
+        }
     }
 
-    const { extensionId } = this;
-    const eventualToken = token ? Promise.resolve(token) : this.fetchToken();
+    async uploadExisting(readStream, token = this.fetchToken()) {
+        if (!readStream) {
+            throw new Error('Read stream missing');
+        }
 
-    return eventualToken.then(token => {
-      return got.put(uploadExistingURI(extensionId), {
-        headers: this._headers(token),
-        body: readStream
-      }).then(this._extractBody);
-    });
-  }
+        const { extensionId } = this;
 
-  publish(target = 'default', token) {
-    const { extensionId } = this;
-    const eventualToken = token ? Promise.resolve(token) : this.fetchToken();
+        return got
+            .put(uploadExistingURI(extensionId), {
+                headers: this._headers(await token),
+                body: readStream,
+            })
+            .json();
+    }
 
-    return eventualToken.then(token => {
-      return got.post(publishURI(extensionId, target), {
-        headers: this._headers(token)
-      }).then(this._extractBody);
-    });
-  }
+    async publish(target = 'default', token = this.fetchToken()) {
+        const { extensionId } = this;
 
-  fetchToken() {
-    const { clientId, clientSecret, refreshToken } = this;
+        return got
+            .post(publishURI(extensionId, target), {
+                headers: this._headers(await token),
+            })
+            .json();
+    }
 
-    return got.post(refreshTokenURI, {
-      body: {
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: refreshToken,
-        grant_type: 'refresh_token',
-        redirect_uri: 'urn:ietf:wg:oauth:2.0:oob'
-      }
-    }).then(this._extractBody).then(({ access_token }) => access_token);
-  }
+    async get(projection = 'DRAFT', token = this.fetchToken()) {
+        const { extensionId } = this;
 
-  _headers(token) {
-    return {
-      Authorization: `Bearer ${token}`,
-      'x-goog-api-version': '2'
-    };
-  }
+        return got
+            .get(getURI(extensionId, projection), {
+                headers: this._headers(await token),
+            })
+            .json();
+    }
 
-  _extractBody({ body }) {
-    return body;
-  }
+    async fetchToken() {
+        const { clientId, clientSecret, refreshToken } = this;
+        const json = {
+            client_id: clientId,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token',
+        };
+
+        if (clientSecret) {
+            json.client_secret = clientSecret;
+        }
+
+        const response = await got.post(refreshTokenURI, { json }).json();
+
+        return response.access_token;
+    }
+
+    _headers(token) {
+        return {
+            Authorization: `Bearer ${token}`,
+            'x-goog-api-version': '2',
+        };
+    }
 }
 
-
-module.exports = function (...args) {
-  return new APIClient(...args);
-};
+export default function chromeWebstoreUpload(...args) {
+    return new APIClient(...args);
+}
