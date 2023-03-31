@@ -17946,10 +17946,13 @@ function uploadFile(
             return
           })
           .catch((e) => {
-            core.error(e)
-            core.setFailed(
-              'publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.'
-            )
+            // why do we get caught in success state?
+            if (e && e.uploadState !== 'SUCCESS') {
+              core.error(e)
+              core.setFailed(
+                'publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.'
+              )
+            }
           })
       }
     })
