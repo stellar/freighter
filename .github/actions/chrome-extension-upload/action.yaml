@@ -11,6 +11,9 @@ inputs:
   extension-id:
     description: 'extension id'
     required: true
+  client-secret:
+    description: 'client secret'
+    required: true
   client-id:
     description: 'client id'
     required: true
