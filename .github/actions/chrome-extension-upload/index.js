@@ -20,7 +20,6 @@ function uploadFile(
   webStore
     .fetchToken()
     .then((token) => {
-      console.log(token)
       webStore
         .uploadExisting(myZipFile, token)
         .then((uploadRes) => {

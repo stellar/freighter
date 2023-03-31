@@ -48,11 +48,9 @@ class APIClient {
 
   async publish(target = 'default', token = this.fetchToken()) {
     const { extensionId } = this;
-    const publishURI = publishURI(extensionId, target)
-    console.log(publishURI)
 
     return got
-      .post(publishURI, {
+      .post(publishURI(extensionId, target), {
         headers: this._headers(await token),
       })
       .json();
