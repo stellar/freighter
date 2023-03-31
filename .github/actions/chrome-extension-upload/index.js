@@ -20,37 +20,38 @@ function uploadFile(
   webStore
     .fetchToken()
     .then((token) => {
+      console.log(token)
       webStore
-    .uploadExisting(myZipFile, token)
-    .then((uploadRes) => {
-      console.log('Uploading bundle')
-      console.log(uploadRes)
-      core.debug(uploadRes)
-      if (publishFlg === 'true') {
-        webStore
-          .publish(publishTarget, token)
-          .then((publishRes) => {
-            console.log('Publishing bundle')
-            core.debug(publishRes)
-            process.exitCode = 0
-            return
-          })
-          .catch((e) => {
-            core.error(e)
-              core.setFailed(
-                'publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.'
-              )
-          })
-      }
+        .uploadExisting(myZipFile, token)
+        .then((uploadRes) => {
+          console.log('Uploading bundle')
+          console.log(uploadRes)
+          core.debug(uploadRes)
+          if (publishFlg === 'true') {
+            webStore
+              .publish(publishTarget, token)
+              .then((publishRes) => {
+                console.log('Publishing bundle')
+                core.debug(publishRes)
+                process.exitCode = 0
+                return
+              })
+              .catch((e) => {
+                core.error(e)
+                  core.setFailed(
+                    'publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.'
+                  )
+              })
+          }
+        })
+        .catch((e) => {
+          console.log(e)
+          core.error(e)
+          core.setFailed(
+            'upload error - You will need to go to the Chrome Web Store Developer Dashboard and upload it manually.'
+          )
+        })
     })
-    .catch((e) => {
-      console.log(e)
-      core.error(e)
-      core.setFailed(
-        'upload error - You will need to go to the Chrome Web Store Developer Dashboard and upload it manually.'
-      )
-    })
-  })
 }
 
 async function run() {
