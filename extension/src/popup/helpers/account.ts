@@ -14,6 +14,7 @@ import {
   getCanonicalFromAsset,
   isTestnet,
 } from "helpers/stellar";
+import { getAttrsFromSorobanOp, SorobanTokenInterface } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -46,12 +47,22 @@ export const getIsPayment = (type: Horizon.OperationResponseType) =>
     Horizon.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
 
+export const getIsSorobanTransfer = (
+  operation: HorizonOperation,
+  networkDetails: NetworkDetails,
+) => {
+  const attrs = getAttrsFromSorobanOp(operation, networkDetails);
+  return !!attrs && attrs.fnName === SorobanTokenInterface.xfer;
+};
+
 export const getIsSwap = (operation: HorizonOperation) =>
   operation.type_i === 13 && operation.source_account === operation.to;
 
 interface SortOperationsByAsset {
   operations: Array<HorizonOperation>;
   balances: Array<AssetType>;
+  networkDetails: NetworkDetails;
+  publicKey: string;
 }
 
 export interface AssetOperations {
@@ -61,6 +72,8 @@ export interface AssetOperations {
 export const sortOperationsByAsset = ({
   balances,
   operations,
+  networkDetails,
+  publicKey,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -97,6 +110,20 @@ export const sortOperationsByAsset = ({
           ) {
             assetOperationMap[assetKey].push(op);
           }
+        }
+      });
+    }
+
+    if (getIsSorobanTransfer(op, networkDetails)) {
+      Object.keys(assetOperationMap).forEach((assetKey) => {
+        const asset = getAssetFromCanonical(assetKey);
+        const attrs = getAttrsFromSorobanOp(op, networkDetails);
+        if (
+          attrs &&
+          op.source_account === publicKey &&
+          asset.issuer === attrs.contractId
+        ) {
+          assetOperationMap[assetKey].push(op);
         }
       });
     }
