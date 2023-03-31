@@ -26,6 +26,8 @@ function uploadFile(
           .publish(publishTarget)
           .then((publishRes) => {
             core.debug(publishRes)
+            process.exitCode = 0
+            return
           })
           .catch((e) => {
             core.error(e)
