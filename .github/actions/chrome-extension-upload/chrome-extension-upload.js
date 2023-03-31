@@ -41,8 +41,7 @@ class APIClient {
     return eventualToken.then(token => {
       return got.put(uploadExistingURI(extensionId), {
         headers: this._headers(token),
-        body: readStream,
-        json: true
+        body: readStream
       }).then(this._extractBody);
     });
   }
@@ -69,8 +68,7 @@ class APIClient {
         refresh_token: refreshToken,
         grant_type: 'refresh_token',
         redirect_uri: 'urn:ietf:wg:oauth:2.0:oob'
-      },
-      json: true
+      }
     }).then(this._extractBody).then(({ access_token }) => access_token);
   }
 
