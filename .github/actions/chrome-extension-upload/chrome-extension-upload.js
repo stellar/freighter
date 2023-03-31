@@ -52,8 +52,7 @@ class APIClient {
 
     return eventualToken.then(token => {
       return got.post(publishURI(extensionId, target), {
-        headers: this._headers(token),
-        json: true
+        headers: this._headers(token)
       }).then(this._extractBody);
     });
   }
