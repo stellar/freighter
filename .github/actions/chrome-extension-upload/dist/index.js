@@ -14,90 +14,92 @@ const got = __nccwpck_require__(3061);
 const rootURI = 'https://www.googleapis.com';
 const refreshTokenURI = 'https://accounts.google.com/o/oauth2/token';
 const uploadExistingURI = id =>
-    `${rootURI}/upload/chromewebstore/v1.1/items/${id}`;
+  `${rootURI}/upload/chromewebstore/v1.1/items/${id}`;
 const publishURI = (id, target) =>
-    `${rootURI}/chromewebstore/v1.1/items/${id}/publish?publishTarget=${target}`;
+  `${rootURI}/chromewebstore/v1.1/items/${id}/publish?publishTarget=${target}`;
 const getURI = (id, projection) =>
-    `${rootURI}/chromewebstore/v1.1/items/${id}?projection=${projection}`;
+  `${rootURI}/chromewebstore/v1.1/items/${id}?projection=${projection}`;
 
 const requiredFields = ['extensionId', 'clientId', 'refreshToken'];
 
 class APIClient {
-    constructor(options) {
-        for (const field of requiredFields) {
-            if (!options[field]) {
-                throw new Error(`Option "${field}" is required`);
-            }
+  constructor(options) {
+    for (const field of requiredFields) {
+      if (!options[field]) {
+        throw new Error(`Option "${field}" is required`);
+      }
 
-            this[field] = options[field];
-        }
-
-        if ('clientSecret' in options) {
-            this.clientSecret = options.clientSecret;
-        }
+      this[field] = options[field];
     }
 
-    async uploadExisting(readStream, token = this.fetchToken()) {
-        if (!readStream) {
-            throw new Error('Read stream missing');
-        }
+    if ('clientSecret' in options) {
+      this.clientSecret = options.clientSecret;
+    }
+  }
 
-        const { extensionId } = this;
-
-        return got
-            .put(uploadExistingURI(extensionId), {
-                headers: this._headers(await token),
-                body: readStream,
-            })
-            .json();
+  async uploadExisting(readStream, token = this.fetchToken()) {
+    if (!readStream) {
+      throw new Error('Read stream missing');
     }
 
-    async publish(target = 'default', token = this.fetchToken()) {
-        const { extensionId } = this;
+    const { extensionId } = this;
 
-        return got
-            .post(publishURI(extensionId, target), {
-                headers: this._headers(await token),
-            })
-            .json();
+    return got
+      .put(uploadExistingURI(extensionId), {
+        headers: this._headers(await token),
+        body: readStream,
+      })
+      .json();
+  }
+
+  async publish(target = 'default', token = this.fetchToken()) {
+    const { extensionId } = this;
+    const publishURI = publishURI(extensionId, target)
+    console.log(publishURI)
+
+    return got
+      .post(publishURI, {
+        headers: this._headers(await token),
+      })
+      .json();
+  }
+
+  async get(projection = 'DRAFT', token = this.fetchToken()) {
+    const { extensionId } = this;
+
+    return got
+      .get(getURI(extensionId, projection), {
+        headers: this._headers(await token),
+      })
+      .json();
+  }
+
+  async fetchToken() {
+    const { clientId, clientSecret, refreshToken } = this;
+    const json = {
+      client_id: clientId,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    };
+
+    if (clientSecret) {
+      json.client_secret = clientSecret;
     }
 
-    async get(projection = 'DRAFT', token = this.fetchToken()) {
-        const { extensionId } = this;
+    const response = await got.post(refreshTokenURI, { json }).json();
 
-        return got
-            .get(getURI(extensionId, projection), {
-                headers: this._headers(await token),
-            })
-            .json();
-    }
+    return response.access_token;
+  }
 
-    async fetchToken() {
-        const { clientId, clientSecret, refreshToken } = this;
-        const json = {
-            client_id: clientId,
-            refresh_token: refreshToken,
-            grant_type: 'refresh_token',
-        };
-
-        if (clientSecret) {
-            json.client_secret = clientSecret;
-        }
-
-        const response = await got.post(refreshTokenURI, { json }).json();
-
-        return response.access_token;
-    }
-
-    _headers(token) {
-        return {
-            Authorization: `Bearer ${token}`,
-            'x-goog-api-version': '2',
-        };
-    }
+  _headers(token) {
+    return {
+      Authorization: `Bearer ${token}`,
+      'x-goog-api-version': '2',
+    };
+  }
 }
 
-module.exports = function(...args) {
+module.exports = function (...args) {
   return new APIClient(...args);
 };
 
@@ -17936,37 +17938,38 @@ function uploadFile(
   webStore
     .fetchToken()
     .then((token) => {
+      console.log(token)
       webStore
-    .uploadExisting(myZipFile, token)
-    .then((uploadRes) => {
-      console.log('Uploading bundle')
-      console.log(uploadRes)
-      core.debug(uploadRes)
-      if (publishFlg === 'true') {
-        webStore
-          .publish(publishTarget, token)
-          .then((publishRes) => {
-            console.log('Publishing bundle')
-            core.debug(publishRes)
-            process.exitCode = 0
-            return
-          })
-          .catch((e) => {
-            core.error(e)
-              core.setFailed(
-                'publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.'
-              )
-          })
-      }
+        .uploadExisting(myZipFile, token)
+        .then((uploadRes) => {
+          console.log('Uploading bundle')
+          console.log(uploadRes)
+          core.debug(uploadRes)
+          if (publishFlg === 'true') {
+            webStore
+              .publish(publishTarget, token)
+              .then((publishRes) => {
+                console.log('Publishing bundle')
+                core.debug(publishRes)
+                process.exitCode = 0
+                return
+              })
+              .catch((e) => {
+                core.error(e)
+                  core.setFailed(
+                    'publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.'
+                  )
+              })
+          }
+        })
+        .catch((e) => {
+          console.log(e)
+          core.error(e)
+          core.setFailed(
+            'upload error - You will need to go to the Chrome Web Store Developer Dashboard and upload it manually.'
+          )
+        })
     })
-    .catch((e) => {
-      console.log(e)
-      core.error(e)
-      core.setFailed(
-        'upload error - You will need to go to the Chrome Web Store Developer Dashboard and upload it manually.'
-      )
-    })
-  })
 }
 
 async function run() {
