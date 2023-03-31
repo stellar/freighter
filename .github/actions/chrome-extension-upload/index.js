@@ -16,27 +16,30 @@ function uploadFile(
   publishTarget
 ) {
   const myZipFile = fs.createReadStream(filePath)
+
   webStore
-    .uploadExisting(myZipFile)
+    .fetchToken()
+    .then((token) => {
+      webStore
+    .uploadExisting(myZipFile, token)
     .then((uploadRes) => {
+      console.log('Uploading bundle')
       console.log(uploadRes)
       core.debug(uploadRes)
       if (publishFlg === 'true') {
         webStore
-          .publish(publishTarget)
+          .publish(publishTarget, token)
           .then((publishRes) => {
+            console.log('Publishing bundle')
             core.debug(publishRes)
             process.exitCode = 0
             return
           })
           .catch((e) => {
-            // why do we get caught in success state?
-            if (e && e.uploadState !== 'SUCCESS') {
-              core.error(e)
+            core.error(e)
               core.setFailed(
                 'publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.'
               )
-            }
           })
       }
     })
@@ -47,6 +50,7 @@ function uploadFile(
         'upload error - You will need to go to the Chrome Web Store Developer Dashboard and upload it manually.'
       )
     })
+  })
 }
 
 async function run() {
