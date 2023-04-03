@@ -12,6 +12,7 @@ import {
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
+  // getBlockedAccounts as internalGetBlockedAccounts,
 } from "@shared/api/internal";
 
 import {
