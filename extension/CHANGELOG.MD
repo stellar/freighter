@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-2.12.1
+
+### Story
+
+Soroban xfer in account history
+
 # Release notes - Wallets - Freighter-2.12.0
 
 ### Bug
