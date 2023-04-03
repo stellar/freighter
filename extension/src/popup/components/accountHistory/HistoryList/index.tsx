@@ -1,6 +1,5 @@
 import React from "react";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 
 import "./styles.scss";
 
@@ -10,9 +9,9 @@ interface HistoryListProps {
 }
 
 export const HistoryList = ({ children, assetDetail }: HistoryListProps) => (
-  <SimpleBar
+  <SimpleBarWrapper
     className={`HistoryList ${assetDetail ? "HistoryList--assetDetail" : ""}`}
   >
     <div className="HistoryList__items">{children}</div>
-  </SimpleBar>
+  </SimpleBarWrapper>
 );

@@ -3,14 +3,13 @@ import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon } from "@stellar/design-system";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 
 import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
+  getIsSorobanTransfer,
   getIsSwap,
   getStellarExpertUrl,
   getRawBalance,
@@ -20,7 +19,7 @@ import {
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
 import { getAssetFromCanonical } from "helpers/stellar";
-
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -197,7 +196,7 @@ export const AssetDetail = ({
             </PillButton>
           )}
         </div>
-        <SimpleBar>
+        <SimpleBarWrapper>
           <div className="AssetDetail__scam-warning">
             {isOwnedScamAsset && (
               <InfoBlock variant={InfoBlock.variant.error}>
@@ -225,12 +224,21 @@ export const AssetDetail = ({
                     isPayment: getIsPayment(operation.type),
                     isSwap: getIsSwap(operation),
                   };
+
+                  const tokenBalances =
+                    balance &&
+                    "contractId" in balance &&
+                    getIsSorobanTransfer(operation, networkDetails)
+                      ? [balance]
+                      : [];
                   return (
                     <HistoryItem
                       key={operation.id}
+                      tokenBalances={tokenBalances}
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       url={stellarExpertUrl}
+                      networkDetails={networkDetails}
                       setDetailViewProps={setDetailViewProps}
                       setIsDetailViewShowing={setIsDetailViewShowing}
                     />
@@ -243,7 +251,7 @@ export const AssetDetail = ({
               {t("No transactions to show")}
             </div>
           )}
-        </SimpleBar>
+        </SimpleBarWrapper>
       </div>
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>

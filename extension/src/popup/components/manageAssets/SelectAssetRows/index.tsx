@@ -1,11 +1,10 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 import { Types } from "@stellar/wallet-sdk";
 
 import { AppDispatch } from "popup/App";
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import {
   transactionSubmissionSelector,
   saveAsset,
@@ -61,7 +60,7 @@ export const SelectAssetRows = ({
     assetSelect.isSource === false;
 
   return (
-    <SimpleBar
+    <SimpleBarWrapper
       className="SelectAssetRows__scrollbar"
       style={{
         maxHeight: `${maxHeight}px`,
@@ -118,6 +117,6 @@ export const SelectAssetRows = ({
           );
         })}
       </div>
-    </SimpleBar>
+    </SimpleBarWrapper>
   );
 };

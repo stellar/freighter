@@ -2,8 +2,6 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
 import {
@@ -12,6 +10,7 @@ import {
   ActionStatus,
 } from "@shared/api/types";
 
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { Button } from "popup/basics/buttons/Button";
 import {
   settingsNetworkDetailsSelector,
@@ -68,10 +67,9 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const {
-    tokenBalances: sorobanBalances,
-    getTokenBalancesStatus,
-  } = useSelector(sorobanSelector);
+  const { tokenBalances, getTokenBalancesStatus } = useSelector(
+    sorobanSelector,
+  );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -90,7 +88,7 @@ export const Account = () => {
 
   const { balances, isFunded } = accountBalances;
 
-  const builder = useContext(SorobanContext);
+  const sorobanClient = useContext(SorobanContext);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -105,7 +103,7 @@ export const Account = () => {
     dispatch(getBlockedDomains());
 
     if (isExperimentalModeEnabled) {
-      dispatch(getTokenBalances({ sorobanClient: builder }));
+      dispatch(getTokenBalances({ sorobanClient }));
     }
 
     return () => {
@@ -115,7 +113,7 @@ export const Account = () => {
       }
     };
   }, [
-    builder,
+    sorobanClient,
     isExperimentalModeEnabled,
     publicKey,
     networkDetails,
@@ -130,14 +128,14 @@ export const Account = () => {
         getTokenBalancesStatus === ActionStatus.PENDING);
     if (!balances || hasFetchedSorobanTokens) return;
 
-    setSortedBalances(sortBalances(balances, sorobanBalances));
+    setSortedBalances(sortBalances(balances, tokenBalances));
 
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
   }, [
     isExperimentalModeEnabled,
     getTokenBalancesStatus,
-    sorobanBalances,
+    tokenBalances,
     balances,
     networkDetails,
     dispatch,
@@ -151,6 +149,8 @@ export const Account = () => {
           sortOperationsByAsset({
             operations: res.operations,
             balances: sortedBalances,
+            networkDetails,
+            publicKey,
           }),
         );
       } catch (e) {
@@ -222,13 +222,13 @@ export const Account = () => {
             </div>
           </div>
           {isFunded ? (
-            <SimpleBar className="AccountView__assets-wrapper">
+            <SimpleBarWrapper className="AccountView__assets-wrapper">
               <AccountAssets
                 sortedBalances={sortedBalances}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />
-            </SimpleBar>
+            </SimpleBarWrapper>
           ) : (
             <NotFundedMessage
               isTestnet={isTestnet(networkDetails)}
