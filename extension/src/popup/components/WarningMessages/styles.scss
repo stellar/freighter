@@ -1,4 +1,12 @@
+#modal-root {
+  z-index: calc(var(--back--button-z-index) + 1);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
 .WarningMessage {
+
   &--active {
     background: var(--background-color);
     display: flex;
