@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import StellarSdk, { Account } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
-import SimpleBar from "simplebar-react";
 import { useTranslation } from "react-i18next";
-import "simplebar-react/dist/simplebar.min.css";
 import { CURRENCY, ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
@@ -20,6 +18,7 @@ import {
   xlmToStroop,
 } from "helpers/stellar";
 
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
@@ -306,7 +305,7 @@ export const ManageAssetRows = ({
           }}
         />
       )}
-      <SimpleBar
+      <SimpleBarWrapper
         className="ManageAssetRows__scrollbar"
         style={{
           maxHeight: `${maxHeight}px`,
@@ -352,7 +351,7 @@ export const ManageAssetRows = ({
           })}
         </div>
         {children}
-      </SimpleBar>
+      </SimpleBarWrapper>
       <LoadingBackground
         onClick={() => {}}
         isActive={showNewAssetWarning || showBlockedDomainWarning}

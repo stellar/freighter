@@ -2,8 +2,6 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 
 import { getAccountHistory } from "@shared/api/internal";
 import {
@@ -12,6 +10,7 @@ import {
   ActionStatus,
 } from "@shared/api/types";
 
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { Button } from "popup/basics/buttons/Button";
 import {
   settingsNetworkDetailsSelector,
@@ -223,13 +222,13 @@ export const Account = () => {
             </div>
           </div>
           {isFunded ? (
-            <SimpleBar className="AccountView__assets-wrapper">
+            <SimpleBarWrapper className="AccountView__assets-wrapper">
               <AccountAssets
                 sortedBalances={sortedBalances}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />
-            </SimpleBar>
+            </SimpleBarWrapper>
           ) : (
             <NotFundedMessage
               isTestnet={isTestnet(networkDetails)}
