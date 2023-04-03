@@ -60,6 +60,7 @@ export interface Response {
   hardwareWalletType: WalletType;
   bipPath: string;
   blockedDomains: BlockedDomains;
+  blockedAccounts: BlockedAccounts[];
   assetDomain: string;
   tokenId: string;
   tokenIdList: string[];
@@ -72,6 +73,8 @@ export interface BlockedDomains {
 
 export interface BlockedAccounts {
   address: string
+  name: string
+  domain: string | null
   tags: string[]
 }
 

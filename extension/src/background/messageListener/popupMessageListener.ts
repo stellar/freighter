@@ -1131,7 +1131,7 @@ export const popupMessageListener = (request: Request) => {
         STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
         CACHED_BLOCKED_ACCOUNTS_ID,
       );
-      const blockedAccounts: BlockedAccounts = resp?._embedded?.records || []
+      const blockedAccounts: BlockedAccounts[] = resp?._embedded?.records || []
       return { blockedAccounts };
     } catch (e) {
       console.error(e);
