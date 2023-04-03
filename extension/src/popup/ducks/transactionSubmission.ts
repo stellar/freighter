@@ -12,7 +12,7 @@ import {
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
-  // getBlockedAccounts as internalGetBlockedAccounts,
+  getBlockedAccounts as internalGetBlockedAccounts,
 } from "@shared/api/internal";
 
 import {
@@ -24,6 +24,7 @@ import {
   BlockedDomains,
   AccountType,
   ActionStatus,
+  BlockedAccounts,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -352,6 +353,19 @@ export const getBlockedDomains = createAsyncThunk<
   }
 });
 
+export const getBlockedAccounts = createAsyncThunk<
+  BlockedAccounts[],
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getBlockedAccounts", async (_, thunkApi) => {
+  try {
+    const resp = await internalGetBlockedAccounts();
+    return resp.blockedAccounts || [];
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
 export enum ShowOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
@@ -401,6 +415,7 @@ interface InitialState {
   blockedDomains: {
     domains: BlockedDomains;
   };
+  blockedAccounts: BlockedAccounts[]
 }
 
 export const initialState: InitialState = {
@@ -445,6 +460,7 @@ export const initialState: InitialState = {
   blockedDomains: {
     domains: {},
   },
+  blockedAccounts: []
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -610,6 +626,9 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
       state.blockedDomains.domains = action.payload;
+    });
+    builder.addCase(getBlockedAccounts.fulfilled, (state, action) => {
+      state.blockedAccounts = action.payload;
     });
   },
 });
