@@ -70,6 +70,11 @@ export interface BlockedDomains {
   [key: string]: boolean;
 }
 
+export interface BlockedAccounts {
+  address: string
+  tags: string[]
+}
+
 export interface ExternalRequest {
   transactionXdr: string;
   network: string;
