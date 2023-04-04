@@ -5,11 +5,9 @@ import { useTranslation } from "react-i18next";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 import { useHistory, useLocation } from "react-router-dom";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 
 import { AppDispatch } from "popup/App";
-
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
@@ -301,7 +299,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       <SubviewHeader
         title={isEditing ? t("Add Custom Network") : t("Network Details")}
       />
-      <SimpleBar className="NetworkForm__simplebar">
+      <SimpleBarWrapper className="NetworkForm__simplebar">
         <Formik
           onSubmit={handleSubmit}
           initialValues={initialValues}
@@ -426,7 +424,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
             </Form>
           )}
         </Formik>
-      </SimpleBar>
+      </SimpleBarWrapper>
     </div>
   );
 };

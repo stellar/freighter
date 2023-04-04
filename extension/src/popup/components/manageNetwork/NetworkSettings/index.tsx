@@ -1,8 +1,8 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import SimpleBar from "simplebar-react";
 
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { Button } from "popup/basics/buttons/Button";
@@ -30,7 +30,7 @@ export const NetworkSettings = () => {
     <div className="NetworkSettings">
       <SubviewHeader title={t("Network Settings")} />
       <div className="NetworkSettings__header">{t("Network")}</div>
-      <SimpleBar className="NetworkSettings__scrollbar">
+      <SimpleBarWrapper className="NetworkSettings__scrollbar">
         <ListNavLinkWrapper>
           {networksList.map((network, i) => {
             const isActive = isActiveNetwork(activeNetworkDetails, network);
@@ -61,7 +61,7 @@ export const NetworkSettings = () => {
             );
           })}
         </ListNavLinkWrapper>
-      </SimpleBar>
+      </SimpleBarWrapper>
       <div className="NetworkSettings__bottom">
         <Button
           fullWidth
