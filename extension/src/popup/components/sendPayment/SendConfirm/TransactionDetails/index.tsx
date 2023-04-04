@@ -566,11 +566,13 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </div>
           </div>
         )}
-        <FlaggedWarningMessage
-          isUnsafe={isUnsafe}
-          isMalicious={isMalicious}
-          isMemoRequired={isMemoRequired}
-        />
+        {submission.submitStatus === ActionStatus.IDLE && (
+          <FlaggedWarningMessage
+            isUnsafe={isUnsafe}
+            isMalicious={isMalicious}
+            isMemoRequired={isMemoRequired}
+          />
+        )}
         <div className="TransactionDetails__bottom-wrapper">
           <div className="TransactionDetails__bottom-wrapper__copy">
             {(isPathPayment || isSwap) &&
