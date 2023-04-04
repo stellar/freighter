@@ -217,6 +217,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
   const [isUnsafe, setUnsafe] = React.useState(false)
   const [isMalicious, setMalicious] = React.useState(false)
+  const [isMemoRequired, setMemoRequired] = React.useState(false)
 
   const sourceAsset = isToken ? asset : getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
@@ -234,6 +235,62 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       });
     })();
   }, [destAsset.code, destAsset.issuer, networkDetails]);
+
+  useEffect(() => {
+    dispatch(getBlockedAccounts())
+  }, [dispatch])
+
+  // checked tags for blocked accounts
+  useEffect(() => {
+    if (isValidatingSafeAssetsEnabled) {
+      const operation = getOperation(
+        sourceAsset,
+        destAsset,
+        amount,
+        destinationAmount,
+        destination,
+        allowedSlippage,
+        path,
+        isPathPayment,
+        isSwap,
+        destinationBalances.isFunded!,
+        publicKey
+      )
+
+      blockedAccounts.forEach(({ address, tags }) => {
+        if (address === operation.destination) {
+          tags.forEach(tag => {
+            if (tag === TRANSACTION_WARNING.unsafe) {
+              setUnsafe(true)
+            }
+
+            if (tag === TRANSACTION_WARNING.malicious) {
+              setMalicious(true)
+            }
+
+            if (tag === TRANSACTION_WARNING.memoRequired && !memo) {
+              setMemoRequired(true)
+            }
+          })
+        }
+      })
+    }
+  }, [
+    allowedSlippage,
+    amount,
+    blockedAccounts,
+    destAsset,
+    destination,
+    destinationAmount,
+    destinationBalances.isFunded,
+    isPathPayment,
+    isSwap,
+    isValidatingSafeAssetsEnabled,
+    memo,
+    path,
+    publicKey,
+    sourceAsset,
+  ])
 
   const handleXferTransaction = async () => {
     try {
@@ -382,58 +439,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     }
   };
 
-  useEffect(() => {
-    dispatch(getBlockedAccounts())
-  }, [dispatch])
-
-  useEffect(() => {
-    if (isValidatingSafeAssetsEnabled) {
-      const operation = getOperation(
-        sourceAsset,
-        destAsset,
-        amount,
-        destinationAmount,
-        destination,
-        allowedSlippage,
-        path,
-        isPathPayment,
-        isSwap,
-        destinationBalances.isFunded!,
-        publicKey
-      )
-
-      blockedAccounts.forEach(({ address, tags }) => {
-        if (address === operation.destination) {
-          tags.forEach(tag => {
-            if (tag === TRANSACTION_WARNING.unsafe) {
-              setUnsafe(true)
-            }
-
-            if (tag === TRANSACTION_WARNING.malicious) {
-              setMalicious(true)
-            }
-          })
-        }
-      })
-    }
-  }, [
-    blockedAccounts,
-    isValidatingSafeAssetsEnabled,
-    sourceAsset,
-    destAsset,
-    amount,
-    destinationAmount,
-    destination,
-    allowedSlippage,
-    path,
-    isPathPayment,
-    isSwap,
-    destinationBalances.isFunded,
-    publicKey
-  ])
-
-  console.log(blockedAccounts)
-
   const showMemo = !isSwap && !isMuxedAccount(destination);
 
   const StellarExpertButton = () =>
@@ -564,7 +569,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <FlaggedWarningMessage
           isUnsafe={isUnsafe}
           isMalicious={isMalicious}
-          isMemoRequired={false}
+          isMemoRequired={isMemoRequired}
         />
         <div className="TransactionDetails__bottom-wrapper">
           <div className="TransactionDetails__bottom-wrapper__copy">
