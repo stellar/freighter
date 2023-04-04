@@ -217,7 +217,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const [isMalicious, setMalicious] = React.useState(false);
   const [isMemoRequired, setMemoRequired] = React.useState(false);
 
-  const sourceAsset = isToken ? asset : getAssetFromCanonical(asset);
+  const sourceAsset = getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
 
   // load destination asset icons
@@ -342,7 +342,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         );
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
+            sourceAsset: sourceAsset.code,
+          });
         }
       }
     } catch (e) {
@@ -474,9 +476,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <SubviewHeader
           title={
             submission.submitStatus === ActionStatus.SUCCESS
-              ? `${isSwap ? t("Swapped") : t("Sent")} ${
-                  isToken ? asset.split(":")[0] : sourceAsset.code
-                }`
+              ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
               : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
           }
           customBackAction={goBack}
