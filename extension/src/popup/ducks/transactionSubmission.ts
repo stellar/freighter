@@ -24,7 +24,7 @@ import {
   BlockedDomains,
   AccountType,
   ActionStatus,
-  BlockedAccounts,
+  BlockedAccount,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -354,7 +354,7 @@ export const getBlockedDomains = createAsyncThunk<
 });
 
 export const getBlockedAccounts = createAsyncThunk<
-  BlockedAccounts[],
+BlockedAccount[],
   undefined,
   { rejectValue: ErrorMessage }
 >("getBlockedAccounts", async (_, thunkApi) => {
@@ -415,7 +415,7 @@ interface InitialState {
   blockedDomains: {
     domains: BlockedDomains;
   };
-  blockedAccounts: BlockedAccounts[]
+  blockedAccounts: BlockedAccount[]
 }
 
 export const initialState: InitialState = {
