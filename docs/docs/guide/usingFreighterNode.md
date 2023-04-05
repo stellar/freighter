@@ -27,14 +27,14 @@ Now let's dig into what functionality is available to you:
 
 ### isConnected
 
-#### `isConnected() -> <boolean>`
+#### `isConnected() -> <Promise<boolean>>`
 
 This function is useful for determining if a user in your application has Freighter installed.
 
 ```javascript
 import { isConnected } from "@stellar/freighter-api";
 
-if (isConnected()) {
+if (await isConnected()) {
   alert("User has Freighter!");
 }
 ```
@@ -54,7 +54,7 @@ import {
   signTransaction,
 } from "@stellar/freighter-api";
 
-if (isConnected()) {
+if (await isConnected()) {
   alert("User has Freighter!");
 }
 
@@ -91,7 +91,7 @@ import {
   signTransaction,
 } from "@stellar/freighter-api";
 
-if (isConnected()) {
+if (await isConnected()) {
   alert("User has Freighter!");
 }
 
@@ -140,7 +140,7 @@ import {
   signTransaction,
 } from "@stellar/freighter-api";
 
-if (isConnected()) {
+if (await isConnected()) {
   alert("User has Freighter!");
 }
 
