@@ -28,10 +28,12 @@ export const contractIdAttrToHex = (byteArray: Buffer) =>
     "",
   );
 
-export const getXferArgs = (args: SorobanClient.xdr.ScVal[]): Record<string, string|number> => {
+export const getXferArgs = (
+  args: SorobanClient.xdr.ScVal[],
+): Record<string, string | number> => {
   // xfer(to, from, amount)
   const amount = args[2];
-  const value = amount.value() as SorobanClient.xdr.ScObject
+  const value = amount.value() as SorobanClient.xdr.ScObject;
   return {
     amount: value.i128().lo().low,
   };
@@ -43,7 +45,7 @@ interface RootInvocation {
     functionName: Buffer;
     args: SorobanClient.xdr.ScVal[];
     subInvocations: SorobanClient.xdr.AuthorizedInvocation[];
-  }
+  };
 }
 
 export const getAttrsFromSorobanOp = (
@@ -57,7 +59,10 @@ export const getAttrsFromSorobanOp = (
   const txEnvelope = SorobanClient.TransactionBuilder.fromXDR(
     operation.transaction_attr.envelope_xdr,
     networkDetails.networkPassphrase,
-  ) as SorobanClient.Transaction<SorobanClient.Memo<SorobanClient.MemoType>, SorobanClient.Operation.InvokeHostFunction[]>;
+  ) as SorobanClient.Transaction<
+    SorobanClient.Memo<SorobanClient.MemoType>,
+    SorobanClient.Operation.InvokeHostFunction[]
+  >;
 
   const op = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
@@ -71,7 +76,9 @@ export const getAttrsFromSorobanOp = (
   }
 
   // TODO: figure out how to better work with the AuthorizedInvocation interface
-  const { _attributes: attrs } = txAuth.rootInvocation() as unknown as RootInvocation
+  const {
+    _attributes: attrs,
+  } = (txAuth.rootInvocation() as unknown) as RootInvocation;
   const { amount } = getXferArgs(attrs.args);
 
   return {
