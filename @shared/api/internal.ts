@@ -815,7 +815,7 @@ type TxToOp = {
       SorobanClient.Memo<SorobanClient.MemoType>,
       SorobanClient.Operation[]
     >;
-    decoder: (val: Buffer) => string | number | Buffer;
+    decoder: (val: Buffer) => string | number;
   };
 };
 
@@ -840,7 +840,6 @@ export const getSorobanTokenBalance = (
   params: SorobanClient.xdr.ScVal[],
 ) => {
   const contract = new SorobanClient.Contract(contractId);
-  console.log(params);
 
   // Right now we can only have 1 operation per TX in Soroban
   // There is ongoing work to lift this restriction
