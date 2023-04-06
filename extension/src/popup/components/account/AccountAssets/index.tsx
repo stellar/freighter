@@ -70,7 +70,7 @@ export const AssetIcon = ({
   // Placeholder for Soroban tokens
   if (_isSorobanToken) {
     return (
-      <div className="AccountAssets__asset--logo AccountAssets__asset--lp-share">
+      <div className="AccountAssets__asset--logo AccountAssets__asset--soroban-token">
         S
       </div>
     );
