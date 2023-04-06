@@ -9,7 +9,7 @@ export const accountIdentifier = (account: string) =>
 // How do we decode these in a more generic way?
 export const decodeAccountIdentifier = (scVal: Buffer) => {
   const accountId = xdr.ScVal.fromXDR(scVal);
-  return accountId.str();
+  return accountId.i128().lo().low;
   // const val = accountId.value() as xdr.ScObject;
   // const hyper = val.value() as xdr.Int128Parts;
   // return hyper.lo().low;
@@ -17,17 +17,12 @@ export const decodeAccountIdentifier = (scVal: Buffer) => {
 
 export const decodeBytesN = (scVal: Buffer) => {
   const val = xdr.ScVal.fromXDR(scVal);
-  // const scObj = val.value() as xdr.ScObject;
-  // const valBuffer = scObj.value();
-  // console.log(val);
-  return val.str();
-  // return valBuffer.toString();
+  return val.bytes().toString();
 };
 
 export const decodeScVal = (scVal: Buffer) => {
   const val = xdr.ScVal.fromXDR(scVal);
-  // return val.value()?.toString() || "";
-  return val.str();
+  return val.u32();
 };
 
 const bigintToBuf = (bn: bigint): Buffer => {
