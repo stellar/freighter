@@ -597,7 +597,7 @@ export const submitFreighterSorobanTransaction = async ({
     while (response.status === SorobanTxStatus.PENDING) {
       // See if the transaction is complete
       // eslint-disable-next-line no-await-in-loop
-      response = await server.getTransactionStatus(response.id);
+      response = await server.getTransaction(response.id);
       // Wait a second
       // eslint-disable-next-line no-await-in-loop
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -815,7 +815,7 @@ type TxToOp = {
       SorobanClient.Memo<SorobanClient.MemoType>,
       SorobanClient.Operation[]
     >;
-    decoder: (val: Buffer) => string | number;
+    decoder: (val: Buffer) => string | number | Buffer;
   };
 };
 
@@ -840,6 +840,7 @@ export const getSorobanTokenBalance = (
   params: SorobanClient.xdr.ScVal[],
 ) => {
   const contract = new SorobanClient.Contract(contractId);
+  console.log(params);
 
   // Right now we can only have 1 operation per TX in Soroban
   // There is ongoing work to lift this restriction
