@@ -1,3 +1,13 @@
+# Release notes - Wallets - Freighter-2.12.2
+
+### Bug
+
+Replace PopupWrapper with SimpleBar scrolling
+
+### Story
+
+Upgrade soroban-client to v0.5.0
+
 # Release notes - Wallets - Freighter-2.12.1
 
 ### Story
@@ -14,7 +24,8 @@ Inconsistent token icons
 
 ### Story
 
-When Sending payment, choosing Token Asset should use \`InvokeHostFunctionOp\` instead of classic \`Payment\` op
+When Sending payment, choosing Token Asset should use \`InvokeHostFunctionOp\`
+instead of classic \`Payment\` op
 
 # Release notes - Wallets - Freighter-2.11.1
 
