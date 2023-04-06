@@ -9,21 +9,25 @@ export const accountIdentifier = (account: string) =>
 // How do we decode these in a more generic way?
 export const decodeAccountIdentifier = (scVal: Buffer) => {
   const accountId = xdr.ScVal.fromXDR(scVal);
-  const val = accountId.value() as xdr.ScObject;
-  const hyper = val.value() as xdr.Int128Parts;
-  return hyper.lo().low;
+  return accountId.str();
+  // const val = accountId.value() as xdr.ScObject;
+  // const hyper = val.value() as xdr.Int128Parts;
+  // return hyper.lo().low;
 };
 
 export const decodeBytesN = (scVal: Buffer) => {
   const val = xdr.ScVal.fromXDR(scVal);
-  const scObj = val.value() as xdr.ScObject;
-  const valBuffer = scObj.value();
-  return valBuffer.toString();
+  // const scObj = val.value() as xdr.ScObject;
+  // const valBuffer = scObj.value();
+  // console.log(val);
+  return val.str();
+  // return valBuffer.toString();
 };
 
 export const decodeScVal = (scVal: Buffer) => {
   const val = xdr.ScVal.fromXDR(scVal);
-  return val.value()?.toString() || "";
+  // return val.value()?.toString() || "";
+  return val.str();
 };
 
 const bigintToBuf = (bn: bigint): Buffer => {
@@ -101,9 +105,7 @@ export const numberToI128 = (value: number): xdr.ScVal => {
     bigNumberFromBytes(false, ...padded.slice(8, 12)).toNumber(),
   );
 
-  return xdr.ScVal.scvObject(
-    xdr.ScObject.scoI128(new xdr.Int128Parts({ lo, hi })),
-  );
+  return xdr.ScVal.scvI128(new xdr.Int128Parts({ lo, hi }));
 };
 
 /* eslint-enable */
