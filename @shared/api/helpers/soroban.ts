@@ -10,9 +10,6 @@ export const accountIdentifier = (account: string) =>
 export const decodeAccountIdentifier = (scVal: Buffer) => {
   const accountId = xdr.ScVal.fromXDR(scVal);
   return accountId.i128().lo().low;
-  // const val = accountId.value() as xdr.ScObject;
-  // const hyper = val.value() as xdr.Int128Parts;
-  // return hyper.lo().low;
 };
 
 export const decodeBytesN = (scVal: Buffer) => {
