@@ -597,7 +597,7 @@ export const submitFreighterSorobanTransaction = async ({
     while (response.status === SorobanTxStatus.PENDING) {
       // See if the transaction is complete
       // eslint-disable-next-line no-await-in-loop
-      response = await server.getTransactionStatus(response.id);
+      response = await server.getTransaction(response.id);
       // Wait a second
       // eslint-disable-next-line no-await-in-loop
       await new Promise((resolve) => setTimeout(resolve, 1000));
