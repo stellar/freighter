@@ -3,8 +3,7 @@ import { Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 
 import { saveSettings, settingsSelector } from "popup/ducks/settings";
 
@@ -63,7 +62,7 @@ export const Preferences = () => {
   return (
     <div className="Preferences">
       <SubviewHeader title={t("Preferences")} />
-      <SimpleBar className="Preferences__simplebar">
+      <SimpleBarWrapper className="Preferences__simplebar">
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}
@@ -165,7 +164,7 @@ export const Preferences = () => {
             </div>
           </Form>
         </Formik>
-      </SimpleBar>
+      </SimpleBarWrapper>
     </div>
   );
 };

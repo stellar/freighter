@@ -22,6 +22,7 @@ import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { Button } from "popup/basics/buttons/Button";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -236,38 +237,40 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                 {recentAddresses.length > 0 && (
                   <div className="SendTo__subheading">{t("RECENT")}</div>
                 )}
-                <ul className="SendTo__recent-accts-ul">
-                  {recentAddresses.map((address) => (
-                    <li key={address}>
-                      <button
-                        onClick={async () => {
-                          emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
-                          setIsLoading(true);
-                          // recentAddresses already validated so safe to dispatch
-                          if (isFederationAddress(address)) {
-                            const fedResp = await FederationServer.resolve(
-                              address,
-                            );
-                            const publicKey = fedResp.account_id;
-                            setValidatedPubKey(publicKey);
-                            handleContinue(publicKey, address);
-                          } else {
-                            setValidatedPubKey(address);
-                            handleContinue(address);
-                          }
-                        }}
-                        className="SendTo__subheading-identicon"
-                      >
-                        <IdenticonImg publicKey={address} />
-                        <span>
-                          {isFederationAddress(address)
-                            ? address
-                            : truncatedPublicKey(address)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <SimpleBarWrapper className="SendTo__simplebar">
+                  <ul className="SendTo__recent-accts-ul">
+                    {recentAddresses.map((address) => (
+                      <li key={address}>
+                        <button
+                          onClick={async () => {
+                            emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
+                            setIsLoading(true);
+                            // recentAddresses already validated so safe to dispatch
+                            if (isFederationAddress(address)) {
+                              const fedResp = await FederationServer.resolve(
+                                address,
+                              );
+                              const publicKey = fedResp.account_id;
+                              setValidatedPubKey(publicKey);
+                              handleContinue(publicKey, address);
+                            } else {
+                              setValidatedPubKey(address);
+                              handleContinue(address);
+                            }
+                          }}
+                          className="SendTo__subheading-identicon"
+                        >
+                          <IdenticonImg publicKey={address} />
+                          <span>
+                            {isFederationAddress(address)
+                              ? address
+                              : truncatedPublicKey(address)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </SimpleBarWrapper>
               </>
             ) : (
               <div>
