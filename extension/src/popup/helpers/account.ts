@@ -77,6 +77,7 @@ export const sortOperationsByAsset = ({
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
+  console.log(balances);
   balances.forEach((bal) => {
     if ("token" in bal) {
       const issuer = "issuer" in bal.token ? bal.token.issuer.key : "";
