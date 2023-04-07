@@ -12,6 +12,7 @@ import { SorobanContext } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
+  isMainnet,
   isMuxedAccount,
   xlmToStroop,
   getConversionRate,
@@ -202,7 +203,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const { isValidatingSafeAssetsEnabled } = useSelector(settingsSelector);
+  const {
+    isValidatingSafeAssetsEnabled,
+    isMemoValidationEnabled,
+    isSafetyValidationEnabled,
+  } = useSelector(settingsSelector);
   const isSwap = useIsSwap();
   const { t } = useTranslation();
 
@@ -240,7 +245,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   // checked tags for blocked accounts
   useEffect(() => {
-    if (isValidatingSafeAssetsEnabled) {
+    const _isMainnet = isMainnet(networkDetails);
+    const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
+    const isValidatingSafety = isSafetyValidationEnabled && _isMainnet;
+
+    if (isValidatingMemo || isValidatingSafety) {
       const operation = getOperation(
         sourceAsset,
         destAsset,
@@ -258,15 +267,21 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       blockedAccounts.forEach(({ address, tags }) => {
         if (address === operation.destination) {
           tags.forEach((tag) => {
-            if (tag === TRANSACTION_WARNING.unsafe) {
-              setUnsafe(true);
+            if (isValidatingSafety) {
+              if (tag === TRANSACTION_WARNING.unsafe) {
+                setUnsafe(true);
+              }
+
+              if (tag === TRANSACTION_WARNING.malicious) {
+                setMalicious(true);
+              }
             }
 
-            if (tag === TRANSACTION_WARNING.malicious) {
-              setMalicious(true);
-            }
-
-            if (tag === TRANSACTION_WARNING.memoRequired && !memo) {
+            if (
+              isValidatingMemo &&
+              tag === TRANSACTION_WARNING.memoRequired &&
+              !memo
+            ) {
               setMemoRequired(true);
             }
           });
@@ -284,6 +299,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     isPathPayment,
     isSwap,
     isValidatingSafeAssetsEnabled,
+    isMemoValidationEnabled,
+    isSafetyValidationEnabled,
+    networkDetails,
     memo,
     path,
     publicKey,
