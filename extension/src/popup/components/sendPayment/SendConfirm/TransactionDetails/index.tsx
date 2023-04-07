@@ -203,11 +203,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const {
-    isValidatingSafeAssetsEnabled,
-    isMemoValidationEnabled,
-    isSafetyValidationEnabled,
-  } = useSelector(settingsSelector);
+  const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
+    settingsSelector,
+  );
   const isSwap = useIsSwap();
   const { t } = useTranslation();
 
@@ -218,12 +216,29 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
-  const [isUnsafe, setUnsafe] = React.useState(false);
-  const [isMalicious, setMalicious] = React.useState(false);
-  const [isMemoRequired, setMemoRequired] = React.useState(false);
 
   const sourceAsset = getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
+
+  const _isMainnet = isMainnet(networkDetails);
+  const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
+  const isValidatingSafety = isSafetyValidationEnabled && _isMainnet;
+
+  const matchingBlockedTags = blockedAccounts
+    .filter(({ address }) => address === destination)
+    .flatMap(({ tags }) => tags);
+  const isMemoRequired =
+    isValidatingMemo &&
+    matchingBlockedTags.some(
+      (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
+    );
+  const isMalicious =
+    isValidatingSafety &&
+    matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.malicious);
+  const isUnsafe =
+    isValidatingSafety &&
+    matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.unsafe);
+  const isSubmitDisabled = isMemoRequired || isMalicious || isUnsafe;
 
   // load destination asset icons
   useEffect(() => {
@@ -242,47 +257,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   useEffect(() => {
     dispatch(getBlockedAccounts());
   }, [dispatch]);
-
-  // checked tags for blocked accounts
-  useEffect(() => {
-    const _isMainnet = isMainnet(networkDetails);
-    const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
-    const isValidatingSafety = isSafetyValidationEnabled && _isMainnet;
-
-    if (isValidatingMemo || isValidatingSafety) {
-      blockedAccounts.forEach(({ address, tags }) => {
-        if (address === destination) {
-          tags.forEach((tag) => {
-            if (isValidatingSafety) {
-              if (tag === TRANSACTION_WARNING.unsafe) {
-                setUnsafe(true);
-              }
-
-              if (tag === TRANSACTION_WARNING.malicious) {
-                setMalicious(true);
-              }
-            }
-
-            if (
-              isValidatingMemo &&
-              tag === TRANSACTION_WARNING.memoRequired &&
-              !memo
-            ) {
-              setMemoRequired(true);
-            }
-          });
-        }
-      });
-    }
-  }, [
-    blockedAccounts,
-    destination,
-    isValidatingSafeAssetsEnabled,
-    isMemoValidationEnabled,
-    isSafetyValidationEnabled,
-    networkDetails,
-    memo,
-  ]);
 
   const handleXferTransaction = async () => {
     try {
@@ -584,6 +558,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 {t("Cancel")}
               </Button>
               <Button
+                disabled={isSubmitDisabled}
                 onClick={handleSend}
                 isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
               >
