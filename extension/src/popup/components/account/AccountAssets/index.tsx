@@ -9,6 +9,7 @@ import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
+import { formatTokenAmount } from "popup/helpers/soroban";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
@@ -211,6 +212,11 @@ export const AccountAssets = ({
         const assetDomain = assetDomains[canonicalAsset];
         const isScamAsset = !!blockedDomains.domains[assetDomain];
 
+        const bigTotal = new BigNumber(rb.total);
+        const amountVal = rb.contractId
+          ? formatTokenAmount(bigTotal, rb.decimals)
+          : bigTotal.toFixed();
+
         return (
           <div
             className={`AccountAssets__asset ${
@@ -234,7 +240,7 @@ export const AccountAssets = ({
             </div>
             <div className="AccountAssets__copy-right">
               <div>
-                {new BigNumber(rb.total).toFixed()} <span>{amountUnit}</span>
+                {amountVal} <span>{amountUnit}</span>
               </div>
             </div>
           </div>

@@ -23,41 +23,46 @@ while (ZEROS.length < 256) {
   ZEROS += ZEROS;
 }
 
-const getAmountMultiplier = (decimals: number) => {
-  return "1" + ZEROS.substring(0, decimals);
-};
+const getAmountMultiplier = (decimals: number) =>
+  `1${ZEROS.substring(0, decimals)}`;
 
 export const formatTokenAmount = (amount: BigNumber, decimals: number) => {
   const multiplier = getAmountMultiplier(decimals);
+  return amount.div(multiplier).toString();
+};
 
-  const negative = amount.lt(new BigNumber(0));
-  if (negative) {
-    amount = amount.multipliedBy(new BigNumber(-1));
+export const parseTokenAmount = (value: string, decimals: number) => {
+  const multiplier = getAmountMultiplier(decimals);
+  const comps = value.split(".");
+
+  let whole = comps[0];
+  let fraction = comps[1];
+  if (!whole) {
+    whole = "0";
+  }
+  if (!fraction) {
+    fraction = "0";
   }
 
-  let fraction = amount.mod(multiplier).toString();
+  // Trim trailing zeros
+  while (fraction[fraction.length - 1] === "0") {
+    fraction = fraction.substring(0, fraction.length - 1);
+  }
+
+  // If decimals is 0, we have an empty string for fraction
+  if (fraction === "") {
+    fraction = "0";
+  }
+
+  // Fully pad the string with zeros to get to value
   while (fraction.length < multiplier.length - 1) {
-    fraction = "0" + fraction;
+    fraction += "0";
   }
 
-  // Strip trailing 0
-  fraction = fraction.match(/^([0-9]*[1-9]|0)(0*)/)![1];
+  const wholeValue = new BigNumber(whole);
+  const fractionValue = new BigNumber(fraction);
 
-  const whole = amount.div(multiplier).toString();
-
-  let value = "";
-
-  if (multiplier.length === 1) {
-    value = whole;
-  } else {
-    value = whole + "." + fraction;
-  }
-
-  if (negative) {
-    value = "-" + value;
-  }
-
-  return value;
+  return wholeValue.multipliedBy(multiplier).plus(fractionValue);
 };
 
 export const getTokenBalance = (
