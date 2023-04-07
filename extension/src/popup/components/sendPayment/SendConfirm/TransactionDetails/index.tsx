@@ -250,22 +250,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     const isValidatingSafety = isSafetyValidationEnabled && _isMainnet;
 
     if (isValidatingMemo || isValidatingSafety) {
-      const operation = getOperation(
-        sourceAsset,
-        destAsset,
-        amount,
-        destinationAmount,
-        destination,
-        allowedSlippage,
-        path,
-        isPathPayment,
-        isSwap,
-        destinationBalances.isFunded!,
-        publicKey,
-      );
-
       blockedAccounts.forEach(({ address, tags }) => {
-        if (address === operation.destination) {
+        if (address === destination) {
           tags.forEach((tag) => {
             if (isValidatingSafety) {
               if (tag === TRANSACTION_WARNING.unsafe) {
@@ -289,23 +275,13 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       });
     }
   }, [
-    allowedSlippage,
-    amount,
     blockedAccounts,
-    destAsset,
     destination,
-    destinationAmount,
-    destinationBalances.isFunded,
-    isPathPayment,
-    isSwap,
     isValidatingSafeAssetsEnabled,
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
     networkDetails,
     memo,
-    path,
-    publicKey,
-    sourceAsset,
   ]);
 
   const handleXferTransaction = async () => {
