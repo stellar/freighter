@@ -1,8 +1,6 @@
 import React from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 
 import {
   CLAIM_PREDICATES,
@@ -15,6 +13,7 @@ import { FlaggedKeys } from "types/transactions";
 
 import { truncatedPoolId, truncatedPublicKey } from "helpers/stellar";
 
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import "./styles.scss";
@@ -145,11 +144,11 @@ const KeyValueWithScValue = ({
       {operationKey}
       {operationKey ? ":" : null}
     </div>
-    <SimpleBar className="Operations__scValue">
+    <SimpleBarWrapper className="Operations__scValue">
       <div>
         <pre>{JSON.stringify(operationValue, null, 2)}</pre>
       </div>
-    </SimpleBar>
+    </SimpleBarWrapper>
   </div>
 );
 

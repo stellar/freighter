@@ -33,9 +33,10 @@ export const getXferArgs = (
 ): Record<string, string | number> => {
   // xfer(to, from, amount)
   const amount = args[2];
-  const value = amount.value() as SorobanClient.xdr.ScObject;
+  const value = amount.i128().lo().low;
+
   return {
-    amount: value.i128().lo().low,
+    amount: value,
   };
 };
 

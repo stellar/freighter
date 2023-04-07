@@ -3,12 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
 import { Icon, Loader } from "@stellar/design-system";
 import StellarSdk from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
+import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import {
   AssetSelect,
   PathPayAssetSelect,
@@ -423,7 +422,7 @@ export const SendAmount = ({
               formik.submitForm();
             }}
           >
-            <SimpleBar
+            <SimpleBarWrapper
               className={`${
                 isSwap
                   ? "SendAmount__simplebar"
@@ -503,7 +502,7 @@ export const SendAmount = ({
                   )}
                 </div>
               </div>
-            </SimpleBar>
+            </SimpleBarWrapper>
             <div className="SendAmount__btn-continue">
               <Button
                 disabled={
