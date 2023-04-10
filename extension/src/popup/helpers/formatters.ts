@@ -1,7 +1,7 @@
 // remove non digits and decimal
 export const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
 
-// This assumes the specific formatting being done is Intl.NumberFormat of deciaml type,
+// This assumes the specific formatting being done is Intl.NumberFormat of decimal type,
 // other formats may not work out of the box
 export const preserveCursor = (
   val: string, // raw value from input,
@@ -35,6 +35,7 @@ If digits & decimals, do previous step on chars before the dot and also account 
 export const formatAmount = (
   val: string,
   staleVal: string,
+  decimals: number = 7,
   cursorPosition: number = 1,
 ) => {
   const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
@@ -44,7 +45,7 @@ export const formatAmount = (
   if (cleaned.indexOf(".") !== -1) {
     const parts = cleaned.split(".");
     parts[0] = decimal.format(Number(parts[0].slice(0, maxDigits))).toString();
-    parts[1] = parts[1].slice(0, 7);
+    parts[1] = parts[1].slice(0, decimals);
 
     // To preserve cursor -
     // need to account for commas and filtered chars before dot

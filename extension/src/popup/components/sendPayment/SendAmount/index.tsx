@@ -48,12 +48,30 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 
 import "../styles.scss";
+import { TokenBalances } from "@shared/api/types";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
   DEC_MAX = "too many decimal digits",
   SEND_MAX = "amount higher than send max",
 }
+
+const getAssetDecimals = (
+  asset: string,
+  balances: TokenBalances,
+  isToken: boolean,
+) => {
+  if (isToken) {
+    const contractId = asset.split(":")[1];
+    const balance = balances.find(({ contractId: id }) => id === contractId);
+
+    if (balance) {
+      return Number(balance.decimals);
+    }
+  }
+
+  return 7;
+};
 
 const ConversionRate = ({
   source,
@@ -350,7 +368,12 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(TX_SEND_MAX, formik.values.amount)})
+          {formatAmount(
+            TX_SEND_MAX,
+            formik.values.amount,
+            getAssetDecimals(asset, tokenBalances, isToken),
+          )}
+          )
         </InfoBlock>
       );
     }
@@ -433,6 +456,7 @@ export const SendAmount = ({
                     const { amount: newAmount, newCursor } = formatAmount(
                       e.target.value,
                       formik.values.amount,
+                      getAssetDecimals(asset, tokenBalances, isToken),
                       e.target.selectionStart || 1,
                     );
                     formik.setFieldValue("amount", newAmount);

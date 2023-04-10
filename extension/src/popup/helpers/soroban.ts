@@ -1,11 +1,76 @@
+import BigNumber from "bignumber.js";
 import * as SorobanClient from "soroban-client";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
+interface RootInvocation {
+  _attributes: {
+    contractId: Buffer;
+    functionName: Buffer;
+    args: SorobanClient.xdr.ScVal[];
+    subInvocations: SorobanClient.xdr.AuthorizedInvocation[];
+  };
+}
+
 export enum SorobanTokenInterface {
   xfer = "xfer",
 }
+
+// Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
+// Constant to pull zeros from for multipliers
+let ZEROS = "0";
+while (ZEROS.length < 256) {
+  ZEROS += ZEROS;
+}
+
+const getAmountMultiplier = (decimals: number) =>
+  `1${ZEROS.substring(0, decimals)}`;
+
+export const formatTokenAmount = (amount: BigNumber, decimals: number) => {
+  const multiplier = getAmountMultiplier(decimals);
+  let formatted = amount.div(multiplier).toFixed(decimals).toString();
+
+  // Trim trailing zeros
+  while (formatted[formatted.length - 1] === "0") {
+    formatted = formatted.substring(0, formatted.length - 1);
+  }
+  return formatted;
+};
+
+export const parseTokenAmount = (value: string, decimals: number) => {
+  const multiplier = getAmountMultiplier(decimals);
+  const comps = value.split(".");
+
+  let whole = comps[0];
+  let fraction = comps[1];
+  if (!whole) {
+    whole = "0";
+  }
+  if (!fraction) {
+    fraction = "0";
+  }
+
+  // Trim trailing zeros
+  while (fraction[fraction.length - 1] === "0") {
+    fraction = fraction.substring(0, fraction.length - 1);
+  }
+
+  // If decimals is 0, we have an empty string for fraction
+  if (fraction === "") {
+    fraction = "0";
+  }
+
+  // Fully pad the string with zeros to get to value
+  while (fraction.length < multiplier.length - 1) {
+    fraction += "0";
+  }
+
+  const wholeValue = new BigNumber(whole);
+  const fractionValue = new BigNumber(fraction);
+
+  return wholeValue.multipliedBy(multiplier).plus(fractionValue);
+};
 
 export const getTokenBalance = (
   tokenBalances: TokenBalances,
@@ -17,7 +82,10 @@ export const getTokenBalance = (
     throw new Error("Balance not found");
   }
 
-  return balance.total.toString();
+  return formatTokenAmount(
+    new BigNumber(balance.total),
+    Number(balance.decimals),
+  );
 };
 
 export const contractIdAttrToHex = (byteArray: Buffer) =>
@@ -38,15 +106,6 @@ export const getXferArgs = (
     amount: value,
   };
 };
-
-interface RootInvocation {
-  _attributes: {
-    contractId: Buffer;
-    functionName: Buffer;
-    args: SorobanClient.xdr.ScVal[];
-    subInvocations: SorobanClient.xdr.AuthorizedInvocation[];
-  };
-}
 
 export const getAttrsFromSorobanOp = (
   operation: HorizonOperation,
