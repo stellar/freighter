@@ -17,6 +17,7 @@ export enum SorobanTokenInterface {
   xfer = "xfer",
 }
 
+// Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
 // Constant to pull zeros from for multipliers
 let ZEROS = "0";
 while (ZEROS.length < 256) {
@@ -28,7 +29,13 @@ const getAmountMultiplier = (decimals: number) =>
 
 export const formatTokenAmount = (amount: BigNumber, decimals: number) => {
   const multiplier = getAmountMultiplier(decimals);
-  return amount.div(multiplier).toString();
+  let formatted = amount.div(multiplier).toFixed(decimals).toString();
+
+  // Trim trailing zeros
+  while (formatted[formatted.length - 1] === "0") {
+    formatted = formatted.substring(0, formatted.length - 1);
+  }
+  return formatted;
 };
 
 export const parseTokenAmount = (value: string, decimals: number) => {
@@ -75,7 +82,10 @@ export const getTokenBalance = (
     throw new Error("Balance not found");
   }
 
-  return balance.total.toString();
+  return formatTokenAmount(
+    new BigNumber(balance.total),
+    Number(balance.decimals),
+  );
 };
 
 export const contractIdAttrToHex = (byteArray: Buffer) =>
