@@ -163,15 +163,15 @@ export const SendAmount = ({
           availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
+
+          if (availBalance.lt(minBalance)) {
+            return "0";
+          }
         } else {
           // needed for different wallet-sdk bignumber.js version
           availBalance = new BigNumber(
             accountBalances.balances[selectedAsset].total,
           );
-        }
-
-        if (availBalance.lt(minBalance)) {
-          return "0";
         }
       }
 
