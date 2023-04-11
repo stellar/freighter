@@ -40,6 +40,7 @@ import {
   ShowOverlayStatus,
   startHwSign,
 } from "popup/ducks/transactionSubmission";
+import { sorobanSelector } from "popup/ducks/soroban";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -64,6 +65,7 @@ import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 
 import "./styles.scss";
+import { parseTokenAmount } from "popup/helpers/soroban";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 const TwoAssetCard = ({
@@ -179,6 +181,7 @@ const getOperation = (
 };
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
+  const sorobanClient = useContext(SorobanContext);
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -203,10 +206,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const { tokenBalances } = useSelector(sorobanSelector);
   const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
     settingsSelector,
   );
   const isSwap = useIsSwap();
+
   const { t } = useTranslation();
 
   const { server: sorobanServer } = useContext(SorobanContext);
@@ -261,6 +266,19 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const handleXferTransaction = async () => {
     try {
       const assetAddress = asset.split(":")[1];
+      const assetBalance = tokenBalances.find(
+        (b) => b.contractId === assetAddress,
+      );
+
+      if (!assetBalance) {
+        throw new Error("Asset Balance not available");
+      }
+
+      const parsedAmount = parseTokenAmount(
+        amount,
+        Number(assetBalance.decimals),
+      );
+
       const sourceAccount = await sorobanServer.getAccount(publicKey);
       const contract = new SorobanClient.Contract(assetAddress);
       const contractOp = contract.call(
@@ -268,7 +286,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         ...[
           accountIdentifier(publicKey), // from
           accountIdentifier(destination), // to
-          numberToI128(Number(amount)), // amount
+          numberToI128(parsedAmount.toNumber()), // amount
         ],
       );
 
@@ -302,9 +320,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterSorobanTransaction({
-            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
+            sorobanClient,
             refreshBalances: true,
           }),
         );

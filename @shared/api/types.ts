@@ -72,10 +72,10 @@ export interface BlockedDomains {
 }
 
 export interface BlockedAccount {
-  address: string
-  name: string
-  domain: string | null
-  tags: string[]
+  address: string;
+  name: string;
+  domain: string | null;
+  tags: string[];
 }
 
 export interface ExternalRequest {
