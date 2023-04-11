@@ -9,6 +9,7 @@ import {
 import { createMemoryHistory } from "history";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -59,7 +60,11 @@ describe("MnemonicPhrase", () => {
         state={{
           auth: {
             applicationState: ApplicationState.PASSWORD_CREATED,
-            publicKey: "G123",
+            publicKey:
+              "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV",
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
           },
         }}
       >
@@ -83,7 +88,11 @@ describe("MnemonicPhrase", () => {
             auth: {
               error: null,
               applicationState: ApplicationState.PASSWORD_CREATED,
-              publicKey: "G123",
+              publicKey:
+                "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV",
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
             },
           }}
         >
@@ -103,9 +112,7 @@ describe("MnemonicPhrase", () => {
           screen.getByTestId("display-mnemonic-phrase-confirm-btn"),
         );
       });
-      await waitFor(() =>
-        screen.getByText(`redirect ${ROUTES.mnemonicPhraseConfirmed}`),
-      );
+      await waitFor(() => screen.getByText(`redirect ${ROUTES.pinExtension}`));
     });
   });
 });
