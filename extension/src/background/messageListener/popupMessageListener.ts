@@ -83,7 +83,10 @@ import {
   updateAllAccountsAccountName,
   reset,
 } from "background/ducks/session";
-import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL, STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
+import {
+  STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
+  STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
+} from "background/constants/apiUrls";
 
 const sessionTimer = new SessionTimer();
 
@@ -1091,7 +1094,7 @@ export const popupMessageListener = (request: Request) => {
         STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
         CACHED_BLOCKED_ACCOUNTS_ID,
       );
-      const blockedAccounts: BlockedAccount[] = resp?._embedded?.records || []
+      const blockedAccounts: BlockedAccount[] = resp?._embedded?.records || [];
       return { blockedAccounts };
     } catch (e) {
       console.error(e);
@@ -1178,7 +1181,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
-    [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts
+    [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
   };
 
   return messageResponder[request.type]();

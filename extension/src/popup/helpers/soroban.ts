@@ -1,11 +1,90 @@
+import BigNumber from "bignumber.js";
 import * as SorobanClient from "soroban-client";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
+interface RootInvocation {
+  _attributes: {
+    contractId: Buffer;
+    functionName: Buffer;
+    args: SorobanClient.xdr.ScVal[];
+    subInvocations: SorobanClient.xdr.AuthorizedInvocation[];
+  };
+}
+
 export enum SorobanTokenInterface {
   xfer = "xfer",
 }
+
+// All assets on the classic side have 7 decimals
+// https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
+export const CLASSIC_ASSET_DECIMALS = 7;
+
+export const getAssetDecimals = (
+  asset: string,
+  balances: TokenBalances,
+  isToken: boolean,
+) => {
+  if (isToken) {
+    const contractId = asset.split(":")[1];
+    const balance = balances.find(({ contractId: id }) => id === contractId);
+
+    if (balance) {
+      return Number(balance.decimals);
+    }
+  }
+
+  return CLASSIC_ASSET_DECIMALS;
+};
+
+// Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
+export const formatTokenAmount = (amount: BigNumber, decimals: number) => {
+  let formatted = amount.shiftedBy(-decimals).toFixed(decimals).toString();
+
+  // Trim trailing zeros
+  while (formatted[formatted.length - 1] === "0") {
+    formatted = formatted.substring(0, formatted.length - 1);
+  }
+
+  if (formatted.endsWith(".")) {
+    formatted = formatted.substring(0, formatted.length - 1);
+  }
+  return formatted;
+};
+
+export const parseTokenAmount = (value: string, decimals: number) => {
+  const comps = value.split(".");
+
+  let whole = comps[0];
+  let fraction = comps[1];
+  if (!whole) {
+    whole = "0";
+  }
+  if (!fraction) {
+    fraction = "0";
+  }
+
+  // Trim trailing zeros
+  while (fraction[fraction.length - 1] === "0") {
+    fraction = fraction.substring(0, fraction.length - 1);
+  }
+
+  // If decimals is 0, we have an empty string for fraction
+  if (fraction === "") {
+    fraction = "0";
+  }
+
+  // Fully pad the string with zeros to get to value
+  while (fraction.length < decimals) {
+    fraction += "0";
+  }
+
+  const wholeValue = new BigNumber(whole);
+  const fractionValue = new BigNumber(fraction);
+
+  return wholeValue.shiftedBy(decimals).plus(fractionValue);
+};
 
 export const getTokenBalance = (
   tokenBalances: TokenBalances,
@@ -17,7 +96,10 @@ export const getTokenBalance = (
     throw new Error("Balance not found");
   }
 
-  return balance.total.toString();
+  return formatTokenAmount(
+    new BigNumber(balance.total),
+    Number(balance.decimals),
+  );
 };
 
 export const contractIdAttrToHex = (byteArray: Buffer) =>
@@ -38,15 +120,6 @@ export const getXferArgs = (
     amount: value.i128().lo().low,
   };
 };
-
-interface RootInvocation {
-  _attributes: {
-    contractId: Buffer;
-    functionName: Buffer;
-    args: SorobanClient.xdr.ScVal[];
-    subInvocations: SorobanClient.xdr.AuthorizedInvocation[];
-  };
-}
 
 export const getAttrsFromSorobanOp = (
   operation: HorizonOperation,

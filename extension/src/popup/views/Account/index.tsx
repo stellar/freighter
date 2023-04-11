@@ -123,11 +123,7 @@ export const Account = () => {
   ]);
 
   useEffect(() => {
-    const hasFetchedSorobanTokens =
-      isExperimentalModeEnabled &&
-      (getTokenBalancesStatus === ActionStatus.IDLE ||
-        getTokenBalancesStatus === ActionStatus.PENDING);
-    if (!balances || hasFetchedSorobanTokens) return;
+    if (!balances) return;
 
     setSortedBalances(sortBalances(balances, tokenBalances));
 
@@ -163,7 +159,10 @@ export const Account = () => {
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.IDLE;
+    accountBalanceStatus === ActionStatus.IDLE ||
+    (isExperimentalModeEnabled &&
+      (getTokenBalancesStatus === ActionStatus.PENDING ||
+        getTokenBalancesStatus === ActionStatus.IDLE));
 
   return selectedAsset ? (
     <AssetDetail
