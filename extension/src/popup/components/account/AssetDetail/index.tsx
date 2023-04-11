@@ -18,6 +18,7 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
+import { formatTokenAmount } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
@@ -78,10 +79,14 @@ export const AssetDetail = ({
 
   const balance = getRawBalance(accountBalances, selectedAsset) || null;
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
-  const balanceTotal =
-    balance && balance?.total
-      ? `${new BigNumber(balance?.total).toString()} ${canonical.code}`
-      : `0 ${canonical.code}`;
+  const total =
+    balance && "contractId" in balance
+      ? formatTokenAmount(
+          new BigNumber(balance.total || "0"),
+          Number(balance.decimals),
+        )
+      : (balance && new BigNumber(balance?.total).toString()) || "0";
+  const balanceTotal = `${total} ${canonical.code}`;
 
   const balanceAvailable = getAvailableBalance({
     accountBalances,
