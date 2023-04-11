@@ -123,6 +123,7 @@ const TwoAssetCard = ({
 };
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
+  const sorobanClient = useContext(SorobanContext);
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -275,9 +276,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterSorobanTransaction({
-            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
+            sorobanClient,
             refreshBalances: true,
           }),
         );

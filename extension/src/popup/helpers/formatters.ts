@@ -1,3 +1,5 @@
+import { CLASSIC_ASSET_DECIMALS } from "./soroban";
+
 // remove non digits and decimal
 export const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
 
@@ -35,7 +37,7 @@ If digits & decimals, do previous step on chars before the dot and also account 
 export const formatAmount = (
   val: string,
   staleVal: string,
-  decimals: number = 7,
+  decimals: number = CLASSIC_ASSET_DECIMALS,
   cursorPosition: number = 1,
 ) => {
   const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });

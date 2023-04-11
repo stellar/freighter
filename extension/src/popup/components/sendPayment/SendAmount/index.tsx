@@ -26,7 +26,7 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getTokenBalance } from "popup/helpers/soroban";
+import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { cleanAmount, formatAmount } from "popup/helpers/formatters";
@@ -48,30 +48,12 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 
 import "../styles.scss";
-import { TokenBalances } from "@shared/api/types";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
   DEC_MAX = "too many decimal digits",
   SEND_MAX = "amount higher than send max",
 }
-
-const getAssetDecimals = (
-  asset: string,
-  balances: TokenBalances,
-  isToken: boolean,
-) => {
-  if (isToken) {
-    const contractId = asset.split(":")[1];
-    const balance = balances.find(({ contractId: id }) => id === contractId);
-
-    if (balance) {
-      return Number(balance.decimals);
-    }
-  }
-
-  return 7;
-};
 
 const ConversionRate = ({
   source,

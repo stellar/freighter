@@ -17,29 +17,43 @@ export enum SorobanTokenInterface {
   xfer = "xfer",
 }
 
+// All assets on the classic side have 7 decimals
+// https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
+export const CLASSIC_ASSET_DECIMALS = 7;
+
+export const getAssetDecimals = (
+  asset: string,
+  balances: TokenBalances,
+  isToken: boolean,
+) => {
+  if (isToken) {
+    const contractId = asset.split(":")[1];
+    const balance = balances.find(({ contractId: id }) => id === contractId);
+
+    if (balance) {
+      return Number(balance.decimals);
+    }
+  }
+
+  return CLASSIC_ASSET_DECIMALS;
+};
+
 // Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
-// Constant to pull zeros from for multipliers
-let ZEROS = "0";
-while (ZEROS.length < 256) {
-  ZEROS += ZEROS;
-}
-
-const getAmountMultiplier = (decimals: number) =>
-  `1${ZEROS.substring(0, decimals)}`;
-
 export const formatTokenAmount = (amount: BigNumber, decimals: number) => {
-  const multiplier = getAmountMultiplier(decimals);
-  let formatted = amount.div(multiplier).toFixed(decimals).toString();
+  let formatted = amount.shiftedBy(-decimals).toFixed(decimals).toString();
 
   // Trim trailing zeros
   while (formatted[formatted.length - 1] === "0") {
+    formatted = formatted.substring(0, formatted.length - 1);
+  }
+
+  if (formatted.endsWith(".")) {
     formatted = formatted.substring(0, formatted.length - 1);
   }
   return formatted;
 };
 
 export const parseTokenAmount = (value: string, decimals: number) => {
-  const multiplier = getAmountMultiplier(decimals);
   const comps = value.split(".");
 
   let whole = comps[0];
@@ -62,14 +76,14 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   }
 
   // Fully pad the string with zeros to get to value
-  while (fraction.length < multiplier.length - 1) {
+  while (fraction.length < decimals) {
     fraction += "0";
   }
 
   const wholeValue = new BigNumber(whole);
   const fractionValue = new BigNumber(fraction);
 
-  return wholeValue.multipliedBy(multiplier).plus(fractionValue);
+  return wholeValue.shiftedBy(decimals).plus(fractionValue);
 };
 
 export const getTokenBalance = (
