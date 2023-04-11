@@ -1,6 +1,6 @@
 import StellarSdk from "stellar-sdk";
 import SorobanSdk from "soroban-client";
-import { browser, Runtime } from "webextension-polyfill-ts";
+import browser from "webextension-polyfill";
 
 import { ExternalRequest as Request } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -47,7 +47,7 @@ const WINDOW_SETTINGS: WINDOW_PARAMS = {
 
 export const freighterApiMessageListener = (
   request: Request,
-  sender: Runtime.MessageSender,
+  sender: browser.Runtime.MessageSender,
 ) => {
   const requestAccess = async () => {
     const publicKey = publicKeySelector(store.getState());
@@ -246,11 +246,14 @@ export const freighterApiMessageListener = (
     return { networkDetails };
   };
 
+  const requestConnectionStatus = () => ({ isConnected: true });
+
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS]: requestConnectionStatus,
   };
 
   return messageResponder[request.type]();
