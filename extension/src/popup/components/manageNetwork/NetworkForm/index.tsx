@@ -41,6 +41,7 @@ interface FormValues {
   networkUrl: string;
   isSwitchSelected?: boolean;
   isAllowHttpSelected: boolean;
+  friendbotUrl?: string;
 }
 
 interface NetworkFormProps {
@@ -84,6 +85,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         networkName: "",
         networkPassphrase: "",
         networkUrl: "",
+        friendbotUrl: "",
         isSwitchSelected: false,
         isAllowHttpSelected: false,
       };
@@ -112,13 +114,14 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const getCustomNetworkDetailsFromFormValues = (values: FormValues) => {
-    const { networkName, networkUrl, networkPassphrase } = values;
+    const { networkName, networkUrl, networkPassphrase, friendbotUrl } = values;
 
     return {
       network: CUSTOM_NETWORK,
       networkName,
       networkUrl,
       networkPassphrase,
+      friendbotUrl,
     };
   };
 
@@ -351,6 +354,20 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 label={t("Passphrase")}
                 name="networkPassphrase"
                 placeholder={t("Enter passphrase")}
+              />
+              <Input
+                disabled={isEditingDefaultNetworks}
+                id="friendbotUrl"
+                autoComplete="off"
+                error={
+                  errors.friendbotUrl && touched.friendbotUrl
+                    ? errors.friendbotUrl
+                    : ""
+                }
+                customInput={<Field />}
+                label={t("Friendbot URL")}
+                name="friendbotUrl"
+                placeholder={t("Enter Friendbot URL")}
               />
               {!isEditingDefaultNetworks ? (
                 <Field name="isAllowHttpSelected">
