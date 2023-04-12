@@ -41,6 +41,7 @@ import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
 } from "@shared/constants/stellar";
+import { getFriendbotUrl } from "@shared/helpers/account";
 
 import { EXPERIMENTAL } from "constants/featureFlag";
 import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
@@ -270,17 +271,14 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    const networkDetails = await getNetworkDetails();
     const isTestnet = await getIsTestnet();
     const isFuturenet = await getIsFuturenet();
 
     if (isTestnet || isFuturenet) {
+      const networkDetails = await getNetworkDetails();
+      const friendBotUrl = getFriendbotUrl(networkDetails);
       try {
-        await fetch(
-          `${networkDetails.friendBotUrl}?addr=${encodeURIComponent(
-            publicKey,
-          )}`,
-        );
+        await fetch(`${friendBotUrl}?addr=${encodeURIComponent(publicKey)}`);
       } catch (e) {
         console.error(e);
         throw new Error("Error creating account");
