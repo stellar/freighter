@@ -270,11 +270,9 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    const isTestnet = await getIsTestnet();
-    const isFuturenet = await getIsFuturenet();
+    const networkDetails = await getNetworkDetails();
 
-    if (isTestnet || isFuturenet) {
-      const networkDetails = await getNetworkDetails();
+    if (networkDetails.friendBotUrl) {
       try {
         await fetch(
           `${networkDetails.friendBotUrl}?addr=${encodeURIComponent(
