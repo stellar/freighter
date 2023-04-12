@@ -3,16 +3,19 @@ import StellarSdk from "stellar-sdk";
 export enum NETWORK_NAMES {
   TESTNET = "Test Net",
   PUBNET = "Main Net",
+  FUTURENET = "Future Net",
 }
 
 export enum NETWORKS {
   PUBLIC = "PUBLIC",
   TESTNET = "TESTNET",
+  FUTURENET = "FUTURENET",
 }
 
 export enum NETWORK_URLS {
   PUBLIC = "https://horizon.stellar.org",
   TESTNET = "https://horizon-testnet.stellar.org",
+  FUTURENET = "https://horizon-futurenet.stellar.org",
 }
 
 export enum FRIENDBOT_URLS {
@@ -21,7 +24,7 @@ export enum FRIENDBOT_URLS {
 }
 
 export const SOROBAN_RPC_URLS = {
-  futureNet: "https://rpc-futurenet.stellar.org/",
+  FUTURENET: "https://rpc-futurenet.stellar.org/",
 };
 
 export interface NetworkDetails {
@@ -48,9 +51,9 @@ export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
 };
 
 export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
-  network: "Futurenet",
-  networkName: "Future Net",
-  networkUrl: "https://horizon-futurenet.stellar.org/",
+  network: NETWORKS.FUTURENET,
+  networkName: NETWORK_NAMES.FUTURENET,
+  networkUrl: NETWORK_URLS.FUTURENET,
   networkPassphrase: "Test SDF Future Network ; October 2022",
   friendbotUrl: FRIENDBOT_URLS.FUTURENET,
 };
