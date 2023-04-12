@@ -7,6 +7,7 @@ import {
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
+import { migrateFriendBotUrlNetworkDetails } from "./helpers/dataStorage";
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -47,4 +48,6 @@ export const initInstalledListener = () => {
       default:
     }
   });
+
+  browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
 };

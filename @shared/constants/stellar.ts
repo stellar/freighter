@@ -29,6 +29,7 @@ export interface NetworkDetails {
   networkName: string;
   networkUrl: string;
   networkPassphrase: string;
+  friendbotUrl?: string;
 }
 
 export const MAINNET_NETWORK_DETAILS: NetworkDetails = {
@@ -43,6 +44,7 @@ export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.TESTNET,
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: StellarSdk.Networks.TESTNET,
+  friendbotUrl: FRIENDBOT_URLS.TESTNET,
 };
 
 export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
@@ -50,6 +52,7 @@ export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
   networkName: "Future Net",
   networkUrl: "https://horizon-futurenet.stellar.org/",
   networkPassphrase: "Test SDF Future Network ; October 2022",
+  friendbotUrl: FRIENDBOT_URLS.FUTURENET,
 };
 
 export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
