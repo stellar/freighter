@@ -2,7 +2,11 @@ import BigNumber from "bignumber.js";
 import StellarSdk from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
-import { NETWORK_URLS, NetworkDetails } from "@shared/constants/stellar";
+import {
+  NETWORK_URLS,
+  NetworkDetails,
+  FUTURENET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 
 import { parsedSearchParam, getUrlHostname } from "./urls";
@@ -134,6 +138,15 @@ export const isTestnet = (networkDetails: NetworkDetails) => {
   return (
     networkPassphrase === StellarSdk.Networks.TESTNET &&
     networkUrl === NETWORK_URLS.TESTNET
+  );
+};
+
+export const isFuturenet = (networkDetails: NetworkDetails) => {
+  const { networkPassphrase, networkUrl } = networkDetails;
+
+  return (
+    networkPassphrase === FUTURENET_NETWORK_DETAILS.networkPassphrase &&
+    networkUrl === FUTURENET_NETWORK_DETAILS.networkUrl
   );
 };
 

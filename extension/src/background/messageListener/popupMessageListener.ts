@@ -48,7 +48,8 @@ import {
   addAccountName,
   getAccountNameList,
   getKeyIdList,
-  getIsMainnet,
+  getIsTestnet,
+  getIsFuturenet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
   getIsValidatingSafeAssetsEnabled,
@@ -269,12 +270,16 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    const isMainnet = await getIsMainnet();
+    const networkDetails = await getNetworkDetails();
+    const isTestnet = await getIsTestnet();
+    const isFuturenet = await getIsFuturenet();
 
-    if (!isMainnet) {
+    if (isTestnet || isFuturenet) {
       try {
         await fetch(
-          `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
+          `${networkDetails.friendBotUrl}?addr=${encodeURIComponent(
+            publicKey,
+          )}`,
         );
       } catch (e) {
         console.error(e);

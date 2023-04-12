@@ -15,11 +15,21 @@ export enum NETWORK_URLS {
   TESTNET = "https://horizon-testnet.stellar.org",
 }
 
+export enum FRIENDBOT_URLS {
+  TESTNET = "https://friendbot.stellar.org",
+  FUTURENET = "https://friendbot-futurenet.stellar.org",
+}
+
+export const SOROBAN_RPC_URLS = {
+  futureNet: "https://rpc-futurenet.stellar.org/",
+};
+
 export interface NetworkDetails {
   network: string;
   networkName: string;
   networkUrl: string;
   networkPassphrase: string;
+  friendBotUrl?: string;
 }
 
 export const MAINNET_NETWORK_DETAILS: NetworkDetails = {
@@ -34,6 +44,7 @@ export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.TESTNET,
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: StellarSdk.Networks.TESTNET,
+  friendBotUrl: FRIENDBOT_URLS.TESTNET,
 };
 
 export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
@@ -41,13 +52,10 @@ export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
   networkName: "Future Net",
   networkUrl: "https://horizon-futurenet.stellar.org/",
   networkPassphrase: "Test SDF Future Network ; October 2022",
+  friendBotUrl: FRIENDBOT_URLS.FUTURENET,
 };
 
 export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 ];
-
-export const SOROBAN_RPC_URLS = {
-  futureNet: "https://stellar-futurenet.4d63.com/soroban/rpc",
-};
