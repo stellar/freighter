@@ -231,7 +231,7 @@ export const Account = () => {
             </SimpleBarWrapper>
           ) : (
             <NotFundedMessage
-              isTestnet={isTestnet(networkDetails)}
+              canUseFriendbot={!!networkDetails.friendBotUrl}
               setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
               publicKey={publicKey}
             />
