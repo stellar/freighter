@@ -32,7 +32,7 @@ export interface NetworkDetails {
   networkName: string;
   networkUrl: string;
   networkPassphrase: string;
-  friendBotUrl?: string;
+  friendbotUrl?: string;
 }
 
 export const MAINNET_NETWORK_DETAILS: NetworkDetails = {
@@ -47,6 +47,7 @@ export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.TESTNET,
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: StellarSdk.Networks.TESTNET,
+  friendbotUrl: FRIENDBOT_URLS.TESTNET,
 };
 
 export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
@@ -54,7 +55,7 @@ export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.FUTURENET,
   networkUrl: NETWORK_URLS.FUTURENET,
   networkPassphrase: "Test SDF Future Network ; October 2022",
-  friendBotUrl: FRIENDBOT_URLS.FUTURENET,
+  friendbotUrl: FRIENDBOT_URLS.FUTURENET,
 };
 
 export const DEFAULT_NETWORKS: Array<NetworkDetails> = [

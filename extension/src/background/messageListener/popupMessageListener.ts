@@ -263,11 +263,11 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    const { friendBotUrl } = await getNetworkDetails();
+    const { friendbotUrl } = await getNetworkDetails();
 
-    if (friendBotUrl) {
+    if (friendbotUrl) {
       try {
-        await fetch(`${friendBotUrl}?addr=${encodeURIComponent(publicKey)}`);
+        await fetch(`${friendbotUrl}?addr=${encodeURIComponent(publicKey)}`);
       } catch (e) {
         console.error(e);
         throw new Error("Error creating account");
