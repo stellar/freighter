@@ -120,6 +120,7 @@
   },
   "enable": "enable",
   "Enable experimental mode": "Enable experimental mode",
+  "Enter Friendbot URL": "Enter Friendbot URL",
   "Enter network name": "Enter network name",
   "Enter network URL": "Enter network URL",
   "Enter passphrase": "Enter passphrase",
@@ -161,6 +162,7 @@
   "Freighter will use experimental API‘s and connect to the Futurenet, a test network": {
     " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
   },
+  "Friendbot URL": "Friendbot URL",
   "From": "From",
   "Function": "Function",
   "Fund with Friendbot": "Fund with Friendbot",
