@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
 import { Icon, TextLink } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import StellarSdk, { Account } from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import { AppDispatch } from "popup/App";
 
 import { AssetIcons, ErrorMessage } from "@shared/api/types";
@@ -94,7 +94,9 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
     const changeParams = { limit: "0" };
-    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const sourceAccount: StellarSdk.Account = await server.loadAccount(
+      publicKey,
+    );
 
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),

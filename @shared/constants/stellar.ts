@@ -1,4 +1,4 @@
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 
 export enum NETWORK_NAMES {
   TESTNET = "Test Net",

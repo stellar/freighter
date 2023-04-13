@@ -18,10 +18,10 @@ export const useAssetDomain = ({ assetIssuer }: UseAssetDomain) => {
       const { networkUrl } = networkDetails;
       const server = stellarSdkServer(networkUrl);
 
-      let assetDomain = "";
+      let assetDomain;
 
       try {
-        ({ home_domain: assetDomain } = await server.loadAccount(assetIssuer));
+        ({ home_domain: assetDomain } = await server.loadAccount(assetIssuer!));
       } catch (e) {
         console.error(e);
       }

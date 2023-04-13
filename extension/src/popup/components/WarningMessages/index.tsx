@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
-import StellarSdk, { Account } from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 
 import { ActionStatus } from "@shared/api/types";
 
@@ -300,7 +300,7 @@ export const ScamAssetWarning = ({
     setIsSubmitting(true);
 
     const server = new StellarSdk.Server(networkDetails.networkUrl);
-    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const sourceAccount = await server.loadAccount(publicKey);
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,
@@ -483,7 +483,7 @@ export const NewAssetWarning = ({
     setIsSubmitting(true);
 
     const server = new StellarSdk.Server(networkDetails.networkUrl);
-    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const sourceAccount = await server.loadAccount(publicKey);
     const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,

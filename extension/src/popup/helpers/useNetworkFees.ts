@@ -26,10 +26,11 @@ export const useNetworkFees = () => {
           max_fee: maxFee,
           ledger_capacity_usage: ledgerCapacityUsage,
         } = await server.feeStats();
+        const ledgerCapacityUsageNum = Number(ledgerCapacityUsage);
         setRecommendedFee(stroopToXlm(maxFee.mode).toFixed());
-        if (ledgerCapacityUsage > 0.5 && ledgerCapacityUsage <= 0.75) {
+        if (ledgerCapacityUsageNum > 0.5 && ledgerCapacityUsageNum <= 0.75) {
           setNetworkCongestion(NetworkCongestion.MEDIUM);
-        } else if (ledgerCapacityUsage > 0.75) {
+        } else if (ledgerCapacityUsageNum > 0.75) {
           setNetworkCongestion(NetworkCongestion.HIGH);
         } else {
           setNetworkCongestion(NetworkCongestion.LOW);

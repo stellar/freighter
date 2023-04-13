@@ -1,4 +1,4 @@
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import SorobanSdk from "soroban-client";
 import { browser, Runtime } from "webextension-polyfill-ts";
 

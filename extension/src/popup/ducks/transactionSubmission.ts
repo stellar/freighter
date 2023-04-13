@@ -1,4 +1,4 @@
-import StellarSdk, { Horizon, Server, ServerApi } from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -68,7 +68,7 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
 );
 
 export const submitFreighterTransaction = createAsyncThunk<
-  Horizon.TransactionResponse,
+  StellarSdk.Horizon.SubmitTransactionResponse,
   {
     publicKey: string;
     signedXDR: string;
@@ -109,7 +109,7 @@ export const submitFreighterTransaction = createAsyncThunk<
 );
 
 export const submitFreighterSorobanTransaction = createAsyncThunk<
-  Horizon.TransactionResponse,
+  StellarSdk.Horizon.TransactionResponse,
   {
     publicKey: string;
     signedXDR: string;
@@ -308,7 +308,7 @@ export const getAssetDomains = createAsyncThunk<
 
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
-  ServerApi.PaymentPathRecord,
+  StellarSdk.ServerApi.PaymentPathRecord,
   {
     amount: string;
     sourceAsset: string;
@@ -320,7 +320,7 @@ export const getBestPath = createAsyncThunk<
   "getBestPath",
   async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
     try {
-      const server = new Server(networkDetails.networkUrl);
+      const server = new StellarSdk.Server(networkDetails.networkUrl);
       const builder = server.strictSendPaths(
         getAssetFromCanonical(sourceAsset),
         amount,
@@ -386,7 +386,7 @@ interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
-  response: Horizon.TransactionResponse | null;
+  response: StellarSdk.Horizon.TransactionResponse | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
   accountBalances: AccountBalancesInterface;
@@ -516,7 +516,7 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.submitStatus = ActionStatus.SUCCESS;
-      state.response = action.payload;
+      state.response = action.payload as any; // TODO
     });
     builder.addCase(submitFreighterSorobanTransaction.pending, (state) => {
       state.submitStatus = ActionStatus.PENDING;

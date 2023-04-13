@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { Redirect, Route, Switch } from "react-router-dom";
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 
 import {
   transactionSubmissionSelector,
@@ -34,7 +34,7 @@ export const ManageAssets = () => {
         const parsedTx = StellarSdk.TransactionBuilder.fromXDR(
           xdrEnvelope,
           networkPassphrase,
-        );
+        ) as any; // TODO
         const { code, issuer } = parsedTx._operations[0].line;
         const asset = `${code}:${issuer}`;
         setErrorAsset(asset);

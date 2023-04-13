@@ -194,7 +194,7 @@ const userSignedTransaction = userSignTransaction(xdr, "TESTNET");
 freighter-api will return a signed transaction xdr. Below is an example of how you might submit this signed transaction to Horizon using `stellar-sdk` (https://github.com/stellar/js-stellar-sdk):
 
 ```javascript
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 
 const userSignTransaction = async (
   xdr: string,

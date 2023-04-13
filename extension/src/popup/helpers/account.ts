@@ -1,4 +1,4 @@
-import StellarSdk, { Horizon } from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   AssetType,
@@ -40,11 +40,11 @@ export const sortBalances = (
   return collection.concat(_sorobanBalances).concat(lpBalances);
 };
 
-export const getIsPayment = (type: Horizon.OperationResponseType) =>
+export const getIsPayment = (type: StellarSdk.Horizon.OperationResponseType) =>
   [
-    Horizon.OperationResponseType.payment,
-    Horizon.OperationResponseType.pathPayment,
-    Horizon.OperationResponseType.pathPaymentStrictSend,
+    StellarSdk.Horizon.OperationResponseType.payment,
+    StellarSdk.Horizon.OperationResponseType.pathPayment,
+    StellarSdk.Horizon.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
 
 export const getIsSorobanTransfer = (

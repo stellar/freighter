@@ -70,7 +70,7 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-    toml = await StellarTomlResolver.resolve(homeDomain);
+    toml = await StellarTomlResolver.resolve(homeDomain!);
   } catch (e) {
     console.error(e);
     return iconUrl;

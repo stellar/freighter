@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Input } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";

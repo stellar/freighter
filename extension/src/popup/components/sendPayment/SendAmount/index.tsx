@@ -4,7 +4,7 @@ import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
 import { Icon, Loader } from "@stellar/design-system";
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";

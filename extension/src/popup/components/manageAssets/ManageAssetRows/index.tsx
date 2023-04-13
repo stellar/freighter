@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import StellarSdk, { Account } from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { CURRENCY, ActionStatus } from "@shared/api/types";
@@ -111,7 +111,7 @@ export const ManageAssetRows = ({
     addTrustline: boolean,
   ) => {
     const changeParams = addTrustline ? {} : { limit: "0" };
-    const sourceAccount: Account = await server.loadAccount(publicKey);
+    const sourceAccount = await server.loadAccount(publicKey);
     const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
 
     setAssetSubmitting(canonicalAsset);

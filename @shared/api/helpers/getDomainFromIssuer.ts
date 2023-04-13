@@ -1,4 +1,4 @@
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
@@ -39,7 +39,7 @@ export const getDomainFromIssuer = async ({
     return assetDomain;
   }
 
-  assetDomain = response.home_domain;
+  assetDomain = response.home_domain!;
 
   /* And also save into the cache to prevent having to do this process again */
   await sendMessageToBackground({

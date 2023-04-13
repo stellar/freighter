@@ -1,4 +1,4 @@
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {

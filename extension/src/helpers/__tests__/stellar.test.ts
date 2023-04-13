@@ -1,4 +1,4 @@
-import { Tabs } from "webextension-polyfill-ts";
+// import { Tabs } from "webextension-polyfill-ts";
 import { getTransactionInfo, truncatedPublicKey } from "../stellar";
 import * as urls from "../urls";
 
@@ -24,7 +24,7 @@ describe("getTransactionInfo", () => {
       transactionXdr: "",
       isDomainListedAllowed: true,
       flaggedKeys: { test: { tags: [""] } },
-      tab: {} as Tabs.Tab,
+      tab: {} as any,
     });
     expect(getTransactionInfo("foo").isHttpsDomain).toBe(true);
   });
@@ -36,7 +36,7 @@ describe("getTransactionInfo", () => {
       transactionXdr: "",
       isDomainListedAllowed: true,
       flaggedKeys: { test: { tags: [""] } },
-      tab: {} as Tabs.Tab,
+      tab: {} as any,
     });
     expect(getTransactionInfo("foo").isHttpsDomain).toBe(false);
   });

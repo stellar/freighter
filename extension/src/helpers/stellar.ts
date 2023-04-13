@@ -1,8 +1,7 @@
 import BigNumber from "bignumber.js";
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
-import { isSorobanIssuer } from "popup/helpers/account";
 import { NETWORK_URLS, NetworkDetails } from "@shared/constants/stellar";
 
 import { parsedSearchParam, getUrlHostname } from "./urls";
@@ -62,13 +61,6 @@ export const getAssetFromCanonical = (canonical: string) => {
   }
   if (canonical.includes(":")) {
     const [code, issuer] = canonical.split(":");
-
-    if (isSorobanIssuer(issuer)) {
-      return {
-        code,
-        issuer,
-      };
-    }
     return new StellarSdk.Asset(code, issuer);
   }
 

@@ -2,9 +2,8 @@ import React, { useContext, useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import SorobanClient from "soroban-client";
-import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -155,7 +154,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const isHardwareWallet = !!hardwareWalletType;
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
 
-  const sourceAsset = isToken ? asset : getAssetFromCanonical(asset);
+  const sourceAsset = getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
 
   // load destination asset icons
@@ -277,7 +276,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const handlePaymentTransaction = async () => {
     try {
       const server = stellarSdkServer(networkDetails.networkUrl);
-      const sourceAccount: Types.Account = await server.loadAccount(publicKey);
+      const sourceAccount = await server.loadAccount(publicKey);
 
       const transactionXDR = await new StellarSdk.TransactionBuilder(
         sourceAccount,
