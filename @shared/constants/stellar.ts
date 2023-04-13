@@ -24,7 +24,7 @@ export enum FRIENDBOT_URLS {
 }
 
 export const SOROBAN_RPC_URLS = {
-  futureNet: "https://rpc-futurenet.stellar.org/",
+  FUTURENET: "https://rpc-futurenet.stellar.org/",
 };
 
 export interface NetworkDetails {
