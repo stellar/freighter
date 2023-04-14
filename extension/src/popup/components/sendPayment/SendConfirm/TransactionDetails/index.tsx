@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import StellarSdk from "stellar-sdk";
+import StellarSdk, { Asset } from "stellar-sdk";
 import SorobanClient from "soroban-client";
 import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon } from "@stellar/design-system";
@@ -12,6 +12,7 @@ import { SorobanContext } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
+  isMainnet,
   isMuxedAccount,
   xlmToStroop,
   getConversionRate,
@@ -28,6 +29,7 @@ import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
+  getBlockedAccounts,
   signFreighterTransaction,
   signFreighterSorobanTransaction,
   submitFreighterTransaction,
@@ -38,7 +40,11 @@ import {
   ShowOverlayStatus,
   startHwSign,
 } from "popup/ducks/transactionSubmission";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { sorobanSelector } from "popup/ducks/soroban";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
@@ -56,8 +62,11 @@ import {
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
+import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 
 import "./styles.scss";
+import { parseTokenAmount } from "popup/helpers/soroban";
+import { TRANSACTION_WARNING } from "constants/transaction";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -120,7 +129,59 @@ const TwoAssetCard = ({
   );
 };
 
+const computeDestMinWithSlippage = (
+  slippage: string,
+  destMin: string,
+): BigNumber => {
+  const mult = 1 - parseFloat(slippage) / 100;
+  return new BigNumber(destMin).times(new BigNumber(mult));
+};
+
+const getOperation = (
+  sourceAsset: Asset,
+  destAsset: Asset,
+  amount: string,
+  destinationAmount: string,
+  destination: string,
+  allowedSlippage: string,
+  path: string[],
+  isPathPayment: boolean,
+  isSwap: boolean,
+  isFunded: boolean,
+  publicKey: string,
+) => {
+  // path payment or swap
+  if (isPathPayment || isSwap) {
+    const destMin = computeDestMinWithSlippage(
+      allowedSlippage,
+      destinationAmount,
+    );
+    return StellarSdk.Operation.pathPaymentStrictSend({
+      sendAsset: sourceAsset,
+      sendAmount: amount,
+      destination: isSwap ? publicKey : destination,
+      destAsset,
+      destMin: destMin.toFixed(7),
+      path: path.map((p) => getAssetFromCanonical(p)),
+    });
+  }
+  // create account if unfunded and sending xlm
+  if (!isFunded && sourceAsset === StellarSdk.Asset.native().toString()) {
+    return StellarSdk.Operation.createAccount({
+      destination,
+      startingBalance: amount,
+    });
+  }
+  // regular payment
+  return StellarSdk.Operation.payment({
+    destination,
+    asset: sourceAsset,
+    amount,
+  });
+};
+
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
+  const sorobanClient = useContext(SorobanContext);
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -140,11 +201,17 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     },
     assetIcons,
     hardwareWalletData: { status: hwStatus },
+    blockedAccounts,
   } = submission;
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const { tokenBalances } = useSelector(sorobanSelector);
+  const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
+    settingsSelector,
+  );
   const isSwap = useIsSwap();
+
   const { t } = useTranslation();
 
   const { server: sorobanServer } = useContext(SorobanContext);
@@ -155,8 +222,28 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const isHardwareWallet = !!hardwareWalletType;
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
 
-  const sourceAsset = isToken ? asset : getAssetFromCanonical(asset);
+  const sourceAsset = getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
+
+  const _isMainnet = isMainnet(networkDetails);
+  const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
+  const isValidatingSafety = isSafetyValidationEnabled && _isMainnet;
+
+  const matchingBlockedTags = blockedAccounts
+    .filter(({ address }) => address === destination)
+    .flatMap(({ tags }) => tags);
+  const isMemoRequired =
+    isValidatingMemo &&
+    matchingBlockedTags.some(
+      (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
+    );
+  const isMalicious =
+    isValidatingSafety &&
+    matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.malicious);
+  const isUnsafe =
+    isValidatingSafety &&
+    matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.unsafe);
+  const isSubmitDisabled = isMemoRequired || isMalicious || isUnsafe;
 
   // load destination asset icons
   useEffect(() => {
@@ -172,51 +259,26 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     })();
   }, [destAsset.code, destAsset.issuer, networkDetails]);
 
-  const computeDestMinWithSlippage = (
-    slippage: string,
-    destMin: string,
-  ): BigNumber => {
-    const mult = 1 - parseFloat(slippage) / 100;
-    return new BigNumber(destMin).times(new BigNumber(mult));
-  };
-
-  const getOperation = () => {
-    // path payment or swap
-    if (isPathPayment || isSwap) {
-      const destMin = computeDestMinWithSlippage(
-        allowedSlippage,
-        destinationAmount,
-      );
-      return StellarSdk.Operation.pathPaymentStrictSend({
-        sendAsset: sourceAsset,
-        sendAmount: amount,
-        destination: isSwap ? publicKey : destination,
-        destAsset,
-        destMin: destMin.toFixed(7),
-        path: path.map((p) => getAssetFromCanonical(p)),
-      });
-    }
-    // create account if unfunded and sending xlm
-    if (
-      !destinationBalances.isFunded &&
-      asset === StellarSdk.Asset.native().toString()
-    ) {
-      return StellarSdk.Operation.createAccount({
-        destination,
-        startingBalance: amount,
-      });
-    }
-    // regular payment
-    return StellarSdk.Operation.payment({
-      destination,
-      asset: sourceAsset,
-      amount,
-    });
-  };
+  useEffect(() => {
+    dispatch(getBlockedAccounts());
+  }, [dispatch]);
 
   const handleXferTransaction = async () => {
     try {
       const assetAddress = asset.split(":")[1];
+      const assetBalance = tokenBalances.find(
+        (b) => b.contractId === assetAddress,
+      );
+
+      if (!assetBalance) {
+        throw new Error("Asset Balance not available");
+      }
+
+      const parsedAmount = parseTokenAmount(
+        amount,
+        Number(assetBalance.decimals),
+      );
+
       const sourceAccount = await sorobanServer.getAccount(publicKey);
       const contract = new SorobanClient.Contract(assetAddress);
       const contractOp = contract.call(
@@ -224,7 +286,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         ...[
           accountIdentifier(publicKey), // from
           accountIdentifier(destination), // to
-          numberToI128(Number(amount)), // amount
+          numberToI128(parsedAmount.toNumber()), // amount
         ],
       );
 
@@ -258,15 +320,17 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterSorobanTransaction({
-            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
+            sorobanClient,
             refreshBalances: true,
           }),
         );
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
+            sourceAsset: sourceAsset.code,
+          });
         }
       }
     } catch (e) {
@@ -279,6 +343,20 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       const server = stellarSdkServer(networkDetails.networkUrl);
       const sourceAccount: Types.Account = await server.loadAccount(publicKey);
 
+      const operation = getOperation(
+        sourceAsset,
+        destAsset,
+        amount,
+        destinationAmount,
+        destination,
+        allowedSlippage,
+        path,
+        isPathPayment,
+        isSwap,
+        destinationBalances.isFunded!,
+        publicKey,
+      );
+
       const transactionXDR = await new StellarSdk.TransactionBuilder(
         sourceAccount,
         {
@@ -286,7 +364,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           networkPassphrase: networkDetails.networkPassphrase,
         },
       )
-        .addOperation(getOperation())
+        .addOperation(operation)
         .addMemo(StellarSdk.Memo.text(memo))
         .setTimeout(180)
         .build()
@@ -384,9 +462,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         <SubviewHeader
           title={
             submission.submitStatus === ActionStatus.SUCCESS
-              ? `${isSwap ? t("Swapped") : t("Sent")} ${
-                  isToken ? asset.split(":")[0] : sourceAsset.code
-                }`
+              ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
               : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
           }
           customBackAction={goBack}
@@ -474,6 +550,13 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </div>
           </div>
         )}
+        {submission.submitStatus === ActionStatus.IDLE && (
+          <FlaggedWarningMessage
+            isUnsafe={isUnsafe}
+            isMalicious={isMalicious}
+            isMemoRequired={isMemoRequired}
+          />
+        )}
         <div className="TransactionDetails__bottom-wrapper">
           <div className="TransactionDetails__bottom-wrapper__copy">
             {(isPathPayment || isSwap) &&
@@ -493,6 +576,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 {t("Cancel")}
               </Button>
               <Button
+                disabled={isSubmitDisabled}
                 onClick={handleSend}
                 isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
               >

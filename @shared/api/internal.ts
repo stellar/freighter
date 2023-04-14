@@ -809,6 +809,13 @@ export const getBlockedDomains = async () => {
   return resp;
 };
 
+export const getBlockedAccounts = async () => {
+  const resp = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_BLOCKED_ACCOUNTS,
+  });
+  return resp;
+};
+
 type TxToOp = {
   [index: string]: {
     tx: SorobanClient.Transaction<
