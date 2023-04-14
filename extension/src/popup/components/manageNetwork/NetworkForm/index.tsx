@@ -77,7 +77,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     ? {
         ...networkDetailsToEdit,
         isSwitchSelected: false,
-        isAllowHttpSelected: !networkDetailsToEdit.networkUrl.includes("https"),
+        isAllowHttpSelected: !networkDetailsToEdit?.networkUrl.includes(
+          "https",
+        ),
       }
     : {
         networkName: "",
