@@ -43,7 +43,7 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { isTestnet, truncatedPublicKey } from "helpers/stellar";
+import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -231,7 +231,7 @@ export const Account = () => {
             </SimpleBarWrapper>
           ) : (
             <NotFundedMessage
-              isTestnet={isTestnet(networkDetails)}
+              canUseFriendbot={!!networkDetails.friendbotUrl}
               setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
               publicKey={publicKey}
             />
