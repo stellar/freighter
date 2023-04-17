@@ -11,7 +11,7 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 You will need
 
-- Node (v14.11.0 or newer): https://nodejs.org/en/download/
+- Node (>=16.14.0 <17.0.0): https://nodejs.org/en/download/
 - Yarn (v1.22.5 or newer): https://classic.yarnpkg.com/en/docs/install
 
 ## Build the extension

@@ -1,3 +1,11 @@
+# Release notes - Wallets - Freighter-2.12.3
+
+### Story
+
+Check for malicious accounts when sending from the app
+
+Use decimals field on Soroban token for amount display
+
 # Release notes - Wallets - Freighter-2.12.2
 
 ### Bug

@@ -12,6 +12,7 @@ import {
   Account,
   Response as Request,
   BlockedDomains,
+  BlockedAccount,
 } from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
@@ -30,6 +31,7 @@ import {
   KEY_ID_LIST,
   RECENT_ADDRESSES,
   CACHED_BLOCKED_DOMAINS_ID,
+  CACHED_BLOCKED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
@@ -81,7 +83,10 @@ import {
   updateAllAccountsAccountName,
   reset,
 } from "background/ducks/session";
-import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL } from "background/constants/apiUrls";
+import {
+  STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
+  STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
+} from "background/constants/apiUrls";
 
 const sessionTimer = new SessionTimer();
 
@@ -1083,6 +1088,20 @@ export const popupMessageListener = (request: Request) => {
     }
   };
 
+  const getBlockedAccounts = async () => {
+    try {
+      const resp = await cachedFetch(
+        STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
+        CACHED_BLOCKED_ACCOUNTS_ID,
+      );
+      const blockedAccounts: BlockedAccount[] = resp?._embedded?.records || [];
+      return { blockedAccounts };
+    } catch (e) {
+      console.error(e);
+      return new Error("Error getting blocked accounts");
+    }
+  };
+
   const resetExperimentalData = async () => {
     if (EXPERIMENTAL !== true) {
       return { error: "Not in experimental mode" };
@@ -1162,6 +1181,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
+    [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
   };
 
   return messageResponder[request.type]();

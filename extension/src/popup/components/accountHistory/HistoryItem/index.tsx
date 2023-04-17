@@ -8,7 +8,10 @@ import { OPERATION_TYPES } from "constants/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
-import { getAttrsFromSorobanOp } from "popup/helpers/soroban";
+import {
+  formatTokenAmount,
+  getAttrsFromSorobanOp,
+} from "popup/helpers/soroban";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -184,12 +187,16 @@ export const HistoryItem = ({
         operationText: operationString,
       };
     } else {
+      const formattedTokenAmount = formatTokenAmount(
+        new BigNumber(attrs.amount),
+        Number(token.decimals),
+      );
       isRecipient = transactionAttrs.source_account !== publicKey;
       paymentDifference = isRecipient ? "+" : "-";
       PaymentComponent = (
         <>
           {paymentDifference}
-          {new BigNumber(attrs.amount).toFixed(2, 1)} {token.symbol}
+          {formattedTokenAmount} {token.symbol}
         </>
       );
       IconComponent = isRecipient ? (
@@ -205,9 +212,7 @@ export const HistoryItem = ({
         headerTitle: `${isRecipient ? t("Received") : t("Sent")} ${
           token.symbol
         }`,
-        operationText: `${paymentDifference}${new BigNumber(attrs.amount)} ${
-          token.symbol
-        }`,
+        operationText: `${paymentDifference}${formattedTokenAmount} ${token.symbol}`,
       };
     }
   } else {
