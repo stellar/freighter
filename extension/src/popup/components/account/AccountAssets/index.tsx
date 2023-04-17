@@ -229,11 +229,11 @@ export const AccountAssets = ({
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={!!rb.liquidityPoolId}
               />
-              <span>{code}</span>
+              <span className="asset-code">{code}</span>
               <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
-              <div>
+              <div className="asset-amount">
                 {new BigNumber(rb.total).toFixed()} <span>{amountUnit}</span>
               </div>
             </div>
