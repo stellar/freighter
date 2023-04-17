@@ -22,6 +22,14 @@ import { Router } from "./Router";
 
 import "./styles/global.scss";
 
+// ALEC TODO - remove
+const loggerMiddleware = (storeVal: any) => (next: any) => (action: any) => {
+  console.log("Dispatching: ", action.type);
+  const dispatchedAction = next(action);
+  console.log("NEW STATE: ", storeVal.getState());
+  return dispatchedAction;
+};
+
 // .isBigNumber() not catching correctly, so checking .isBigNumber
 // property as well
 const isSerializable = (value: any) =>
@@ -43,7 +51,7 @@ export const store = configureStore({
         isSerializable,
       },
     }),
-  ].concat(metricsMiddleware<AppState>()),
+  ].concat(metricsMiddleware<AppState>(), loggerMiddleware),
 });
 
 export type AppDispatch = typeof store.dispatch;

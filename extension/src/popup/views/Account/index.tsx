@@ -176,7 +176,7 @@ export const Account = () => {
   ) : (
     <>
       {isLoading ? null : (
-        <div className="AccountView">
+        <div className="AccountView" data-testid="account-view">
           <AccountHeader
             accountDropDownRef={accountDropDownRef}
             allAccounts={allAccounts}
