@@ -1061,8 +1061,11 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetDomain = async () => {
     const { assetCanonical, assetDomain } = request;
 
-    const assetDomainCache =
+    let assetDomainCache =
       (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+    if (typeof assetDomainCache === "string") {
+      assetDomainCache = JSON.parse(assetDomainCache);
+    }
     assetDomainCache[assetCanonical] = assetDomain;
     await dataStorageAccess.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
