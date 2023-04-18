@@ -1,23 +1,21 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
+import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
+import { Balances } from "@shared/api/types";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 import * as ApiInternal from "@shared/api/internal";
+import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 
-import { createMemoryHistory } from "history";
 import { Wrapper } from "../../__testHelpers__";
 import { Account } from "../Account";
-import { ROUTES } from "popup/constants/routes";
-
-const mockHistoryGetter = jest.fn();
 
 const mockBalances = {
-  balances: {
+  balances: ({
     ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
       token: {
         code: "USDC",
@@ -25,39 +23,77 @@ const mockBalances = {
           key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
         },
       },
-      // ALEC TODO - why dont need BigNumber here?
-      total: "100",
+      total: new BigNumber("100"),
     },
-    native: { token: { type: "native", code: "XLM", total: "50" } },
-  },
+    native: {
+      token: { type: "native", code: "XLM", total: new BigNumber("50") },
+    },
+  } as any) as Balances,
   isFunded: true,
   subentryCount: 1,
 };
 
-jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
-  return mockBalances;
+const mockAccounts = [
+  {
+    hardwareWalletType: "",
+    imported: false,
+    name: "Account 1",
+    publicKey: "G1",
+  },
+  {
+    hardwareWalletType: "",
+    imported: true,
+    name: "Account 2",
+    publicKey: "G2",
+  },
+  {
+    hardwareWalletType: "Ledger",
+    imported: true,
+    name: "Ledger 1",
+    publicKey: "L1",
+  },
+];
+
+const mockHistoryOperations = {
+  operations: [
+    {
+      amount: "1",
+      type: "payment",
+      asset_type: "native",
+      from: "G1",
+      to: "G2",
+    },
+  ],
+};
+
+jest
+  .spyOn(ApiInternal, "getAccountBalances")
+  .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest
+  .spyOn(ApiInternal, "makeAccountActive")
+  .mockImplementation(() =>
+    Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
+  );
+
+jest
+  .spyOn(ApiInternal, "getAccountHistory")
+  .mockImplementation(() => Promise.resolve(mockHistoryOperations));
+
+jest.spyOn(UseAssetDomain, "useAssetDomain").mockImplementation(() => {
+  return { assetDomain: "centre.io" };
 });
 
-console.log({ screen }); // ALEC TODO - remove
-
-describe("Account", () => {
+describe("Account view", () => {
   it("renders", async () => {
-    // ALEC TODO - remove the history stuff
-    // ALEC TODO - what are these doing?
-    const history = createMemoryHistory();
-    history.push(ROUTES.account);
-    mockHistoryGetter.mockReturnValue(history);
-
     render(
       <Wrapper
-        // ALEC TODO - need history here?
-        history={history}
         state={{
           auth: {
             error: null,
             applicationState: ApplicationState.PASSWORD_CREATED,
-            publicKey: "G123",
-            allAccounts: ["G123"],
+            publicKey: "G1",
+            allAccounts: mockAccounts,
           },
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
@@ -72,10 +108,7 @@ describe("Account", () => {
     await waitFor(() => screen.getByTestId("account-view"));
     expect(screen.getByTestId("account-view")).toBeDefined();
   });
-});
 
-// ALEC TODO - need to separate "describes" here?
-describe("Account", () => {
   it("loads accounts", async () => {
     render(
       <Wrapper
@@ -83,27 +116,8 @@ describe("Account", () => {
           auth: {
             error: null,
             applicationState: ApplicationState.PASSWORD_CREATED,
-            publicKey: "G123",
-            allAccounts: [
-              {
-                hardwareWalletType: "",
-                imported: false,
-                name: "Account 1",
-                publicKey: "G1",
-              },
-              {
-                hardwareWalletType: "",
-                imported: true,
-                name: "Account 2",
-                publicKey: "G2",
-              },
-              {
-                hardwareWalletType: "Ledger",
-                imported: true,
-                name: "Ledger 1",
-                publicKey: "L1",
-              },
-            ],
+            publicKey: "G1",
+            allAccounts: mockAccounts,
           },
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
@@ -119,11 +133,8 @@ describe("Account", () => {
     expect(screen.getByTestId("account-header")).toBeDefined();
     const accountNodes = screen.getAllByTestId("account-list-item");
     expect(accountNodes.length).toEqual(3);
-    expect(screen.getByText("Account 1")).toBeDefined();
+    expect(screen.getAllByText("Account 1")).toBeDefined();
   });
-});
-
-describe("Account", () => {
   it("displays balances", async () => {
     render(
       <Wrapper
@@ -131,8 +142,8 @@ describe("Account", () => {
           auth: {
             error: null,
             applicationState: ApplicationState.PASSWORD_CREATED,
-            publicKey: "G123",
-            allAccounts: ["G123"],
+            publicKey: "G1",
+            allAccounts: mockAccounts,
           },
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
@@ -143,11 +154,71 @@ describe("Account", () => {
         <Account />
       </Wrapper>,
     );
-    let assetNodes;
     await waitFor(() => {
-      assetNodes = screen.getAllByTestId("account-assets");
+      const assetNodes = screen.getAllByTestId("account-assets");
+      expect(assetNodes.length).toEqual(2);
+      expect(screen.getAllByText("USDC")).toBeDefined();
     });
-    expect(assetNodes.length).toEqual(2);
-    expect(screen.getAllByText("USDC")).toBeDefined();
+  });
+  it("goes to account details", async () => {
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      const assetNodes = screen.getAllByTestId("account-assets");
+      await fireEvent.click(assetNodes[1]);
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+  });
+  it("switches accounts", async () => {
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+    await waitFor(async () => {
+      const accountIdenticonNodes = screen.getAllByTestId(
+        "account-list-identicon-button",
+      );
+      await fireEvent.click(accountIdenticonNodes[2]);
+    });
+    await waitFor(async () => {
+      expect(screen.getByTestId("account-view-account-name")).toHaveTextContent(
+        "Account 2",
+      );
+    });
   });
 });

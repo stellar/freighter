@@ -1,14 +1,10 @@
 import React, { Suspense } from "react";
-import {
-  configureStore,
-  isPlain,
-  getDefaultMiddleware,
-} from "@reduxjs/toolkit";
+import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
-import { BigNumber } from "bignumber.js";
 
 import { metricsMiddleware } from "helpers/metrics";
+import { isSerializable } from "helpers/stellar";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
@@ -21,19 +17,6 @@ import { ErrorTracking } from "popup/components/ErrorTracking";
 import { Router } from "./Router";
 
 import "./styles/global.scss";
-
-// ALEC TODO - remove
-const loggerMiddleware = (storeVal: any) => (next: any) => (action: any) => {
-  console.log("Dispatching: ", action.type);
-  const dispatchedAction = next(action);
-  console.log("NEW STATE: ", storeVal.getState());
-  return dispatchedAction;
-};
-
-// .isBigNumber() not catching correctly, so checking .isBigNumber
-// property as well
-const isSerializable = (value: any) =>
-  value?.isBigNumber || BigNumber.isBigNumber(value) || isPlain(value);
 
 const rootReducer = combineReducers({
   auth,
@@ -51,7 +34,7 @@ export const store = configureStore({
         isSerializable,
       },
     }),
-  ].concat(metricsMiddleware<AppState>(), loggerMiddleware),
+  ].concat(metricsMiddleware<AppState>()),
 });
 
 export type AppDispatch = typeof store.dispatch;

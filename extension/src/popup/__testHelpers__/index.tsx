@@ -1,10 +1,15 @@
 import React from "react";
 import { Provider } from "react-redux";
 import { createMemoryHistory } from "history";
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import {
+  configureStore,
+  combineReducers,
+  getDefaultMiddleware,
+} from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ActionStatus } from "@shared/api/types";
 
+import { isSerializable } from "helpers/stellar";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import {
@@ -26,6 +31,13 @@ const makeDummyStore = (state: any) =>
   configureStore({
     reducer: rootReducer,
     preloadedState: state,
+    middleware: [
+      ...getDefaultMiddleware({
+        serializableCheck: {
+          isSerializable,
+        },
+      }),
+    ],
   });
 
 export const Wrapper: React.FunctionComponent<any> = ({
