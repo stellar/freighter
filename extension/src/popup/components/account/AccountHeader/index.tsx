@@ -64,7 +64,11 @@ export const AccountHeader = ({
   activeNetworkIndex.current = index;
 
   return (
-    <div className="AccountHeader" ref={accountDropDownRef}>
+    <div
+      className="AccountHeader"
+      ref={accountDropDownRef}
+      data-testid="account-header"
+    >
       <div
         className="AccountHeader__icon-btn"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}

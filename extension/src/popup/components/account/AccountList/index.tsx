@@ -39,7 +39,11 @@ export const AccountListItem = ({
   imported,
   hardwareWalletType = WalletType.NONE,
 }: AccountListItemProps) => (
-  <li className="AccountList__item" key={`account-${accountName}`}>
+  <li
+    className="AccountList__item"
+    key={`account-${accountName}`}
+    data-testid="account-list-item"
+  >
     <AccountListIdenticon
       displayKey
       accountName={accountName}
