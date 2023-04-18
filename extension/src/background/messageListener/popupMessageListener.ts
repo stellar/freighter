@@ -1050,8 +1050,13 @@ export const popupMessageListener = (request: Request) => {
   const getCachedAssetDomain = async () => {
     const { assetCanonical } = request;
 
-    const assetDomainCache =
+    let assetDomainCache =
       (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+
+    // works around a 3.0.0 migration issue
+    if (typeof assetDomainCache === "string") {
+      assetDomainCache = JSON.parse(assetDomainCache);
+    }
 
     return {
       iconUrl: assetDomainCache[assetCanonical] || "",
@@ -1061,8 +1066,14 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetDomain = async () => {
     const { assetCanonical, assetDomain } = request;
 
-    const assetDomainCache =
+    let assetDomainCache =
       (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+
+    // works around a 3.0.0 migration issue
+    if (typeof assetDomainCache === "string") {
+      assetDomainCache = JSON.parse(assetDomainCache);
+    }
+
     assetDomainCache[assetCanonical] = assetDomain;
     await dataStorageAccess.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
