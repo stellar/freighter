@@ -1,20 +1,20 @@
-const got = require('got');
+const got = require("got");
 
 /*
   Forked from https://github.com/fregante/chrome-webstore-upload
   due to broken fetch token call after 2.2.0
 */
 
-const rootURI = 'https://www.googleapis.com';
-const refreshTokenURI = 'https://accounts.google.com/o/oauth2/token';
-const uploadExistingURI = id =>
+const rootURI = "https://www.googleapis.com";
+const refreshTokenURI = "https://accounts.google.com/o/oauth2/token";
+const uploadExistingURI = (id) =>
   `${rootURI}/upload/chromewebstore/v1.1/items/${id}`;
 const publishURI = (id, target) =>
   `${rootURI}/chromewebstore/v1.1/items/${id}/publish?publishTarget=${target}`;
 const getURI = (id, projection) =>
   `${rootURI}/chromewebstore/v1.1/items/${id}?projection=${projection}`;
 
-const requiredFields = ['extensionId', 'clientId', 'refreshToken'];
+const requiredFields = ["extensionId", "clientId", "refreshToken"];
 
 class APIClient {
   constructor(options) {
@@ -26,14 +26,14 @@ class APIClient {
       this[field] = options[field];
     }
 
-    if ('clientSecret' in options) {
+    if ("clientSecret" in options) {
       this.clientSecret = options.clientSecret;
     }
   }
 
   async uploadExisting(readStream, token = this.fetchToken()) {
     if (!readStream) {
-      throw new Error('Read stream missing');
+      throw new Error("Read stream missing");
     }
 
     const { extensionId } = this;
@@ -46,7 +46,7 @@ class APIClient {
       .json();
   }
 
-  async publish(target = 'default', token = this.fetchToken()) {
+  async publish(target = "default", token = this.fetchToken()) {
     const { extensionId } = this;
 
     return got
@@ -56,7 +56,7 @@ class APIClient {
       .json();
   }
 
-  async get(projection = 'DRAFT', token = this.fetchToken()) {
+  async get(projection = "DRAFT", token = this.fetchToken()) {
     const { extensionId } = this;
 
     return got
@@ -71,7 +71,7 @@ class APIClient {
     const json = {
       client_id: clientId,
       refresh_token: refreshToken,
-      grant_type: 'refresh_token',
+      grant_type: "refresh_token",
     };
 
     if (clientSecret) {
@@ -86,7 +86,7 @@ class APIClient {
   _headers(token) {
     return {
       Authorization: `Bearer ${token}`,
-      'x-goog-api-version': '2',
+      "x-goog-api-version": "2",
     };
   }
 }
