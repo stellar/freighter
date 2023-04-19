@@ -3,12 +3,6 @@
   "version": "2.12.3",
   "version_name": "2.12.3",
   "description": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser.",
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "{3ee0dd4e-8c64-4b92-b539-25718a10f62f}",
-      "strict_min_version": "48.0"
-    }
-  },
   "background": {
     "service_worker": "background.min.js"
   },
