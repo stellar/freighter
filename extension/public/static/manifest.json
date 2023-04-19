@@ -10,7 +10,10 @@
     }
   },
   "background": {
-    "service_worker": "background.min.js"
+    "scripts": [
+      "background.min.js"
+    ],
+    "persistent": true
   },
   "content_scripts": [
     {
@@ -23,7 +26,7 @@
       "run_at": "document_start"
     }
   ],
-  "action": {
+  "browser_action": {
     "default_popup": "index.html",
     "default_icon": {
       "16": "images/icon16.png",
@@ -41,5 +44,5 @@
   "permissions": [
     "storage"
   ],
-  "manifest_version": 3
+  "manifest_version": 2
 }

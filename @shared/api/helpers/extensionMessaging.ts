@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill";
+import { browser } from "webextension-polyfill-ts";
 import {
   DEV_SERVER,
   EXTERNAL_MSG_RESPONSE,

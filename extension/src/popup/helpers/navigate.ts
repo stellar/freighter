@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill";
+import { browser } from "webextension-polyfill-ts";
 
 import { ROUTES } from "popup/constants/routes";
 import { history } from "popup/constants/history";
