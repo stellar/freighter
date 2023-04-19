@@ -549,6 +549,22 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const loadAccount = async () => {
+    /* 
+    The 3.0.0 migration mistakenly sets keyId as a number in older versions. 
+    For some users, Chrome went right from version ~2.9.x to 3.0.0, which caused them to miss the below fix to the migration.
+    This will fix this issue at load.
+    
+    keyId being of type number causes issues downstream:
+    - we need to be able to use String.indexOf to determine if the keyId belongs to a hardware wallet
+    - @stellar/walet-sdk expects a string when dealing unlocking a keystore by keyId
+    - in other places in code where we save keyId, we do so as a string
+    Let's solve the issue at its source
+  */
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) as string | number;
+    if (typeof keyId === "number") {
+      await dataStorageAccess.setItem(KEY_ID, keyId.toString());
+    }
+
     const currentState = store.getState();
 
     return {
