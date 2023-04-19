@@ -1,4 +1,4 @@
-import browser from "webextension-polyfill";
+import { Runtime } from "webextension-polyfill-ts";
 
 import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
@@ -7,7 +7,7 @@ import { dataStorageAccess } from "background/helpers/dataStorage";
 export const isSenderAllowed = async ({
   sender,
 }: {
-  sender: browser.Runtime.MessageSender;
+  sender: Runtime.MessageSender;
 }) => {
   const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
   const allowList = allowListStr.split(",");
