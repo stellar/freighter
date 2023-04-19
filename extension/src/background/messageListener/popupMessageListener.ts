@@ -63,8 +63,8 @@ import {
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
-  browserStorage,
   dataStorage,
+  migrateLocalStorageToBrowserStorage,
   dataStorageAccess,
 } from "background/helpers/dataStorage";
 
@@ -102,8 +102,8 @@ interface KeyPair {
 }
 
 export const popupMessageListener = (request: Request) => {
-  const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
-  localKeyStore.configure({ storage: browserStorage });
+  const localKeyStore = new KeyManagerPlugins.LocalStorageKeyStore();
+  localKeyStore.configure({ storage: localStorage });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
@@ -153,12 +153,15 @@ export const popupMessageListener = (request: Request) => {
 
     if (keyIdListArr.indexOf(keyId) === -1) {
       keyIdListArr.push(keyId);
-      await dataStorageAccess.setItem(KEY_ID_LIST, keyIdListArr);
+      await dataStorageAccess.setItem(
+        KEY_ID_LIST,
+        JSON.stringify(keyIdListArr),
+      );
       const hwData = {
         bipPath,
         publicKey,
       };
-      await dataStorageAccess.setItem(keyId, hwData);
+      await dataStorageAccess.setItem(keyId, JSON.stringify(hwData));
       await addAccountName({
         keyId,
         accountName,
@@ -242,7 +245,7 @@ export const popupMessageListener = (request: Request) => {
     const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
 
-    await dataStorageAccess.setItem(KEY_ID_LIST, keyIdListArr);
+    await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
     await dataStorageAccess.setItem(KEY_ID, keyStore.id);
     await addAccountName({
       keyId: keyStore.id,
@@ -483,7 +486,10 @@ export const popupMessageListener = (request: Request) => {
 
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
-    await dataStorageAccess.setItem(NETWORKS_LIST_ID, networksList);
+    await dataStorageAccess.setItem(
+      NETWORKS_LIST_ID,
+      JSON.stringify(networksList),
+    );
 
     return {
       networksList,
@@ -500,7 +506,10 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1);
 
-    await dataStorageAccess.setItem(NETWORKS_LIST_ID, savedNetworks);
+    await dataStorageAccess.setItem(
+      NETWORKS_LIST_ID,
+      JSON.stringify(savedNetworks),
+    );
 
     return {
       networksList: savedNetworks,
@@ -511,8 +520,10 @@ export const popupMessageListener = (request: Request) => {
     const { networkDetails, networkIndex } = request;
 
     const savedNetworks = await getSavedNetworks();
-    const activeNetworkDetails =
-      (await dataStorageAccess.getItem(NETWORK_ID)) || MAINNET_NETWORK_DETAILS;
+    const activeNetworkDetails = JSON.parse(
+      (await dataStorageAccess.getItem(NETWORK_ID)) ||
+        JSON.stringify(MAINNET_NETWORK_DETAILS),
+    );
     const activeIndex =
       savedNetworks.findIndex(
         ({ networkName: savedNetworkName }) =>
@@ -521,11 +532,17 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
 
-    await dataStorageAccess.setItem(NETWORKS_LIST_ID, savedNetworks);
+    await dataStorageAccess.setItem(
+      NETWORKS_LIST_ID,
+      JSON.stringify(savedNetworks),
+    );
 
     if (activeIndex === networkIndex) {
       // editing active network, so we need to update this in storage
-      await dataStorageAccess.setItem(NETWORK_ID, savedNetworks[activeIndex]);
+      await dataStorageAccess.setItem(
+        NETWORK_ID,
+        JSON.stringify(savedNetworks[activeIndex]),
+      );
     }
 
     return {
@@ -543,7 +560,7 @@ export const popupMessageListener = (request: Request) => {
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
-    await dataStorageAccess.setItem(NETWORK_ID, networkDetails);
+    await dataStorageAccess.setItem(NETWORK_ID, JSON.stringify(networkDetails));
 
     return { networkDetails };
   };
@@ -557,7 +574,9 @@ export const popupMessageListener = (request: Request) => {
       applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: await getBipPath(),
-      tokenIdList: (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || {},
+      tokenIdList: JSON.parse(
+        (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
+      ),
     };
   };
 
@@ -624,32 +643,26 @@ export const popupMessageListener = (request: Request) => {
           const publicKey = wallet.getPublicKey(i);
           const privateKey = wallet.getSecret(i);
 
-          // eslint-disable-next-line no-await-in-loop
-          const resp = await fetch(
-            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
+          const server = new StellarSdk.Server(
+            MAINNET_NETWORK_DETAILS.networkUrl,
           );
           // eslint-disable-next-line no-await-in-loop
-          const j = await resp.json();
-          if (j.account_id) {
-            const newKeyPair = {
-              publicKey,
-              privateKey,
-            };
+          await server.accounts().accountId(publicKey).call();
+          const newKeyPair = {
+            publicKey,
+            privateKey,
+          };
 
-            // eslint-disable-next-line no-await-in-loop
-            await _storeAccount({
-              password,
-              keyPair: newKeyPair,
-              mnemonicPhrase: recoverMnemonic,
-              imported: true,
-            });
-            // eslint-disable-next-line no-await-in-loop
-            await dataStorageAccess.setItem(
-              KEY_DERIVATION_NUMBER_ID,
-              String(i),
-            );
-          }
-        } catch (e) {
+          // eslint-disable-next-line no-await-in-loop
+          await _storeAccount({
+            password,
+            keyPair: newKeyPair,
+            mnemonicPhrase: recoverMnemonic,
+            imported: true,
+          });
+          // eslint-disable-next-line no-await-in-loop
+          await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
+        } catch {
           // continue
         }
       }
@@ -742,7 +755,7 @@ export const popupMessageListener = (request: Request) => {
       const keyId = await dataStorageAccess.getItem(KEY_ID);
       if (keyId) {
         keyIdList.push(keyId);
-        await dataStorageAccess.setItem(KEY_ID_LIST, keyIdList);
+        await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
         await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
         await addAccountName({ keyId, accountName: "Account 1" });
       }
@@ -929,21 +942,24 @@ export const popupMessageListener = (request: Request) => {
 
   const addRecentAddress = async () => {
     const { publicKey } = request;
-    const storedData =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || [];
-    const recentAddresses = storedData;
+    const storedJSON =
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
+    const recentAddresses = JSON.parse(storedJSON);
     if (recentAddresses.indexOf(publicKey) === -1) {
       recentAddresses.push(publicKey);
     }
-    await dataStorageAccess.setItem(RECENT_ADDRESSES, recentAddresses);
+    await dataStorageAccess.setItem(
+      RECENT_ADDRESSES,
+      JSON.stringify(recentAddresses),
+    );
 
     return { recentAddresses };
   };
 
   const loadRecentAddresses = async () => {
-    const storedData =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || [];
-    const recentAddresses = storedData;
+    const storedJSON =
+      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
+    const recentAddresses = JSON.parse(storedJSON);
     return { recentAddresses };
   };
 
@@ -967,18 +983,21 @@ export const popupMessageListener = (request: Request) => {
 
     const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
-    await dataStorageAccess.setItem(DATA_SHARING_ID, isDataSharingAllowed);
+    await dataStorageAccess.setItem(
+      DATA_SHARING_ID,
+      JSON.stringify(isDataSharingAllowed),
+    );
     await dataStorageAccess.setItem(
       IS_VALIDATING_MEMO_ID,
-      isMemoValidationEnabled,
+      JSON.stringify(isMemoValidationEnabled),
     );
     await dataStorageAccess.setItem(
       IS_VALIDATING_SAFETY_ID,
-      isSafetyValidationEnabled,
+      JSON.stringify(isSafetyValidationEnabled),
     );
     await dataStorageAccess.setItem(
       IS_VALIDATING_SAFE_ASSETS_ID,
-      isValidatingSafeAssetsEnabled,
+      JSON.stringify(isValidatingSafeAssetsEnabled),
     );
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
@@ -992,13 +1011,19 @@ export const popupMessageListener = (request: Request) => {
 
       currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
-      await dataStorageAccess.setItem(NETWORKS_LIST_ID, currentNetworksList);
-      await dataStorageAccess.setItem(NETWORK_ID, defaultNetworkDetails);
+      await dataStorageAccess.setItem(
+        NETWORKS_LIST_ID,
+        JSON.stringify(currentNetworksList),
+      );
+      await dataStorageAccess.setItem(
+        NETWORK_ID,
+        JSON.stringify(defaultNetworkDetails),
+      );
     }
 
     await dataStorageAccess.setItem(
       IS_EXPERIMENTAL_MODE_ID,
-      isExperimentalModeEnabled,
+      JSON.stringify(isExperimentalModeEnabled),
     );
 
     return {
@@ -1013,8 +1038,13 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const loadSettings = async () => {
-    const isDataSharingAllowed =
-      (await dataStorage.getItem(DATA_SHARING_ID)) || true;
+    await migrateLocalStorageToBrowserStorage();
+
+    const {
+      [DATA_SHARING_ID]: isDataSharingAllowed,
+    } = await await dataStorage.getItem({
+      [DATA_SHARING_ID]: true,
+    });
 
     return {
       isDataSharingAllowed,
@@ -1030,8 +1060,9 @@ export const popupMessageListener = (request: Request) => {
   const getCachedAssetIcon = async () => {
     const { assetCanonical } = request;
 
-    const assetIconCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || {};
+    const assetIconCache = JSON.parse(
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
+    );
 
     return {
       iconUrl: assetIconCache[assetCanonical] || "",
@@ -1041,22 +1072,22 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetIcon = async () => {
     const { assetCanonical, iconUrl } = request;
 
-    const assetIconCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || {};
+    const assetIconCache = JSON.parse(
+      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
+    );
     assetIconCache[assetCanonical] = iconUrl;
-    await dataStorageAccess.setItem(CACHED_ASSET_ICONS_ID, assetIconCache);
+    await dataStorageAccess.setItem(
+      CACHED_ASSET_ICONS_ID,
+      JSON.stringify(assetIconCache),
+    );
   };
 
   const getCachedAssetDomain = async () => {
     const { assetCanonical } = request;
 
-    let assetDomainCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
-
-    // works around a 3.0.0 migration issue
-    if (typeof assetDomainCache === "string") {
-      assetDomainCache = JSON.parse(assetDomainCache);
-    }
+    const assetDomainCache = JSON.parse(
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
+    );
 
     return {
       iconUrl: assetDomainCache[assetCanonical] || "",
@@ -1066,16 +1097,14 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetDomain = async () => {
     const { assetCanonical, assetDomain } = request;
 
-    let assetDomainCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
-
-    // works around a 3.0.0 migration issue
-    if (typeof assetDomainCache === "string") {
-      assetDomainCache = JSON.parse(assetDomainCache);
-    }
-
+    const assetDomainCache = JSON.parse(
+      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
+    );
     assetDomainCache[assetCanonical] = assetDomain;
-    await dataStorageAccess.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
+    await dataStorageAccess.setItem(
+      CACHED_ASSET_DOMAINS_ID,
+      JSON.stringify(assetDomainCache),
+    );
   };
 
   const getBlockedDomains = async () => {
@@ -1148,7 +1177,9 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const getTokenIds = async () => {
-    const tokenIdList = (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdList = JSON.parse(
+      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
+    );
     const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
 
     return { tokenIdList: tokenIdList[keyId] || [] };

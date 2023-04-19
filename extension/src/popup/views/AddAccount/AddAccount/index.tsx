@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
@@ -16,11 +16,7 @@ import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
-import {
-  addAccount,
-  authErrorSelector,
-  clearApiError,
-} from "popup/ducks/accountServices";
+import { addAccount, authErrorSelector } from "popup/ducks/accountServices";
 
 import "./styles.scss";
 
@@ -49,10 +45,6 @@ export const AddAccount = () => {
       navigateTo(ROUTES.account);
     }
   };
-
-  useEffect(() => () => (dispatch(clearApiError()) as unknown) as void, [
-    dispatch,
-  ]);
 
   return (
     <>

@@ -116,7 +116,6 @@ export const getXferArgs = (
   // xfer(to, from, amount)
   const amount = args[2];
   const value = amount.i128().lo().low;
-
   return {
     amount: value,
   };

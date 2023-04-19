@@ -74,7 +74,7 @@ export const ConfirmMnemonicPhrase = ({
         </OnboardingHeader>
         <div className="ConfirmMnemonicPhrase__content">
           <p>{t("Please select each word in the same order you have")}</p>
-          <p>{t("them noted to confirm you got them right")}</p>
+          <p>{t("them noted to confirm you go them right")}</p>
         </div>
         <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
           {({ dirty, isSubmitting, handleChange }) => (
