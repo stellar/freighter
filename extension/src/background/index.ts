@@ -7,6 +7,8 @@ import {
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
+import { SESSION_ALARM_NAME } from "./helpers/session";
+// import { timeoutAccountAccess } from "./ducks/session";
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -45,6 +47,14 @@ export const initInstalledListener = () => {
       // TODO: case "update":
       // TODO: case "browser_update":
       default:
+    }
+  });
+};
+
+export const initInitAlarmListener = () => {
+  browser?.alarms.onAlarm.addListener(({ name }: { name: string }) => {
+    if (name === SESSION_ALARM_NAME) {
+      // timeoutAccountAccess()
     }
   });
 };

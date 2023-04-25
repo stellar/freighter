@@ -3,6 +3,7 @@ import { timeoutAccountAccess } from "background/ducks/session";
 
 // 24 hours
 const SESSION_LENGTH = 60 * 24;
+export const SESSION_ALARM_NAME = "session-timer";
 
 export class SessionTimer {
   DURATION = 1000 * 60 * SESSION_LENGTH;
@@ -12,11 +13,8 @@ export class SessionTimer {
   }
 
   startSession() {
-    if (this.runningTimeout) {
-      clearTimeout(this.runningTimeout);
-    }
-    this.runningTimeout = setTimeout(() => {
-      store.dispatch(timeoutAccountAccess());
-    }, this.DURATION);
+    chrome.alarms.create(SESSION_ALARM_NAME, {
+      delayInMinutes: SESSION_LENGTH,
+    });
   }
 }
