@@ -2,6 +2,7 @@ import { createSelector, createSlice } from "@reduxjs/toolkit";
 
 import { Account } from "@shared/api/types";
 import { getIsHardwareWalletActive } from "background/helpers/account";
+// import { SESSION_STORAGE_ENABLED } from "background/helpers/dataStorage";
 
 const initialState = {
   publicKey: "",

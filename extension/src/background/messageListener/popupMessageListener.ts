@@ -63,9 +63,10 @@ import {
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
-  browserStorage,
-  dataStorage,
   dataStorageAccess,
+  SESSION_STORAGE_ENABLED,
+  browserStorage,
+  sessionStorage,
 } from "background/helpers/dataStorage";
 
 import { store } from "background/store";
@@ -102,6 +103,8 @@ interface KeyPair {
 }
 
 export const popupMessageListener = (request: Request) => {
+  const storageApi = SESSION_STORAGE_ENABLED ? sessionStorage : browserStorage;
+  const _dataStore = dataStorageAccess(storageApi);
   const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
   localKeyStore.configure({ storage: browserStorage });
   const keyManager = new KeyManager({
@@ -153,12 +156,12 @@ export const popupMessageListener = (request: Request) => {
 
     if (keyIdListArr.indexOf(keyId) === -1) {
       keyIdListArr.push(keyId);
-      await dataStorageAccess.setItem(KEY_ID_LIST, keyIdListArr);
+      await _dataStore.setItem(KEY_ID_LIST, keyIdListArr);
       const hwData = {
         bipPath,
         publicKey,
       };
-      await dataStorageAccess.setItem(keyId, hwData);
+      await _dataStore.setItem(keyId, hwData);
       await addAccountName({
         keyId,
         accountName,
@@ -174,7 +177,7 @@ export const popupMessageListener = (request: Request) => {
       ];
     }
 
-    await dataStorageAccess.setItem(KEY_ID, keyId);
+    await _dataStore.setItem(KEY_ID, keyId);
 
     store.dispatch(
       logIn({
@@ -242,8 +245,8 @@ export const popupMessageListener = (request: Request) => {
     const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
 
-    await dataStorageAccess.setItem(KEY_ID_LIST, keyIdListArr);
-    await dataStorageAccess.setItem(KEY_ID, keyStore.id);
+    await _dataStore.setItem(KEY_ID_LIST, keyIdListArr);
+    await _dataStore.setItem(KEY_ID, keyStore.id);
     await addAccountName({
       keyId: keyStore.id,
       accountName,
@@ -261,7 +264,7 @@ export const popupMessageListener = (request: Request) => {
 
     const activeKeyId = keyIdList[publicKeyIndex];
 
-    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
+    await _dataStore.setItem(KEY_ID, activeKeyId);
 
     store.dispatch(setActivePublicKey({ publicKey }));
   };
@@ -293,7 +296,7 @@ export const popupMessageListener = (request: Request) => {
 
     const KEY_DERIVATION_NUMBER = 0;
 
-    await dataStorageAccess.setItem(
+    await _dataStore.setItem(
       KEY_DERIVATION_NUMBER_ID,
       KEY_DERIVATION_NUMBER.toString(),
     );
@@ -308,7 +311,7 @@ export const popupMessageListener = (request: Request) => {
       keyPair,
       mnemonicPhrase,
     });
-    await dataStorageAccess.setItem(
+    await _dataStore.setItem(
       APPLICATION_ID,
       APPLICATION_STATE.PASSWORD_CREATED,
     );
@@ -331,7 +334,7 @@ export const popupMessageListener = (request: Request) => {
 
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()
-      : (await dataStorageAccess.getItem(KEY_ID)) || "";
+      : (await _dataStore.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -342,7 +345,7 @@ export const popupMessageListener = (request: Request) => {
 
     const wallet = fromMnemonic(mnemonicPhrase);
     const keyNumber =
-      Number(await dataStorageAccess.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
+      Number(await _dataStore.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
 
     const keyPair = {
       publicKey: wallet.getPublicKey(keyNumber),
@@ -355,10 +358,7 @@ export const popupMessageListener = (request: Request) => {
       mnemonicPhrase,
     });
 
-    await dataStorageAccess.setItem(
-      KEY_DERIVATION_NUMBER_ID,
-      keyNumber.toString(),
-    );
+    await _dataStore.setItem(KEY_DERIVATION_NUMBER_ID, keyNumber.toString());
 
     store.dispatch(timeoutAccountAccess());
 
@@ -379,7 +379,7 @@ export const popupMessageListener = (request: Request) => {
     let sourceKeys;
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()
-      : (await dataStorageAccess.getItem(KEY_ID)) || "";
+      : (await _dataStore.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -453,7 +453,7 @@ export const popupMessageListener = (request: Request) => {
 
   const updateAccountName = async () => {
     const { accountName } = request;
-    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    const keyId = (await _dataStore.getItem(KEY_ID)) || "";
 
     store.dispatch(
       updateAllAccountsAccountName({ updatedAccountName: accountName }),
@@ -483,7 +483,7 @@ export const popupMessageListener = (request: Request) => {
 
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
-    await dataStorageAccess.setItem(NETWORKS_LIST_ID, networksList);
+    await _dataStore.setItem(NETWORKS_LIST_ID, networksList);
 
     return {
       networksList,
@@ -500,7 +500,7 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1);
 
-    await dataStorageAccess.setItem(NETWORKS_LIST_ID, savedNetworks);
+    await _dataStore.setItem(NETWORKS_LIST_ID, savedNetworks);
 
     return {
       networksList: savedNetworks,
@@ -512,7 +512,7 @@ export const popupMessageListener = (request: Request) => {
 
     const savedNetworks = await getSavedNetworks();
     const activeNetworkDetails =
-      (await dataStorageAccess.getItem(NETWORK_ID)) || MAINNET_NETWORK_DETAILS;
+      (await _dataStore.getItem(NETWORK_ID)) || MAINNET_NETWORK_DETAILS;
     const activeIndex =
       savedNetworks.findIndex(
         ({ networkName: savedNetworkName }) =>
@@ -521,11 +521,11 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
 
-    await dataStorageAccess.setItem(NETWORKS_LIST_ID, savedNetworks);
+    await _dataStore.setItem(NETWORKS_LIST_ID, savedNetworks);
 
     if (activeIndex === networkIndex) {
       // editing active network, so we need to update this in storage
-      await dataStorageAccess.setItem(NETWORK_ID, savedNetworks[activeIndex]);
+      await _dataStore.setItem(NETWORK_ID, savedNetworks[activeIndex]);
     }
 
     return {
@@ -543,7 +543,7 @@ export const popupMessageListener = (request: Request) => {
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
-    await dataStorageAccess.setItem(NETWORK_ID, networkDetails);
+    await _dataStore.setItem(NETWORK_ID, networkDetails);
 
     return { networkDetails };
   };
@@ -560,9 +560,9 @@ export const popupMessageListener = (request: Request) => {
     - in other places in code where we save keyId, we do so as a string
     Let's solve the issue at its source
   */
-    const keyId = (await dataStorageAccess.getItem(KEY_ID)) as string | number;
+    const keyId = (await _dataStore.getItem(KEY_ID)) as string | number;
     if (typeof keyId === "number") {
-      await dataStorageAccess.setItem(KEY_ID, keyId.toString());
+      await _dataStore.setItem(KEY_ID, keyId.toString());
     }
 
     const currentState = store.getState();
@@ -570,10 +570,10 @@ export const popupMessageListener = (request: Request) => {
     return {
       hasPrivateKey: await hasPrivateKeySelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await _dataStore.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: await getBipPath(),
-      tokenIdList: (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || {},
+      tokenIdList: (await _dataStore.getItem(TOKEN_ID_LIST)) || {},
     };
   };
 
@@ -590,11 +590,11 @@ export const popupMessageListener = (request: Request) => {
       ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
       : APPLICATION_STATE.MNEMONIC_PHRASE_FAILED;
 
-    await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
+    await _dataStore.setItem(APPLICATION_ID, applicationState);
 
     return {
       isCorrectPhrase,
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await _dataStore.getItem(APPLICATION_ID)) || "",
     };
   };
 
@@ -616,17 +616,17 @@ export const popupMessageListener = (request: Request) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
-      dataStorageAccess.clear();
-      await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+      _dataStore.clear();
+      await _dataStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
 
       // if we don't have an application state, assign them one
       applicationState =
-        (await dataStorageAccess.getItem(APPLICATION_ID)) ||
+        (await _dataStore.getItem(APPLICATION_ID)) ||
         APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
-      await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
+      await _dataStore.setItem(APPLICATION_ID, applicationState);
 
       // start the timer now that we have active private key
       sessionTimer.startSession();
@@ -660,10 +660,7 @@ export const popupMessageListener = (request: Request) => {
               imported: true,
             });
             // eslint-disable-next-line no-await-in-loop
-            await dataStorageAccess.setItem(
-              KEY_DERIVATION_NUMBER_ID,
-              String(i),
-            );
+            await _dataStore.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
           }
         } catch (e) {
           // continue
@@ -679,7 +676,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await _dataStore.getItem(APPLICATION_ID)) || "",
       hasPrivateKey: await hasPrivateKeySelector(currentState),
       error,
     };
@@ -690,7 +687,7 @@ export const popupMessageListener = (request: Request) => {
 
     try {
       await _unlockKeystore({
-        keyID: (await dataStorageAccess.getItem(KEY_ID)) || "",
+        keyID: (await _dataStore.getItem(KEY_ID)) || "",
         password,
       });
       return {};
@@ -755,11 +752,11 @@ export const popupMessageListener = (request: Request) => {
 
     /* migration needed to v1.0.6-beta data model */
     if (!keyIdList.length) {
-      const keyId = await dataStorageAccess.getItem(KEY_ID);
+      const keyId = await _dataStore.getItem(KEY_ID);
       if (keyId) {
         keyIdList.push(keyId);
-        await dataStorageAccess.setItem(KEY_ID_LIST, keyIdList);
-        await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+        await _dataStore.setItem(KEY_ID_LIST, keyIdList);
+        await _dataStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
         await addAccountName({ keyId, accountName: "Account 1" });
       }
     }
@@ -767,7 +764,7 @@ export const popupMessageListener = (request: Request) => {
 
     // if active hw then use the first non-hw keyID to check password
     // with keyManager
-    let keyID = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    let keyID = (await _dataStore.getItem(KEY_ID)) || "";
     let hwPublicKey = "";
     if (await getIsHardwareWalletActive()) {
       hwPublicKey = keyID.split(":")[1];
@@ -821,7 +818,7 @@ export const popupMessageListener = (request: Request) => {
     return {
       publicKey: publicKeySelector(store.getState()),
       hasPrivateKey: await hasPrivateKeySelector(store.getState()),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await _dataStore.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(store.getState()),
       bipPath: await getBipPath(),
     };
@@ -835,11 +832,11 @@ export const popupMessageListener = (request: Request) => {
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
-    const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
+    const allowListStr = (await _dataStore.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
     allowList.push(punycodedDomain);
 
-    await dataStorageAccess.setItem(ALLOWLIST_ID, allowList.join());
+    await _dataStore.setItem(ALLOWLIST_ID, allowList.join());
 
     if (typeof response === "function") {
       return response(url);
@@ -945,20 +942,18 @@ export const popupMessageListener = (request: Request) => {
 
   const addRecentAddress = async () => {
     const { publicKey } = request;
-    const storedData =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || [];
+    const storedData = (await _dataStore.getItem(RECENT_ADDRESSES)) || [];
     const recentAddresses = storedData;
     if (recentAddresses.indexOf(publicKey) === -1) {
       recentAddresses.push(publicKey);
     }
-    await dataStorageAccess.setItem(RECENT_ADDRESSES, recentAddresses);
+    await _dataStore.setItem(RECENT_ADDRESSES, recentAddresses);
 
     return { recentAddresses };
   };
 
   const loadRecentAddresses = async () => {
-    const storedData =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || [];
+    const storedData = (await _dataStore.getItem(RECENT_ADDRESSES)) || [];
     const recentAddresses = storedData;
     return { recentAddresses };
   };
@@ -968,7 +963,7 @@ export const popupMessageListener = (request: Request) => {
 
     return {
       publicKey: publicKeySelector(store.getState()),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await _dataStore.getItem(APPLICATION_ID)) || "",
     };
   };
 
@@ -983,16 +978,13 @@ export const popupMessageListener = (request: Request) => {
 
     const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
-    await dataStorageAccess.setItem(DATA_SHARING_ID, isDataSharingAllowed);
-    await dataStorageAccess.setItem(
-      IS_VALIDATING_MEMO_ID,
-      isMemoValidationEnabled,
-    );
-    await dataStorageAccess.setItem(
+    await _dataStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
+    await _dataStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
+    await _dataStore.setItem(
       IS_VALIDATING_SAFETY_ID,
       isSafetyValidationEnabled,
     );
-    await dataStorageAccess.setItem(
+    await _dataStore.setItem(
       IS_VALIDATING_SAFE_ASSETS_ID,
       isValidatingSafeAssetsEnabled,
     );
@@ -1008,11 +1000,11 @@ export const popupMessageListener = (request: Request) => {
 
       currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
-      await dataStorageAccess.setItem(NETWORKS_LIST_ID, currentNetworksList);
-      await dataStorageAccess.setItem(NETWORK_ID, defaultNetworkDetails);
+      await _dataStore.setItem(NETWORKS_LIST_ID, currentNetworksList);
+      await _dataStore.setItem(NETWORK_ID, defaultNetworkDetails);
     }
 
-    await dataStorageAccess.setItem(
+    await _dataStore.setItem(
       IS_EXPERIMENTAL_MODE_ID,
       isExperimentalModeEnabled,
     );
@@ -1030,7 +1022,7 @@ export const popupMessageListener = (request: Request) => {
 
   const loadSettings = async () => {
     const isDataSharingAllowed =
-      (await dataStorage.getItem(DATA_SHARING_ID)) || true;
+      (await _dataStore.getItem(DATA_SHARING_ID)) || true;
 
     return {
       isDataSharingAllowed,
@@ -1047,7 +1039,7 @@ export const popupMessageListener = (request: Request) => {
     const { assetCanonical } = request;
 
     const assetIconCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || {};
+      (await _dataStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
 
     return {
       iconUrl: assetIconCache[assetCanonical] || "",
@@ -1058,16 +1050,16 @@ export const popupMessageListener = (request: Request) => {
     const { assetCanonical, iconUrl } = request;
 
     const assetIconCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || {};
+      (await _dataStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
     assetIconCache[assetCanonical] = iconUrl;
-    await dataStorageAccess.setItem(CACHED_ASSET_ICONS_ID, assetIconCache);
+    await _dataStore.setItem(CACHED_ASSET_ICONS_ID, assetIconCache);
   };
 
   const getCachedAssetDomain = async () => {
     const { assetCanonical } = request;
 
     let assetDomainCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+      (await _dataStore.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
 
     // works around a 3.0.0 migration issue
     if (typeof assetDomainCache === "string") {
@@ -1083,7 +1075,7 @@ export const popupMessageListener = (request: Request) => {
     const { assetCanonical, assetDomain } = request;
 
     let assetDomainCache =
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+      (await _dataStore.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
 
     // works around a 3.0.0 migration issue
     if (typeof assetDomainCache === "string") {
@@ -1091,7 +1083,7 @@ export const popupMessageListener = (request: Request) => {
     }
 
     assetDomainCache[assetCanonical] = assetDomain;
-    await dataStorageAccess.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
+    await _dataStore.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
 
   const getBlockedDomains = async () => {
@@ -1133,7 +1125,7 @@ export const popupMessageListener = (request: Request) => {
     if (EXPERIMENTAL !== true) {
       return { error: "Not in experimental mode" };
     }
-    await dataStorageAccess.clear();
+    await _dataStore.clear();
     store.dispatch(reset());
     return {};
   };
@@ -1141,9 +1133,9 @@ export const popupMessageListener = (request: Request) => {
   const addTokenId = async () => {
     const { tokenId } = request;
     const tokenIdList = JSON.parse(
-      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
+      (await _dataStore.getItem(TOKEN_ID_LIST)) || "{}",
     );
-    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    const keyId = (await _dataStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
 
@@ -1152,7 +1144,7 @@ export const popupMessageListener = (request: Request) => {
     }
 
     accountTokenIdList.push(tokenId);
-    await dataStorageAccess.setItem(
+    await _dataStore.setItem(
       TOKEN_ID_LIST,
       JSON.stringify({
         ...tokenIdList,
@@ -1164,8 +1156,8 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const getTokenIds = async () => {
-    const tokenIdList = (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || {};
-    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    const tokenIdList = (await _dataStore.getItem(TOKEN_ID_LIST)) || {};
+    const keyId = (await _dataStore.getItem(KEY_ID)) || "";
 
     return { tokenIdList: tokenIdList[keyId] || [] };
   };

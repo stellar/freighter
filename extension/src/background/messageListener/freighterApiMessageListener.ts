@@ -27,11 +27,19 @@ import {
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
-import { dataStorageAccess } from "background/helpers/dataStorage";
+import {
+  dataStorageAccess,
+  SESSION_STORAGE_ENABLED,
+  browserStorage,
+  sessionStorage,
+} from "background/helpers/dataStorage";
 import { store } from "background/store";
 import { publicKeySelector } from "background/ducks/session";
 
 import { responseQueue, transactionQueue } from "./popupMessageListener";
+
+const storageApi = SESSION_STORAGE_ENABLED ? sessionStorage : browserStorage;
+const _dataStore = dataStorageAccess(storageApi);
 
 interface WINDOW_PARAMS {
   height: number;
@@ -108,7 +116,7 @@ export const freighterApiMessageListener = (
     const domain = getUrlHostname(tabUrl);
     const punycodedDomain = getPunycodedDomain(domain);
 
-    const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
+    const allowListStr = (await _dataStore.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
 
     const isDomainListedAllowed = await isSenderAllowed({ sender });
@@ -205,7 +213,7 @@ export const freighterApiMessageListener = (
         if (signedTransaction) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
-            dataStorageAccess.setItem(ALLOWLIST_ID, allowList.join());
+            _dataStore.setItem(ALLOWLIST_ID, allowList.join());
           }
           resolve({ signedTransaction });
         }

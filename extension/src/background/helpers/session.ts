@@ -1,5 +1,5 @@
-import { store } from "background/store";
-import { timeoutAccountAccess } from "background/ducks/session";
+// import { store } from "background/store";
+// import { timeoutAccountAccess } from "background/ducks/session";
 
 // 24 hours
 const SESSION_LENGTH = 60 * 24;

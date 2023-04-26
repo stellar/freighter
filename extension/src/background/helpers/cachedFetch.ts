@@ -1,16 +1,22 @@
-import { dataStorageAccess } from "background/helpers/dataStorage";
+import {
+  dataStorageAccess,
+  SESSION_STORAGE_ENABLED,
+  browserStorage,
+  sessionStorage,
+} from "background/helpers/dataStorage";
+
+const storageApi = SESSION_STORAGE_ENABLED ? sessionStorage : browserStorage;
+const _dataStore = dataStorageAccess(storageApi);
 
 export const cachedFetch = async (url: string, storageKey: string) => {
   const cachedDateId = `${storageKey}_date`;
 
-  const cachedDate = Number(
-    (await dataStorageAccess.getItem(cachedDateId)) || "",
-  );
+  const cachedDate = Number((await _dataStore.getItem(cachedDateId)) || "");
   const date = new Date();
   const time = date.getTime();
   const sevenDaysAgo = time - 7 * 24 * 60 * 60 * 1000;
 
-  let directoryLookup = (await dataStorageAccess.getItem(storageKey)) || "{}";
+  let directoryLookup = (await _dataStore.getItem(storageKey)) || "{}";
 
   if (typeof directoryLookup === "string") {
     try {
@@ -26,8 +32,8 @@ export const cachedFetch = async (url: string, storageKey: string) => {
       const res = await fetch(url);
       directoryLookup = await res.json();
 
-      await dataStorageAccess.setItem(storageKey, directoryLookup);
-      await dataStorageAccess.setItem(cachedDateId, time.toString());
+      await _dataStore.setItem(storageKey, directoryLookup);
+      await _dataStore.setItem(cachedDateId, time.toString());
     } catch (e) {
       console.error(e);
     }
