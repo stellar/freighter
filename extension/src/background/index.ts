@@ -1,4 +1,5 @@
-import { browser } from "webextension-polyfill-ts";
+import browser from "webextension-polyfill";
+import { ROUTES } from "popup/constants/routes";
 import {
   EXTERNAL_SERVICE_TYPES,
   SERVICE_TYPES,
@@ -6,14 +7,20 @@ import {
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
-import { migrateLocalStorageToBrowserStorage } from "./helpers/dataStorage";
 
-export const initMessageListener = () => {
-  // returning true is very important in these message listeners. It tells the listener that the callback
-  // could possibly be async, so keep the channel open til we send a reponse.
-  browser.runtime.onMessage.addListener(async (request, sender) => {
+export const initContentScriptMessageListener = () => {
+  browser?.runtime?.onMessage?.addListener((message) => {
+    if (message === "runContentScript") {
+      browser.tabs.executeScript({
+        file: "contentScript.min.js",
+      });
+    }
+  });
+};
+
+export const initExtensionMessageListener = () => {
+  browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     // todo this is kinda ugly
-
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type)) {
       res = await popupMessageListener(request);
@@ -24,6 +31,20 @@ export const initMessageListener = () => {
 
     return res;
   });
+};
 
-  browser.runtime.onInstalled.addListener(migrateLocalStorageToBrowserStorage);
+export const initInstalledListener = () => {
+  browser?.runtime?.onInstalled.addListener(async ({ reason, temporary }) => {
+    if (temporary) return; // skip during development
+    switch (reason) {
+      case "install":
+        await browser.tabs.create({
+          url: browser.runtime.getURL(`index.html#${ROUTES.welcome}`),
+        });
+        break;
+      // TODO: case "update":
+      // TODO: case "browser_update":
+      default:
+    }
+  });
 };

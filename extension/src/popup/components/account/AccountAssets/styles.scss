@@ -4,7 +4,6 @@ $loader-light-color: #444961;
 .AccountAssets {
   &__asset {
     align-items: center;
-    justify-content: space-between;
     display: flex;
     color: var(--pal-text-primary);
     font-size: 1rem;
@@ -16,8 +15,8 @@ $loader-light-color: #444961;
 
     &--logo {
       margin-right: 1rem;
-      width: 2rem;
-      height: 2rem;
+      max-width: 2rem;
+      max-height: 2rem;
 
       img {
         width: 100%;
@@ -78,12 +77,31 @@ $loader-light-color: #444961;
   }
 
   &__copy-left {
+    flex: 5;
+    min-width: 0;
     align-items: center;
     display: flex;
     font-weight: var(--font-weight-medium);
+
+    .asset-code {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
   }
 
   &__copy-right {
+    flex: 4;
+    min-width: 0;
     font-weight: var(--font-weight-normal);
+
+    .asset-amount {
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
   }
 }
