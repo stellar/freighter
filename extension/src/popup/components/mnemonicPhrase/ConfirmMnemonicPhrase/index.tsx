@@ -1,17 +1,13 @@
 import React, { useState } from "react";
-import { Redirect } from "react-router-dom";
 import { Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { Card } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   confirmMnemonicPhrase,
   authErrorSelector,
-  applicationStateSelector,
 } from "popup/ducks/accountServices";
-import { ROUTES } from "popup/constants/routes";
 import { FormError, SubmitButtonWrapper } from "popup/basics/Forms";
 import { Button } from "popup/basics/buttons/Button";
 
@@ -45,7 +41,6 @@ export const ConfirmMnemonicPhrase = ({
   );
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const authError = useSelector(authErrorSelector);
-  const applicationState = useSelector(applicationStateSelector);
 
   const updatePhrase = (target: HTMLInputElement) => {
     if (target.checked) {
@@ -67,10 +62,6 @@ export const ConfirmMnemonicPhrase = ({
 
   const joinSelectedWords = () =>
     selectedWords.map((word) => convertToWord(word)).join(" ");
-
-  if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
-    return <Redirect to={ROUTES.mnemonicPhraseConfirmed} />;
-  }
 
   return (
     <>
