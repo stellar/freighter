@@ -18,7 +18,7 @@ export const browserStorage = storage?.local;
 export const sessionStorage = storage?.session;
 
 // Session Storage Feature Flag - turn on when storage.session is supported
-export const SESSION_STORAGE_ENABLED = true;
+export const SESSION_STORAGE_ENABLED = false;
 
 export type StorageOption = typeof browserStorage | typeof sessionStorage;
 
