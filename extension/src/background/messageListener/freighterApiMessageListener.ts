@@ -1,6 +1,7 @@
 import StellarSdk from "stellar-sdk";
 import SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
+import { Store } from "redux";
 
 import { ExternalRequest as Request } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -29,17 +30,13 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
-  SESSION_STORAGE_ENABLED,
   browserStorage,
-  sessionStorage,
 } from "background/helpers/dataStorage";
-import { store } from "background/store";
 import { publicKeySelector } from "background/ducks/session";
 
 import { responseQueue, transactionQueue } from "./popupMessageListener";
 
-const storageApi = SESSION_STORAGE_ENABLED ? sessionStorage : browserStorage;
-const _dataStore = dataStorageAccess(storageApi);
+const dataStore = dataStorageAccess(browserStorage);
 
 interface WINDOW_PARAMS {
   height: number;
@@ -56,6 +53,7 @@ const WINDOW_SETTINGS: WINDOW_PARAMS = {
 export const freighterApiMessageListener = (
   request: Request,
   sender: browser.Runtime.MessageSender,
+  store: Store,
 ) => {
   const requestAccess = async () => {
     const publicKey = publicKeySelector(store.getState());
@@ -116,7 +114,7 @@ export const freighterApiMessageListener = (
     const domain = getUrlHostname(tabUrl);
     const punycodedDomain = getPunycodedDomain(domain);
 
-    const allowListStr = (await _dataStore.getItem(ALLOWLIST_ID)) || "";
+    const allowListStr = (await dataStore.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
 
     const isDomainListedAllowed = await isSenderAllowed({ sender });
@@ -213,7 +211,7 @@ export const freighterApiMessageListener = (
         if (signedTransaction) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
-            _dataStore.setItem(ALLOWLIST_ID, allowList.join());
+            dataStore.setItem(ALLOWLIST_ID, allowList.join());
           }
           resolve({ signedTransaction });
         }

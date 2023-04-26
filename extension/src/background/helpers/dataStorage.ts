@@ -17,7 +17,8 @@ const storage = browser.storage as BrowserStorage;
 export const browserStorage = storage?.local;
 export const sessionStorage = storage?.session;
 
-export const SESSION_STORAGE_ENABLED = false;
+// Session Storage Feature Flag - turn on when storage.session is supported
+export const SESSION_STORAGE_ENABLED = true;
 
 export type StorageOption = typeof browserStorage | typeof sessionStorage;
 
@@ -43,7 +44,7 @@ export const dataStorageAccess = (
 ) => {
   const _storage = dataStorage(storageApi);
   return {
-    getItem: (keyId: string) => _storage.getItem(keyId),
+    getItem: _storage.getItem,
     setItem: async (keyId: string, value: any) => {
       await _storage.setItem({ [keyId]: value });
     },

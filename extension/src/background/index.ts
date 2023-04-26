@@ -8,6 +8,7 @@ import {
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SESSION_ALARM_NAME } from "./helpers/session";
+import { buildStore } from "./store";
 // import { timeoutAccountAccess } from "./ducks/session";
 
 export const initContentScriptMessageListener = () => {
@@ -23,12 +24,14 @@ export const initContentScriptMessageListener = () => {
 export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     // todo this is kinda ugly
+    const store = await buildStore();
+    console.log(store.getState());
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type)) {
-      res = await popupMessageListener(request);
+      res = await popupMessageListener(request, store);
     }
     if (Object.values(EXTERNAL_SERVICE_TYPES).includes(request.type)) {
-      res = await freighterApiMessageListener(request, sender);
+      res = await freighterApiMessageListener(request, sender, store);
     }
 
     return res;
@@ -52,7 +55,7 @@ export const initInstalledListener = () => {
 };
 
 export const initInitAlarmListener = () => {
-  browser?.alarms.onAlarm.addListener(({ name }: { name: string }) => {
+  browser?.alarms?.onAlarm.addListener(({ name }: { name: string }) => {
     if (name === SESSION_ALARM_NAME) {
       // timeoutAccountAccess()
     }

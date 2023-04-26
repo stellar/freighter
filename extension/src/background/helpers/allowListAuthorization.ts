@@ -4,9 +4,7 @@ import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
-  SESSION_STORAGE_ENABLED,
   browserStorage,
-  sessionStorage,
 } from "background/helpers/dataStorage";
 
 export const isSenderAllowed = async ({
@@ -14,9 +12,8 @@ export const isSenderAllowed = async ({
 }: {
   sender: browser.Runtime.MessageSender;
 }) => {
-  const storageApi = SESSION_STORAGE_ENABLED ? sessionStorage : browserStorage;
-  const _dataStore = dataStorageAccess(storageApi);
-  const allowListStr = (await _dataStore.getItem(ALLOWLIST_ID)) || "";
+  const dataStore = dataStorageAccess(browserStorage);
+  const allowListStr = (await dataStore.getItem(ALLOWLIST_ID)) || "";
   const allowList = allowListStr.split(",");
 
   const { url: tabUrl = "" } = sender;

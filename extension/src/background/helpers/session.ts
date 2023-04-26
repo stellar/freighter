@@ -1,5 +1,4 @@
-// import { store } from "background/store";
-// import { timeoutAccountAccess } from "background/ducks/session";
+import browser from "webextension-polyfill";
 
 // 24 hours
 const SESSION_LENGTH = 60 * 24;
@@ -13,7 +12,7 @@ export class SessionTimer {
   }
 
   startSession() {
-    chrome.alarms.create(SESSION_ALARM_NAME, {
+    browser?.alarms.create(SESSION_ALARM_NAME, {
       delayInMinutes: SESSION_LENGTH,
     });
   }
