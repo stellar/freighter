@@ -48,7 +48,6 @@ import {
   addAccountName,
   getAccountNameList,
   getKeyIdList,
-  getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
   getIsValidatingSafeAssetsEnabled,
@@ -269,13 +268,11 @@ export const popupMessageListener = (request: Request) => {
   const fundAccount = async () => {
     const { publicKey } = request;
 
-    const isMainnet = await getIsMainnet();
+    const { friendbotUrl } = await getNetworkDetails();
 
-    if (!isMainnet) {
+    if (friendbotUrl) {
       try {
-        await fetch(
-          `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,
-        );
+        await fetch(`${friendbotUrl}?addr=${encodeURIComponent(publicKey)}`);
       } catch (e) {
         console.error(e);
         throw new Error("Error creating account");

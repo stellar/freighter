@@ -1,5 +1,14 @@
 import browser from "webextension-polyfill";
 
+import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
+import {
+  DEFAULT_NETWORKS,
+  NetworkDetails,
+  NETWORKS,
+  TESTNET_NETWORK_DETAILS,
+  FUTURENET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+
 interface SetItemParams {
   [key: string]: any;
 }
@@ -29,4 +38,24 @@ export const dataStorageAccess = {
     await dataStorage.setItem({ [keyId]: value });
   },
   clear: () => dataStorage.clear(),
+};
+
+// This migration adds a friendbotUrl to testnet and futurenet network details
+export const migrateFriendBotUrlNetworkDetails = async () => {
+  const networksList: NetworkDetails[] =
+    (await dataStorageAccess.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+  const migratedNetworkList = networksList.map((network) => {
+    if (network.network === NETWORKS.TESTNET) {
+      return TESTNET_NETWORK_DETAILS;
+    }
+
+    if (network.network === FUTURENET_NETWORK_DETAILS.network) {
+      return FUTURENET_NETWORK_DETAILS;
+    }
+
+    return network;
+  });
+
+  await dataStorageAccess.setItem(NETWORKS_LIST_ID, migratedNetworkList);
 };
