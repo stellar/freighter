@@ -1,5 +1,6 @@
 import React from "react";
 import { Provider } from "react-redux";
+import BigNumber from "bignumber.js";
 import { createMemoryHistory } from "history";
 import {
   configureStore,
@@ -7,7 +8,7 @@ import {
   getDefaultMiddleware,
 } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ActionStatus } from "@shared/api/types";
+import { ActionStatus, Balances } from "@shared/api/types";
 
 import { isSerializable } from "helpers/stellar";
 import { reducer as auth } from "popup/ducks/accountServices";
@@ -75,3 +76,46 @@ export const Wrapper: React.FunctionComponent<any> = ({
     </>
   );
 };
+
+export const mockBalances = {
+  balances: ({
+    ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+      token: {
+        code: "USDC",
+        issuer: {
+          key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        },
+      },
+      total: new BigNumber("100"),
+      available: new BigNumber("100"),
+    },
+    native: {
+      token: { type: "native", code: "XLM" },
+      total: new BigNumber("50"),
+      available: new BigNumber("50"),
+    },
+  } as any) as Balances,
+  isFunded: true,
+  subentryCount: 1,
+};
+
+export const mockAccounts = [
+  {
+    hardwareWalletType: "",
+    imported: false,
+    name: "Account 1",
+    publicKey: "G1",
+  },
+  {
+    hardwareWalletType: "",
+    imported: true,
+    name: "Account 2",
+    publicKey: "G2",
+  },
+  {
+    hardwareWalletType: "Ledger",
+    imported: true,
+    name: "Ledger 1",
+    publicKey: "L1",
+  },
+];

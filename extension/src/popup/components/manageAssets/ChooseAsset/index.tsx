@@ -127,7 +127,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   ]);
 
   return (
-    <div className="ChooseAsset">
+    <div className="ChooseAsset" data-testid="choose-asset">
       {isLoading && (
         <div className="ChooseAsset__loader">
           <Loader size="2rem" />

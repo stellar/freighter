@@ -1,8 +1,6 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
-import BigNumber from "bignumber.js";
 
-import { Balances } from "@shared/api/types";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -11,48 +9,8 @@ import {
 import * as ApiInternal from "@shared/api/internal";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 
-import { Wrapper } from "../../__testHelpers__";
+import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { Account } from "../Account";
-
-const mockBalances = {
-  balances: ({
-    ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
-      token: {
-        code: "USDC",
-        issuer: {
-          key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-        },
-      },
-      total: new BigNumber("100"),
-    },
-    native: {
-      token: { type: "native", code: "XLM", total: new BigNumber("50") },
-    },
-  } as any) as Balances,
-  isFunded: true,
-  subentryCount: 1,
-};
-
-const mockAccounts = [
-  {
-    hardwareWalletType: "",
-    imported: false,
-    name: "Account 1",
-    publicKey: "G1",
-  },
-  {
-    hardwareWalletType: "",
-    imported: true,
-    name: "Account 2",
-    publicKey: "G2",
-  },
-  {
-    hardwareWalletType: "Ledger",
-    imported: true,
-    name: "Ledger 1",
-    publicKey: "L1",
-  },
-];
 
 const mockHistoryOperations = {
   operations: [
