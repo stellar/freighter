@@ -12,6 +12,7 @@ import {
   Account,
   Response as Request,
   BlockedDomains,
+  BlockedAccount,
 } from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
@@ -30,6 +31,7 @@ import {
   KEY_ID_LIST,
   RECENT_ADDRESSES,
   CACHED_BLOCKED_DOMAINS_ID,
+  CACHED_BLOCKED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
@@ -81,7 +83,10 @@ import {
   updateAllAccountsAccountName,
   reset,
 } from "background/ducks/session";
-import { STELLAR_EXPERT_BLOCKED_DOMAINS_URL } from "background/constants/apiUrls";
+import {
+  STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
+  STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
+} from "background/constants/apiUrls";
 
 const sessionTimer = new SessionTimer();
 
@@ -544,6 +549,22 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const loadAccount = async () => {
+    /* 
+    The 3.0.0 migration mistakenly sets keyId as a number in older versions. 
+    For some users, Chrome went right from version ~2.9.x to 3.0.0, which caused them to miss the below fix to the migration.
+    This will fix this issue at load.
+    
+    keyId being of type number causes issues downstream:
+    - we need to be able to use String.indexOf to determine if the keyId belongs to a hardware wallet
+    - @stellar/walet-sdk expects a string when dealing unlocking a keystore by keyId
+    - in other places in code where we save keyId, we do so as a string
+    Let's solve the issue at its source
+  */
+    const keyId = (await dataStorageAccess.getItem(KEY_ID)) as string | number;
+    if (typeof keyId === "number") {
+      await dataStorageAccess.setItem(KEY_ID, keyId.toString());
+    }
+
     const currentState = store.getState();
 
     return {
@@ -1045,8 +1066,13 @@ export const popupMessageListener = (request: Request) => {
   const getCachedAssetDomain = async () => {
     const { assetCanonical } = request;
 
-    const assetDomainCache =
+    let assetDomainCache =
       (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+
+    // works around a 3.0.0 migration issue
+    if (typeof assetDomainCache === "string") {
+      assetDomainCache = JSON.parse(assetDomainCache);
+    }
 
     return {
       iconUrl: assetDomainCache[assetCanonical] || "",
@@ -1056,8 +1082,14 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetDomain = async () => {
     const { assetCanonical, assetDomain } = request;
 
-    const assetDomainCache =
+    let assetDomainCache =
       (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+
+    // works around a 3.0.0 migration issue
+    if (typeof assetDomainCache === "string") {
+      assetDomainCache = JSON.parse(assetDomainCache);
+    }
+    
     assetDomainCache[assetCanonical] = assetDomain;
     await dataStorageAccess.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
@@ -1080,6 +1112,20 @@ export const popupMessageListener = (request: Request) => {
     } catch (e) {
       console.error(e);
       return new Error("Error getting blocked domains");
+    }
+  };
+
+  const getBlockedAccounts = async () => {
+    try {
+      const resp = await cachedFetch(
+        STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
+        CACHED_BLOCKED_ACCOUNTS_ID,
+      );
+      const blockedAccounts: BlockedAccount[] = resp?._embedded?.records || [];
+      return { blockedAccounts };
+    } catch (e) {
+      console.error(e);
+      return new Error("Error getting blocked accounts");
     }
   };
 
@@ -1162,6 +1208,7 @@ export const popupMessageListener = (request: Request) => {
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
+    [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
   };
 
   return messageResponder[request.type]();

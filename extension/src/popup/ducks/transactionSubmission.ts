@@ -12,6 +12,7 @@ import {
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
+  getBlockedAccounts as internalGetBlockedAccounts,
 } from "@shared/api/internal";
 
 import {
@@ -23,6 +24,7 @@ import {
   BlockedDomains,
   AccountType,
   ActionStatus,
+  BlockedAccount,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -33,6 +35,8 @@ import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { SororbanContext } from "popup/SorobanContext";
+import { getTokenBalances, resetSorobanTokensStatus } from "./soroban";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -85,20 +89,16 @@ export const submitFreighterTransaction = createAsyncThunk<
     thunkApi,
   ) => {
     try {
-      if (refreshBalances) {
-        const txRes = await internalSubmitFreighterTransaction({
-          signedXDR,
-          networkDetails,
-        });
-
-        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
-
-        return txRes;
-      }
-      return await internalSubmitFreighterTransaction({
+      const txRes = await internalSubmitFreighterTransaction({
         signedXDR,
         networkDetails,
       });
+
+      if (refreshBalances) {
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
+      }
+
+      return txRes;
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
@@ -111,9 +111,9 @@ export const submitFreighterTransaction = createAsyncThunk<
 export const submitFreighterSorobanTransaction = createAsyncThunk<
   Horizon.TransactionResponse,
   {
-    publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
+    sorobanClient: SororbanContext;
     refreshBalances?: boolean;
   },
   {
@@ -122,24 +122,21 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
 >(
   "submitFreighterSorobanTransaction",
   async (
-    { publicKey, signedXDR, networkDetails, refreshBalances = false },
+    { signedXDR, networkDetails, sorobanClient, refreshBalances = false },
     thunkApi,
   ) => {
     try {
-      if (refreshBalances) {
-        const txRes = await internalSubmitFreighterSorobanTransaction({
-          signedXDR,
-          networkDetails,
-        });
-
-        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
-
-        return txRes;
-      }
-      return await internalSubmitFreighterSorobanTransaction({
+      const txRes = await internalSubmitFreighterSorobanTransaction({
         signedXDR,
         networkDetails,
       });
+
+      if (refreshBalances) {
+        thunkApi.dispatch(resetSorobanTokensStatus());
+        await thunkApi.dispatch(getTokenBalances({ sorobanClient }));
+      }
+
+      return txRes;
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
@@ -351,6 +348,19 @@ export const getBlockedDomains = createAsyncThunk<
   }
 });
 
+export const getBlockedAccounts = createAsyncThunk<
+  BlockedAccount[],
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getBlockedAccounts", async (_, thunkApi) => {
+  try {
+    const resp = await internalGetBlockedAccounts();
+    return resp.blockedAccounts || [];
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
 export enum ShowOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
@@ -400,6 +410,7 @@ interface InitialState {
   blockedDomains: {
     domains: BlockedDomains;
   };
+  blockedAccounts: BlockedAccount[];
 }
 
 export const initialState: InitialState = {
@@ -444,6 +455,7 @@ export const initialState: InitialState = {
   blockedDomains: {
     domains: {},
   },
+  blockedAccounts: [],
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -609,6 +621,9 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
       state.blockedDomains.domains = action.payload;
+    });
+    builder.addCase(getBlockedAccounts.fulfilled, (state, action) => {
+      state.blockedAccounts = action.payload;
     });
   },
 });

@@ -79,9 +79,7 @@ export const Preferences = () => {
                   htmlFor="isValidatingMemoValue"
                   className="Preferences--label"
                 >
-                  {t(
-                    "Validate addresses that require a memo (external app transactions only)",
-                  )}
+                  {t("Validate addresses that require a memo")}
                 </label>
                 <Toggle
                   checked={initialValues.isValidatingMemoValue}
@@ -94,9 +92,7 @@ export const Preferences = () => {
                   htmlFor="isValidatingSafetyValue"
                   className="Preferences--label"
                 >
-                  {t(
-                    "Block malicious or unsafe addresses and domains (external app transactions only)",
-                  )}
+                  {t("Block malicious or unsafe addresses and domains")}
                 </label>
                 <Toggle
                   checked={initialValues.isValidatingSafetyValue}

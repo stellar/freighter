@@ -26,7 +26,7 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getTokenBalance } from "popup/helpers/soroban";
+import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { cleanAmount, formatAmount } from "popup/helpers/formatters";
@@ -360,7 +360,12 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(TX_SEND_MAX, formik.values.amount)})
+          {formatAmount(
+            TX_SEND_MAX,
+            formik.values.amount,
+            getAssetDecimals(asset, tokenBalances, isToken),
+          )}
+          )
         </InfoBlock>
       );
     }
@@ -443,6 +448,7 @@ export const SendAmount = ({
                     const { amount: newAmount, newCursor } = formatAmount(
                       e.target.value,
                       formik.values.amount,
+                      getAssetDecimals(asset, tokenBalances, isToken),
                       e.target.selectionStart || 1,
                     );
                     formik.setFieldValue("amount", newAmount);
