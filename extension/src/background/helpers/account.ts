@@ -11,7 +11,7 @@ import {
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
-import { isMainnet, isTestnet } from "helpers/stellar";
+import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserStorage,
@@ -55,6 +55,12 @@ export const getIsTestnet = async () => {
   const networkDetails = await getNetworkDetails();
 
   return isTestnet(networkDetails);
+};
+
+export const getIsFuturenet = async () => {
+  const networkDetails = await getNetworkDetails();
+
+  return isFuturenet(networkDetails);
 };
 
 export const getIsMemoValidationEnabled = async () =>

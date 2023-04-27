@@ -235,7 +235,7 @@ export const AccountAssets = ({
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={!!rb.liquidityPoolId}
               />
-              <span>{code}</span>
+              <span className="asset-code">{code}</span>
               <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
