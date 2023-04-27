@@ -1,4 +1,5 @@
 import browser from "webextension-polyfill";
+import { Store } from "redux";
 import { ROUTES } from "popup/constants/routes";
 import {
   EXTERNAL_SERVICE_TYPES,
@@ -7,6 +8,8 @@ import {
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
+import { SESSION_ALARM_NAME } from "./helpers/session";
+import { timeoutAccountAccess } from "./ducks/session";
 import { migrateFriendBotUrlNetworkDetails } from "./helpers/dataStorage";
 
 export const initContentScriptMessageListener = () => {
@@ -19,15 +22,15 @@ export const initContentScriptMessageListener = () => {
   });
 };
 
-export const initExtensionMessageListener = () => {
+export const initExtensionMessageListener = (store: Store) => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     // todo this is kinda ugly
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type)) {
-      res = await popupMessageListener(request);
+      res = await popupMessageListener(request, store);
     }
     if (Object.values(EXTERNAL_SERVICE_TYPES).includes(request.type)) {
-      res = await freighterApiMessageListener(request, sender);
+      res = await freighterApiMessageListener(request, sender, store);
     }
 
     return res;
@@ -49,4 +52,12 @@ export const initInstalledListener = () => {
     }
   });
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
+};
+
+export const initInitAlarmListener = (store: Store) => {
+  browser?.alarms?.onAlarm.addListener(({ name }: { name: string }) => {
+    if (name === SESSION_ALARM_NAME) {
+      store.dispatch(timeoutAccountAccess());
+    }
+  });
 };

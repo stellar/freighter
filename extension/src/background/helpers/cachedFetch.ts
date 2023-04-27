@@ -1,16 +1,19 @@
-import { dataStorageAccess } from "background/helpers/dataStorage";
+import {
+  dataStorageAccess,
+  browserStorage,
+} from "background/helpers/dataStorage";
+
+const dataStore = dataStorageAccess(browserStorage);
 
 export const cachedFetch = async (url: string, storageKey: string) => {
   const cachedDateId = `${storageKey}_date`;
 
-  const cachedDate = Number(
-    (await dataStorageAccess.getItem(cachedDateId)) || "",
-  );
+  const cachedDate = Number((await dataStore.getItem(cachedDateId)) || "");
   const date = new Date();
   const time = date.getTime();
   const sevenDaysAgo = time - 7 * 24 * 60 * 60 * 1000;
 
-  let directoryLookup = (await dataStorageAccess.getItem(storageKey)) || "{}";
+  let directoryLookup = (await dataStore.getItem(storageKey)) || "{}";
 
   if (typeof directoryLookup === "string") {
     try {
@@ -26,8 +29,8 @@ export const cachedFetch = async (url: string, storageKey: string) => {
       const res = await fetch(url);
       directoryLookup = await res.json();
 
-      await dataStorageAccess.setItem(storageKey, directoryLookup);
-      await dataStorageAccess.setItem(cachedDateId, time.toString());
+      await dataStore.setItem(storageKey, directoryLookup);
+      await dataStore.setItem(cachedDateId, time.toString());
     } catch (e) {
       console.error(e);
     }

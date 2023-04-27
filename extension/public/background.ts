@@ -2,9 +2,17 @@ import {
   initContentScriptMessageListener,
   initExtensionMessageListener,
   initInstalledListener,
+  initInitAlarmListener,
 } from "background";
 
-initContentScriptMessageListener();
-initExtensionMessageListener();
+import { buildStore } from "background/store";
 
-initInstalledListener();
+async function main() {
+  const store = await buildStore();
+  initContentScriptMessageListener();
+  initExtensionMessageListener(store);
+  initInstalledListener();
+  initInitAlarmListener(store);
+}
+
+main();
