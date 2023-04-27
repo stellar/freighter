@@ -3,14 +3,16 @@ import * as Sentry from "@sentry/browser";
 import { Integrations } from "@sentry/tracing";
 
 import { settingsDataSharingSelector } from "popup/ducks/settings";
+import { version } from "../../../../package.json";
 
 export const ErrorTracking = () => {
+  console.log(version);
   const isDataSharingAllowed = useSelector(settingsDataSharingSelector);
 
   if (process.env.SENTRY_KEY && isDataSharingAllowed) {
     Sentry.init({
       dsn: process.env.SENTRY_KEY,
-      release: `freighter@${process.env.npm_package_version}`,
+      release: `freighter@${version}`,
       integrations: [new Integrations.BrowserTracing()],
       tracesSampleRate: 1.0,
     });
