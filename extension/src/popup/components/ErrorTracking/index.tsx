@@ -6,7 +6,6 @@ import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { version } from "../../../../package.json";
 
 export const ErrorTracking = () => {
-  console.log(version);
   const isDataSharingAllowed = useSelector(settingsDataSharingSelector);
 
   if (process.env.SENTRY_KEY && isDataSharingAllowed) {
