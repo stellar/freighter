@@ -23,15 +23,15 @@ const storage = browser.storage as BrowserStorage;
 // browser storage uses local storage which stores values on disk and persists data across sessions
 // session storage uses session storage which stores data in memory and clears data after every "session"
 // only use session storage for secrets or sensitive values
-export const browserStorage = storage?.local;
+export const localStorage = storage?.local;
 export const sessionStorage = storage?.session;
 
 // Session Storage Feature Flag - turn on when storage.session is supported
 export const SESSION_STORAGE_ENABLED = false;
 
-export type StorageOption = typeof browserStorage | typeof sessionStorage;
+export type StorageOption = typeof localStorage | typeof sessionStorage;
 
-export const dataStorage = (storageApi: StorageOption = browserStorage) => ({
+export const dataStorage = (storageApi: StorageOption = localStorage) => ({
   getItem: async (key: string) => {
     // TODO: re-enable defaults by passing an object. The value of the key-value pair will be the default
 
@@ -48,9 +48,7 @@ export const dataStorage = (storageApi: StorageOption = browserStorage) => ({
   },
 });
 
-export const dataStorageAccess = (
-  storageApi: StorageOption = browserStorage,
-) => {
+export const dataStorageAccess = (storageApi: StorageOption = localStorage) => {
   const store = dataStorage(storageApi);
   return {
     getItem: store.getItem,
@@ -63,10 +61,10 @@ export const dataStorageAccess = (
 
 // This migration adds a friendbotUrl to testnet and futurenet network details
 export const migrateFriendBotUrlNetworkDetails = async () => {
-  const store = dataStorageAccess(browserStorage);
+  const localStore = dataStorageAccess(localStorage);
 
   const networksList: NetworkDetails[] =
-    (await store.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+    (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
   const migratedNetworkList = networksList.map((network) => {
     if (network.network === NETWORKS.TESTNET) {
@@ -80,5 +78,5 @@ export const migrateFriendBotUrlNetworkDetails = async () => {
     return network;
   });
 
-  await store.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+  await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
 };

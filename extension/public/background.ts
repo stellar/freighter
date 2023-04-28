@@ -2,7 +2,7 @@ import {
   initContentScriptMessageListener,
   initExtensionMessageListener,
   initInstalledListener,
-  initInitAlarmListener,
+  initAlarmListener,
 } from "background";
 
 import { buildStore } from "background/store";
@@ -12,7 +12,7 @@ async function main() {
   initContentScriptMessageListener();
   initExtensionMessageListener(store);
   initInstalledListener();
-  initInitAlarmListener(store);
+  initAlarmListener(store);
 }
 
 main();

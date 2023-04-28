@@ -22,15 +22,15 @@ export const initContentScriptMessageListener = () => {
   });
 };
 
-export const initExtensionMessageListener = (store: Store) => {
+export const initExtensionMessageListener = (sessionStore: Store) => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     // todo this is kinda ugly
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type)) {
-      res = await popupMessageListener(request, store);
+      res = await popupMessageListener(request, sessionStore);
     }
     if (Object.values(EXTERNAL_SERVICE_TYPES).includes(request.type)) {
-      res = await freighterApiMessageListener(request, sender, store);
+      res = await freighterApiMessageListener(request, sender, sessionStore);
     }
 
     return res;
@@ -54,10 +54,10 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
 };
 
-export const initInitAlarmListener = (store: Store) => {
+export const initAlarmListener = (sessionStore: Store) => {
   browser?.alarms?.onAlarm.addListener(({ name }: { name: string }) => {
     if (name === SESSION_ALARM_NAME) {
-      store.dispatch(timeoutAccountAccess());
+      sessionStore.dispatch(timeoutAccountAccess());
     }
   });
 };

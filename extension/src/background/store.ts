@@ -6,15 +6,12 @@ import {
   SESSION_STORAGE_ENABLED,
   dataStorageAccess,
   sessionStorage,
-  browserStorage,
 } from "./helpers/dataStorage";
 
 // Session storage can be used to persist redux store in Manifest v3 because service workers go idle after 30 seconds
 // Session storage is not currently supported in Firefox, which blocks our migration to using this by default
-const REDUX_STORE_KEY = "redux-store";
-const sessionStore = dataStorageAccess(
-  SESSION_STORAGE_ENABLED ? sessionStorage : browserStorage,
-);
+const REDUX_STORE_KEY = "session-store";
+const sessionStore = dataStorageAccess(sessionStorage);
 
 export async function loadState() {
   try {
