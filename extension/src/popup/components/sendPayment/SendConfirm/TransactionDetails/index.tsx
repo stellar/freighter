@@ -165,8 +165,9 @@ const getOperation = (
       path: path.map((p) => getAssetFromCanonical(p)),
     });
   }
+
   // create account if unfunded and sending xlm
-  if (!isFunded && sourceAsset === StellarSdk.Asset.native().toString()) {
+  if (!isFunded && sourceAsset.code === StellarSdk.Asset.native().code) {
     return StellarSdk.Operation.createAccount({
       destination,
       startingBalance: amount,
