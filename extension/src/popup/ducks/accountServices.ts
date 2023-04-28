@@ -3,6 +3,7 @@ import {
   createSelector,
   createSlice,
 } from "@reduxjs/toolkit";
+import * as Sentry from "@sentry/browser";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
@@ -304,6 +305,7 @@ export const loadAccount = createAsyncThunk(
     } catch (e) {
       console.error(e);
       error = e;
+      Sentry.captureException(`Error loading account: ${error}`);
     }
 
     if (!res) {
