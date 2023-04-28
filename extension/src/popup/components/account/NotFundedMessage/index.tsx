@@ -10,11 +10,11 @@ import { fundAccount } from "popup/ducks/accountServices";
 import "./styles.scss";
 
 export const NotFundedMessage = ({
-  isTestnet,
+  canUseFriendbot,
   publicKey,
   setIsAccountFriendbotFunded,
 }: {
-  isTestnet: boolean;
+  canUseFriendbot: boolean;
   publicKey: string;
   setIsAccountFriendbotFunded: (isAccountFriendbotFunded: boolean) => void;
 }) => {
@@ -35,7 +35,7 @@ export const NotFundedMessage = ({
         </div>
         <div className="NotFunded__copy">
           {t("To create this account, fund it with a minimum of 1 XLM.")}
-          {isTestnet ? (
+          {canUseFriendbot ? (
             <span>
               {t(
                 "You can fund this account on the test network using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens on the test network.",
@@ -51,7 +51,7 @@ export const NotFundedMessage = ({
           </a>
         </div>
       </div>
-      {isTestnet ? (
+      {canUseFriendbot ? (
         <Formik initialValues={{}} onSubmit={handleFundAccount}>
           {({ isSubmitting }) => (
             <Form className="NotFunded__form">
