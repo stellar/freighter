@@ -40,7 +40,6 @@ export const MAINNET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.PUBNET,
   networkUrl: NETWORK_URLS.PUBLIC,
   networkPassphrase: StellarSdk.Networks.PUBLIC,
-  friendbotUrl: FRIENDBOT_URLS.TESTNET,
 };
 
 export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
