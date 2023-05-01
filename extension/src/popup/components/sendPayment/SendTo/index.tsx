@@ -223,9 +223,10 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
           placeholder={t("Recipient Stellar address")}
           onChange={formik.handleChange}
           value={formik.values.destination}
+          data-testid="send-to-input"
         />
       </FormRows>
-      <div className="SendTo__address-wrapper">
+      <div className="SendTo__address-wrapper" data-testid="send-to-view">
         {isLoading ? (
           <div className="SendTo__loader">
             <Loader />
@@ -300,6 +301,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                         fullWidth
                         variant={Button.variant.tertiary}
                         onClick={() => formik.submitForm()}
+                        data-testid="send-to-btn-continue"
                       >
                         {t("Continue")}
                       </Button>
