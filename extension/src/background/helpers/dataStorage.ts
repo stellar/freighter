@@ -73,9 +73,10 @@ export const dataStorageAccess = {
 
 // This migration adds a friendbotUrl to testnet and futurenet network details
 export const migrateFriendBotUrlNetworkDetails = async () => {
-  const networksList: NetworkDetails[] =
-    JSON.parse((await dataStorageAccess.getItem(NETWORKS_LIST_ID)) || "[]") ||
-    DEFAULT_NETWORKS;
+  const networkList = await dataStorageAccess.getItem(NETWORKS_LIST_ID);
+  const networksList: NetworkDetails[] = networkList
+    ? JSON.parse(networkList)
+    : DEFAULT_NETWORKS;
 
   const migratedNetworkList = networksList.map((network) => {
     if (network.network === NETWORKS.TESTNET) {
