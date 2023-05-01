@@ -579,6 +579,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 disabled={isSubmitDisabled}
                 onClick={handleSend}
                 isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
+                data-testid="transaction-details-btn-send"
               >
                 {isSwap ? t("Swap") : t("Send")}
               </Button>

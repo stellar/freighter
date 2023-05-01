@@ -5,7 +5,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { stroopToXlm } from "helpers/stellar";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-enum NetworkCongestion {
+export enum NetworkCongestion {
   LOW = "Low",
   MEDIUM = "Medium",
   HIGH = "High",
