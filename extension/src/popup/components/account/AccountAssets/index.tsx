@@ -17,6 +17,7 @@ import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg";
 
 import "./styles.scss";
+import { formatAmount } from "popup/helpers/formatters";
 
 const getIsXlm = (code: string) => code === "XLM";
 
@@ -240,7 +241,7 @@ export const AccountAssets = ({
             </div>
             <div className="AccountAssets__copy-right">
               <div>
-                {amountVal} <span>{amountUnit}</span>
+                {formatAmount(amountVal)} <span>{amountUnit}</span>
               </div>
             </div>
           </div>

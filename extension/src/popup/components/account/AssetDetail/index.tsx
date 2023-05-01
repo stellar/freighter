@@ -47,6 +47,7 @@ import { InfoBlock } from "popup/basics/InfoBlock";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 import "./styles.scss";
+import { formatAmount } from "popup/helpers/formatters";
 
 interface AssetDetailProps {
   assetOperations: Array<HorizonOperation>;
@@ -137,7 +138,7 @@ export const AssetDetail = ({
         {isNative ? (
           <div className="AssetDetail__available">
             <span className="AssetDetail__available__copy">
-              {balanceAvailable} {canonical.code} {t("available")}
+              {formatAmount(balanceAvailable)} {canonical.code} {t("available")}
             </span>
             <span
               className="AssetDetail__available__icon"
@@ -148,7 +149,9 @@ export const AssetDetail = ({
           </div>
         ) : null}
         <div className="AssetDetail__total">
-          <div className="AssetDetail__total__copy">{balanceTotal}</div>
+          <div className="AssetDetail__total__copy">
+            {formatAmount(balanceTotal)}
+          </div>
           <div className="AssetDetail__total__network">
             <AssetNetworkInfo
               assetCode={canonical.code}
@@ -266,12 +269,12 @@ export const AssetDetail = ({
                 <img src={StellarLogo} alt="Network icon" />{" "}
                 <div>{canonical.code}</div>
               </div>
-              <div>{balanceTotal}</div>
+              <div>{formatAmount(balanceTotal)}</div>
             </div>
             <div className="AssetDetail__info-modal__available-box">
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Total Balance")}</div>
-                <div>{balanceTotal}</div>
+                <div>{formatAmount(balanceTotal)}</div>
               </div>
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Reserved Balance*")}</div>
@@ -280,9 +283,11 @@ export const AssetDetail = ({
                 balance?.available &&
                 balance?.total ? (
                   <div>
-                    {new BigNumber(balanceAvailable)
-                      .minus(new BigNumber(balance?.total))
-                      .toString()}{" "}
+                    {formatAmount(
+                      new BigNumber(balanceAvailable)
+                        .minus(new BigNumber(balance?.total))
+                        .toString(),
+                    )}{" "}
                     {canonical.code}
                   </div>
                 ) : null}
@@ -290,7 +295,7 @@ export const AssetDetail = ({
               <div className="AssetDetail__info-modal__total-available-row">
                 <div>{t("Total Available")}</div>
                 <div>
-                  {balanceAvailable} {canonical.code}
+                  {formatAmount(balanceAvailable)} {canonical.code}
                 </div>
               </div>
             </div>

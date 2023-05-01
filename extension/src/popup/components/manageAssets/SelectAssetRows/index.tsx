@@ -21,6 +21,7 @@ import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { Balances } from "@shared/api/types";
 
 import "./styles.scss";
+import { formatAmount } from "popup/helpers/formatters";
 
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
@@ -109,7 +110,7 @@ export const SelectAssetRows = ({
                 <div>
                   {contractId
                     ? calculateTokenBalance(contractId)
-                    : getAccountBalance(canonical)}{" "}
+                    : formatAmount(getAccountBalance(canonical))}{" "}
                   {code}
                 </div>
               )}
