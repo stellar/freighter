@@ -67,6 +67,7 @@ import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 import "./styles.scss";
 import { parseTokenAmount } from "popup/helpers/soroban";
 import { TRANSACTION_WARNING } from "constants/transaction";
+import { formatAmount } from "popup/helpers/formatters";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -105,7 +106,7 @@ const TwoAssetCard = ({
           <ScamAssetIcon isScamAsset={isSourceAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
-          {sourceAmount} {sourceAsset.code}
+          {formatAmount(sourceAmount)} {sourceAsset.code}
         </div>
       </div>
       <div className="TwoAssetCard__arrow-icon">
@@ -122,7 +123,7 @@ const TwoAssetCard = ({
           <ScamAssetIcon isScamAsset={isDestAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
-          {new BigNumber(destAmount).toFixed()} {destAsset.code}
+          {formatAmount(new BigNumber(destAmount).toFixed())} {destAsset.code}
         </div>
       </div>
     </div>

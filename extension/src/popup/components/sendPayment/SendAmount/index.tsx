@@ -29,7 +29,11 @@ import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { cleanAmount, formatAmount } from "popup/helpers/formatters";
+import {
+  cleanAmount,
+  formatAmount,
+  formatAmountPreserveCursor,
+} from "popup/helpers/formatters";
 import {
   transactionSubmissionSelector,
   saveAmount,
@@ -360,7 +364,7 @@ export const SendAmount = ({
       return (
         <InfoBlock variant={InfoBlock.variant.error}>
           {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmount(
+          {formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
             getAssetDecimals(asset, tokenBalances, isToken),
@@ -403,8 +407,8 @@ export const SendAmount = ({
         />
         <div className="SendAmount__content">
           <div className="SendAmount__asset-copy">
-            <span>{availBalance}</span> <span>{parsedSourceAsset.code}</span>{" "}
-            {t("available")}
+            <span>{formatAmount(availBalance)}</span>{" "}
+            <span>{parsedSourceAsset.code}</span> {t("available")}
           </div>
           <div className="SendAmount__btn-set-max">
             <PillButton
@@ -445,7 +449,10 @@ export const SendAmount = ({
                   value={formik.values.amount}
                   onChange={(e) => {
                     const input = e.target;
-                    const { amount: newAmount, newCursor } = formatAmount(
+                    const {
+                      amount: newAmount,
+                      newCursor,
+                    } = formatAmountPreserveCursor(
                       e.target.value,
                       formik.values.amount,
                       getAssetDecimals(asset, tokenBalances, isToken),
