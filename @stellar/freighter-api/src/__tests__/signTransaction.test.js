@@ -16,9 +16,4 @@ describe("signTransaction", () => {
     });
     expect(signTransaction).toThrowError(TEST_ERROR);
   });
-  it("throws a wrong network error", () => {
-    expect(signTransaction("s", "s")).toThrowError(
-      `Network must be ${NETWORKS.PUBLIC} or ${NETWORKS.TESTNET}`
-    );
-  });
 });

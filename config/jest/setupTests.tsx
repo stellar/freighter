@@ -5,6 +5,7 @@
 import { JSDOM } from "jsdom";
 import React from "react";
 import fetch from "isomorphic-unfetch";
+import chrome from "sinon-chrome/extensions";
 import "jest-localstorage-mock";
 import "jsdom-global";
 
@@ -14,8 +15,15 @@ const { window } = jsdom;
 
 global.fetch = fetch;
 window.fetch = fetch;
+global.chrome = chrome;
 global.DEV_SERVER = true;
 global.PRODUCTION = false;
+global.EXPERIMENTAL = false;
+
+if (!chrome.runtime) chrome.runtime = {};
+if (!chrome.runtime.id) chrome.runtime.id = "history-delete";
+
+global.browser = chrome;
 
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},

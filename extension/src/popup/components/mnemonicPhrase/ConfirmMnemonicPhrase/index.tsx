@@ -55,9 +55,9 @@ export const ConfirmMnemonicPhrase = ({
 
   const wordStateArr: [string, boolean][] = Object.entries(initialWordState);
 
-  const handleSubmit = async () => {
-    await dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+  const handleSubmit = () => {
     setSelectedWords([]);
+    dispatch(confirmMnemonicPhrase(joinSelectedWords()));
   };
 
   const joinSelectedWords = () =>

@@ -1,0 +1,9 @@
+name: Automated Test
+on:
+  pull-request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
