@@ -236,6 +236,7 @@ export const popupMessageListener = (request: Request) => {
     let keyStore = { id: "" };
 
     try {
+      // const key = await keyManager.loadAllKeyIds();
       keyStore = await keyManager.storeKey(keyMetadata);
     } catch (e) {
       console.error(e);

@@ -6,6 +6,8 @@ import { JSDOM } from "jsdom";
 import React from "react";
 import fetch from "isomorphic-unfetch";
 import chrome from "sinon-chrome/extensions";
+import { TextEncoder } from "util";
+import crypto from "crypto";
 import "jest-localstorage-mock";
 import "jsdom-global";
 
@@ -13,9 +15,39 @@ import "jsdom-global";
 const jsdom = new JSDOM("<!doctype html><html><body></body></html>");
 const { window } = jsdom;
 
+class LocalStorageMock {
+  private store: Record<string, any>;
+  constructor() {
+    this.store = {};
+  }
+
+  clear() {
+    this.store = {};
+  }
+
+  get = async (_key: string) => {
+    return this.store;
+  };
+
+  set = async (params: Record<string, any>) => {
+    this.store = {
+      ...this.store,
+      ...params,
+    };
+    return;
+  };
+
+  removeItem(key: string) {
+    delete this.store[key];
+  }
+}
+
 global.fetch = fetch;
 window.fetch = fetch;
 global.chrome = chrome;
+global.TextEncoder = TextEncoder;
+global.crypto = crypto.webcrypto;
+window.crypto = crypto.webcrypto;
 global.DEV_SERVER = true;
 global.PRODUCTION = false;
 global.EXPERIMENTAL = false;
@@ -23,8 +55,10 @@ global.EXPERIMENTAL = false;
 if (!chrome.runtime) chrome.runtime = {};
 if (!chrome.runtime.id) chrome.runtime.id = "history-delete";
 
-global.browser = chrome;
-
+global.browser = {};
+global.browser.storage = {
+  local: new LocalStorageMock(),
+};
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
 }));

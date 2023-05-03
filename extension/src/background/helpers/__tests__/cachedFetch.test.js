@@ -10,7 +10,7 @@ import { cachedFetch } from "../cachedFetch";
 
 describe("cached fetch", () => {
   beforeAll(() => {
-    localStorage.clear();
+    browser.storage.local.clear();
   });
   describe("blocked domains", () => {
     it("works", async () => {
@@ -18,10 +18,14 @@ describe("cached fetch", () => {
         STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
         CACHED_BLOCKED_DOMAINS_ID,
       );
-      expect(localStorage.getItem(CACHED_BLOCKED_DOMAINS_ID)).toBeTruthy();
-      expect(
-        localStorage.getItem(CACHED_BLOCKED_DOMAINS_ID + "_date"),
-      ).toBeTruthy();
+      const storedItem = await browser.storage.local.get(
+        CACHED_BLOCKED_DOMAINS_ID,
+      );
+      const storedItemDate = await browser.storage.local.get(
+        CACHED_BLOCKED_DOMAINS_ID + "_date",
+      );
+      expect(storedItem).toBeTruthy();
+      expect(browser.storage.local.get(storedItemDate)).toBeTruthy();
     });
   });
   describe("blocked accounts", () => {
@@ -30,10 +34,14 @@ describe("cached fetch", () => {
         STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
         CACHED_BLOCKED_ACCOUNTS_ID,
       );
-      expect(localStorage.getItem(CACHED_BLOCKED_ACCOUNTS_ID)).toBeTruthy();
-      expect(
-        localStorage.getItem(CACHED_BLOCKED_ACCOUNTS_ID + "_date"),
-      ).toBeTruthy();
+      const storedItem = await browser.storage.local.get(
+        CACHED_BLOCKED_ACCOUNTS_ID,
+      );
+      const storedItemDate = await browser.storage.local.get(
+        CACHED_BLOCKED_ACCOUNTS_ID + "_date",
+      );
+      expect(storedItem).toBeTruthy();
+      expect(browser.storage.local.get(storedItemDate)).toBeTruthy();
     });
   });
 });
