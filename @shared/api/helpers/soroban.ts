@@ -1,6 +1,8 @@
 import BigNumber from "bignumber.js";
 import { xdr, Address } from "soroban-client";
 
+import { I128 } from "./xdr";
+
 /* eslint-disable */
 
 export const accountIdentifier = (account: string) =>
@@ -9,7 +11,19 @@ export const accountIdentifier = (account: string) =>
 // How do we decode these in a more generic way?
 export const decodeAccountIdentifier = (scVal: Buffer) => {
   const accountId = xdr.ScVal.fromXDR(scVal);
-  return accountId.i128().lo().low;
+  console.log(accountId.i128());
+  try {
+    console.log([accountId.i128().lo().toXDR(), accountId.i128().hi().toXDR()]);
+    const out = new I128([
+      accountId.i128().lo().toXDR(),
+      accountId.i128().hi().toXDR(),
+    ]);
+    console.log(out.toString());
+    return out.toString();
+  } catch (error) {
+    console.log(error);
+    return 0;
+  }
 };
 
 export const decodeBytesN = (scVal: Buffer) => {
