@@ -9,17 +9,16 @@ export const accountIdentifier = (account: string) =>
   new Address(account).toScVal();
 
 // How do we decode these in a more generic way?
-export const decodeAccountIdentifier = (scVal: Buffer) => {
-  const accountId = xdr.ScVal.fromXDR(scVal);
+export const decodei128 = (scVal: Buffer) => {
+  const value = xdr.ScVal.fromXDR(scVal);
 
   try {
-    const out = new I128([
-      BigInt(accountId.i128().lo().low),
-      BigInt(accountId.i128().lo().high),
-      BigInt(accountId.i128().hi().low),
-      BigInt(accountId.i128().hi().high),
-    ]);
-    return out.toString();
+    return new I128([
+      BigInt(value.i128().lo().low),
+      BigInt(value.i128().lo().high),
+      BigInt(value.i128().hi().low),
+      BigInt(value.i128().hi().high),
+    ]).toString();
   } catch (error) {
     console.log(error);
     return 0;
