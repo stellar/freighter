@@ -16,6 +16,7 @@ global.fetch = fetch;
 window.fetch = fetch;
 global.DEV_SERVER = true;
 global.PRODUCTION = false;
+global.EXPERIMENTAL = false;
 
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},

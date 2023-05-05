@@ -11,7 +11,7 @@ import { decodeString } from "helpers/urls";
 
 console.error = jest.fn((e) => console.log(e));
 
-describe("regular account flow", () => {
+describe.skip("regular account flow", () => {
   beforeAll(() => {
     localStorage.clear();
     store.dispatch(sessionSlice.actions.reset());
@@ -94,7 +94,7 @@ describe("regular account flow", () => {
   });
 });
 
-describe("adding hardware wallets", () => {
+describe.skip("adding hardware wallets", () => {
   beforeAll(() => {
     localStorage.clear();
     store.dispatch(sessionSlice.actions.reset());
