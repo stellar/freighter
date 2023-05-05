@@ -385,7 +385,10 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <div className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}>
+      <div
+        className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}
+        data-testid="send-amount-view"
+      >
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
           hasBackButton={!isSwap}
@@ -439,6 +442,7 @@ export const SendAmount = ({
                   className={`SendAmount__input-amount ${
                     isSwap ? "SendAmount__input-amount__full-height" : ""
                   } SendAmount__${getAmountFontSize()}`}
+                  data-testid="send-amount-amount-input"
                   name="amount"
                   type="text"
                   placeholder="0"
@@ -518,6 +522,7 @@ export const SendAmount = ({
                   // path payment, but path not found
                   (showSourceAndDestAsset && !destinationAmount)
                 }
+                data-testid="send-amount-btn-continue"
                 fullWidth
                 variant={Button.variant.tertiary}
                 type="submit"

@@ -605,7 +605,7 @@ export const popupMessageListener = (request: Request) => {
       wallet = fromMnemonic(recoverMnemonic);
     } catch (e) {
       console.error(e);
-      error = e;
+      error = "Invalid mnemonic phrase";
     }
 
     if (wallet) {

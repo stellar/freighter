@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill";
 
 import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
+
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
@@ -42,8 +43,10 @@ export const dataStorageAccess = {
 
 // This migration adds a friendbotUrl to testnet and futurenet network details
 export const migrateFriendBotUrlNetworkDetails = async () => {
-  const networksList: NetworkDetails[] =
-    (await dataStorageAccess.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+  const networkList = await dataStorageAccess.getItem(NETWORKS_LIST_ID);
+  const networksList: NetworkDetails[] = networkList
+    ? JSON.parse(networkList)
+    : DEFAULT_NETWORKS;
 
   const migratedNetworkList = networksList.map((network) => {
     if (network.network === NETWORKS.TESTNET) {
@@ -57,5 +60,8 @@ export const migrateFriendBotUrlNetworkDetails = async () => {
     return network;
   });
 
-  await dataStorageAccess.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+  await dataStorageAccess.setItem(
+    NETWORKS_LIST_ID,
+    JSON.stringify(migratedNetworkList),
+  );
 };

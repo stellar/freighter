@@ -219,6 +219,7 @@ export const AccountAssets = ({
 
         return (
           <div
+            data-testid="account-assets"
             className={`AccountAssets__asset ${
               setSelectedAsset && !isLP
                 ? "AccountAssets__asset--has-detail"
@@ -239,7 +240,7 @@ export const AccountAssets = ({
               <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
-              <div>
+              <div className="asset-amount">
                 {amountVal} <span>{amountUnit}</span>
               </div>
             </div>
