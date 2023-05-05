@@ -1,15 +1,28 @@
 import BigNumber from "bignumber.js";
 import { xdr, Address } from "soroban-client";
 
+import { I128 } from "./xdr";
+
 /* eslint-disable */
 
 export const accountIdentifier = (account: string) =>
   new Address(account).toScVal();
 
 // How do we decode these in a more generic way?
-export const decodeAccountIdentifier = (scVal: Buffer) => {
-  const accountId = xdr.ScVal.fromXDR(scVal);
-  return accountId.i128().lo().low;
+export const decodei128 = (scVal: Buffer) => {
+  const value = xdr.ScVal.fromXDR(scVal);
+
+  try {
+    return new I128([
+      BigInt(value.i128().lo().low),
+      BigInt(value.i128().lo().high),
+      BigInt(value.i128().hi().low),
+      BigInt(value.i128().hi().high),
+    ]).toString();
+  } catch (error) {
+    console.log(error);
+    return 0;
+  }
 };
 
 export const decodeBytesN = (scVal: Buffer) => {
