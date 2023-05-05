@@ -6,7 +6,7 @@ on:
       - "extension/**/*"
 
 jobs:
-  build:
+  compile:
     runs-on: ubuntu-latest
 
     steps:
