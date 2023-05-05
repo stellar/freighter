@@ -11,14 +11,14 @@ export const accountIdentifier = (account: string) =>
 // How do we decode these in a more generic way?
 export const decodeAccountIdentifier = (scVal: Buffer) => {
   const accountId = xdr.ScVal.fromXDR(scVal);
-  console.log(accountId.i128());
+
   try {
-    console.log([accountId.i128().lo().toXDR(), accountId.i128().hi().toXDR()]);
     const out = new I128([
-      accountId.i128().lo().toXDR(),
-      accountId.i128().hi().toXDR(),
+      BigInt(accountId.i128().lo().low),
+      BigInt(accountId.i128().lo().high),
+      BigInt(accountId.i128().hi().low),
+      BigInt(accountId.i128().hi().high),
     ]);
-    console.log(out.toString());
     return out.toString();
   } catch (error) {
     console.log(error);
