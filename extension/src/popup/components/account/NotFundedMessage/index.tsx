@@ -38,7 +38,7 @@ export const NotFundedMessage = ({
           {canUseFriendbot ? (
             <span>
               {t(
-                "You can fund this account on the test network using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens on the test network.",
+                "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens.",
               )}
             </span>
           ) : null}{" "}
