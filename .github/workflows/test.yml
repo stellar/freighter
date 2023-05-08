@@ -10,4 +10,4 @@ jobs:
           node-version: 16.14.0
       - run: yarn install
       - run: yarn build
-      # - run: yarn test:ci
+      - run: yarn test:ci
