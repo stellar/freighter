@@ -49,6 +49,7 @@ export const AccountListIdenticon = ({
         </div>
       </div>
       <button
+        data-testid="account-list-identicon-button"
         className="AccountListIdenticon__identicon-button"
         onClick={handleMakeAccountActive}
       >
