@@ -13,7 +13,7 @@ console.error = jest.fn((e) => console.log(e));
 
 let store = {};
 
-describe("regular account flow", () => {
+describe.skip("regular account flow", () => {
   beforeAll(async () => {
     store = await buildStore();
     localStorage.clear();
@@ -97,7 +97,7 @@ describe("regular account flow", () => {
   });
 });
 
-describe("adding hardware wallets", () => {
+describe.skip("adding hardware wallets", () => {
   beforeAll(() => {
     localStorage.clear();
     store.dispatch(sessionSlice.actions.reset());

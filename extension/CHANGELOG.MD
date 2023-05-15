@@ -1,3 +1,25 @@
+# Release notes - Wallets - Freighter-4.0.2
+
+### Bug
+
+some values are not properly decoded for Soroban token balances
+
+# Release notes - Wallets - Freighter-4.0.1
+
+### Bug
+
+Add "Has FriendBot" toggle when creating a custom network
+
+NFT names can overflow space in DOM
+
+Removing custom network goes to blank screen
+
+Sentry doesn't factor in version
+
+Creating an account on payment no longer works
+
+Entering incorrect mnemonic on "recover-account" leads to blank screen
+
 # Release notes - Wallets - Freighter-2.12.3
 
 ### Story
