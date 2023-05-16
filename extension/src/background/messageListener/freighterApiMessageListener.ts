@@ -1,6 +1,7 @@
 import StellarSdk from "stellar-sdk";
 import SorobanSdk from "soroban-client";
-import { browser, Runtime } from "webextension-polyfill-ts";
+import browser from "webextension-polyfill";
+import { Store } from "redux";
 
 import { ExternalRequest as Request } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -27,11 +28,15 @@ import {
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
-import { dataStorageAccess } from "background/helpers/dataStorage";
-import { store } from "background/store";
+import {
+  dataStorageAccess,
+  localStorage,
+} from "background/helpers/dataStorage";
 import { publicKeySelector } from "background/ducks/session";
 
 import { responseQueue, transactionQueue } from "./popupMessageListener";
+
+const localStore = dataStorageAccess(localStorage);
 
 interface WINDOW_PARAMS {
   height: number;
@@ -47,10 +52,11 @@ const WINDOW_SETTINGS: WINDOW_PARAMS = {
 
 export const freighterApiMessageListener = (
   request: Request,
-  sender: Runtime.MessageSender,
+  sender: browser.Runtime.MessageSender,
+  sessionStore: Store,
 ) => {
   const requestAccess = async () => {
-    const publicKey = publicKeySelector(store.getState());
+    const publicKey = publicKeySelector(sessionStore.getState());
 
     const { tab, url: tabUrl = "" } = sender;
 
@@ -72,7 +78,7 @@ export const freighterApiMessageListener = (
         // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
         // if we're good, of course
         if (url === tabUrl) {
-          resolve({ publicKey: publicKeySelector(store.getState()) });
+          resolve({ publicKey: publicKeySelector(sessionStore.getState()) });
         }
 
         resolve({ error: "User declined access" });
@@ -108,7 +114,7 @@ export const freighterApiMessageListener = (
     const domain = getUrlHostname(tabUrl);
     const punycodedDomain = getPunycodedDomain(domain);
 
-    const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
+    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
 
     const isDomainListedAllowed = await isSenderAllowed({ sender });
@@ -205,7 +211,7 @@ export const freighterApiMessageListener = (
         if (signedTransaction) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
-            dataStorageAccess.setItem(ALLOWLIST_ID, allowList.join());
+            localStore.setItem(ALLOWLIST_ID, allowList.join());
           }
           resolve({ signedTransaction });
         }
@@ -246,11 +252,14 @@ export const freighterApiMessageListener = (
     return { networkDetails };
   };
 
+  const requestConnectionStatus = () => ({ isConnected: true });
+
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS]: requestConnectionStatus,
   };
 
   return messageResponder[request.type]();
