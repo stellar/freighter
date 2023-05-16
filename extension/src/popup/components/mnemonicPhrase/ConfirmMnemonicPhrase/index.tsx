@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Form, Formik } from "formik";
+import { Form, Formik, FormikHelpers, FormikValues } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { Card } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -55,9 +55,13 @@ export const ConfirmMnemonicPhrase = ({
 
   const wordStateArr: [string, boolean][] = Object.entries(initialWordState);
 
-  const handleSubmit = async () => {
-    await dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+  const handleSubmit = (
+    _values: FormikValues,
+    formikHelpers: FormikHelpers<FormikValues>,
+  ): void => {
+    dispatch(confirmMnemonicPhrase(joinSelectedWords()));
     setSelectedWords([]);
+    formikHelpers.resetForm();
   };
 
   const joinSelectedWords = () =>
