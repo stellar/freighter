@@ -976,7 +976,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     } = request;
 
-    const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
+    const currentIsExperimentalModeEnabled =
+      await getIsExperimentalModeEnabled();
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
@@ -1144,13 +1145,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     accountTokenIdList.push(tokenId);
-    await localStore.setItem(
-      TOKEN_ID_LIST,
-      JSON.stringify({
-        ...tokenIdList,
-        [keyId]: accountTokenIdList,
-      }),
-    );
+    await localStore.setItem(TOKEN_ID_LIST, {
+      ...tokenIdList,
+      [keyId]: accountTokenIdList,
+    });
 
     return { accountTokenIdList };
   };
@@ -1185,7 +1183,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
-    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]: signFreighterSorobanTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]:
+      signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
