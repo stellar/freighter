@@ -10,7 +10,10 @@ import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SESSION_ALARM_NAME } from "./helpers/session";
 import { timeoutAccountAccess } from "./ducks/session";
-import { migrateFriendBotUrlNetworkDetails } from "./helpers/dataStorage";
+import {
+  migrateFriendBotUrlNetworkDetails,
+  normalizeMigratedData,
+} from "./helpers/dataStorage";
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -52,6 +55,7 @@ export const initInstalledListener = () => {
     }
   });
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
+  browser?.runtime?.onInstalled.addListener(normalizeMigratedData);
 };
 
 export const initAlarmListener = (sessionStore: Store) => {

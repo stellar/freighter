@@ -24,15 +24,19 @@ const storage = browser.storage as BrowserStorage;
 // browser storage uses local storage which stores values on disk and persists data across sessions
 // session storage uses session storage which stores data in memory and clears data after every "session"
 // only use session storage for secrets or sensitive values
-export const localStorage = storage?.local;
-export const sessionStorage = storage?.session;
+export const browserLocalStorage = storage?.local;
+export const browserSessionStorage = storage?.session;
 
 // Session Storage Feature Flag - turn on when storage.session is supported
 export const SESSION_STORAGE_ENABLED = false;
 
-export type StorageOption = typeof localStorage | typeof sessionStorage;
+export type StorageOption =
+  | typeof browserLocalStorage
+  | typeof browserSessionStorage;
 
-export const dataStorage = (storageApi: StorageOption = localStorage) => ({
+export const dataStorage = (
+  storageApi: StorageOption = browserLocalStorage,
+) => ({
   getItem: async (key: string) => {
     // TODO: re-enable defaults by passing an object. The value of the key-value pair will be the default
 
@@ -49,7 +53,9 @@ export const dataStorage = (storageApi: StorageOption = localStorage) => ({
   },
 });
 
-export const dataStorageAccess = (storageApi: StorageOption = localStorage) => {
+export const dataStorageAccess = (
+  storageApi: StorageOption = browserLocalStorage,
+) => {
   const store = dataStorage(storageApi);
   return {
     getItem: store.getItem,
@@ -60,9 +66,28 @@ export const dataStorageAccess = (storageApi: StorageOption = localStorage) => {
   };
 };
 
+export const normalizeMigratedData = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStorageEntries = Object.entries(localStorage);
+
+  // eslint-disable-next-line no-plusplus
+  for (let i = 0; i < localStorageEntries.length; i++) {
+    const [key, value] = localStorageEntries[i];
+    try {
+      if (typeof value === "string") {
+        const parsedValue = JSON.parse(value);
+        // eslint-disable-next-line no-await-in-loop
+        await localStore.setItem(key, parsedValue);
+      }
+    } catch (e) {
+      // do not transform v
+    }
+  }
+};
+
 // This migration adds a friendbotUrl to testnet and futurenet network details
 export const migrateFriendBotUrlNetworkDetails = async () => {
-  const localStore = dataStorageAccess(localStorage);
+  const localStore = dataStorageAccess(browserLocalStorage);
 
   const networksList: NetworkDetails[] =
     (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
