@@ -14,10 +14,10 @@ import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
-  localStorage,
+  browserLocalStorage,
 } from "background/helpers/dataStorage";
 
-const localStore = dataStorageAccess(localStorage);
+const localStore = dataStorageAccess(browserLocalStorage);
 
 export const getKeyIdList = async () =>
   (await localStore.getItem(KEY_ID_LIST)) || [];
