@@ -1022,7 +1022,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const loadSettings = async () => {
     const isDataSharingAllowed =
-      (await localStore.getItem(DATA_SHARING_ID)) || true;
+      (await localStore.getItem(DATA_SHARING_ID)) ?? true;
 
     return {
       isDataSharingAllowed,
