@@ -62,12 +62,10 @@ import {
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
-  dataStorage,
-  migrateLocalStorageToBrowserStorage,
   dataStorageAccess,
+  browserLocalStorage,
 } from "background/helpers/dataStorage";
 
-import { store } from "background/store";
 import {
   allAccountsSelector,
   hasPrivateKeySelector,
@@ -86,6 +84,7 @@ import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
+import { Store } from "redux";
 
 const sessionTimer = new SessionTimer();
 
@@ -100,9 +99,10 @@ interface KeyPair {
   privateKey: string;
 }
 
-export const popupMessageListener = (request: Request) => {
-  const localKeyStore = new KeyManagerPlugins.LocalStorageKeyStore();
-  localKeyStore.configure({ storage: localStorage });
+export const popupMessageListener = (request: Request, sessionStore: Store) => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
+  localKeyStore.configure({ storage: browserLocalStorage });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
@@ -141,8 +141,8 @@ export const popupMessageListener = (request: Request) => {
     hardwareWalletType: WalletType;
     bipPath: string;
   }) => {
-    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
-    let allAccounts = allAccountsSelector(store.getState());
+    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
+    let allAccounts = allAccountsSelector(sessionStore.getState());
 
     const keyId = `${HW_PREFIX}${publicKey}`;
     const keyIdListArr = await getKeyIdList();
@@ -152,15 +152,12 @@ export const popupMessageListener = (request: Request) => {
 
     if (keyIdListArr.indexOf(keyId) === -1) {
       keyIdListArr.push(keyId);
-      await dataStorageAccess.setItem(
-        KEY_ID_LIST,
-        JSON.stringify(keyIdListArr),
-      );
+      await localStore.setItem(KEY_ID_LIST, keyIdListArr);
       const hwData = {
         bipPath,
         publicKey,
       };
-      await dataStorageAccess.setItem(keyId, JSON.stringify(hwData));
+      await localStore.setItem(keyId, hwData);
       await addAccountName({
         keyId,
         accountName,
@@ -176,9 +173,9 @@ export const popupMessageListener = (request: Request) => {
       ];
     }
 
-    await dataStorageAccess.setItem(KEY_ID, keyId);
+    await localStore.setItem(KEY_ID, keyId);
 
-    store.dispatch(
+    sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
@@ -187,7 +184,7 @@ export const popupMessageListener = (request: Request) => {
     );
 
     // an active hw account should not have an active private key
-    store.dispatch(setActivePrivateKey({ privateKey: "" }));
+    sessionStore.dispatch(setActivePrivateKey({ privateKey: "" }));
   };
 
   const _storeAccount = async ({
@@ -203,10 +200,10 @@ export const popupMessageListener = (request: Request) => {
   }) => {
     const { publicKey, privateKey } = keyPair;
 
-    const allAccounts = allAccountsSelector(store.getState());
+    const allAccounts = allAccountsSelector(sessionStore.getState());
     const accountName = `Account ${allAccounts.length + 1}`;
 
-    store.dispatch(
+    sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
@@ -244,8 +241,8 @@ export const popupMessageListener = (request: Request) => {
     const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
 
-    await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdListArr));
-    await dataStorageAccess.setItem(KEY_ID, keyStore.id);
+    await localStore.setItem(KEY_ID_LIST, keyIdListArr);
+    await localStore.setItem(KEY_ID, keyStore.id);
     await addAccountName({
       keyId: keyStore.id,
       accountName,
@@ -253,7 +250,7 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
-    const allAccounts = allAccountsSelector(store.getState());
+    const allAccounts = allAccountsSelector(sessionStore.getState());
     let publicKeyIndex = allAccounts.findIndex(
       (account: Account) => account.publicKey === publicKey,
     );
@@ -263,9 +260,9 @@ export const popupMessageListener = (request: Request) => {
 
     const activeKeyId = keyIdList[publicKeyIndex];
 
-    await dataStorageAccess.setItem(KEY_ID, activeKeyId);
+    await localStore.setItem(KEY_ID, activeKeyId);
 
-    store.dispatch(setActivePublicKey({ publicKey }));
+    sessionStore.dispatch(setActivePublicKey({ publicKey }));
   };
 
   const fundAccount = async () => {
@@ -293,7 +290,7 @@ export const popupMessageListener = (request: Request) => {
 
     const KEY_DERIVATION_NUMBER = 0;
 
-    await dataStorageAccess.setItem(
+    await localStore.setItem(
       KEY_DERIVATION_NUMBER_ID,
       KEY_DERIVATION_NUMBER.toString(),
     );
@@ -308,12 +305,12 @@ export const popupMessageListener = (request: Request) => {
       keyPair,
       mnemonicPhrase,
     });
-    await dataStorageAccess.setItem(
+    await localStore.setItem(
       APPLICATION_ID,
       APPLICATION_STATE.PASSWORD_CREATED,
     );
 
-    const currentState = store.getState();
+    const currentState = sessionStore.getState();
 
     return {
       allAccounts: allAccountsSelector(currentState),
@@ -323,7 +320,7 @@ export const popupMessageListener = (request: Request) => {
 
   const addAccount = async () => {
     const { password } = request;
-    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
+    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
 
     if (!mnemonicPhrase) {
       return { error: "Mnemonic phrase not found" };
@@ -331,7 +328,7 @@ export const popupMessageListener = (request: Request) => {
 
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()
-      : (await dataStorageAccess.getItem(KEY_ID)) || "";
+      : (await localStore.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -342,7 +339,7 @@ export const popupMessageListener = (request: Request) => {
 
     const wallet = fromMnemonic(mnemonicPhrase);
     const keyNumber =
-      Number(await dataStorageAccess.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
+      Number(await localStore.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
 
     const keyPair = {
       publicKey: wallet.getPublicKey(keyNumber),
@@ -355,17 +352,16 @@ export const popupMessageListener = (request: Request) => {
       mnemonicPhrase,
     });
 
-    await dataStorageAccess.setItem(
-      KEY_DERIVATION_NUMBER_ID,
-      keyNumber.toString(),
-    );
+    await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyNumber.toString());
 
-    store.dispatch(timeoutAccountAccess());
+    sessionStore.dispatch(timeoutAccountAccess());
 
     sessionTimer.startSession();
-    store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
+    sessionStore.dispatch(
+      setActivePrivateKey({ privateKey: keyPair.privateKey }),
+    );
 
-    const currentState = store.getState();
+    const currentState = sessionStore.getState();
 
     return {
       publicKey: publicKeySelector(currentState),
@@ -379,7 +375,7 @@ export const popupMessageListener = (request: Request) => {
     let sourceKeys;
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()
-      : (await dataStorageAccess.getItem(KEY_ID)) || "";
+      : (await localStore.getItem(KEY_ID)) || "";
 
     try {
       await _unlockKeystore({ keyID, password });
@@ -394,7 +390,7 @@ export const popupMessageListener = (request: Request) => {
       privateKey,
     };
 
-    const mnemonicPhrase = mnemonicPhraseSelector(store.getState());
+    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
 
     if (!mnemonicPhrase) {
       return { error: "Mnemonic phrase not found" };
@@ -408,9 +404,9 @@ export const popupMessageListener = (request: Request) => {
     });
 
     sessionTimer.startSession();
-    store.dispatch(setActivePrivateKey({ privateKey }));
+    sessionStore.dispatch(setActivePrivateKey({ privateKey }));
 
-    const currentState = store.getState();
+    const currentState = sessionStore.getState();
 
     return {
       publicKey: publicKeySelector(currentState),
@@ -429,9 +425,9 @@ export const popupMessageListener = (request: Request) => {
     });
 
     return {
-      publicKey: publicKeySelector(store.getState()),
-      allAccounts: allAccountsSelector(store.getState()),
-      hasPrivateKey: await hasPrivateKeySelector(store.getState()),
+      publicKey: publicKeySelector(sessionStore.getState()),
+      allAccounts: allAccountsSelector(sessionStore.getState()),
+      hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),
       bipPath: await getBipPath(),
     };
   };
@@ -440,9 +436,9 @@ export const popupMessageListener = (request: Request) => {
     const { publicKey } = request;
     await _activatePublicKey({ publicKey });
 
-    store.dispatch(timeoutAccountAccess());
+    sessionStore.dispatch(timeoutAccountAccess());
 
-    const currentState = store.getState();
+    const currentState = sessionStore.getState();
 
     return {
       publicKey: publicKeySelector(currentState),
@@ -453,15 +449,15 @@ export const popupMessageListener = (request: Request) => {
 
   const updateAccountName = async () => {
     const { accountName } = request;
-    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
 
-    store.dispatch(
+    sessionStore.dispatch(
       updateAllAccountsAccountName({ updatedAccountName: accountName }),
     );
     await addAccountName({ keyId, accountName });
 
     return {
-      allAccounts: allAccountsSelector(store.getState()),
+      allAccounts: allAccountsSelector(sessionStore.getState()),
     };
   };
 
@@ -483,10 +479,7 @@ export const popupMessageListener = (request: Request) => {
 
     const networksList: NetworkDetails[] = [...savedNetworks, networkDetails];
 
-    await dataStorageAccess.setItem(
-      NETWORKS_LIST_ID,
-      JSON.stringify(networksList),
-    );
+    await localStore.setItem(NETWORKS_LIST_ID, networksList);
 
     return {
       networksList,
@@ -503,10 +496,7 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1);
 
-    await dataStorageAccess.setItem(
-      NETWORKS_LIST_ID,
-      JSON.stringify(savedNetworks),
-    );
+    await localStore.setItem(NETWORKS_LIST_ID, savedNetworks);
 
     return {
       networksList: savedNetworks,
@@ -517,10 +507,8 @@ export const popupMessageListener = (request: Request) => {
     const { networkDetails, networkIndex } = request;
 
     const savedNetworks = await getSavedNetworks();
-    const activeNetworkDetails = JSON.parse(
-      (await dataStorageAccess.getItem(NETWORK_ID)) ||
-        JSON.stringify(MAINNET_NETWORK_DETAILS),
-    );
+    const activeNetworkDetails =
+      (await localStore.getItem(NETWORK_ID)) || MAINNET_NETWORK_DETAILS;
     const activeIndex =
       savedNetworks.findIndex(
         ({ networkName: savedNetworkName }) =>
@@ -529,17 +517,11 @@ export const popupMessageListener = (request: Request) => {
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
 
-    await dataStorageAccess.setItem(
-      NETWORKS_LIST_ID,
-      JSON.stringify(savedNetworks),
-    );
+    await localStore.setItem(NETWORKS_LIST_ID, savedNetworks);
 
     if (activeIndex === networkIndex) {
       // editing active network, so we need to update this in storage
-      await dataStorageAccess.setItem(
-        NETWORK_ID,
-        JSON.stringify(savedNetworks[activeIndex]),
-      );
+      await localStore.setItem(NETWORK_ID, savedNetworks[activeIndex]);
     }
 
     return {
@@ -557,44 +539,58 @@ export const popupMessageListener = (request: Request) => {
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
-    await dataStorageAccess.setItem(NETWORK_ID, JSON.stringify(networkDetails));
+    await localStore.setItem(NETWORK_ID, networkDetails);
 
     return { networkDetails };
   };
 
   const loadAccount = async () => {
-    const currentState = store.getState();
+    /* 
+    The 3.0.0 migration mistakenly sets keyId as a number in older versions. 
+    For some users, Chrome went right from version ~2.9.x to 3.0.0, which caused them to miss the below fix to the migration.
+    This will fix this issue at load.
+    
+    keyId being of type number causes issues downstream:
+    - we need to be able to use String.indexOf to determine if the keyId belongs to a hardware wallet
+    - @stellar/walet-sdk expects a string when dealing unlocking a keystore by keyId
+    - in other places in code where we save keyId, we do so as a string
+    Let's solve the issue at its source
+  */
+    const keyId = (await localStore.getItem(KEY_ID)) as string | number;
+    if (typeof keyId === "number") {
+      await localStore.setItem(KEY_ID, keyId.toString());
+    }
+
+    const currentState = sessionStore.getState();
 
     return {
       hasPrivateKey: await hasPrivateKeySelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
       allAccounts: allAccountsSelector(currentState),
       bipPath: await getBipPath(),
-      tokenIdList: JSON.parse(
-        (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "[]",
-      ),
+      tokenIdList: (await localStore.getItem(TOKEN_ID_LIST)) || {},
     };
   };
 
   const getMnemonicPhrase = () => ({
-    mnemonicPhrase: mnemonicPhraseSelector(store.getState()),
+    mnemonicPhrase: mnemonicPhraseSelector(sessionStore.getState()),
   });
 
   const confirmMnemonicPhrase = async () => {
     const isCorrectPhrase =
-      mnemonicPhraseSelector(store.getState()) ===
+      mnemonicPhraseSelector(sessionStore.getState()) ===
       request.mnemonicPhraseToConfirm;
 
     const applicationState = isCorrectPhrase
       ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
       : APPLICATION_STATE.MNEMONIC_PHRASE_FAILED;
 
-    await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
+    await localStore.setItem(APPLICATION_ID, applicationState);
 
     return {
       isCorrectPhrase,
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     };
   };
 
@@ -616,21 +612,23 @@ export const popupMessageListener = (request: Request) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
-      dataStorageAccess.clear();
-      await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+      localStore.clear();
+      await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
 
       // if we don't have an application state, assign them one
       applicationState =
-        (await dataStorageAccess.getItem(APPLICATION_ID)) ||
+        (await localStore.getItem(APPLICATION_ID)) ||
         APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
-      await dataStorageAccess.setItem(APPLICATION_ID, applicationState);
+      await localStore.setItem(APPLICATION_ID, applicationState);
 
       // start the timer now that we have active private key
       sessionTimer.startSession();
-      store.dispatch(setActivePrivateKey({ privateKey: keyPair.privateKey }));
+      sessionStore.dispatch(
+        setActivePrivateKey({ privateKey: keyPair.privateKey }),
+      );
 
       // lets check first couple of accounts and pre-load them if funded on mainnet
       const numOfPublicKeysToCheck = 5;
@@ -640,26 +638,29 @@ export const popupMessageListener = (request: Request) => {
           const publicKey = wallet.getPublicKey(i);
           const privateKey = wallet.getSecret(i);
 
-          const server = new StellarSdk.Server(
-            MAINNET_NETWORK_DETAILS.networkUrl,
+          // eslint-disable-next-line no-await-in-loop
+          const resp = await fetch(
+            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
           );
           // eslint-disable-next-line no-await-in-loop
-          await server.accounts().accountId(publicKey).call();
-          const newKeyPair = {
-            publicKey,
-            privateKey,
-          };
+          const j = await resp.json();
+          if (j.account_id) {
+            const newKeyPair = {
+              publicKey,
+              privateKey,
+            };
 
-          // eslint-disable-next-line no-await-in-loop
-          await _storeAccount({
-            password,
-            keyPair: newKeyPair,
-            mnemonicPhrase: recoverMnemonic,
-            imported: true,
-          });
-          // eslint-disable-next-line no-await-in-loop
-          await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
-        } catch {
+            // eslint-disable-next-line no-await-in-loop
+            await _storeAccount({
+              password,
+              keyPair: newKeyPair,
+              mnemonicPhrase: recoverMnemonic,
+              imported: true,
+            });
+            // eslint-disable-next-line no-await-in-loop
+            await localStore.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
+          }
+        } catch (e) {
           // continue
         }
       }
@@ -668,12 +669,12 @@ export const popupMessageListener = (request: Request) => {
       await _activatePublicKey({ publicKey: wallet.getPublicKey(0) });
     }
 
-    const currentState = store.getState();
+    const currentState = sessionStore.getState();
 
     return {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
       hasPrivateKey: await hasPrivateKeySelector(currentState),
       error,
     };
@@ -684,7 +685,7 @@ export const popupMessageListener = (request: Request) => {
 
     try {
       await _unlockKeystore({
-        keyID: (await dataStorageAccess.getItem(KEY_ID)) || "",
+        keyID: (await localStore.getItem(KEY_ID)) || "",
         password,
       });
       return {};
@@ -749,11 +750,11 @@ export const popupMessageListener = (request: Request) => {
 
     /* migration needed to v1.0.6-beta data model */
     if (!keyIdList.length) {
-      const keyId = await dataStorageAccess.getItem(KEY_ID);
+      const keyId = await localStore.getItem(KEY_ID);
       if (keyId) {
         keyIdList.push(keyId);
-        await dataStorageAccess.setItem(KEY_ID_LIST, JSON.stringify(keyIdList));
-        await dataStorageAccess.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+        await localStore.setItem(KEY_ID_LIST, keyIdList);
+        await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
         await addAccountName({ keyId, accountName: "Account 1" });
       }
     }
@@ -761,7 +762,7 @@ export const popupMessageListener = (request: Request) => {
 
     // if active hw then use the first non-hw keyID to check password
     // with keyManager
-    let keyID = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    let keyID = (await localStore.getItem(KEY_ID)) || "";
     let hwPublicKey = "";
     if (await getIsHardwareWalletActive()) {
       hwPublicKey = keyID.split(":")[1];
@@ -790,14 +791,14 @@ export const popupMessageListener = (request: Request) => {
     const activeMnemonicPhrase = activeExtra.mnemonicPhrase;
 
     if (
-      !publicKeySelector(store.getState()) ||
-      !allAccountsSelector(store.getState()).length
+      !publicKeySelector(sessionStore.getState()) ||
+      !allAccountsSelector(sessionStore.getState()).length
     ) {
       // we have cleared redux store via reloading extension/browser
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
 
-      store.dispatch(
+      sessionStore.dispatch(
         logIn({
           publicKey: hwPublicKey || activePublicKey,
           mnemonicPhrase: activeMnemonicPhrase,
@@ -809,14 +810,16 @@ export const popupMessageListener = (request: Request) => {
     // start the timer now that we have active private key
     sessionTimer.startSession();
     if (!(await getIsHardwareWalletActive())) {
-      store.dispatch(setActivePrivateKey({ privateKey: activePrivateKey }));
+      sessionStore.dispatch(
+        setActivePrivateKey({ privateKey: activePrivateKey }),
+      );
     }
 
     return {
-      publicKey: publicKeySelector(store.getState()),
-      hasPrivateKey: await hasPrivateKeySelector(store.getState()),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
-      allAccounts: allAccountsSelector(store.getState()),
+      publicKey: publicKeySelector(sessionStore.getState()),
+      hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),
+      applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
+      allAccounts: allAccountsSelector(sessionStore.getState()),
       bipPath: await getBipPath(),
     };
   };
@@ -829,11 +832,11 @@ export const popupMessageListener = (request: Request) => {
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
-    const allowListStr = (await dataStorageAccess.getItem(ALLOWLIST_ID)) || "";
+    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
     allowList.push(punycodedDomain);
 
-    await dataStorageAccess.setItem(ALLOWLIST_ID, allowList.join());
+    await localStore.setItem(ALLOWLIST_ID, allowList.join());
 
     if (typeof response === "function") {
       return response(url);
@@ -863,7 +866,7 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const signTransaction = async () => {
-    const privateKey = privateKeySelector(store.getState());
+    const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
       const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
@@ -909,7 +912,7 @@ export const popupMessageListener = (request: Request) => {
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
 
-    const privateKey = privateKeySelector(store.getState());
+    const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
       const sourceKeys = SDK.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
@@ -927,7 +930,7 @@ export const popupMessageListener = (request: Request) => {
       network,
     );
 
-    const privateKey = privateKeySelector(store.getState());
+    const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
       const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
@@ -939,33 +942,28 @@ export const popupMessageListener = (request: Request) => {
 
   const addRecentAddress = async () => {
     const { publicKey } = request;
-    const storedJSON =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
-    const recentAddresses = JSON.parse(storedJSON);
+    const storedData = (await localStore.getItem(RECENT_ADDRESSES)) || [];
+    const recentAddresses = storedData;
     if (recentAddresses.indexOf(publicKey) === -1) {
       recentAddresses.push(publicKey);
     }
-    await dataStorageAccess.setItem(
-      RECENT_ADDRESSES,
-      JSON.stringify(recentAddresses),
-    );
+    await localStore.setItem(RECENT_ADDRESSES, recentAddresses);
 
     return { recentAddresses };
   };
 
   const loadRecentAddresses = async () => {
-    const storedJSON =
-      (await dataStorageAccess.getItem(RECENT_ADDRESSES)) || "[]";
-    const recentAddresses = JSON.parse(storedJSON);
+    const storedData = (await localStore.getItem(RECENT_ADDRESSES)) || [];
+    const recentAddresses = storedData;
     return { recentAddresses };
   };
 
   const signOut = async () => {
-    store.dispatch(logOut());
+    sessionStore.dispatch(logOut());
 
     return {
-      publicKey: publicKeySelector(store.getState()),
-      applicationState: (await dataStorageAccess.getItem(APPLICATION_ID)) || "",
+      publicKey: publicKeySelector(sessionStore.getState()),
+      applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     };
   };
 
@@ -980,21 +978,15 @@ export const popupMessageListener = (request: Request) => {
 
     const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
-    await dataStorageAccess.setItem(
-      DATA_SHARING_ID,
-      JSON.stringify(isDataSharingAllowed),
-    );
-    await dataStorageAccess.setItem(
-      IS_VALIDATING_MEMO_ID,
-      JSON.stringify(isMemoValidationEnabled),
-    );
-    await dataStorageAccess.setItem(
+    await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
+    await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
+    await localStore.setItem(
       IS_VALIDATING_SAFETY_ID,
-      JSON.stringify(isSafetyValidationEnabled),
+      isSafetyValidationEnabled,
     );
-    await dataStorageAccess.setItem(
+    await localStore.setItem(
       IS_VALIDATING_SAFE_ASSETS_ID,
-      JSON.stringify(isValidatingSafeAssetsEnabled),
+      isValidatingSafeAssetsEnabled,
     );
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
@@ -1008,19 +1000,13 @@ export const popupMessageListener = (request: Request) => {
 
       currentNetworksList.splice(0, 1, defaultNetworkDetails);
 
-      await dataStorageAccess.setItem(
-        NETWORKS_LIST_ID,
-        JSON.stringify(currentNetworksList),
-      );
-      await dataStorageAccess.setItem(
-        NETWORK_ID,
-        JSON.stringify(defaultNetworkDetails),
-      );
+      await localStore.setItem(NETWORKS_LIST_ID, currentNetworksList);
+      await localStore.setItem(NETWORK_ID, defaultNetworkDetails);
     }
 
-    await dataStorageAccess.setItem(
+    await localStore.setItem(
       IS_EXPERIMENTAL_MODE_ID,
-      JSON.stringify(isExperimentalModeEnabled),
+      isExperimentalModeEnabled,
     );
 
     return {
@@ -1035,13 +1021,8 @@ export const popupMessageListener = (request: Request) => {
   };
 
   const loadSettings = async () => {
-    await migrateLocalStorageToBrowserStorage();
-
-    const {
-      [DATA_SHARING_ID]: isDataSharingAllowed,
-    } = await await dataStorage.getItem({
-      [DATA_SHARING_ID]: true,
-    });
+    const isDataSharingAllowed =
+      (await localStore.getItem(DATA_SHARING_ID)) || true;
 
     return {
       isDataSharingAllowed,
@@ -1057,9 +1038,8 @@ export const popupMessageListener = (request: Request) => {
   const getCachedAssetIcon = async () => {
     const { assetCanonical } = request;
 
-    const assetIconCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
-    );
+    const assetIconCache =
+      (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
 
     return {
       iconUrl: assetIconCache[assetCanonical] || "",
@@ -1069,22 +1049,22 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetIcon = async () => {
     const { assetCanonical, iconUrl } = request;
 
-    const assetIconCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_ICONS_ID)) || "{}",
-    );
+    const assetIconCache =
+      (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
     assetIconCache[assetCanonical] = iconUrl;
-    await dataStorageAccess.setItem(
-      CACHED_ASSET_ICONS_ID,
-      JSON.stringify(assetIconCache),
-    );
+    await localStore.setItem(CACHED_ASSET_ICONS_ID, assetIconCache);
   };
 
   const getCachedAssetDomain = async () => {
     const { assetCanonical } = request;
 
-    const assetDomainCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
-    );
+    let assetDomainCache =
+      (await localStore.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+
+    // works around a 3.0.0 migration issue
+    if (typeof assetDomainCache === "string") {
+      assetDomainCache = JSON.parse(assetDomainCache);
+    }
 
     return {
       iconUrl: assetDomainCache[assetCanonical] || "",
@@ -1094,14 +1074,16 @@ export const popupMessageListener = (request: Request) => {
   const cacheAssetDomain = async () => {
     const { assetCanonical, assetDomain } = request;
 
-    const assetDomainCache = JSON.parse(
-      (await dataStorageAccess.getItem(CACHED_ASSET_DOMAINS_ID)) || "{}",
-    );
+    let assetDomainCache =
+      (await localStore.getItem(CACHED_ASSET_DOMAINS_ID)) || {};
+
+    // works around a 3.0.0 migration issue
+    if (typeof assetDomainCache === "string") {
+      assetDomainCache = JSON.parse(assetDomainCache);
+    }
+
     assetDomainCache[assetCanonical] = assetDomain;
-    await dataStorageAccess.setItem(
-      CACHED_ASSET_DOMAINS_ID,
-      JSON.stringify(assetDomainCache),
-    );
+    await localStore.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
 
   const getBlockedDomains = async () => {
@@ -1143,17 +1125,15 @@ export const popupMessageListener = (request: Request) => {
     if (EXPERIMENTAL !== true) {
       return { error: "Not in experimental mode" };
     }
-    await dataStorageAccess.clear();
-    store.dispatch(reset());
+    await localStore.clear();
+    sessionStore.dispatch(reset());
     return {};
   };
 
   const addTokenId = async () => {
     const { tokenId } = request;
-    const tokenIdList = JSON.parse(
-      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
-    );
-    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
 
@@ -1162,22 +1142,17 @@ export const popupMessageListener = (request: Request) => {
     }
 
     accountTokenIdList.push(tokenId);
-    await dataStorageAccess.setItem(
-      TOKEN_ID_LIST,
-      JSON.stringify({
-        ...tokenIdList,
-        [keyId]: accountTokenIdList,
-      }),
-    );
+    await localStore.setItem(TOKEN_ID_LIST, {
+      ...tokenIdList,
+      [keyId]: accountTokenIdList,
+    });
 
     return { accountTokenIdList };
   };
 
   const getTokenIds = async () => {
-    const tokenIdList = JSON.parse(
-      (await dataStorageAccess.getItem(TOKEN_ID_LIST)) || "{}",
-    );
-    const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
+    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     return { tokenIdList: tokenIdList[keyId] || [] };
   };
