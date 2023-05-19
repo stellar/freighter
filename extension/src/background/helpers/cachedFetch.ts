@@ -1,9 +1,9 @@
 import {
   dataStorageAccess,
-  localStorage,
+  browserLocalStorage,
 } from "background/helpers/dataStorage";
 
-const localStore = dataStorageAccess(localStorage);
+const localStore = dataStorageAccess(browserLocalStorage);
 
 export const cachedFetch = async (url: string, storageKey: string) => {
   const cachedDateId = `${storageKey}_date`;

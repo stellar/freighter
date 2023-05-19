@@ -30,13 +30,13 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
-  localStorage,
+  browserLocalStorage,
 } from "background/helpers/dataStorage";
 import { publicKeySelector } from "background/ducks/session";
 
 import { responseQueue, transactionQueue } from "./popupMessageListener";
 
-const localStore = dataStorageAccess(localStorage);
+const localStore = dataStorageAccess(browserLocalStorage);
 
 interface WINDOW_PARAMS {
   height: number;

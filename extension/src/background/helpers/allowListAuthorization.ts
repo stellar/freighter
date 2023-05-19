@@ -4,7 +4,7 @@ import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
-  localStorage,
+  browserLocalStorage,
 } from "background/helpers/dataStorage";
 
 export const isSenderAllowed = async ({
@@ -12,7 +12,7 @@ export const isSenderAllowed = async ({
 }: {
   sender: browser.Runtime.MessageSender;
 }) => {
-  const localStore = dataStorageAccess(localStorage);
+  const localStore = dataStorageAccess(browserLocalStorage);
   const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
   const allowList = allowListStr.split(",");
 
