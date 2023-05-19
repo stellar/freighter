@@ -54,8 +54,8 @@ export const initInstalledListener = () => {
       default:
     }
   });
-  browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(normalizeMigratedData);
+  browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
 };
 
 export const initAlarmListener = (sessionStore: Store) => {
