@@ -1,6 +1,6 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
-import { store } from "background/store";
+import { buildStore } from "background/store";
 import {
   publicKeySelector,
   privateKeySelector,
@@ -11,8 +11,11 @@ import { decodeString } from "helpers/urls";
 
 console.error = jest.fn((e) => console.log(e));
 
+let store = {};
+
 describe.skip("regular account flow", () => {
-  beforeAll(() => {
+  beforeAll(async () => {
+    store = await buildStore();
     localStorage.clear();
     store.dispatch(sessionSlice.actions.reset());
   });
@@ -21,7 +24,7 @@ describe.skip("regular account flow", () => {
       const r = {};
       r.type = SERVICE_TYPES.CREATE_ACCOUNT;
       r.password = "test";
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       // check store
@@ -38,7 +41,7 @@ describe.skip("regular account flow", () => {
       r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
       r.password = "test";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -47,7 +50,7 @@ describe.skip("regular account flow", () => {
       const r = {};
       r.type = SERVICE_TYPES.LOAD_ACCOUNT;
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -55,7 +58,7 @@ describe.skip("regular account flow", () => {
     it("works", async () => {
       const r = {};
       r.type = SERVICE_TYPES.SIGN_OUT;
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -65,7 +68,7 @@ describe.skip("regular account flow", () => {
       r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
       r.password = "test";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -75,7 +78,7 @@ describe.skip("regular account flow", () => {
       r.type = SERVICE_TYPES.ADD_ACCOUNT;
       r.password = "test";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       expect(allAccountsSelector(store.getState()).length).toBe(2);
@@ -88,7 +91,7 @@ describe.skip("regular account flow", () => {
       r.type = SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE;
       r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -104,7 +107,7 @@ describe.skip("adding hardware wallets", () => {
       const r = {};
       r.type = SERVICE_TYPES.CREATE_ACCOUNT;
       r.password = "test";
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       // check store
@@ -122,7 +125,7 @@ describe.skip("adding hardware wallets", () => {
       r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
       r.hardwareWalletType = "Ledger";
       r.bipPath = "44'/148'/1'";
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       // check store
@@ -154,7 +157,7 @@ describe.skip("adding hardware wallets", () => {
     it("works", async () => {
       const r = {};
       r.type = SERVICE_TYPES.SIGN_OUT;
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -164,7 +167,7 @@ describe.skip("adding hardware wallets", () => {
       r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
       r.password = "test";
 
-      const resp = await popupMessageListener(r);
+      const resp = await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       expect(resp.bipPath).toBe("44'/148'/1'");
@@ -175,7 +178,7 @@ describe.skip("adding hardware wallets", () => {
       const r = {};
       r.type = SERVICE_TYPES.LOAD_ACCOUNT;
 
-      const resp = await popupMessageListener(r);
+      const resp = await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       expect(resp.bipPath).toBe("44'/148'/1'");
@@ -188,7 +191,7 @@ describe.skip("adding hardware wallets", () => {
       r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
       r.hardwareWalletType = "Ledger";
       r.bipPath = "44'/148'/1'";
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       // check store
@@ -208,7 +211,7 @@ describe.skip("adding hardware wallets", () => {
       r.type = SERVICE_TYPES.CONFIRM_PASSWORD;
       r.password = "test";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
     });
   });
@@ -219,7 +222,7 @@ describe.skip("adding hardware wallets", () => {
       r.password = "test";
       r.privateKey = "SAUIIOB4EB6MZ25RKTKQ6DBXBDKKFQVMPLS2Q5LDH4GAMT7SAQPQMNCB";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       // check store
@@ -240,7 +243,7 @@ describe.skip("adding hardware wallets", () => {
       const r = {};
       r.type = SERVICE_TYPES.LOAD_ACCOUNT;
 
-      const resp = await popupMessageListener(r);
+      const resp = await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       expect(resp.bipPath).toBe("");
@@ -252,7 +255,7 @@ describe.skip("adding hardware wallets", () => {
       r.type = SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE;
       r.publicKey = "GBOORGNN6F35F3BFI4SF5ZR4Q7VHALNPGRG3MGA6WMOW4BKFOFMNI45O";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
       expect(localStorage.getItem("keyId").indexOf("hw:")).toBe(0);
     });
@@ -263,7 +266,7 @@ describe.skip("adding hardware wallets", () => {
       r.type = SERVICE_TYPES.ADD_ACCOUNT;
       r.password = "test";
 
-      await popupMessageListener(r);
+      await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
 
       // check store
