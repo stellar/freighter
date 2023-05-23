@@ -12,14 +12,19 @@ import {
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
-import { dataStorageAccess } from "background/helpers/dataStorage";
+import {
+  dataStorageAccess,
+  browserLocalStorage,
+} from "background/helpers/dataStorage";
+
+const localStore = dataStorageAccess(browserLocalStorage);
 
 export const getKeyIdList = async () =>
-  JSON.parse((await dataStorageAccess.getItem(KEY_ID_LIST)) || "[]");
+  (await localStore.getItem(KEY_ID_LIST)) || [];
 
 export const getAccountNameList = async () => {
   const encodedaccountNameList =
-    (await dataStorageAccess.getItem(ACCOUNT_NAME_LIST_ID)) || encodeObject({});
+    (await localStore.getItem(ACCOUNT_NAME_LIST_ID)) || encodeObject({});
 
   return JSON.parse(decodeString(encodedaccountNameList));
 };
@@ -37,7 +42,7 @@ export const addAccountName = async ({
 
   const encodedaccountNameList = encodeObject(accountNameList);
 
-  await dataStorageAccess.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
+  await localStore.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
 };
 
 export const getIsMainnet = async () => {
@@ -59,71 +64,50 @@ export const getIsFuturenet = async () => {
 };
 
 export const getIsMemoValidationEnabled = async () =>
-  JSON.parse(
-    (await dataStorageAccess.getItem(IS_VALIDATING_MEMO_ID)) || "true",
-  );
+  (await localStore.getItem(IS_VALIDATING_MEMO_ID)) ?? true;
 
 export const getIsSafetyValidationEnabled = async () =>
-  JSON.parse(
-    (await dataStorageAccess.getItem(IS_VALIDATING_SAFETY_ID)) || "true",
-  );
+  (await localStore.getItem(IS_VALIDATING_SAFETY_ID)) ?? true;
 
 export const getIsValidatingSafeAssetsEnabled = async () =>
-  JSON.parse(
-    (await dataStorageAccess.getItem(IS_VALIDATING_SAFE_ASSETS_ID)) || "true",
-  );
+  (await localStore.getItem(IS_VALIDATING_SAFE_ASSETS_ID)) ?? true;
 
 export const getIsExperimentalModeEnabled = async () =>
-  JSON.parse(
-    (await dataStorageAccess.getItem(IS_EXPERIMENTAL_MODE_ID)) || "false",
-  );
+  (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;
 
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";
 
 export const getIsHardwareWalletActive = async () =>
-  ((await dataStorageAccess.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
+  ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
 export const getBipPath = async () => {
-  const keyId = (await dataStorageAccess.getItem(KEY_ID)) || "";
-  const hwData = JSON.parse((await dataStorageAccess.getItem(keyId)) || "{}");
+  const keyId = (await localStore.getItem(KEY_ID)) || "";
+  const hwData = (await localStore.getItem(keyId)) || {};
   return hwData.bipPath || "";
 };
 
-export const getSavedNetworks = async () =>
-  JSON.parse(
-    (await dataStorageAccess.getItem(NETWORKS_LIST_ID)) ||
-      JSON.stringify(DEFAULT_NETWORKS),
-  ) as NetworkDetails[];
+export const getSavedNetworks = async (): Promise<NetworkDetails[]> =>
+  (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
 export const getNetworkDetails = async () => {
-  if (!(await dataStorageAccess.getItem(NETWORK_ID))) {
-    await dataStorageAccess.setItem(
-      NETWORK_ID,
-      JSON.stringify(DEFAULT_NETWORKS[0]),
-    );
+  if (!(await localStore.getItem(NETWORK_ID))) {
+    await localStore.setItem(NETWORK_ID, DEFAULT_NETWORKS[0]);
   }
 
-  const networkDetails = JSON.parse(
-    (await dataStorageAccess.getItem(NETWORK_ID)) ||
-      JSON.stringify(DEFAULT_NETWORKS[0]),
-  ) as NetworkDetails;
+  const networkDetails =
+    (await localStore.getItem(NETWORK_ID)) || DEFAULT_NETWORKS[0];
 
   return networkDetails;
 };
 
 export const getNetworksList = async () => {
-  if (!(await dataStorageAccess.getItem(NETWORKS_LIST_ID))) {
-    await dataStorageAccess.setItem(
-      NETWORKS_LIST_ID,
-      JSON.stringify(DEFAULT_NETWORKS),
-    );
+  if (!(await localStore.getItem(NETWORKS_LIST_ID))) {
+    await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
   }
 
-  const networksList = JSON.parse(
-    (await dataStorageAccess.getItem(NETWORKS_LIST_ID)) ||
-      JSON.stringify(DEFAULT_NETWORKS),
-  ) as NetworkDetails[];
+  const networksList =
+    (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
   return networksList;
 };

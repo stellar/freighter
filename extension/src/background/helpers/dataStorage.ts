@@ -1,5 +1,6 @@
-import { browser } from "webextension-polyfill-ts";
-import { KEY_ID, NETWORKS_LIST_ID } from "constants/localStorageTypes";
+import browser from "webextension-polyfill";
+
+import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
 
 import {
   DEFAULT_NETWORKS,
@@ -13,70 +14,83 @@ interface SetItemParams {
   [key: string]: any;
 }
 
-export const dataStorage = {
-  getItem: async (key: null | string | string[] | { [s: string]: any }) => {
-    // Passing an object (for ex: {myKey: "aValue"}) will return the key's (myKey) value from storage.
-    // If the key is not found in storage, it will return the the value passed along in object as a default (in this case, "aValue")
+// https://github.com/mozilla/webextension-polyfill/issues/424
+interface BrowserStorage extends browser.Storage.Static {
+  session: browser.Storage.LocalStorageArea;
+}
 
-    const storageResult = await browser.storage.local.get(key);
+const storage = browser.storage as BrowserStorage;
 
-    return storageResult;
+// browser storage uses local storage which stores values on disk and persists data across sessions
+// session storage uses session storage which stores data in memory and clears data after every "session"
+// only use session storage for secrets or sensitive values
+export const browserLocalStorage = storage?.local;
+export const browserSessionStorage = storage?.session;
+
+// Session Storage Feature Flag - turn on when storage.session is supported
+export const SESSION_STORAGE_ENABLED = false;
+
+export type StorageOption =
+  | typeof browserLocalStorage
+  | typeof browserSessionStorage;
+
+export const dataStorage = (
+  storageApi: StorageOption = browserLocalStorage,
+) => ({
+  getItem: async (key: string) => {
+    // TODO: re-enable defaults by passing an object. The value of the key-value pair will be the default
+
+    const storageResult = await storageApi.get(key);
+
+    return storageResult[key];
   },
   setItem: async (setItemParams: SetItemParams) => {
-    await browser.storage.local.set(setItemParams);
+    await storageApi.set(setItemParams);
   },
+
+  clear: async () => {
+    await storageApi.clear();
+  },
+});
+
+export const dataStorageAccess = (
+  storageApi: StorageOption = browserLocalStorage,
+) => {
+  const store = dataStorage(storageApi);
+  return {
+    getItem: store.getItem,
+    setItem: async (keyId: string, value: any) => {
+      await store.setItem({ [keyId]: value });
+    },
+    clear: () => store.clear(),
+  };
 };
 
-export const migrateLocalStorageToBrowserStorage = async () => {
-  const storage: { [key: string]: any } = {};
-  Object.entries(localStorage).forEach(([k, v]) => {
-    let value = v;
+export const normalizeMigratedData = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStorageEntries = Object.entries(localStorage);
+
+  // eslint-disable-next-line no-plusplus
+  for (let i = 0; i < localStorageEntries.length; i++) {
+    const [key, value] = localStorageEntries[i];
     try {
-      const parsedValue = JSON.parse(v);
-      value = parsedValue;
+      if (typeof value === "string") {
+        const parsedValue = JSON.parse(value);
+        // eslint-disable-next-line no-await-in-loop
+        await localStore.setItem(key, parsedValue);
+      }
     } catch (e) {
       // do not transform v
     }
-
-    storage[k] = value;
-  });
-
-  await dataStorage.setItem(storage);
-
-  /* 
-    The above migration mistakenly sets keyId as a number, which causes issues downstream:
-    - we need to be able to use String.indexOf to determine if the keyId belongs to a hardware wallet
-    - @stellar/walet-sdk expects a string when dealing unlocking a keystore by keyId
-    - in other places in code where we save keyId, we do so as a string
-
-    Let's solve the issue at its source
-  */
-  const keyId = (await dataStorageAccess.getItem(KEY_ID)) as string | number;
-  if (typeof keyId === "number") {
-    await dataStorageAccess.setItem(KEY_ID, keyId.toString());
   }
-};
-
-// TODO - temporary wrapper around localStorage until we replace
-// localStorage all together
-export const dataStorageAccess = {
-  getItem: async (keyId: string) => {
-    await dataStorage.getItem({ [keyId]: "" });
-    return localStorage.getItem(keyId);
-  },
-  setItem: async (keyId: string, value: string) => {
-    await dataStorage.setItem({ [keyId]: value });
-    localStorage.setItem(keyId, value);
-  },
-  clear: () => localStorage.clear(),
 };
 
 // This migration adds a friendbotUrl to testnet and futurenet network details
 export const migrateFriendBotUrlNetworkDetails = async () => {
-  const networkList = await dataStorageAccess.getItem(NETWORKS_LIST_ID);
-  const networksList: NetworkDetails[] = networkList
-    ? JSON.parse(networkList)
-    : DEFAULT_NETWORKS;
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  const networksList: NetworkDetails[] =
+    (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
   const migratedNetworkList = networksList.map((network) => {
     if (network.network === NETWORKS.TESTNET) {
@@ -90,8 +104,5 @@ export const migrateFriendBotUrlNetworkDetails = async () => {
     return network;
   });
 
-  await dataStorageAccess.setItem(
-    NETWORKS_LIST_ID,
-    JSON.stringify(migratedNetworkList),
-  );
+  await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
 };
