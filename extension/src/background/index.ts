@@ -1,4 +1,5 @@
 import browser from "webextension-polyfill";
+import { Store } from "redux";
 import { ROUTES } from "popup/constants/routes";
 import {
   EXTERNAL_SERVICE_TYPES,
@@ -7,7 +8,12 @@ import {
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
-import { migrateFriendBotUrlNetworkDetails } from "./helpers/dataStorage";
+import { SESSION_ALARM_NAME } from "./helpers/session";
+import { timeoutAccountAccess } from "./ducks/session";
+import {
+  migrateFriendBotUrlNetworkDetails,
+  normalizeMigratedData,
+} from "./helpers/dataStorage";
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -19,15 +25,15 @@ export const initContentScriptMessageListener = () => {
   });
 };
 
-export const initExtensionMessageListener = () => {
+export const initExtensionMessageListener = (sessionStore: Store) => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     // todo this is kinda ugly
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type)) {
-      res = await popupMessageListener(request);
+      res = await popupMessageListener(request, sessionStore);
     }
     if (Object.values(EXTERNAL_SERVICE_TYPES).includes(request.type)) {
-      res = await freighterApiMessageListener(request, sender);
+      res = await freighterApiMessageListener(request, sender, sessionStore);
     }
 
     return res;
@@ -48,5 +54,14 @@ export const initInstalledListener = () => {
       default:
     }
   });
+  browser?.runtime?.onInstalled.addListener(normalizeMigratedData);
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
+};
+
+export const initAlarmListener = (sessionStore: Store) => {
+  browser?.alarms?.onAlarm.addListener(({ name }: { name: string }) => {
+    if (name === SESSION_ALARM_NAME) {
+      sessionStore.dispatch(timeoutAccountAccess());
+    }
+  });
 };
