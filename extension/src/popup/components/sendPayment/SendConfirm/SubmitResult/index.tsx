@@ -163,7 +163,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     accountBalances.balances[asset].available.isZero();
 
   return (
-    <div className="SubmitResult">
+    <div className="SubmitResult" data-testid="submit-success-view">
       <div className="SubmitResult__header">
         {t("Successfully")} {isSwap ? t("swapped") : t("sent")}
       </div>

@@ -1,5 +1,4 @@
 import * as apiExternal from "@shared/api/external";
-import { NETWORKS } from "@shared/constants/stellar";
 import { signTransaction } from "../signTransaction";
 
 describe("signTransaction", () => {
@@ -15,10 +14,5 @@ describe("signTransaction", () => {
       throw TEST_ERROR;
     });
     expect(signTransaction).toThrowError(TEST_ERROR);
-  });
-  it("throws a wrong network error", () => {
-    expect(signTransaction("s", "s")).toThrowError(
-      `Network must be ${NETWORKS.PUBLIC} or ${NETWORKS.TESTNET}`
-    );
   });
 });

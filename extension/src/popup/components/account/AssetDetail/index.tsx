@@ -149,7 +149,10 @@ export const AssetDetail = ({
           </div>
         ) : null}
         <div className="AssetDetail__total">
-          <div className="AssetDetail__total__copy">
+          <div
+            className="AssetDetail__total__copy"
+            data-testid="asset-detail-available-copy"
+          >
             {formatAmount(balanceTotal)}
           </div>
           <div className="AssetDetail__total__network">

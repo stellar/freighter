@@ -166,8 +166,9 @@ const getOperation = (
       path: path.map((p) => getAssetFromCanonical(p)),
     });
   }
+
   // create account if unfunded and sending xlm
-  if (!isFunded && sourceAsset === StellarSdk.Asset.native().toString()) {
+  if (!isFunded && sourceAsset.code === StellarSdk.Asset.native().code) {
     return StellarSdk.Operation.createAccount({
       destination,
       startingBalance: amount,
@@ -580,6 +581,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 disabled={isSubmitDisabled}
                 onClick={handleSend}
                 isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
+                data-testid="transaction-details-btn-send"
               >
                 {isSwap ? t("Swap") : t("Send")}
               </Button>
