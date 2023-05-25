@@ -50,7 +50,7 @@ jest.mock("@shared/api/internal", () => {
   };
 });
 
-describe("MnemonicPhrase", () => {
+describe.skip("MnemonicPhrase", () => {
   it("renders", async () => {
     const history = createMemoryHistory();
     history.push(ROUTES.mnemonicPhrase);

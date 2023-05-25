@@ -68,7 +68,7 @@ export const SendSettings = ({
 
   return (
     <PopupWrapper>
-      <div className="SendSettings">
+      <div className="SendSettings" data-testid="send-settings-view">
         <SubviewHeader
           title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
           customBackAction={() => navigateTo(previous)}
@@ -225,6 +225,7 @@ export const SendSettings = ({
                     type="submit"
                     variant={Button.variant.tertiary}
                     onClick={() => navigateTo(next)}
+                    data-testid="send-settings-btn-continue"
                   >
                     {t("Review")} {isSwap ? t("Swap") : t("Send")}
                   </Button>

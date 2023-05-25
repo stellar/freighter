@@ -35,7 +35,11 @@ export function AssetSelect({
   };
 
   return (
-    <div className="AssetSelect__wrapper" onClick={handleSelectAsset}>
+    <div
+      className="AssetSelect__wrapper"
+      onClick={handleSelectAsset}
+      data-testid="send-amount-asset-select"
+    >
       <div className="AssetSelect__content">
         <div className="AssetSelect__content__left">
           <AssetIcon
