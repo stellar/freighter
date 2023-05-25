@@ -63,7 +63,7 @@ import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   dataStorageAccess,
-  localStorage,
+  browserLocalStorage,
 } from "background/helpers/dataStorage";
 
 import {
@@ -100,9 +100,9 @@ interface KeyPair {
 }
 
 export const popupMessageListener = (request: Request, sessionStore: Store) => {
-  const localStore = dataStorageAccess(localStorage);
+  const localStore = dataStorageAccess(browserLocalStorage);
   const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
-  localKeyStore.configure({ storage: localStorage });
+  localKeyStore.configure({ storage: browserLocalStorage });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
@@ -1022,7 +1022,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const loadSettings = async () => {
     const isDataSharingAllowed =
-      (await localStore.getItem(DATA_SHARING_ID)) || true;
+      (await localStore.getItem(DATA_SHARING_ID)) ?? true;
 
     return {
       isDataSharingAllowed,
@@ -1132,9 +1132,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const addTokenId = async () => {
     const { tokenId } = request;
-    const tokenIdList = JSON.parse(
-      (await localStore.getItem(TOKEN_ID_LIST)) || "{}",
-    );
+    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
@@ -1144,13 +1142,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     accountTokenIdList.push(tokenId);
-    await localStore.setItem(
-      TOKEN_ID_LIST,
-      JSON.stringify({
-        ...tokenIdList,
-        [keyId]: accountTokenIdList,
-      }),
-    );
+    await localStore.setItem(TOKEN_ID_LIST, {
+      ...tokenIdList,
+      [keyId]: accountTokenIdList,
+    });
 
     return { accountTokenIdList };
   };

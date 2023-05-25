@@ -14,10 +14,10 @@ import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
-  localStorage,
+  browserLocalStorage,
 } from "background/helpers/dataStorage";
 
-const localStore = dataStorageAccess(localStorage);
+const localStore = dataStorageAccess(browserLocalStorage);
 
 export const getKeyIdList = async () =>
   (await localStore.getItem(KEY_ID_LIST)) || [];
@@ -64,16 +64,16 @@ export const getIsFuturenet = async () => {
 };
 
 export const getIsMemoValidationEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_MEMO_ID)) || true;
+  (await localStore.getItem(IS_VALIDATING_MEMO_ID)) ?? true;
 
 export const getIsSafetyValidationEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_SAFETY_ID)) || true;
+  (await localStore.getItem(IS_VALIDATING_SAFETY_ID)) ?? true;
 
 export const getIsValidatingSafeAssetsEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_SAFE_ASSETS_ID)) || true;
+  (await localStore.getItem(IS_VALIDATING_SAFE_ASSETS_ID)) ?? true;
 
 export const getIsExperimentalModeEnabled = async () =>
-  (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) || false;
+  (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;
 
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";

@@ -1,3 +1,13 @@
+# Release notes - Wallets - Freighter-5.0.0
+
+### Bug
+
+Migrate to browser.storage
+
+Confirm that users are able to onboard with mnemonic phrase
+
+Update CD deployments for 5.0.0
+
 # Release notes - Wallets - Freighter-4.0.2
 
 ### Bug
