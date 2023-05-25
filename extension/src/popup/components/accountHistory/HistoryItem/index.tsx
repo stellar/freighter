@@ -12,6 +12,7 @@ import {
   formatTokenAmount,
   getAttrsFromSorobanOp,
 } from "popup/helpers/soroban";
+import { formatAmount } from "popup/helpers/formatters";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -136,7 +137,7 @@ export const HistoryItem = ({
     PaymentComponent = (
       <>
         {paymentDifference}
-        {new BigNumber(amount).toFixed(2, 1)} {destAssetCode}
+        {formatAmount(new BigNumber(amount).toFixed(2, 1))} {destAssetCode}
       </>
     );
     IconComponent = isRecipient ? (
