@@ -1,6 +1,6 @@
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import StellarSdk from "stellar-sdk";
-import SorobanSdk from "soroban-client";
+import * as SorobanSdk from "soroban-client";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 

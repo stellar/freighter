@@ -1,5 +1,5 @@
 import StellarSdk from "stellar-sdk";
-import SorobanSdk from "soroban-client";
+import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
 
