@@ -3,7 +3,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import StellarSdk, { Asset } from "stellar-sdk";
-import SorobanClient from "soroban-client";
+import * as SorobanClient from "soroban-client";
 import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
