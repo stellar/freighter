@@ -59,8 +59,8 @@
     ]
   },
   "dependencies": {
-    "@babel/core": "^7.20.5",
     "@actions/core": "^1.10.0",
+    "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.12.1",
     "@babel/plugin-proposal-optional-chaining": "^7.18.9",
     "@babel/preset-env": "^7.11.0",
