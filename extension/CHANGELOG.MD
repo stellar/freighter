@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-5.0.1
+
+### Bug
+
+Soroban Preview Release 9: Update \`soroban-client\` for tx signing
+
 # Release notes - Wallets - Freighter-5.0.0
 
 ### Bug
