@@ -818,7 +818,7 @@ type TxToOp = {
       SorobanClient.Memo<SorobanClient.MemoType>,
       SorobanClient.Operation[]
     >;
-    decoder: (val: Buffer) => string | number;
+    decoder: (xdr: string) => string | number;
   };
 };
 
@@ -894,7 +894,7 @@ export const getSorobanTokenBalance = (
       throw new Error("Invalid response from simulateTransaction");
     }
     const result = results[0];
-    _prev[curr] = decoder(Buffer.from(result.xdr, "base64"));
+    _prev[curr] = decoder(result.xdr);
 
     return _prev;
   }, Promise.resolve({} as SorobanTokenRecord));

@@ -144,7 +144,10 @@ export const getAttrsFromSorobanOp = (
     return null;
   }
 
-  const txAuth = op.auth[0];
+  // disabling op history until we can figure out how to parse the new structure
+  // @ts-ignore
+
+  const txAuth = op.auth;
   if (!txAuth) {
     return null;
   }
