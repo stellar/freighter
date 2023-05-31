@@ -93,14 +93,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             domain: "",
           });
 
-          // disable soroban payment until we can get the new SDK working
-          const disableSorobanPayment = true;
-
-          if (
-            isExperimentalModeEnabled &&
-            sorobanBalances.length &&
-            !disableSorobanPayment
-          ) {
+          if (isExperimentalModeEnabled && sorobanBalances.length) {
             sorobanBalances.forEach(({ symbol, contractId, name }) => {
               // TODO:
               // interestingly, if an ascii value is set for symbol
