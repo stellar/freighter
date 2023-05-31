@@ -94,7 +94,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           });
 
           // disable soroban payment until we can get the new SDK working
-          const disableSorobanPayment = true;
+          const disableSorobanPayment = false;
 
           if (
             isExperimentalModeEnabled &&
