@@ -283,7 +283,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       const sourceAccount = await sorobanServer.getAccount(publicKey);
       const contract = new SorobanClient.Contract(assetAddress);
       const contractOp = contract.call(
-        "xfer",
+        "transfer",
         ...[
           accountIdentifier(publicKey), // from
           accountIdentifier(destination), // to
