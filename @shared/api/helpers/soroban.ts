@@ -1,17 +1,16 @@
 import BigNumber from "bignumber.js";
-import { xdr, Address } from "soroban-client";
+import * as SorobanClient from "soroban-client";
 
 import { I128 } from "./xdr";
 
 /* eslint-disable */
 
 export const accountIdentifier = (account: string) =>
-  new Address(account).toScVal();
+  new SorobanClient.Address(account).toScVal();
 
 // How do we decode these in a more generic way?
-export const decodei128 = (scVal: Buffer) => {
-  const value = xdr.ScVal.fromXDR(scVal);
-
+export const decodei128 = (xdr: string) => {
+  const value = SorobanClient.xdr.ScVal.fromXDR(xdr, "base64");
   try {
     return new I128([
       BigInt(value.i128().lo().low),
@@ -25,13 +24,13 @@ export const decodei128 = (scVal: Buffer) => {
   }
 };
 
-export const decodeBytesN = (scVal: Buffer) => {
-  const val = xdr.ScVal.fromXDR(scVal);
+export const decodeBytesN = (xdr: string) => {
+  const val = SorobanClient.xdr.ScVal.fromXDR(xdr, "base64");
   return val.bytes().toString();
 };
 
-export const decodeScVal = (scVal: Buffer) => {
-  const val = xdr.ScVal.fromXDR(scVal);
+export const decodeScVal = (xdr: string) => {
+  const val = SorobanClient.xdr.ScVal.fromXDR(xdr, "base64");
   return val.u32();
 };
 
@@ -78,7 +77,7 @@ const bigNumberFromBytes = (
   return BigNumber(b.toString()).multipliedBy(sign);
 };
 
-export const numberToI128 = (value: number): xdr.ScVal => {
+export const numberToI128 = (value: number): SorobanClient.xdr.ScVal => {
   const bigValue = BigNumber(value);
   const b: bigint = BigInt(bigValue.toFixed(0));
   const buf = bigintToBuf(b);
@@ -101,16 +100,18 @@ export const numberToI128 = (value: number): xdr.ScVal => {
     padded[0] |= 0x80;
   }
 
-  const hi = new xdr.Uint64(
+  const hi = new SorobanClient.xdr.Int64(
     bigNumberFromBytes(false, ...padded.slice(4, 8)).toNumber(),
     bigNumberFromBytes(false, ...padded.slice(0, 4)).toNumber(),
   );
-  const lo = new xdr.Uint64(
+  const lo = new SorobanClient.xdr.Uint64(
     bigNumberFromBytes(false, ...padded.slice(12, 16)).toNumber(),
     bigNumberFromBytes(false, ...padded.slice(8, 12)).toNumber(),
   );
 
-  return xdr.ScVal.scvI128(new xdr.Int128Parts({ lo, hi }));
+  return SorobanClient.xdr.ScVal.scvI128(
+    new SorobanClient.xdr.Int128Parts({ lo, hi }),
+  );
 };
 
 /* eslint-enable */
