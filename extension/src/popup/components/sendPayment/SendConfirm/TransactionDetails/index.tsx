@@ -299,12 +299,14 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         },
       )
         .addOperation(contractOp)
-        .addMemo(SorobanClient.Memo.text(memo))
-        .setTimeout(180)
-        .build();
+        .setTimeout(180);
+
+      if (memo) {
+        transaction.addMemo(SorobanClient.Memo.text(memo));
+      }
 
       const preparedTransaction = await sorobanServer.prepareTransaction(
-        transaction,
+        transaction.build(),
         networkDetails.networkPassphrase,
       );
 
@@ -366,18 +368,24 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         },
       )
         .addOperation(operation)
-        .addMemo(StellarSdk.Memo.text(memo))
-        .setTimeout(180)
-        .build()
-        .toXDR();
+        .setTimeout(180);
+
+      if (memo) {
+        transactionXDR.addMemo(SorobanClient.Memo.text(memo));
+      }
 
       if (isHardwareWallet) {
-        dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+        dispatch(
+          startHwSign({
+            transactionXDR: transactionXDR.build().toXDR(),
+            shouldSubmit: true,
+          }),
+        );
         return;
       }
       const res = await dispatch(
         signFreighterTransaction({
-          transactionXDR,
+          transactionXDR: transactionXDR.build().toXDR(),
           network: networkDetails.networkPassphrase,
         }),
       );
