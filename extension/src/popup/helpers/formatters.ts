@@ -34,7 +34,7 @@ Determine wether we need to sanitize digits and/or decimals.
 For digits only, compare the previous value with the newly formatted value and move the cursor according to the difference in number of commas, and difference in number of characters in the raw value vs the cleaned/sanitized(even though we filter out anything but numbers, invalid chars still move the cursor).
 If digits & decimals, do previous step on chars before the dot and also account for characters after the dot that are cleaned out but have moved the cursor.
 */
-export const formatAmount = (
+export const formatAmountPreserveCursor = (
   val: string,
   staleVal: string,
   decimals: number = CLASSIC_ASSET_DECIMALS,
@@ -81,4 +81,16 @@ export const formatAmount = (
     amount: decimal.format(Number(cleaned.slice(0, maxDigits))).toString(),
     newCursor: cursorPosition + commaDiff - cleanedDiff,
   };
+};
+
+export const formatAmount = (val: string) => {
+  const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
+  const [wholeVal, remainderVal] = val.split(".");
+  const formattedWholeVal = decimal.format(Number(wholeVal)).toString();
+
+  if (remainderVal) {
+    return `${formattedWholeVal}.${remainderVal}`;
+  }
+
+  return formattedWholeVal;
 };

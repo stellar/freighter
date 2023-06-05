@@ -6,7 +6,7 @@ describe("formatAmount", () => {
   it("should format a value", () => {
     const value = "1000.0001000";
     const formatted = "1,000.0001000";
-    expect(formatAmount(value, value, 7).amount).toBe(formatted);
+    expect(formatAmount(value)).toBe(formatted);
   });
 
   it("should format a token value", () => {

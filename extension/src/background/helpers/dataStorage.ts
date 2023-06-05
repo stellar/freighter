@@ -1,7 +1,6 @@
 import browser from "webextension-polyfill";
 
 import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
-
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,

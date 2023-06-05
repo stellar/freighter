@@ -36,6 +36,7 @@ import IconFail from "popup/assets/icon-fail.svg";
 import "./styles.scss";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { formatAmount } from "popup/helpers/formatters";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -167,7 +168,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         {t("Successfully")} {isSwap ? t("swapped") : t("sent")}
       </div>
       <div className="SubmitResult__amount">
-        {amount} {sourceAsset.code}
+        {formatAmount(amount)} {sourceAsset.code}
       </div>
       <div className="SubmitResult__icon SubmitResult__success">
         <Icon.ArrowDownCircle />

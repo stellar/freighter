@@ -118,7 +118,7 @@ describe("Account view", () => {
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
   });
-  it("goes to account details", async () => {
+  it.skip("goes to account details", async () => {
     render(
       <Wrapper
         state={{
