@@ -1,3 +1,17 @@
+# Release notes - Wallets - Freighter-5.0.3
+
+### Bug
+
+Reset wordlist state after incorrect phrase
+
+Should not use an empty memo when the user does not provide one
+
+Should not handle 504 as tx failure
+
+### Story
+
+Add commas to balances on Account
+
 # Release notes - Wallets - Freighter-5.0.1
 
 ### Bug
