@@ -205,8 +205,8 @@ const HomeRoute = () => {
   switch (applicationState) {
     case APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED:
       return <Redirect to={ROUTES.account} />;
-    case APPLICATION_STATE.PASSWORD_CREATED ||
-      APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
+    case APPLICATION_STATE.PASSWORD_CREATED:
+    case APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
       openTab(newTabHref(ROUTES.mnemonicPhrase));
       return <Loading />;
     default:

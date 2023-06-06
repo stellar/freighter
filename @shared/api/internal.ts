@@ -547,7 +547,7 @@ export const signFreighterSorobanTransaction = async ({
   return { signedTransaction };
 };
 
-export const submitFreighterTransaction = async ({
+export const submitFreighterTransaction = ({
   signedXDR,
   networkDetails,
 }: {
@@ -559,8 +559,25 @@ export const submitFreighterTransaction = async ({
     networkDetails.networkPassphrase,
   );
   const server = stellarSdkServer(networkDetails.networkUrl);
+  const submitTx = async (): Promise<any> => {
+    let submittedTx;
 
-  return await server.submitTransaction(tx);
+    try {
+      submittedTx = await server.submitTransaction(tx);
+    } catch (e) {
+      if (e.response.status === 504) {
+        // in case of 504, keep retrying this tx until submission succeeds or we get a different error
+        // https://developers.stellar.org/api/errors/http-status-codes/horizon-specific/timeout
+        // https://developers.stellar.org/docs/encyclopedia/error-handling
+        return submitTx();
+      }
+      throw e;
+    }
+
+    return submittedTx;
+  };
+
+  return submitTx();
 };
 
 export const submitFreighterSorobanTransaction = async ({

@@ -67,6 +67,7 @@ import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 import "./styles.scss";
 import { parseTokenAmount } from "popup/helpers/soroban";
 import { TRANSACTION_WARNING } from "constants/transaction";
+import { formatAmount } from "popup/helpers/formatters";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -105,7 +106,7 @@ const TwoAssetCard = ({
           <ScamAssetIcon isScamAsset={isSourceAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
-          {sourceAmount} {sourceAsset.code}
+          {formatAmount(sourceAmount)} {sourceAsset.code}
         </div>
       </div>
       <div className="TwoAssetCard__arrow-icon">
@@ -122,7 +123,7 @@ const TwoAssetCard = ({
           <ScamAssetIcon isScamAsset={isDestAssetScam} />
         </div>
         <div className="TwoAssetCard__row__right">
-          {new BigNumber(destAmount).toFixed()} {destAsset.code}
+          {formatAmount(new BigNumber(destAmount).toFixed())} {destAsset.code}
         </div>
       </div>
     </div>
@@ -299,12 +300,14 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         },
       )
         .addOperation(contractOp)
-        .addMemo(SorobanClient.Memo.text(memo))
-        .setTimeout(180)
-        .build();
+        .setTimeout(180);
+
+      if (memo) {
+        transaction.addMemo(SorobanClient.Memo.text(memo));
+      }
 
       const preparedTransaction = await sorobanServer.prepareTransaction(
-        transaction,
+        transaction.build(),
         networkDetails.networkPassphrase,
       );
 
@@ -366,18 +369,24 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         },
       )
         .addOperation(operation)
-        .addMemo(StellarSdk.Memo.text(memo))
-        .setTimeout(180)
-        .build()
-        .toXDR();
+        .setTimeout(180);
+
+      if (memo) {
+        transactionXDR.addMemo(SorobanClient.Memo.text(memo));
+      }
 
       if (isHardwareWallet) {
-        dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+        dispatch(
+          startHwSign({
+            transactionXDR: transactionXDR.build().toXDR(),
+            shouldSubmit: true,
+          }),
+        );
         return;
       }
       const res = await dispatch(
         signFreighterTransaction({
-          transactionXDR,
+          transactionXDR: transactionXDR.build().toXDR(),
           network: networkDetails.networkPassphrase,
         }),
       );
