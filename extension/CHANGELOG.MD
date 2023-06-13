@@ -1,3 +1,11 @@
+# Release notes - Wallets - Freighter-5.0.4
+
+### Bug
+
+Users experiencing disabled Send button when confirming payment details
+
+Soroban Preview 9: parse tx history using new operation format
+
 # Release notes - Wallets - Freighter-5.0.3
 
 ### Bug
