@@ -372,7 +372,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         .setTimeout(180);
 
       if (memo) {
-        transactionXDR.addMemo(SorobanClient.Memo.text(memo));
+        transactionXDR.addMemo(StellarSdk.Memo.text(memo));
       }
 
       if (isHardwareWallet) {
