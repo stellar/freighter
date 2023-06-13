@@ -47,12 +47,12 @@ export const getIsPayment = (type: Horizon.OperationResponseType) =>
     Horizon.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
 
-export const getIsSorobanTransfer = (
+export const getIsSupportedSorobanOp = (
   operation: HorizonOperation,
   networkDetails: NetworkDetails,
 ) => {
   const attrs = getAttrsFromSorobanOp(operation, networkDetails);
-  return !!attrs && attrs.fnName === SorobanTokenInterface.xfer;
+  return !!attrs && Object.values(SorobanTokenInterface).includes(attrs.fnName);
 };
 
 export const getIsSwap = (operation: HorizonOperation) =>
@@ -114,7 +114,7 @@ export const sortOperationsByAsset = ({
       });
     }
 
-    if (getIsSorobanTransfer(op, networkDetails)) {
+    if (getIsSupportedSorobanOp(op, networkDetails)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
         const asset = getAssetFromCanonical(assetKey);
         const attrs = getAttrsFromSorobanOp(op, networkDetails);

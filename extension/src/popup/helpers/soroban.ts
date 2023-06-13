@@ -14,7 +14,8 @@ interface RootInvocation {
 }
 
 export enum SorobanTokenInterface {
-  xfer = "xfer",
+  transfer = "transfer",
+  mint = "mint",
 }
 
 // All assets on the classic side have 7 decimals
@@ -102,24 +103,31 @@ export const getTokenBalance = (
   );
 };
 
-export const contractIdAttrToHex = (byteArray: Buffer) =>
-  byteArray.reduce(
-    (prev, curr) =>
-      // eslint-disable-next-line
-      prev + ("0" + (curr & 0xff).toString(16)).slice(-2),
-    "",
-  );
+export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
+  let amount;
+  let from;
+  let to;
+  switch (fnName) {
+    case SorobanTokenInterface.transfer:
+      from = SorobanClient.StrKey.encodeEd25519PublicKey(
+        args[0].address().accountId().ed25519(),
+      );
+      to = SorobanClient.StrKey.encodeEd25519PublicKey(
+        args[1].address().accountId().ed25519(),
+      );
+      amount = args[2].i128().lo().low;
+      break;
+    case SorobanTokenInterface.mint:
+      to = SorobanClient.StrKey.encodeEd25519PublicKey(
+        args[0].address().accountId().ed25519(),
+      );
+      amount = args[1].i128().lo().low;
+      break;
+    default:
+      amount = 0;
+  }
 
-export const getXferArgs = (
-  args: SorobanClient.xdr.ScVal[],
-): Record<string, string | number> => {
-  // xfer(to, from, amount)
-  const amount = args[2];
-  const value = amount.i128().lo().low;
-
-  return {
-    amount: value,
-  };
+  return { from, to, amount };
 };
 
 export const getAttrsFromSorobanOp = (
@@ -138,29 +146,37 @@ export const getAttrsFromSorobanOp = (
     SorobanClient.Operation.InvokeHostFunction[]
   >;
 
-  const op = txEnvelope.operations[0]; // only one op per tx in Soroban right now
+  const op = txEnvelope.operations[0].functions[0]; // only one op per tx in Soroban right now
 
   if (!op) {
     return null;
   }
 
-  // disabling op history until we can figure out how to parse the new structure
-  // @ts-ignore
+  const txAuth = op.auth();
 
-  const txAuth = op.auth;
-  if (!txAuth) {
+  if (!txAuth.length) {
     return null;
   }
 
   // TODO: figure out how to better work with the AuthorizedInvocation interface
   const {
     _attributes: attrs,
-  } = (txAuth.rootInvocation() as unknown) as RootInvocation;
-  const { amount } = getXferArgs(attrs.args);
+  } = (txAuth[0].rootInvocation() as unknown) as RootInvocation;
+
+  const fnName = attrs.functionName.toString();
+
+  if (
+    fnName !== SorobanTokenInterface.transfer &&
+    fnName !== SorobanTokenInterface.mint
+  ) {
+    return null;
+  }
+
+  const opArgs = getOpArgs(fnName, attrs.args);
 
   return {
-    fnName: new TextDecoder().decode(attrs.functionName),
-    contractId: contractIdAttrToHex(attrs.contractId),
-    amount,
+    fnName,
+    contractId: attrs.contractId.toString("hex"),
+    ...opArgs,
   };
 };
