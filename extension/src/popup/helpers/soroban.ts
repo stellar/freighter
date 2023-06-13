@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import * as SorobanClient from "soroban-client";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
+import { valueToI128String } from "@shared/api/helpers/soroban";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 interface RootInvocation {
@@ -115,7 +116,7 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
       to = SorobanClient.StrKey.encodeEd25519PublicKey(
         args[1].address().accountId().ed25519(),
       );
-      amount = args[2].i128().lo().low;
+      amount = valueToI128String(args[2]);
       break;
     case SorobanTokenInterface.mint:
       to = SorobanClient.StrKey.encodeEd25519PublicKey(
