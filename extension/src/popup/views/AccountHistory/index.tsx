@@ -19,10 +19,14 @@ import {
 } from "popup/ducks/settings";
 import {
   getIsPayment,
-  getIsSorobanTransfer,
+  getIsSupportedSorobanOp,
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
+import {
+  getAttrsFromSorobanOp,
+  SorobanTokenInterface,
+} from "popup/helpers/soroban";
 
 import {
   historyItemDetailViewProps,
@@ -95,7 +99,7 @@ export const AccountHistory = () => {
   useEffect(() => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
       // TODO: add mint and other common token interactions
-      getIsSorobanTransfer(operation, networkDetails);
+      getIsSupportedSorobanOp(operation, networkDetails);
 
     setIsLoading(true);
     const createSegments = (
@@ -114,7 +118,9 @@ export const AccountHistory = () => {
       };
       _operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
-        const isSorobanXfer = getIsSorobanTransfer(operation, networkDetails);
+        const isSorobanXfer =
+          getAttrsFromSorobanOp(operation, networkDetails)?.fnName ===
+          SorobanTokenInterface.transfer;
         const isSwap = getIsSwap(operation);
         const isCreateExternalAccount =
           operation.type === Horizon.OperationResponseType.createAccount &&
