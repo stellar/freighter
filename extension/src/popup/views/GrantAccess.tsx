@@ -28,10 +28,9 @@ export const GrantAccess = () => {
   const dispatch = useDispatch();
   const [isGranting, setIsGranting] = useState(false);
 
-  const {
-    tab: { title = "" },
-    url,
-  } = parsedSearchParam(location.search);
+  const { tab, url } = parsedSearchParam(location.search);
+
+  const title = tab && tab.title ? tab.title : "";
 
   const domain = getUrlHostname(url);
   const publicKey = useSelector(publicKeySelector);
