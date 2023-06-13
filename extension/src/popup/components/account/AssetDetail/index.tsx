@@ -9,7 +9,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
-  getIsSorobanTransfer,
+  getIsSupportedSorobanOp,
   getIsSwap,
   getStellarExpertUrl,
   getRawBalance,
@@ -239,7 +239,7 @@ export const AssetDetail = ({
                   const tokenBalances =
                     balance &&
                     "contractId" in balance &&
-                    getIsSorobanTransfer(operation, networkDetails)
+                    getIsSupportedSorobanOp(operation, networkDetails)
                       ? [balance]
                       : [];
                   return (
