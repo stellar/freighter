@@ -8,16 +8,19 @@ import { I128 } from "./xdr";
 export const accountIdentifier = (account: string) =>
   new SorobanClient.Address(account).toScVal();
 
+export const valueToI128String = (value: SorobanClient.xdr.ScVal) =>
+  new I128([
+    BigInt(value.i128().lo().low),
+    BigInt(value.i128().lo().high),
+    BigInt(value.i128().hi().low),
+    BigInt(value.i128().hi().high),
+  ]).toString();
+
 // How do we decode these in a more generic way?
 export const decodei128 = (xdr: string) => {
   const value = SorobanClient.xdr.ScVal.fromXDR(xdr, "base64");
   try {
-    return new I128([
-      BigInt(value.i128().lo().low),
-      BigInt(value.i128().lo().high),
-      BigInt(value.i128().hi().low),
-      BigInt(value.i128().hi().high),
-    ]).toString();
+    return valueToI128String(value);
   } catch (error) {
     console.log(error);
     return 0;

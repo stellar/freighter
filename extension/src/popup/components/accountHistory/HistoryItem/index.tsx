@@ -11,6 +11,7 @@ import { emitMetric } from "helpers/metrics";
 import {
   formatTokenAmount,
   getAttrsFromSorobanOp,
+  SorobanTokenInterface,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
 
@@ -174,7 +175,6 @@ export const HistoryItem = ({
       operationText: `-${new BigNumber(startingBalance)} XLM`,
     };
   } else if (isSorobanTx) {
-    const { transaction_attr: transactionAttrs } = operation;
     const attrs = getAttrsFromSorobanOp(operation, networkDetails);
     const token = tokenBalances.find(
       (balance) => attrs && balance.contractId === attrs.contractId,
@@ -187,12 +187,46 @@ export const HistoryItem = ({
         headerTitle: t("Transaction"),
         operationText: operationString,
       };
-    } else {
+    } else if (attrs.fnName === SorobanTokenInterface.mint) {
+      // handle a mint operation, which is similar to a Sent Payment, but with subtle differences
       const formattedTokenAmount = formatTokenAmount(
         new BigNumber(attrs.amount),
         Number(token.decimals),
       );
-      isRecipient = transactionAttrs.source_account !== publicKey;
+      PaymentComponent = (
+        <>
+          {formattedTokenAmount} {token.symbol}
+        </>
+      );
+      IconComponent = <Icon.ArrowUp className="HistoryItem__icon--sent" />;
+
+      // specify that this is a mint operation
+      dateText = `${t("Mint")} \u2022 ${date}`;
+      rowText = token.symbol;
+      transactionDetailProps = {
+        ...transactionDetailProps,
+        operation: {
+          ...transactionDetailProps.operation,
+          from: attrs.from,
+          to: attrs.to,
+        },
+        // we don't use a +/- as mint does not negatively affect balance
+        headerTitle: `${t("Mint")} ${token.symbol}`,
+        // manually set `isPayment` now that we've passed the above `isPayment` conditional
+        isPayment: true,
+        isRecipient: false,
+        operationText: `${formattedTokenAmount} ${token.symbol}`,
+      };
+    } else {
+      // otherwise handle as a token payment
+      const formattedTokenAmount = formatTokenAmount(
+        new BigNumber(attrs.amount),
+        Number(token.decimals),
+      );
+
+      // we're not getting token received ops from Horizon,
+      // but we'll check to make sure we're not the one sending the payment
+      isRecipient = attrs.from !== publicKey;
       paymentDifference = isRecipient ? "+" : "-";
       PaymentComponent = (
         <>
@@ -205,10 +239,17 @@ export const HistoryItem = ({
       ) : (
         <Icon.ArrowUp className="HistoryItem__icon--sent" />
       );
-      rowText = token.symbol;
       dateText = `${isRecipient ? t("Received") : t("Sent")} \u2022 ${date}`;
+      rowText = token.symbol;
       transactionDetailProps = {
         ...transactionDetailProps,
+        operation: {
+          ...transactionDetailProps.operation,
+          from: attrs.from,
+          to: attrs.to,
+        },
+        // manually set `isPayment` now that we've passed the above `isPayment` conditional
+        isPayment: true,
         isRecipient,
         headerTitle: `${isRecipient ? t("Received") : t("Sent")} ${
           token.symbol
