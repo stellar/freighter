@@ -1,7 +1,10 @@
 const PLAYGROUND_BASE_PATH = "playground";
 const playgroundPaths = [
   "isConnected",
+  "isAllowed",
+  "setAllowed",
   "getPublicKey",
+  "getUserInfo",
   "getNetwork",
   "getNetworkDetails",
   "signTransaction",
