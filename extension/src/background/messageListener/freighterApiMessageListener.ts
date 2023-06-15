@@ -294,13 +294,20 @@ export const freighterApiMessageListener = (
     });
   };
 
-  const requestUserInfo = () => {
+  const requestUserInfo = async () => {
     const publicKey = publicKeySelector(sessionStore.getState());
+    const isAllowed = await isSenderAllowed({ sender });
+    const notAllowedUserInfo = {
+      publicKey: "",
+    };
+    const userInfo = isAllowed
+      ? {
+          publicKey,
+        }
+      : notAllowedUserInfo;
 
     return {
-      userInfo: {
-        publicKey,
-      },
+      userInfo,
     };
   };
 
