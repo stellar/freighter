@@ -15,8 +15,6 @@ export const GetUserInfoDemo = () => {
       error = e;
     }
 
-    console.log(userInfo);
-
     setUserInfoResult(userInfo || error);
   };
 

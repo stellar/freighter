@@ -39,6 +39,36 @@ if (await isConnected()) {
 }
 ```
 
+### isAllowed
+
+#### `isAllowed() -> <Promise<boolean>>`
+
+This function is useful for determining if a user has previously authorized your app to receive data from Freighter.
+
+```javascript
+import { isAllowed } from "@stellar/freighter-api";
+
+if (await isAllowed()) {
+  alert("User has allowed your app!");
+}
+```
+
+### setAllowed
+
+#### `setAllowed() -> <Promise<boolean>>`
+
+If a user has never interacted with your app before, this function will prompt the user to provide your app privileges to receive user data. If and when the user accepts, this function will resolve with a boolean of `true` indicating the app is now on the extension's "Allow list". This means the extension can immediately provide user data without any user action.
+
+```javascript
+import { setAllowed } from "@stellar/freighter-api";
+
+const isAllowed = await setAllowed();
+
+if (isAllowed) {
+  alert("Successfully added the app to Freighter's Allow List");
+}
+```
+
 ### getPublicKey
 
 #### `getPublicKey() -> <Promise<string>>`
@@ -76,6 +106,62 @@ const retrievePublicKey = async () => {
 };
 
 const result = retrievePublicKey();
+```
+
+### getUserInfo
+
+#### `getUserInfo() -> <Promise<{ publicKey: string }>>`
+
+Similar to `getPublicKey` above, this will transmit user data from Freighter to an authorized app.
+
+_NOTE:_ An important difference between `getUserInfo` and `getPublicKey` is that `getPublicKey` will prompt a user to allow authorization if they had not previously done so. `getUserInfo` will _not_ prompt the user. If your app has not been authorized, or if a user needs to authenticate inside of Freighter, you will simply receive no data. Use with caution as you may need to use other checks to ensure a good UX. See below for an ecample
+
+```javascript
+import {
+  isConnected,
+  isAllowed,
+  setAllowed,
+  getUserInfo,
+  signTransaction,
+} from "@stellar/freighter-api";
+
+if (await isConnected()) {
+  alert("User has Freighter!");
+}
+
+const retrieveUserInfo = async () => {
+  let userInfo = { publicKey: "" };
+  let error = "";
+
+  try {
+    userInfo = await getUserInfo();
+  } catch (e) {
+    error = e;
+  }
+
+  if (error) {
+    return error;
+  }
+
+  if (!userInfo.publicKey) {
+    // we didn't get anything back. Maybe the app hasn't been authorixed?
+
+    const isAllowed = await isAllowed();
+
+    if (!isAllowed) {
+      // oh, we forgot to make sure the app is allowed. Let's do that now
+      await setAllowed();
+
+      // now, let's try getting that user info again
+      // it should work now that this app is "allowed"
+      userInfo = await getUserInfo();
+    }
+  }
+
+  return userInfo.publicKey;
+};
+
+const result = retrieveUserInfo();
 ```
 
 ### getNetwork
