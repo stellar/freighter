@@ -254,12 +254,65 @@ export const freighterApiMessageListener = (
 
   const requestConnectionStatus = () => ({ isConnected: true });
 
+  const requestAllowedStatus = async () => {
+    const isAllowed = await isSenderAllowed({ sender });
+
+    return { isAllowed };
+  };
+
+  const setAllowedStatus = async () => {
+    const isAllowed = await isSenderAllowed({ sender });
+
+    const { tab, url: tabUrl = "" } = sender;
+
+    if (isAllowed) {
+      // okay, the requester checks out
+      return { isAllowed };
+    }
+
+    // otherwise, we need to confirm either url or password. Maybe both
+    const encodeOrigin = encodeObject({ tab, url: tabUrl });
+
+    browser.windows.create({
+      url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
+      ...WINDOW_SETTINGS,
+    });
+
+    return new Promise((resolve) => {
+      const response = async (url?: string) => {
+        // queue it up, we'll let user confirm the url looks okay and then we'll say it's okay
+        if (url === tabUrl) {
+          const isAllowedResponse = await isSenderAllowed({ sender });
+
+          resolve({ isAllowed: isAllowedResponse });
+        }
+
+        resolve({ error: "User declined access" });
+      };
+
+      responseQueue.push(response);
+    });
+  };
+
+  const requestUserInfo = () => {
+    const publicKey = publicKeySelector(sessionStore.getState());
+
+    return {
+      userInfo: {
+        publicKey,
+      },
+    };
+  };
+
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
     [EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS]: requestConnectionStatus,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_ALLOWED_STATUS]: requestAllowedStatus,
+    [EXTERNAL_SERVICE_TYPES.SET_ALLOWED_STATUS]: setAllowedStatus,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_USER_INFO]: requestUserInfo,
   };
 
   return messageResponder[request.type]();

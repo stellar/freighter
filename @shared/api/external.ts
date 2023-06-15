@@ -1,5 +1,6 @@
 import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { sendMessageToContentScript } from "./helpers/extensionMessaging";
+import { UserInfo } from "./types";
 
 export const requestPublicKey = async (): Promise<string> => {
   let response = { publicKey: "", error: "" };
@@ -131,4 +132,60 @@ export const requestConnectionStatus = async (): Promise<boolean> => {
   }
 
   return response.isConnected;
+};
+
+export const requestAllowedStatus = async (): Promise<boolean> => {
+  let response = {
+    isAllowed: false,
+  };
+
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_ALLOWED_STATUS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response.isAllowed;
+};
+
+export const setAllowedStatus = async (): Promise<boolean> => {
+  let response = {
+    isAllowed: false,
+    error: "",
+  };
+
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.SET_ALLOWED_STATUS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const { isAllowed, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return isAllowed;
+};
+
+export const requestUserInfo = async (): Promise<UserInfo> => {
+  let response = { userInfo: { publicKey: "" }, error: "" };
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_USER_INFO,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const { userInfo, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return userInfo;
 };
