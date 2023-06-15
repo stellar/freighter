@@ -19,6 +19,10 @@ export enum SorobanTxStatus {
   SUCCESS = "success",
 }
 
+export interface UserInfo {
+  publicKey: string;
+}
+
 export interface Response {
   error: string;
   messagedId: number;
@@ -65,6 +69,8 @@ export interface Response {
   tokenId: string;
   tokenIdList: string[];
   isConnected: boolean;
+  isAllowed: boolean;
+  userInfo: UserInfo;
 }
 
 export interface BlockedDomains {
