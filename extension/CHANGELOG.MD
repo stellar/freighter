@@ -1,3 +1,24 @@
+# Release notes - Wallets - Freighter-5.1.1
+
+### Bug
+
+freighter-api's getUserInfo doesn't check if dapp is on allowlist before
+transmitting
+
+# Release notes - Wallets - Freighter-5.1.0
+
+### Story
+
+Let dapps know if it is on Freighter's Allow List
+
+freighter-api: add ability to request public key without prompting a user
+
+# Release notes - Wallets - Freighter-5.0.5
+
+### Bug
+
+Dead screen when api call requires a user login through external window.
+
 # Release notes - Wallets - Freighter-5.0.4
 
 ### Bug
