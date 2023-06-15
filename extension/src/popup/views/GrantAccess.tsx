@@ -56,7 +56,9 @@ export const GrantAccess = () => {
         <ModalInfo
           domain={domain}
           domainTitle={title}
-          subject={`${t("This website wants to know your public key")}:`}
+          subject={`${t(
+            "This website wants to know data about your account",
+          )}:`}
         >
           <KeyIdenticon publicKey={publicKey} />
         </ModalInfo>
