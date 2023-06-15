@@ -114,7 +114,7 @@ const result = retrievePublicKey();
 
 Similar to `getPublicKey` above, this will transmit user data from Freighter to an authorized app.
 
-_NOTE:_ An important difference between `getUserInfo` and `getPublicKey` is that `getPublicKey` will prompt a user to allow authorization if they had not previously done so. `getUserInfo` will _not_ prompt the user. If your app has not been authorized, or if a user needs to authenticate inside of Freighter, you will simply receive no data. Use with caution as you may need to use other checks to ensure a good UX. See below for an ecample
+_NOTE:_ An important difference between `getUserInfo` and `getPublicKey` is that `getPublicKey` will prompt a user to allow authorization if they had not previously done so. `getUserInfo` will _not_ prompt the user. If your app has not been authorized, or if a user needs to authenticate inside of Freighter, you will simply receive no data. Use with caution as you may need to use other checks to ensure a good UX. See below for an example
 
 ```javascript
 import {
