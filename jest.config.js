@@ -1,6 +1,6 @@
 const esModules = ["@stellar/wallet-sdk"];
 
-module.exports = {
+const jsdomTests = {
   rootDir: __dirname,
   roots: ["./", "./extension", "./@shared/api", "./@stellar/freighter-api"],
   collectCoverageFrom: ["src/**/*.{ts,tsx,mjs}"],
@@ -27,4 +27,17 @@ module.exports = {
   moduleFileExtensions: ["js", "jsx", "json", "node", "mjs", "ts", "tsx"],
   moduleDirectories: ["node_modules", "<rootDir>/extension/src", "<rootDir>/."],
   testEnvironment: "jsdom",
+};
+
+module.exports = {
+  projects: [
+    {
+      displayName: "jsdom",
+      ...jsdomTests,
+    },
+    {
+      displayName: "node",
+      testMatch: ["<rootDir>/testNodeCompat.js"],
+    },
+  ],
 };
