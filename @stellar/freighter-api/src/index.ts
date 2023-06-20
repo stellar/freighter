@@ -7,6 +7,8 @@ import { isAllowed } from "./isAllowed";
 import { setAllowed } from "./setAllowed";
 import { getUserInfo } from "./getUserInfo";
 
+export const isBrowser = typeof window !== "undefined";
+
 export {
   getPublicKey,
   signTransaction,
