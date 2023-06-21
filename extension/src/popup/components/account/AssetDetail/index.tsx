@@ -87,7 +87,6 @@ export const AssetDetail = ({
           Number(balance.decimals),
         )
       : (balance && new BigNumber(balance?.total).toString()) || "0";
-  const balanceTotal = `${total} ${canonical.code}`;
 
   const balanceAvailable = getAvailableBalance({
     accountBalances,
@@ -153,7 +152,7 @@ export const AssetDetail = ({
             className="AssetDetail__total__copy"
             data-testid="asset-detail-available-copy"
           >
-            {formatAmount(balanceTotal)}
+            {formatAmount(total)} {canonical.code}
           </div>
           <div className="AssetDetail__total__network">
             <AssetNetworkInfo
@@ -272,12 +271,16 @@ export const AssetDetail = ({
                 <img src={StellarLogo} alt="Network icon" />{" "}
                 <div>{canonical.code}</div>
               </div>
-              <div>{formatAmount(balanceTotal)}</div>
+              <div>
+                {formatAmount(total)} {canonical.code}
+              </div>
             </div>
             <div className="AssetDetail__info-modal__available-box">
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Total Balance")}</div>
-                <div>{formatAmount(balanceTotal)}</div>
+                <div>
+                  {formatAmount(total)} {canonical.code}
+                </div>
               </div>
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Reserved Balance*")}</div>
