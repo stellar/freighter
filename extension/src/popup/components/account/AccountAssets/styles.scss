@@ -26,6 +26,8 @@ $loader-light-color: #444961;
 
     &--lp-share,
     &--soroban-token {
+      height: 32px;
+      width: 32px;
       background: var(--pal-background-secondary);
       border-radius: 2rem;
       display: flex;
