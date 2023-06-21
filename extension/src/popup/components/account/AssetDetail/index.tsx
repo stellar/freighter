@@ -87,13 +87,15 @@ export const AssetDetail = ({
           Number(balance.decimals),
         )
       : (balance && new BigNumber(balance?.total).toString()) || "0";
-  const balanceTotal = `${total} ${canonical.code}`;
 
   const balanceAvailable = getAvailableBalance({
     accountBalances,
     selectedAsset,
     subentryCount,
   });
+
+  const availableTotal = `${formatAmount(balanceAvailable)} ${canonical.code}`;
+  const displayTotal = `${formatAmount(total)} ${canonical.code}`;
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
@@ -138,7 +140,7 @@ export const AssetDetail = ({
         {isNative ? (
           <div className="AssetDetail__available">
             <span className="AssetDetail__available__copy">
-              {formatAmount(balanceAvailable)} {canonical.code} {t("available")}
+              {availableTotal} {t("available")}
             </span>
             <span
               className="AssetDetail__available__icon"
@@ -153,7 +155,7 @@ export const AssetDetail = ({
             className="AssetDetail__total__copy"
             data-testid="asset-detail-available-copy"
           >
-            {formatAmount(balanceTotal)}
+            {displayTotal}
           </div>
           <div className="AssetDetail__total__network">
             <AssetNetworkInfo
@@ -272,12 +274,12 @@ export const AssetDetail = ({
                 <img src={StellarLogo} alt="Network icon" />{" "}
                 <div>{canonical.code}</div>
               </div>
-              <div>{formatAmount(balanceTotal)}</div>
+              <div>{displayTotal}</div>
             </div>
             <div className="AssetDetail__info-modal__available-box">
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Total Balance")}</div>
-                <div>{formatAmount(balanceTotal)}</div>
+                <div>{displayTotal}</div>
               </div>
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Reserved Balance*")}</div>
@@ -297,9 +299,7 @@ export const AssetDetail = ({
               </div>
               <div className="AssetDetail__info-modal__total-available-row">
                 <div>{t("Total Available")}</div>
-                <div>
-                  {formatAmount(balanceAvailable)} {canonical.code}
-                </div>
+                <div>{availableTotal}</div>
               </div>
             </div>
             <div className="AssetDetail__info-modal__footnote">
