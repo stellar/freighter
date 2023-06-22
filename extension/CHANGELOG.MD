@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-5.1.2
+
+### Bug
+
+0 decimal tokens not formatted correctly
+
 # Release notes - Wallets - Freighter-5.1.1
 
 ### Bug
