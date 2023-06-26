@@ -1,7 +1,8 @@
-name: Test and build
+name: test
 on: [pull_request]
 jobs:
   test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
