@@ -38,7 +38,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -m "Add translations" -a
-          git push
+          git push origin HEAD:${{ github.head_ref }}
       # - name: Push changes
       #   if: steps.verify_diff.outputs.new_translations_exist == 'true'
       #   uses: ad-m/github-push-action@master
