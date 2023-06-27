@@ -40,6 +40,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git commit -m "Add translations" -a
       - name: Push changes
+        if: steps.verify_diff.outputs.new_translations_exist == 'true'
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
