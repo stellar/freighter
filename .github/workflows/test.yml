@@ -26,8 +26,7 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: "16.14.0"
-      - run: |
-        yarn && yarn build:freighter-api && yarn build:extension:translations
+      - run: yarn && yarn build:freighter-api && yarn build:extension:translations
       # - name: Verify diff
       #   id: verify_diff
       #   run: |
