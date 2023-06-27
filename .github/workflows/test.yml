@@ -33,12 +33,12 @@ jobs:
         id: verify_diff
         run: |
           git diff --quiet  || echo "::set-output name=new_translations_exist::true"
-      # - name: Commit files
-      #   if: steps.verify_diff.outputs.new_translations_exist == 'true'
-      #   run: |
-      #     git config --local user.email "action@github.com"
-      #     git config --local user.name "GitHub Action"
-      #     git commit -m "Add translations" -a
+      - name: Commit files
+        if: steps.verify_diff.outputs.new_translations_exist == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Add translations" -a
       # - name: Push changes
       #   uses: ad-m/github-push-action@master
       #   with:
