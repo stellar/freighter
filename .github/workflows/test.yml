@@ -1,4 +1,4 @@
-name: test
+name: tesst
 on: [pull_request]
 jobs:
   test:
