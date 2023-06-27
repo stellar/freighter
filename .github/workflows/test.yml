@@ -1,8 +1,8 @@
-name: Test
+name: Translate and Test
 on: [pull_request]
 jobs:
-  test-ci:
-    name: test
+  build-translations:
+    name: Build translation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -11,4 +11,8 @@ jobs:
           node-version: 16.14.0
       - run: yarn install
       - run: yarn build:freighter-api
+  test-ci:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
       - run: yarn test:ci
