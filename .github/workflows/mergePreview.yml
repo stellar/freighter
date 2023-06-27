@@ -1,19 +1,19 @@
-name: Cleanup extension PR preview on merge
+# name: Cleanup extension PR preview on merge
 
-on:
-  push:
-    branches:
-      - master
+# on:
+#   push:
+#     branches:
+#       - master
 
-jobs:
-  merge:
-    runs-on: ubuntu-latest
+# jobs:
+#   merge:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Delete Release
-        uses: dev-drprasad/delete-tag-and-release@v0.2.1
-        with:
-          delete_release: true
-          tag_name: pr-release-${{ github.event.number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#     steps:
+#       - name: Delete Release
+#         uses: dev-drprasad/delete-tag-and-release@v0.2.1
+#         with:
+#           delete_release: true
+#           tag_name: pr-release-${{ github.event.number }}
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
