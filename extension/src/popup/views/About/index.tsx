@@ -41,7 +41,7 @@ export const About = () => {
         <AboutLink url="freighter.app" />
         <AboutLink url="stellar.org" />
         <AboutLink url="stellar.org/privacy-policy">
-          {t("Privacy Policy")}
+          {t("Privcy Policy")}
         </AboutLink>
         <AboutLink url="stellar.org/terms-of-service">
           {t("Terms of Service")}
