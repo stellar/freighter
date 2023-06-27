@@ -91,7 +91,7 @@ describe("Account view", () => {
     expect(screen.getByTestId("account-header")).toBeDefined();
     const accountNodes = screen.getAllByTestId("account-list-item");
     expect(accountNodes.length).toEqual(3);
-    expect(screen.getAllByText("Account 1")).toBeDefined();
+    expect(screen.getAllByText("Account 5")).toBeDefined();
   });
   it("displays balances", async () => {
     render(
