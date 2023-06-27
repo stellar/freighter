@@ -20,7 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          persist-credentials: false
           fetch-depth: 0
       - uses: actions/setup-node@v1
         with:
@@ -34,7 +33,6 @@ jobs:
           git diff --quiet  || echo "::set-output name=new_translations_exist::true"
       - name: Commit files
         if: steps.verify_diff.outputs.new_translations_exist == 'true'
-        uses: actions/checkout@v3
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
