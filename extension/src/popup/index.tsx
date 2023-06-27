@@ -6,7 +6,7 @@ import "popup/helpers/localizationConfig";
 // Import global CSS from Stellar Design System
 import "@stellar/design-system/build/styles.min.css";
 
-console.log("tesst");
+console.log("test");
 
 // eslint-disable-next-line react/jsx-filename-extension
 ReactDOM.render(<App />, document.getElementById("root"));

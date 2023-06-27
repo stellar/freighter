@@ -1,7 +1,7 @@
 name: tesst
 on: [pull_request]
 jobs:
-  test:
+  teast:
     name: test
     runs-on: ubuntu-latest
     steps:
