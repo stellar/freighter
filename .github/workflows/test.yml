@@ -28,9 +28,6 @@ jobs:
       - name: Run translation job
         run: |
           yarn && yarn build:freighter-api && yarn build:extension:translations
-      - name: Run tests
-        run: |
-          yarn test:ci
       - name: Verify diff
         id: verify_diff
         run: |
@@ -47,3 +44,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
+      - name: Run tests
+        run: |
+          yarn test:ci
