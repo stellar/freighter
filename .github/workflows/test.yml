@@ -12,6 +12,7 @@ jobs:
       - run: yarn install
       - run: yarn build:freighter-api
   test-ci:
+    needs: build-translations
     name: test
     runs-on: ubuntu-latest
     steps:
