@@ -16,6 +16,8 @@ jobs:
       - run: yarn build:freighter-api
       - run: yarn test:ci
   build-translations:
+    name: test
+    needs: test-ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
