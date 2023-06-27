@@ -1,41 +1,41 @@
-# name: Translate and Test
-# on: [pull_request]
-# jobs:
-#   test-ci:
-#     name: test
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#       - uses: actions/setup-node@v2
-#         with:
-#           node-version: 16.14.0
-#       - run: yarn install
-#       - run: yarn build:freighter-api
-#       - run: yarn test:ci
-#   build-translations:
-#     needs: test-ci
-#     name: test
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#       - uses: actions/setup-node@v2
-#         with:
-#           node-version: 16.14.0
-#       - name: Run translation job
-#         run: |
-#           yarn && yarn build:freighter-api && yarn build:extension:translations
-#       - name: Verify diff
-#         id: verify_diff
-#         run: |
-#           git diff --quiet  || echo "::set-output name=new_translations_exist::true"
-#       - name: Commit files
-#         if: steps.verify_diff.outputs.new_translations_exist == 'true'
-#         run: |
-#           git config --local user.email "action@github.com"
-#           git config --local user.name "GitHub Action"
-#           git commit -m "Add translations" -a
-#       - name: Push changes
-#         uses: ad-m/github-push-action@master
-#         with:
-#           github_token: ${{ secrets.GITHUB_TOKEN }}
-#           branch: ${{ github.head_ref }}
+name: Translate and Test
+on:
+  pull_request:
+    paths:
+      - "extension/**/*"
+jobs:
+  test-ci:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: yarn install
+      - run: yarn build:freighter-api
+      - run: yarn test:ci
+  build-translations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "16.14.0"
+      - name: Run translation job
+        run: |
+          yarn && yarn build:freighter-api && yarn build:extension:translations
+      - name: Verify diff
+        id: verify_diff
+        run: |
+          git diff --quiet  || echo "::set-output name=new_translations_exist::true"
+      - name: Commit files
+        if: steps.verify_diff.outputs.new_translations_exist == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Add translations" -a
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
