@@ -10,4 +10,5 @@ jobs:
         with:
           node-version: 16.14.0
       - run: yarn install
+      - run: yarn build:freighter-api
       - run: yarn test:ci
