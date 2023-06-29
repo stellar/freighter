@@ -1,4 +1,4 @@
 #!/bin/sh
 
 yarn build:extension:translations
-git diff --quiet || git commit -m "Add translations" -a && git push
+git diff --quiet || echo "Added translations commit" exit 1
