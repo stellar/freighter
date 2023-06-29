@@ -34,7 +34,8 @@
     "start:unpacked": "yarn workspace extension start:unpacked-extension",
     "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
     "test:ci": "jest --ci",
-    "test": "jest -o --watch"
+    "test": "jest -o --watch",
+    "prepare": "husky install"
   },
   "husky": {
     "hooks": {
@@ -96,7 +97,7 @@
     "eslint-webpack-plugin": "^2.1.0",
     "glob": "^9.3.2",
     "got": "11.8.2",
-    "husky": "^8.0.3",
+    "husky": "^8.0.0",
     "isomorphic-unfetch": "^3.0.0",
     "jest": "^28.1.3",
     "jest-localstorage-mock": "^2.4.3",
