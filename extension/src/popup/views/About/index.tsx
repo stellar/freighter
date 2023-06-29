@@ -41,10 +41,10 @@ export const About = () => {
         <AboutLink url="freighter.app" />
         <AboutLink url="stellar.org" />
         <AboutLink url="stellar.org/privacy-policy">
-          {t("Privcy Policy")}
+          {t("Privacy Policy")}
         </AboutLink>
         <AboutLink url="stellar.org/terms-of-service">
-          {t("Teeeems of Service")}
+          {t("Terms of Service")}
         </AboutLink>
       </div>
 
