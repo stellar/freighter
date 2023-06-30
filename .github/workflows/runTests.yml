@@ -1,8 +1,5 @@
-name: Test
-on:
-  pull_request:
-    paths:
-      - "extension/**/*"
+name: Run Tests
+on: [pull_request]
 jobs:
   test-ci:
     name: test
