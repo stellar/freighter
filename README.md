@@ -86,3 +86,23 @@ symlinks all the workspaces, so doing so will allow you to import files from the
 ### Dependencies
 
 Many dev dependencies (such as Typescript, linters, Webpack, etc.) have been moved to the root `package.json` to allow devs to upgrade these libraries all in one place.
+
+### Pushing to repo
+
+This repo will run a pre-push hook before pushing. This hook will run the cmd `yarn build:extension:translations` to check if any strings in the extension need to be added to the translations JSON. If there is no need to update the translations JSON, the push will go through. If there is a need to update, the changes will be automatically committed to your branch and the push will be aborted. You will need to run `git push` again.
+
+NOTE: If you're using nvm and run into an error where the git hook is using an incompatible version of node, create a file `~/.huskryc` on your system and added the following:
+
+```
+# This loads nvm.sh, sets the correct PATH before running hook, and ensures the project version of Node
+export NVM_DIR="$HOME/.nvm"
+
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# If you have an .nvmrc file, we use the relevant node version
+if [[ -f ".nvmrc" ]]; then
+  nvm use
+fi
+```
+
+This will instruct the git hook to use the .nvmrc found in this repo.
