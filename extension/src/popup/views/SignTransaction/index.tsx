@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
-import { FederationServer, MuxedAccount } from "stellar-sdk";
+import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
+import * as SorobanSdk from "soroban-client";
 import { useTranslation, Trans } from "react-i18next";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
@@ -29,7 +30,7 @@ import {
 } from "popup/ducks/accountServices";
 import {
   settingsNetworkDetailsSelector,
-  settingsPreferencesSelector,
+  settingsExperimentalModeSelector,
 } from "popup/ducks/settings";
 
 import {
@@ -70,15 +71,34 @@ export const SignTransaction = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch();
+  const { networkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
+  const isExperimentalModeEnabled = useSelector(
+    settingsExperimentalModeSelector,
+  );
   const {
     accountToSign: _accountToSign,
-    transaction,
     transactionXdr,
     domain,
     isDomainListedAllowed,
     isHttpsDomain,
     flaggedKeys,
   } = getTransactionInfo(location.search);
+
+  /* 
+  Reconstruct the tx from xdr as passing a tx through extension contexts 
+  loses custom prototypes associated with some values. This is fine for most cases 
+  where we just need a high level overview of the tx, like just a list of operations.  
+  But in this case, we will need the hostFn prototype associated with Soroban tx operations.
+  */
+
+  const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+  const transaction = SDK.TransactionBuilder.fromXDR(
+    transactionXdr,
+    networkPassphrase,
+  );
+
   const {
     _fee,
     _innerTransaction,
@@ -155,13 +175,6 @@ export const SignTransaction = () => {
   );
   const isMemoRequired = flaggedKeyValues.some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
-  );
-
-  const { networkName, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
-  const { isExperimentalModeEnabled } = useSelector(
-    settingsPreferencesSelector,
   );
 
   const allAccounts = useSelector(allAccountsSelector);

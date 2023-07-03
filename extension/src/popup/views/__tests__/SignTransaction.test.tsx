@@ -34,6 +34,16 @@ const defaultTransactionInfo = {
   flaggedKeys: { test: { tags: [""] } },
 };
 
+jest.mock("stellar-sdk", () => {
+  const original = jest.requireActual("stellar-sdk");
+  return {
+    ...original,
+    TransactionBuilder: {
+      fromXDR: () => defaultTransactionInfo.transaction,
+    },
+  };
+});
+
 describe("SignTransactions", () => {
   beforeEach(() => {
     const mockCanvas = document.createElement("canvas");

@@ -14,7 +14,7 @@ import {
   getCanonicalFromAsset,
   isTestnet,
 } from "helpers/stellar";
-import { getAttrsFromSorobanOp, SorobanTokenInterface } from "./soroban";
+import { getAttrsFromSorobanHorizonOp, SorobanTokenInterface } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -51,7 +51,7 @@ export const getIsSupportedSorobanOp = (
   operation: HorizonOperation,
   networkDetails: NetworkDetails,
 ) => {
-  const attrs = getAttrsFromSorobanOp(operation, networkDetails);
+  const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
   return !!attrs && Object.values(SorobanTokenInterface).includes(attrs.fnName);
 };
 
@@ -117,7 +117,7 @@ export const sortOperationsByAsset = ({
     if (getIsSupportedSorobanOp(op, networkDetails)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
         const asset = getAssetFromCanonical(assetKey);
-        const attrs = getAttrsFromSorobanOp(op, networkDetails);
+        const attrs = getAttrsFromSorobanHorizonOp(op, networkDetails);
         if (
           attrs &&
           op.source_account === publicKey &&

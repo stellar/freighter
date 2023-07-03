@@ -17,7 +17,7 @@ import { parsedSearchParam, getUrlHostname } from "./urls";
 export const isSerializable = (value: any) =>
   value?.isBigNumber || BigNumber.isBigNumber(value) || isPlain(value);
 
-const truncateString = (str: string) =>
+export const truncateString = (str: string) =>
   str ? `${str.slice(0, 4)}…${str.slice(-4)}` : "";
 
 export const truncatedPublicKey = (publicKey: string) =>
