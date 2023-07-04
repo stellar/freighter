@@ -678,13 +678,6 @@ export const Operations = ({
                   />
                 ) : null}
 
-                {scFunctions ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Functions")}
-                    operationValue={scFunctions}
-                  />
-                ) : null}
-
                 {sendAsset ? (
                   <KeyValueList
                     operationKey={t("Sending Asset")}
@@ -782,6 +775,13 @@ export const Operations = ({
                     }
                   />
                 ))}
+
+                {scFunctions ? (
+                  <KeyValueWithScValue
+                    operationKey={t("Functions")}
+                    operationValue={scFunctions}
+                  />
+                ) : null}
               </div>
             </div>
           );
