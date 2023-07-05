@@ -390,7 +390,7 @@ export const Operations = ({
           const sorobanAttrs = getAttrsFromSorobanTxOp(operations[i]);
 
           if (sorobanAttrs) {
-            amountVal = sorobanAttrs?.amount;
+            amountVal = sorobanAttrs?.amount.toString();
             destinationVal = sorobanAttrs?.to || "";
             sourceVal = sorobanAttrs?.from || "";
             fnName = sorobanAttrs?.fnName;
