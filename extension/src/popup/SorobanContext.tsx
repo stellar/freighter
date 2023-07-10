@@ -9,12 +9,14 @@ import {
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
-export interface SororbanContext {
+export interface SorobanContextInterface {
   server: SorobanClient.Server;
   newTxBuilder: () => SorobanClient.TransactionBuilder;
 }
 
-export const SorobanContext = React.createContext({} as SororbanContext);
+export const SorobanContext = React.createContext(
+  {} as SorobanContextInterface,
+);
 
 export const SorobanProvider = ({
   children,

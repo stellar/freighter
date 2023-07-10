@@ -10,7 +10,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import {
   formatTokenAmount,
-  getAttrsFromSorobanOp,
+  getAttrsFromSorobanHorizonOp,
   SorobanTokenInterface,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
@@ -175,7 +175,7 @@ export const HistoryItem = ({
       operationText: `-${new BigNumber(startingBalance)} XLM`,
     };
   } else if (isSorobanTx) {
-    const attrs = getAttrsFromSorobanOp(operation, networkDetails);
+    const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
     const token = tokenBalances.find(
       (balance) => attrs && balance.contractId === attrs.contractId,
     );

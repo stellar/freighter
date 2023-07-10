@@ -2,8 +2,9 @@ import BigNumber from "bignumber.js";
 import * as SorobanClient from "soroban-client";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
-import { valueToI128String } from "@shared/api/helpers/soroban";
+import { decodeScVal, valueToI128String } from "@shared/api/helpers/soroban";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { SorobanContextInterface } from "popup/SorobanContext";
 
 interface RootInvocation {
   _attributes: {
@@ -18,6 +19,11 @@ export enum SorobanTokenInterface {
   transfer = "transfer",
   mint = "mint",
 }
+
+export const SOROBAN_OPERATION_TYPES = [
+  "invoke_host_function",
+  "invokeHostFunction",
+];
 
 // All assets on the classic side have 7 decimals
 // https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
@@ -109,10 +115,33 @@ export const getTokenBalance = (
   );
 };
 
+export const getContractDecimals = async (
+  sorobanClient: SorobanContextInterface,
+  contractId: string,
+) => {
+  const contract = new SorobanClient.Contract(contractId);
+  const server = sorobanClient.server;
+
+  const tx = sorobanClient
+    .newTxBuilder()
+    .addOperation(contract.call("decimals"))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const { results } = await server.simulateTransaction(tx);
+
+  if (!results || results.length !== 1) {
+    throw new Error("Invalid response from simulateTransaction");
+  }
+  const result = results[0];
+  return decodeScVal(result.xdr);
+};
+
 export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
   let amount;
   let from;
   let to;
+
   switch (fnName) {
     case SorobanTokenInterface.transfer:
       from = SorobanClient.StrKey.encodeEd25519PublicKey(
@@ -136,41 +165,27 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
   return { from, to, amount };
 };
 
-export const getAttrsFromSorobanOp = (
-  operation: HorizonOperation,
-  networkDetails: NetworkDetails,
-) => {
-  if (operation.type_i !== 24) {
+const isSorobanOp = (operation: HorizonOperation) =>
+  SOROBAN_OPERATION_TYPES.includes(operation.type);
+
+const getRootInvocationArgs = (hostFn: SorobanClient.xdr.HostFunction) => {
+  if (!hostFn) {
     return null;
   }
 
-  const txEnvelope = SorobanClient.TransactionBuilder.fromXDR(
-    operation.transaction_attr.envelope_xdr,
-    networkDetails.networkPassphrase,
-  ) as SorobanClient.Transaction<
-    SorobanClient.Memo<SorobanClient.MemoType>,
-    SorobanClient.Operation.InvokeHostFunction[]
-  >;
-
-  const op = txEnvelope.operations[0].functions[0]; // only one op per tx in Soroban right now
-
-  if (!op) {
-    return null;
-  }
-
-  const txAuth = op.auth();
+  const txAuth = hostFn.auth();
 
   if (!txAuth.length) {
     return null;
   }
 
-  // TODO: figure out how to better work with the AuthorizedInvocation interface
   const {
     _attributes: attrs,
   } = (txAuth[0].rootInvocation() as unknown) as RootInvocation;
 
   const fnName = attrs.functionName.toString();
 
+  // TODO: figure out how to make this extensible to all contract functions
   if (
     fnName !== SorobanTokenInterface.transfer &&
     fnName !== SorobanTokenInterface.mint
@@ -185,4 +200,34 @@ export const getAttrsFromSorobanOp = (
     contractId: attrs.contractId.toString("hex"),
     ...opArgs,
   };
+};
+
+export const getAttrsFromSorobanTxOp = (operation: HorizonOperation) => {
+  if (!isSorobanOp(operation)) {
+    return null;
+  }
+  const hostFn = operation.functions[0];
+  return getRootInvocationArgs(hostFn);
+};
+
+export const getAttrsFromSorobanHorizonOp = (
+  operation: HorizonOperation,
+  networkDetails: NetworkDetails,
+) => {
+  // console.log(operation);
+  if (!isSorobanOp(operation)) {
+    return null;
+  }
+
+  const txEnvelope = SorobanClient.TransactionBuilder.fromXDR(
+    operation.transaction_attr.envelope_xdr,
+    networkDetails.networkPassphrase,
+  ) as SorobanClient.Transaction<
+    SorobanClient.Memo<SorobanClient.MemoType>,
+    SorobanClient.Operation.InvokeHostFunction[]
+  >;
+
+  const hostFn = txEnvelope.operations[0].functions[0]; // only one op per tx in Soroban right now
+
+  return getRootInvocationArgs(hostFn);
 };
