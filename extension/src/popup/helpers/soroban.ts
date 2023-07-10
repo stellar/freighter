@@ -214,7 +214,6 @@ export const getAttrsFromSorobanHorizonOp = (
   operation: HorizonOperation,
   networkDetails: NetworkDetails,
 ) => {
-  // console.log(operation);
   if (!isSorobanOp(operation)) {
     return null;
   }
