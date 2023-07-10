@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { Header } from "popup/components/Header";
@@ -41,8 +41,7 @@ export const UnlockAccount = () => {
     const { password } = values;
     await dispatch(confirmPassword(password));
     // skip this location in history, we won't need to come back here after unlocking account
-    history.replace(destination);
-    navigateTo(destination, queryParams);
+    history.replace(`${destination}${queryParams}`);
   };
 
   return (

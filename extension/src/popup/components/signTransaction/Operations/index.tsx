@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import BigNumber from "bignumber.js";
 
 import {
   CLAIM_PREDICATES,
@@ -11,10 +12,21 @@ import {
 
 import { FlaggedKeys } from "types/transactions";
 
-import { truncatedPoolId, truncatedPublicKey } from "helpers/stellar";
+import {
+  truncatedPoolId,
+  truncatedPublicKey,
+  truncateString,
+} from "helpers/stellar";
+import {
+  getContractDecimals,
+  getAttrsFromSorobanTxOp,
+  formatTokenAmount,
+} from "popup/helpers/soroban";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+
+import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -59,7 +71,7 @@ interface TransactionInfoResponse {
   destAsset: { code: string };
   flags: FLAGS;
   footprint: any; // TODO: finalize schema
-  function: any; // TODO: finalize schema
+  functions: any; // TODO: finalize schema
   from: string;
   highThreshold: number;
   inflationDest: string;
@@ -277,6 +289,7 @@ export const Operations = ({
   operations: Array<TransactionInfoResponse>;
 }) => {
   const { t } = useTranslation();
+  const sorobanClient = useContext(SorobanContext);
 
   enum AuthorizationMap {
     "Authorization Required" = 1,
@@ -300,6 +313,21 @@ export const Operations = ({
     t("Authorization Required; Authorization Required; Authorization Immutable")
   */
 
+  const [contractId, setContractId] = useState("");
+  const [decimals, setDecimals] = useState(0);
+
+  useEffect(() => {
+    const fetchContractDecimals = async () => {
+      const contractDecimals = await getContractDecimals(
+        sorobanClient,
+        contractId,
+      );
+      setDecimals(contractDecimals);
+    };
+
+    fetchContractDecimals();
+  }, [sorobanClient, contractId]);
+
   return (
     <div className="Operations">
       {operations.map(
@@ -318,7 +346,7 @@ export const Operations = ({
             destAsset,
             flags,
             footprint,
-            function: scFunction,
+            functions: scFunctions,
             from,
             highThreshold,
             inflationDest,
@@ -354,6 +382,24 @@ export const Operations = ({
           i: number,
         ) => {
           const operationIndex = i + 1;
+          let amountVal = amount;
+          let destinationVal = destination;
+          let sourceVal = source;
+          let fnName;
+
+          const sorobanAttrs = getAttrsFromSorobanTxOp(operations[i]);
+
+          if (sorobanAttrs) {
+            amountVal = sorobanAttrs?.amount;
+            destinationVal = sorobanAttrs?.to || "";
+            sourceVal = sorobanAttrs?.from || "";
+            fnName = sorobanAttrs?.fnName;
+
+            if (!contractId && sorobanAttrs.contractId) {
+              setContractId(sorobanAttrs?.contractId);
+            }
+          }
+
           return (
             <div className="Operations--wrapper" key={operationIndex}>
               <div className="Operations--header">
@@ -369,10 +415,13 @@ export const Operations = ({
                   />
                 ) : null}
 
-                {amount ? (
+                {amountVal ? (
                   <KeyValueList
                     operationKey={t("Amount")}
-                    operationValue={`${amount}`}
+                    operationValue={`${formatTokenAmount(
+                      BigNumber(amountVal),
+                      decimals,
+                    )}`}
                   />
                 ) : null}
 
@@ -445,6 +494,13 @@ export const Operations = ({
                   />
                 ) : null}
 
+                {contractId ? (
+                  <KeyValueList
+                    operationKey={t("Contract ID")}
+                    operationValue={truncateString(contractId)}
+                  />
+                ) : null}
+
                 {destAsset ? (
                   <KeyValueList
                     operationKey={t("Destination Asset")}
@@ -452,14 +508,14 @@ export const Operations = ({
                   />
                 ) : null}
 
-                {destination ? (
+                {destinationVal ? (
                   <>
                     <KeyValueWithPublicKey
                       operationKey={t("Destination")}
-                      operationValue={destination}
+                      operationValue={destinationVal}
                     />
                     <DestinationWarning
-                      destination={destination}
+                      destination={destinationVal}
                       flaggedKeys={flaggedKeys}
                       isMemoRequired={isMemoRequired}
                     />
@@ -474,6 +530,13 @@ export const Operations = ({
                   <KeyValueWithScValue
                     operationKey={t("Footprint")}
                     operationValue={footprint}
+                  />
+                ) : null}
+
+                {fnName ? (
+                  <KeyValueList
+                    operationKey={t("Function Name")}
+                    operationValue={fnName}
                   />
                 ) : null}
 
@@ -615,13 +678,6 @@ export const Operations = ({
                   />
                 ) : null}
 
-                {scFunction ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Function")}
-                    operationValue={scFunction}
-                  />
-                ) : null}
-
                 {sendAsset ? (
                   <KeyValueList
                     operationKey={t("Sending Asset")}
@@ -675,10 +731,10 @@ export const Operations = ({
                   />
                 ) : null}
 
-                {source ? (
+                {sourceVal ? (
                   <KeyValueWithPublicKey
                     operationKey={t("Source")}
-                    operationValue={source}
+                    operationValue={sourceVal}
                   />
                 ) : null}
 
@@ -719,6 +775,13 @@ export const Operations = ({
                     }
                   />
                 ))}
+
+                {scFunctions ? (
+                  <KeyValueWithScValue
+                    operationKey={t("Functions")}
+                    operationValue={scFunctions}
+                  />
+                ) : null}
               </div>
             </div>
           );

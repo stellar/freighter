@@ -35,7 +35,7 @@ import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { SororbanContext } from "popup/SorobanContext";
+import { SorobanContextInterface } from "popup/SorobanContext";
 import { getTokenBalances, resetSorobanTokensStatus } from "./soroban";
 
 export const signFreighterTransaction = createAsyncThunk<
@@ -113,7 +113,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   {
     signedXDR: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SororbanContext;
+    sorobanClient: SorobanContextInterface;
     refreshBalances?: boolean;
   },
   {

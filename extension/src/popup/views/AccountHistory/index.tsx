@@ -24,7 +24,7 @@ import {
   getStellarExpertUrl,
 } from "popup/helpers/account";
 import {
-  getAttrsFromSorobanOp,
+  getAttrsFromSorobanHorizonOp,
   SorobanTokenInterface,
 } from "popup/helpers/soroban";
 
@@ -119,7 +119,7 @@ export const AccountHistory = () => {
       _operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
         const isSorobanXfer =
-          getAttrsFromSorobanOp(operation, networkDetails)?.fnName ===
+          getAttrsFromSorobanHorizonOp(operation, networkDetails)?.fnName ===
           SorobanTokenInterface.transfer;
         const isSwap = getIsSwap(operation);
         const isCreateExternalAccount =
