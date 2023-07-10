@@ -6,15 +6,6 @@ import { decodeScVal, valueToI128String } from "@shared/api/helpers/soroban";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanContextInterface } from "popup/SorobanContext";
 
-interface RootInvocation {
-  _attributes: {
-    contractId: Buffer;
-    functionName: Buffer;
-    args: SorobanClient.xdr.ScVal[];
-    subInvocations: SorobanClient.xdr.AuthorizedInvocation[];
-  };
-}
-
 export enum SorobanTokenInterface {
   transfer = "transfer",
   mint = "mint",
@@ -168,22 +159,19 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-const getRootInvocationArgs = (hostFn: SorobanClient.xdr.HostFunction) => {
+const getTxArgs = (hostFn: SorobanClient.xdr.HostFunction) => {
   if (!hostFn) {
     return null;
   }
 
-  const txAuth = hostFn.auth();
+  const [_contractId, methodSymbol, ...args] = hostFn.args().value() as SorobanClient.xdr.ScVal[];
 
-  if (!txAuth.length) {
+  if (!args.length) {
     return null;
   }
 
-  const {
-    _attributes: attrs,
-  } = (txAuth[0].rootInvocation() as unknown) as RootInvocation;
-
-  const fnName = attrs.functionName.toString();
+  const fnName = (methodSymbol.value() as string).toString();
+  const contractId = _contractId.bytes().toString("hex")
 
   // TODO: figure out how to make this extensible to all contract functions
   if (
@@ -193,11 +181,11 @@ const getRootInvocationArgs = (hostFn: SorobanClient.xdr.HostFunction) => {
     return null;
   }
 
-  const opArgs = getOpArgs(fnName, attrs.args);
+  const opArgs = getOpArgs(fnName, args);
 
   return {
     fnName,
-    contractId: attrs.contractId.toString("hex"),
+    contractId,
     ...opArgs,
   };
 };
@@ -207,7 +195,7 @@ export const getAttrsFromSorobanTxOp = (operation: HorizonOperation) => {
     return null;
   }
   const hostFn = operation.functions[0];
-  return getRootInvocationArgs(hostFn);
+  return getTxArgs(hostFn);
 };
 
 export const getAttrsFromSorobanHorizonOp = (
@@ -228,5 +216,5 @@ export const getAttrsFromSorobanHorizonOp = (
 
   const hostFn = txEnvelope.operations[0].functions[0]; // only one op per tx in Soroban right now
 
-  return getRootInvocationArgs(hostFn);
+  return getTxArgs(hostFn);
 };

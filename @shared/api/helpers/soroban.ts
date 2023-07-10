@@ -16,7 +16,6 @@ export const valueToI128String = (value: SorobanClient.xdr.ScVal) =>
     BigInt(value.i128().hi().high),
   ]).toString();
 
-// How do we decode these in a more generic way?
 export const decodei128 = (xdr: string) => {
   const value = SorobanClient.xdr.ScVal.fromXDR(xdr, "base64");
   try {
