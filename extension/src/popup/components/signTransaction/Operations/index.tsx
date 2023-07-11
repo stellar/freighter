@@ -317,6 +317,7 @@ export const Operations = ({
   const [decimals, setDecimals] = useState(0);
 
   useEffect(() => {
+    if (!contractId) return;
     const fetchContractDecimals = async () => {
       const contractDecimals = await getContractDecimals(
         sorobanClient,
