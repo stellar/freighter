@@ -141,7 +141,7 @@ export const SignTransaction = () => {
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signTransaction({ transaction }));
+      await dispatch(signTransaction());
       window.close();
     }
   };

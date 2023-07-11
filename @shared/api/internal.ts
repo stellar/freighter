@@ -492,14 +492,9 @@ export const handleSignedHwTransaction = async ({
   }
 };
 
-export const signTransaction = async ({
-  transaction,
-}: {
-  transaction: {};
-}): Promise<void> => {
+export const signTransaction = async (): Promise<void> => {
   try {
     await sendMessageToBackground({
-      transaction,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
   } catch (e) {
