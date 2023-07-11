@@ -193,7 +193,13 @@ const getRootInvocationArgs = (hostFn: SorobanClient.xdr.HostFunction) => {
     return null;
   }
 
-  const opArgs = getOpArgs(fnName, attrs.args);
+  let opArgs;
+
+  try {
+    opArgs = getOpArgs(fnName, attrs.args);
+  } catch (e) {
+    return null;
+  }
 
   return {
     fnName,
