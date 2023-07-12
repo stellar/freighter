@@ -168,12 +168,18 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-const getRootInvocationArgs = (hostFn: SorobanClient.xdr.HostFunction) => {
+const getRootInvocationArgs = (
+  hostFn: SorobanClient.Operation.InvokeHostFunction,
+) => {
   if (!hostFn) {
     return null;
   }
 
-  const txAuth = hostFn.auth();
+  if (!hostFn.auth) {
+    return null;
+  }
+
+  const txAuth = hostFn.auth;
 
   if (!txAuth.length) {
     return null;
