@@ -252,7 +252,7 @@ export const IntegrationTest = () => {
       await handleSignedHwTransaction({ signedTransaction: "" });
       runAsserts("handleSignedHwTransaction", () => {});
 
-      await signTransaction({ transaction: testTxXDR });
+      await signTransaction();
       runAsserts("signTransaction", () => {});
 
       res = await signFreighterTransaction({

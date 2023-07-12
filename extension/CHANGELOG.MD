@@ -1,3 +1,22 @@
+# Release notes - Wallets - Freighter-5.2.2
+
+### Bug
+
+Firefox blocks signing transactions
+
+# Release notes - Wallets - Freighter-5.2.1
+
+### Bug
+
+Sign Transaction throws error if contract args don't follow standard token
+interface
+
+# Release notes - Wallets - Freighter-5.2.0
+
+### Story
+
+Improve XDR decoder for transfer/mint transaction signing
+
 # Release notes - Wallets - Freighter-5.1.2
 
 ### Bug

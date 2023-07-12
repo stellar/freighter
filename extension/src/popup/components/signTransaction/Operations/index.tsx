@@ -317,6 +317,7 @@ export const Operations = ({
   const [decimals, setDecimals] = useState(0);
 
   useEffect(() => {
+    if (!contractId) return;
     const fetchContractDecimals = async () => {
       const contractDecimals = await getContractDecimals(
         sorobanClient,
@@ -390,7 +391,7 @@ export const Operations = ({
           const sorobanAttrs = getAttrsFromSorobanTxOp(operations[i]);
 
           if (sorobanAttrs) {
-            amountVal = sorobanAttrs?.amount.toString();
+            amountVal = sorobanAttrs?.amount;
             destinationVal = sorobanAttrs?.to || "";
             sourceVal = sorobanAttrs?.from || "";
             fnName = sorobanAttrs?.fnName;

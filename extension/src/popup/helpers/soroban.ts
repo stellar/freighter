@@ -168,18 +168,12 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-const getRootInvocationArgs = (
-  hostFn: SorobanClient.Operation.InvokeHostFunction,
-) => {
+const getRootInvocationArgs = (hostFn: SorobanClient.xdr.HostFunction) => {
   if (!hostFn) {
     return null;
   }
 
-  if (!hostFn.auth) {
-    return null;
-  }
-
-  const txAuth = hostFn.auth;
+  const txAuth = hostFn.auth();
 
   if (!txAuth.length) {
     return null;
@@ -199,7 +193,13 @@ const getRootInvocationArgs = (
     return null;
   }
 
-  const opArgs = getOpArgs(fnName, attrs.args);
+  let opArgs;
+
+  try {
+    opArgs = getOpArgs(fnName, attrs.args);
+  } catch (e) {
+    return null;
+  }
 
   return {
     fnName,
@@ -220,7 +220,6 @@ export const getAttrsFromSorobanHorizonOp = (
   operation: HorizonOperation,
   networkDetails: NetworkDetails,
 ) => {
-  console.log(operation);
   if (!isSorobanOp(operation)) {
     return null;
   }
@@ -233,8 +232,7 @@ export const getAttrsFromSorobanHorizonOp = (
     SorobanClient.Operation.InvokeHostFunction[]
   >;
 
-  console.log(3);
-  const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
+  const hostFn = txEnvelope.operations[0].functions[0]; // only one op per tx in Soroban right now
 
-  return getRootInvocationArgs(invokeHostFn);
+  return getRootInvocationArgs(hostFn);
 };
