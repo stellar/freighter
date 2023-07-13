@@ -162,33 +162,23 @@ const isSorobanOp = (operation: HorizonOperation) =>
 const getRootInvocationArgs = (
   hostFn: SorobanClient.Operation.InvokeHostFunction,
 ) => {
-  if (!hostFn) {
+  if (!hostFn?.func?.invokeContract) {
     return null;
   }
 
-  if (!hostFn.auth) {
+  let invokedContract;
+
+  try {
+    invokedContract = hostFn.func.invokeContract();
+  } catch (e) {
     return null;
   }
 
-  const txAuth = hostFn.auth;
-
-  if (!txAuth.length) {
-    return null;
-  }
-
-  console.log(
-    txAuth[0]
-      .rootInvocation()
-      .function()
-      .contractFn()
-      .contractAddress()
-      .contractId()
-      .toString("hex"),
+  const contractId = SorobanClient.StrKey.encodeContract(
+    invokedContract[0].address().contractId(),
   );
-
-  const contractFn = txAuth[0].rootInvocation().function().contractFn();
-  const fnName = contractFn.functionName().toString();
-  const args = contractFn.args();
+  const fnName = invokedContract[1].sym().toString();
+  const args = invokedContract.slice(2);
 
   // TODO: figure out how to make this extensible to all contract functions
   if (
@@ -208,7 +198,7 @@ const getRootInvocationArgs = (
 
   return {
     fnName,
-    contractId: "",
+    contractId,
     ...opArgs,
   };
 };
