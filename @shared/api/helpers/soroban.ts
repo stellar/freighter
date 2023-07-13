@@ -22,7 +22,7 @@ export const decodei128 = (b64: string) => {
 export const decodeStr = (b64: string) =>
   xdr.ScVal.fromXDR(b64, "base64").str().toString();
 
-export const decodeScVal = (b64: string) =>
+export const decodeU32 = (b64: string) =>
   xdr.ScVal.fromXDR(b64, "base64").u32();
 
 export const numberToI128 = (value: number): xdr.ScVal =>

@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import * as SorobanClient from "soroban-client";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
-import { decodeScVal, valueToI128String } from "@shared/api/helpers/soroban";
+import { decodeU32, valueToI128String } from "@shared/api/helpers/soroban";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanContextInterface } from "popup/SorobanContext";
 
@@ -125,7 +125,7 @@ export const getContractDecimals = async (
     throw new Error("Invalid response from simulateTransaction");
   }
   const result = results[0];
-  return decodeScVal(result.xdr);
+  return decodeU32(result.xdr);
 };
 
 export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
