@@ -30,6 +30,7 @@ export const getTokenBalances = createAsyncThunk<
         once multi-op transactions are supported this can send
         1 tx with an operation for each value.
       */
+
       try {
         // eslint-disable-next-line no-await-in-loop
         const { balance, ...rest } = await internalGetSorobanTokenBalance(

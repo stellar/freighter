@@ -36,7 +36,7 @@ export const SorobanProvider = ({
       "Test SDF Future Network ; October 2022" &&
     networkDetails.networkUrl === FUTURENET_NETWORK_DETAILS.networkUrl
       ? SOROBAN_RPC_URLS.FUTURENET
-      : networkDetails.networkUrl;
+      : SOROBAN_RPC_URLS.FUTURENET;
 
   const server = new SorobanClient.Server(serverUrl, {
     allowHttp: networkDetails.networkUrl.startsWith("http://"),

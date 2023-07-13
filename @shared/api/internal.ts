@@ -296,6 +296,9 @@ export const getAccountBalances = async ({
     serverUrl: networkUrl,
     accountOrKey: publicKey,
     networkPassphrase,
+    metadata: {
+      allowHttp: true,
+    },
   });
 
   let balances: any = null;
