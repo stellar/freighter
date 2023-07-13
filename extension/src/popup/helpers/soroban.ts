@@ -6,15 +6,6 @@ import { decodeScVal, valueToI128String } from "@shared/api/helpers/soroban";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanContextInterface } from "popup/SorobanContext";
 
-interface RootInvocation {
-  _attributes: {
-    contractId: Buffer;
-    functionName: Buffer;
-    args: SorobanClient.xdr.ScVal[];
-    subInvocations: SorobanClient.xdr.SorobanAuthorizedInvocation[];
-  };
-}
-
 export enum SorobanTokenInterface {
   transfer = "transfer",
   mint = "mint",
@@ -185,11 +176,19 @@ const getRootInvocationArgs = (
     return null;
   }
 
-  const {
-    _attributes: attrs,
-  } = (txAuth[0].rootInvocation() as unknown) as RootInvocation;
+  console.log(
+    txAuth[0]
+      .rootInvocation()
+      .function()
+      .contractFn()
+      .contractAddress()
+      .contractId()
+      .toString("hex"),
+  );
 
-  const fnName = attrs.functionName.toString();
+  const contractFn = txAuth[0].rootInvocation().function().contractFn();
+  const fnName = contractFn.functionName().toString();
+  const args = contractFn.args();
 
   // TODO: figure out how to make this extensible to all contract functions
   if (
@@ -202,14 +201,14 @@ const getRootInvocationArgs = (
   let opArgs;
 
   try {
-    opArgs = getOpArgs(fnName, attrs.args);
+    opArgs = getOpArgs(fnName, args);
   } catch (e) {
     return null;
   }
 
   return {
     fnName,
-    contractId: attrs.contractId.toString("hex"),
+    contractId: "",
     ...opArgs,
   };
 };
@@ -218,8 +217,7 @@ export const getAttrsFromSorobanTxOp = (operation: HorizonOperation) => {
   if (!isSorobanOp(operation)) {
     return null;
   }
-  const hostFn = operation.functions[0];
-  return getRootInvocationArgs(hostFn);
+  return getRootInvocationArgs(operation);
 };
 
 export const getAttrsFromSorobanHorizonOp = (
@@ -238,7 +236,7 @@ export const getAttrsFromSorobanHorizonOp = (
     SorobanClient.Operation.InvokeHostFunction[]
   >;
 
-  const hostFn = txEnvelope.operations[0].functions[0]; // only one op per tx in Soroban right now
+  const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
-  return getRootInvocationArgs(hostFn);
+  return getRootInvocationArgs(invokeHostFn);
 };

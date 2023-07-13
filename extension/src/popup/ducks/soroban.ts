@@ -58,7 +58,7 @@ export const getTokenBalances = createAsyncThunk<
 
     return results;
   } catch (e) {
-    console.log(e);
+    console.error(e);
     return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });

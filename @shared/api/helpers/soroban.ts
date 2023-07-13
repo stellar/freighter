@@ -14,13 +14,13 @@ export const decodei128 = (b64: string) => {
   try {
     return valueToI128String(value);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return 0;
   }
 };
 
-export const decodeBytesN = (b64: string) =>
-  xdr.ScVal.fromXDR(b64, "base64").bytes().toString();
+export const decodeStr = (b64: string) =>
+  xdr.ScVal.fromXDR(b64, "base64").str().toString();
 
 export const decodeScVal = (b64: string) =>
   xdr.ScVal.fromXDR(b64, "base64").u32();

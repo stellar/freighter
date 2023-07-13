@@ -24,7 +24,7 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
-import { decodei128, decodeScVal, decodeBytesN } from "./helpers/soroban";
+import { decodei128, decodeScVal, decodeStr } from "./helpers/soroban";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -886,11 +886,11 @@ export const getSorobanTokenBalance = (
     },
     name: {
       tx: nameTx,
-      decoder: decodeBytesN,
+      decoder: decodeStr,
     },
     symbol: {
       tx: symbolTx,
-      decoder: decodeBytesN,
+      decoder: decodeStr,
     },
     decimals: {
       tx: decimalsTx,
