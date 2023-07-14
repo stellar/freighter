@@ -24,7 +24,7 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
-import { decodei128, decodeScVal, decodeBytesN } from "./helpers/soroban";
+import { decodei128, decodeU32, decodeStr } from "./helpers/soroban";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -296,6 +296,9 @@ export const getAccountBalances = async ({
     serverUrl: networkUrl,
     accountOrKey: publicKey,
     networkPassphrase,
+    metadata: {
+      allowHttp: networkUrl.startsWith("http://"),
+    },
   });
 
   let balances: any = null;
@@ -886,15 +889,15 @@ export const getSorobanTokenBalance = (
     },
     name: {
       tx: nameTx,
-      decoder: decodeBytesN,
+      decoder: decodeStr,
     },
     symbol: {
       tx: symbolTx,
-      decoder: decodeBytesN,
+      decoder: decodeStr,
     },
     decimals: {
       tx: decimalsTx,
-      decoder: decodeScVal,
+      decoder: decodeU32,
     },
   };
 
