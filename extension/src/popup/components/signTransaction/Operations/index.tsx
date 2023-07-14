@@ -61,6 +61,7 @@ interface TransactionInfoResponse {
   account: string;
   amount: string;
   asset: { code: string; issuer: string };
+  auth: any; // TODO: finalize schema
   balanceId: string;
   bumpTo: string;
   buyAmount: string;
@@ -71,7 +72,7 @@ interface TransactionInfoResponse {
   destAsset: { code: string };
   flags: FLAGS;
   footprint: any; // TODO: finalize schema
-  functions: any; // TODO: finalize schema
+  func: any; // TODO: finalize schema
   from: string;
   highThreshold: number;
   inflationDest: string;
@@ -337,6 +338,7 @@ export const Operations = ({
             account,
             amount,
             asset,
+            auth: scAuth,
             balanceId,
             bumpTo,
             buyAmount,
@@ -347,7 +349,7 @@ export const Operations = ({
             destAsset,
             flags,
             footprint,
-            functions: scFunctions,
+            func: scFunc,
             from,
             highThreshold,
             inflationDest,
@@ -391,7 +393,7 @@ export const Operations = ({
           const sorobanAttrs = getAttrsFromSorobanTxOp(operations[i]);
 
           if (sorobanAttrs) {
-            amountVal = sorobanAttrs?.amount;
+            amountVal = sorobanAttrs?.amount.toString();
             destinationVal = sorobanAttrs?.to || "";
             sourceVal = sorobanAttrs?.from || "";
             fnName = sorobanAttrs?.fnName;
@@ -777,10 +779,16 @@ export const Operations = ({
                   />
                 ))}
 
-                {scFunctions ? (
+                {scFunc ? (
                   <KeyValueWithScValue
-                    operationKey={t("Functions")}
-                    operationValue={scFunctions}
+                    operationKey={t("Func")}
+                    operationValue={scFunc}
+                  />
+                ) : null}
+                {scAuth ? (
+                  <KeyValueWithScValue
+                    operationKey={t("Auth")}
+                    operationValue={scAuth}
                   />
                 ) : null}
               </div>
