@@ -21,9 +21,20 @@ const defaultSettingsState = {
   },
 };
 
-const defaultTransactionInfo = {
+const mockTransactionInfo = {
   accountToSign: "",
-  transaction: { _networkPassphrase: "foo" },
+  transaction: {
+    _networkPassphrase: "foo",
+    _operations: [
+      {
+        flags: {
+          authorized: true,
+          authorizedToMaintainLiabilities: false,
+          clawbackEnabled: undefined,
+        },
+      },
+    ],
+  },
   transactionXdr: "",
   domain: "",
   domainTitle: "",
@@ -39,7 +50,7 @@ jest.mock("stellar-sdk", () => {
   return {
     ...original,
     TransactionBuilder: {
-      fromXDR: () => defaultTransactionInfo.transaction,
+      fromXDR: () => mockTransactionInfo.transaction,
     },
   };
 });
@@ -52,7 +63,7 @@ describe("SignTransactions", () => {
   it("renders", async () => {
     jest
       .spyOn(Stellar, "getTransactionInfo")
-      .mockImplementation(() => defaultTransactionInfo);
+      .mockImplementation(() => mockTransactionInfo);
 
     render(
       <Wrapper
@@ -68,7 +79,7 @@ describe("SignTransactions", () => {
   });
   it("shows non-https domain error", async () => {
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
-      ...defaultTransactionInfo,
+      ...mockTransactionInfo,
       isHttpsDomain: false,
     }));
     render(

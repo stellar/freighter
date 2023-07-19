@@ -190,12 +190,14 @@ const PathList = ({ paths }: { paths: [Path] }) => {
 const FlagList = ({ flags }: { flags: FLAGS }) => (
   <>
     {Object.entries(flags).map(([flag, value]) => (
-      <div key={flag}>
-        <KeyValueList
-          operationKey={FLAG_TYPES[flag as keyof typeof FLAG_TYPES]}
-          operationValue={value.toString()}
-        />
-      </div>
+      <KeyValueList
+        key={flag}
+        operationKey={FLAG_TYPES[flag as keyof typeof FLAG_TYPES]}
+        operationValue={
+          // clawbackEnabled will be undefined if not being cleared
+          typeof value === "undefined" ? "undefined" : value.toString()
+        }
+      />
     ))}
   </>
 );
