@@ -32,5 +32,15 @@
     "react-dom": "^17.0.2",
     "react-is": "^16.13.1",
     "styled-components": "^5.0.1"
+  },
+  "devDependencies": {
+    "@lavamoat/allow-scripts": "^2.3.1"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@docusaurus/core>@babel/runtime-corejs3>core-js-pure": false,
+      "@docusaurus/core>core-js": false,
+      "@docusaurus/core>file-loader>webpack>watchpack>watchpack-chokidar2>chokidar>fsevents": false
+    }
   }
 }

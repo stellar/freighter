@@ -85,7 +85,6 @@
     "babel-loader": "^8.3.0",
     "babel-plugin-dynamic-import-node": "^2.3.3",
     "babel-polyfill": "6.26.0",
-    "can-i-ignore-scripts": "^0.1.9",
     "eslint": "7.12.1",
     "eslint-config-prettier": "^6.10.0",
     "eslint-config-react-app": "^5.2.1",
