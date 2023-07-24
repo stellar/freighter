@@ -109,6 +109,14 @@ jobs:
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      - name: Submit extension to Edge
+        uses: wdzeng/edge-addon@v1
+        with:
+          product-id: ${{ secrets.EDGE_PRODUCT_ID }}
+          zip-path: ${{ secrets.EDGE_ZIP_PATH }}
+          client-id: ${{ secrets.EDGE_CLIENT_ID }}
+          client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+          access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
         env:
