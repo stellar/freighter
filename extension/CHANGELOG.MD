@@ -1,3 +1,16 @@
+# Release notes - Wallets - Freighter-5.2.4
+
+### Bug
+
+Freighter shows an empty screen when request to sign a transaction including
+setTrustLineFlagsOp
+
+# Release notes - Wallets - Freighter-5.2.3
+
+### Story
+
+Soroban Preview 10: scVal conversion and tx signing using latest soroban-client
+
 # Release notes - Wallets - Freighter-5.2.2
 
 ### Bug
