@@ -27,4 +27,14 @@
     align-items: center;
     justify-content: space-between;
   }
+
+  &__empty {
+    align-items: center;
+    display: flex;
+    height: calc(
+      var(--popup--height) - var(--subview--header--height) -
+        var(--popup-vertical-padding)
+    );
+    justify-content: center;
+  }
 }

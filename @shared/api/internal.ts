@@ -674,20 +674,39 @@ export const showBackupPhrase = async (
   return response;
 };
 
-export const saveSettings = async ({
+export const saveAllowList = async ({
   allowList,
+}: {
+  allowList: string[];
+}): Promise<{ allowList: string[] }> => {
+  let response = {
+    allowList: [""],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      allowList,
+      type: SERVICE_TYPES.SAVE_ALLOWLIST,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
   isValidatingSafeAssetsEnabled,
   isExperimentalModeEnabled,
 }: {
-  allowList?: string[];
-  isDataSharingAllowed?: boolean;
-  isMemoValidationEnabled?: boolean;
-  isSafetyValidationEnabled?: boolean;
-  isValidatingSafeAssetsEnabled?: boolean;
-  isExperimentalModeEnabled?: boolean;
+  isDataSharingAllowed: boolean;
+  isMemoValidationEnabled: boolean;
+  isSafetyValidationEnabled: boolean;
+  isValidatingSafeAssetsEnabled: boolean;
+  isExperimentalModeEnabled: boolean;
 }): Promise<Settings> => {
   let response = {
     allowList: [""],
@@ -703,7 +722,6 @@ export const saveSettings = async ({
 
   try {
     response = await sendMessageToBackground({
-      allowList,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,

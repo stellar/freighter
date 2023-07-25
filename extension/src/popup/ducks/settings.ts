@@ -6,6 +6,7 @@ import {
 } from "@reduxjs/toolkit";
 
 import {
+  saveAllowList as saveAllowListService,
   saveSettings as saveSettingsService,
   loadSettings as loadSettingsService,
   changeNetwork as changeNetworkService,
@@ -46,22 +47,43 @@ export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
   loadSettingsService(),
 );
 
+export const saveAllowList = createAsyncThunk<
+  { allowList: string[] },
+  {
+    allowList: string[];
+  },
+  { rejectValue: ErrorMessage }
+>("settings/saveAllowList", async ({ allowList }, thunkApi) => {
+  let res = { allowList: initialState.allowList };
+
+  try {
+    res = await saveAllowListService({
+      allowList,
+    });
+  } catch (e) {
+    console.error(e);
+    return thunkApi.rejectWithValue({
+      errorMessage: e.message,
+    });
+  }
+
+  return res;
+});
+
 export const saveSettings = createAsyncThunk<
   Settings,
   {
-    allowList?: string[];
-    isDataSharingAllowed?: boolean;
-    isMemoValidationEnabled?: boolean;
-    isSafetyValidationEnabled?: boolean;
-    isValidatingSafeAssetsEnabled?: boolean;
-    isExperimentalModeEnabled?: boolean;
+    isDataSharingAllowed: boolean;
+    isMemoValidationEnabled: boolean;
+    isSafetyValidationEnabled: boolean;
+    isValidatingSafeAssetsEnabled: boolean;
+    isExperimentalModeEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
   async (
     {
-      allowList,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
@@ -74,7 +96,6 @@ export const saveSettings = createAsyncThunk<
 
     try {
       res = await saveSettingsService({
-        allowList,
         isDataSharingAllowed,
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
@@ -144,10 +165,27 @@ const settingsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(
+      saveAllowList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          allowList: string[];
+        }>,
+      ) => {
+        const { allowList } = action?.payload || {
+          networksList: initialState.allowList,
+        };
+
+        return {
+          ...state,
+          allowList,
+        };
+      },
+    );
+    builder.addCase(
       saveSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
         const {
-          allowList,
           isDataSharingAllowed,
           networkDetails,
           isMemoValidationEnabled,
@@ -161,7 +199,6 @@ const settingsSlice = createSlice({
 
         return {
           ...state,
-          allowList,
           isDataSharingAllowed,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,

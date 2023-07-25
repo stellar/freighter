@@ -28,6 +28,7 @@ import {
   addRecentAddress,
   loadRecentAddresses,
   signOut,
+  saveAllowList,
   saveSettings,
   loadSettings,
   showBackupPhrase,
@@ -279,8 +280,14 @@ export const IntegrationTest = () => {
         assertString(res.applicationState);
       });
 
-      res = await saveSettings({
+      res = await saveAllowList({
         allowList: ["foo", "bar"],
+      });
+      runAsserts("saveAllowList", () => {
+        assertEq(res.allowList, ["foo", "bar"]);
+      });
+
+      res = await saveSettings({
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
         isSafetyValidationEnabled: true,
