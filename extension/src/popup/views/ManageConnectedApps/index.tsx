@@ -10,12 +10,6 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import "./styles.scss";
 
-/* 
-  Due to a bug in how allowList is stored, even when the list is empty, the list is saved as [""]. 
-  So, to determine if the list is empty, we check to see if length is greater than 1
-  */
-const ALLOWLIST_DEFAULT_LENGTH = 1;
-
 export const ManageConnectedApps = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -34,7 +28,7 @@ export const ManageConnectedApps = () => {
   return (
     <div className="ManageConnectedApps">
       <SubviewHeader title="Manage Connected Apps" />
-      {allowList.length > ALLOWLIST_DEFAULT_LENGTH ? (
+      {allowList.length ? (
         <SimpleBarWrapper className="ManageConnectedApps__wrapper">
           <div className="ManageConnectedApps__content">
             {allowList.map(

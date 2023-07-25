@@ -47,6 +47,7 @@ import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 import {
   addAccountName,
   getAccountNameList,
+  getAllowList,
   getKeyIdList,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
@@ -973,7 +974,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(ALLOWLIST_ID, allowList.join());
 
     return {
-      allowList,
+      allowList: await getAllowList(),
     };
   };
 
@@ -1019,11 +1020,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     );
 
-    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-    const allowList = allowListStr.split(",");
-
     return {
-      allowList,
+      allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
@@ -1038,11 +1036,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
 
-    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-    const allowList = allowListStr.split(",");
-
     return {
-      allowList,
+      allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),

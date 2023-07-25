@@ -1,5 +1,6 @@
 import {
   ACCOUNT_NAME_LIST_ID,
+  ALLOWLIST_ID,
   KEY_ID_LIST,
   KEY_ID,
   IS_VALIDATING_MEMO_ID,
@@ -61,6 +62,17 @@ export const getIsFuturenet = async () => {
   const networkDetails = await getNetworkDetails();
 
   return isFuturenet(networkDetails);
+};
+
+export const getAllowList = async () => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || "";
+
+  if (allowList === "") {
+    // manually return an empty array as calling .split(",") will return [""]
+    return [];
+  }
+
+  return allowList.split(",");
 };
 
 export const getIsMemoValidationEnabled = async () =>
