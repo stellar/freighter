@@ -71,6 +71,7 @@ export interface Response {
   isConnected: boolean;
   isAllowed: boolean;
   userInfo: UserInfo;
+  allowList: string[];
 }
 
 export interface BlockedDomains {
@@ -116,6 +117,7 @@ export interface Preferences {
 }
 
 export type Settings = {
+  allowList: string[];
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   error: string;

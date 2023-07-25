@@ -26,6 +26,7 @@ interface ErrorMessage {
 }
 
 const initialState: Settings = {
+  allowList: [],
   isDataSharingAllowed: false,
   networkDetails: {
     network: "",
@@ -48,17 +49,19 @@ export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
 export const saveSettings = createAsyncThunk<
   Settings,
   {
-    isDataSharingAllowed: boolean;
-    isMemoValidationEnabled: boolean;
-    isSafetyValidationEnabled: boolean;
-    isValidatingSafeAssetsEnabled: boolean;
-    isExperimentalModeEnabled: boolean;
+    allowList?: string[];
+    isDataSharingAllowed?: boolean;
+    isMemoValidationEnabled?: boolean;
+    isSafetyValidationEnabled?: boolean;
+    isValidatingSafeAssetsEnabled?: boolean;
+    isExperimentalModeEnabled?: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
   async (
     {
+      allowList,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
@@ -71,6 +74,7 @@ export const saveSettings = createAsyncThunk<
 
     try {
       res = await saveSettingsService({
+        allowList,
         isDataSharingAllowed,
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
@@ -143,6 +147,7 @@ const settingsSlice = createSlice({
       saveSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
         const {
+          allowList,
           isDataSharingAllowed,
           networkDetails,
           isMemoValidationEnabled,
@@ -156,6 +161,7 @@ const settingsSlice = createSlice({
 
         return {
           ...state,
+          allowList,
           isDataSharingAllowed,
           isMemoValidationEnabled,
           isSafetyValidationEnabled,
@@ -170,6 +176,7 @@ const settingsSlice = createSlice({
       loadSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
         const {
+          allowList,
           isDataSharingAllowed,
           networkDetails,
           networksList,
@@ -183,6 +190,7 @@ const settingsSlice = createSlice({
 
         return {
           ...state,
+          allowList,
           isDataSharingAllowed,
           networkDetails,
           networksList,

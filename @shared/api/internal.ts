@@ -675,19 +675,22 @@ export const showBackupPhrase = async (
 };
 
 export const saveSettings = async ({
+  allowList,
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
   isValidatingSafeAssetsEnabled,
   isExperimentalModeEnabled,
 }: {
-  isDataSharingAllowed: boolean;
-  isMemoValidationEnabled: boolean;
-  isSafetyValidationEnabled: boolean;
-  isValidatingSafeAssetsEnabled: boolean;
-  isExperimentalModeEnabled: boolean;
+  allowList?: string[];
+  isDataSharingAllowed?: boolean;
+  isMemoValidationEnabled?: boolean;
+  isSafetyValidationEnabled?: boolean;
+  isValidatingSafeAssetsEnabled?: boolean;
+  isExperimentalModeEnabled?: boolean;
 }): Promise<Settings> => {
   let response = {
+    allowList: [""],
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
@@ -700,6 +703,7 @@ export const saveSettings = async ({
 
   try {
     response = await sendMessageToBackground({
+      allowList,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,

@@ -40,6 +40,7 @@ export enum ROUTES {
   about = "/settings/about",
   preferences = "/settings/preferences",
   security = "/settings/security",
+  manageConnectedApps = "/settings/manageConnectedApps",
   manageAssets = "/manage-assets",
   addAsset = "/manage-assets/add-asset",
   searchAsset = "/manage-assets/search-asset",

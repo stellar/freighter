@@ -280,6 +280,7 @@ export const IntegrationTest = () => {
       });
 
       res = await saveSettings({
+        allowList: ["foo", "bar"],
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
         isSafetyValidationEnabled: true,

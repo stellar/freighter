@@ -23,6 +23,9 @@ export const Security = () => {
         <ListNavLink href={ROUTES.displayBackupPhrase}>
           {t("Show recovery phrase")}
         </ListNavLink>
+        <ListNavLink href={ROUTES.manageConnectedApps}>
+          {t("Manage connected apps")}
+        </ListNavLink>
       </ListNavLinkWrapper>
     </div>
   );

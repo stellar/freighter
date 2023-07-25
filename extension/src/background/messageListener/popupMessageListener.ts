@@ -969,6 +969,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const saveSettings = async () => {
     const {
+      allowList,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
@@ -978,6 +979,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
+    await localStore.setItem(ALLOWLIST_ID, allowList.join());
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
     await localStore.setItem(
@@ -1010,6 +1012,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
 
     return {
+      allowList,
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
@@ -1024,7 +1027,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
 
+    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
+    const allowList = allowListStr.split(",");
+
     return {
+      allowList,
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
