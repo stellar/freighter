@@ -19,7 +19,7 @@ import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { TransactionHeading } from "popup/basics/TransactionHeading";
-import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { rejectTransaction, signBlob, signTransaction } from "popup/ducks/access";
 import {
   allAccountsSelector,
   confirmPassword,
@@ -77,6 +77,7 @@ export const SignTransaction = () => {
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
+
   const {
     accountToSign: _accountToSign,
     transactionXdr,
@@ -93,11 +94,16 @@ export const SignTransaction = () => {
   But in this case, we will need the hostFn prototype associated with Soroban tx operations.
   */
 
-  const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-  const transaction = SDK.TransactionBuilder.fromXDR(
-    transactionXdr,
-    networkPassphrase,
-  );
+  let transaction = {} as any;
+  try {
+    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    transaction = SDK.TransactionBuilder.fromXDR(
+      transactionXdr,
+      networkPassphrase,
+    );
+  } catch (error) {
+    console.log('signing data as blob')
+  }
 
   const {
     _fee,
@@ -141,7 +147,12 @@ export const SignTransaction = () => {
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signTransaction());
+
+      if (Object.keys(transaction).length > 0) {
+        await dispatch(signTransaction());
+      } else {
+        await dispatch(signBlob());
+      }
       window.close();
     }
   };
@@ -256,7 +267,7 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
-  if (_networkPassphrase !== networkPassphrase) {
+  if (_networkPassphrase !== networkPassphrase && Object.keys(transaction).length > 0) {
     return (
       <ModalWrapper>
         <WarningMessage
@@ -294,6 +305,31 @@ export const SignTransaction = () => {
         </WarningMessage>
       </ModalWrapper>
     );
+  }
+
+  function renderPreview() {
+    switch (true) {
+      case Object.keys(transaction).length > 0:
+        return (
+          <Transaction
+            flaggedKeys={flaggedKeys}
+            isMemoRequired={isMemoRequired}
+            transaction={transaction}
+          />
+        )
+      case isFeeBump:
+        return (
+          <div className="SignTransaction__inner-transaction">
+            <Transaction
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
+              transaction={_innerTransaction}
+            />
+          </div>
+        )
+      default:
+        return (<></>)
+    }
   }
 
   return isPasswordRequired ? (
@@ -378,22 +414,7 @@ export const SignTransaction = () => {
               </div>
             ) : null}
           </div>
-
-          {isFeeBump ? (
-            <div className="SignTransaction__inner-transaction">
-              <Transaction
-                flaggedKeys={flaggedKeys}
-                isMemoRequired={isMemoRequired}
-                transaction={_innerTransaction}
-              />
-            </div>
-          ) : (
-            <Transaction
-              flaggedKeys={flaggedKeys}
-              isMemoRequired={isMemoRequired}
-              transaction={transaction}
-            />
-          )}
+          {renderPreview()}
           <TransactionHeading>{t("Transaction Info")}</TransactionHeading>
           <TransactionInfo
             _fee={_fee}

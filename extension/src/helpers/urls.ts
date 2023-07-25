@@ -13,7 +13,7 @@ export const newTabHref = (path = "", queryParams = "") =>
 export const removeQueryParam = (url = "") => url.replace(/\?(.*)/, "");
 
 export const parsedSearchParam = (param: string): TransactionInfo => {
-  const decodedSearchParam = decodeString(param.replace("?", ""));
+  const decodedSearchParam = decodeString((param).replace("?", ""));
   return decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
 };
 

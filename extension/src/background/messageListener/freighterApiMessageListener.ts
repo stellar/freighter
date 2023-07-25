@@ -105,10 +105,6 @@ export const freighterApiMessageListener = (
     const { networkUrl } = await getNetworkDetails();
     const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-    const transaction = SDK.TransactionBuilder.fromXDR(
-      transactionXdr,
-      networkPassphrase || SDK.Networks[network],
-    );
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -116,88 +112,109 @@ export const freighterApiMessageListener = (
 
     const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
-
     const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-    const directoryLookupJson = await cachedFetch(
-      STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-      CACHED_BLOCKED_ACCOUNTS_ID,
-    );
-    const accountData = directoryLookupJson?._embedded?.records || [];
-
-    const _operations =
-      transaction._operations || transaction._innerTransaction._operations;
-
-    const flaggedKeys: FlaggedKeys = {};
-
-    const isValidatingMemo = (await getIsMemoValidationEnabled()) && isMainnet;
-    const isValidatingSafety =
-      (await getIsSafetyValidationEnabled()) && isMainnet;
-
-    if (isValidatingMemo || isValidatingSafety) {
-      _operations.forEach((operation: { destination: string }) => {
-        accountData.forEach(
-          ({ address, tags }: { address: string; tags: Array<string> }) => {
-            if (address === operation.destination) {
-              let collectedTags = [...tags];
-
-              /* if the user has opted out of validation, remove applicable tags */
-              if (!isValidatingMemo) {
-                collectedTags.filter(
-                  (tag) => tag !== TRANSACTION_WARNING.memoRequired,
-                );
-              }
-              if (!isValidatingSafety) {
-                collectedTags = collectedTags.filter(
-                  (tag) => tag !== TRANSACTION_WARNING.unsafe,
-                );
-                collectedTags = collectedTags.filter(
-                  (tag) => tag !== TRANSACTION_WARNING.malicious,
-                );
-              }
-              flaggedKeys[operation.destination] = {
-                ...flaggedKeys[operation.destination],
-                tags: collectedTags,
-              };
-            }
-          },
-        );
-      });
-    }
-
-    const server = stellarSdkServer(networkUrl);
-
+    // try to build a tx xdr, if you cannot then assume the user wants to sign an arbitrary blob
+    let encodedBlob = ""
     try {
-      await server.checkMemoRequired(transaction);
-    } catch (e) {
-      flaggedKeys[e.accountId] = {
-        ...flaggedKeys[e.accountId],
-        tags: [TRANSACTION_WARNING.memoRequired],
-      };
+      const transaction = SDK.TransactionBuilder.fromXDR(
+        transactionXdr,
+        networkPassphrase || SDK.Networks[network],
+      );
+  
+      const directoryLookupJson = await cachedFetch(
+        STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
+        CACHED_BLOCKED_ACCOUNTS_ID,
+      );
+      const accountData = directoryLookupJson?._embedded?.records || [];
+  
+      const _operations =
+        transaction._operations || transaction._innerTransaction._operations;
+  
+      const flaggedKeys: FlaggedKeys = {};
+  
+      const isValidatingMemo = (await getIsMemoValidationEnabled()) && isMainnet;
+      const isValidatingSafety =
+        (await getIsSafetyValidationEnabled()) && isMainnet;
+  
+      if (isValidatingMemo || isValidatingSafety) {
+        _operations.forEach((operation: { destination: string }) => {
+          accountData.forEach(
+            ({ address, tags }: { address: string; tags: Array<string> }) => {
+              if (address === operation.destination) {
+                let collectedTags = [...tags];
+  
+                /* if the user has opted out of validation, remove applicable tags */
+                if (!isValidatingMemo) {
+                  collectedTags.filter(
+                    (tag) => tag !== TRANSACTION_WARNING.memoRequired,
+                  );
+                }
+                if (!isValidatingSafety) {
+                  collectedTags = collectedTags.filter(
+                    (tag) => tag !== TRANSACTION_WARNING.unsafe,
+                  );
+                  collectedTags = collectedTags.filter(
+                    (tag) => tag !== TRANSACTION_WARNING.malicious,
+                  );
+                }
+                flaggedKeys[operation.destination] = {
+                  ...flaggedKeys[operation.destination],
+                  tags: collectedTags,
+                };
+              }
+            },
+          );
+        });
+      }
+  
+      const server = stellarSdkServer(networkUrl);
+  
+      try {
+        await server.checkMemoRequired(transaction);
+      } catch (e) {
+        flaggedKeys[e.accountId] = {
+          ...flaggedKeys[e.accountId],
+          tags: [TRANSACTION_WARNING.memoRequired],
+        };
+      }
+  
+      const transactionInfo = {
+        transaction,
+        transactionXdr,
+        tab,
+        isDomainListedAllowed,
+        url: tabUrl,
+        flaggedKeys,
+        accountToSign,
+      } as TransactionInfo;
+  
+      transactionQueue.push(transaction);
+  
+      encodedBlob = encodeObject(transactionInfo);
+    } catch (error) {
+      const blob = {
+        isDomainListedAllowed,
+        flaggedKeys: {} as FlaggedKeys,
+        tab,
+        transactionXdr,
+        url: tabUrl,
+        accountToSign
+      }
+
+      transactionQueue.push(blob as any);
+      encodedBlob = encodeObject(blob)
     }
-
-    const transactionInfo = {
-      transaction,
-      transactionXdr,
-      tab,
-      isDomainListedAllowed,
-      url: tabUrl,
-      flaggedKeys,
-      accountToSign,
-    } as TransactionInfo;
-
-    transactionQueue.push(transaction);
-
-    const encodetransactionInfo = encodeObject(transactionInfo);
-
+    
     const popup = browser.windows.create({
       url: chrome.runtime.getURL(
-        `/index.html#/sign-transaction?${encodetransactionInfo}`,
+        `/index.html#/sign-transaction?${encodedBlob}`,
       ),
       ...WINDOW_SETTINGS,
     });
 
     return new Promise((resolve) => {
+      console.log(popup)
       if (!popup) {
         resolve({ error: "Couldn't open access prompt" });
       } else {
@@ -208,6 +225,7 @@ export const freighterApiMessageListener = (
         );
       }
       const response = (signedTransaction: string) => {
+        console.log('signed tx', signedTransaction)
         if (signedTransaction) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
@@ -216,6 +234,7 @@ export const freighterApiMessageListener = (
           resolve({ signedTransaction });
         }
 
+        console.log('declined access')
         resolve({ error: "User declined access" });
       };
 

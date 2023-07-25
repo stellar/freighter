@@ -898,6 +898,32 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
+  const signBlob = async () => {
+    const privateKey = privateKeySelector(sessionStore.getState());
+
+    if (privateKey.length) {
+      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
+      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+
+      // TODO: retype tx queue
+      const blob: { transactionXdr: string } = transactionQueue.pop() as any;
+      console.log(blob)
+      const response = await sourceKeys.sign(Buffer.from(blob.transactionXdr, 'base64'))
+      console.log(response)
+
+      const blobResponse = responseQueue.pop();
+
+      console.log(blobResponse)
+      if (typeof blobResponse === "function") {
+        blobResponse(response);
+        return {};
+      }
+    }
+
+    return { error: "Session timed out" };
+  }
+
   const rejectTransaction = () => {
     transactionQueue.pop();
     const response = responseQueue.pop();
@@ -1177,6 +1203,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.GRANT_ACCESS]: grantAccess,
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
+    [SERVICE_TYPES.SIGN_BLOB]: signBlob,
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,

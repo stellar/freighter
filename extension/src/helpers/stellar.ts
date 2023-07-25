@@ -47,7 +47,7 @@ export const getTransactionInfo = (search: string) => {
   } = transactionInfo;
   const hostname = getUrlHostname(url);
   const isHttpsDomain = url.startsWith("https");
-  const { _operations = [] } = transaction;
+  const _operations = transaction && transaction._operations || [];
   const operationTypes = _operations.map(
     (operation: { type: string }) => operation.type,
   );

@@ -505,6 +505,16 @@ export const signTransaction = async (): Promise<void> => {
   }
 };
 
+export const signBlob = async (): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      type: SERVICE_TYPES.SIGN_BLOB,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signFreighterTransaction = async ({
   transactionXDR,
   network,
