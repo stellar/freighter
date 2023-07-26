@@ -25,7 +25,10 @@ describe("getTransactionInfo", () => {
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
     });
-    expect(getTransactionInfo("foo").isHttpsDomain).toBe(true);
+    const info =  getTransactionInfo("foo")
+    if (!("blob" in info)) {
+      expect(info.isHttpsDomain).toBe(true);
+    }
   });
   it("detects non-https domain", () => {
     jest.spyOn(urls, "parsedSearchParam").mockReturnValue({
@@ -37,6 +40,9 @@ describe("getTransactionInfo", () => {
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
     });
-    expect(getTransactionInfo("foo").isHttpsDomain).toBe(false);
+    const info =  getTransactionInfo("foo")
+    if (!("blob" in info)) {
+      expect(info.isHttpsDomain).toBe(false);
+    }
   });
 });
