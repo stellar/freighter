@@ -106,3 +106,15 @@ fi
 ```
 
 This will instruct the git hook to use the .nvmrc found in this repo.
+
+### TEMP NOTES
+
+Setup Safari to allow unsigned extensions
+https://developer.apple.com/documentation/safariservices/safari_web_extensions/running_your_safari_web_extension#3744467
+
+xcrun safari-web-extension-converter freighter/extension/build --project-location freighter-safari
+
+https://developer.apple.com/documentation/safariservices/safari_web_extensions/converting_a_web_extension_for_safari#3586258
+says we can't use persistent bg scripts but I don't see that when running it locally
+
+Run in xcode and open in Safari
