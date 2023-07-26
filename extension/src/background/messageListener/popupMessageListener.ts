@@ -1,6 +1,7 @@
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import StellarSdk from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
+import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
@@ -92,6 +93,12 @@ export const responseQueue: Array<(message?: any) => void> = [];
 export const transactionQueue: Array<{
   sign: (sourceKeys: {}) => void;
   toXDR: () => void;
+}> = [];
+export const blobQueue: Array<{
+  tab: browser.Tabs.Tab | undefined,
+  blob: string,
+  url: string,
+  accountToSign: string
 }> = [];
 
 interface KeyPair {
@@ -906,15 +913,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
       const sourceKeys = SDK.Keypair.fromSecret(privateKey);
 
-      // TODO: retype tx queue
-      const blob: { transactionXdr: string } = transactionQueue.pop() as any;
-      console.log(blob)
-      const response = await sourceKeys.sign(Buffer.from(blob.transactionXdr, 'base64'))
-      console.log(response)
+      const blob = blobQueue.pop();
+      const response = blob ? await sourceKeys.sign(Buffer.from(blob.blob, 'base64')) : null
 
       const blobResponse = responseQueue.pop();
 
-      console.log(blobResponse)
       if (typeof blobResponse === "function") {
         blobResponse(response);
         return {};

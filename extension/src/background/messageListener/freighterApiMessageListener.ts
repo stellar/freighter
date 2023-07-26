@@ -34,7 +34,7 @@ import {
 } from "background/helpers/dataStorage";
 import { publicKeySelector } from "background/ducks/session";
 
-import { responseQueue, transactionQueue } from "./popupMessageListener";
+import { blobQueue, responseQueue, transactionQueue } from "./popupMessageListener";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -194,15 +194,13 @@ export const freighterApiMessageListener = (
       encodedBlob = encodeObject(transactionInfo);
     } catch (error) {
       const blob = {
-        isDomainListedAllowed,
-        flaggedKeys: {} as FlaggedKeys,
         tab,
-        transactionXdr,
+        blob: transactionXdr,
         url: tabUrl,
         accountToSign
       }
 
-      transactionQueue.push(blob as any);
+      blobQueue.push(blob);
       encodedBlob = encodeObject(blob)
     }
     
@@ -214,7 +212,6 @@ export const freighterApiMessageListener = (
     });
 
     return new Promise((resolve) => {
-      console.log(popup)
       if (!popup) {
         resolve({ error: "Couldn't open access prompt" });
       } else {
@@ -225,7 +222,6 @@ export const freighterApiMessageListener = (
         );
       }
       const response = (signedTransaction: string) => {
-        console.log('signed tx', signedTransaction)
         if (signedTransaction) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
@@ -234,7 +230,6 @@ export const freighterApiMessageListener = (
           resolve({ signedTransaction });
         }
 
-        console.log('declined access')
         resolve({ error: "User declined access" });
       };
 

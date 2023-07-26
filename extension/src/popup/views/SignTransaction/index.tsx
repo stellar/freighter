@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
 import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
@@ -51,7 +50,6 @@ import {
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
 import { Transaction } from "popup/components/signTransaction/Transaction";
-import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
@@ -63,13 +61,257 @@ import {
 } from "popup/ducks/transactionSubmission";
 
 import { Account } from "@shared/api/types";
+import { FlaggedKeys } from "types/transactions";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
+import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
+import { BlobToSign } from "helpers/urls";
 
 export const SignTransaction = () => {
+  const blobOrTx = getTransactionInfo(location.search);
+
+  if ("blob" in blobOrTx) {
+    return (
+      <SignBlobBody blob={blobOrTx} />
+    )
+  }
+
+  return (
+    <SignTxBody
+      tx={blobOrTx}
+     />
+  )
+};
+
+interface SignBlobBodyProps {
+  blob: BlobToSign
+}
+
+const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
+  const { accountToSign } = blob
   const { t } = useTranslation();
-  const location = useLocation();
+  const dispatch: AppDispatch = useDispatch();
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const {
+    hardwareWalletData: { status: hwStatus },
+  } = useSelector(transactionSubmissionSelector);
+  const isExperimentalModeEnabled = useSelector(
+    settingsExperimentalModeSelector,
+  );
+
+  const [startedHwSign, setStartedHwSign] = useState(false);
+  const [currentAccount, setCurrentAccount] = useState({} as Account);
+  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [accountNotFound, setAccountNotFound] = useState(false);
+
+  const isHardwareWallet = !!hardwareWalletType;
+
+  const allAccounts = useSelector(allAccountsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  // the public key the user had selected before starting this flow
+  const defaultPublicKey = useRef(publicKey);
+  const allAccountsMap = useRef({} as { [key: string]: Account });
+
+  const signAndClose = async () => {
+    if (isHardwareWallet) {
+      await dispatch(
+        startHwSign({ transactionXDR: blob.blob, shouldSubmit: false }),
+      );
+      setStartedHwSign(true);
+    } else {
+
+      await dispatch(signBlob());
+      window.close();
+    }
+  };
+
+  const verifyPasswordThenSign = async (password: string) => {
+    const confirmPasswordResp = await dispatch(confirmPassword(password));
+
+    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
+      await signAndClose();
+    }
+  };
+
+  const rejectAndClose = () => {
+    dispatch(rejectTransaction());
+    window.close();
+  };
+
+  const handleApprove = async () => {
+    setIsConfirming(true);
+
+    if (hasPrivateKey) {
+      await signAndClose();
+    } else {
+      setIsPasswordRequired(true);
+    }
+
+    setIsConfirming(false);
+  };
+
+  useEffect(() => {
+    // handle any changes to the current acct - whether by auto select or manual select
+    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
+  }, [allAccounts, publicKey]);
+
+  useEffect(() => {
+    if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
+      window.close();
+    }
+  }, [startedHwSign, hwStatus]);
+
+  useEffect(() => {
+    // handle auto selecting the right account based on `accountToSign`
+    let autoSelectedAccountDetails;
+
+    allAccounts.forEach((account) => {
+      if (accountToSign) {
+        // does the user have the `accountToSign` somewhere in the accounts list?
+        if (account.publicKey === accountToSign) {
+          // if the `accountToSign` is found, but it isn't active, make it active
+          if (defaultPublicKey.current !== account.publicKey) {
+            dispatch(makeAccountActive(account.publicKey));
+          }
+
+          // save the details of the `accountToSign`
+          autoSelectedAccountDetails = account;
+        }
+      }
+
+      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
+      allAccountsMap.current[account.publicKey] = account;
+    });
+
+    if (!autoSelectedAccountDetails) {
+      setAccountNotFound(true);
+    }
+  }, [accountToSign, allAccounts, dispatch]);
+
+  return isPasswordRequired ? (
+    <VerifyAccount
+      isApproval
+      customBackAction={() => setIsPasswordRequired(false)}
+      customSubmit={verifyPasswordThenSign}
+    />
+  ) : (
+    <>
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      <div className="SignTransaction" data-testid="SignTransaction">
+        <ModalWrapper>
+          <ModalHeader>
+            <strong>{t("Confirm Transaction")}</strong>
+          </ModalHeader>
+          {isExperimentalModeEnabled ? (
+            <WarningMessage
+              header="Experimental Mode"
+              variant={WarningMessageVariant.default}
+            >
+              <p>
+                {t(
+                  "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk.",
+                )}
+              </p>
+            </WarningMessage>
+          ) : null}
+        </ModalWrapper>
+        <div className="SignTransaction__info">
+          <Card variant={Card.variant.highlight}>
+            <div className="SignTransaction__subject">
+              {t("is requesting approval to sign a blob of data")}
+            </div>
+            <div className="SignTransaction__approval">
+              <div className="SignTransaction__approval__title">
+                {t("Approve using")}:
+              </div>
+              <div
+                className="SignTransaction__current-account"
+                onClick={() => setIsDropdownOpen(true)}
+              >
+                <AccountListIdenticon
+                  displayKey
+                  accountName={currentAccount.name}
+                  active
+                  publicKey={currentAccount.publicKey}
+                  setIsDropdownOpen={setIsDropdownOpen}
+                >
+                  <OptionTag
+                    hardwareWalletType={currentAccount.hardwareWalletType}
+                    imported={currentAccount.imported}
+                  />
+                </AccountListIdenticon>
+                <div className="SignTransaction__current-account__chevron">
+                  <Icon.ChevronDown />
+                </div>
+              </div>
+            </div>
+          </Card>
+          {accountNotFound && accountToSign ? (
+            <div className="SignTransaction__account-not-found">
+              <InfoBlock variant={InfoBlock.variant.warning}>
+                {t("The application is requesting a specific account")} (
+                {truncatedPublicKey(accountToSign)}),{" "}
+                {t(
+                  "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
+                )}
+              </InfoBlock>
+            </div>
+          ) : null}
+        </div>
+        <ButtonsContainer>
+          <Button
+            fullWidth
+            variant={Button.variant.tertiary}
+            onClick={() => rejectAndClose()}
+          >
+            {t("Reject")}
+          </Button>
+          <Button
+            fullWidth
+            isLoading={isConfirming}
+            onClick={() => handleApprove()}
+          >
+            {t("Approve")}
+          </Button>
+        </ButtonsContainer>
+        <SlideupModal
+          isModalOpen={isDropdownOpen}
+          setIsModalOpen={setIsDropdownOpen}
+        >
+          <div className="SignTransaction__modal">
+            <AccountList
+              allAccounts={allAccounts}
+              publicKey={publicKey}
+              setIsDropdownOpen={setIsDropdownOpen}
+            />
+          </div>
+        </SlideupModal>
+      </div>
+    </>
+  );
+}
+
+interface SignTxBodyProps {
+  tx: {
+    accountToSign: string | undefined
+    transactionXdr: string;
+    domain: string;
+    domainTitle: any;
+    isHttpsDomain: boolean;
+    operations: any;
+    operationTypes: any;
+    isDomainListedAllowed: boolean;
+    flaggedKeys: FlaggedKeys;
+  }
+}
+
+const SignTxBody = ({ tx }: SignTxBodyProps) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
@@ -85,7 +327,7 @@ export const SignTransaction = () => {
     isDomainListedAllowed,
     isHttpsDomain,
     flaggedKeys,
-  } = getTransactionInfo(location.search);
+  } = tx
 
   /* 
   Reconstruct the tx from xdr as passing a tx through extension contexts 
@@ -94,16 +336,11 @@ export const SignTransaction = () => {
   But in this case, we will need the hostFn prototype associated with Soroban tx operations.
   */
 
-  let transaction = {} as any;
-  try {
-    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-    transaction = SDK.TransactionBuilder.fromXDR(
-      transactionXdr,
-      networkPassphrase,
-    );
-  } catch (error) {
-    console.log('signing data as blob')
-  }
+  const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+  const transaction = SDK.TransactionBuilder.fromXDR(
+    transactionXdr,
+    networkPassphrase,
+  );
 
   const {
     _fee,
@@ -148,11 +385,7 @@ export const SignTransaction = () => {
       setStartedHwSign(true);
     } else {
 
-      if (Object.keys(transaction).length > 0) {
-        await dispatch(signTransaction());
-      } else {
-        await dispatch(signBlob());
-      }
+      await dispatch(signTransaction());
       window.close();
     }
   };
@@ -215,7 +448,7 @@ export const SignTransaction = () => {
         accountToSign = mAccount.baseAccount().accountId();
       }
       if (isFederationAddress(_accountToSign)) {
-        accountToSign = await resolveFederatedAddress(accountToSign);
+        accountToSign = await resolveFederatedAddress(accountToSign) as string;
       }
     }
   };
@@ -267,7 +500,7 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
-  if (_networkPassphrase !== networkPassphrase && Object.keys(transaction).length > 0) {
+  if (_networkPassphrase !== networkPassphrase) {
     return (
       <ModalWrapper>
         <WarningMessage
@@ -306,32 +539,6 @@ export const SignTransaction = () => {
       </ModalWrapper>
     );
   }
-
-  function renderPreview() {
-    switch (true) {
-      case Object.keys(transaction).length > 0:
-        return (
-          <Transaction
-            flaggedKeys={flaggedKeys}
-            isMemoRequired={isMemoRequired}
-            transaction={transaction}
-          />
-        )
-      case isFeeBump:
-        return (
-          <div className="SignTransaction__inner-transaction">
-            <Transaction
-              flaggedKeys={flaggedKeys}
-              isMemoRequired={isMemoRequired}
-              transaction={_innerTransaction}
-            />
-          </div>
-        )
-      default:
-        return (<></>)
-    }
-  }
-
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -414,7 +621,21 @@ export const SignTransaction = () => {
               </div>
             ) : null}
           </div>
-          {renderPreview()}
+          {isFeeBump ? (
+            <div className="SignTransaction__inner-transaction">
+              <Transaction
+                flaggedKeys={flaggedKeys}
+                isMemoRequired={isMemoRequired}
+                transaction={_innerTransaction}
+              />
+            </div>
+          ) : (
+            <Transaction
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
+              transaction={transaction}
+            />
+          )}
           <TransactionHeading>{t("Transaction Info")}</TransactionHeading>
           <TransactionInfo
             _fee={_fee}
@@ -455,4 +676,4 @@ export const SignTransaction = () => {
       </div>
     </>
   );
-};
+}
