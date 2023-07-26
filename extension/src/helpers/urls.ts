@@ -3,6 +3,8 @@ import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
 
 export interface BlobToSign {
+  isDomainListedAllowed: boolean,
+  domain: string,
   tab: browser.Tabs.Tab | undefined,
   blob: string,
   url: string,

@@ -95,6 +95,8 @@ export const transactionQueue: Array<{
   toXDR: () => void;
 }> = [];
 export const blobQueue: Array<{
+  isDomainListedAllowed: boolean,
+  domain: string,
   tab: browser.Tabs.Tab | undefined,
   blob: string,
   url: string,

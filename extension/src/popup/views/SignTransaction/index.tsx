@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
 import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
@@ -69,6 +70,7 @@ import { TransactionInfo } from "popup/components/signTransaction/TransactionInf
 import { BlobToSign } from "helpers/urls";
 
 export const SignTransaction = () => {
+  const location = useLocation();
   const blobOrTx = getTransactionInfo(location.search);
 
   if ("blob" in blobOrTx) {
@@ -89,7 +91,7 @@ interface SignBlobBodyProps {
 }
 
 const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
-  const { accountToSign } = blob
+  const { accountToSign, domain, isDomainListedAllowed } = blob
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
@@ -193,6 +195,27 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
     }
   }, [accountToSign, allAccounts, dispatch]);
 
+  if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
+    return (
+      <ModalWrapper>
+        <WarningMessage
+          handleCloseClick={() => window.close()}
+          isActive
+          variant={WarningMessageVariant.warning}
+          header={t("WEBSITE CONNECTION IS NOT SECURE")}
+        >
+          <p>
+            <Trans domain={domain}>
+              The website <strong>{{ domain }}</strong> does not use an SSL
+              certificate. For additional safety Freighter only works with
+              websites that provide an SSL certificate.
+            </Trans>
+          </p>
+        </WarningMessage>
+      </ModalWrapper>
+    );
+  }
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -205,7 +228,7 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
       <div className="SignTransaction" data-testid="SignTransaction">
         <ModalWrapper>
           <ModalHeader>
-            <strong>{t("Confirm Transaction")}</strong>
+            <strong>{t("Confirm Data")}</strong>
           </ModalHeader>
           {isExperimentalModeEnabled ? (
             <WarningMessage
@@ -214,55 +237,59 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
             >
               <p>
                 {t(
-                  "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk.",
+                  "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk.",
                 )}
               </p>
             </WarningMessage>
           ) : null}
-        </ModalWrapper>
-        <div className="SignTransaction__info">
-          <Card variant={Card.variant.highlight}>
-            <div className="SignTransaction__subject">
-              {t("is requesting approval to sign a blob of data")}
-            </div>
-            <div className="SignTransaction__approval">
-              <div className="SignTransaction__approval__title">
-                {t("Approve using")}:
+          {!isDomainListedAllowed ? (
+          <FirstTimeWarningMessage />
+        ) : null}
+          <div className="SignTransaction__info">
+            <Card variant={Card.variant.highlight}>
+              <PunycodedDomain domain={domain} isRow />
+              <div className="SignTransaction__subject">
+                {t("is requesting approval to sign a blob of data")}
               </div>
-              <div
-                className="SignTransaction__current-account"
-                onClick={() => setIsDropdownOpen(true)}
-              >
-                <AccountListIdenticon
-                  displayKey
-                  accountName={currentAccount.name}
-                  active
-                  publicKey={currentAccount.publicKey}
-                  setIsDropdownOpen={setIsDropdownOpen}
+              <div className="SignTransaction__approval">
+                <div className="SignTransaction__approval__title">
+                  {t("Approve using")}:
+                </div>
+                <div
+                  className="SignTransaction__current-account"
+                  onClick={() => setIsDropdownOpen(true)}
                 >
-                  <OptionTag
-                    hardwareWalletType={currentAccount.hardwareWalletType}
-                    imported={currentAccount.imported}
-                  />
-                </AccountListIdenticon>
-                <div className="SignTransaction__current-account__chevron">
-                  <Icon.ChevronDown />
+                  <AccountListIdenticon
+                    displayKey
+                    accountName={currentAccount.name}
+                    active
+                    publicKey={currentAccount.publicKey}
+                    setIsDropdownOpen={setIsDropdownOpen}
+                  >
+                    <OptionTag
+                      hardwareWalletType={currentAccount.hardwareWalletType}
+                      imported={currentAccount.imported}
+                    />
+                  </AccountListIdenticon>
+                  <div className="SignTransaction__current-account__chevron">
+                    <Icon.ChevronDown />
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-          {accountNotFound && accountToSign ? (
-            <div className="SignTransaction__account-not-found">
-              <InfoBlock variant={InfoBlock.variant.warning}>
-                {t("The application is requesting a specific account")} (
-                {truncatedPublicKey(accountToSign)}),{" "}
-                {t(
-                  "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
-                )}
-              </InfoBlock>
-            </div>
-          ) : null}
-        </div>
+            </Card>
+            {accountNotFound && accountToSign ? (
+              <div className="SignTransaction__account-not-found">
+                <InfoBlock variant={InfoBlock.variant.warning}>
+                  {t("The application is requesting a specific account")} (
+                  {truncatedPublicKey(accountToSign)}),{" "}
+                  {t(
+                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
+                  )}
+                </InfoBlock>
+              </div>
+            ) : null}
+          </div>
+        </ModalWrapper>
         <ButtonsContainer>
           <Button
             fullWidth

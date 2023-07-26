@@ -190,10 +190,11 @@ export const freighterApiMessageListener = (
       } as TransactionInfo;
   
       transactionQueue.push(transaction);
-  
       encodedBlob = encodeObject(transactionInfo);
     } catch (error) {
       const blob = {
+        isDomainListedAllowed,
+        domain,
         tab,
         blob: transactionXdr,
         url: tabUrl,
