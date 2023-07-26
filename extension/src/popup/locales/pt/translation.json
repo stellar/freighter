@@ -83,6 +83,7 @@
   "Click on the extensions button at the top of your browser’s bar": "Click on the extensions button at the top of your browser’s bar",
   "Code": "Code",
   "CONFIRM": "CONFIRM",
+  "Confirm Data": "Confirm Data",
   "Confirm password": "Confirm password",
   "Confirm removing Network": "Confirm removing Network",
   "Confirm Send": "Confirm Send",
@@ -413,6 +414,9 @@
   "Woo, you’re in!": "Woo, you’re in!",
   "You are interacting with a transaction that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk."
+  },
+  "You are interacting with data that may be using untested and changing schemas": {
+    " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."
   },
   "You can": "You can",
   "You can fund this account using the friendbot tool": {
