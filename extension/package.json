@@ -4,6 +4,7 @@
   "license": "Apache-2.0",
   "prettier": "@stellar/prettier-config",
   "scripts": {
+    "setup": "yarn install && yarn allow-scripts",
     "build": "webpack --config webpack.extension.js",
     "build:experimental": "yarn build --env.EXPERIMENTAL=true",
     "build:production": "yarn build --env.PRODUCTION",
@@ -71,6 +72,7 @@
     "redux": "^4.0.5",
     "sass": "^1.22.10",
     "sass-loader": "8.0.0",
+    "ses": "^0.18.5",
     "simplebar-react": "^2.3.6",
     "soroban-client": "^0.9.1",
     "stellar-hd-wallet": "^0.0.10",
@@ -81,5 +83,18 @@
     "tslib": "2.0.0",
     "webextension-polyfill": "^0.10.0",
     "yup": "^0.29.1"
+  },
+  "devDependencies": {
+    "@lavamoat/allow-scripts": "^2.3.1"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@testing-library/react>@testing-library/dom>aria-query>@babel/runtime-corejs3>core-js-pure": false,
+      "css-loader>webpack>watchpack>watchpack-chokidar2>chokidar>fsevents": false,
+      "simplebar-react>simplebar>core-js": false,
+      "soroban-client>stellar-base>sodium-native": false,
+      "stellar-hd-wallet>stellar-base>sodium-native": false,
+      "stellar-sdk>stellar-base>sodium-native": false
+    }
   }
 }

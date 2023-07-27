@@ -16,6 +16,7 @@
     "**/terser-webpack-plugin": "^1.4.3"
   },
   "scripts": {
+    "setup": "yarn install && yarn allow-scripts",
     "build": "run-p --print-label build:freighter-api build:docs build:extension",
     "build:netlify": "cd docs && npm i && npm run build",
     "build:extension-preview": "run-s build:freighter-api build:extension:experimental",
@@ -32,7 +33,7 @@
     "start:extension": "yarn workspace extension start",
     "start:extension:experimental": "yarn workspace extension start:experimental",
     "start:unpacked": "yarn workspace extension start:unpacked-extension",
-    "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn install || exit 0",
+    "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn setup || exit 0",
     "test:ci": "jest --ci",
     "test": "jest -o --watch",
     "prepare": "husky install"
@@ -113,5 +114,18 @@
     "webpack-cli": "3.3.10",
     "webpack-dev-server": "3.10.3",
     "webpack-merge": "4.2.2"
+  },
+  "devDependencies": {
+    "@lavamoat/allow-scripts": "^2.3.1",
+    "@lavamoat/preinstall-always-fail": "^1.0.0"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@lavamoat/preinstall-always-fail": false,
+      "@testing-library/dom>aria-query>@babel/runtime-corejs3>core-js-pure": false,
+      "babel-polyfill>core-js": false,
+      "webpack-dev-server>chokidar>fsevents": true,
+      "webpack>watchpack>watchpack-chokidar2>chokidar>fsevents": true
+    }
   }
 }
