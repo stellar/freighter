@@ -59,7 +59,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: "16.14"
-      - run: yarn install && yarn build:freighter-api && yarn build:extension:production
+      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production
       - name: Use BETA icons
         run: |
           rm -rf ./extension/build/images
