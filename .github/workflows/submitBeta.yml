@@ -19,10 +19,16 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: release/${{ github.event.inputs.release }}
-      - name: Update manifest.json name
+      - name: Update manifest-v2.json name
         uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
         with:
-          file: ./extension/public/static/manifest.json
+          file: ./extension/public/static/manifest/v2.json
+          field: name
+          value: Freighter BETA
+      - name: Update manifest-v3.json name
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/public/static/manifest/v3.json
           field: name
           value: Freighter BETA
       - name: Update manifest-v2.json version_name
