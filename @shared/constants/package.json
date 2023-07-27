@@ -3,10 +3,16 @@
   "prettier": "@stellar/prettier-config",
   "version": "1.0.0",
   "dependencies": {
-    "typescript": "~3.7.2",
-    "stellar-sdk": "^10.4.1"
+    "stellar-sdk": "^10.4.1",
+    "typescript": "~3.7.2"
   },
   "devDependencies": {
+    "@lavamoat/allow-scripts": "^2.3.1",
     "@stellar/prettier-config": "^1.0.1"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "stellar-sdk>stellar-base>sodium-native": false
+    }
   }
 }
