@@ -34,7 +34,11 @@ import {
 } from "background/helpers/dataStorage";
 import { publicKeySelector } from "background/ducks/session";
 
-import { blobQueue, responseQueue, transactionQueue } from "./popupMessageListener";
+import {
+  blobQueue,
+  responseQueue,
+  transactionQueue,
+} from "./popupMessageListener";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -189,7 +193,7 @@ export const freighterApiMessageListener = (
 
     transactionQueue.push(transaction);
     const encodedBlob = encodeObject(transactionInfo);
-    
+
     const popup = browser.windows.create({
       url: chrome.runtime.getURL(
         `/index.html#/sign-transaction?${encodedBlob}`,
@@ -224,10 +228,7 @@ export const freighterApiMessageListener = (
   };
 
   const submitBlob = async () => {
-    const {
-      transactionXdr,
-      accountToSign,
-    } = request;
+    const { transactionXdr, accountToSign } = request;
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -243,11 +244,11 @@ export const freighterApiMessageListener = (
       tab,
       blob: transactionXdr,
       url: tabUrl,
-      accountToSign
-    }
+      accountToSign,
+    };
 
     blobQueue.push(blob);
-    const encodedBlob = encodeObject(blob)
+    const encodedBlob = encodeObject(blob);
     const popup = browser.windows.create({
       url: chrome.runtime.getURL(
         `/index.html#/sign-transaction?${encodedBlob}`,

@@ -87,14 +87,14 @@ registerHandler<AppState>(navigate, (_, a) => {
     const info = getTransactionInfo(search);
 
     if (!("blob" in info)) {
-      const { operations, operationTypes } = info
+      const { operations, operationTypes } = info;
       const METRIC_OPTIONS = {
         domain: getUrlDomain(url),
         subdomain: getUrlHostname(url),
         number_of_operations: operations.length,
         operationTypes,
       };
-  
+
       emitMetric(eventName, METRIC_OPTIONS);
     }
   } else {

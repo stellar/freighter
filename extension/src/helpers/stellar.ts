@@ -37,7 +37,7 @@ export const getTransactionInfo = (search: string) => {
   const searchParams = parsedSearchParam(search);
 
   if ("blob" in searchParams) {
-    return searchParams
+    return searchParams;
   }
 
   const {

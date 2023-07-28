@@ -95,12 +95,12 @@ export const transactionQueue: Array<{
   toXDR: () => void;
 }> = [];
 export const blobQueue: Array<{
-  isDomainListedAllowed: boolean,
-  domain: string,
-  tab: browser.Tabs.Tab | undefined,
-  blob: string,
-  url: string,
-  accountToSign: string
+  isDomainListedAllowed: boolean;
+  domain: string;
+  tab: browser.Tabs.Tab | undefined;
+  blob: string;
+  url: string;
+  accountToSign: string;
 }> = [];
 
 interface KeyPair {
@@ -916,7 +916,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const sourceKeys = SDK.Keypair.fromSecret(privateKey);
 
       const blob = blobQueue.pop();
-      const response = blob ? await sourceKeys.sign(Buffer.from(blob.blob, 'base64')) : null
+      const response = blob
+        ? await sourceKeys.sign(Buffer.from(blob.blob, "base64"))
+        : null;
 
       const blobResponse = responseQueue.pop();
 
@@ -927,7 +929,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     return { error: "Session timed out" };
-  }
+  };
 
   const rejectTransaction = () => {
     transactionQueue.pop();

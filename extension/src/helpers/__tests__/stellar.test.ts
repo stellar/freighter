@@ -25,7 +25,7 @@ describe("getTransactionInfo", () => {
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
     });
-    const info =  getTransactionInfo("foo")
+    const info = getTransactionInfo("foo");
     if (!("blob" in info)) {
       expect(info.isHttpsDomain).toBe(true);
     }
@@ -40,7 +40,7 @@ describe("getTransactionInfo", () => {
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
     });
-    const info =  getTransactionInfo("foo")
+    const info = getTransactionInfo("foo");
     if (!("blob" in info)) {
       expect(info.isHttpsDomain).toBe(false);
     }

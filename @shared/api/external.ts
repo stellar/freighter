@@ -71,15 +71,14 @@ export const submitTransaction = async (
 
 export const submitBlob = async (
   blob: string,
-  opts:
-  | {
-      network: string
-      accountToSign: string
-      networkPassphrase: string
-    },
+  opts: {
+    network: string;
+    accountToSign: string;
+    networkPassphrase: string;
+  },
 ): Promise<string> => {
   let response = { signedTransaction: "", error: "" };
-  const {network, networkPassphrase, accountToSign} = opts
+  const { network, networkPassphrase, accountToSign } = opts;
   try {
     response = await sendMessageToContentScript({
       transactionXDR: blob,
@@ -97,7 +96,7 @@ export const submitBlob = async (
     throw error;
   }
   return signedTransaction;
-}
+};
 
 export const requestNetwork = async (): Promise<string> => {
   let response = { network: "", error: "" };
