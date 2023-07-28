@@ -73,34 +73,20 @@ export const SignTransaction = () => {
   const location = useLocation();
   const blobOrTx = getTransactionInfo(location.search);
 
-  if ("blob" in blobOrTx) {
-    return (
-      <SignBlobBody blob={blobOrTx} />
-    )
-  }
-
-  return (
-    <SignTxBody
-      tx={blobOrTx}
-     />
-  )
-};
-
-interface SignBlobBodyProps {
-  blob: BlobToSign
-}
-
-const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
-  const { accountToSign, domain, isDomainListedAllowed } = blob
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const {
-    hardwareWalletData: { status: hwStatus },
-  } = useSelector(transactionSubmissionSelector);
+  const { networkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
+
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
+  const {
+    hardwareWalletData: { status: hwStatus },
+  } = useSelector(transactionSubmissionSelector);
 
   const [startedHwSign, setStartedHwSign] = useState(false);
   const [currentAccount, setCurrentAccount] = useState({} as Account);
@@ -109,8 +95,6 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [accountNotFound, setAccountNotFound] = useState(false);
 
-  const isHardwareWallet = !!hardwareWalletType;
-
   const allAccounts = useSelector(allAccountsSelector);
   const publicKey = useSelector(publicKeySelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
@@ -118,34 +102,14 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
   // the public key the user had selected before starting this flow
   const defaultPublicKey = useRef(publicKey);
   const allAccountsMap = useRef({} as { [key: string]: Account });
-
-  const signAndClose = async () => {
-    if (isHardwareWallet) {
-      await dispatch(
-        startHwSign({ transactionXDR: blob.blob, shouldSubmit: false }),
-      );
-      setStartedHwSign(true);
-    } else {
-
-      await dispatch(signBlob());
-      window.close();
-    }
-  };
-
-  const verifyPasswordThenSign = async (password: string) => {
-    const confirmPasswordResp = await dispatch(confirmPassword(password));
-
-    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
-      await signAndClose();
-    }
-  };
+  const accountToSign = blobOrTx.accountToSign // both types have this key
 
   const rejectAndClose = () => {
     dispatch(rejectTransaction());
     window.close();
   };
 
-  const handleApprove = async () => {
+  const handleApprove = (signAndClose: () => Promise<void>) => async () => {
     setIsConfirming(true);
 
     if (hasPrivateKey) {
@@ -194,6 +158,75 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
       setAccountNotFound(true);
     }
   }, [accountToSign, allAccounts, dispatch]);
+
+  if ("blob" in blobOrTx) {
+    return (
+      <SignBlobBody setIsDropdownOpen={setIsDropdownOpen} setIsPasswordRequired={setIsPasswordRequired} accountNotFound={accountNotFound} isConfirming={isConfirming} isDropdownOpen={isDropdownOpen} allAccounts={allAccounts} currentAccount={currentAccount} publicKey={publicKey} isPasswordRequired={isPasswordRequired} rejectAndClose={rejectAndClose} handleApprove={handleApprove} setStartedHwSign={setStartedHwSign} isHardwareWallet={isHardwareWallet} hwStatus={hwStatus} isExperimentalModeEnabled={isExperimentalModeEnabled} blob={blobOrTx} t={t} dispatch={dispatch} />
+    )
+  }
+
+  return (
+    <SignTxBody
+      setCurrentAccount={setCurrentAccount}
+      setAccountNotFound={setAccountNotFound}
+      startedHwSign={startedHwSign}
+      setIsDropdownOpen={setIsDropdownOpen} setIsPasswordRequired={setIsPasswordRequired} accountNotFound={accountNotFound} isConfirming={isConfirming} isDropdownOpen={isDropdownOpen} allAccounts={allAccounts} currentAccount={currentAccount} publicKey={publicKey} isPasswordRequired={isPasswordRequired} rejectAndClose={rejectAndClose} handleApprove={handleApprove} setStartedHwSign={setStartedHwSign} isHardwareWallet={isHardwareWallet} hwStatus={hwStatus}
+      isExperimentalModeEnabled={isExperimentalModeEnabled}
+      tx={blobOrTx}
+      t={t}
+      dispatch={dispatch}
+      networkName={networkName}
+      networkPassphrase={networkPassphrase}
+     />
+  )
+};
+
+interface SignBlobBodyProps {
+  publicKey: string
+  currentAccount: Account
+  allAccounts: Account[]
+  isPasswordRequired: boolean
+  isDropdownOpen: boolean
+  isHardwareWallet: boolean
+  isConfirming: boolean
+  accountNotFound: boolean
+  hwStatus: ShowOverlayStatus
+  isExperimentalModeEnabled: boolean
+  blob: BlobToSign
+  t: any
+  dispatch: AppDispatch
+  setStartedHwSign: (hasStarted: boolean) => void
+  setIsPasswordRequired: (isRequired: boolean) => void
+  setIsDropdownOpen: (isRequired: boolean) => void
+  rejectAndClose: () => void
+  handleApprove: (signAndClose: () => Promise<void>) => () => Promise<void>
+}
+
+const SignBlobBody = ({ publicKey, allAccounts, isDropdownOpen, handleApprove, isConfirming, accountNotFound, rejectAndClose, currentAccount, setIsDropdownOpen, setIsPasswordRequired, isPasswordRequired, blob, isExperimentalModeEnabled, t, dispatch, hwStatus, isHardwareWallet, setStartedHwSign }: SignBlobBodyProps) => {
+  const { accountToSign, domain, isDomainListedAllowed } = blob
+
+  const signAndClose = async () => {
+    if (isHardwareWallet) {
+      await dispatch(
+        startHwSign({ transactionXDR: blob.blob, shouldSubmit: false }),
+      );
+      setStartedHwSign(true);
+    } else {
+
+      await dispatch(signBlob());
+      window.close();
+    }
+  };
+
+  const _handleApprove = handleApprove(signAndClose)
+
+  const verifyPasswordThenSign = async (password: string) => {
+    const confirmPasswordResp = await dispatch(confirmPassword(password));
+
+    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
+      await signAndClose();
+    }
+  };
 
   if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
     return (
@@ -301,7 +334,7 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
           <Button
             fullWidth
             isLoading={isConfirming}
-            onClick={() => handleApprove()}
+            onClick={() => _handleApprove()}
           >
             {t("Approve")}
           </Button>
@@ -324,6 +357,28 @@ const SignBlobBody = ({ blob }: SignBlobBodyProps) => {
 }
 
 interface SignTxBodyProps {
+  publicKey: string
+  currentAccount: Account
+  allAccounts: Account[]
+  isPasswordRequired: boolean
+  isDropdownOpen: boolean
+  isConfirming: boolean
+  accountNotFound: boolean
+  isHardwareWallet: boolean
+  startedHwSign: boolean
+  hwStatus: ShowOverlayStatus
+  isExperimentalModeEnabled: boolean
+  networkName: string
+  networkPassphrase: string
+  dispatch: AppDispatch
+  setStartedHwSign: (hasStarted: boolean) => void
+  setIsPasswordRequired: (isRequired: boolean) => void
+  setIsDropdownOpen: (isRequired: boolean) => void
+  rejectAndClose: () => void
+  handleApprove: (signAndClose: () => Promise<void>) => () => Promise<void>
+  setAccountNotFound: (isNotFound: boolean) => void
+  setCurrentAccount: (account: Account) => void
+  t: any
   tx: {
     accountToSign: string | undefined
     transactionXdr: string;
@@ -337,15 +392,7 @@ interface SignTxBodyProps {
   }
 }
 
-const SignTxBody = ({ tx }: SignTxBodyProps) => {
-  const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
-  const { networkName, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
-  const isExperimentalModeEnabled = useSelector(
-    settingsExperimentalModeSelector,
-  );
+const SignTxBody = ({ setCurrentAccount, setAccountNotFound, startedHwSign, setStartedHwSign, publicKey, allAccounts, isDropdownOpen, handleApprove, isConfirming, accountNotFound, rejectAndClose, currentAccount, setIsDropdownOpen, setIsPasswordRequired, isPasswordRequired, tx, isExperimentalModeEnabled, t, dispatch, networkName, networkPassphrase, hwStatus, isHardwareWallet }: SignTxBodyProps) => {
 
   const {
     accountToSign: _accountToSign,
@@ -380,29 +427,12 @@ const SignTxBody = ({ tx }: SignTxBodyProps) => {
   const isFeeBump = !!_innerTransaction;
   const memo = decodeMemo(_memo);
   let accountToSign = _accountToSign;
-  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const isHardwareWallet = !!hardwareWalletType;
-  const {
-    hardwareWalletData: { status: hwStatus },
-  } = useSelector(transactionSubmissionSelector);
-
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [currentAccount, setCurrentAccount] = useState({} as Account);
-  const [accountNotFound, setAccountNotFound] = useState(false);
-  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  const [startedHwSign, setStartedHwSign] = useState(false);
 
   useEffect(() => {
     if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
       window.close();
     }
   }, [startedHwSign, hwStatus]);
-
-  const rejectAndClose = () => {
-    dispatch(rejectTransaction());
-    window.close();
-  };
 
   const signAndClose = async () => {
     if (isHardwareWallet) {
@@ -417,24 +447,14 @@ const SignTxBody = ({ tx }: SignTxBodyProps) => {
     }
   };
 
+  const _handleApprove = handleApprove(signAndClose)
+
   const verifyPasswordThenSign = async (password: string) => {
     const confirmPasswordResp = await dispatch(confirmPassword(password));
 
     if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
       await signAndClose();
     }
-  };
-
-  const handleApprove = async () => {
-    setIsConfirming(true);
-
-    if (hasPrivateKey) {
-      await signAndClose();
-    } else {
-      setIsPasswordRequired(true);
-    }
-
-    setIsConfirming(false);
   };
 
   const flaggedKeyValues = Object.values(flaggedKeys);
@@ -447,10 +467,6 @@ const SignTxBody = ({ tx }: SignTxBodyProps) => {
   const isMemoRequired = flaggedKeyValues.some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
-
-  const allAccounts = useSelector(allAccountsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const hasPrivateKey = useSelector(hasPrivateKeySelector);
 
   // the public key the user had selected before starting this flow
   const defaultPublicKey = useRef(publicKey);
@@ -518,12 +534,12 @@ const SignTxBody = ({ tx }: SignTxBodyProps) => {
     if (!autoSelectedAccountDetails) {
       setAccountNotFound(true);
     }
-  }, [accountToSign, allAccounts, dispatch]);
+  }, [accountToSign, allAccounts, dispatch, setAccountNotFound]);
 
   useEffect(() => {
     // handle any changes to the current acct - whether by auto select or manual select
     setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-  }, [allAccounts, publicKey]);
+  }, [allAccounts, publicKey, setCurrentAccount]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
@@ -683,7 +699,7 @@ const SignTxBody = ({ tx }: SignTxBodyProps) => {
             disabled={isSubmitDisabled}
             fullWidth
             isLoading={isConfirming}
-            onClick={() => handleApprove()}
+            onClick={() => _handleApprove()}
           >
             {t("Approve")}
           </Button>
