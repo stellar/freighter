@@ -112,6 +112,9 @@ export const METRIC_NAMES = {
   signTransactionUnsafe: "sign transaction: unsafe account warning",
   rejectTransaction: "sign transaction: rejected",
 
+  signBlob: "sign blob: confirmed",
+  rejectBlob: "sign blob: rejected",
+
   backupPhraseSuccess: "backup phrase: success",
   backupPhraseFail: "backup phrase: error",
 

@@ -19,13 +19,20 @@ export const signTransaction = createAsyncThunk(
   internalSignTransaction,
 );
 
+export const signBlob = createAsyncThunk(
+  "signBlob",
+  internalSignBlob,
+);
+
 // Basically an alias for metrics purposes
 export const rejectTransaction = createAsyncThunk(
   "rejectTransaction",
   internalRejectAccess,
 );
 
-export const signBlob = createAsyncThunk(
-  "signBlob",
-  internalSignBlob,
+// Basically an alias for metrics purposes
+export const rejectBlob = createAsyncThunk(
+  "rejectBlob",
+  internalRejectAccess,
 );
+

@@ -19,7 +19,7 @@ import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { TransactionHeading } from "popup/basics/TransactionHeading";
-import { rejectTransaction, signBlob, signTransaction } from "popup/ducks/access";
+import { rejectTransaction, rejectBlob, signBlob, signTransaction } from "popup/ducks/access";
 import {
   allAccountsSelector,
   confirmPassword,
@@ -72,6 +72,7 @@ import { BlobToSign } from "helpers/urls";
 export const SignTransaction = () => {
   const location = useLocation();
   const blobOrTx = getTransactionInfo(location.search);
+  const isBlob = "blob" in blobOrTx
 
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -105,7 +106,8 @@ export const SignTransaction = () => {
   const accountToSign = blobOrTx.accountToSign // both types have this key
 
   const rejectAndClose = () => {
-    dispatch(rejectTransaction());
+    const _reject = isBlob ? rejectTransaction : rejectBlob
+    dispatch(_reject());
     window.close();
   };
 
