@@ -19,10 +19,16 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: release/${{ github.event.inputs.release }}
-      - name: Update manifest.json name
+      - name: Update manifest-v2.json name
         uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
         with:
-          file: ./extension/public/static/manifest.json
+          file: ./extension/public/static/manifest/v2.json
+          field: name
+          value: Freighter BETA
+      - name: Update manifest-v3.json name
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/public/static/manifest/v3.json
           field: name
           value: Freighter BETA
       - name: Update manifest-v2.json version_name
@@ -53,7 +59,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: "16.14"
-      - run: yarn install && yarn build:freighter-api && yarn build:extension:production
+      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production
       - name: Use BETA icons
         run: |
           rm -rf ./extension/build/images
@@ -96,7 +102,7 @@ jobs:
           publish: true
           publish-target: trustedTesters
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@4d4ce0d91186ffe6633a8cda645146d38e88228b #v2
+        uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
         env:
           MSG_MINIMAL: true
           SLACK_CHANNEL: proj-freighter
