@@ -37,6 +37,7 @@ import { BlobToSign } from "helpers/urls";
 
 import "../styles.scss";
 import { useDispatch } from "react-redux";
+import { Blob } from "popup/components/signBlob";
 
 interface SignBlobBodyProps {
   accountNotFound: boolean;
@@ -187,12 +188,14 @@ export const SignBlobBody = ({
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
                   {t(
-                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
+                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
                   )}
                 </InfoBlock>
               </div>
             ) : null}
           </div>
+          <div className="blob-data">{blob.blob}</div>
+          <Blob />
         </ModalWrapper>
         <ButtonsContainer>
           <Button

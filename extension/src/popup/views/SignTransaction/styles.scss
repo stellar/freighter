@@ -3,6 +3,15 @@
   overflow: hidden;
   position: relative;
 
+  .blob-data {
+    display: -webkit-box;
+    width: 100%;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    word-wrap: break-word;
+  }
+
   &__inner-transaction {
     border: 1px solid var(--pal-border-primary);
     border-radius: 0.5rem;
