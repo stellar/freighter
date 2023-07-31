@@ -333,7 +333,6 @@
   "Show recovery phrase": "Show recovery phrase",
   "Signer": "Signer",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
-  "SIGNING UNKNOWN DATA": "SIGNING UNKNOWN DATA",
   "Source": "Source",
   "Sponsored Id": "Sponsored Id",
   "Stellar address is not funded": "Stellar address is not funded",
@@ -414,6 +413,7 @@
     " If you own this account, you can import it into Freighter to complete this transaction": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction."
   },
   "Woo, you’re in!": "Woo, you’re in!",
+  "You are attempting to sign arbitrary data, please use extreme caution and understand the implications of signing this data": "You are attempting to sign arbitrary data, please use extreme caution and understand the implications of signing this data.",
   "You are interacting with a transaction that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk."
   },
