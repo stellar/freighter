@@ -155,7 +155,7 @@ export const SignBlobBody = ({
           >
             <p>
               {t(
-                "You are attempting to sign arbitrary data, please use extreme caution and understand the implications of signing this data.",
+                "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data.",
               )}
             </p>
           </WarningMessage>
