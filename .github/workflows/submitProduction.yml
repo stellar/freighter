@@ -111,6 +111,9 @@ jobs:
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
       - name: Submit extension to Apple
           run: ./.github/scripts/archive-safari-app.sh
+          env:
+            apiKey:  ${{ secrets.APPLE_API_KEY }}
+            apiIssuerId:  ${{ secrets.APPLE_ISSUER_ID }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
         env:
