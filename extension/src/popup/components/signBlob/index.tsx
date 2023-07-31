@@ -1,26 +1,17 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Card, Heading4 } from "@stellar/design-system";
 
-import { ModalWrapper } from "popup/basics/Modal";
-import { WarningMessage, WarningMessageVariant } from "../WarningMessages";
 import "./index.scss";
 
-export const Blob = () => {
-  const { t } = useTranslation();
-  return (
-    <div className="Blob">
-      <ModalWrapper>
-        <WarningMessage
-          handleCloseClick={() => window.close()}
-          isActive
-          variant={WarningMessageVariant.warning}
-          header={t("SIGNING UNKNOWN DATA")}
-        >
-          <p>
-            You are attempting to sign arbitrary data, please use extreme caution and understand the implications of signing this data. 
-          </p>
-        </WarningMessage>
-      </ModalWrapper>
-    </div>
-  )
+interface BlobProps {
+  blob: string
 }
+
+export const Blob = (props: BlobProps) => (
+  <Card variant={Card.variant.highlight}>
+    <Heading4>Signing data:</Heading4>
+    <div className="Blob">
+      {props.blob}
+    </div>
+  </Card>
+)

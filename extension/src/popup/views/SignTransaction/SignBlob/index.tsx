@@ -149,6 +149,16 @@ export const SignBlobBody = ({
               </p>
             </WarningMessage>
           ) : null}
+          <WarningMessage
+            header="Unknown data"
+            variant={WarningMessageVariant.highAlert}
+          >
+            <p>
+              {t(
+                "You are attempting to sign arbitrary data, please use extreme caution and understand the implications of signing this data.",
+              )}
+            </p>
+          </WarningMessage>
           {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignBlob__info">
             <Card variant={Card.variant.highlight}>
@@ -194,8 +204,7 @@ export const SignBlobBody = ({
               </div>
             ) : null}
           </div>
-          <div className="blob-data">{blob.blob}</div>
-          <Blob />
+          <Blob blob={blob.blob} />
         </ModalWrapper>
         <ButtonsContainer>
           <Button
