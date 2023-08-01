@@ -32,6 +32,7 @@ const routeToEventName = {
   [ROUTES.settings]: METRIC_NAMES.viewSettings,
   [ROUTES.preferences]: METRIC_NAMES.viewPreferences,
   [ROUTES.security]: METRIC_NAMES.viewSecurity,
+  [ROUTES.manageConnectedApps]: METRIC_NAMES.viewManageConnectedApps,
   [ROUTES.about]: METRIC_NAMES.viewAbout,
   [ROUTES.viewPublicKey]: METRIC_NAMES.viewPublicKey,
   [ROUTES.debug]: METRIC_NAMES.viewDebug,

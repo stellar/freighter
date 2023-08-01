@@ -27,6 +27,7 @@ export const METRIC_NAMES = {
   viewSettings: "loaded screen: settings",
   viewPreferences: "loaded screen: preferences",
   viewSecurity: "loaded screen: security",
+  viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
 
   viewSendPayment: "loaded screen: send payment",

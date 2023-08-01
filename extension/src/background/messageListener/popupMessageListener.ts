@@ -48,6 +48,7 @@ import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
 import {
   addAccountName,
   getAccountNameList,
+  getAllowList,
   getKeyIdList,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
@@ -1000,6 +1001,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     };
   };
 
+  const saveAllowList = async () => {
+    const { allowList } = request;
+
+    await localStore.setItem(ALLOWLIST_ID, allowList.join());
+
+    return {
+      allowList: await getAllowList(),
+    };
+  };
+
   const saveSettings = async () => {
     const {
       isDataSharingAllowed,
@@ -1043,6 +1054,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
 
     return {
+      allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
@@ -1058,6 +1070,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
 
     return {
+      allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
@@ -1219,6 +1232,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
+    [SERVICE_TYPES.SAVE_ALLOWLIST]: saveAllowList,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
     [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
