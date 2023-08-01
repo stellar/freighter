@@ -1,6 +1,7 @@
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import StellarSdk from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
+import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 
@@ -92,6 +93,14 @@ export const responseQueue: Array<(message?: any) => void> = [];
 export const transactionQueue: Array<{
   sign: (sourceKeys: {}) => void;
   toXDR: () => void;
+}> = [];
+export const blobQueue: Array<{
+  isDomainListedAllowed: boolean;
+  domain: string;
+  tab: browser.Tabs.Tab | undefined;
+  blob: string;
+  url: string;
+  accountToSign: string;
 }> = [];
 
 interface KeyPair {
@@ -898,6 +907,30 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
+  const signBlob = async () => {
+    const privateKey = privateKeySelector(sessionStore.getState());
+
+    if (privateKey.length) {
+      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
+      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+
+      const blob = blobQueue.pop();
+      const response = blob
+        ? await sourceKeys.sign(Buffer.from(blob.blob, "base64"))
+        : null;
+
+      const blobResponse = responseQueue.pop();
+
+      if (typeof blobResponse === "function") {
+        blobResponse(response);
+        return {};
+      }
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const rejectTransaction = () => {
     transactionQueue.pop();
     const response = responseQueue.pop();
@@ -1177,6 +1210,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.GRANT_ACCESS]: grantAccess,
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
+    [SERVICE_TYPES.SIGN_BLOB]: signBlob,
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,

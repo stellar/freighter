@@ -5,5 +5,6 @@ describe("freighter API", () => {
     expect(typeof FreighterAPI.isConnected).toBe("function");
     expect(typeof FreighterAPI.getPublicKey).toBe("function");
     expect(typeof FreighterAPI.signTransaction).toBe("function");
+    expect(typeof FreighterAPI.signBlob).toBe("function");
   });
 });

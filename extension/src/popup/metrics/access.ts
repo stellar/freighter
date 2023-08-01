@@ -4,6 +4,7 @@ import {
   grantAccess,
   rejectAccess,
   signTransaction,
+  signBlob,
   rejectTransaction,
 } from "popup/ducks/access";
 import { registerHandler, emitMetric, MetricsData } from "helpers/metrics";
@@ -26,4 +27,12 @@ registerHandler<AppState>(signTransaction.fulfilled, () => {
 });
 registerHandler<AppState>(rejectTransaction.fulfilled, () => {
   emitMetric(METRIC_NAMES.rejectTransaction);
+});
+registerHandler<AppState>(signBlob.fulfilled, () => {
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+  emitMetric(METRIC_NAMES.signBlob, {
+    accountType: metricsData.accountType,
+  });
 });

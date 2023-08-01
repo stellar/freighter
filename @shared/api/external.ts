@@ -21,7 +21,7 @@ export const requestPublicKey = async (): Promise<string> => {
 };
 
 export const submitTransaction = async (
-  transactionXdr: string,
+  blob: string,
   opts?:
     | string
     | {
@@ -52,11 +52,40 @@ export const submitTransaction = async (
   let response = { signedTransaction: "", error: "" };
   try {
     response = await sendMessageToContentScript({
-      transactionXdr,
+      blob,
       network,
       networkPassphrase,
       accountToSign: _accountToSign,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  const { signedTransaction, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return signedTransaction;
+};
+
+export const submitBlob = async (
+  blob: string,
+  opts: {
+    network: string;
+    accountToSign: string;
+    networkPassphrase: string;
+  },
+): Promise<string> => {
+  let response = { signedTransaction: "", error: "" };
+  const { network, networkPassphrase, accountToSign } = opts;
+  try {
+    response = await sendMessageToContentScript({
+      transactionXDR: blob,
+      network,
+      networkPassphrase,
+      accountToSign,
+      type: EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB,
     });
   } catch (e) {
     console.error(e);

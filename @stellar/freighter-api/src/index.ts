@@ -1,5 +1,6 @@
 import { getPublicKey } from "./getPublicKey";
 import { signTransaction } from "./signTransaction";
+import { signBlob } from "./signBlob";
 import { isConnected } from "./isConnected";
 import { getNetwork } from "./getNetwork";
 import { getNetworkDetails } from "./getNetworkDetails";
@@ -12,6 +13,7 @@ export const isBrowser = typeof window !== "undefined";
 export {
   getPublicKey,
   signTransaction,
+  signBlob,
   isConnected,
   getNetwork,
   getNetworkDetails,
@@ -22,6 +24,7 @@ export {
 export default {
   getPublicKey,
   signTransaction,
+  signBlob,
   isConnected,
   getNetwork,
   getNetworkDetails,
