@@ -10,4 +10,4 @@ xcodebuild -archivePath ./build/Freighter.xarchive \
             -allowProvisioningUpdates \
             -exportArchive | xcpretty
 
-xcrun altool --upload-app -f build/Freighter.ipa --apiKey $API_KEY --apiIssuer $API_ISSUER --verbose
+xcrun altool --upload-package --apple-id $APPLE_ID --asc-public-id $APPLE_PUBLIC_ID -t ios -t macos -f build/Freighter.ipa --apiKey $API_KEY --apiIssuer $API_ISSUER --verbose
