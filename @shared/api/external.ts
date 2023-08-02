@@ -71,12 +71,13 @@ export const submitTransaction = async (
 
 export const submitBlob = async (
   blob: string,
-  opts: {
-    accountToSign: string;
+  opts?: {
+    accountToSign?: string;
   },
 ): Promise<string> => {
   let response = { signedBlob: "", error: "" };
-  const { accountToSign } = opts;
+  const _opts = opts || {};
+  const accountToSign = _opts.accountToSign || "";
   try {
     response = await sendMessageToContentScript({
       blob,
