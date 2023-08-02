@@ -41,6 +41,7 @@ export interface Response {
   };
   transactionXDR: string;
   signedTransaction: string;
+  signedBlob: string;
   source: string;
   type: SERVICE_TYPES;
   url: string;
@@ -85,13 +86,22 @@ export interface BlockedAccount {
   tags: string[];
 }
 
-export interface ExternalRequest {
-  transactionXdr: string;
+export interface ExternalRequestBase {
   network: string;
   networkPassphrase: string;
   accountToSign: string;
   type: EXTERNAL_SERVICE_TYPES;
 }
+
+export interface ExternalRequestTx extends ExternalRequestBase {
+  transactionXdr: string;
+}
+
+export interface ExternalRequestBlob extends ExternalRequestBase {
+  blob: string;
+}
+
+export type ExternalRequest = ExternalRequestTx | ExternalRequestBlob;
 
 export interface Account {
   publicKey: string;

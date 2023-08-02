@@ -3,7 +3,11 @@ import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
 
-import { ExternalRequest as Request } from "@shared/api/types";
+import {
+  ExternalRequestBlob,
+  ExternalRequestTx,
+  ExternalRequest as Request,
+} from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
@@ -98,7 +102,7 @@ export const freighterApiMessageListener = (
       network: _network,
       networkPassphrase,
       accountToSign,
-    } = request;
+    } = request as ExternalRequestTx;
 
     const network =
       _network === null || !_network
@@ -228,7 +232,7 @@ export const freighterApiMessageListener = (
   };
 
   const submitBlob = async () => {
-    const { transactionXdr, accountToSign } = request;
+    const { blob, accountToSign } = request as ExternalRequestBlob;
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -238,17 +242,17 @@ export const freighterApiMessageListener = (
     const allowList = allowListStr.split(",");
     const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-    const blob = {
+    const blobData = {
       isDomainListedAllowed,
       domain,
       tab,
-      blob: transactionXdr,
+      blob,
       url: tabUrl,
       accountToSign,
     };
 
-    blobQueue.push(blob);
-    const encodedBlob = encodeObject(blob);
+    blobQueue.push(blobData);
+    const encodedBlob = encodeObject(blobData);
     const popup = browser.windows.create({
       url: chrome.runtime.getURL(
         `/index.html#/sign-transaction?${encodedBlob}`,

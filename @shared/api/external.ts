@@ -72,30 +72,26 @@ export const submitTransaction = async (
 export const submitBlob = async (
   blob: string,
   opts: {
-    network: string;
     accountToSign: string;
-    networkPassphrase: string;
   },
 ): Promise<string> => {
-  let response = { signedTransaction: "", error: "" };
-  const { network, networkPassphrase, accountToSign } = opts;
+  let response = { signedBlob: "", error: "" };
+  const { accountToSign } = opts;
   try {
     response = await sendMessageToContentScript({
-      transactionXdr: blob,
-      network,
-      networkPassphrase,
+      blob,
       accountToSign,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB,
     });
   } catch (e) {
     console.error(e);
   }
-  const { signedTransaction, error } = response;
+  const { signedBlob, error } = response;
 
   if (error) {
     throw error;
   }
-  return signedTransaction;
+  return signedBlob;
 };
 
 export const requestNetwork = async (): Promise<string> => {
