@@ -8,99 +8,98 @@ on:
         required: true
 jobs:
   bump-version-safari:
-  name: Bump Package Version and Submit Extension to Safari
-    runs-on: macos-latest
-    steps:
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Update package.json version
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-        with:
-          file: ./extension/package.json
-          field: version
-          value: ${{ github.event.inputs.version }}
-      - name: Update manifest-v2.json version_name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-        with:
-          file: ./extension/public/static/manifest/v2.json
-          field: version_name
-          value: ${{ github.event.inputs.version }}
-      - name: Update manifest-v3.json version_name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-        with:
-          file: ./extension/public/static/manifest/v3.json
-          field: version_name
-          value: ${{ github.event.inputs.version }}
-      - name: Get manifest.json version
-        id: manifest_version
-        uses: frabert/replace-string-action@4ec615c8a75164a61d8fb333ad5e2e86ff038af1 #v1.2
-        with:
-          string: ${{ github.event.inputs.version }}
-          pattern: \-(.*)
-          replace-with: ""
-      - name: Update manifest-v2.json version
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-        with:
-          file: ./extension/public/static/manifest/v2.json
-          field: version
-          value: ${{ steps.manifest_version.outputs.replaced }}
-      - name: Update manifest-v3.json version
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-        with:
-          file: ./extension/public/static/manifest/v3.json
-          field: version
-          value: ${{ steps.manifest_version.outputs.replaced }}
-      - name: Build extension
-        uses: actions/setup-node@v1
-        with:
-          node-version: "16.14"
-      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
-      - name: Install zip
-        uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
-      - name: Zip extension build
-        run: zip -qq -r ./build.zip *
-        working-directory: ./extension/build
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
-          git tag ${{ github.event.inputs.version }}
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
-        with:
-          title: Bump versions to ${{ github.event.inputs.version }}
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          release_name: ${{ github.event.inputs.version }}
-          body: ${{ github.event.inputs.version }}
-          draft: false
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./extension/build/build.zip
-          asset_name: build-${{ github.event.inputs.version }}.zip
-          asset_content_type: application/zip
-      - name: Submit extension to Apple
-          run: ./.github/scripts/archive-safari-app.sh
+    name: Bump Package Version and Submit Extension to Safari
+      runs-on: macos-latest
+      steps:
+        - uses: maxim-lobanov/setup-xcode@v1
+          with:
+            xcode-version: latest
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: Update package.json version
+          uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+          with:
+            file: ./extension/package.json
+            field: version
+            value: ${{ github.event.inputs.version }}
+        - name: Update manifest-v2.json version_name
+          uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+          with:
+            file: ./extension/public/static/manifest/v2.json
+            field: version_name
+            value: ${{ github.event.inputs.version }}
+        - name: Update manifest-v3.json version_name
+          uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+          with:
+            file: ./extension/public/static/manifest/v3.json
+            field: version_name
+            value: ${{ github.event.inputs.version }}
+        - name: Get manifest.json version
+          id: manifest_version
+          uses: frabert/replace-string-action@4ec615c8a75164a61d8fb333ad5e2e86ff038af1 #v1.2
+          with:
+            string: ${{ github.event.inputs.version }}
+            pattern: \-(.*)
+            replace-with: ""
+        - name: Update manifest-v2.json version
+          uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+          with:
+            file: ./extension/public/static/manifest/v2.json
+            field: version
+            value: ${{ steps.manifest_version.outputs.replaced }}
+        - name: Update manifest-v3.json version
+          uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+          with:
+            file: ./extension/public/static/manifest/v3.json
+            field: version
+            value: ${{ steps.manifest_version.outputs.replaced }}
+        - name: Build extension
+          uses: actions/setup-node@v1
+          with:
+            node-version: "16.14"
+        - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
+        - name: Install zip
+          uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
+        - name: Zip extension build
+          run: zip -qq -r ./build.zip *
+          working-directory: ./extension/build
+        - name: Commit files
+          run: |
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add -A
+            git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
+            git tag ${{ github.event.inputs.version }}
+        - name: Create Pull Request
+          uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
+          with:
+            title: Bump versions to ${{ github.event.inputs.version }}
+        - name: Create GitHub Release
+          id: create_release
+          uses: actions/create-release@v1
           env:
-            apiKey:  ${{ secrets.APPLE_API_KEY }}
-            apiIssuerId:  ${{ secrets.APPLE_ISSUER_ID }}
-jobs:
+            GITHUB_TOKEN: ${{ github.token }}
+          with:
+            tag_name: ${{ github.event.inputs.version }}
+            release_name: ${{ github.event.inputs.version }}
+            body: ${{ github.event.inputs.version }}
+            draft: false
+            prerelease: false
+        - name: Upload Release Asset
+          id: upload-release-asset
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{ github.token }}
+          with:
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+            asset_path: ./extension/build/build.zip
+            asset_name: build-${{ github.event.inputs.version }}.zip
+            asset_content_type: application/zip
+        - name: Submit extension to Apple
+            run: ./.github/scripts/archive-safari-app.sh
+            env:
+              apiKey:  ${{ secrets.APPLE_API_KEY }}
+              apiIssuerId:  ${{ secrets.APPLE_ISSUER_ID }}
   bump-version:
     name: Bump Package Version and Submit Extension
     runs-on: ubuntu-latest
