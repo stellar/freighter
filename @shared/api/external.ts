@@ -21,7 +21,7 @@ export const requestPublicKey = async (): Promise<string> => {
 };
 
 export const submitTransaction = async (
-  blob: string,
+  transactionXdr: string,
   opts?:
     | string
     | {
@@ -52,7 +52,7 @@ export const submitTransaction = async (
   let response = { signedTransaction: "", error: "" };
   try {
     response = await sendMessageToContentScript({
-      blob,
+      transactionXdr,
       network,
       networkPassphrase,
       accountToSign: _accountToSign,
@@ -81,7 +81,7 @@ export const submitBlob = async (
   const { network, networkPassphrase, accountToSign } = opts;
   try {
     response = await sendMessageToContentScript({
-      transactionXDR: blob,
+      transactionXdr: blob,
       network,
       networkPassphrase,
       accountToSign,
