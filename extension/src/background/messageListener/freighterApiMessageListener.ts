@@ -270,13 +270,13 @@ export const freighterApiMessageListener = (
           }),
         );
       }
-      const response = (signedTransaction: string) => {
-        if (signedTransaction) {
+      const response = (signedBlob: string) => {
+        if (signedBlob) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
             localStore.setItem(ALLOWLIST_ID, allowList.join());
           }
-          resolve({ signedTransaction });
+          resolve({ signedBlob });
         }
 
         resolve({ error: "User declined access" });
