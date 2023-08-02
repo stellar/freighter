@@ -1,4 +1,4 @@
-name: Production Deployment
+name: Safari Deployment
 on:
   workflow_dispatch:
     inputs:
@@ -7,10 +7,13 @@ on:
         default: "1.0.0"
         required: true
 jobs:
-  bump-version:
-    name: Bump Package Version and Submit Extension
-    runs-on: ubuntu-latest
+  bump-version-safari:
+    name: Bump Package Version and Submit Extension to Safari
+    runs-on: macos-latest
     steps:
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Update package.json version
@@ -92,31 +95,8 @@ jobs:
           asset_path: ./extension/build/build.zip
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
-      - name: Submit extension to Firefox
-        uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
-        with:
-          cmd: sign
-          source: ./extension/build/build.zip
-          channel: listed
-          apiKey: ${{ secrets.AMO_SIGN_KEY }}
-          apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
-          timeout: 900000
-      - name: Submit extension to Chrome
-        uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
-        with:
-          file-path: ./extension/build/build.zip
-          extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
-          client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
-          client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
-          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
-      - name: Slack Notification
-        uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
+      - name: Submit extension to Apple
+        run: ./.github/scripts/archive-safari-app.sh
         env:
-          MSG_MINIMAL: true
-          SLACK_CHANNEL: proj-freighter
-          SLACK_COLOR: "#391EDA"
-          SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
-          SLACK_TITLE: Freighter v${{ github.event.inputs.version }} has been submitted to app stores for review!
-          SLACK_USERNAME: Freighter Administrative Assistant
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          apiKey:  ${{ secrets.APPLE_API_KEY }}
+          apiIssuerId:  ${{ secrets.APPLE_ISSUER_ID }}
