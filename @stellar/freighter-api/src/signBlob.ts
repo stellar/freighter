@@ -4,8 +4,6 @@ import { isBrowser } from ".";
 export const signBlob = (
   blob: string,
   opts: {
-    network: string;
-    networkPassphrase: string;
     accountToSign: string;
   }
 ): Promise<string> =>
