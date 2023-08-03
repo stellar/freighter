@@ -81,11 +81,6 @@ export const SignTransaction = () => {
   };
 
   useEffect(() => {
-    // handle any changes to the current acct - whether by auto select or manual select
-    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-  }, [allAccounts, publicKey]);
-
-  useEffect(() => {
     if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
       window.close();
     }
@@ -117,6 +112,11 @@ export const SignTransaction = () => {
       setAccountNotFound(true);
     }
   }, [accountToSign, allAccounts, dispatch]);
+
+  useEffect(() => {
+    // handle any changes to the current acct - whether by auto select or manual select
+    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
+  }, [allAccounts, publicKey]);
 
   if ("blob" in blobOrTx) {
     return (
