@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-5.2.5
+
+### Bug
+
+Implement LavaMoat to block lifecycle scripts
+
 # Release notes - Wallets - Freighter-5.2.4
 
 ### Bug
