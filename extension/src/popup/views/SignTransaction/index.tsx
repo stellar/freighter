@@ -145,6 +145,7 @@ export const SignTransaction = () => {
     <SignTxBody
       accountNotFound={accountNotFound}
       allAccounts={allAccounts}
+      allAccountsMap={allAccountsMap}
       currentAccount={currentAccount}
       handleApprove={handleApprove}
       hwStatus={hwStatus}
@@ -157,7 +158,6 @@ export const SignTransaction = () => {
       networkPassphrase={networkPassphrase}
       publicKey={publicKey}
       rejectAndClose={rejectAndClose}
-      setAccountNotFound={setAccountNotFound}
       setCurrentAccount={setCurrentAccount}
       setIsDropdownOpen={setIsDropdownOpen}
       setIsPasswordRequired={setIsPasswordRequired}
