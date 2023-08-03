@@ -81,11 +81,6 @@ export const SignTransaction = () => {
   };
 
   useEffect(() => {
-    // handle any changes to the current acct - whether by auto select or manual select
-    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-  }, [allAccounts, publicKey]);
-
-  useEffect(() => {
     if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
       window.close();
     }
@@ -118,6 +113,11 @@ export const SignTransaction = () => {
     }
   }, [accountToSign, allAccounts, dispatch]);
 
+  useEffect(() => {
+    // handle any changes to the current acct - whether by auto select or manual select
+    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
+  }, [allAccounts, publicKey]);
+
   if ("blob" in blobOrTx) {
     return (
       <SignBlobBody
@@ -145,6 +145,7 @@ export const SignTransaction = () => {
     <SignTxBody
       accountNotFound={accountNotFound}
       allAccounts={allAccounts}
+      allAccountsMap={allAccountsMap}
       currentAccount={currentAccount}
       handleApprove={handleApprove}
       hwStatus={hwStatus}
@@ -157,7 +158,6 @@ export const SignTransaction = () => {
       networkPassphrase={networkPassphrase}
       publicKey={publicKey}
       rejectAndClose={rejectAndClose}
-      setAccountNotFound={setAccountNotFound}
       setCurrentAccount={setCurrentAccount}
       setIsDropdownOpen={setIsDropdownOpen}
       setIsPasswordRequired={setIsPasswordRequired}

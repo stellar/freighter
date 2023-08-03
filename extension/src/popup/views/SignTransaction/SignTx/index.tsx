@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Card, Icon } from "@stellar/design-system";
 import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
@@ -51,13 +51,11 @@ import { AppDispatch } from "popup/App";
 
 import "../styles.scss";
 import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
-import {
-  confirmPassword,
-  makeAccountActive,
-} from "popup/ducks/accountServices";
+import { confirmPassword } from "popup/ducks/accountServices";
 import { useDispatch } from "react-redux";
 
 interface SignTxBodyProps {
+  allAccountsMap: React.MutableRefObject<{ [key: string]: Account }>;
   accountNotFound: boolean;
   allAccounts: Account[];
   currentAccount: Account;
@@ -72,7 +70,6 @@ interface SignTxBodyProps {
   networkPassphrase: string;
   publicKey: string;
   rejectAndClose: () => void;
-  setAccountNotFound: (isNotFound: boolean) => void;
   setCurrentAccount: (account: Account) => void;
   setIsDropdownOpen: (isRequired: boolean) => void;
   setIsPasswordRequired: (isRequired: boolean) => void;
@@ -92,8 +89,8 @@ interface SignTxBodyProps {
 }
 
 export const SignTxBody = ({
+  allAccountsMap,
   setCurrentAccount,
-  setAccountNotFound,
   startedHwSign,
   setStartedHwSign,
   publicKey,
@@ -190,10 +187,6 @@ export const SignTxBody = ({
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
-  // the public key the user had selected before starting this flow
-  const defaultPublicKey = useRef(publicKey);
-  const allAccountsMap = useRef({} as { [key: string]: Account });
-
   const resolveFederatedAddress = useCallback(async (inputDest) => {
     let resolvedPublicKey;
     try {
@@ -234,36 +227,9 @@ export const SignTxBody = ({
   }, [isMemoRequired, isMalicious, isUnsafe]);
 
   useEffect(() => {
-    // handle auto selecting the right account based on `accountToSign`
-    let autoSelectedAccountDetails;
-
-    allAccounts.forEach((account) => {
-      if (accountToSign) {
-        // does the user have the `accountToSign` somewhere in the accounts list?
-        if (account.publicKey === accountToSign) {
-          // if the `accountToSign` is found, but it isn't active, make it active
-          if (defaultPublicKey.current !== account.publicKey) {
-            dispatch(makeAccountActive(account.publicKey));
-          }
-
-          // save the details of the `accountToSign`
-          autoSelectedAccountDetails = account;
-        }
-      }
-
-      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
-      allAccountsMap.current[account.publicKey] = account;
-    });
-
-    if (!autoSelectedAccountDetails) {
-      setAccountNotFound(true);
-    }
-  }, [accountToSign, allAccounts, dispatch, setAccountNotFound]);
-
-  useEffect(() => {
     // handle any changes to the current acct - whether by auto select or manual select
     setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-  }, [allAccounts, publicKey, setCurrentAccount]);
+  }, [allAccountsMap, allAccounts, publicKey, setCurrentAccount]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
