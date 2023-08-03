@@ -20,6 +20,7 @@ import {
   isConnected,
   getPublicKey,
   signTransaction,
+  signBlob,
 } from "@stellar/freighter-api";
 ```
 
@@ -82,6 +83,7 @@ import {
   isConnected,
   getPublicKey,
   signTransaction,
+  signBlob,
 } from "@stellar/freighter-api";
 
 if (await isConnected()) {
@@ -123,6 +125,7 @@ import {
   setAllowed,
   getUserInfo,
   signTransaction,
+  signBlob,
 } from "@stellar/freighter-api";
 
 if (await isConnected()) {
@@ -175,6 +178,7 @@ import {
   isConnected,
   getNetwork,
   signTransaction,
+  signBlob,
 } from "@stellar/freighter-api";
 
 if (await isConnected()) {
@@ -219,11 +223,18 @@ These 2 configurations are useful in the case that the user's Freighter is confi
 
 You can also use this `opts` to specify which account's signature you’re requesting. If Freighter has the public key requested, it will switch to that account. If not, it will alert the user that they do not have the requested account.
 
+### signBlob
+
+#### `signBlob(xdr: string, opts: { network: string, networkPassphrase: string, accountToSign: string }) -> <Promise<string>>`
+
+This is the same as `signTransaction` but accepts a base64 encoded blob.
+
 ```javascript
 import {
   isConnected,
   getPublicKey,
   signTransaction,
+  signBlob
 } from "@stellar/freighter-api";
 
 if (await isConnected()) {

@@ -3,7 +3,11 @@ import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
 
-import { ExternalRequest as Request } from "@shared/api/types";
+import {
+  ExternalRequestBlob,
+  ExternalRequestTx,
+  ExternalRequest as Request,
+} from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
@@ -34,7 +38,11 @@ import {
 } from "background/helpers/dataStorage";
 import { publicKeySelector } from "background/ducks/session";
 
-import { responseQueue, transactionQueue } from "./popupMessageListener";
+import {
+  blobQueue,
+  responseQueue,
+  transactionQueue,
+} from "./popupMessageListener";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -94,7 +102,7 @@ export const freighterApiMessageListener = (
       network: _network,
       networkPassphrase,
       accountToSign,
-    } = request;
+    } = request as ExternalRequestTx;
 
     const network =
       _network === null || !_network
@@ -105,10 +113,6 @@ export const freighterApiMessageListener = (
     const { networkUrl } = await getNetworkDetails();
     const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
     const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-    const transaction = SDK.TransactionBuilder.fromXDR(
-      transactionXdr,
-      networkPassphrase || SDK.Networks[network],
-    );
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -116,8 +120,13 @@ export const freighterApiMessageListener = (
 
     const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
     const allowList = allowListStr.split(",");
-
     const isDomainListedAllowed = await isSenderAllowed({ sender });
+
+    // try to build a tx xdr, if you cannot then assume the user wants to sign an arbitrary blob
+    const transaction = SDK.TransactionBuilder.fromXDR(
+      transactionXdr,
+      networkPassphrase || SDK.Networks[network],
+    );
 
     const directoryLookupJson = await cachedFetch(
       STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
@@ -187,12 +196,11 @@ export const freighterApiMessageListener = (
     } as TransactionInfo;
 
     transactionQueue.push(transaction);
-
-    const encodetransactionInfo = encodeObject(transactionInfo);
+    const encodedBlob = encodeObject(transactionInfo);
 
     const popup = browser.windows.create({
       url: chrome.runtime.getURL(
-        `/index.html#/sign-transaction?${encodetransactionInfo}`,
+        `/index.html#/sign-transaction?${encodedBlob}`,
       ),
       ...WINDOW_SETTINGS,
     });
@@ -214,6 +222,61 @@ export const freighterApiMessageListener = (
             localStore.setItem(ALLOWLIST_ID, allowList.join());
           }
           resolve({ signedTransaction });
+        }
+
+        resolve({ error: "User declined access" });
+      };
+
+      responseQueue.push(response);
+    });
+  };
+
+  const submitBlob = async () => {
+    const { blob, accountToSign } = request as ExternalRequestBlob;
+
+    const { tab, url: tabUrl = "" } = sender;
+    const domain = getUrlHostname(tabUrl);
+    const punycodedDomain = getPunycodedDomain(domain);
+
+    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
+    const allowList = allowListStr.split(",");
+    const isDomainListedAllowed = await isSenderAllowed({ sender });
+
+    const blobData = {
+      isDomainListedAllowed,
+      domain,
+      tab,
+      blob,
+      url: tabUrl,
+      accountToSign,
+    };
+
+    blobQueue.push(blobData);
+    const encodedBlob = encodeObject(blobData);
+    const popup = browser.windows.create({
+      url: chrome.runtime.getURL(
+        `/index.html#/sign-transaction?${encodedBlob}`,
+      ),
+      ...WINDOW_SETTINGS,
+    });
+
+    return new Promise((resolve) => {
+      if (!popup) {
+        resolve({ error: "Couldn't open access prompt" });
+      } else {
+        browser.windows.onRemoved.addListener(() =>
+          resolve({
+            error: "User declined access",
+          }),
+        );
+      }
+      const response = (signedBlob: string) => {
+        if (signedBlob) {
+          if (!isDomainListedAllowed) {
+            allowList.push(punycodedDomain);
+            localStore.setItem(ALLOWLIST_ID, allowList.join());
+          }
+          resolve({ signedBlob });
         }
 
         resolve({ error: "User declined access" });
@@ -314,6 +377,7 @@ export const freighterApiMessageListener = (
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
+    [EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB]: submitBlob,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
     [EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS]: requestConnectionStatus,

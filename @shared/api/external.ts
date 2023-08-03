@@ -69,6 +69,32 @@ export const submitTransaction = async (
   return signedTransaction;
 };
 
+export const submitBlob = async (
+  blob: string,
+  opts?: {
+    accountToSign?: string;
+  },
+): Promise<string> => {
+  let response = { signedBlob: "", error: "" };
+  const _opts = opts || {};
+  const accountToSign = _opts.accountToSign || "";
+  try {
+    response = await sendMessageToContentScript({
+      blob,
+      accountToSign,
+      type: EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  const { signedBlob, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return signedBlob;
+};
+
 export const requestNetwork = async (): Promise<string> => {
   let response = { network: "", error: "" };
   try {

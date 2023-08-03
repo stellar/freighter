@@ -27,6 +27,7 @@ export const METRIC_NAMES = {
   viewSettings: "loaded screen: settings",
   viewPreferences: "loaded screen: preferences",
   viewSecurity: "loaded screen: security",
+  viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
 
   viewSendPayment: "loaded screen: send payment",
@@ -111,6 +112,9 @@ export const METRIC_NAMES = {
   signTransactionMalicious: "sign transaction: malicious account warning",
   signTransactionUnsafe: "sign transaction: unsafe account warning",
   rejectTransaction: "sign transaction: rejected",
+
+  signBlob: "sign blob: confirmed",
+  rejectBlob: "sign blob: rejected",
 
   backupPhraseSuccess: "backup phrase: success",
   backupPhraseFail: "backup phrase: error",

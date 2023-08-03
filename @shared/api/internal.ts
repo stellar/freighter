@@ -505,6 +505,16 @@ export const signTransaction = async (): Promise<void> => {
   }
 };
 
+export const signBlob = async (): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      type: SERVICE_TYPES.SIGN_BLOB,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signFreighterTransaction = async ({
   transactionXDR,
   network,
@@ -674,6 +684,27 @@ export const showBackupPhrase = async (
   return response;
 };
 
+export const saveAllowList = async ({
+  allowList,
+}: {
+  allowList: string[];
+}): Promise<{ allowList: string[] }> => {
+  let response = {
+    allowList: [""],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      allowList,
+      type: SERVICE_TYPES.SAVE_ALLOWLIST,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
 export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
@@ -688,6 +719,7 @@ export const saveSettings = async ({
   isExperimentalModeEnabled: boolean;
 }): Promise<Settings> => {
   let response = {
+    allowList: [""],
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
