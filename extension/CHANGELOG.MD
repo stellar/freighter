@@ -1,3 +1,11 @@
+# Release notes - Wallets - Freighter-5.2.6
+
+### Story
+
+Allow removing domain connection
+
+Allow Freighter to sign arbitrary blobs
+
 # Release notes - Wallets - Freighter-5.2.5
 
 ### Bug
