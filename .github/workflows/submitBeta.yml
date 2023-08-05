@@ -58,7 +58,7 @@ jobs:
       - name: Build extension
         uses: actions/setup-node@v1
         with:
-          node-version: "16.14"
+          node-version: "18"
       - run: yarn setup && yarn build:freighter-api && yarn build:extension:production
       - name: Use BETA icons
         run: |
