@@ -11,7 +11,6 @@ const { DEFAULT_STATS } = require("../config/webpack");
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = (env = { EXPERIMENTAL: false }) => ({
-  node: { global: true, fs: "empty" },
   entry: {
     background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
@@ -30,7 +29,8 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
       /* don't add a hash to background and contentScript files 
       because manifest.json is hardcoded to look for background.min.js 
       and contentScript.min.js */
-      return !name.includes("index")
+
+      return name && !name.includes("index")
         ? `${name.split("~")[0]}.min.js`
         : "[name].min.js";
     },
@@ -42,6 +42,18 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
         configFile: path.resolve(__dirname, "./tsconfig.json"),
       }),
     ],
+    fallback: {
+      fs: false,
+      stream: require.resolve("stream-browserify"),
+      util: require.resolve("util/"),
+      url: require.resolve("url/"),
+      https: require.resolve("https-browserify"),
+      http: require.resolve("stream-http"),
+      os: require.resolve("os-browserify/browser"),
+      path: require.resolve("path-browserify"),
+      buffer: require.resolve("buffer"),
+      "process/browser": require.resolve("process/browser"),
+    },
   },
   module: {
     rules: [
@@ -65,19 +77,11 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
       },
       {
         test: /\.png$/,
-        use: [
-          {
-            loader: "file-loader",
-          },
-        ],
+        type: "asset/resource",
       },
       {
         test: /\.svg$/,
-        use: [
-          {
-            loader: "svg-url-loader",
-          },
-        ],
+        type: "asset/resource",
       },
       {
         test: /\.(css|sass|scss)$/,
@@ -94,15 +98,10 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
       },
       {
         test: /\.(woff(2)?|ttf|eot)(\?v=\d+\.\d+\.\d+)?$/,
-        use: [
-          {
-            loader: "file-loader",
-            options: {
-              name: "[name].[ext]",
-              outputPath: "fonts/",
-            },
-          },
-        ],
+        type: "asset/resource",
+        generator: {
+          filename: "fonts/[hash][ext]",
+        },
       },
     ],
   },
@@ -130,14 +129,17 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
       EXPERIMENTAL: env.EXPERIMENTAL,
     }),
     new MiniCssExtractPlugin({
-      filename: "style.min.css",
+      filename: "[name].min.css",
       chunkFilename: "[name].min.css",
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ["buffer", "Buffer"],
+    }),
+    new webpack.ProvidePlugin({
+      process: "process/browser",
     }),
   ],
   stats: DEFAULT_STATS,
-  devServer: {
-    stats: "minimal",
-  },
 });
 
 module.exports.commonConfig = commonConfig;

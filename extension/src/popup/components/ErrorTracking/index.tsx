@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/browser";
 import { Integrations } from "@sentry/tracing";
 
 import { settingsDataSharingSelector } from "popup/ducks/settings";
-import { version } from "../../../../package.json";
+import packageJson from "../../../../package.json";
 
 export const ErrorTracking = () => {
   const isDataSharingAllowed = useSelector(settingsDataSharingSelector);
@@ -11,7 +11,7 @@ export const ErrorTracking = () => {
   if (process.env.SENTRY_KEY && isDataSharingAllowed) {
     Sentry.init({
       dsn: process.env.SENTRY_KEY,
-      release: `freighter@${version}`,
+      release: `freighter@${packageJson.version}`,
       integrations: [new Integrations.BrowserTracing()],
       tracesSampleRate: 1.0,
     });

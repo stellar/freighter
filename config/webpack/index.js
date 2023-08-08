@@ -3,7 +3,6 @@ const DEFAULT_STATS = {
   // can use `preset: "minimal"` once webpack 5 lands
   all: false,
   modules: true,
-  maxModules: 0,
   errors: true,
   warnings: true,
   // We want to keep output narrowly focused when possible because there's a lot

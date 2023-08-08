@@ -2,7 +2,7 @@
   "license": "Apache-2.0",
   "private": true,
   "engines": {
-    "node": ">=16.14.0 <17.0.0"
+    "node": ">=18.0.0"
   },
   "workspaces": [
     "@shared/api",
@@ -18,7 +18,7 @@
   "scripts": {
     "setup": "yarn install && yarn allow-scripts",
     "build": "run-p --print-label build:freighter-api build:docs build:extension",
-    "build:netlify": "cd docs && npm i && npm run build",
+    "build:netlify": "cd docs && npm i --legacy-peer-deps && npm run build",
     "build:extension-preview": "run-s build:freighter-api build:extension:experimental",
     "build:freighter-api": "yarn workspace @stellar/freighter-api build",
     "build:docs": "yarn workspace docs build",
@@ -104,16 +104,15 @@
     "jsdom": "^16.5.0",
     "jsdom-global": "^3.0.2",
     "lint-staged": "^10.2.11",
-    "module-replace-webpack-plugin": "^0.0.12",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
-    "ts-loader": "8.0.7",
+    "ts-loader": "9.4.3",
     "typescript": "^4.2.3",
-    "webpack": "4.41.5",
-    "webpack-cli": "3.3.10",
-    "webpack-dev-server": "3.10.3",
-    "webpack-merge": "4.2.2"
+    "webpack": "5.88.0",
+    "webpack-cli": "5.1.4",
+    "webpack-dev-server": "4.15.1",
+    "webpack-merge": "5.9.0"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.3.1",
