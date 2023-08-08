@@ -11,7 +11,7 @@
     "build:translations": "yarn build --env env.TRANSLATIONS=true",
     "start": "webpack-dev-server --config webpack.dev.js",
     "start:experimental": "yarn start --env env.EXPERIMENTAL=true",
-    "start:unpacked-extension": "yarn build --watch --info-verbosity verbose"
+    "start:unpacked-extension": "yarn build --watch"
   },
   "dependencies": {
     "@ledgerhq/hw-app-str": "^6.27.1",
