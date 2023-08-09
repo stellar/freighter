@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { IconButton, Icon } from "@stellar/design-system";
+import { IconButton, Icon, Notification } from "@stellar/design-system";
 
 import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -43,7 +43,6 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 import "./styles.scss";
@@ -212,7 +211,8 @@ export const AssetDetail = ({
         <SimpleBarWrapper>
           <div className="AssetDetail__scam-warning">
             {isOwnedScamAsset && (
-              <InfoBlock variant={InfoBlock.variant.error}>
+              // TODO: ??? translate
+              <Notification variant="error" title="Error">
                 <div>
                   <p>
                     This asset was tagged as fraudulent by stellar.expert, a
@@ -224,7 +224,7 @@ export const AssetDetail = ({
                     say otherwise.
                   </p>
                 </div>
-              </InfoBlock>
+              </Notification>
             )}
           </div>
 

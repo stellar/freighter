@@ -1,6 +1,6 @@
 import React from "react";
+import { Notification } from "@stellar/design-system";
 
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import "./styles.scss";
@@ -19,14 +19,13 @@ export const NetworkModal = ({
   <div className="NetworkModal">
     <LoadingBackground isActive />
     <div className="NetworkModal__content">
-      <InfoBlock
-        variant={InfoBlock.variant.warning}
-        className={`NetworkModal__infoBlock ${
-          isConfirmation ? "NetworkModal__infoBlock--confirmation" : ""
-        }`}
+      <Notification
+        variant={isConfirmation ? "warning" : "error"}
+        // TODO: ??? translate
+        title="Network"
       >
         {children}
-      </InfoBlock>
+      </Notification>
       <div className="NetworkModal__button-row">{buttonComponent}</div>
     </div>
   </div>

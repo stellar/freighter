@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import { Card, Icon } from "@stellar/design-system";
+import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
 import { useTranslation, Trans } from "react-i18next";
@@ -13,8 +13,6 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { TransactionHeading } from "popup/basics/TransactionHeading";
 import { signTransaction } from "popup/ducks/access";
 
@@ -123,10 +121,10 @@ export const SignTxBody = ({
     flaggedKeys,
   } = tx;
 
-  /* 
-  Reconstruct the tx from xdr as passing a tx through extension contexts 
-  loses custom prototypes associated with some values. This is fine for most cases 
-  where we just need a high level overview of the tx, like just a list of operations.  
+  /*
+  Reconstruct the tx from xdr as passing a tx through extension contexts
+  loses custom prototypes associated with some values. This is fine for most cases
+  where we just need a high level overview of the tx, like just a list of operations.
   But in this case, we will need the hostFn prototype associated with Soroban tx operations.
   */
 
@@ -309,7 +307,7 @@ export const SignTxBody = ({
             <FirstTimeWarningMessage />
           ) : null}
           <div className="SignTransaction__info">
-            <Card variant={Card.variant.highlight}>
+            <Card variant="secondary">
               <PunycodedDomain domain={domain} isRow />
               <div className="SignTransaction__subject">
                 {t("is requesting approval to a")}{" "}
@@ -344,13 +342,18 @@ export const SignTxBody = ({
             </Card>
             {accountNotFound && accountToSign ? (
               <div className="SignTransaction__account-not-found">
-                <InfoBlock variant={InfoBlock.variant.warning}>
+                <Notification
+                  variant="warning"
+                  icon={<Icon.Warning />}
+                  // TODO: ??? translate
+                  title="Account not available"
+                >
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
                   {t(
                     "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
                   )}
-                </InfoBlock>
+                </Notification>
               </div>
             ) : null}
           </div>
@@ -379,15 +382,18 @@ export const SignTxBody = ({
         </ModalWrapper>
         <ButtonsContainer>
           <Button
-            fullWidth
-            variant={Button.variant.tertiary}
+            size="md"
+            isFullWidth
+            variant="tertiary"
             onClick={() => rejectAndClose()}
           >
             {t("Reject")}
           </Button>
           <Button
+            size="md"
             disabled={isSubmitDisabled}
-            fullWidth
+            isFullWidth
+            variant="primary"
             isLoading={isConfirming}
             onClick={() => _handleApprove()}
           >

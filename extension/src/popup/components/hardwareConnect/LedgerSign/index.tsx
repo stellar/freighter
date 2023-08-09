@@ -3,13 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
-import { Icon } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { handleSignedHwTransaction } from "@shared/api/internal";
 
 import { POPUP_HEIGHT } from "constants/dimensions";
 
 import { AppDispatch } from "popup/App";
-import { Button } from "popup/basics/buttons/Button";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import Ledger from "popup/assets/ledger.png";
 import LedgerSigning from "popup/assets/ledger-signing.png";
@@ -125,7 +124,7 @@ export const LedgerSign = () => {
       <div className="LedgerSign__wrapper" ref={ledgerConnectRef}>
         <SubviewHeader
           customBackAction={closeOverlay}
-          customBackIcon={<Icon.X />}
+          customBackIcon={<Icon.Close />}
           title="Connect Ledger"
         />
         <div className="LedgerSign__content">
@@ -149,8 +148,9 @@ export const LedgerSign = () => {
           {isDetectBtnDirty && <LedgerErrorBlock error={connectError} />}
           {!ledgerConnectSuccessful && (
             <Button
-              fullWidth
-              variant={Button.variant.tertiary}
+              size="md"
+              variant="tertiary"
+              isFullWidth
               onClick={() => {
                 setIsDetectBtnDirty(true);
                 handleSign();

@@ -3,11 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import QrCode from "qrcode.react";
 import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
 import { object as YupObject, string as YupString } from "yup";
-import { Icon, Input, CopyText } from "@stellar/design-system";
+import { Icon, Input, CopyText, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
-import { Button } from "popup/basics/buttons/Button";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey, isCustomNetwork } from "helpers/stellar";
@@ -91,6 +90,7 @@ export const ViewPublicKey = () => {
                       <Field name="accountName">
                         {({ field }: FieldProps) => (
                           <Input
+                            fieldSize="md"
                             autoComplete="off"
                             id="accountName"
                             placeholder={accountName}
@@ -139,8 +139,9 @@ export const ViewPublicKey = () => {
         <div className="ViewPublicKey__external-link">
           {!isCustomNetwork(networkDetails) ? (
             <Button
-              fullWidth
-              variant={Button.variant.tertiary}
+              size="md"
+              isFullWidth
+              variant="tertiary"
               onClick={() => {
                 openTab(
                   `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,

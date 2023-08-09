@@ -2,10 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
-import { Input, Checkbox, Icon, TextLink } from "@stellar/design-system";
+import { Input, Checkbox, Icon, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { Onboarding } from "popup/components/Onboarding";
 import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
@@ -44,6 +43,7 @@ const PhraseInput = ({
   return (
     <div key={phraseInput} className="RecoverAccount__phrase-input">
       <Input
+        fieldSize="md"
         autoComplete="off"
         id={phraseInput}
         name={phraseInput}
@@ -60,7 +60,7 @@ const PhraseInput = ({
         className="RecoverAccount__password-toggle"
         onClick={() => setIsTextShowing(!isTextShowing)}
       >
-        {isTextShowing ? <Icon.Eye /> : <Icon.EyeOff />}
+        {isTextShowing ? <Icon.Show /> : <Icon.Hide />}
       </div>
     </div>
   );
@@ -166,6 +166,7 @@ export const RecoverAccount = () => {
                 <div className="RecoverAccount__half-screen">
                   <FormRows>
                     <Input
+                      fieldSize="md"
                       autoComplete="off"
                       customInput={<Field />}
                       id="password-input"
@@ -179,6 +180,7 @@ export const RecoverAccount = () => {
                       }
                     />
                     <Input
+                      fieldSize="md"
                       autoComplete="off"
                       customInput={<Field />}
                       id="confirm-password-input"
@@ -195,6 +197,7 @@ export const RecoverAccount = () => {
                     <Field name="termsOfUse">
                       {({ field }: FieldProps) => (
                         <Checkbox
+                          fieldSize="md"
                           autoComplete="off"
                           id="termsOfUse-input"
                           error={
@@ -205,12 +208,12 @@ export const RecoverAccount = () => {
                           label={
                             <span>
                               {t("I have read and agree to")}{" "}
-                              <TextLink
-                                variant={TextLink.variant.secondary}
+                              <Link
+                                variant="secondary"
                                 href="https://stellar.org/terms-of-service"
                               >
                                 {t("Terms of Use")}
-                              </TextLink>
+                              </Link>
                             </span>
                           }
                           {...field}
@@ -220,7 +223,9 @@ export const RecoverAccount = () => {
                   </FormRows>
                   <SubmitButtonWrapper>
                     <Button
-                      fullWidth
+                      size="md"
+                      isFullWidth
+                      variant="primary"
                       isLoading={isSubmitting}
                       disabled={
                         !(

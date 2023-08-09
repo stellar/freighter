@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Checkbox, Input } from "@stellar/design-system";
+import { Button, Checkbox, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
@@ -8,7 +8,6 @@ import { useHistory, useLocation } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
-import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
 
@@ -190,9 +189,10 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
   const CloseModalButton = () => (
     <Button
+      size="md"
       type="button"
-      fullWidth
-      variant={Button.variant.tertiary}
+      isFullWidth
+      variant="tertiary"
       onClick={() => {
         setIsNetworkInUse(false);
         setIsNetworkUrlValid(false);
@@ -205,16 +205,19 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const ConfirmRemovalButtons = () => (
     <div className="NetworkForm__removal-buttons">
       <Button
-        fullWidth
+        size="md"
+        isFullWidth
         type="button"
-        variant={Button.variant.tertiary}
+        variant="tertiary"
         onClick={() => setIsConfirmingRemoval(false)}
       >
         {t("Cancel")}
       </Button>
       <div className="NetworkForm__remove-button">
         <Button
-          fullWidth
+          size="md"
+          isFullWidth
+          variant="primary"
           type="button"
           onClick={() => {
             handleRemoveNetwork();
@@ -235,17 +238,20 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     !isEditingDefaultNetworks ? (
       <div className="NetworkForm__editing-buttons">
         <Button
+          size="md"
           onClick={() => history.goBack()}
           type="button"
-          variant={Button.variant.tertiary}
-          fullWidth
+          variant="tertiary"
+          isFullWidth
         >
           {t("Cancel")}
         </Button>
         <Button
+          size="md"
+          variant="primary"
           disabled={!isValid}
           isLoading={isSubmitting}
-          fullWidth
+          isFullWidth
           type="submit"
         >
           {t("Save")}
@@ -313,6 +319,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
           {({ dirty, errors, isSubmitting, isValid, touched }) => (
             <Form className="NetworkForm__form">
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="networkName"
                 autoComplete="off"
@@ -328,6 +335,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 placeholder={t("Enter network name")}
               />
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="networkUrl"
                 autoComplete="off"
@@ -342,6 +350,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 placeholder={t("Enter network URL")}
               />
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="networkPassphrase"
                 autoComplete="off"
@@ -356,6 +365,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 placeholder={t("Enter passphrase")}
               />
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="friendbotUrl"
                 autoComplete="off"
@@ -373,6 +383,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 <Field name="isAllowHttpSelected">
                   {({ field }: FieldProps) => (
                     <Checkbox
+                      fieldSize="md"
                       checked={field.value}
                       id="isAllowHttpSelected-input"
                       error={
@@ -413,6 +424,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 <Field name="isSwitchSelected">
                   {({ field }: FieldProps) => (
                     <Checkbox
+                      fieldSize="md"
                       autoComplete="off"
                       id="isSwitchSelected-input"
                       error={
@@ -431,8 +443,10 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               ) : (
                 <div className="NetworkForm__add-button">
                   <Button
+                    size="md"
+                    variant="primary"
                     disabled={!(isValid && dirty)}
-                    fullWidth
+                    isFullWidth
                     isLoading={isSubmitting}
                     type="submit"
                   >

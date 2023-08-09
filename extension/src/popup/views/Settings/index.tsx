@@ -1,12 +1,11 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { Heading5 } from "@stellar/design-system";
+import { Button, Heading } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
-import { Button } from "popup/basics/buttons/Button";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 
 import { BottomNav } from "popup/components/BottomNav";
@@ -32,7 +31,9 @@ export const Settings = () => {
       <nav className="Settings">
         <div>
           <div className="Settings__header">
-            <Heading5>Settings</Heading5>
+            <Heading as="h5" size="md">
+              Settings
+            </Heading>
             <div className="Settings__version">{packageJson.version}</div>
           </div>
           <ListNavLinkWrapper>
@@ -54,8 +55,9 @@ export const Settings = () => {
         </div>
         <div className="Settings__logout">
           <Button
-            fullWidth
-            variant={Button.variant.tertiary}
+            size="md"
+            isFullWidth
+            variant="tertiary"
             onClick={(e) => signOutAndClose(e)}
           >
             {t("Log Out")}

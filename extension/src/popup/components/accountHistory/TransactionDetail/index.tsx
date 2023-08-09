@@ -1,8 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-
-import { Button } from "popup/basics/buttons/Button";
+import { Button } from "@stellar/design-system";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -147,12 +146,13 @@ export const TransactionDetail = ({
       </div>
       {!isCustomNetwork(networkDetails) ? (
         <Button
-          fullWidth
+          size="md"
+          variant="tertiary"
+          isFullWidth
           onClick={() => {
             emitMetric(METRIC_NAMES.historyOpenItem);
             openTab(externalUrl);
           }}
-          variant={Button.variant.tertiary}
         >
           {t("View on")} stellar.expert
         </Button>

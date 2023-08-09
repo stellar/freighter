@@ -2,12 +2,10 @@ import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link, Redirect } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Input, Loader } from "@stellar/design-system";
+import { Button, Input, Loader, Notification } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
 
 import { ROUTES } from "popup/constants/routes";
@@ -47,7 +45,8 @@ const ResultsHeader = () => {
 
   return (
     <div className="SearchAsset__InfoBlock">
-      <InfoBlock>
+      {/* TODO: ??? translate */}
+      <Notification variant="primary" title="Multiple assets">
         <div>
           {t(
             "Multiple assets have a similar code, please check the domain before adding.",
@@ -62,7 +61,7 @@ const ResultsHeader = () => {
             </a>
           </div>
         </div>
-      </InfoBlock>
+      </Notification>
     </div>
   );
 };
@@ -150,6 +149,7 @@ export const SearchAsset = () => {
                 <Field name="asset">
                   {({ field }: FieldProps) => (
                     <Input
+                      fieldSize="md"
                       autoFocus
                       autoComplete="off"
                       id="asset"
@@ -198,7 +198,7 @@ export const SearchAsset = () => {
               {!dirty && hasNoResults ? (
                 <div>
                   <Link to={ROUTES.addAsset}>
-                    <Button fullWidth variant={Button.variant.tertiary}>
+                    <Button size="md" isFullWidth variant="tertiary">
                       {t("Add asset manually")}
                     </Button>
                   </Link>

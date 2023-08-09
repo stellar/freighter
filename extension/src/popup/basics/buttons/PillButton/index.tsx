@@ -1,8 +1,6 @@
 import React from "react";
 import { Button } from "@stellar/design-system";
 
-import "./styles.scss";
-
 interface PillButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
@@ -18,9 +16,11 @@ export const PillButton = ({
 }: PillButtonProps) => (
   <div className="PillButton">
     <Button
+      size="md"
       disabled={disabled}
       isLoading={isLoading}
-      variant={Button.variant.tertiary}
+      variant="tertiary"
+      isPill
       {...props}
     >
       {children}

@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Icon, Loader } from "@stellar/design-system";
+import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
 import {
@@ -135,7 +134,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
       )}
       <SubviewHeader
         title="Choose Asset"
-        customBackIcon={!managingAssets ? <Icon.X /> : undefined}
+        customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
       />
       <div className="ChooseAsset__wrapper">
         <div
@@ -165,7 +164,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             {isExperimentalModeEnabled ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
-                  <Button fullWidth variant={Button.variant.tertiary}>
+                  <Button size="md" isFullWidth variant="tertiary">
                     {t("Add Soroban token")}
                   </Button>
                 </Link>
@@ -173,7 +172,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             ) : null}
             <div className="ChooseAsset__button">
               <Link to={ROUTES.searchAsset}>
-                <Button fullWidth variant={Button.variant.tertiary}>
+                <Button size="md" isFullWidth variant="tertiary">
                   {t("Add another asset")}
                 </Button>
               </Link>

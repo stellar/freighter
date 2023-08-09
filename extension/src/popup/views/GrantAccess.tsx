@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Button } from "@stellar/design-system";
 
 import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 
-import { Button } from "popup/basics/buttons/Button";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
@@ -65,14 +65,17 @@ export const GrantAccess = () => {
       </ModalWrapper>
       <ButtonsContainer>
         <Button
-          fullWidth
-          variant={Button.variant.tertiary}
+          size="md"
+          isFullWidth
+          variant="tertiary"
           onClick={rejectAndClose}
         >
           {t("Reject")}
         </Button>
         <Button
-          fullWidth
+          size="md"
+          isFullWidth
+          variant="primary"
           isLoading={isGranting}
           onClick={() => grantAndClose()}
         >

@@ -1,11 +1,11 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { Button } from "@stellar/design-system";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
-import { Button } from "popup/basics/buttons/Button";
 
 import { isActiveNetwork } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
@@ -64,8 +64,9 @@ export const NetworkSettings = () => {
       </SimpleBarWrapper>
       <div className="NetworkSettings__bottom">
         <Button
-          fullWidth
-          variant={Button.variant.tertiary}
+          size="md"
+          isFullWidth
+          variant="tertiary"
           onClick={() => navigateTo(ROUTES.addNetwork)}
         >
           {t("Add custom network")}
