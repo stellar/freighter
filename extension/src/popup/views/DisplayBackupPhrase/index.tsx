@@ -103,7 +103,7 @@ export const DisplayBackupPhrase = () => {
                   isFullWidth
                   isLoading={isSubmitting}
                   type="submit"
-                  variant="tertiary"
+                  variant="secondary"
                 >
                   {t("Show recovery phrase")}
                 </Button>

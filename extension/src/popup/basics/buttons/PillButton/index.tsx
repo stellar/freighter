@@ -19,7 +19,7 @@ export const PillButton = ({
       size="md"
       disabled={disabled}
       isLoading={isLoading}
-      variant="tertiary"
+      variant="secondary"
       isPill
       {...props}
     >

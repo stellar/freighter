@@ -53,7 +53,7 @@ export const Welcome = () => {
                 <Button
                   size="md"
                   isFullWidth
-                  variant="tertiary"
+                  variant="secondary"
                   onClick={() => navigateTo(ROUTES.recoverAccount)}
                 >
                   {t("IMPORT WALLET")}

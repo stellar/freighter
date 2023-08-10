@@ -130,7 +130,7 @@ export const AccountCreator = () => {
                           error={touched.termsOfUse ? errors.termsOfUse : null}
                           id="termsOfUse-input"
                           label={
-                            <span>
+                            <>
                               {t("I have read and agree to")}{" "}
                               <Link
                                 variant="secondary"
@@ -138,7 +138,7 @@ export const AccountCreator = () => {
                               >
                                 {t("Terms of Use")}
                               </Link>
-                            </span>
+                            </>
                           }
                           {...field}
                         />

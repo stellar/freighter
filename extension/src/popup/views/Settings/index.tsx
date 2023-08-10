@@ -57,7 +57,7 @@ export const Settings = () => {
           <Button
             size="md"
             isFullWidth
-            variant="tertiary"
+            variant="secondary"
             onClick={(e) => signOutAndClose(e)}
           >
             {t("Log Out")}

@@ -96,7 +96,7 @@ export const WarningMessage = ({
         <div className="WarningMessage__children-wrapper">{children}</div>
         <Button
           size="md"
-          variant="tertiary"
+          variant="secondary"
           isFullWidth
           type="button"
           onClick={() =>
@@ -363,8 +363,7 @@ export const ScamAssetWarning = ({
         <div className="ScamAssetWarning__bottom-content">
           <div>
             {isSendWarning ? (
-              // TODO: ??? translate
-              <Notification variant="error" title="Not recommended asset">
+              <Notification variant="error" title={t("Not recommended asset")}>
                 <p>
                   {t(
                     "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise.",
@@ -372,8 +371,7 @@ export const ScamAssetWarning = ({
                 </p>
               </Notification>
             ) : (
-              // TODO: ??? translate
-              <Notification variant="error" title="Blocked asset">
+              <Notification variant="error" title={t("Blocked asset")}>
                 <div>
                   <p>
                     {isValidatingSafeAssetsEnabled
@@ -400,7 +398,7 @@ export const ScamAssetWarning = ({
             <Button
               size="md"
               isFullWidth
-              variant="tertiary"
+              variant="secondary"
               type="button"
               onClick={closeOverlay}
             >
@@ -611,7 +609,7 @@ export const NewAssetWarning = ({
             <Button
               size="md"
               isFullWidth
-              variant="tertiary"
+              variant="secondary"
               type="button"
               onClick={closeOverlay}
             >

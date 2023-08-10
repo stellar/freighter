@@ -145,7 +145,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                   size="md"
                   isFullWidth
                   disabled={!values.presetSlippage && !values.customSlippage}
-                  variant="tertiary"
+                  variant="secondary"
                   type="submit"
                 >
                   {t("Done")}

@@ -195,8 +195,7 @@ export const SignBlobBody = ({
                 <Notification
                   variant="warning"
                   icon={<Icon.Warning />}
-                  // TODO: ??? translate
-                  title="Account not available"
+                  title={t("Account not available")}
                 >
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
@@ -213,7 +212,7 @@ export const SignBlobBody = ({
           <Button
             size="md"
             isFullWidth
-            variant="tertiary"
+            variant="secondary"
             onClick={() => rejectAndClose()}
           >
             {t("Reject")}

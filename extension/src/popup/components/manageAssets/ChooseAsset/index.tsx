@@ -164,7 +164,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             {isExperimentalModeEnabled ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
-                  <Button size="md" isFullWidth variant="tertiary">
+                  <Button size="md" isFullWidth variant="secondary">
                     {t("Add Soroban token")}
                   </Button>
                 </Link>
@@ -172,7 +172,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             ) : null}
             <div className="ChooseAsset__button">
               <Link to={ROUTES.searchAsset}>
-                <Button size="md" isFullWidth variant="tertiary">
+                <Button size="md" isFullWidth variant="secondary">
                   {t("Add another asset")}
                 </Button>
               </Link>

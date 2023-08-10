@@ -211,8 +211,7 @@ export const AssetDetail = ({
         <SimpleBarWrapper>
           <div className="AssetDetail__scam-warning">
             {isOwnedScamAsset && (
-              // TODO: ??? translate
-              <Notification variant="error" title="Error">
+              <Notification variant="error" title={t("Error")}>
                 <div>
                   <p>
                     This asset was tagged as fraudulent by stellar.expert, a

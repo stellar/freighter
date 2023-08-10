@@ -56,11 +56,7 @@ export const PluginWallet = () => {
             defaultChecked
             autoComplete="off"
             id="useDefault-input"
-            label={
-              <span className="PluginWallet__checkbox-label">
-                Use default account
-              </span>
-            }
+            label="Use default account"
             onClick={() => setUseDefault(!useDefault)}
           />
           <Button

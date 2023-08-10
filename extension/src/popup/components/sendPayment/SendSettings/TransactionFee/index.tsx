@@ -106,7 +106,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                 <Button
                   size="md"
                   isFullWidth
-                  variant="tertiary"
+                  variant="secondary"
                   disabled={!values.transactionFee || !isValid}
                   type="submit"
                 >

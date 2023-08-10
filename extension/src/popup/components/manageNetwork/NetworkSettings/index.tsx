@@ -66,7 +66,7 @@ export const NetworkSettings = () => {
         <Button
           size="md"
           isFullWidth
-          variant="tertiary"
+          variant="secondary"
           onClick={() => navigateTo(ROUTES.addNetwork)}
         >
           {t("Add custom network")}

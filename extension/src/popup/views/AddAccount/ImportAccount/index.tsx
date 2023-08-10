@@ -129,7 +129,7 @@ export const ImportAccount = () => {
               <Button
                 size="md"
                 isFullWidth
-                variant="tertiary"
+                variant="secondary"
                 onClick={() => navigateTo(ROUTES.account)}
               >
                 {t("Cancel")}

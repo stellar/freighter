@@ -1,6 +1,6 @@
 .InfoBlock {
   &__header {
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     display: inline-block;
     font-weight: var(--font-weight-bold);
     font-size: 1.1rem;
@@ -44,7 +44,7 @@
     flex-direction: column;
     justify-content: start;
     padding: 0 0 2rem 0;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     max-width: 24rem;
   }
 

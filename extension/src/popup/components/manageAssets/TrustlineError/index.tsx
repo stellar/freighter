@@ -58,8 +58,7 @@ const RenderedError = ({
   switch (errorState) {
     case TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS:
       return (
-        // TODO: ??? translate
-        <Notification variant="error" title="Error">
+        <Notification variant="error" title={t("Error")}>
           <div>
             <p className="TrustlineError__title">{t("Not enough lumens")}</p>
             <p>0.500001 XLM {t("are required to add a new asset.")}</p>

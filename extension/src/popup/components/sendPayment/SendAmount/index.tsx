@@ -535,7 +535,7 @@ export const SendAmount = ({
                 }
                 data-testid="send-amount-btn-continue"
                 isFullWidth
-                variant="tertiary"
+                variant="secondary"
                 type="submit"
               >
                 {t("Continue")}

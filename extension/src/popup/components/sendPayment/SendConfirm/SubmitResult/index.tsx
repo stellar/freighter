@@ -186,8 +186,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       </div>
       <div className="SubmitResult__suggest-remove-tl">
         {suggestRemoveTrustline && (
-          // TODO: ??? translate
-          <Notification variant="primary" title="Remove trustline">
+          <Notification variant="primary" title={t("Remove trustline")}>
             <span className="remove-tl-contents">
               <p>
                 Your {sourceAsset.code} balance is now empty. Would you like to
@@ -205,7 +204,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         )}
       </div>
       <div className="SubmitResult__button-rows__success">
-        <Button size="md" variant="tertiary" onClick={() => viewDetails()}>
+        <Button size="md" variant="secondary" onClick={() => viewDetails()}>
           {t("Details")}
         </Button>
         <Button
@@ -259,8 +258,7 @@ export const SubmitFail = () => {
       case RESULT_CODES.tx_insufficient_fee:
         errorDetails.title = t("Insufficient Fee");
         errorDetails.errorBlock = (
-          // TODO: ??? translate
-          <Notification variant="error" title="Network fees">
+          <Notification variant="error" title={t("Network fees")}>
             <div>
               {t(
                 "Fees can vary depending on the network congestion. Please try using the suggested fee and try again.",
@@ -294,8 +292,7 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification
             variant="error"
-            // TODO: ??? translate
-            title="The destination account doesn’t exist"
+            title={t("The destination account doesn’t exist")}
           >
             <div>
               {t(
@@ -321,8 +318,9 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification
             variant="error"
-            // TODO: ??? translate
-            title="The destination account does not accept the asset you’re sending"
+            title={t(
+              "The destination account does not accept the asset you’re sending",
+            )}
           >
             <div>
               {t(
@@ -344,8 +342,7 @@ export const SubmitFail = () => {
       case RESULT_CODES.op_under_dest_min:
         errorDetails.title = t("Conversion rate changed");
         errorDetails.errorBlock = (
-          // TODO: ??? translate
-          <Notification variant="error" title="Conversion rate">
+          <Notification variant="error" title={t("Conversion rate")}>
             <div>
               {t("Please check the new rate and try again.")}
               <Link
@@ -364,8 +361,7 @@ export const SubmitFail = () => {
       case RESULT_CODES.op_low_reserve:
         errorDetails.title = t("Account minimum balance is too low");
         errorDetails.errorBlock = (
-          // TODO: ??? translate
-          <Notification variant="error" title="New account">
+          <Notification variant="error" title={t("New account")}>
             <div>
               {t(
                 "To create a new account you need to send at least 1 XLM to it.",
@@ -416,7 +412,7 @@ export const SubmitFail = () => {
       <div className="SubmitResult__button-rows__fail">
         <Button
           isFullWidth
-          variant="tertiary"
+          variant="secondary"
           size="md"
           onClick={() => {
             navigateTo(ROUTES.account);

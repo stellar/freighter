@@ -147,7 +147,7 @@ export const TransactionDetail = ({
       {!isCustomNetwork(networkDetails) ? (
         <Button
           size="md"
-          variant="tertiary"
+          variant="secondary"
           isFullWidth
           onClick={() => {
             emitMetric(METRIC_NAMES.historyOpenItem);

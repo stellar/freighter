@@ -45,8 +45,7 @@ const ResultsHeader = () => {
 
   return (
     <div className="SearchAsset__InfoBlock">
-      {/* TODO: ??? translate */}
-      <Notification variant="primary" title="Multiple assets">
+      <Notification variant="primary" title={t("Multiple assets")}>
         <div>
           {t(
             "Multiple assets have a similar code, please check the domain before adding.",
@@ -198,7 +197,7 @@ export const SearchAsset = () => {
               {!dirty && hasNoResults ? (
                 <div>
                   <Link to={ROUTES.addAsset}>
-                    <Button size="md" isFullWidth variant="tertiary">
+                    <Button size="md" isFullWidth variant="secondary">
                       {t("Add asset manually")}
                     </Button>
                   </Link>

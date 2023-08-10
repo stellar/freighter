@@ -215,7 +215,7 @@ export const SendSettings = ({
                     size="md"
                     isFullWidth
                     type="submit"
-                    variant="tertiary"
+                    variant="secondary"
                     onClick={() => navigateTo(next)}
                     data-testid="send-settings-btn-continue"
                   >

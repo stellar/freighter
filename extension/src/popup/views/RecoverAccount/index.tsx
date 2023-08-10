@@ -206,7 +206,7 @@ export const RecoverAccount = () => {
                               : null
                           }
                           label={
-                            <span>
+                            <>
                               {t("I have read and agree to")}{" "}
                               <Link
                                 variant="secondary"
@@ -214,7 +214,7 @@ export const RecoverAccount = () => {
                               >
                                 {t("Terms of Use")}
                               </Link>
-                            </span>
+                            </>
                           }
                           {...field}
                         />

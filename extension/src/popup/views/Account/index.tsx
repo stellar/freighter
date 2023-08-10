@@ -237,7 +237,7 @@ export const Account = () => {
             <Button
               size="md"
               isFullWidth
-              variant="tertiary"
+              variant="secondary"
               onClick={() => {
                 dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
                 navigateTo(ROUTES.manageAssets);

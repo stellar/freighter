@@ -149,7 +149,7 @@ export const LedgerSign = () => {
           {!ledgerConnectSuccessful && (
             <Button
               size="md"
-              variant="tertiary"
+              variant="secondary"
               isFullWidth
               onClick={() => {
                 setIsDetectBtnDirty(true);

@@ -67,7 +67,7 @@ export const GrantAccess = () => {
         <Button
           size="md"
           isFullWidth
-          variant="tertiary"
+          variant="secondary"
           onClick={rejectAndClose}
         >
           {t("Reject")}

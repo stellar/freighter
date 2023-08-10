@@ -192,7 +192,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       size="md"
       type="button"
       isFullWidth
-      variant="tertiary"
+      variant="secondary"
       onClick={() => {
         setIsNetworkInUse(false);
         setIsNetworkUrlValid(false);
@@ -208,7 +208,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         size="md"
         isFullWidth
         type="button"
-        variant="tertiary"
+        variant="secondary"
         onClick={() => setIsConfirmingRemoval(false)}
       >
         {t("Cancel")}
@@ -241,7 +241,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
           size="md"
           onClick={() => history.goBack()}
           type="button"
-          variant="tertiary"
+          variant="secondary"
           isFullWidth
         >
           {t("Cancel")}
@@ -392,11 +392,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                           ? errors.isAllowHttpSelected
                           : null
                       }
-                      label={
-                        <span>
-                          {t("Allow connecting to non-HTTPS networks")}
-                        </span>
-                      }
+                      label={t("Allow connecting to non-HTTPS networks")}
                       {...field}
                     />
                   )}
@@ -432,7 +428,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                           ? errors.isSwitchSelected
                           : null
                       }
-                      label={<span>{t("Switch to this network")}</span>}
+                      label={t("Switch to this network")}
                       {...field}
                     />
                   )}

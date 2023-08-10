@@ -119,7 +119,7 @@ export const LedgerConnect = () => {
         <Button
           size="md"
           isFullWidth
-          variant="tertiary"
+          variant="secondary"
           onClick={() => window.close()}
         >
           Done
@@ -130,7 +130,7 @@ export const LedgerConnect = () => {
       <Button
         size="md"
         isFullWidth
-        variant="tertiary"
+        variant="secondary"
         onClick={handleConnect}
         isLoading={isDetecting}
       >

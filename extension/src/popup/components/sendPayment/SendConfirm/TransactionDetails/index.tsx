@@ -441,7 +441,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       <Button
         size="md"
         isFullWidth
-        variant="tertiary"
+        variant="secondary"
         onClick={() =>
           openTab(
             `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
@@ -581,7 +581,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             <div className="TransactionDetails__bottom-wrapper__buttons">
               <Button
                 size="md"
-                variant="tertiary"
+                variant="secondary"
                 onClick={() => {
                   navigateTo(ROUTES.account);
                 }}

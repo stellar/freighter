@@ -58,10 +58,9 @@ export const AccountDoesntExistWarning = () => {
 
   return (
     <div className="SendTo__info-block">
-      {/* TODO: ??? translate */}
       <Notification
         variant="primary"
-        title="The destination account doesn’t exist"
+        title={t("The destination account doesn’t exist")}
       >
         <div>
           {t(
@@ -309,7 +308,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                       <Button
                         size="md"
                         isFullWidth
-                        variant="tertiary"
+                        variant="secondary"
                         onClick={() => formik.submitForm()}
                         data-testid="send-to-btn-continue"
                       >

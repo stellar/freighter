@@ -197,7 +197,6 @@ export const AccountHeader = ({
               to={ROUTES.networkSettings}
             >
               <div className="AccountHeader__account-list-item__icon">
-                {/* TODO: manage network settings icon */}
                 <Icon.Settings />
               </div>
               <span className="AccountHeader__account-list-item__link-copy">

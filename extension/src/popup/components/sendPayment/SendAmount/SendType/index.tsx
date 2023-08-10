@@ -42,24 +42,24 @@ const RadioCheck = ({
 }: RadioCheckProps) => (
   <div className="SendType__form-row">
     <label className="SendType--label SendType--radio-label">
-      <InfoTooltip infoText={tooltipDetails} placement="bottom-start">
-        <div className="SendType__content-wrapper">
-          <div className="SendType__content-wrapper__title">
+      <div className="SendType__content-wrapper">
+        <div className="SendType__content-wrapper__title">
+          <InfoTooltip infoText={tooltipDetails} placement="bottom-start">
             {title}
-            {subtext && (
-              <span className="SendType__content-wrapper__subtext">
-                {subtext}
-              </span>
-            )}
-          </div>
-          <Field
-            className="SendType--radio-field"
-            name={name}
-            type="radio"
-            value={value}
-          />
+          </InfoTooltip>
+          {subtext && (
+            <span className="SendType__content-wrapper__subtext">
+              {subtext}
+            </span>
+          )}
         </div>
-      </InfoTooltip>
+        <Field
+          className="SendType--radio-field"
+          name={name}
+          type="radio"
+          value={value}
+        />
+      </div>
     </label>
     <div
       className={`SendType--radio-check ${
@@ -149,7 +149,7 @@ export const SendType = () => {
               <Button
                 size="md"
                 isFullWidth
-                variant="tertiary"
+                variant="secondary"
                 onClick={() => submitForm(values)}
               >
                 {t("Done")}

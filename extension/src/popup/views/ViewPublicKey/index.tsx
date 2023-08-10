@@ -141,7 +141,7 @@ export const ViewPublicKey = () => {
             <Button
               size="md"
               isFullWidth
-              variant="tertiary"
+              variant="secondary"
               onClick={() => {
                 openTab(
                   `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,
