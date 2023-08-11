@@ -1,11 +1,10 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Input, Checkbox, TextLink } from "@stellar/design-system";
+import { Input, Checkbox, Link, Button } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import {
@@ -87,6 +86,7 @@ export const AccountCreator = () => {
                     <Field name="password">
                       {({ field }: FieldProps) => (
                         <Input
+                          fieldSize="md"
                           autoComplete="off"
                           id="new-password-input"
                           placeholder={t("New password")}
@@ -104,6 +104,7 @@ export const AccountCreator = () => {
                     <Field name="confirmPassword">
                       {({ field }: FieldProps) => (
                         <Input
+                          fieldSize="md"
                           autoComplete="off"
                           id="confirm-password-input"
                           placeholder={t("Confirm password")}
@@ -124,19 +125,20 @@ export const AccountCreator = () => {
                     <Field name="termsOfUse">
                       {({ field }: FieldProps) => (
                         <Checkbox
+                          fieldSize="md"
                           autoComplete="off"
                           error={touched.termsOfUse ? errors.termsOfUse : null}
                           id="termsOfUse-input"
                           label={
-                            <span>
+                            <>
                               {t("I have read and agree to")}{" "}
-                              <TextLink
-                                variant={TextLink.variant.secondary}
+                              <Link
+                                variant="secondary"
                                 href="https://stellar.org/terms-of-service"
                               >
                                 {t("Terms of Use")}
-                              </TextLink>
-                            </span>
+                              </Link>
+                            </>
                           }
                           {...field}
                         />
@@ -145,7 +147,9 @@ export const AccountCreator = () => {
                   </div>
                   <SubmitButtonWrapper>
                     <Button
-                      fullWidth
+                      size="md"
+                      isFullWidth
+                      variant="primary"
                       type="submit"
                       isLoading={isSubmitting}
                       disabled={!(dirty && isValid)}

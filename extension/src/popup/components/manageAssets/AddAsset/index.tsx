@@ -1,12 +1,10 @@
 import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Input } from "@stellar/design-system";
+import { Button, Input, Notification } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
 import StellarSdk from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -93,6 +91,7 @@ export const AddAsset = () => {
                 <Field name="assetDomain">
                   {({ field }: FieldProps) => (
                     <Input
+                      fieldSize="md"
                       autoComplete="off"
                       id="assetDomain"
                       placeholder={`${t("Asset domain")}, e.g. “centre.io”`}
@@ -108,7 +107,10 @@ export const AddAsset = () => {
               </div>
               <div className="AddAsset__results">
                 {isCurrencyNotFound ? (
-                  <InfoBlock>{t("Asset not found")}</InfoBlock>
+                  <Notification
+                    variant="primary"
+                    title={t("Asset not found")}
+                  />
                 ) : null}
                 {assetRows.length ? (
                   <>
@@ -132,7 +134,9 @@ export const AddAsset = () => {
               </div>
               <div>
                 <Button
-                  fullWidth
+                  size="md"
+                  variant="primary"
+                  isFullWidth
                   type="submit"
                   isLoading={isSubmitting}
                   disabled={!(dirty && isValid)}

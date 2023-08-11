@@ -20,10 +20,10 @@
 
   .IconButton {
     &__label {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
     }
     svg {
-      stroke: var(--pal-text-primary);
+      fill: var(--color-gray-90);
     }
   }
 }

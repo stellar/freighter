@@ -19,7 +19,7 @@
     width: 19.5rem;
     height: 3.5rem;
     border-radius: 0.5rem;
-    border: 1px solid var(--pal-background-secondary);
+    border: 1px solid var(--color-gray-10);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -30,7 +30,7 @@
   }
 
   &__option:hover {
-    background: var(--pal-background-secondary);
+    background: var(--color-gray-10);
   }
 
   li::before {

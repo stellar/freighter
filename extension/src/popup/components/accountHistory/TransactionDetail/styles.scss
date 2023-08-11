@@ -9,8 +9,8 @@
   padding: var(--popup-vertical-padding) var(--popup--side-padding);
 
   &__header {
-    border-bottom: 1px solid var(--pal-example-details);
-    color: var(--pal-brand-primary-on);
+    border-bottom: 1px solid var(--color-gray-40);
+    color: var(--color-white);
     font-size: 2rem;
     font-weight: var(--font-weight-light);
     padding-bottom: 1.5rem;
@@ -35,7 +35,7 @@
       justify-content: space-between;
 
       div:nth-child(2) {
-        color: var(--pal-success-on);
+        color: var(--color-white);
       }
     }
   }

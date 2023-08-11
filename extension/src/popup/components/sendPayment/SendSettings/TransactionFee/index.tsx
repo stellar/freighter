@@ -3,15 +3,15 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { Formik, Form, Field, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
-import { Input, Icon, TextLink, DetailsTooltip } from "@stellar/design-system";
+import { Input, Icon, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { FormRows } from "popup/basics/Forms";
+import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveTransactionFee,
@@ -31,26 +31,26 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
       <SubviewHeader
         title="Transaction Fee"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.X />}
+        customBackIcon={<Icon.Close />}
         rightButton={
-          <DetailsTooltip
-            tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
-            details={
+          <InfoTooltip
+            infoText={
               <span>
                 {t("Maximum network transaction fee to be paid")}{" "}
-                <TextLink
-                  variant={TextLink.variant.secondary}
+                <Link
+                  variant="secondary"
                   href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
                   rel="noreferrer"
                   target="_blank"
                 >
                   {t("Learn more")}
-                </TextLink>
+                </Link>
               </span>
             }
+            placement="bottom"
           >
-            <span></span>
-          </DetailsTooltip>
+            <></>
+          </InfoTooltip>
         }
       />
       <div className="TransactionFee">
@@ -74,6 +74,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                   {({ field }: FieldProps) => (
                     <>
                       <Input
+                        fieldSize="md"
                         id="transaction-fee-input"
                         className="SendTo__input"
                         type="number"
@@ -81,16 +82,18 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                         error={errors.transactionFee}
                       />
                       <div className="TransactionFee__row">
-                        <TextLink
-                          underline
-                          disabled={field.value === recommendedFee}
-                          variant={TextLink.variant.secondary}
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        <Link
+                          isUnderline
+                          isDisabled={field.value === recommendedFee}
+                          variant="secondary"
+                          role="button"
                           onClick={() =>
                             setFieldValue("transactionFee", recommendedFee)
                           }
                         >
                           {t("Set recommended")}
-                        </TextLink>
+                        </Link>
                         <span>
                           {networkCongestion} {t("congestion")}
                         </span>
@@ -101,8 +104,9 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
               </FormRows>
               <div className="SendPayment__btn-continue">
                 <Button
-                  fullWidth
-                  variant={Button.variant.tertiary}
+                  size="md"
+                  isFullWidth
+                  variant="secondary"
                   disabled={!values.transactionFee || !isValid}
                   type="submit"
                 >

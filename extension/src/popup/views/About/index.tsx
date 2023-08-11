@@ -15,7 +15,7 @@ interface AboutLinkProps {
 
 const AboutLink = ({ children, url }: AboutLinkProps) => (
   <div className="About__link">
-    <Icon.Link2 />
+    <Icon.Link />
     <a target="_blank" rel="noreferrer" href={`https://${url}`}>
       {children || url}
     </a>

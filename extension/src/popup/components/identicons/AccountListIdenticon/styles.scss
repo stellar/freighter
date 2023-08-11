@@ -7,7 +7,7 @@
     border-radius: 2rem;
     border-width: 1.5px;
     border-style: solid;
-    border-color: var(--pal-border-primary);
+    border-color: var(--color-gray-30);
 
     &.active {
       border-color: rgba(61, 204, 152, 1);
@@ -15,7 +15,7 @@
   }
 
   &__identicon-wrapper {
-    background: var(--pal-brand-primary-on);
+    background: var(--color-white);
     border-radius: 2rem;
     height: 2rem;
     width: 2rem;
@@ -37,7 +37,7 @@
   }
 
   &__account-name {
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     margin: 0 0 0.1875rem 0;
     max-height: 1.2rem;
     overflow: hidden;

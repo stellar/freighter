@@ -1,16 +1,13 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
-import { Icon, TextLink } from "@stellar/design-system";
+import { Button, Icon, Link, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import StellarSdk, { Account } from "stellar-sdk";
 import { AppDispatch } from "popup/App";
 
 import { AssetIcons, ErrorMessage } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-
-import { InfoBlock } from "popup/basics/InfoBlock";
-import { Button } from "popup/basics/buttons/Button";
 
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
@@ -171,7 +168,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         {formatAmount(amount)} {sourceAsset.code}
       </div>
       <div className="SubmitResult__icon SubmitResult__success">
-        <Icon.ArrowDownCircle />
+        <Icon.ArrowCircleDown />
       </div>
       <div className="SubmitResult__identicon">
         {isSwap ? (
@@ -189,7 +186,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       </div>
       <div className="SubmitResult__suggest-remove-tl">
         {suggestRemoveTrustline && (
-          <InfoBlock>
+          <Notification variant="primary" title={t("Remove trustline")}>
             <span className="remove-tl-contents">
               <p>
                 Your {sourceAsset.code} balance is now empty. Would you like to
@@ -203,14 +200,16 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
                 Remove Trustline
               </button>
             </span>
-          </InfoBlock>
+          </Notification>
         )}
       </div>
       <div className="SubmitResult__button-rows__success">
-        <Button variant={Button.variant.tertiary} onClick={() => viewDetails()}>
+        <Button size="md" variant="secondary" onClick={() => viewDetails()}>
           {t("Details")}
         </Button>
         <Button
+          size="md"
+          variant="primary"
           onClick={() => {
             navigateTo(ROUTES.account);
           }}
@@ -259,55 +258,57 @@ export const SubmitFail = () => {
       case RESULT_CODES.tx_insufficient_fee:
         errorDetails.title = t("Insufficient Fee");
         errorDetails.errorBlock = (
-          <InfoBlock variant={InfoBlock.variant.error}>
+          <Notification variant="error" title={t("Network fees")}>
             <div>
               {t(
                 "Fees can vary depending on the network congestion. Please try using the suggested fee and try again.",
               )}
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
+              <Link
+                isUnderline
+                variant="secondary"
                 href="https://developers.stellar.org/docs/glossary/fees/"
                 rel="noreferrer"
                 target="_blank"
               >
                 {t("Learn more about fees")}
-              </TextLink>
+              </Link>
             </div>
-          </InfoBlock>
+          </Notification>
         );
         break;
       case RESULT_CODES.op_underfunded:
         errorDetails.title = t("Insufficient Balance");
         errorDetails.errorBlock = (
-          <InfoBlock variant={InfoBlock.variant.error}>
-            <div>
-              {t(
-                "Your account balance is not sufficient for this transaction. Please review the transaction and try again.",
-              )}
-            </div>
-          </InfoBlock>
+          <Notification
+            variant="error"
+            title={t(
+              "Your account balance is not sufficient for this transaction. Please review the transaction and try again.",
+            )}
+          />
         );
         break;
       case RESULT_CODES.op_no_destination:
         errorDetails.title = t("Destination account doesn’t exist");
         errorDetails.errorBlock = (
-          <InfoBlock variant={InfoBlock.variant.error}>
+          <Notification
+            variant="error"
+            title={t("The destination account doesn’t exist")}
+          >
             <div>
               {t(
                 "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again.",
               )}
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
+              <Link
+                isUnderline
+                variant="secondary"
                 href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
                 rel="noreferrer"
                 target="_blank"
               >
                 {t("Learn more about account funding")}
-              </TextLink>
+              </Link>
             </div>
-          </InfoBlock>
+          </Notification>
         );
         break;
       case RESULT_CODES.op_no_trust:
@@ -315,62 +316,67 @@ export const SubmitFail = () => {
           "Destination account does not accept this asset",
         );
         errorDetails.errorBlock = (
-          <InfoBlock variant={InfoBlock.variant.error}>
+          <Notification
+            variant="error"
+            title={t(
+              "The destination account does not accept the asset you’re sending",
+            )}
+          >
             <div>
               {t(
                 "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it.",
               )}
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
+              <Link
+                isUnderline
+                variant="secondary"
                 href="https://developers.stellar.org/docs/issuing-assets/anatomy-of-an-asset/#trustlines"
                 rel="noreferrer"
                 target="_blank"
               >
                 {t("Learn more about trustlines")}
-              </TextLink>
+              </Link>
             </div>
-          </InfoBlock>
+          </Notification>
         );
         break;
       case RESULT_CODES.op_under_dest_min:
         errorDetails.title = t("Conversion rate changed");
         errorDetails.errorBlock = (
-          <InfoBlock variant={InfoBlock.variant.error}>
+          <Notification variant="error" title={t("Conversion rate")}>
             <div>
               {t("Please check the new rate and try again.")}
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
+              <Link
+                isUnderline
+                variant="secondary"
                 href="https://developers.stellar.org/docs/start/list-of-operations/#path-payment-strict-send"
                 rel="noreferrer"
                 target="_blank"
               >
                 {t("Learn more about conversion rates")}
-              </TextLink>
+              </Link>
             </div>
-          </InfoBlock>
+          </Notification>
         );
         break;
       case RESULT_CODES.op_low_reserve:
         errorDetails.title = t("Account minimum balance is too low");
         errorDetails.errorBlock = (
-          <InfoBlock variant={InfoBlock.variant.error}>
+          <Notification variant="error" title={t("New account")}>
             <div>
               {t(
                 "To create a new account you need to send at least 1 XLM to it.",
               )}
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
+              <Link
+                isUnderline
+                variant="secondary"
                 href="https://developers.stellar.org/docs/start/list-of-operations/#path-payment-strict-send"
                 rel="noreferrer"
                 target="_blank"
               >
                 {t("Learn more about conversion rates")}
-              </TextLink>
+              </Link>
             </div>
-          </InfoBlock>
+          </Notification>
         );
         break;
       default:
@@ -379,9 +385,10 @@ export const SubmitFail = () => {
           isSwap ? t("Swap failed") : t("Transaction failed")
         }`;
         errorDetails.errorBlock = (
-          <InfoBlock variant={InfoBlock.variant.error}>
-            <div>{t("One or more operations in this transaction failed.")}</div>
-          </InfoBlock>
+          <Notification
+            variant="error"
+            title={t("One or more operations in this transaction failed.")}
+          />
         );
     }
     return errorDetails;
@@ -404,8 +411,9 @@ export const SubmitFail = () => {
       <div className="SubmitResult__error-block">{errorDetails.errorBlock}</div>
       <div className="SubmitResult__button-rows__fail">
         <Button
-          fullWidth
-          variant={Button.variant.tertiary}
+          isFullWidth
+          variant="secondary"
+          size="md"
           onClick={() => {
             navigateTo(ROUTES.account);
           }}

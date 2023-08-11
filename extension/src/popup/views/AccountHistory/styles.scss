@@ -22,7 +22,7 @@
   }
 
   &__selector {
-    border-bottom: 1px solid var(--pal-example-details);
+    border-bottom: 1px solid var(--color-gray-40);
     display: flex;
     gap: 1rem;
     margin: 0.5rem 0 1.5rem;
@@ -36,8 +36,8 @@
       text-transform: uppercase;
 
       &--active {
-        border-bottom: 2px solid var(--pal-brand-primary);
-        color: var(--pal-brand-primary-on);
+        border-bottom: 2px solid var(--color-purple-60);
+        color: var(--color-white);
       }
     }
   }
