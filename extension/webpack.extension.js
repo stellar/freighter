@@ -5,7 +5,14 @@ const { commonConfig } = require("./webpack.common.js");
 
 const LOCALES = ["en", "pt"];
 
-const prodConfig = (env = { PRODUCTION: false, TRANSLATIONS: false }) => ({
+const prodConfig = (
+  env = {
+    PRODUCTION: false,
+    TRANSLATIONS: false,
+    AMPLITUDE_KEY: "",
+    SENTRY_KEY: "",
+  },
+) => ({
   mode: "production",
   optimization: {
     minimize: env.PRODUCTION,
@@ -20,6 +27,8 @@ const prodConfig = (env = { PRODUCTION: false, TRANSLATIONS: false }) => ({
   plugins: [
     new webpack.DefinePlugin({
       DEV_SERVER: false,
+      AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
+      SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
     }),
     ...(env.TRANSLATIONS
       ? [

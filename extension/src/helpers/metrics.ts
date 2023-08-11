@@ -4,6 +4,7 @@ import { createAsyncThunk, createAction } from "@reduxjs/toolkit";
 
 import { store } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
+import { AMPLITUDE_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { AccountType } from "@shared/api/types";
 
@@ -86,7 +87,7 @@ let cache: event[] = [];
 const uploadMetrics = throttle(() => {
   const toUpload = cache;
   cache = [];
-  if (!process.env.AMPLITUDE_KEY) {
+  if (!AMPLITUDE_KEY) {
     // eslint-disable-next-line no-console
     console.log("Not uploading metrics", toUpload);
     return;
@@ -97,7 +98,7 @@ const uploadMetrics = throttle(() => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      api_key: process.env.AMPLITUDE_KEY,
+      api_key: AMPLITUDE_KEY,
       events: toUpload,
     }),
   });

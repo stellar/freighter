@@ -2,15 +2,16 @@ import { useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
 import { Integrations } from "@sentry/tracing";
 
+import { SENTRY_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import packageJson from "../../../../package.json";
 
 export const ErrorTracking = () => {
   const isDataSharingAllowed = useSelector(settingsDataSharingSelector);
 
-  if (process.env.SENTRY_KEY && isDataSharingAllowed) {
+  if (SENTRY_KEY && isDataSharingAllowed) {
     Sentry.init({
-      dsn: process.env.SENTRY_KEY,
+      dsn: SENTRY_KEY,
       release: `freighter@${packageJson.version}`,
       integrations: [new Integrations.BrowserTracing()],
       tracesSampleRate: 1.0,
