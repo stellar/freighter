@@ -24,6 +24,7 @@ const AboutLink = ({ children, url }: AboutLinkProps) => (
 
 export const About = () => {
   const { t } = useTranslation();
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="About">
@@ -49,7 +50,7 @@ export const About = () => {
       </div>
 
       <div className="About__copyright">
-        &copy; 2022 Stellar Development Foundation
+        {`© ${currentYear} Stellar Development Foundation`}
       </div>
     </div>
   );
