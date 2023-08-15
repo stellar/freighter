@@ -18,7 +18,7 @@ import {
   truncateString,
 } from "helpers/stellar";
 import {
-  getContractDecimals,
+  getTokenDecimals,
   getAttrsFromSorobanTxOp,
   formatTokenAmount,
 } from "popup/helpers/soroban";
@@ -322,7 +322,7 @@ export const Operations = ({
   useEffect(() => {
     if (!contractId) return;
     const fetchContractDecimals = async () => {
-      const contractDecimals = await getContractDecimals(
+      const contractDecimals = await getTokenDecimals(
         sorobanClient,
         contractId,
       );
