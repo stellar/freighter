@@ -148,7 +148,7 @@ export interface SorobanBalance {
   total: BigNumber;
   name: string;
   symbol: string;
-  decimals: string;
+  decimals: number;
 }
 
 export type AssetType =

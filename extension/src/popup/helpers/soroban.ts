@@ -146,6 +146,40 @@ export const getTokenDecimals = async (
   return result;
 };
 
+export const getTokenName = async (
+  sorobanClient: SorobanContextInterface,
+  contractId: string,
+) => {
+  const contract = new SorobanClient.Contract(contractId);
+  const server = sorobanClient.server;
+
+  const tx = sorobanClient
+    .newTxBuilder()
+    .addOperation(contract.call("name"))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const result = await simulateTx<string>(tx, server);
+  return result;
+};
+
+export const getTokenSymbol = async (
+  sorobanClient: SorobanContextInterface,
+  contractId: string,
+) => {
+  const contract = new SorobanClient.Contract(contractId);
+  const server = sorobanClient.server;
+
+  const tx = sorobanClient
+    .newTxBuilder()
+    .addOperation(contract.call("symbol"))
+    .setTimeout(SorobanClient.TimeoutInfinite)
+    .build();
+
+  const result = await simulateTx<string>(tx, server);
+  return result;
+};
+
 export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
   let amount;
   let from;
