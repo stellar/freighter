@@ -80,7 +80,8 @@ export const HistoryItem = ({
     sourceAssetCode = operation.source_asset_code;
   }
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
-  const operationString = `${OPERATION_TYPES[operationType]}${
+  const opTypeStr = OPERATION_TYPES[operationType] || t("Transaction");
+  const operationString = `${opTypeStr}${
     operationCount > 1 ? ` + ${operationCount - 1} ops` : ""
   }`;
   const date = new Date(Date.parse(createdAt))
@@ -97,7 +98,6 @@ export const HistoryItem = ({
   let dateText = date;
   let IconComponent = <Icon.Shuffle className="HistoryItem__icon--default" />;
   let PaymentComponent = null as React.ReactElement | null;
-  // TODO should be combined with isPayment
   const isSorobanTx = typeI === 24;
 
   let transactionDetailProps: TransactionDetailProps = {
@@ -180,6 +180,7 @@ export const HistoryItem = ({
       (balance) => attrs && balance.contractId === attrs.contractId,
     );
 
+    // TODO: minter does not need to have tokens to mint, fetch and store if no token
     if (!token || !attrs) {
       rowText = operationString;
       transactionDetailProps = {
@@ -218,6 +219,7 @@ export const HistoryItem = ({
         operationText: `${formattedTokenAmount} ${token.symbol}`,
       };
     } else {
+      // TODO: cannot assume token payment here, handle as generic tx
       // otherwise handle as a token payment
       const formattedTokenAmount = formatTokenAmount(
         new BigNumber(attrs.amount),

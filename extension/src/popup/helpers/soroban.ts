@@ -2,7 +2,6 @@ import BigNumber from "bignumber.js";
 import * as SorobanClient from "soroban-client";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
-import { decodeU32, valueToI128String } from "@shared/api/helpers/soroban";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanContextInterface } from "popup/SorobanContext";
 
@@ -19,6 +18,30 @@ export const SOROBAN_OPERATION_TYPES = [
 // All assets on the classic side have 7 decimals
 // https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
 export const CLASSIC_ASSET_DECIMALS = 7;
+
+export const simulateTx = async <ArgType>(
+  tx: SorobanClient.Transaction<
+    SorobanClient.Memo<SorobanClient.MemoType>,
+    SorobanClient.Operation[]
+  >,
+  server: SorobanClient.Server,
+): Promise<ArgType> => {
+  const { results } = await server.simulateTransaction(tx);
+  if (!results || results.length !== 1) {
+    throw new Error("Invalid response from simulateTransaction");
+  }
+  const result = results[0];
+  const scVal = SorobanClient.xdr.ScVal.fromXDR(result.xdr, "base64");
+  let convertedScVal: any;
+  try {
+    // handle a case where scValToNative doesn't properly handle scvString
+    convertedScVal = scVal.str().toString();
+    return convertedScVal;
+  } catch (e) {
+    console.error(e);
+  }
+  return SorobanClient.scValToNative(scVal);
+};
 
 export const getAssetDecimals = (
   asset: string,
@@ -106,7 +129,7 @@ export const getTokenBalance = (
   );
 };
 
-export const getContractDecimals = async (
+export const getTokenDecimals = async (
   sorobanClient: SorobanContextInterface,
   contractId: string,
 ) => {
@@ -119,13 +142,8 @@ export const getContractDecimals = async (
     .setTimeout(SorobanClient.TimeoutInfinite)
     .build();
 
-  const { results } = await server.simulateTransaction(tx);
-
-  if (!results || results.length !== 1) {
-    throw new Error("Invalid response from simulateTransaction");
-  }
-  const result = results[0];
-  return decodeU32(result.xdr);
+  const result = await simulateTx<number>(tx, server);
+  return result;
 };
 
 export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
@@ -141,13 +159,13 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
       to = SorobanClient.StrKey.encodeEd25519PublicKey(
         args[1].address().accountId().ed25519(),
       );
-      amount = valueToI128String(args[2]);
+      amount = SorobanClient.scValToNative(args[2]);
       break;
     case SorobanTokenInterface.mint:
       to = SorobanClient.StrKey.encodeEd25519PublicKey(
         args[0].address().accountId().ed25519(),
       );
-      amount = args[1].i128().lo().low;
+      amount = SorobanClient.scValToNative(args[1]);
       break;
     default:
       amount = 0;

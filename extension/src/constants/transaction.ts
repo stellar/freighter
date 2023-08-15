@@ -28,6 +28,7 @@ export enum OPERATION_TYPES {
   revokeTrustlineSponsorship = "Revoke Trustline Sponsorship",
   setOptions = "Set Options",
   setTrustLineFlags = "Set Trustline Flags",
+  bumpFootprintExpiration = "Bump Footprint Expiration",
 }
 
 export enum TRANSACTION_WARNING {
