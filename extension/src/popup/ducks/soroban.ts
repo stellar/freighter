@@ -1,3 +1,4 @@
+import { Address } from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -7,7 +8,6 @@ import {
   getTokenIds as internalGetTokenIds,
 } from "@shared/api/internal";
 import { ErrorMessage, ActionStatus, TokenBalances } from "@shared/api/types";
-import { accountIdentifier } from "@shared/api/helpers/soroban";
 import { SorobanContextInterface } from "popup/SorobanContext";
 
 export const getTokenBalances = createAsyncThunk<
@@ -19,7 +19,7 @@ export const getTokenBalances = createAsyncThunk<
     const { publicKey } = await internalLoadAccount();
     const tokenIdList = await internalGetTokenIds();
 
-    const params = [accountIdentifier(publicKey)];
+    const params = [new Address(publicKey).toScVal()];
     const results = [] as TokenBalances;
 
     for (let i = 0; i < tokenIdList.length; i += 1) {
@@ -27,7 +27,7 @@ export const getTokenBalances = createAsyncThunk<
       /*
         Right now, Soroban transactions only support 1 operation per tx
         so we need a builder per value from the contract,
-        once multi-op transactions are supported this can send
+        once/if multi-op transactions are supported this can send
         1 tx with an operation for each value.
       */
 
@@ -45,7 +45,7 @@ export const getTokenBalances = createAsyncThunk<
           params,
         );
 
-        const total = new BigNumber(balance) as any; // ?? why can't the BigNumber type work here
+        const total = new BigNumber(balance);
 
         results.push({
           contractId: tokenId,

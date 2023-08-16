@@ -10,6 +10,8 @@ import {
   TRANSACTION_WARNING,
 } from "constants/transaction";
 
+import { getDecimals } from "@shared/helpers/soroban/token";
+
 import { FlaggedKeys } from "types/transactions";
 
 import {
@@ -18,7 +20,6 @@ import {
   truncateString,
 } from "helpers/stellar";
 import {
-  getTokenDecimals,
   getAttrsFromSorobanTxOp,
   formatTokenAmount,
 } from "popup/helpers/soroban";
@@ -322,9 +323,10 @@ export const Operations = ({
   useEffect(() => {
     if (!contractId) return;
     const fetchContractDecimals = async () => {
-      const contractDecimals = await getTokenDecimals(
-        sorobanClient,
+      const contractDecimals = await getDecimals(
         contractId,
+        sorobanClient.server,
+        sorobanClient.newTxBuilder(),
       );
       setDecimals(contractDecimals);
     };

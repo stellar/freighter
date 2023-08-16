@@ -9,9 +9,11 @@ import {
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
+const BASE_FEE = "100";
+
 export interface SorobanContextInterface {
   server: SorobanClient.Server;
-  newTxBuilder: () => SorobanClient.TransactionBuilder;
+  newTxBuilder: (fee?: string) => SorobanClient.TransactionBuilder;
 }
 
 export const SorobanContext = React.createContext(
@@ -25,9 +27,6 @@ export const SorobanProvider = ({
   children: React.ReactNode;
   pubKey: string;
 }) => {
-  // Were only simluating so the fee here should not matter
-  // AFAIK there is no fee stats for Soroban yet either
-  const fee = "100";
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const source = new SorobanClient.Account(pubKey, "0");
 
@@ -42,7 +41,7 @@ export const SorobanProvider = ({
     allowHttp: networkDetails.networkUrl.startsWith("http://"),
   });
 
-  const newTxBuilder = () =>
+  const newTxBuilder = (fee = BASE_FEE) =>
     new SorobanClient.TransactionBuilder(source, {
       fee,
       networkPassphrase: networkDetails.networkPassphrase,

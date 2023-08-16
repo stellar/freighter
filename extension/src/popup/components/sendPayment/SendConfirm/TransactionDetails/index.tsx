@@ -23,7 +23,7 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-import { accountIdentifier, numberToI128 } from "@shared/api/helpers/soroban";
+import { transfer } from "@shared/helpers/soroban/token";
 
 import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
@@ -281,33 +281,20 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         Number(assetBalance.decimals),
       );
 
-      const sourceAccount = await sorobanServer.getAccount(publicKey);
-      const contract = new SorobanClient.Contract(assetAddress);
-      const contractOp = contract.call(
-        "transfer",
-        ...[
-          accountIdentifier(publicKey), // from
-          accountIdentifier(destination), // to
-          numberToI128(parsedAmount.toNumber()), // amount
-        ],
+      const params = [
+        new SorobanClient.Address(publicKey).toScVal(), // from
+        new SorobanClient.Address(destination).toScVal(), // to
+        SorobanClient.nativeToScVal(parsedAmount.toNumber(), { type: "i128" }), // amount
+      ];
+
+      const builder = sorobanClient.newTxBuilder(
+        xlmToStroop(transactionFee).toFixed(),
       );
 
-      const transaction = await new SorobanClient.TransactionBuilder(
-        sourceAccount,
-        {
-          fee: xlmToStroop(transactionFee).toFixed(),
-          networkPassphrase: networkDetails.networkPassphrase,
-        },
-      )
-        .addOperation(contractOp)
-        .setTimeout(180);
-
-      if (memo) {
-        transaction.addMemo(SorobanClient.Memo.text(memo));
-      }
+      const transaction = await transfer(publicKey, params, memo, builder);
 
       const preparedTransaction = await sorobanServer.prepareTransaction(
-        transaction.build(),
+        transaction,
         networkDetails.networkPassphrase,
       );
 
