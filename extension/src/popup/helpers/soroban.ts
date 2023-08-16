@@ -3,12 +3,7 @@ import * as SorobanClient from "soroban-client";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { SorobanContextInterface } from "popup/SorobanContext";
-
-export enum SorobanTokenInterface {
-  transfer = "transfer",
-  mint = "mint",
-}
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -18,30 +13,6 @@ export const SOROBAN_OPERATION_TYPES = [
 // All assets on the classic side have 7 decimals
 // https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
 export const CLASSIC_ASSET_DECIMALS = 7;
-
-export const simulateTx = async <ArgType>(
-  tx: SorobanClient.Transaction<
-    SorobanClient.Memo<SorobanClient.MemoType>,
-    SorobanClient.Operation[]
-  >,
-  server: SorobanClient.Server,
-): Promise<ArgType> => {
-  const { results } = await server.simulateTransaction(tx);
-  if (!results || results.length !== 1) {
-    throw new Error("Invalid response from simulateTransaction");
-  }
-  const result = results[0];
-  const scVal = SorobanClient.xdr.ScVal.fromXDR(result.xdr, "base64");
-  let convertedScVal: any;
-  try {
-    // handle a case where scValToNative doesn't properly handle scvString
-    convertedScVal = scVal.str().toString();
-    return convertedScVal;
-  } catch (e) {
-    console.error(e);
-  }
-  return SorobanClient.scValToNative(scVal);
-};
 
 export const getAssetDecimals = (
   asset: string,
@@ -58,6 +29,22 @@ export const getAssetDecimals = (
   }
 
   return CLASSIC_ASSET_DECIMALS;
+};
+
+export const getTokenBalance = (
+  tokenBalances: TokenBalances,
+  contractId: string,
+) => {
+  const balance = tokenBalances.find(({ contractId: id }) => id === contractId);
+
+  if (!balance) {
+    throw new Error("Balance not found");
+  }
+
+  return formatTokenAmount(
+    new BigNumber(balance.total),
+    Number(balance.decimals),
+  );
 };
 
 // Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
@@ -111,73 +98,6 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   const fractionValue = new BigNumber(fraction);
 
   return wholeValue.shiftedBy(decimals).plus(fractionValue);
-};
-
-export const getTokenBalance = (
-  tokenBalances: TokenBalances,
-  contractId: string,
-) => {
-  const balance = tokenBalances.find(({ contractId: id }) => id === contractId);
-
-  if (!balance) {
-    throw new Error("Balance not found");
-  }
-
-  return formatTokenAmount(
-    new BigNumber(balance.total),
-    Number(balance.decimals),
-  );
-};
-
-export const getTokenDecimals = async (
-  sorobanClient: SorobanContextInterface,
-  contractId: string,
-) => {
-  const contract = new SorobanClient.Contract(contractId);
-  const server = sorobanClient.server;
-
-  const tx = sorobanClient
-    .newTxBuilder()
-    .addOperation(contract.call("decimals"))
-    .setTimeout(SorobanClient.TimeoutInfinite)
-    .build();
-
-  const result = await simulateTx<number>(tx, server);
-  return result;
-};
-
-export const getTokenName = async (
-  sorobanClient: SorobanContextInterface,
-  contractId: string,
-) => {
-  const contract = new SorobanClient.Contract(contractId);
-  const server = sorobanClient.server;
-
-  const tx = sorobanClient
-    .newTxBuilder()
-    .addOperation(contract.call("name"))
-    .setTimeout(SorobanClient.TimeoutInfinite)
-    .build();
-
-  const result = await simulateTx<string>(tx, server);
-  return result;
-};
-
-export const getTokenSymbol = async (
-  sorobanClient: SorobanContextInterface,
-  contractId: string,
-) => {
-  const contract = new SorobanClient.Contract(contractId);
-  const server = sorobanClient.server;
-
-  const tx = sorobanClient
-    .newTxBuilder()
-    .addOperation(contract.call("symbol"))
-    .setTimeout(SorobanClient.TimeoutInfinite)
-    .build();
-
-  const result = await simulateTx<string>(tx, server);
-  return result;
 };
 
 export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {

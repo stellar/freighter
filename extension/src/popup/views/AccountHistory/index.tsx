@@ -6,6 +6,7 @@ import { Horizon } from "stellar-sdk";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -23,10 +24,7 @@ import {
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
-import {
-  getAttrsFromSorobanHorizonOp,
-  SorobanTokenInterface,
-} from "popup/helpers/soroban";
+import { getAttrsFromSorobanHorizonOp } from "popup/helpers/soroban";
 
 import {
   historyItemDetailViewProps,
