@@ -10,7 +10,9 @@ const { DEFAULT_STATS } = require("../config/webpack");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
-const commonConfig = (env = { EXPERIMENTAL: false }) => ({
+const commonConfig = (
+  env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
+) => ({
   entry: {
     background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
@@ -127,6 +129,8 @@ const commonConfig = (env = { EXPERIMENTAL: false }) => ({
     }),
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
+      AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
+      SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
     }),
     new MiniCssExtractPlugin({
       filename: "[name].min.css",
