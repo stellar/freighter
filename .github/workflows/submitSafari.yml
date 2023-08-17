@@ -1,6 +1,6 @@
 name: Safari Deployment
 on:
-  workflow_dispatch:
+  push:
     inputs:
       version:
         description: New Version
