@@ -99,6 +99,25 @@ export const mockBalances = {
   subentryCount: 1,
 };
 
+export const mockTokenBalances = {
+  tokenBalances: [
+    {
+      contractId: "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+      decimals: 0,
+      name: "Demo Token",
+      symbol: "DT",
+      total: new BigNumber(10),
+    },
+  ],
+};
+
+export const mockTokenBalance = {
+  balance: 10,
+  decimals: 0,
+  name: "Demo Token",
+  symbol: "DT",
+};
+
 export const mockAccounts = [
   {
     hardwareWalletType: "",
