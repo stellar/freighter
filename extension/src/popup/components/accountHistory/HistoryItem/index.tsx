@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
 import { Icon } from "@stellar/design-system";
@@ -109,22 +109,22 @@ export const HistoryItem = ({
     setIsDetailViewShowing,
   };
 
-  const [txDetails, setTxDetails] = React.useState(transactionDetailPropsBase);
-  const [dateText, setDateText] = React.useState(date);
-  const [rowText, setRowText] = React.useState("");
-  const [IconComponent, setIconComponent] = React.useState(
+  const [txDetails, setTxDetails] = useState(transactionDetailPropsBase);
+  const [dateText, setDateText] = useState(date);
+  const [rowText, setRowText] = useState("");
+  const [IconComponent, setIconComponent] = useState(
     (
       <Icon.Shuffle className="HistoryItem__icon--default" />
     ) as React.ReactElement | null,
   );
-  const [BodyComponent, setBodyComponent] = React.useState(
+  const [BodyComponent, setBodyComponent] = useState(
     null as React.ReactElement | null,
   );
 
   const renderBodyComponent = () => BodyComponent;
   const renderIcon = () => IconComponent;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const buildHistoryItem = async () => {
       if (isSwap) {
         setBodyComponent(
