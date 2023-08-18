@@ -287,7 +287,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
       ];
 
-      const builder = sorobanClient.newTxBuilder(
+      const builder = await sorobanClient.newTxBuilder(
         xlmToStroop(transactionFee).toFixed(),
       );
 

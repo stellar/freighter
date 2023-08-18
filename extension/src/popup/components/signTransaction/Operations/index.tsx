@@ -326,7 +326,7 @@ export const Operations = ({
       const contractDecimals = await getDecimals(
         contractId,
         sorobanClient.server,
-        sorobanClient.newTxBuilder(),
+        await sorobanClient.newTxBuilder(),
       );
       setDecimals(contractDecimals);
     };

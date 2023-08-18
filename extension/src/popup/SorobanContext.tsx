@@ -11,7 +11,7 @@ import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
 export interface SorobanContextInterface {
   server: SorobanClient.Server;
-  newTxBuilder: (fee?: string) => SorobanClient.TransactionBuilder;
+  newTxBuilder: (fee?: string) => Promise<SorobanClient.TransactionBuilder>;
 }
 
 export const SorobanContext = React.createContext(
@@ -26,7 +26,6 @@ export const SorobanProvider = ({
   pubKey: string;
 }) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const source = new SorobanClient.Account(pubKey, "0");
 
   const serverUrl =
     networkDetails.networkPassphrase ===
@@ -39,11 +38,13 @@ export const SorobanProvider = ({
     allowHttp: networkDetails.networkUrl.startsWith("http://"),
   });
 
-  const newTxBuilder = (fee = SorobanClient.BASE_FEE) =>
-    new SorobanClient.TransactionBuilder(source, {
+  const newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
+    const sourceAccount = await server.getAccount(pubKey);
+    return new SorobanClient.TransactionBuilder(sourceAccount, {
       fee,
       networkPassphrase: networkDetails.networkPassphrase,
     });
+  };
 
   return (
     <SorobanContext.Provider value={{ server, newTxBuilder }}>

@@ -225,17 +225,17 @@ export const HistoryItem = ({
               const tokenDecimals = await getDecimals(
                 attrs.contractId,
                 sorobanClient.server,
-                sorobanClient.newTxBuilder(),
+                await sorobanClient.newTxBuilder(),
               );
               const tokenName = await getName(
                 attrs.contractId,
                 sorobanClient.server,
-                sorobanClient.newTxBuilder(),
+                await sorobanClient.newTxBuilder(),
               );
               const tokenSymbol = await getSymbol(
                 attrs.contractId,
                 sorobanClient.server,
-                sorobanClient.newTxBuilder(),
+                await sorobanClient.newTxBuilder(),
               );
 
               _token = {
