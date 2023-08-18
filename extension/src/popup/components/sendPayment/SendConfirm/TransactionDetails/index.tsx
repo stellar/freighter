@@ -291,7 +291,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         xlmToStroop(transactionFee).toFixed(),
       );
 
-      const transaction = await transfer(publicKey, params, memo, builder);
+      const transaction = await transfer(assetAddress, params, memo, builder);
 
       const preparedTransaction = await sorobanServer.prepareTransaction(
         transaction,

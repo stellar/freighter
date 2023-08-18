@@ -14,7 +14,6 @@ import {
   Balances,
   HorizonOperation,
   Settings,
-  SorobanTxStatus,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -31,6 +30,23 @@ import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
+
+export const SendTxStatus: {
+  [index: string]: SorobanClient.SorobanRpc.SendTransactionStatus;
+} = {
+  Pending: "PENDING",
+  Duplicate: "DUPLICATE",
+  Retry: "TRY_AGAIN_LATER",
+  Error: "ERROR",
+};
+
+export const GetTxStatus: {
+  [index: string]: SorobanClient.SorobanRpc.GetTransactionStatus;
+} = {
+  Success: "SUCCESS",
+  NotFound: "NOT_FOUND",
+  Failed: "FAILED",
+};
 
 export const createAccount = async (
   password: string,
@@ -614,24 +630,32 @@ export const submitFreighterSorobanTransaction = async ({
     allowHttp: true,
   });
 
-  // TODO: fixed in Sorobanclient, not yet released
-  let response = (await server.sendTransaction(tx)) as any;
+  let response = await server.sendTransaction(tx);
 
-  try {
-    // Poll this until the status is not "pending"
-    while (response.status === SorobanTxStatus.PENDING) {
+  if (response.errorResultXdr) {
+    throw new Error(response.errorResultXdr);
+  }
+
+  if (response.status === SendTxStatus.Pending) {
+    let txResponse = await server.getTransaction(response.hash);
+
+    // Poll this until the status is not "NOT_FOUND"
+    while (txResponse.status === GetTxStatus.NotFound) {
       // See if the transaction is complete
       // eslint-disable-next-line no-await-in-loop
-      response = await server.getTransaction(response.id);
+      txResponse = await server.getTransaction(response.hash);
       // Wait a second
       // eslint-disable-next-line no-await-in-loop
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-  } catch (e) {
-    throw new Error(e);
-  }
 
-  return response;
+    return response;
+    // eslint-disable-next-line no-else-return
+  } else {
+    throw new Error(
+      `Unabled to submit transaction, status: ${response.status}`,
+    );
+  }
 };
 
 export const addRecentAddress = async ({

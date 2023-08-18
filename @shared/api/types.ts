@@ -14,11 +14,6 @@ export enum ActionStatus {
   ERROR = "ERROR",
 }
 
-export enum SorobanTxStatus {
-  PENDING = "pending",
-  SUCCESS = "success",
-}
-
 export interface UserInfo {
   publicKey: string;
 }

@@ -1,4 +1,5 @@
 import StellarSdk, { Horizon, Server, ServerApi } from "stellar-sdk";
+import { SorobanRpc } from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -109,7 +110,7 @@ export const submitFreighterTransaction = createAsyncThunk<
 );
 
 export const submitFreighterSorobanTransaction = createAsyncThunk<
-  Horizon.TransactionResponse,
+  SorobanRpc.SendTransactionResponse,
   {
     signedXDR: string;
     networkDetails: NetworkDetails;
@@ -396,7 +397,10 @@ interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
-  response: Horizon.TransactionResponse | null;
+  response:
+    | Horizon.TransactionResponse
+    | SorobanRpc.SendTransactionResponse
+    | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
   accountBalances: AccountBalancesInterface;

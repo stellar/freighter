@@ -18,5 +18,6 @@ export const simulateTx = async <ArgType>(
   }
   const result = results[0];
   const scVal = xdr.ScVal.fromXDR(result.xdr, "base64");
+
   return scValToNative(scVal);
 };
