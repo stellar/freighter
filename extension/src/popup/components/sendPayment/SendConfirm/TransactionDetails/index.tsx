@@ -284,7 +284,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       const params = [
         new SorobanClient.Address(publicKey).toScVal(), // from
         new SorobanClient.Address(destination).toScVal(), // to
-        SorobanClient.nativeToScVal(parsedAmount.toNumber(), { type: "i128" }), // amount
+        new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
       ];
 
       const builder = sorobanClient.newTxBuilder(

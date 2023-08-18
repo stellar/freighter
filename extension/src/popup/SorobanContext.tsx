@@ -9,8 +9,6 @@ import {
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
-const BASE_FEE = "100";
-
 export interface SorobanContextInterface {
   server: SorobanClient.Server;
   newTxBuilder: (fee?: string) => SorobanClient.TransactionBuilder;
@@ -41,7 +39,7 @@ export const SorobanProvider = ({
     allowHttp: networkDetails.networkUrl.startsWith("http://"),
   });
 
-  const newTxBuilder = (fee = BASE_FEE) =>
+  const newTxBuilder = (fee = SorobanClient.BASE_FEE) =>
     new SorobanClient.TransactionBuilder(source, {
       fee,
       networkPassphrase: networkDetails.networkPassphrase,
