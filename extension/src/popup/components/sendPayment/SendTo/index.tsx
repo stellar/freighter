@@ -92,9 +92,14 @@ const InvalidAddressWarning = () => {
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const { destination, federationAddress } = useSelector(
+  const { destination, federationAddress, ...rest } = useSelector(
     transactionDataSelector,
   );
+  console.log({
+    destination,
+    federationAddress,
+    ...rest,
+  });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { destinationBalances } = useSelector(transactionSubmissionSelector);
 
