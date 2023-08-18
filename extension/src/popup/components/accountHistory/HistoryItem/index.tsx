@@ -24,6 +24,11 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
 
+// TODO
+function capitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export const historyItemDetailViewProps: TransactionDetailProps = {
   operation: {} as HorizonOperation,
   headerTitle: "",
@@ -166,7 +171,7 @@ export const HistoryItem = ({
         setRowText(destAssetCode);
         setDateText(
           (_dateText) =>
-            `${_isRecipient ? t("Received") : t("Sent")} \u2022 ${_dateText}`,
+            `${_isRecipient ? t("Received") : t("Sent")} \u2022 ${date}`,
         );
         setTxDetails((_state) => ({
           ..._state,
@@ -184,7 +189,7 @@ export const HistoryItem = ({
         );
         setIconComponent(<Icon.ArrowUp className="HistoryItem__icon--sent" />);
         setRowText("XLM");
-        setDateText((_dateText) => `${t("Sent")} \u2022 ${_dateText}`);
+        setDateText((_dateText) => `${t("Sent")} \u2022 ${date}`);
         setTxDetails((_state) => ({
           ..._state,
           headerTitle: t("Create Account"),
@@ -211,16 +216,25 @@ export const HistoryItem = ({
           }));
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
           const isRecieving = attrs.to === publicKey;
+
+          setIconComponent(
+            isRecieving ? (
+              <Icon.ArrowDown className="HistoryItem__icon--received" />
+            ) : (
+              <Icon.Shuffle className="HistoryItem__icon--default" />
+            ),
+          );
+
           // Minter does not need to have tokens to mint, and
           // they are not neccessarily minted to themselves.
           // If user has minted to self, add token to their token list.
-          let _token = token;
-          if (!_token) {
+          if (!token) {
             // TODO: When fetching contract details, we could encounter an expired state entry
             // and fail to fetch values through the RPC.
             // We can address this in several ways -
             // 1. If token is a SAC, fetch details from Horizon.
             // 2. If not SAC or unknown, look up ledger entry directly.
+
             try {
               const tokenDecimals = await getDecimals(
                 attrs.contractId,
@@ -238,7 +252,7 @@ export const HistoryItem = ({
                 await sorobanClient.newTxBuilder(),
               );
 
-              _token = {
+              const _token = {
                 contractId: attrs.contractId,
                 total: isRecieving ? attrs.amount : 0,
                 decimals: tokenDecimals,
@@ -256,11 +270,12 @@ export const HistoryItem = ({
                   {formattedTokenAmount} {_token.symbol}
                 </>,
               );
-              setIconComponent(
-                <Icon.ArrowUp className="HistoryItem__icon--sent" />,
+
+              setDateText(
+                (_dateText) =>
+                  `${isRecieving ? t("Received") : t("Minted")} \u2022 ${date}`,
               );
-              setDateText((_dateText) => `${t("Mint")} \u2022 ${_dateText}`);
-              setRowText(_token.symbol);
+              setRowText(t(capitalize(attrs.fnName)));
               setTxDetails((_state) => ({
                 ..._state,
                 operation: {
@@ -268,23 +283,107 @@ export const HistoryItem = ({
                   from: attrs.from,
                   to: attrs.to,
                 },
-                headerTitle: `${t("Mint")} ${_token!.symbol}`,
-                // manually set `isPayment` now that we've passed the above `isPayment` conditional
-                isPayment: true,
-                isRecipient: false,
-                operationText: `${formattedTokenAmount} ${_token!.symbol}`,
+                headerTitle: `${t(capitalize(attrs.fnName))} ${tokenSymbol}`,
+                isPayment: false,
+                isRecipient: isRecieving,
+                operationText: `${formattedTokenAmount} ${tokenSymbol}`,
               }));
             } catch (error) {
               console.error(error);
               captureException(`Error fetching token details: ${error}`);
-              // can't get token details, display as generic tx
-              setRowText(operationString);
+              setRowText(t(capitalize(attrs.fnName)));
+              setBodyComponent(
+                <>
+                  {isRecieving && "+ "}
+                  Unknown
+                </>,
+              );
+              setDateText(
+                (_dateText) =>
+                  `${isRecieving ? t("Received") : t("Minted")} \u2022 ${date}`,
+              );
               setTxDetails((_state) => ({
                 ..._state,
-                headerTitle: t("Transaction"),
+                operation: {
+                  ..._state.operation,
+                  from: attrs.from,
+                  to: attrs.to,
+                },
+                headerTitle: t(capitalize(attrs.fnName)),
+                // manually set `isPayment` now that we've passed the above `isPayment` conditional
+                isPayment: false,
+                isRecipient: isRecieving,
                 operationText: operationString,
               }));
             }
+          } else {
+            const formattedTokenAmount = formatTokenAmount(
+              new BigNumber(attrs.amount),
+              token.decimals,
+            );
+            setBodyComponent(
+              <>
+                {isRecieving && "+"}
+                {formattedTokenAmount} {token.symbol}
+              </>,
+            );
+
+            setDateText(
+              (_dateText) =>
+                `${isRecieving ? t("Received") : t("Minted")} \u2022 ${date}`,
+            );
+            setRowText(t(capitalize(attrs.fnName)));
+            setTxDetails((_state) => ({
+              ..._state,
+              operation: {
+                ..._state.operation,
+                from: attrs.from,
+                to: attrs.to,
+              },
+              headerTitle: `${t(capitalize(attrs.fnName))} ${token.symbol}`,
+              isPayment: false,
+              isRecipient: isRecieving,
+              operationText: `${formattedTokenAmount} ${token.symbol}`,
+            }));
+          }
+        } else if (attrs.fnName === SorobanTokenInterface.transfer) {
+          setIconComponent(
+            <Icon.ArrowUp className="HistoryItem__icon--sent" />,
+          );
+
+          if (!token) {
+            // this should never happen, transfers cant succeed if you have no balance.
+            setRowText(operationString);
+            setTxDetails((_state) => ({
+              ..._state,
+              headerTitle: t("Transaction"),
+              operationText: operationString,
+            }));
+          } else {
+            const formattedTokenAmount = formatTokenAmount(
+              new BigNumber(attrs.amount),
+              token.decimals,
+            );
+            setBodyComponent(
+              <>
+                - {formattedTokenAmount} {token.symbol}
+              </>,
+            );
+
+            setDateText((_dateText) => `${t("Sent")} \u2022 ${date}`);
+            setRowText(t(capitalize(attrs.fnName)));
+            setTxDetails((_state) => ({
+              ..._state,
+              operation: {
+                ..._state.operation,
+                from: attrs.from,
+                to: attrs.to,
+              },
+              headerTitle: `${t(capitalize(attrs.fnName))} ${token.symbol}`,
+              isPayment: false,
+              isRecipient: false,
+              operationText: `${formattedTokenAmount} ${token.symbol}`,
+            }));
           }
         } else {
           setRowText(operationString);
@@ -306,15 +405,15 @@ export const HistoryItem = ({
 
     buildHistoryItem();
   }, [
-    isSwap,
-    isPayment,
-    isCreateExternalAccount,
-    isInvokeHostFn,
     account,
     amount,
+    date,
     destAssetCode,
     from,
-    to,
+    isCreateExternalAccount,
+    isInvokeHostFn,
+    isPayment,
+    isSwap,
     networkDetails,
     operation,
     operationString,
@@ -323,6 +422,7 @@ export const HistoryItem = ({
     srcAssetCode,
     startingBalance,
     t,
+    to,
     tokenBalances,
   ]);
 
