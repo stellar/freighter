@@ -32,18 +32,19 @@ export const getTokenBalances = createAsyncThunk<
       */
 
       try {
-        // eslint-disable-next-line no-await-in-loop
+        /* eslint-disable no-await-in-loop */
         const { balance, ...rest } = await internalGetSorobanTokenBalance(
           sorobanClient.server,
           tokenId,
           {
-            balance: sorobanClient.newTxBuilder(),
-            name: sorobanClient.newTxBuilder(),
-            decimals: sorobanClient.newTxBuilder(),
-            symbol: sorobanClient.newTxBuilder(),
+            balance: await sorobanClient.newTxBuilder(),
+            name: await sorobanClient.newTxBuilder(),
+            decimals: await sorobanClient.newTxBuilder(),
+            symbol: await sorobanClient.newTxBuilder(),
           },
           params,
         );
+        /* eslint-enable no-await-in-loop */
 
         const total = new BigNumber(balance);
 
