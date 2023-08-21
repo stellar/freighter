@@ -1,5 +1,5 @@
 import React from "react";
-import { useSelector, Provider } from "react-redux";
+import { Provider } from "react-redux";
 import * as SorobanClient from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createMemoryHistory } from "history";
@@ -10,17 +10,11 @@ import {
 } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { Balances } from "@shared/api/types";
-import {
-  SOROBAN_RPC_URLS,
-  FUTURENET_NETWORK_DETAILS,
-} from "@shared/constants/stellar";
+import { FUTURENET_NETWORK_DETAILS } from "@shared/constants/stellar";
 
 import { isSerializable } from "helpers/stellar";
 import { reducer as auth } from "popup/ducks/accountServices";
-import {
-  reducer as settings,
-  settingsNetworkDetailsSelector,
-} from "popup/ducks/settings";
+import { reducer as settings } from "popup/ducks/settings";
 import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
@@ -60,24 +54,18 @@ const MockSorobanProvider = ({
   children: React.ReactNode;
   pubKey: string;
 }) => {
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-
-  const serverUrl =
-    networkDetails.networkPassphrase ===
-      "Test SDF Future Network ; October 2022" &&
-    networkDetails.networkUrl === FUTURENET_NETWORK_DETAILS.networkUrl
-      ? SOROBAN_RPC_URLS.FUTURENET
-      : networkDetails.networkUrl;
-
-  const server = new SorobanClient.Server(serverUrl, {
-    allowHttp: networkDetails.networkUrl.startsWith("http://"),
-  });
+  const server = new SorobanClient.Server(
+    FUTURENET_NETWORK_DETAILS.networkUrl,
+    {
+      allowHttp: FUTURENET_NETWORK_DETAILS.networkUrl.startsWith("http://"),
+    },
+  );
 
   const newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
     const sourceAccount = new SorobanClient.Account(pubKey, "0");
     return new SorobanClient.TransactionBuilder(sourceAccount, {
       fee,
-      networkPassphrase: networkDetails.networkPassphrase,
+      networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
     });
   };
 

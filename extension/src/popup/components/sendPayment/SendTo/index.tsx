@@ -143,7 +143,6 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const db = useCallback(
     debounce(async (inputDest) => {
       const errors = await formik.validateForm();
-
       if (Object.keys(errors).length !== 0) {
         setIsLoading(false);
         return;

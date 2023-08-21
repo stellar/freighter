@@ -112,7 +112,7 @@ describe("SendTokenPayment", () => {
   mockHistoryGetter.mockReturnValue(history);
 
   const asset = "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
-  render(
+  const { container } = render(
     <Wrapper
       history={history}
       state={{
@@ -178,6 +178,7 @@ describe("SendTokenPayment", () => {
     });
 
     await waitFor(async () => {
+      expect(container).toHaveTextContent("5 DT");
       const sendBtn = screen.getByTestId("transaction-details-btn-send");
       await fireEvent.click(sendBtn);
     });
