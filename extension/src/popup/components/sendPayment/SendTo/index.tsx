@@ -92,14 +92,9 @@ const InvalidAddressWarning = () => {
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const { destination, federationAddress, ...rest } = useSelector(
+  const { destination, federationAddress } = useSelector(
     transactionDataSelector,
   );
-  console.log({
-    destination,
-    federationAddress,
-    ...rest,
-  });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { destinationBalances } = useSelector(transactionSubmissionSelector);
 
@@ -148,6 +143,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const db = useCallback(
     debounce(async (inputDest) => {
       const errors = await formik.validateForm();
+
       if (Object.keys(errors).length !== 0) {
         setIsLoading(false);
         return;
