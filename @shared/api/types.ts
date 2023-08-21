@@ -96,7 +96,14 @@ export interface ExternalRequestBlob extends ExternalRequestBase {
   blob: string;
 }
 
-export type ExternalRequest = ExternalRequestTx | ExternalRequestBlob;
+export interface ExternalRequestAuthEntry extends ExternalRequestBase {
+  entryXdr: string;
+}
+
+export type ExternalRequest =
+  | ExternalRequestTx
+  | ExternalRequestBlob
+  | ExternalRequestAuthEntry;
 
 export interface Account {
   publicKey: string;

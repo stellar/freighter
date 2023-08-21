@@ -535,6 +535,16 @@ export const signBlob = async (): Promise<void> => {
   }
 };
 
+export const signAuthEntry = async (): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signFreighterTransaction = async ({
   transactionXDR,
   network,

@@ -18,6 +18,7 @@ const routeToEventName = {
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
   [ROUTES.connectLedger]: METRIC_NAMES.viewConnectLedger,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
+  [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
   [ROUTES.mnemonicPhraseConfirm]: METRIC_NAMES.viewMnemonicPhraseConfirm,
@@ -74,7 +75,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     throw new Error(`Didn't find a metric event name for path '${pathname}'`);
   }
 
-  // "/sign-transaction" and "/grant-access" require additionak metrics on loaded page
+  // "/sign-transaction" and "/grant-access" require additional metrics on loaded page
   if (pathname === ROUTES.grantAccess) {
     const { url } = parsedSearchParam(search);
     const METRIC_OPTION_DOMAIN = {
@@ -83,11 +84,14 @@ registerHandler<AppState>(navigate, (_, a) => {
     };
 
     emitMetric(eventName, METRIC_OPTION_DOMAIN);
-  } else if (pathname === ROUTES.signTransaction) {
+  } else if (
+    pathname === ROUTES.signTransaction ||
+    pathname === ROUTES.signAuthEntry
+  ) {
     const { url } = parsedSearchParam(search);
     const info = getTransactionInfo(search);
 
-    if (!("blob" in info)) {
+    if (!("blob" in info) && !("entry" in info)) {
       const { operations, operationTypes } = info;
       const METRIC_OPTIONS = {
         domain: getUrlDomain(url),
