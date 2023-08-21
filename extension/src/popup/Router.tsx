@@ -46,6 +46,7 @@ import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
 import { RecoverAccount } from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
+import { SignAuthEntry } from "popup/views/SignAuthEntry";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
@@ -275,6 +276,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.signAuthEntry}>
+          <SignAuthEntry />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
           <DisplayBackupPhrase />
