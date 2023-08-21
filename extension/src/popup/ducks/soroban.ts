@@ -65,7 +65,7 @@ export const getTokenBalances = createAsyncThunk<
   }
 });
 
-const initialState = {
+export const initialState = {
   getTokenBalancesStatus: ActionStatus.IDLE,
   tokenBalances: [] as TokenBalances,
 };

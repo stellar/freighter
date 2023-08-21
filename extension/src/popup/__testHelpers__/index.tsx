@@ -1,5 +1,6 @@
 import React from "react";
-import { Provider } from "react-redux";
+import { useSelector, Provider } from "react-redux";
+import * as SorobanClient from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createMemoryHistory } from "history";
 import {
@@ -8,16 +9,27 @@ import {
   getDefaultMiddleware,
 } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ActionStatus, Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types";
+import {
+  SOROBAN_RPC_URLS,
+  FUTURENET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 
 import { isSerializable } from "helpers/stellar";
 import { reducer as auth } from "popup/ducks/accountServices";
-import { reducer as settings } from "popup/ducks/settings";
+import {
+  reducer as settings,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
+import { initialState as sorobanInitialState } from "popup/ducks/soroban";
 import { reducer as soroban } from "popup/ducks/soroban";
+import { SorobanContext } from "../SorobanContext";
+
+const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
 const rootReducer = combineReducers({
   auth,
@@ -41,6 +53,41 @@ const makeDummyStore = (state: any) =>
     ],
   });
 
+const MockSorobanProvider = ({
+  children,
+  pubKey,
+}: {
+  children: React.ReactNode;
+  pubKey: string;
+}) => {
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  const serverUrl =
+    networkDetails.networkPassphrase ===
+      "Test SDF Future Network ; October 2022" &&
+    networkDetails.networkUrl === FUTURENET_NETWORK_DETAILS.networkUrl
+      ? SOROBAN_RPC_URLS.FUTURENET
+      : networkDetails.networkUrl;
+
+  const server = new SorobanClient.Server(serverUrl, {
+    allowHttp: networkDetails.networkUrl.startsWith("http://"),
+  });
+
+  const newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
+    const sourceAccount = new SorobanClient.Account(pubKey, "0");
+    return new SorobanClient.TransactionBuilder(sourceAccount, {
+      fee,
+      networkPassphrase: networkDetails.networkPassphrase,
+    });
+  };
+
+  return (
+    <SorobanContext.Provider value={{ server, newTxBuilder }}>
+      {children}
+    </SorobanContext.Provider>
+  );
+};
+
 export const Wrapper: React.FunctionComponent<any> = ({
   children,
   state,
@@ -63,14 +110,13 @@ export const Wrapper: React.FunctionComponent<any> = ({
               applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
             },
             transactionSubmission: transactionSubmissionInitialState,
-            soroban: {
-              getTokenBalancesStatus: ActionStatus.IDLE,
-              tokenBalances: [],
-            },
+            soroban: sorobanInitialState,
             ...state,
           })}
         >
-          {children}
+          <MockSorobanProvider pubKey={publicKey}>
+            {children}
+          </MockSorobanProvider>
         </Provider>
       </Router>
     </>

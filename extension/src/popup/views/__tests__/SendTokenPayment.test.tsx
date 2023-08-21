@@ -1,5 +1,6 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createMemoryHistory } from "history";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -11,6 +12,7 @@ import {
   mockBalances,
   mockAccounts,
   mockTokenBalance,
+  mockTokenBalances,
 } from "../../__testHelpers__";
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
@@ -19,6 +21,7 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import { initialState as sorobanInitialState } from "popup/ducks/soroban";
 
 jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
@@ -26,6 +29,19 @@ jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
 
 jest.spyOn(ApiInternal, "getSorobanTokenBalance").mockImplementation(() => {
   return Promise.resolve(mockTokenBalance);
+});
+
+jest.mock("popup/ducks/soroban", () => {
+  const original = jest.requireActual("popup/ducks/soroban");
+  return {
+    ...original,
+    getTokenBalances: () => {
+      return {
+        type: "test-action",
+        payload: mockTokenBalances,
+      };
+    },
+  };
 });
 
 jest
@@ -40,7 +56,12 @@ jest
 jest
   .spyOn(ApiInternal, "submitFreighterSorobanTransaction")
   .mockImplementation(() => {
-    return Promise.resolve({} as any);
+    return Promise.resolve({
+      status: "PENDING",
+      hash: "some-hash",
+      latestLedger: 32131,
+      latestLedgerCloseTime: 62131,
+    });
   });
 
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
@@ -55,6 +76,9 @@ jest.mock("soroban-client", () => {
   return {
     ...original,
     Server: class {
+      prepareTransaction(tx: any, _passphrase: string) {
+        return Promise.resolve(tx as any);
+      }
       loadAccount() {
         return {
           sequenceNumber: () => 1,
@@ -82,46 +106,12 @@ jest.mock("popup/constants/history", () => ({
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
-describe.skip("SendTokenPayment", () => {
-  it("renders send payment view", async () => {
-    const history = createMemoryHistory();
-    history.push(ROUTES.sendPaymentTo);
-    mockHistoryGetter.mockReturnValue(history);
-    render(
-      <Wrapper
-        history={history}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
-            publicKey,
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-          },
-        }}
-      >
-        <SendPayment />
-      </Wrapper>,
-    );
-    await waitFor(() => {
-      expect(screen.getByTestId("send-to-view")).toBeDefined();
-    });
-  });
-
-  it("can send a payment using Soroban token", async () => {
-    await testPaymentFlow(
-      "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-    );
-  });
-});
-
-const testPaymentFlow = async (asset: string) => {
+describe("SendTokenPayment", () => {
   const history = createMemoryHistory();
   history.push(ROUTES.sendPaymentTo);
   mockHistoryGetter.mockReturnValue(history);
+
+  const asset = "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
   render(
     <Wrapper
       history={history}
@@ -146,22 +136,52 @@ const testPaymentFlow = async (asset: string) => {
           },
           accountBalances: mockBalances,
         },
+        soroban: {
+          ...sorobanInitialState,
+          tokenBalances: mockTokenBalances.tokenBalances,
+        },
       }}
     >
       <SendPayment />
     </Wrapper>,
   );
 
-  await waitFor(() => {
-    const input = screen.getByTestId("send-to-input");
-    fireEvent.change(input, { target: { value: publicKey } });
-  });
+  it("can send a payment using a Soroban token", async () => {
+    await waitFor(async () => {
+      const input = screen.getByTestId("send-to-input");
+      await userEvent.type(input, publicKey);
+    });
 
-  await waitFor(
-    async () => {
-      const continueBtn = screen.getByTestId("send-to-btn-continue");
+    await waitFor(
+      async () => {
+        const continueBtn = screen.getByTestId("send-to-btn-continue");
+        fireEvent.click(continueBtn);
+      },
+      { timeout: 3000 },
+    );
+
+    await waitFor(async () => {
+      const input = screen.getByTestId("send-amount-amount-input");
+      fireEvent.change(input, { target: { value: "5" } });
+    });
+
+    await waitFor(async () => {
+      const continueBtn = screen.getByTestId("send-amount-btn-continue");
+      expect(continueBtn).not.toBeDisabled();
       await fireEvent.click(continueBtn);
-    },
-    { timeout: 3000 },
-  );
-};
+    });
+
+    await waitFor(async () => {
+      screen.getByTestId("send-settings-view");
+      const continueBtn = screen.getByTestId("send-settings-btn-continue");
+      await fireEvent.click(continueBtn);
+    });
+
+    await waitFor(async () => {
+      const sendBtn = screen.getByTestId("transaction-details-btn-send");
+      await fireEvent.click(sendBtn);
+    });
+
+    await waitFor(() => screen.getByTestId("submit-success-view"));
+  });
+});
