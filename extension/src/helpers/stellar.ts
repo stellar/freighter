@@ -36,7 +36,7 @@ export const truncatedPoolId = (poolId: string) => truncateString(poolId);
 export const getTransactionInfo = (search: string) => {
   const searchParams = parsedSearchParam(search);
 
-  if ("blob" in searchParams) {
+  if ("blob" in searchParams || "entry" in searchParams) {
     return searchParams;
   }
 

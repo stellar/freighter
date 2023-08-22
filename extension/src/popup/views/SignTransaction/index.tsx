@@ -163,7 +163,7 @@ export const SignTransaction = () => {
       setIsPasswordRequired={setIsPasswordRequired}
       setStartedHwSign={setStartedHwSign}
       startedHwSign={startedHwSign}
-      tx={blobOrTx}
+      tx={blobOrTx as any} // TODO
     />
   );
 };

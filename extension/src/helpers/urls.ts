@@ -2,11 +2,21 @@ import punycode from "punycode";
 import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
 
+// TODO: move these
 export interface BlobToSign {
   isDomainListedAllowed: boolean;
   domain: string;
   tab: browser.Tabs.Tab | undefined;
   blob: string;
+  url: string;
+  accountToSign: string;
+}
+
+export interface EntryToSign {
+  isDomainListedAllowed: boolean;
+  domain: string;
+  tab: browser.Tabs.Tab | undefined;
+  entry: string;
   url: string;
   accountToSign: string;
 }
@@ -24,7 +34,7 @@ export const removeQueryParam = (url = "") => url.replace(/\?(.*)/, "");
 
 export const parsedSearchParam = (
   param: string,
-): TransactionInfo | BlobToSign => {
+): TransactionInfo | BlobToSign | EntryToSign => {
   const decodedSearchParam = decodeString(param.replace("?", ""));
   return decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
 };

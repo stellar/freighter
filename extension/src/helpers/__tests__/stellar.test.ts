@@ -26,7 +26,7 @@ describe("getTransactionInfo", () => {
       tab: {},
     });
     const info = getTransactionInfo("foo");
-    if (!("blob" in info)) {
+    if (!("blob" in info) && !("entry" in info)) {
       expect(info.isHttpsDomain).toBe(true);
     }
   });
@@ -41,7 +41,7 @@ describe("getTransactionInfo", () => {
       tab: {},
     });
     const info = getTransactionInfo("foo");
-    if (!("blob" in info)) {
+    if (!("blob" in info) && !("entry" in info)) {
       expect(info.isHttpsDomain).toBe(false);
     }
   });
