@@ -53,6 +53,7 @@
   "Assets found in this domain": "Assets found in this domain",
   "At least one uppercase letter": "At least one uppercase letter",
   "Auth": "Auth",
+  "Authorization Entry": "Authorization Entry",
   "Authorization Immutable": "Authorization Immutable",
   "Authorization Required": "Authorization Required",
   "Authorization Required; Authorization Immutable": "Authorization Required; Authorization Immutable",
@@ -203,6 +204,7 @@
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "is requesting approval to a": "is requesting approval to a",
   "is requesting approval to sign a blob of data": "is requesting approval to sign a blob of data",
+  "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
   "Keep it in a safe place": "Keep it in a safe place.",
   "Keep your recovery phrase in a safe and secure place": {
