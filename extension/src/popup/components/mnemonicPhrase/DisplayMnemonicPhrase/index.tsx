@@ -3,8 +3,6 @@ import { useTranslation } from "react-i18next";
 
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { Button } from "popup/basics/buttons/Button";
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
 
 import {
   OnboardingScreen,
@@ -18,8 +16,10 @@ import "./styles.scss";
 
 export const DisplayMnemonicPhrase = ({
   mnemonicPhrase,
+  setIsConfirmed,
 }: {
   mnemonicPhrase: string;
+  setIsConfirmed: (confirmed: boolean) => void;
 }) => {
   const { t } = useTranslation();
 
@@ -60,7 +60,7 @@ export const DisplayMnemonicPhrase = ({
             data-testid="display-mnemonic-phrase-next-btn"
             fullWidth
             onClick={() => {
-              navigateTo(ROUTES.mnemonicPhraseConfirm);
+              setIsConfirmed(true);
             }}
           >
             {t("Next")}

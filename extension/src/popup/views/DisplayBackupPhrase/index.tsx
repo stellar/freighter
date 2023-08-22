@@ -9,7 +9,6 @@ import { ROUTES } from "popup/constants/routes";
 import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
-import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -24,7 +23,7 @@ export const DisplayBackupPhrase = () => {
   const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState("");
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);
-  const mnemonicPhrase = useMnemonicPhrase();
+  const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   useEffect(() => {
     emitMetric(
@@ -51,6 +50,7 @@ export const DisplayBackupPhrase = () => {
         error_type: res.error,
       });
     } else {
+      setMnemonicPhrase(res.mnemonicPhrase);
       setIsPhraseUnlocked(true);
       setErrorMessage("");
       emitMetric(METRIC_NAMES.backupPhraseSuccess);
