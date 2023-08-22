@@ -117,6 +117,9 @@ export const METRIC_NAMES = {
   signBlob: "sign blob: confirmed",
   rejectBlob: "sign blob: rejected",
 
+  signAuthEntry: "sign auth entry: confirmed",
+  rejectAuthEntry: "sign auth entry: rejected",
+
   backupPhraseSuccess: "backup phrase: success",
   backupPhraseFail: "backup phrase: error",
 
