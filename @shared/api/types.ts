@@ -37,6 +37,7 @@ export interface Response {
   transactionXDR: string;
   signedTransaction: string;
   signedBlob: string;
+  signedAuthEntry: string;
   source: string;
   type: SERVICE_TYPES;
   url: string;

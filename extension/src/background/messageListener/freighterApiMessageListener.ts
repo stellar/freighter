@@ -300,7 +300,7 @@ export const freighterApiMessageListener = (
     const isDomainListedAllowed = await isSenderAllowed({ sender });
 
     const authEntry = {
-      entry: Buffer.from(entryXdr),
+      entry: entryXdr,
       accountToSign,
       tab,
       url: tabUrl,

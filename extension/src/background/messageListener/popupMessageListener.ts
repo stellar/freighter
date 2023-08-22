@@ -107,7 +107,7 @@ export const blobQueue: Array<{
 export const authEntryQueue: Array<{
   accountToSign: string;
   tab: browser.Tabs.Tab | undefined;
-  entry: Buffer; // xdr.SorobanAuthorizationEntry
+  entry: string; // xdr.SorobanAuthorizationEntry
   url: string;
 }> = [];
 
@@ -948,7 +948,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? await sourceKeys.sign(authEntry.entry)
+        ? await sourceKeys.sign(Buffer.from(authEntry.entry))
         : null;
 
       const entryResponse = responseQueue.pop();

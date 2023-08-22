@@ -42,6 +42,7 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 import { AppDispatch } from "popup/App";
 import { EntryToSign, parsedSearchParam } from "helpers/urls";
 import { Account } from "@shared/api/types";
+import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 
 export const SignAuthEntry = () => {
   const location = useLocation();
@@ -152,7 +153,7 @@ export const SignAuthEntry = () => {
     }
   };
 
-  if (!params.domain.startsWith("https") && !isExperimentalModeEnabled) {
+  if (!params.url.startsWith("https") && !isExperimentalModeEnabled) {
     return (
       <ModalWrapper>
         <WarningMessage
@@ -162,9 +163,9 @@ export const SignAuthEntry = () => {
           header={t("WEBSITE CONNECTION IS NOT SECURE")}
         >
           <p>
-            <Trans domain={params.domain}>
-              The website <strong>{{ domain: params.domain }}</strong> does not
-              use an SSL certificate. For additional safety Freighter only works
+            <Trans domain={params.url}>
+              The website <strong>{{ domain: params.url }}</strong> does not use
+              an SSL certificate. For additional safety Freighter only works
               with websites that provide an SSL certificate.
             </Trans>
           </p>
@@ -199,22 +200,12 @@ export const SignAuthEntry = () => {
               </p>
             </WarningMessage>
           ) : null}
-          <WarningMessage
-            header="Unknown data"
-            variant={WarningMessageVariant.highAlert}
-          >
-            <p>
-              {t(
-                "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data.",
-              )}
-            </p>
-          </WarningMessage>
           {!params.isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignBlob__info">
             <Card variant={Card.variant.highlight}>
-              <PunycodedDomain domain={params.domain} isRow />
+              <PunycodedDomain domain={params.url} isRow />
               <div className="SignBlob__subject">
-                {t("is requesting approval to sign a blob of data")}
+                {t("is requesting approval to sign an authorization entry")}
               </div>
               <div className="SignBlob__approval">
                 <div className="SignBlob__approval__title">
@@ -254,7 +245,7 @@ export const SignAuthEntry = () => {
               </div>
             ) : null}
           </div>
-          {/* <Blob blob={blob.blob} /> */}
+          <AuthEntry authEntryXdr={params.entry} />
         </ModalWrapper>
         <ButtonsContainer>
           <Button
