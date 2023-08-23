@@ -283,7 +283,7 @@ export const Router = () => {
           <GrantAccess />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
-          <MnemonicPhrase />
+          <MnemonicPhrase mnemonicPhrase="" />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.settings} exact>
           <Settings />

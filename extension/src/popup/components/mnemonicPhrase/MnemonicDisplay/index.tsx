@@ -11,7 +11,7 @@ interface generateMnemonicPhraseDisplayProps {
 }
 
 export const generateMnemonicPhraseDisplay = ({
-  mnemonicPhrase,
+  mnemonicPhrase = "",
 }: generateMnemonicPhraseDisplayProps) =>
   mnemonicPhrase.split(" ").map((word: string) => {
     /* 
