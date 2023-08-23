@@ -66,6 +66,7 @@ import { PinExtension } from "popup/views/PinExtension";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
+import { SignBlob } from "./views/SignBlob";
 
 import { SorobanProvider } from "./SorobanContext";
 
@@ -279,6 +280,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.signAuthEntry}>
           <SignAuthEntry />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.signBlob}>
+          <SignBlob />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
           <DisplayBackupPhrase />

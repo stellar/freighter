@@ -10,6 +10,6 @@ interface BlobProps {
 export const Blob = (props: BlobProps) => (
   <Card variant={Card.variant.highlight}>
     <Heading4>Signing data:</Heading4>
-    <div className="Blob">{props.blob}</div>
+    <div className="Blob">{atob(props.blob)}</div>
   </Card>
 );
