@@ -6,18 +6,14 @@ import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { buildInvocationTree } from "../invocation";
 import "./styles.scss";
 
-const authEntryParser = (entryXdr: string) =>
-  xdr.SorobanAuthorizationEntry.fromXDR(entryXdr, "hex");
-
 interface TransactionProps {
   authEntryXdr: string;
 }
 
 export const AuthEntry = ({ authEntryXdr }: TransactionProps) => {
   const { t } = useTranslation();
-  const rootJson = buildInvocationTree(
-    authEntryParser(authEntryXdr).rootInvocation(),
-  );
+  const authEntry = xdr.SorobanAuthorizationEntry.fromXDR(authEntryXdr, "hex");
+  const rootJson = buildInvocationTree(authEntry.rootInvocation());
 
   return (
     <div className="AuthEntry">
