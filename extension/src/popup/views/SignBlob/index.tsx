@@ -1,12 +1,38 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
 import { useTranslation, Trans } from "react-i18next";
-
-import { truncatedPublicKey } from "helpers/stellar";
+import { signBlob, rejectBlob } from "popup/ducks/access";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
-import { signBlob } from "popup/ducks/access";
-import { confirmPassword } from "popup/ducks/accountServices";
+import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
+import { AccountList, OptionTag } from "popup/components/account/AccountList";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import { Blob } from "popup/components/signBlob";
+import {
+  confirmPassword,
+  allAccountsSelector,
+  hasPrivateKeySelector,
+  makeAccountActive,
+  publicKeySelector,
+  hardwareWalletTypeSelector,
+} from "popup/ducks/accountServices";
+import { settingsExperimentalModeSelector } from "popup/ducks/settings";
+import {
+  WarningMessageVariant,
+  WarningMessage,
+  FirstTimeWarningMessage,
+} from "popup/components/WarningMessages";
+
+import {
+  startHwSign,
+  ShowOverlayStatus,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
+
+import { Account } from "@shared/api/types";
+import { AppDispatch } from "popup/App";
 
 import {
   ButtonsContainer,
@@ -14,71 +40,101 @@ import {
   ModalWrapper,
 } from "popup/basics/Modal";
 
-import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-import { AccountList, OptionTag } from "popup/components/account/AccountList";
-import { PunycodedDomain } from "popup/components/PunycodedDomain";
-import {
-  WarningMessageVariant,
-  WarningMessage,
-  FirstTimeWarningMessage,
-} from "popup/components/WarningMessages";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { AppDispatch } from "popup/App";
-import {
-  ShowOverlayStatus,
-  startHwSign,
-} from "popup/ducks/transactionSubmission";
+import { BlobToSign, parsedSearchParam } from "helpers/urls";
+import { truncatedPublicKey } from "helpers/stellar";
 
-import { Account } from "@shared/api/types";
-import { BlobToSign } from "helpers/urls";
+import "./styles.scss";
 
-import "../styles.scss";
-import { useDispatch } from "react-redux";
-import { Blob } from "popup/components/signBlob";
-
-interface SignBlobBodyProps {
-  accountNotFound: boolean;
-  allAccounts: Account[];
-  blob: BlobToSign;
-  currentAccount: Account;
-  handleApprove: (signAndClose: () => Promise<void>) => () => Promise<void>;
-  hwStatus: ShowOverlayStatus;
-  isConfirming: boolean;
-  isDropdownOpen: boolean;
-  isExperimentalModeEnabled: boolean;
-  isHardwareWallet: boolean;
-  isPasswordRequired: boolean;
-  publicKey: string;
-  rejectAndClose: () => void;
-  setIsDropdownOpen: (isRequired: boolean) => void;
-  setIsPasswordRequired: (isRequired: boolean) => void;
-  setStartedHwSign: (hasStarted: boolean) => void;
-}
-
-export const SignBlobBody = ({
-  publicKey,
-  allAccounts,
-  isDropdownOpen,
-  handleApprove,
-  isConfirming,
-  accountNotFound,
-  rejectAndClose,
-  currentAccount,
-  setIsDropdownOpen,
-  setIsPasswordRequired,
-  isPasswordRequired,
-  blob,
-  isExperimentalModeEnabled,
-  hwStatus,
-  isHardwareWallet,
-  setStartedHwSign,
-}: SignBlobBodyProps) => {
-  const dispatch: AppDispatch = useDispatch();
+export const SignBlob = () => {
+  const location = useLocation();
   const { t } = useTranslation();
+  const blob = parsedSearchParam(location.search) as BlobToSign;
   const { accountToSign, domain, isDomainListedAllowed } = blob;
+
+  const dispatch: AppDispatch = useDispatch();
+  const isExperimentalModeEnabled = useSelector(
+    settingsExperimentalModeSelector,
+  );
+
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
+  const {
+    hardwareWalletData: { status: hwStatus },
+  } = useSelector(transactionSubmissionSelector);
+
+  const [startedHwSign, setStartedHwSign] = useState(false);
+  const [currentAccount, setCurrentAccount] = useState({} as Account);
+  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [accountNotFound, setAccountNotFound] = useState(false);
+
+  const allAccounts = useSelector(allAccountsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+
+  // the public key the user had selected before starting this flow
+  const defaultPublicKey = useRef(publicKey);
+  const allAccountsMap = useRef({} as { [key: string]: Account });
+
+  const rejectAndClose = () => {
+    dispatch(rejectBlob());
+    window.close();
+  };
+
+  const handleApprove = (signAndClose: () => Promise<void>) => async () => {
+    setIsConfirming(true);
+
+    if (hasPrivateKey) {
+      await signAndClose();
+    } else {
+      setIsPasswordRequired(true);
+    }
+
+    setIsConfirming(false);
+  };
+
+  useEffect(() => {
+    if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
+      window.close();
+    }
+  }, [startedHwSign, hwStatus]);
+
+  useEffect(() => {
+    // handle auto selecting the right account based on `accountToSign`
+    let autoSelectedAccountDetails;
+
+    allAccounts.forEach((account) => {
+      if (accountToSign) {
+        // does the user have the `accountToSign` somewhere in the accounts list?
+        if (account.publicKey === accountToSign) {
+          // if the `accountToSign` is found, but it isn't active, make it active
+          if (defaultPublicKey.current !== account.publicKey) {
+            dispatch(makeAccountActive(account.publicKey));
+          }
+
+          // save the details of the `accountToSign`
+          autoSelectedAccountDetails = account;
+        }
+      }
+
+      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
+      allAccountsMap.current[account.publicKey] = account;
+    });
+
+    if (!autoSelectedAccountDetails) {
+      setAccountNotFound(true);
+    }
+  }, [accountToSign, allAccounts, dispatch]);
+
+  useEffect(() => {
+    // handle any changes to the current acct - whether by auto select or manual select
+    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
+  }, [allAccounts, publicKey]);
 
   const signAndClose = async () => {
     if (isHardwareWallet) {

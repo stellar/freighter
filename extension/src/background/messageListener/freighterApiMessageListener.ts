@@ -256,9 +256,7 @@ export const freighterApiMessageListener = (
     blobQueue.push(blobData);
     const encodedBlob = encodeObject(blobData);
     const popup = browser.windows.create({
-      url: chrome.runtime.getURL(
-        `/index.html#/sign-transaction?${encodedBlob}`,
-      ),
+      url: chrome.runtime.getURL(`/index.html#/sign-blob?${encodedBlob}`),
       ...WINDOW_SETTINGS,
     });
 

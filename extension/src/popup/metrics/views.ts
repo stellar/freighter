@@ -17,6 +17,7 @@ const routeToEventName = {
   [ROUTES.connectWallet]: METRIC_NAMES.viewConnectWallet,
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
   [ROUTES.connectLedger]: METRIC_NAMES.viewConnectLedger,
+  [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
@@ -84,24 +85,31 @@ registerHandler<AppState>(navigate, (_, a) => {
     };
 
     emitMetric(eventName, METRIC_OPTION_DOMAIN);
-  } else if (
-    pathname === ROUTES.signTransaction ||
-    pathname === ROUTES.signAuthEntry
-  ) {
+  } else if (pathname === ROUTES.signTransaction) {
     const { url } = parsedSearchParam(search);
     const info = getTransactionInfo(search);
 
-    if (!("blob" in info) && !("entry" in info)) {
-      const { operations, operationTypes } = info;
-      const METRIC_OPTIONS = {
-        domain: getUrlDomain(url),
-        subdomain: getUrlHostname(url),
-        number_of_operations: operations.length,
-        operationTypes,
-      };
+    const { operations, operationTypes } = info;
+    const METRIC_OPTIONS = {
+      domain: getUrlDomain(url),
+      subdomain: getUrlHostname(url),
+      number_of_operations: operations.length,
+      operationTypes,
+    };
 
-      emitMetric(eventName, METRIC_OPTIONS);
-    }
+    emitMetric(eventName, METRIC_OPTIONS);
+  } else if (
+    pathname === ROUTES.signAuthEntry ||
+    pathname === ROUTES.signBlob
+  ) {
+    const { url } = parsedSearchParam(search);
+
+    const METRIC_OPTIONS = {
+      domain: getUrlDomain(url),
+      subdomain: getUrlHostname(url),
+    };
+
+    emitMetric(eventName, METRIC_OPTIONS);
   } else {
     emitMetric(eventName);
   }
