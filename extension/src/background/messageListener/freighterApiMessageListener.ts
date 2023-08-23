@@ -325,13 +325,13 @@ export const freighterApiMessageListener = (
           }),
         );
       }
-      const response = (signedEntry: string) => {
-        if (signedEntry) {
+      const response = (signedAuthEntry: string) => {
+        if (signedAuthEntry) {
           if (!isDomainListedAllowed) {
             allowList.push(punycodedDomain);
             localStore.setItem(ALLOWLIST_ID, allowList.join());
           }
-          resolve({ signedEntry });
+          resolve({ signedAuthEntry });
         }
 
         resolve({ error: "User declined access" });

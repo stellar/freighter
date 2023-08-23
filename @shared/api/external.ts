@@ -101,7 +101,6 @@ export const submitAuthEntry = async (
     accountToSign?: string;
   },
 ): Promise<string> => {
-  console.log(entryXdr);
   let response = { signedAuthEntry: "", error: "" };
   const _opts = opts || {};
   const accountToSign = _opts.accountToSign || "";
