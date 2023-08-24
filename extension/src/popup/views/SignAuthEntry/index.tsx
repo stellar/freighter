@@ -183,7 +183,7 @@ export const SignAuthEntry = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="SignBlob" data-testid="SignBlob">
+      <div className="SignAuthEntry" data-testid="SignAuthEntry">
         <ModalWrapper>
           <ModalHeader>
             <strong>{t("Confirm Data")}</strong>
@@ -201,18 +201,18 @@ export const SignAuthEntry = () => {
             </WarningMessage>
           ) : null}
           {!params.isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
-          <div className="SignBlob__info">
+          <div className="SignAuthEntry__info">
             <Card variant={Card.variant.highlight}>
               <PunycodedDomain domain={params.url} isRow />
-              <div className="SignBlob__subject">
+              <div className="SignAuthEntry__subject">
                 {t("is requesting approval to sign an authorization entry")}
               </div>
-              <div className="SignBlob__approval">
-                <div className="SignBlob__approval__title">
+              <div className="SignAuthEntry__approval">
+                <div className="SignAuthEntry__approval__title">
                   {t("Approve using")}:
                 </div>
                 <div
-                  className="SignBlob__current-account"
+                  className="SignAuthEntry__current-account"
                   onClick={() => setIsDropdownOpen(true)}
                 >
                   <AccountListIdenticon
@@ -227,14 +227,14 @@ export const SignAuthEntry = () => {
                       imported={currentAccount.imported}
                     />
                   </AccountListIdenticon>
-                  <div className="SignBlob__current-account__chevron">
+                  <div className="SignAuthEntry__current-account__chevron">
                     <Icon.ChevronDown />
                   </div>
                 </div>
               </div>
             </Card>
             {accountNotFound && accountToSign ? (
-              <div className="SignBlob__account-not-found">
+              <div className="SignAuthEntry__account-not-found">
                 <InfoBlock variant={InfoBlock.variant.warning}>
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
@@ -273,7 +273,7 @@ export const SignAuthEntry = () => {
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
         >
-          <div className="SignBlob__modal">
+          <div className="SignAuthEntry__modal">
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
