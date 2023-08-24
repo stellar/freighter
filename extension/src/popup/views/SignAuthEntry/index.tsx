@@ -44,6 +44,8 @@ import { EntryToSign, parsedSearchParam } from "helpers/urls";
 import { Account } from "@shared/api/types";
 import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 
+import "./styles.scss";
+
 export const SignAuthEntry = () => {
   const location = useLocation();
   const params = parsedSearchParam(location.search) as EntryToSign;
