@@ -2,7 +2,6 @@ import punycode from "punycode";
 import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
 
-// TODO: move these
 export interface BlobToSign {
   isDomainListedAllowed: boolean;
   domain: string;
