@@ -119,7 +119,6 @@ export const submitAuthEntry = async (
 
   if (error) {
     throw error;
-    throw error;
   }
   return signedAuthEntry;
 };
