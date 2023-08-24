@@ -12,7 +12,10 @@ interface TransactionProps {
 
 export const AuthEntry = ({ authEntryXdr }: TransactionProps) => {
   const { t } = useTranslation();
-  const authEntry = xdr.SorobanAuthorizationEntry.fromXDR(authEntryXdr, "hex");
+  const authEntry = xdr.SorobanAuthorizationEntry.fromXDR(
+    authEntryXdr,
+    "base64",
+  );
   const rootJson = buildInvocationTree(authEntry.rootInvocation());
 
   return (

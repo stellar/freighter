@@ -5,7 +5,7 @@ import { TransactionInfo } from "../types/transactions";
 export interface BlobToSign {
   isDomainListedAllowed: boolean;
   domain: string;
-  tab: browser.Tabs.Tab | undefined;
+  tab?: browser.Tabs.Tab;
   blob: string;
   url: string;
   accountToSign: string;
@@ -14,7 +14,7 @@ export interface BlobToSign {
 export interface EntryToSign {
   isDomainListedAllowed: boolean;
   domain: string;
-  tab: browser.Tabs.Tab | undefined;
+  tab?: browser.Tabs.Tab;
   entry: string;
   url: string;
   accountToSign: string;

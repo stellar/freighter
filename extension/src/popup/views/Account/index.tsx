@@ -48,6 +48,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
+import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
 import { SorobanContext } from "../../SorobanContext";
@@ -175,7 +176,9 @@ export const Account = () => {
     />
   ) : (
     <>
-      {isLoading ? null : (
+      {isLoading ? (
+        <Loading />
+      ) : (
         <div className="AccountView" data-testid="account-view">
           <AccountHeader
             accountDropDownRef={accountDropDownRef}
