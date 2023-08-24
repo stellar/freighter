@@ -60,6 +60,7 @@ export const submitTransaction = async (
     });
   } catch (e) {
     console.error(e);
+    throw e;
   }
   const { signedTransaction, error } = response;
 
@@ -86,6 +87,7 @@ export const submitBlob = async (
     });
   } catch (e) {
     console.error(e);
+    throw e;
   }
   const { signedBlob, error } = response;
 
@@ -116,6 +118,7 @@ export const submitAuthEntry = async (
   const { signedAuthEntry, error } = response;
 
   if (error) {
+    throw error;
     throw error;
   }
   return signedAuthEntry;

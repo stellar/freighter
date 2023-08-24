@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
-import { Icon } from "@stellar/design-system";
+import { Icon, Loader } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 
@@ -24,7 +24,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
 
-// TODO
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -117,6 +116,7 @@ export const HistoryItem = ({
   const [txDetails, setTxDetails] = useState(transactionDetailPropsBase);
   const [dateText, setDateText] = useState(date);
   const [rowText, setRowText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [IconComponent, setIconComponent] = useState(
     (
       <Icon.Shuffle className="HistoryItem__icon--default" />
@@ -229,6 +229,7 @@ export const HistoryItem = ({
           // they are not neccessarily minted to themselves.
           // If user has minted to self, add token to their token list.
           if (!token) {
+            setIsLoading(true);
             // TODO: When fetching contract details, we could encounter an expired state entry
             // and fail to fetch values through the RPC.
             // We can address this in several ways -
@@ -288,6 +289,7 @@ export const HistoryItem = ({
                 isRecipient: isRecieving,
                 operationText: `${formattedTokenAmount} ${tokenSymbol}`,
               }));
+              setIsLoading(false);
             } catch (error) {
               console.error(error);
               captureException(`Error fetching token details: ${error}`);
@@ -315,6 +317,7 @@ export const HistoryItem = ({
                 isRecipient: isRecieving,
                 operationText: operationString,
               }));
+              setIsLoading(false);
             }
           } else {
             const formattedTokenAmount = formatTokenAmount(
@@ -436,13 +439,21 @@ export const HistoryItem = ({
       }}
     >
       <div className="HistoryItem__row">
-        <div className="HistoryItem__icon">{renderIcon()}</div>
-        <div className="HistoryItem__operation">
-          {rowText}
-          <div className="HistoryItem__date">{dateText}</div>
-        </div>
+        {isLoading ? (
+          <div className="HistoryItem__loader">
+            <Loader size="2rem" />
+          </div>
+        ) : (
+          <>
+            <div className="HistoryItem__icon">{renderIcon()}</div>
+            <div className="HistoryItem__operation">
+              {rowText}
+              <div className="HistoryItem__date">{dateText}</div>
+            </div>
 
-        <div className="HistoryItem__payment">{renderBodyComponent()}</div>
+            <div className="HistoryItem__payment">{renderBodyComponent()}</div>
+          </>
+        )}
       </div>
     </div>
   );
