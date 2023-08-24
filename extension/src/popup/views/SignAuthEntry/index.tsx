@@ -245,6 +245,12 @@ export const SignAuthEntry = () => {
               </div>
             ) : null}
           </div>
+          {/* Can replace AuthEntry once SignTx supports xdr classes */}
+          {/* <Transaction
+            flaggedKeys={{}}
+            isMemoRequired={false}
+            transaction={{ _operations: [{ auth: params.entry }] }}
+          /> */}
           <AuthEntry authEntryXdr={params.entry} />
         </ModalWrapper>
         <ButtonsContainer>

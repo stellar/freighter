@@ -30,6 +30,8 @@ import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
+import { xdr } from "soroban-client";
+import { buildInvocationTree } from "popup/components/signAuthEntry/invocation";
 
 interface Path {
   code: string;
@@ -165,6 +167,37 @@ const KeyValueWithScValue = ({
     </SimpleBarWrapper>
   </div>
 );
+
+const KeyValueWithScAuth = ({
+  operationKey,
+  operationValue,
+}: {
+  operationKey: string;
+  operationValue: {
+    _attributes: {
+      credentials: xdr.SorobanCredentials;
+      rootInvocation: xdr.SorobanAuthorizedInvocation;
+    };
+  }[];
+}) => {
+  // TODO: use getters in signTx to get these correctly
+  const rawEntry = operationValue[0] && operationValue[0]._attributes;
+  const authEntry = new xdr.SorobanAuthorizationEntry(rawEntry);
+  const rootJson = buildInvocationTree(authEntry.rootInvocation());
+  return (
+    <div className="Operations__pair--smart-contract">
+      <div>
+        {operationKey}
+        {operationKey ? ":" : null}
+      </div>
+      <SimpleBarWrapper className="Operations__scValue">
+        <div>
+          <pre>{JSON.stringify(rootJson, null, 2)}</pre>
+        </div>
+      </SimpleBarWrapper>
+    </div>
+  );
+};
 
 const PathList = ({ paths }: { paths: [Path] }) => {
   const { t } = useTranslation();
@@ -783,15 +816,9 @@ export const Operations = ({
                   />
                 ))}
 
-                {scFunc ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Func")}
-                    operationValue={scFunc}
-                  />
-                ) : null}
                 {scAuth ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Auth")}
+                  <KeyValueWithScAuth
+                    operationKey={t("Invocation")}
                     operationValue={scAuth}
                   />
                 ) : null}
