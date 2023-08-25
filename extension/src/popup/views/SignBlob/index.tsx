@@ -59,6 +59,7 @@ export const SignBlob = () => {
     publicKey,
     handleApprove,
     hwStatus,
+    isHardwareWallet,
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
@@ -69,6 +70,25 @@ export const SignBlob = () => {
     blob.blob,
     accountToSign,
   );
+
+  if (isHardwareWallet) {
+    return (
+      <ModalWrapper>
+        <WarningMessage
+          variant={WarningMessageVariant.warning}
+          handleCloseClick={() => window.close()}
+          isActive
+          header={t("Unsupported signing method")}
+        >
+          <p>
+            {t(
+              "Hardware wallets are currently not supported for signing arbitrary blobs.",
+            )}
+          </p>
+        </WarningMessage>
+      </ModalWrapper>
+    );
+  }
 
   if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
     return (

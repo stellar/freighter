@@ -56,6 +56,7 @@ export const SignAuthEntry = () => {
     publicKey,
     handleApprove,
     hwStatus,
+    isHardwareWallet,
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
@@ -66,6 +67,25 @@ export const SignAuthEntry = () => {
     params.entry,
     accountToSign,
   );
+
+  if (isHardwareWallet) {
+    return (
+      <ModalWrapper>
+        <WarningMessage
+          variant={WarningMessageVariant.warning}
+          handleCloseClick={() => window.close()}
+          isActive
+          header={t("Unsupported signing method")}
+        >
+          <p>
+            {t(
+              "Hardware wallets are currently not supported for signing arbitrary blobs.",
+            )}
+          </p>
+        </WarningMessage>
+      </ModalWrapper>
+    );
+  }
 
   if (!params.url.startsWith("https") && !isExperimentalModeEnabled) {
     return (
