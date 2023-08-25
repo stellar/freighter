@@ -68,7 +68,7 @@ export const SignTransaction = () => {
     settingsExperimentalModeSelector,
   );
   const dispatch: AppDispatch = useDispatch();
-  const { networkName, networkPassphrase, ...rest } = useSelector(
+  const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
 
