@@ -126,6 +126,7 @@ export function useSetupSigningFlow(
     accountNotFound,
     currentAccount,
     handleApprove,
+    isHardwareWallet,
     publicKey,
     hwStatus,
     isConfirming,
