@@ -23,7 +23,9 @@ export enum FRIENDBOT_URLS {
   FUTURENET = "https://friendbot-futurenet.stellar.org",
 }
 
-export const SOROBAN_RPC_URLS = {
+export const SOROBAN_RPC_URLS: { [index: string]: string } = {
+  PUBLIC: "https://rpc-futurenet.stellar.org/",
+  TESTNET: "https://rpc-futurenet.stellar.org/",
   FUTURENET: "https://rpc-futurenet.stellar.org/",
 };
 
