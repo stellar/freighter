@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
@@ -10,14 +10,6 @@ import { AccountListIdenticon } from "popup/components/identicons/AccountListIde
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { Blob } from "popup/components/signBlob";
-import {
-  confirmPassword,
-  allAccountsSelector,
-  hasPrivateKeySelector,
-  makeAccountActive,
-  publicKeySelector,
-  hardwareWalletTypeSelector,
-} from "popup/ducks/accountServices";
 import { settingsExperimentalModeSelector } from "popup/ducks/settings";
 import {
   WarningMessageVariant,
@@ -25,13 +17,8 @@ import {
   FirstTimeWarningMessage,
 } from "popup/components/WarningMessages";
 
-import {
-  startHwSign,
-  ShowOverlayStatus,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
-import { Account } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 
 import {
@@ -48,115 +35,40 @@ import { BlobToSign, parsedSearchParam } from "helpers/urls";
 import { truncatedPublicKey } from "helpers/stellar";
 
 import "./styles.scss";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
 export const SignBlob = () => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const location = useLocation();
   const { t } = useTranslation();
-  const blob = parsedSearchParam(location.search) as BlobToSign;
-  const { accountToSign, domain, isDomainListedAllowed } = blob;
-
   const dispatch: AppDispatch = useDispatch();
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
 
-  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const isHardwareWallet = !!hardwareWalletType;
+  const blob = parsedSearchParam(location.search) as BlobToSign;
+  const { accountToSign, domain, isDomainListedAllowed } = blob;
+
   const {
-    hardwareWalletData: { status: hwStatus },
-  } = useSelector(transactionSubmissionSelector);
-
-  const [startedHwSign, setStartedHwSign] = useState(false);
-  const [currentAccount, setCurrentAccount] = useState({} as Account);
-  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [accountNotFound, setAccountNotFound] = useState(false);
-
-  const allAccounts = useSelector(allAccountsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const hasPrivateKey = useSelector(hasPrivateKeySelector);
-
-  // the public key the user had selected before starting this flow
-  const defaultPublicKey = useRef(publicKey);
-  const allAccountsMap = useRef({} as { [key: string]: Account });
-
-  const rejectAndClose = () => {
-    dispatch(rejectBlob());
-    window.close();
-  };
-
-  const handleApprove = (signAndClose: () => Promise<void>) => async () => {
-    setIsConfirming(true);
-
-    if (hasPrivateKey) {
-      await signAndClose();
-    } else {
-      setIsPasswordRequired(true);
-    }
-
-    setIsConfirming(false);
-  };
-
-  useEffect(() => {
-    if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
-      window.close();
-    }
-  }, [startedHwSign, hwStatus]);
-
-  useEffect(() => {
-    // handle auto selecting the right account based on `accountToSign`
-    let autoSelectedAccountDetails;
-
-    allAccounts.forEach((account) => {
-      if (accountToSign) {
-        // does the user have the `accountToSign` somewhere in the accounts list?
-        if (account.publicKey === accountToSign) {
-          // if the `accountToSign` is found, but it isn't active, make it active
-          if (defaultPublicKey.current !== account.publicKey) {
-            dispatch(makeAccountActive(account.publicKey));
-          }
-
-          // save the details of the `accountToSign`
-          autoSelectedAccountDetails = account;
-        }
-      }
-
-      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
-      allAccountsMap.current[account.publicKey] = account;
-    });
-
-    if (!autoSelectedAccountDetails) {
-      setAccountNotFound(true);
-    }
-  }, [accountToSign, allAccounts, dispatch]);
-
-  useEffect(() => {
-    // handle any changes to the current acct - whether by auto select or manual select
-    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-  }, [allAccounts, publicKey]);
-
-  const signAndClose = async () => {
-    if (isHardwareWallet) {
-      await dispatch(
-        startHwSign({ transactionXDR: blob.blob, shouldSubmit: false }),
-      );
-      setStartedHwSign(true);
-    } else {
-      await dispatch(signBlob());
-      window.close();
-    }
-  };
-
-  const _handleApprove = handleApprove(signAndClose);
-
-  const verifyPasswordThenSign = async (password: string) => {
-    const confirmPasswordResp = await dispatch(confirmPassword(password));
-
-    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
-      await signAndClose();
-    }
-  };
+    allAccounts,
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    publicKey,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+  } = useSetupSigningFlow(
+    dispatch,
+    rejectBlob,
+    signBlob,
+    blob.blob,
+    accountToSign,
+  );
 
   if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
     return (
@@ -273,7 +185,7 @@ export const SignBlob = () => {
           <Button
             fullWidth
             isLoading={isConfirming}
-            onClick={() => _handleApprove()}
+            onClick={() => handleApprove()}
           >
             {t("Approve")}
           </Button>
