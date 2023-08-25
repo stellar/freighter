@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
@@ -8,23 +8,11 @@ import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
 
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
-  allAccountsSelector,
-  confirmPassword,
-  hasPrivateKeySelector,
-  makeAccountActive,
-  publicKeySelector,
-  hardwareWalletTypeSelector,
-} from "popup/ducks/accountServices";
-import {
   settingsNetworkDetailsSelector,
   settingsExperimentalModeSelector,
 } from "popup/ducks/settings";
 
-import {
-  startHwSign,
-  ShowOverlayStatus,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -36,6 +24,7 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Button } from "popup/basics/buttons/Button";
 import { InfoBlock } from "popup/basics/InfoBlock";
 import { TransactionHeading } from "popup/basics/TransactionHeading";
@@ -62,8 +51,6 @@ import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
-
-import { Account } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
@@ -74,6 +61,9 @@ import { TransactionInfo } from "popup/components/signTransaction/TransactionInf
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
@@ -81,27 +71,6 @@ export const SignTransaction = () => {
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
-
-  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const isHardwareWallet = !!hardwareWalletType;
-  const {
-    hardwareWalletData: { status: hwStatus },
-  } = useSelector(transactionSubmissionSelector);
-
-  const [startedHwSign, setStartedHwSign] = useState(false);
-  const [currentAccount, setCurrentAccount] = useState({} as Account);
-  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [accountNotFound, setAccountNotFound] = useState(false);
-
-  const allAccounts = useSelector(allAccountsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const hasPrivateKey = useSelector(hasPrivateKeySelector);
-
-  // the public key the user had selected before starting this flow
-  const defaultPublicKey = useRef(publicKey);
-  const allAccountsMap = useRef({} as { [key: string]: Account });
 
   const tx = getTransactionInfo(location.search);
 
@@ -139,88 +108,25 @@ export const SignTransaction = () => {
   const memo = decodeMemo(_memo);
   let accountToSign = _accountToSign;
 
-  const rejectAndClose = () => {
-    dispatch(rejectTransaction());
-    window.close();
-  };
-
-  const handleApprove = (signAndClose: () => Promise<void>) => async () => {
-    setIsConfirming(true);
-
-    if (hasPrivateKey) {
-      await signAndClose();
-    } else {
-      setIsPasswordRequired(true);
-    }
-
-    setIsConfirming(false);
-  };
-
-  useEffect(() => {
-    if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
-      window.close();
-    }
-  }, [startedHwSign, hwStatus]);
-
-  useEffect(() => {
-    // handle auto selecting the right account based on `accountToSign`
-    let autoSelectedAccountDetails;
-
-    allAccounts.forEach((account) => {
-      if (accountToSign) {
-        // does the user have the `accountToSign` somewhere in the accounts list?
-        if (account.publicKey === accountToSign) {
-          // if the `accountToSign` is found, but it isn't active, make it active
-          if (defaultPublicKey.current !== account.publicKey) {
-            dispatch(makeAccountActive(account.publicKey));
-          }
-
-          // save the details of the `accountToSign`
-          autoSelectedAccountDetails = account;
-        }
-      }
-
-      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
-      allAccountsMap.current[account.publicKey] = account;
-    });
-
-    if (!autoSelectedAccountDetails) {
-      setAccountNotFound(true);
-    }
-  }, [accountToSign, allAccounts, dispatch]);
-
-  useEffect(() => {
-    // handle any changes to the current acct - whether by auto select or manual select
-    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-  }, [allAccounts, publicKey]);
-
-  useEffect(() => {
-    if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
-      window.close();
-    }
-  }, [startedHwSign, hwStatus]);
-
-  const signAndClose = async () => {
-    if (isHardwareWallet) {
-      await dispatch(
-        startHwSign({ transactionXDR: transactionXdr, shouldSubmit: false }),
-      );
-      setStartedHwSign(true);
-    } else {
-      await dispatch(signTransaction());
-      window.close();
-    }
-  };
-
-  const _handleApprove = handleApprove(signAndClose);
-
-  const verifyPasswordThenSign = async (password: string) => {
-    const confirmPasswordResp = await dispatch(confirmPassword(password));
-
-    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
-      await signAndClose();
-    }
-  };
+  const {
+    allAccounts,
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    publicKey,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+  } = useSetupSigningFlow(
+    dispatch,
+    rejectTransaction,
+    signTransaction,
+    transactionXdr,
+    accountToSign,
+  );
 
   const flaggedKeyValues = Object.values(flaggedKeys as FlaggedKeys);
   const isUnsafe = flaggedKeyValues.some(({ tags }) =>
@@ -271,11 +177,6 @@ export const SignTransaction = () => {
       emitMetric(METRIC_NAMES.signTransactionMalicious);
     }
   }, [isMemoRequired, isMalicious, isUnsafe]);
-
-  useEffect(() => {
-    // handle any changes to the current acct - whether by auto select or manual select
-    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-  }, [allAccountsMap, allAccounts, publicKey, setCurrentAccount]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
@@ -436,7 +337,7 @@ export const SignTransaction = () => {
             disabled={isSubmitDisabled}
             fullWidth
             isLoading={isConfirming}
-            onClick={() => _handleApprove()}
+            onClick={() => handleApprove()}
           >
             {t("Approve")}
           </Button>
