@@ -82,7 +82,7 @@ export const SignBlob = () => {
         >
           <p>
             {t(
-              "Hardware wallets are currently not supported for signing arbitrary blobs.",
+              "Signing arbitrary data with a hardware wallet is currently not supported.",
             )}
           </p>
         </WarningMessage>
