@@ -636,7 +636,7 @@ export const submitFreighterSorobanTransaction = async ({
     console.error(e);
   }
 
-  const server = new SorobanClient.Server(SOROBAN_RPC_URLS.FUTURENET, {
+  const server = new SorobanClient.Server(SOROBAN_RPC_URLS.FUTURENET!, {
     allowHttp: true,
   });
 

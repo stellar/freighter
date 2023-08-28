@@ -8,7 +8,7 @@ import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { SorobanContext } from "popup/SorobanContext";
+import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -216,8 +216,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const { t } = useTranslation();
 
-  const { server: sorobanServer } = useContext(SorobanContext);
-
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
@@ -287,13 +285,17 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
       ];
 
+      if (!hasSorobanClient(sorobanClient)) {
+        throw new Error("Soroban RPC not supported for this network");
+      }
+
       const builder = await sorobanClient.newTxBuilder(
         xlmToStroop(transactionFee).toFixed(),
       );
 
       const transaction = await transfer(assetAddress, params, memo, builder);
 
-      const preparedTransaction = await sorobanServer.prepareTransaction(
+      const preparedTransaction = await sorobanClient.server.prepareTransaction(
         transaction,
         networkDetails.networkPassphrase,
       );

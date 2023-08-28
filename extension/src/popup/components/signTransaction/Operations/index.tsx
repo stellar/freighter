@@ -27,7 +27,7 @@ import {
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
-import { SorobanContext } from "popup/SorobanContext";
+import { hasSorobanClient, SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 import { xdr } from "soroban-client";
@@ -354,7 +354,7 @@ export const Operations = ({
   const [decimals, setDecimals] = useState(0);
 
   useEffect(() => {
-    if (!contractId) return;
+    if (!contractId || !hasSorobanClient(sorobanClient)) return;
     const fetchContractDecimals = async () => {
       const contractDecimals = await getDecimals(
         contractId,
