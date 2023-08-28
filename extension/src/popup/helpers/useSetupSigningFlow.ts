@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 
@@ -21,7 +21,6 @@ import {
 } from "popup/ducks/transactionSubmission";
 
 export function useSetupSigningFlow(
-  dispatch: AppDispatch,
   reject: typeof rejectTransaction,
   signFn: typeof signTransaction,
   transactionXdr: string,
@@ -33,6 +32,7 @@ export function useSetupSigningFlow(
   const [accountNotFound, setAccountNotFound] = useState(false);
   const [currentAccount, setCurrentAccount] = useState({} as Account);
 
+  const dispatch: AppDispatch = useDispatch();
   const allAccounts = useSelector(allAccountsSelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);

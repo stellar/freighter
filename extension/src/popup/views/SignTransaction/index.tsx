@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Card, Icon } from "@stellar/design-system";
 import * as SorobanSdk from "soroban-client";
@@ -51,7 +51,6 @@ import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
@@ -67,7 +66,6 @@ export const SignTransaction = () => {
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
-  const dispatch: AppDispatch = useDispatch();
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
@@ -121,7 +119,6 @@ export const SignTransaction = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
   } = useSetupSigningFlow(
-    dispatch,
     rejectTransaction,
     signTransaction,
     transactionXdr,

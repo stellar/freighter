@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card, Icon } from "@stellar/design-system";
 import { useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import {
   ButtonsContainer,
@@ -27,7 +27,6 @@ import { settingsExperimentalModeSelector } from "popup/ducks/settings";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
-import { AppDispatch } from "popup/App";
 import { EntryToSign, parsedSearchParam } from "helpers/urls";
 import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 
@@ -38,7 +37,6 @@ export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const location = useLocation();
-  const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
@@ -61,7 +59,6 @@ export const SignAuthEntry = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
   } = useSetupSigningFlow(
-    dispatch,
     rejectAuthEntry,
     signEntry,
     params.entry,
