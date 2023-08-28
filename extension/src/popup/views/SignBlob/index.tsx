@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Card, Icon } from "@stellar/design-system";
 import { useTranslation, Trans } from "react-i18next";
 import { signBlob, rejectBlob } from "popup/ducks/access";
@@ -18,8 +18,6 @@ import {
 } from "popup/components/WarningMessages";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
-
-import { AppDispatch } from "popup/App";
 
 import {
   ButtonsContainer,
@@ -42,7 +40,6 @@ export const SignBlob = () => {
 
   const location = useLocation();
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
@@ -63,13 +60,7 @@ export const SignBlob = () => {
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
-  } = useSetupSigningFlow(
-    dispatch,
-    rejectBlob,
-    signBlob,
-    blob.blob,
-    accountToSign,
-  );
+  } = useSetupSigningFlow(rejectBlob, signBlob, blob.blob, accountToSign);
 
   if (isHardwareWallet) {
     return (
