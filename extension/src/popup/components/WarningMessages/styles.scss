@@ -7,7 +7,7 @@
 
 .WarningMessage {
   &--active {
-    background: var(--background-color);
+    background: var(--color-gray-00);
     display: flex;
     flex-direction: column;
     left: 0;
@@ -109,7 +109,7 @@
     height: calc(var(--popup--height) - 2rem);
     display: flex;
     flex-direction: column;
-    background: var(--background-color);
+    background: var(--color-gray-00);
     margin-top: 2rem;
     transition: bottom var(--dropdown-animation);
     border-top-right-radius: 1rem;
@@ -188,7 +188,7 @@
     bottom: calc(-1 * var(--popup--height));
     display: flex;
     flex-direction: column;
-    background: var(--background-color);
+    background: var(--color-gray-00);
     margin-top: 2rem;
     transition: bottom var(--dropdown-animation);
     border-top-right-radius: 1rem;

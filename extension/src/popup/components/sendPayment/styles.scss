@@ -181,7 +181,7 @@
     padding: 0;
 
     li::before {
-      content: none;
+      content: none !important;
     }
 
     button {

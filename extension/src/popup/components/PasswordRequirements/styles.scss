@@ -2,15 +2,15 @@
   padding: 1.25rem 0 2.5rem;
 
   &__list {
-    color: rgba(255, 255, 255, 0.6);
-    list-style-type: disc;
+    color: var(--color-gray-60) !important;
+    list-style-type: disc !important;
     list-style-position: inside;
     font-size: 1rem;
     padding: 0;
     margin: 0;
 
-    li::before {
-      content: none;
+    ::before {
+      content: none !important;
     }
   }
 }

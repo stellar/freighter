@@ -19,17 +19,13 @@
   --back--button-dimension: 1rem;
   --back--button-z-index: 2;
 
-  --background-color: var(--color-gray-00);
-  --background-color--overlay: var(--color-gray-10);
-  --secondary-text: var(--color-gray-70);
-
   --dropdown-animation: 0.3s ease-out;
 
   --color-shadow-rgb: 0, 0, 0;
 }
 
 body {
-  background: var(--background-color) !important;
+  color: var(--color-gray-80);
   overscroll-behavior: none;
   margin: 0;
   padding: 0;
@@ -54,10 +50,6 @@ a {
     padding-left: 0;
   }
 
-  li::before {
-    content: none;
-  }
-
   h1,
   h2,
   h3,
@@ -71,6 +63,10 @@ a {
 
 .simplebar-content {
   height: 100%;
+}
+
+.simplebar-scrollbar::before {
+  background: var(--color-gray-40);
 }
 
 // TODO: Update in SDS

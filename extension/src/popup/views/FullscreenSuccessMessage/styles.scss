@@ -21,7 +21,7 @@
   }
 
   li::before {
-    content: none;
+    content: none !important;
   }
 }
 
@@ -53,6 +53,10 @@
 
     &__list {
       margin-top: -0.25rem;
+
+      ::before {
+        content: none !important;
+      }
     }
   }
 
