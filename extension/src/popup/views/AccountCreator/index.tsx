@@ -1,12 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Input, Checkbox, Link, Button } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 import { useTranslation } from "react-i18next";
 
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
+import { showBackupPhrase } from "@shared/api/internal";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
@@ -29,6 +28,8 @@ import {
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
+import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
+
 import "./styles.scss";
 
 export const AccountCreator = () => {
@@ -36,6 +37,7 @@ export const AccountCreator = () => {
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
   const { t } = useTranslation();
+  const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   interface FormValues {
     password: string;
@@ -51,6 +53,9 @@ export const AccountCreator = () => {
 
   const handleSubmit = async (values: FormValues) => {
     await dispatch(createAccount(values.password));
+    const res = await showBackupPhrase(values.password);
+
+    setMnemonicPhrase(res.mnemonicPhrase);
   };
 
   const AccountCreatorSchema = YupObject().shape({
@@ -59,13 +64,9 @@ export const AccountCreator = () => {
     termsOfUse: termsofUseValidator,
   });
 
-  useEffect(() => {
-    if (publicKey) {
-      navigateTo(ROUTES.mnemonicPhrase);
-    }
-  }, [publicKey]);
-
-  return (
+  return mnemonicPhrase && publicKey ? (
+    <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
+  ) : (
     <>
       <FullscreenStyle />
       <Header />

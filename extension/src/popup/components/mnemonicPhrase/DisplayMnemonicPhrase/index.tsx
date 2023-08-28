@@ -2,9 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
-
 import {
   OnboardingScreen,
   OnboardingHalfScreen,
@@ -17,8 +14,10 @@ import "./styles.scss";
 
 export const DisplayMnemonicPhrase = ({
   mnemonicPhrase,
+  setIsConfirmed,
 }: {
   mnemonicPhrase: string;
+  setIsConfirmed: (confirmed: boolean) => void;
 }) => {
   const { t } = useTranslation();
 
@@ -62,7 +61,7 @@ export const DisplayMnemonicPhrase = ({
             isFullWidth
             variant="primary"
             onClick={() => {
-              navigateTo(ROUTES.mnemonicPhraseConfirm);
+              setIsConfirmed(true);
             }}
           >
             {t("Next")}
