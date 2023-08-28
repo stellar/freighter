@@ -11,7 +11,7 @@ import { getDecimals, getName, getSymbol } from "@shared/helpers/soroban/token";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
-import { SorobanContext } from "popup/SorobanContext";
+import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
@@ -237,6 +237,10 @@ export const HistoryItem = ({
             // 2. If not SAC or unknown, look up ledger entry directly.
 
             try {
+              if (!hasSorobanClient(sorobanClient)) {
+                throw new Error("Soroban RPC not supported for this network");
+              }
+
               const tokenDecimals = await getDecimals(
                 attrs.contractId,
                 sorobanClient.server,

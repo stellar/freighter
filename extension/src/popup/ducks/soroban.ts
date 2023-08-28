@@ -8,7 +8,10 @@ import {
   getTokenIds as internalGetTokenIds,
 } from "@shared/api/internal";
 import { ErrorMessage, ActionStatus, TokenBalances } from "@shared/api/types";
-import { SorobanContextInterface } from "popup/SorobanContext";
+import {
+  SorobanContextInterface,
+  hasSorobanClient,
+} from "popup/SorobanContext";
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
@@ -32,6 +35,10 @@ export const getTokenBalances = createAsyncThunk<
       */
 
       try {
+        if (!hasSorobanClient(sorobanClient)) {
+          throw new Error("Soroban RPC is not supprted for this network");
+        }
+
         /* eslint-disable no-await-in-loop */
         const { balance, ...rest } = await internalGetSorobanTokenBalance(
           sorobanClient.server,
