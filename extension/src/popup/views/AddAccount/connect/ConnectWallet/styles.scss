@@ -34,7 +34,7 @@
   }
 
   li::before {
-    content: none;
+    content: none !important;
   }
 
   &__btn-continue {

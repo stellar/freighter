@@ -11,7 +11,7 @@
 
     li::before {
       counter-increment: item;
-      content: counter(item);
+      content: counter(item) !important;
     }
 
     &--popup-view {
@@ -25,7 +25,7 @@
 
     &::before {
       color: var(--color-gray-60);
-      content: none;
+      content: none !important;
     }
   }
 
