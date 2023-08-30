@@ -28,25 +28,24 @@ platform :mac do
   desc "Sync certificates"
   lane :sync_certificates do
     #read-only disables match from overriding the existing certificates.
-    match({readonly: false, type: "appstore"})
+    match({readonly: false, type: "appstore", additional_cert_types: "mac_installer_distribution"})
   end
   desc "Create ipa"
   lane :build do
     update_code_signing_settings(
-      use_automatic_signing: false,
+      use_automatic_signing: true,
+      code_sign_identity: "Apple Development",
       path: ENV.fetch("XCODE_PROJ_PATH")
     )
     sync_certificates
     gym(
       scheme: "Freighter",
       export_method: "app-store",
-      installer_cert_name: ENV.fetch("INSTALLER_CERT_NAME"),
-      export_options: {
-        provisioningProfiles: {
-          "org.stellar.freighter" => "match AppStore org.stellar.freighter macos"
-        }
-      },
       export_team_id: CredentialsManager::AppfileConfig.try_fetch_value(:team_id)
     )
+  end
+  desc "Upload to App Store"
+  lane :upload do
+    deliver
   end
 end
