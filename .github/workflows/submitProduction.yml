@@ -109,6 +109,23 @@ jobs:
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      - name: Set up ruby env
+       uses: ruby/setup-ruby@v1.138.0
+       with:
+         ruby-version: 2.6.10
+         bundler-cache: true
+      - name: Bundle extension for Safari
+        run: bundle exec fastlane build
+        env:
+          APPLE_APP_ID: ${{ secrets.ASC_KEY_ID }}
+          APPL_TEAM_ID: ${{ secrets.APPL_TEAM_ID }}
+          APPLE_USER_ID: ${{ secrets.APPLE_USER_ID }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          APPLE_B64_KEY: ${{ secrets.APPLE_B64_KEY }}
+          XCODE_PROJ_PATH: ${{ secrets.XCODE_PROJ_PATH }} # TODO: still need the step to use converter
+      - name: Upload archive to Apple Store
+        run: bundle exec fastlane upload
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
         env:
