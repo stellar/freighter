@@ -1,11 +1,5 @@
 name: Safari Deployment
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: New Version
-        default: "1.0.0"
-        required: true
+
 env:
   GYM_PROJECT: "./extension/freighter-xcode"
 jobs:
