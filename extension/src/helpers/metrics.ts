@@ -4,6 +4,7 @@ import { createAsyncThunk, createAction } from "@reduxjs/toolkit";
 
 import { store } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
+import { AMPLITUDE_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { AccountType } from "@shared/api/types";
 
@@ -17,13 +18,15 @@ const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
  * intended for metrics emission, nothing else.
  */
 export function metricsMiddleware<State>(): Middleware<{}, State> {
-  return ({ getState }) => (next) => (action: AnyAction) => {
-    const state = getState();
-    (handlersLookup[action.type] || []).forEach((handler) =>
-      handler(state, action),
-    );
-    return next(action);
-  };
+  return ({ getState }) =>
+    (next) =>
+    (action: AnyAction) => {
+      const state = getState();
+      (handlersLookup[action.type] || []).forEach((handler) =>
+        handler(state, action),
+      );
+      return next(action);
+    };
 }
 
 // I can't figure out how to get the properties off a thunk for the ActionType
@@ -86,7 +89,7 @@ let cache: event[] = [];
 const uploadMetrics = throttle(() => {
   const toUpload = cache;
   cache = [];
-  if (!process.env.AMPLITUDE_KEY) {
+  if (!AMPLITUDE_KEY) {
     // eslint-disable-next-line no-console
     console.log("Not uploading metrics", toUpload);
     return;
@@ -97,7 +100,7 @@ const uploadMetrics = throttle(() => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      api_key: process.env.AMPLITUDE_KEY,
+      api_key: AMPLITUDE_KEY,
       events: toUpload,
     }),
   });

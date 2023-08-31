@@ -6,6 +6,7 @@ import {
 } from "@reduxjs/toolkit";
 
 import {
+  saveAllowList as saveAllowListService,
   saveSettings as saveSettingsService,
   loadSettings as loadSettingsService,
   changeNetwork as changeNetworkService,
@@ -26,6 +27,7 @@ interface ErrorMessage {
 }
 
 const initialState: Settings = {
+  allowList: [],
   isDataSharingAllowed: false,
   networkDetails: {
     network: "",
@@ -44,6 +46,29 @@ const initialState: Settings = {
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
   loadSettingsService(),
 );
+
+export const saveAllowList = createAsyncThunk<
+  { allowList: string[] },
+  {
+    allowList: string[];
+  },
+  { rejectValue: ErrorMessage }
+>("settings/saveAllowList", async ({ allowList }, thunkApi) => {
+  let res = { allowList: initialState.allowList };
+
+  try {
+    res = await saveAllowListService({
+      allowList,
+    });
+  } catch (e) {
+    console.error(e);
+    return thunkApi.rejectWithValue({
+      errorMessage: e.message,
+    });
+  }
+
+  return res;
+});
 
 export const saveSettings = createAsyncThunk<
   Settings,
@@ -140,6 +165,24 @@ const settingsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(
+      saveAllowList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          allowList: string[];
+        }>,
+      ) => {
+        const { allowList } = action?.payload || {
+          networksList: initialState.allowList,
+        };
+
+        return {
+          ...state,
+          allowList,
+        };
+      },
+    );
+    builder.addCase(
       saveSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
         const {
@@ -170,6 +213,7 @@ const settingsSlice = createSlice({
       loadSettings.fulfilled,
       (state, action: PayloadAction<Settings>) => {
         const {
+          allowList,
           isDataSharingAllowed,
           networkDetails,
           networksList,
@@ -183,6 +227,7 @@ const settingsSlice = createSlice({
 
         return {
           ...state,
+          allowList,
           isDataSharingAllowed,
           networkDetails,
           networksList,

@@ -34,7 +34,11 @@ export const truncatedFedAddress = (addr: string) => {
 export const truncatedPoolId = (poolId: string) => truncateString(poolId);
 
 export const getTransactionInfo = (search: string) => {
-  const transactionInfo = parsedSearchParam(search);
+  const searchParams = parsedSearchParam(search);
+
+  if ("blob" in searchParams) {
+    return searchParams;
+  }
 
   const {
     accountToSign,
@@ -44,7 +48,7 @@ export const getTransactionInfo = (search: string) => {
     isDomainListedAllowed,
     flaggedKeys,
     tab: { title = "" },
-  } = transactionInfo;
+  } = searchParams;
   const hostname = getUrlHostname(url);
   const isHttpsDomain = url.startsWith("https");
   const { _operations = [] } = transaction;

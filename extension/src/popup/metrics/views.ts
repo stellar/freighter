@@ -32,6 +32,7 @@ const routeToEventName = {
   [ROUTES.settings]: METRIC_NAMES.viewSettings,
   [ROUTES.preferences]: METRIC_NAMES.viewPreferences,
   [ROUTES.security]: METRIC_NAMES.viewSecurity,
+  [ROUTES.manageConnectedApps]: METRIC_NAMES.viewManageConnectedApps,
   [ROUTES.about]: METRIC_NAMES.viewAbout,
   [ROUTES.viewPublicKey]: METRIC_NAMES.viewPublicKey,
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
@@ -84,15 +85,19 @@ registerHandler<AppState>(navigate, (_, a) => {
     emitMetric(eventName, METRIC_OPTION_DOMAIN);
   } else if (pathname === ROUTES.signTransaction) {
     const { url } = parsedSearchParam(search);
-    const { operations, operationTypes } = getTransactionInfo(search);
-    const METRIC_OPTIONS = {
-      domain: getUrlDomain(url),
-      subdomain: getUrlHostname(url),
-      number_of_operations: operations.length,
-      operationTypes,
-    };
+    const info = getTransactionInfo(search);
 
-    emitMetric(eventName, METRIC_OPTIONS);
+    if (!("blob" in info)) {
+      const { operations, operationTypes } = info;
+      const METRIC_OPTIONS = {
+        domain: getUrlDomain(url),
+        subdomain: getUrlHostname(url),
+        number_of_operations: operations.length,
+        operationTypes,
+      };
+
+      emitMetric(eventName, METRIC_OPTIONS);
+    }
   } else {
     emitMetric(eventName);
   }

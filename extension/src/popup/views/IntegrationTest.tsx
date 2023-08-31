@@ -28,6 +28,7 @@ import {
   addRecentAddress,
   loadRecentAddresses,
   signOut,
+  saveAllowList,
   saveSettings,
   loadSettings,
   showBackupPhrase,
@@ -68,7 +69,7 @@ const testCustomNetwork = {
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: StellarSdk.Networks.TESTNET,
 };
-const testBalances = ({
+const testBalances = {
   native: {
     token: { type: "native", code: "XLM" },
   },
@@ -82,7 +83,7 @@ const testBalances = ({
       },
     },
   },
-} as unknown) as Balances;
+} as unknown as Balances;
 
 export const IntegrationTest = () => {
   const [isDone, setIsDone] = useState(false);
@@ -277,6 +278,13 @@ export const IntegrationTest = () => {
       runAsserts("signOut", () => {
         assertString(res.publicKey, true);
         assertString(res.applicationState);
+      });
+
+      res = await saveAllowList({
+        allowList: ["foo", "bar"],
+      });
+      runAsserts("saveAllowList", () => {
+        assertEq(res.allowList, ["foo", "bar"]);
       });
 
       res = await saveSettings({

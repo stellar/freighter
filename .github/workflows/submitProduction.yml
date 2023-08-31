@@ -53,8 +53,8 @@ jobs:
       - name: Build extension
         uses: actions/setup-node@v1
         with:
-          node-version: "16.14"
-      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
+          node-version: "18"
+      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
       - name: Zip extension build
@@ -109,6 +109,14 @@ jobs:
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      # - name: Submit extension to Edge
+      #   uses: wdzeng/edge-addon@v1
+      #   with:
+      #     product-id: ${{ secrets.EDGE_PRODUCT_ID }}
+      #     zip-path: ${{ secrets.EDGE_ZIP_PATH }}
+      #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
+      #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+      #     access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
         env:

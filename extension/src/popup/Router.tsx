@@ -36,6 +36,7 @@ import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
+import { ManageConnectedApps } from "popup/views/ManageConnectedApps";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { ConnectWallet } from "popup/views/AddAccount/connect/ConnectWallet";
 import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
@@ -282,7 +283,7 @@ export const Router = () => {
           <GrantAccess />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
-          <MnemonicPhrase />
+          <MnemonicPhrase mnemonicPhrase="" />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.settings} exact>
           <Settings />
@@ -328,6 +329,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.manageNetwork}>
           <ManageNetwork />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.manageConnectedApps}>
+          <ManageConnectedApps />
         </PublicKeyRoute>
 
         {DEV_SERVER && (

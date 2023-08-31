@@ -1,5 +1,15 @@
 import punycode from "punycode";
+import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
+
+export interface BlobToSign {
+  isDomainListedAllowed: boolean;
+  domain: string;
+  tab: browser.Tabs.Tab | undefined;
+  blob: string;
+  url: string;
+  accountToSign: string;
+}
 
 export const encodeObject = (obj: {}) =>
   btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
@@ -12,7 +22,9 @@ export const newTabHref = (path = "", queryParams = "") =>
 
 export const removeQueryParam = (url = "") => url.replace(/\?(.*)/, "");
 
-export const parsedSearchParam = (param: string): TransactionInfo => {
+export const parsedSearchParam = (
+  param: string,
+): TransactionInfo | BlobToSign => {
   const decodedSearchParam = decodeString(param.replace("?", ""));
   return decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
 };

@@ -13,7 +13,7 @@ import { BottomNav } from "popup/components/BottomNav";
 
 import { signOut } from "popup/ducks/accountServices";
 
-import { version } from "../../../../package.json";
+import packageJson from "../../../../package.json";
 
 import "./styles.scss";
 
@@ -33,7 +33,7 @@ export const Settings = () => {
         <div>
           <div className="Settings__header">
             <Heading5>Settings</Heading5>
-            <div className="Settings__version">{version}</div>
+            <div className="Settings__version">{packageJson.version}</div>
           </div>
           <ListNavLinkWrapper>
             <ListNavLink href={ROUTES.networkSettings}>

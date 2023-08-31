@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Redirect, Route, Switch } from "react-router-dom";
 import StellarSdk from "stellar-sdk";
@@ -7,6 +7,7 @@ import {
   transactionSubmissionSelector,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
@@ -15,34 +16,24 @@ import { AddToken } from "popup/components/manageAssets/AddToken";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
-import { getNetworkDetails } from "background/helpers/account";
-
 export const ManageAssets = () => {
-  const {
-    accountBalances,
-    destinationBalances,
-    assetSelect,
-    error,
-  } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, destinationBalances, assetSelect, error } =
+    useSelector(transactionSubmissionSelector);
+  const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [errorAsset, setErrorAsset] = useState("");
 
-  React.useEffect(() => {
-    const parseXdr = async () => {
-      const { networkPassphrase } = await getNetworkDetails();
-      const xdrEnvelope = error?.response?.extras.envelope_xdr;
-      if (xdrEnvelope) {
-        const parsedTx = StellarSdk.TransactionBuilder.fromXDR(
-          xdrEnvelope,
-          networkPassphrase,
-        );
-        const { code, issuer } = parsedTx._operations[0].line;
-        const asset = `${code}:${issuer}`;
-        setErrorAsset(asset);
-      }
-    };
-
-    parseXdr();
-  }, [error]);
+  useEffect(() => {
+    const xdrEnvelope = error?.response?.extras.envelope_xdr;
+    if (xdrEnvelope) {
+      const parsedTx = StellarSdk.TransactionBuilder.fromXDR(
+        xdrEnvelope,
+        networkPassphrase,
+      );
+      const { code, issuer } = parsedTx._operations[0].line;
+      const asset = `${code}:${issuer}`;
+      setErrorAsset(asset);
+    }
+  }, [error, networkPassphrase]);
 
   let balances;
   // path payment destAsset is the only time we use recipient trustlines

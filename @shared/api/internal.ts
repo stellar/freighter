@@ -70,15 +70,11 @@ export const addAccount = async (
   let hasPrivateKey = false;
 
   try {
-    ({
-      allAccounts,
-      error,
-      publicKey,
-      hasPrivateKey,
-    } = await sendMessageToBackground({
-      password,
-      type: SERVICE_TYPES.ADD_ACCOUNT,
-    }));
+    ({ allAccounts, error, publicKey, hasPrivateKey } =
+      await sendMessageToBackground({
+        password,
+        type: SERVICE_TYPES.ADD_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -104,16 +100,12 @@ export const importAccount = async (
   let hasPrivateKey = false;
 
   try {
-    ({
-      allAccounts,
-      publicKey,
-      error,
-      hasPrivateKey,
-    } = await sendMessageToBackground({
-      password,
-      privateKey,
-      type: SERVICE_TYPES.IMPORT_ACCOUNT,
-    }));
+    ({ allAccounts, publicKey, error, hasPrivateKey } =
+      await sendMessageToBackground({
+        password,
+        privateKey,
+        type: SERVICE_TYPES.IMPORT_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -238,16 +230,12 @@ export const recoverAccount = async (
   let error = "";
 
   try {
-    ({
-      allAccounts,
-      publicKey,
-      hasPrivateKey,
-      error,
-    } = await sendMessageToBackground({
-      password,
-      recoverMnemonic,
-      type: SERVICE_TYPES.RECOVER_ACCOUNT,
-    }));
+    ({ allAccounts, publicKey, hasPrivateKey, error } =
+      await sendMessageToBackground({
+        password,
+        recoverMnemonic,
+        type: SERVICE_TYPES.RECOVER_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -505,6 +493,16 @@ export const signTransaction = async (): Promise<void> => {
   }
 };
 
+export const signBlob = async (): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      type: SERVICE_TYPES.SIGN_BLOB,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signFreighterTransaction = async ({
   transactionXDR,
   network,
@@ -660,12 +658,33 @@ export const signOut = async (): Promise<{
 
 export const showBackupPhrase = async (
   password: string,
-): Promise<{ error: string }> => {
-  let response = { error: "" };
+): Promise<{ mnemonicPhrase: string; error: string }> => {
+  let response = { mnemonicPhrase: "", error: "" };
   try {
     response = await sendMessageToBackground({
       password,
       type: SERVICE_TYPES.SHOW_BACKUP_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const saveAllowList = async ({
+  allowList,
+}: {
+  allowList: string[];
+}): Promise<{ allowList: string[] }> => {
+  let response = {
+    allowList: [""],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      allowList,
+      type: SERVICE_TYPES.SAVE_ALLOWLIST,
     });
   } catch (e) {
     console.error(e);
@@ -688,6 +707,7 @@ export const saveSettings = async ({
   isExperimentalModeEnabled: boolean;
 }): Promise<Settings> => {
   let response = {
+    allowList: [""],
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
