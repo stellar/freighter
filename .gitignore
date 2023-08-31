@@ -26,6 +26,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # fastlane output
-Freighter.app/Contents
+Freighter.app/
 Freighter.pkg
 Freighter.app.dSYM.zip

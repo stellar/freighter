@@ -6,6 +6,8 @@ on:
         description: New Version
         default: "1.0.0"
         required: true
+env:
+  GYM_PROJECT: "./extension/freighter-xcode"
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
@@ -57,7 +59,7 @@ jobs:
           node-version: "16.14"
       - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
       - name: Convert extension to Xcode project
-        run: xcrun safari-web-extension-converter ./extension/build --project-location ./extension/freighter-xcode --macos-only
+        run: xcrun safari-web-extension-converter ./extension/build --project-location $GYM_PROJECT --macos-only
       - name: Set up ruby env
        uses: ruby/setup-ruby@v1.138.0
        with:
@@ -66,12 +68,13 @@ jobs:
       - name: Bundle extension for Safari
         run: bundle exec fastlane build
         env:
+          GYM_PROJECT: $GYM_PROJECT
           APPLE_APP_ID: ${{ secrets.ASC_KEY_ID }}
           APPL_TEAM_ID: ${{ secrets.APPL_TEAM_ID }}
           APPLE_USER_ID: ${{ secrets.APPLE_USER_ID }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
           APPLE_B64_KEY: ${{ secrets.APPLE_B64_KEY }}
-          XCODE_PROJ_PATH: ${{ secrets.XCODE_PROJ_PATH }} # TODO: still need the step to use converter
+          XCODE_PROJ_PATH: ${{ secrets.XCODE_PROJ_PATH }} # TODO: still need the step to use converter & figure out how not to pass xcode path in build
       - name: Upload archive to Apple Store
         run: bundle exec fastlane upload
