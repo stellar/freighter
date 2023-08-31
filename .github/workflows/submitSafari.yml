@@ -1,4 +1,4 @@
-name: Production Deployment
+name: Safari Deployment
 on:
   workflow_dispatch:
     inputs:
@@ -56,8 +56,8 @@ jobs:
       - name: Build extension
         uses: actions/setup-node@v1
         with:
-          node-version: "16.14"
-      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --define 'process.env.AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"' --define 'process.env.SENTRY_KEY="${{ secrets.SENTRY_KEY }}"'
+          node-version: "18"
+      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Convert extension to Xcode project
         run: xcrun safari-web-extension-converter ./extension/build --project-location $GYM_PROJECT --macos-only
       - name: Set up ruby env
@@ -69,12 +69,13 @@ jobs:
         run: bundle exec fastlane build
         env:
           GYM_PROJECT: $GYM_PROJECT
-          APPLE_APP_ID: ${{ secrets.ASC_KEY_ID }}
-          APPL_TEAM_ID: ${{ secrets.APPL_TEAM_ID }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPLE_APP_ID: ${{ secrets.APPLE_APP_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_USER_ID: ${{ secrets.APPLE_USER_ID }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
           APPLE_B64_KEY: ${{ secrets.APPLE_B64_KEY }}
-          XCODE_PROJ_PATH: ${{ secrets.XCODE_PROJ_PATH }}
+          XCODE_PROJ_PATH: $GYM_PROJECT
       - name: Upload archive to Apple Store
         run: bundle exec fastlane upload
