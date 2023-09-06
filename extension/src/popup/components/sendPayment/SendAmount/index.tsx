@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
-import { Icon, Loader } from "@stellar/design-system";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import StellarSdk from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
@@ -12,8 +12,6 @@ import {
   AssetSelect,
   PathPayAssetSelect,
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
-import { InfoBlock } from "popup/basics/InfoBlock";
-import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
@@ -348,29 +346,34 @@ export const SendAmount = ({
     }
     if (formik.errors.amount === AMOUNT_ERROR.TOO_HIGH) {
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          {t("Entered amount is higher than your balance")}
-        </InfoBlock>
+        <Notification
+          variant="error"
+          title={t("Entered amount is higher than your balance")}
+        />
       );
     }
     if (formik.errors.amount === AMOUNT_ERROR.DEC_MAX) {
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          7 {t("digits after the decimal allowed")}
-        </InfoBlock>
+        <Notification
+          variant="error"
+          title={`7 ${t("digits after the decimal allowed")}`}
+        />
       );
     }
     if (formik.errors.amount === AMOUNT_ERROR.SEND_MAX) {
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmountPreserveCursor(
+        <Notification
+          variant="error"
+          title={`${t(
+            "Entered amount is higher than the maximum send amount",
+          )} (
+          ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
             getAssetDecimals(asset, tokenBalances, isToken),
           )}
-          )
-        </InfoBlock>
+          )`}
+        />
       );
     }
     return null;
@@ -403,7 +406,7 @@ export const SendAmount = ({
                 onClick={() => navigateTo(ROUTES.sendPaymentType)}
                 className="SendAmount__icon-slider"
               >
-                <Icon.Sliders />
+                <Icon.MoreHoriz />
               </button>
             )
           }
@@ -522,6 +525,7 @@ export const SendAmount = ({
             </SimpleBarWrapper>
             <div className="SendAmount__btn-continue">
               <Button
+                size="md"
                 disabled={
                   loadingRate ||
                   formik.values.amount === "0" ||
@@ -530,8 +534,8 @@ export const SendAmount = ({
                   (showSourceAndDestAsset && !destinationAmount)
                 }
                 data-testid="send-amount-btn-continue"
-                fullWidth
-                variant={Button.variant.tertiary}
+                isFullWidth
+                variant="secondary"
                 type="submit"
               >
                 {t("Continue")}

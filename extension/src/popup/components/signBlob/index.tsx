@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Heading4 } from "@stellar/design-system";
+import { Card, Heading } from "@stellar/design-system";
 
 import "./index.scss";
 
@@ -8,8 +8,10 @@ interface BlobProps {
 }
 
 export const Blob = (props: BlobProps) => (
-  <Card variant={Card.variant.highlight}>
-    <Heading4>Signing data:</Heading4>
+  <Card variant="secondary">
+    <Heading size="md" as="h4">
+      Signing data:
+    </Heading>
     <div className="Blob">{props.blob}</div>
   </Card>
 );

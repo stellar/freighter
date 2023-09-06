@@ -95,7 +95,9 @@ export const HistoryItem = ({
   let paymentDifference = "";
   let rowText = "";
   let dateText = date;
-  let IconComponent = <Icon.Shuffle className="HistoryItem__icon--default" />;
+  let IconComponent = (
+    <Icon.RefreshVert className="HistoryItem__icon--default" />
+  );
   let PaymentComponent = null as React.ReactElement | null;
   // TODO should be combined with isPayment
   const isSorobanTx = typeI === 24;

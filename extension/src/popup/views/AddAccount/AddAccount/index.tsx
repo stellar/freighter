@@ -1,12 +1,11 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Input } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
@@ -65,6 +64,7 @@ export const AddAccount = () => {
                 <Field name="password">
                   {({ field }: FieldProps) => (
                     <Input
+                      fieldSize="md"
                       autoComplete="off"
                       id="password-input"
                       placeholder={t("Enter Password")}
@@ -81,7 +81,9 @@ export const AddAccount = () => {
                 </Field>
                 <SubmitButtonWrapper>
                   <Button
-                    fullWidth
+                    size="md"
+                    isFullWidth
+                    variant="primary"
                     disabled={!(dirty && isValid)}
                     isLoading={isSubmitting}
                     type="submit"

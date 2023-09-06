@@ -1,8 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-
-import { InfoBlock } from "popup/basics/InfoBlock";
-import { Button } from "popup/basics/buttons/Button";
+import { Button, Icon, Notification } from "@stellar/design-system";
 
 import {
   OnboardingScreen,
@@ -49,16 +47,19 @@ export const DisplayMnemonicPhrase = ({
           </div>
         </OnboardingHalfScreen>
         <OnboardingHalfScreen className="DisplayMnemonicPhrase__half-screen">
-          <InfoBlock variant={InfoBlock.variant.warning}>
-            <div>
-              <strong>{t("IMPORTANT WARNING")}</strong>
-              <p>{t("Never disclose your recovery phrase")}!</p>
-            </div>
-          </InfoBlock>
+          <Notification
+            variant="warning"
+            title={t("IMPORTANT WARNING")}
+            icon={<Icon.Warning />}
+          >
+            {t("Never disclose your recovery phrase")}!
+          </Notification>
           <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} />
           <Button
+            size="md"
             data-testid="display-mnemonic-phrase-next-btn"
-            fullWidth
+            isFullWidth
+            variant="primary"
             onClick={() => {
               setIsConfirmed(true);
             }}

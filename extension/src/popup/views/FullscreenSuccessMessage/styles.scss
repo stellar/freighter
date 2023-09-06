@@ -1,6 +1,6 @@
 .InfoBlock {
   &__header {
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     display: inline-block;
     font-weight: var(--font-weight-bold);
     font-size: 1.1rem;
@@ -21,7 +21,7 @@
   }
 
   li::before {
-    content: none;
+    content: none !important;
   }
 }
 
@@ -44,7 +44,7 @@
     flex-direction: column;
     justify-content: start;
     padding: 0 0 2rem 0;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     max-width: 24rem;
   }
 
@@ -53,26 +53,9 @@
 
     &__list {
       margin-top: -0.25rem;
-    }
 
-    .BasicInfoBlock .InfoBlock--warning {
-      border: 1px solid rgba(255, 153, 0, 1);
-      padding: 1rem;
-
-      .InfoBlock {
-        &__icon {
-          display: none;
-        }
-
-        &__header {
-          font-size: 1rem;
-          font-weight: var(--font-weight-medium);
-          line-height: 1.375rem;
-          margin-bottom: -0.25rem;
-          padding: 0;
-          text-transform: uppercase;
-          white-space: nowrap;
-        }
+      ::before {
+        content: none !important;
       }
     }
   }
