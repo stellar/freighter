@@ -52,6 +52,7 @@ export interface Response {
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
   networkDetails: NetworkDetails;
+  sorobanRpcUrl: string;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
   accountName: string;

@@ -5,6 +5,7 @@ import * as SorobanClient from "soroban-client";
 import {
   SOROBAN_RPC_URLS,
   FUTURENET_NETWORK_DETAILS,
+  NETWORKS,
 } from "@shared/constants/stellar";
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
@@ -31,12 +32,17 @@ export const SorobanProvider = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const source = new SorobanClient.Account(pubKey, "0");
 
+  if (!networkDetails.sorobanRpcUrl && networkDetails.network !== NETWORKS.FUTURENET) {
+    throw new Error("soroban rpc not supported")
+  }
+
+  // TODO: migrate Futurenet network details in storage to clean this up
   const serverUrl =
     networkDetails.networkPassphrase ===
       "Test SDF Future Network ; October 2022" &&
     networkDetails.networkUrl === FUTURENET_NETWORK_DETAILS.networkUrl
       ? SOROBAN_RPC_URLS.FUTURENET
-      : networkDetails.networkUrl;
+      : networkDetails.sorobanRpcUrl!;
 
   const server = new SorobanClient.Server(serverUrl, {
     allowHttp: networkDetails.networkUrl.startsWith("http://"),

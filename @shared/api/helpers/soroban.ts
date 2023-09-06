@@ -1,7 +1,5 @@
 import { xdr, Address, ScInt, scValToBigInt } from "soroban-client";
 
-/* eslint-disable */
-
 export const accountIdentifier = (account: string) =>
   new Address(account).toScVal();
 
@@ -27,5 +25,3 @@ export const decodeU32 = (b64: string) =>
 
 export const numberToI128 = (value: number): xdr.ScVal =>
   new ScInt(value).toI128();
-
-/* eslint-enable */

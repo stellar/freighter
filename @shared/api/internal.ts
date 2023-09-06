@@ -13,8 +13,7 @@ import {
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
-  NetworkDetails,
-  SOROBAN_RPC_URLS,
+  NetworkDetails
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -606,7 +605,11 @@ export const submitFreighterSorobanTransaction = async ({
     console.error(e);
   }
 
-  const server = new SorobanClient.Server(SOROBAN_RPC_URLS.FUTURENET, {
+  if (!networkDetails.sorobanRpcUrl) {
+    throw new Error("soroban rpc not supported")
+  }
+
+  const server = new SorobanClient.Server(networkDetails.sorobanRpcUrl, {
     allowHttp: true,
   });
 
