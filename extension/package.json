@@ -71,7 +71,7 @@
     "redux": "^4.0.5",
     "sass": "^1.22.10",
     "sass-loader": "8.0.0",
-    "ses": "^0.18.5",
+    "ses": "^0.18.7",
     "simplebar-react": "^2.3.6",
     "soroban-client": "^0.9.1",
     "stellar-hd-wallet": "^0.0.10",
