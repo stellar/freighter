@@ -13,7 +13,6 @@ import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { OnboardingHeader } from "popup/components/Onboarding";
 import { Button } from "popup/basics/buttons/Button";
-import SuccessIllo from "popup/assets/illo-success-screen.svg";
 import ExtensionIllo from "popup/assets/illo-extension.png";
 
 import "./styles.scss";
@@ -23,25 +22,25 @@ import "./styles.scss";
 const isChrome = () =>
   navigator.userAgent.toLowerCase().indexOf("chrome") > -1 && !!window.chrome;
 
+// TODO: update styles with SDS v2
+
 const AvoidScamsWarningBlock = () => {
   const { t } = useTranslation();
 
   return (
     <div className="FullscreenSuccessMessage__infoBlock">
-      <InfoBlock variant={InfoBlock.variant.warning}>
+      <InfoBlock variant={InfoBlock.variant.info}>
         <div className="InfoBlock__content">
-          <div className="InfoBlock__header">
-            {t("Avoid scams and keep your account safe")}
-          </div>
+          <div className="InfoBlock__header">{t("Keep your account safe")}</div>
           <ul className="FullscreenSuccessMessage__infoBlock__list">
             <li>
               {t(
-                "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
+                "Freighter will never ask for your recovery phrase unless you're actively importing your account using the browser extension - never on an external website",
               )}
             </li>
             <li>
               {t(
-                "Always check the domain of websites you’re using Freighter with",
+                "Always check the domain of websites you're using Freighter with",
               )}
             </li>
             <li>
@@ -96,8 +95,11 @@ const RecoverAccountSuccessMessage = () => {
       <div className="FullscreenSuccessMessage__copy">
         <p>
           {t(
-            "You successfully imported your account. Keep your recovery phrase safe, it’s your responsibility",
-          )}
+            "Awesome, you passed the test! Pin the extension in your browser to access it easily.",
+          )}{" "}
+          <strong>
+            {t("Keep your recovery phrase safe, it’s your responsibility.")}
+          </strong>
         </p>
         {!isChrome() && (
           <p>
@@ -130,7 +132,7 @@ const RecoverAccountSuccessMessage = () => {
             }
           }}
         >
-          {isChrome() ? t("CONTINUE") : t("ALL DONE")}
+          {t("I have my recovery phrase safe")}
         </Button>
       </SubmitButtonWrapper>
     </>
@@ -149,15 +151,8 @@ export const FullscreenSuccessMessage = () => {
       <Header />
       <FullscreenStyle />
       <div className="FullscreenSuccessMessage__wrapper">
-        <div className="FullscreenSuccessMessage__illo-container">
-          <img
-            className="FullscreenSuccessMessage__success-image"
-            src={SuccessIllo}
-            alt="Success"
-          />
-        </div>
         <OnboardingHeader className="FullscreenSuccessMessage__header">
-          {t("Woo, you’re in!")}
+          {t("Wallet created successfully!")}
         </OnboardingHeader>
         <div className="FullscreenSuccessMessage__content-wrapper">
           {IS_MNEMONIC_PHRASE_STATE ? (

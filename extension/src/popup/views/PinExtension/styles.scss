@@ -6,7 +6,7 @@
   align-items: center;
 
   &__wrapper {
-    max-width: 24rem;
+    max-width: 31rem;
   }
 
   &__title {
@@ -14,11 +14,12 @@
     line-height: 2.25rem;
     text-align: center;
     color: var(--pal-text-primary);
+    margin-bottom: 1rem;
   }
 
   &__caption {
     line-height: 1.5rem;
-    margin: 2rem 0;
+    margin-bottom: 2rem;
     color: var(--pal-text-tertiary);
   }
 
