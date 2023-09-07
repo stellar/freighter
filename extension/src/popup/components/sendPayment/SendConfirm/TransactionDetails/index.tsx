@@ -216,8 +216,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const { t } = useTranslation();
 
-  const { server: sorobanServer } = useContext(SorobanContext);
-
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
@@ -266,6 +264,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   }, [dispatch]);
 
   const handleXferTransaction = async () => {
+
+    if (!sorobanClient.server) {
+      throw new Error("soroban rpc not supported")
+    }
+
     try {
       const assetAddress = asset.split(":")[1];
       const assetBalance = tokenBalances.find(
@@ -281,7 +284,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         Number(assetBalance.decimals),
       );
 
-      const sourceAccount = await sorobanServer.getAccount(publicKey);
+      const sourceAccount = await sorobanClient.server.getAccount(publicKey);
       const contract = new SorobanClient.Contract(assetAddress);
       const contractOp = contract.call(
         "transfer",
@@ -306,7 +309,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         transaction.addMemo(SorobanClient.Memo.text(memo));
       }
 
-      const preparedTransaction = await sorobanServer.prepareTransaction(
+      const preparedTransaction = await sorobanClient.server.prepareTransaction(
         transaction.build(),
         networkDetails.networkPassphrase,
       );

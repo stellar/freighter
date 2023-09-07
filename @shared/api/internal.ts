@@ -13,7 +13,9 @@ import {
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
-  NetworkDetails
+  NetworkDetails,
+  NETWORKS,
+  SOROBAN_RPC_URLS
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -605,11 +607,17 @@ export const submitFreighterSorobanTransaction = async ({
     console.error(e);
   }
 
-  if (!networkDetails.sorobanRpcUrl) {
+  if (!networkDetails.sorobanRpcUrl && networkDetails.network !== NETWORKS.FUTURENET) {
     throw new Error("soroban rpc not supported")
   }
 
-  const server = new SorobanClient.Server(networkDetails.sorobanRpcUrl, {
+  // TODO: after enough time has passed to assume most clients have ran
+  // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
+  const serverUrl = !networkDetails.sorobanRpcUrl
+    ? SOROBAN_RPC_URLS[NETWORKS.FUTURENET]
+    : networkDetails.sorobanRpcUrl
+
+  const server = new SorobanClient.Server(serverUrl, {
     allowHttp: true,
   });
 

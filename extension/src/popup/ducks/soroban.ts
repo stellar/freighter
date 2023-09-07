@@ -15,6 +15,11 @@ export const getTokenBalances = createAsyncThunk<
   { sorobanClient: SorobanContextInterface },
   { rejectValue: ErrorMessage }
 >("getTokenBalances", async ({ sorobanClient }, thunkApi) => {
+
+  if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
+    throw new Error("soroban rpc not supported")
+  }
+
   try {
     const { publicKey } = await internalLoadAccount();
     const tokenIdList = await internalGetTokenIds();

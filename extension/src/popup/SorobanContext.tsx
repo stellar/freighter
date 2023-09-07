@@ -4,15 +4,14 @@ import * as SorobanClient from "soroban-client";
 
 import {
   SOROBAN_RPC_URLS,
-  FUTURENET_NETWORK_DETAILS,
-  NETWORKS,
+  NETWORKS
 } from "@shared/constants/stellar";
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
 export interface SorobanContextInterface {
-  server: SorobanClient.Server;
-  newTxBuilder: () => SorobanClient.TransactionBuilder;
+  server?: SorobanClient.Server;
+  newTxBuilder?: () => SorobanClient.TransactionBuilder;
 }
 
 export const SorobanContext = React.createContext(
@@ -32,28 +31,26 @@ export const SorobanProvider = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const source = new SorobanClient.Account(pubKey, "0");
 
-  if (!networkDetails.sorobanRpcUrl && networkDetails.network !== NETWORKS.FUTURENET) {
-    throw new Error("soroban rpc not supported")
-  }
+  let server: SorobanContextInterface['server']
+  let newTxBuilder: SorobanContextInterface['newTxBuilder']
+  if (!networkDetails.sorobanRpcUrl && networkDetails.network === NETWORKS.FUTURENET) {
+    // TODO: after enough time has passed to assume most clients have ran
+    // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
+    const serverUrl = !networkDetails.sorobanRpcUrl
+      ? SOROBAN_RPC_URLS[NETWORKS.FUTURENET]
+      : networkDetails.sorobanRpcUrl
 
-  // TODO: migrate Futurenet network details in storage to clean this up
-  const serverUrl =
-    networkDetails.networkPassphrase ===
-      "Test SDF Future Network ; October 2022" &&
-    networkDetails.networkUrl === FUTURENET_NETWORK_DETAILS.networkUrl
-      ? SOROBAN_RPC_URLS.FUTURENET
-      : networkDetails.sorobanRpcUrl!;
-
-  const server = new SorobanClient.Server(serverUrl, {
-    allowHttp: networkDetails.networkUrl.startsWith("http://"),
-  });
-
-  const newTxBuilder = () =>
-    new SorobanClient.TransactionBuilder(source, {
-      fee,
-      networkPassphrase: networkDetails.networkPassphrase,
+    server = new SorobanClient.Server(serverUrl, {
+      allowHttp: networkDetails.networkUrl.startsWith("http://"),
     });
 
+    newTxBuilder = () =>
+      new SorobanClient.TransactionBuilder(source, {
+        fee,
+        networkPassphrase: networkDetails.networkPassphrase,
+      });
+  }
+    
   return (
     <SorobanContext.Provider value={{ server, newTxBuilder }}>
       {children}

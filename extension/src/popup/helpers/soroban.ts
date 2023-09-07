@@ -111,7 +111,10 @@ export const getContractDecimals = async (
   contractId: string,
 ) => {
   const contract = new SorobanClient.Contract(contractId);
-  const server = sorobanClient.server;
+
+  if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
+    throw new Error("soroban rpc not supported")
+  }
 
   const tx = sorobanClient
     .newTxBuilder()
@@ -119,7 +122,7 @@ export const getContractDecimals = async (
     .setTimeout(SorobanClient.TimeoutInfinite)
     .build();
 
-  const { results } = await server.simulateTransaction(tx);
+  const { results } = await sorobanClient.server.simulateTransaction(tx);
 
   if (!results || results.length !== 1) {
     throw new Error("Invalid response from simulateTransaction");
