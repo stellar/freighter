@@ -41,7 +41,17 @@ export const SorobanProvider = ({
       : networkDetails.sorobanRpcUrl
 
     server = new SorobanClient.Server(serverUrl, {
-      allowHttp: networkDetails.networkUrl.startsWith("http://"),
+      allowHttp: serverUrl.startsWith("http://"),
+    });
+
+    newTxBuilder = () =>
+      new SorobanClient.TransactionBuilder(source, {
+        fee,
+        networkPassphrase: networkDetails.networkPassphrase,
+      });
+  } else if (networkDetails.sorobanRpcUrl) {
+    server = new SorobanClient.Server(networkDetails.sorobanRpcUrl, {
+      allowHttp: networkDetails.sorobanRpcUrl.startsWith("http://"),
     });
 
     newTxBuilder = () =>
