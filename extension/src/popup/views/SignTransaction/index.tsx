@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
-import { Card, Icon } from "@stellar/design-system";
+import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import * as SorobanSdk from "soroban-client";
 import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
 
@@ -25,8 +25,6 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { TransactionHeading } from "popup/basics/TransactionHeading";
 
 import {
@@ -254,7 +252,7 @@ export const SignTransaction = () => {
             <FirstTimeWarningMessage />
           ) : null}
           <div className="SignTransaction__info">
-            <Card variant={Card.variant.highlight}>
+            <Card variant="secondary">
               <PunycodedDomain domain={domain} isRow />
               <div className="SignTransaction__subject">
                 {t("is requesting approval to a")}{" "}
@@ -289,13 +287,17 @@ export const SignTransaction = () => {
             </Card>
             {accountNotFound && accountToSign ? (
               <div className="SignTransaction__account-not-found">
-                <InfoBlock variant={InfoBlock.variant.warning}>
+                <Notification
+                  variant="warning"
+                  icon={<Icon.Warning />}
+                  title={t("Account not available")}
+                >
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
                   {t(
-                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction.",
+                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
                   )}
-                </InfoBlock>
+                </Notification>
               </div>
             ) : null}
           </div>
@@ -324,15 +326,18 @@ export const SignTransaction = () => {
         </ModalWrapper>
         <ButtonsContainer>
           <Button
-            fullWidth
-            variant={Button.variant.tertiary}
+            isFullWidth
+            size="md"
+            variant="tertiary"
             onClick={() => rejectAndClose()}
           >
             {t("Reject")}
           </Button>
           <Button
             disabled={isSubmitDisabled}
-            fullWidth
+            variant="primary"
+            isFullWidth
+            size="md"
             isLoading={isConfirming}
             onClick={() => handleApprove()}
           >

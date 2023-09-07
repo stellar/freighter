@@ -17,7 +17,7 @@
     height: 2rem;
     font-size: 1rem;
     line-height: 1.5rem;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     font-weight: var(--font-weight-medium);
     width: 100%;
     display: flex;
@@ -70,7 +70,7 @@
   &__qr-code {
     height: 11.5rem;
     width: 11.5rem;
-    background: var(--pal-brand-primary-on);
+    background: var(--color-white);
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -88,7 +88,7 @@
   &__address-copy {
     font-size: 1rem;
     line-height: 1.5rem;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
   }
 
   &__copy-btn {

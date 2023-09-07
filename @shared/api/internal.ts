@@ -708,8 +708,8 @@ export const signOut = async (): Promise<{
 
 export const showBackupPhrase = async (
   password: string,
-): Promise<{ error: string }> => {
-  let response = { error: "" };
+): Promise<{ mnemonicPhrase: string; error: string }> => {
+  let response = { mnemonicPhrase: "", error: "" };
   try {
     response = await sendMessageToBackground({
       password,

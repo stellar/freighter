@@ -20,7 +20,7 @@ export const ModalInfo = ({
 }: ModalInfoProps) => (
   <>
     <div className="ModalInfo--card">
-      <Card variant={Card.variant.highlight}>
+      <Card variant="secondary">
         <PunycodedDomain domain={domain} domainTitle={domainTitle} />
         <div className="ModalInfo--subject">{subject}</div>
         {children}

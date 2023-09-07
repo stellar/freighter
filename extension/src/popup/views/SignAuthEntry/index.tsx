@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, Icon } from "@stellar/design-system";
+import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
@@ -10,8 +10,6 @@ import {
 } from "popup/basics/Modal";
 
 import { truncatedPublicKey } from "helpers/stellar";
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
@@ -133,7 +131,7 @@ export const SignAuthEntry = () => {
           ) : null}
           {!params.isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignAuthEntry__info">
-            <Card variant={Card.variant.highlight}>
+            <Card variant="secondary">
               <PunycodedDomain domain={params.url} isRow />
               <div className="SignAuthEntry__subject">
                 {t("is requesting approval to sign an authorization entry")}
@@ -166,13 +164,17 @@ export const SignAuthEntry = () => {
             </Card>
             {accountNotFound && accountToSign ? (
               <div className="SignAuthEntry__account-not-found">
-                <InfoBlock variant={InfoBlock.variant.warning}>
+                <Notification
+                  variant="warning"
+                  icon={<Icon.Warning />}
+                  title={t("Account not available")}
+                >
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
                   {t(
                     "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
                   )}
-                </InfoBlock>
+                </Notification>
               </div>
             ) : null}
           </div>
@@ -186,14 +188,17 @@ export const SignAuthEntry = () => {
         </ModalWrapper>
         <ButtonsContainer>
           <Button
-            fullWidth
-            variant={Button.variant.tertiary}
+            isFullWidth
+            size="md"
+            variant="tertiary"
             onClick={() => rejectAndClose()}
           >
             {t("Reject")}
           </Button>
           <Button
-            fullWidth
+            isFullWidth
+            size="md"
+            variant="primary"
             isLoading={isConfirming}
             onClick={() => handleApprove()}
           >

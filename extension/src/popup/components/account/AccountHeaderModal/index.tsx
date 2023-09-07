@@ -25,7 +25,7 @@ export const AccountHeaderModal = ({
 
   return (
     <div ref={dropdownRef} className="AccountHeaderModal">
-      {children}
+      <div className="AccountHeaderModal__content">{children}</div>
     </div>
   );
 };

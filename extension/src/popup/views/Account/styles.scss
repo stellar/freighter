@@ -45,14 +45,14 @@
   }
 
   &__account-name {
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     width: 100%;
     font-weight: var(--font-weight-medium);
   }
 
   &__account-num {
     align-items: center;
-    color: var(--secondary-text);
+    color: var(--color-gray-70);
     gap: 0.5rem;
     display: flex;
     width: 100%;

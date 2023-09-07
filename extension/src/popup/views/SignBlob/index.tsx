@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Card, Icon } from "@stellar/design-system";
+import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { useTranslation, Trans } from "react-i18next";
 import { signBlob, rejectBlob } from "popup/ducks/access";
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -140,7 +138,7 @@ export const SignBlob = () => {
           </WarningMessage>
           {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignBlob__info">
-            <Card variant={Card.variant.highlight}>
+            <Card variant="secondary">
               <PunycodedDomain domain={domain} isRow />
               <div className="SignBlob__subject">
                 {t("is requesting approval to sign a blob of data")}
@@ -173,13 +171,17 @@ export const SignBlob = () => {
             </Card>
             {accountNotFound && accountToSign ? (
               <div className="SignBlob__account-not-found">
-                <InfoBlock variant={InfoBlock.variant.warning}>
+                <Notification
+                  variant="warning"
+                  icon={<Icon.Warning />}
+                  title={t("Account not available")}
+                >
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
                   {t(
                     "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
                   )}
-                </InfoBlock>
+                </Notification>
               </div>
             ) : null}
           </div>
@@ -187,14 +189,17 @@ export const SignBlob = () => {
         </ModalWrapper>
         <ButtonsContainer>
           <Button
-            fullWidth
-            variant={Button.variant.tertiary}
+            size="md"
+            isFullWidth
+            variant="secondary"
             onClick={() => rejectAndClose()}
           >
             {t("Reject")}
           </Button>
           <Button
-            fullWidth
+            size="md"
+            isFullWidth
+            variant="primary"
             isLoading={isConfirming}
             onClick={() => handleApprove()}
           >

@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CopyText, Icon, NavButton } from "@stellar/design-system";
+import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { getAccountHistory } from "@shared/api/internal";
@@ -11,7 +11,6 @@ import {
 } from "@shared/api/types";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
-import { Button } from "popup/basics/buttons/Button";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -194,14 +193,10 @@ export const Account = () => {
               >
                 {currentAccountName}
               </div>
-              <CopyText
-                textToCopy={publicKey}
-                showTooltip
-                tooltipPosition={CopyText.tooltipPosition.RIGHT}
-              >
+              <CopyText textToCopy={publicKey} tooltipPlacement="right">
                 <div className="AccountView__account-num">
                   {truncatedPublicKey(publicKey)}
-                  <Icon.Copy />
+                  <Icon.ContentCopy />
                 </div>
               </CopyText>
             </div>
@@ -243,8 +238,9 @@ export const Account = () => {
           )}
           {isFunded ? (
             <Button
-              fullWidth
-              variant={Button.variant.tertiary}
+              size="md"
+              isFullWidth
+              variant="secondary"
               onClick={() => {
                 dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
                 navigateTo(ROUTES.manageAssets);

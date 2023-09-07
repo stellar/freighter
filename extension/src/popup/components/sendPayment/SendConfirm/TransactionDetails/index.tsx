@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 import StellarSdk, { Asset } from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
 import { Types } from "@stellar/wallet-sdk";
-import { Card, Loader, Icon } from "@stellar/design-system";
+import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
@@ -25,7 +25,6 @@ import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { transfer } from "@shared/helpers/soroban/token";
 
-import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -429,8 +428,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const StellarExpertButton = () =>
     !isCustomNetwork(networkDetails) && !isToken ? (
       <Button
-        fullWidth
-        variant={Button.variant.tertiary}
+        size="md"
+        isFullWidth
+        variant="secondary"
         onClick={() =>
           openTab(
             `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
@@ -466,7 +466,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           }
           customBackAction={goBack}
           customBackIcon={
-            submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
+            submission.submitStatus === ActionStatus.SUCCESS ? (
+              <Icon.Close />
+            ) : null
           }
         />
         {!(isPathPayment || isSwap) && (
@@ -567,7 +569,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           ) : (
             <div className="TransactionDetails__bottom-wrapper__buttons">
               <Button
-                variant={Button.variant.tertiary}
+                size="md"
+                variant="secondary"
                 onClick={() => {
                   navigateTo(ROUTES.account);
                 }}
@@ -575,6 +578,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 {t("Cancel")}
               </Button>
               <Button
+                size="md"
+                variant="primary"
                 disabled={isSubmitDisabled}
                 onClick={handleSend}
                 isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}

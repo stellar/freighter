@@ -1,10 +1,9 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
-import { DetailsTooltip, Icon, TextLink } from "@stellar/design-system";
+import { Button, Icon, Link } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -17,6 +16,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 
 import "./styles.scss";
+import { InfoTooltip } from "popup/basics/InfoTooltip";
 
 enum PAYMENT_TYPES {
   REGULAR = "REGULAR",
@@ -44,7 +44,9 @@ const RadioCheck = ({
     <label className="SendType--label SendType--radio-label">
       <div className="SendType__content-wrapper">
         <div className="SendType__content-wrapper__title">
-          {title}
+          <InfoTooltip infoText={tooltipDetails} placement="bottom-start">
+            {title}
+          </InfoTooltip>
           {subtext && (
             <span className="SendType__content-wrapper__subtext">
               {subtext}
@@ -59,12 +61,6 @@ const RadioCheck = ({
         />
       </div>
     </label>
-    <DetailsTooltip
-      tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM_START}
-      details={tooltipDetails}
-    >
-      <span></span>
-    </DetailsTooltip>
     <div
       className={`SendType--radio-check ${
         selected ? "SendType--radio-check--active" : ""
@@ -100,7 +96,7 @@ export const SendType = () => {
       <SubviewHeader
         title={t("Send Type")}
         customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
-        customBackIcon={<Icon.X />}
+        customBackIcon={<Icon.Close />}
       />
       <Formik
         initialValues={{
@@ -137,22 +133,23 @@ export const SendType = () => {
                   {t(
                     "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
                   )}{" "}
-                  <TextLink
-                    variant={TextLink.variant.secondary}
+                  <Link
+                    variant="secondary"
                     href="https://www.ledger.com/stellar-wallet"
                     rel="noreferrer"
                     target="_blank"
                   >
                     {t("Learn more")}
-                  </TextLink>
+                  </Link>
                 </span>
               }
               selected={values.paymentType === PAYMENT_TYPES.PATH_PAYMENT}
             />
             <div className="SendPayment__btn-continue">
               <Button
-                fullWidth
-                variant={Button.variant.tertiary}
+                size="md"
+                isFullWidth
+                variant="secondary"
                 onClick={() => submitForm(values)}
               >
                 {t("Done")}

@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Input } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, Form, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
-import { Button } from "popup/basics/buttons/Button";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
-import { useMnemonicPhrase } from "popup/helpers/useMnemonicPhrase";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -24,7 +22,7 @@ export const DisplayBackupPhrase = () => {
   const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState("");
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);
-  const mnemonicPhrase = useMnemonicPhrase();
+  const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   useEffect(() => {
     emitMetric(
@@ -51,6 +49,7 @@ export const DisplayBackupPhrase = () => {
         error_type: res.error,
       });
     } else {
+      setMnemonicPhrase(res.mnemonicPhrase);
       setIsPhraseUnlocked(true);
       setErrorMessage("");
       emitMetric(METRIC_NAMES.backupPhraseSuccess);
@@ -71,7 +70,12 @@ export const DisplayBackupPhrase = () => {
             <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
           </div>
           <div className="DisplayBackupPhrase__button">
-            <Button fullWidth onClick={() => navigateTo(ROUTES.account)}>
+            <Button
+              size="md"
+              isFullWidth
+              variant="primary"
+              onClick={() => navigateTo(ROUTES.account)}
+            >
               {t("Done")}
             </Button>
           </div>
@@ -83,6 +87,7 @@ export const DisplayBackupPhrase = () => {
             {({ dirty, isSubmitting, isValid }) => (
               <Form className="DisplayBackupPhrase__form">
                 <Input
+                  fieldSize="md"
                   id="password"
                   autoComplete="off"
                   error={errorMessage}
@@ -93,11 +98,12 @@ export const DisplayBackupPhrase = () => {
                 />
 
                 <Button
+                  size="md"
                   disabled={!(isValid && dirty)}
-                  fullWidth
+                  isFullWidth
                   isLoading={isSubmitting}
                   type="submit"
-                  variant={Button.variant.tertiary}
+                  variant="secondary"
                 >
                   {t("Show recovery phrase")}
                 </Button>

@@ -119,7 +119,7 @@ export const HistoryItem = ({
   const [isLoading, setIsLoading] = useState(false);
   const [IconComponent, setIconComponent] = useState(
     (
-      <Icon.Shuffle className="HistoryItem__icon--default" />
+      <Icon.RefreshVert className="HistoryItem__icon--default" />
     ) as React.ReactElement | null,
   );
   const [BodyComponent, setBodyComponent] = useState(
@@ -221,7 +221,7 @@ export const HistoryItem = ({
             isRecieving ? (
               <Icon.ArrowDown className="HistoryItem__icon--received" />
             ) : (
-              <Icon.Shuffle className="HistoryItem__icon--default" />
+              <Icon.RefreshVert className="HistoryItem__icon--default" />
             ),
           );
 

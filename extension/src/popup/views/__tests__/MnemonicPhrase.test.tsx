@@ -27,9 +27,6 @@ jest.mock("popup/constants/history", () => ({
   },
 }));
 
-jest.mock("popup/helpers/useMnemonicPhrase", () => ({
-  useMnemonicPhrase: () => "dummy mnemonic",
-}));
 jest.mock("react-router-dom", () => {
   const ReactRouter = jest.requireActual("react-router-dom");
   return {
@@ -68,7 +65,7 @@ describe.skip("MnemonicPhrase", () => {
           },
         }}
       >
-        <MnemonicPhrase />
+        <MnemonicPhrase mnemonicPhrase={MNEMONIC} />
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("display-mnemonic-phrase"));
@@ -96,7 +93,7 @@ describe.skip("MnemonicPhrase", () => {
             },
           }}
         >
-          <MnemonicPhrase />
+          <MnemonicPhrase mnemonicPhrase={MNEMONIC} />
         </Wrapper>,
       );
 
