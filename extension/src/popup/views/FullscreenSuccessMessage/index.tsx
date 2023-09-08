@@ -31,12 +31,12 @@ const AvoidScamsWarningBlock = () => {
           <ul className="FullscreenSuccessMessage__infoBlock__list">
             <li>
               {t(
-                "Freighter will never ask for your recovery phrase unless you're actively importing your account using the browser extension - never on an external website",
+                "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website",
               )}
             </li>
             <li>
               {t(
-                "Always check the domain of websites you're using Freighter with",
+                "Always check the domain of websites you’re using Freighter with",
               )}
             </li>
             <li>
