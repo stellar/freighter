@@ -5,7 +5,7 @@ import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Input } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -14,7 +14,6 @@ import {
   authErrorSelector,
 } from "popup/ducks/accountServices";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { Button } from "popup/basics/buttons/Button";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import "./styles.scss";
@@ -65,6 +64,7 @@ export const VerifyAccount = ({
             <Field name="password">
               {({ field }: FieldProps) => (
                 <Input
+                  fieldSize="md"
                   id="password-input"
                   type="password"
                   placeholder={t("Enter password")}
@@ -78,7 +78,9 @@ export const VerifyAccount = ({
             </Field>
             <div className="VerifyAccount__btn-continue">
               <Button
-                fullWidth
+                size="md"
+                isFullWidth
+                variant="primary"
                 isLoading={isSubmitting}
                 disabled={!(dirty && isValid)}
               >

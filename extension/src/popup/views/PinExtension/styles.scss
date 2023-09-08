@@ -13,17 +13,23 @@
     font-size: 1.5rem;
     line-height: 2.25rem;
     text-align: center;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     margin-bottom: 1rem;
   }
 
   &__caption {
     line-height: 1.5rem;
     margin-bottom: 2rem;
-    color: var(--pal-text-tertiary);
+    color: var(--color-gray-70);
+
+    div:not(:last-child) {
+      margin-bottom: 0.4rem;
+    }
   }
 
   &__img {
+    margin-bottom: 2rem;
+
     img {
       width: 100%;
     }

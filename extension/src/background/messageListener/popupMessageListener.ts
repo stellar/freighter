@@ -583,9 +583,23 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     };
   };
 
-  const getMnemonicPhrase = () => ({
-    mnemonicPhrase: mnemonicPhraseSelector(sessionStore.getState()),
-  });
+  const getMnemonicPhrase = async () => {
+    const { password } = request;
+
+    const keyID = (await getIsHardwareWalletActive())
+      ? await _getNonHwKeyID()
+      : (await localStore.getItem(KEY_ID)) || "";
+
+    try {
+      await _unlockKeystore({ keyID, password });
+    } catch (e) {
+      console.error(e);
+      return { error: "Incorrect password" };
+    }
+    return {
+      mnemonicPhrase: mnemonicPhraseSelector(sessionStore.getState()),
+    };
+  };
 
   const confirmMnemonicPhrase = async () => {
     const isCorrectPhrase =
@@ -698,10 +712,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         keyID: (await localStore.getItem(KEY_ID)) || "",
         password,
       });
-      return {};
     } catch (e) {
       return { error: "Incorrect Password" };
     }
+
+    return {
+      mnemonicPhrase: mnemonicPhraseSelector(sessionStore.getState()),
+    };
   };
 
   const _getLocalStorageAccounts = async (password: string) => {

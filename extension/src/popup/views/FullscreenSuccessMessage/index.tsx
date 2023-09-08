@@ -1,18 +1,17 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Button, Notification } from "@stellar/design-system";
 
 import { emitMetric } from "helpers/metrics";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo } from "popup/helpers/navigate";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { SubmitButtonWrapper } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { OnboardingHeader } from "popup/components/Onboarding";
-import { Button } from "popup/basics/buttons/Button";
 import ExtensionIllo from "popup/assets/illo-extension.png";
 
 import "./styles.scss";
@@ -22,16 +21,13 @@ import "./styles.scss";
 const isChrome = () =>
   navigator.userAgent.toLowerCase().indexOf("chrome") > -1 && !!window.chrome;
 
-// TODO: update styles with SDS v2
-
 const AvoidScamsWarningBlock = () => {
   const { t } = useTranslation();
 
   return (
     <div className="FullscreenSuccessMessage__infoBlock">
-      <InfoBlock variant={InfoBlock.variant.info}>
+      <Notification variant="primary" title={t("Keep your account safe")}>
         <div className="InfoBlock__content">
-          <div className="InfoBlock__header">{t("Keep your account safe")}</div>
           <ul className="FullscreenSuccessMessage__infoBlock__list">
             <li>
               {t(
@@ -50,7 +46,7 @@ const AvoidScamsWarningBlock = () => {
             </li>
           </ul>
         </div>
-      </InfoBlock>
+      </Notification>
     </div>
   );
 };
@@ -70,7 +66,9 @@ const MnemonicPhraseConfirmedMessage = () => {
       <AvoidScamsWarningBlock />
       <SubmitButtonWrapper>
         <Button
-          fullWidth
+          size="md"
+          variant="primary"
+          isFullWidth
           onClick={() => {
             emitMetric(METRIC_NAMES.accountCreatorFinished);
             if (isChrome()) {
@@ -122,7 +120,9 @@ const RecoverAccountSuccessMessage = () => {
       )}
       <SubmitButtonWrapper>
         <Button
-          fullWidth
+          size="md"
+          variant="primary"
+          isFullWidth
           onClick={() => {
             emitMetric(METRIC_NAMES.recoverAccountFinished);
             if (isChrome()) {

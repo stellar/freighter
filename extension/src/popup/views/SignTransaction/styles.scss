@@ -14,7 +14,7 @@
   }
 
   &__inner-transaction {
-    border: 1px solid var(--pal-border-primary);
+    border: 1px solid var(--color-gray-30);
     border-radius: 0.5rem;
     height: 10rem;
     opacity: 0.7;
@@ -28,8 +28,8 @@
   }
 
   &__subject {
-    border-bottom: 1px solid var(--pal-border-secondary);
-    color: var(--pal-text-primary);
+    border-bottom: 1px solid var(--color-gray-30);
+    color: var(--color-gray-90);
     font-size: 0.875rem;
     line-height: 1.5rem;
     margin-bottom: 1rem;

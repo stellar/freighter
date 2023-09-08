@@ -1,13 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Input, Checkbox, TextLink } from "@stellar/design-system";
+import { Input, Checkbox, Link, Button } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
+import { showBackupPhrase } from "@shared/api/internal";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
@@ -30,6 +28,8 @@ import {
 import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
+import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
+
 import "./styles.scss";
 
 export const AccountCreator = () => {
@@ -37,6 +37,7 @@ export const AccountCreator = () => {
   const dispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
   const { t } = useTranslation();
+  const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   interface FormValues {
     password: string;
@@ -52,6 +53,9 @@ export const AccountCreator = () => {
 
   const handleSubmit = async (values: FormValues) => {
     await dispatch(createAccount(values.password));
+    const res = await showBackupPhrase(values.password);
+
+    setMnemonicPhrase(res.mnemonicPhrase);
   };
 
   const AccountCreatorSchema = YupObject().shape({
@@ -60,13 +64,9 @@ export const AccountCreator = () => {
     termsOfUse: termsofUseValidator,
   });
 
-  useEffect(() => {
-    if (publicKey) {
-      navigateTo(ROUTES.mnemonicPhrase);
-    }
-  }, [publicKey]);
-
-  return (
+  return mnemonicPhrase && publicKey ? (
+    <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
+  ) : (
     <>
       <FullscreenStyle />
       <Header />
@@ -87,6 +87,7 @@ export const AccountCreator = () => {
                     <Field name="password">
                       {({ field }: FieldProps) => (
                         <Input
+                          fieldSize="md"
                           autoComplete="off"
                           id="new-password-input"
                           placeholder={t("New password")}
@@ -104,6 +105,7 @@ export const AccountCreator = () => {
                     <Field name="confirmPassword">
                       {({ field }: FieldProps) => (
                         <Input
+                          fieldSize="md"
                           autoComplete="off"
                           id="confirm-password-input"
                           placeholder={t("Confirm password")}
@@ -124,19 +126,20 @@ export const AccountCreator = () => {
                     <Field name="termsOfUse">
                       {({ field }: FieldProps) => (
                         <Checkbox
+                          fieldSize="md"
                           autoComplete="off"
                           error={touched.termsOfUse ? errors.termsOfUse : null}
                           id="termsOfUse-input"
                           label={
-                            <span>
+                            <>
                               {t("I have read and agree to")}{" "}
-                              <TextLink
-                                variant={TextLink.variant.secondary}
+                              <Link
+                                variant="secondary"
                                 href="https://stellar.org/terms-of-service"
                               >
                                 {t("Terms of Use")}
-                              </TextLink>
-                            </span>
+                              </Link>
+                            </>
                           }
                           {...field}
                         />
@@ -145,7 +148,9 @@ export const AccountCreator = () => {
                   </div>
                   <SubmitButtonWrapper>
                     <Button
-                      fullWidth
+                      size="md"
+                      isFullWidth
+                      variant="primary"
                       type="submit"
                       isLoading={isSubmitting}
                       disabled={!(dirty && isValid)}

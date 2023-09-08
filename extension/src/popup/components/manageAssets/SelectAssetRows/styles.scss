@@ -22,7 +22,7 @@
     cursor: pointer;
 
     &__info {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
       flex-grow: 1;
       line-height: 1.5rem;
       &__header {
@@ -36,13 +36,13 @@
   }
 
   &__bullet {
-    background: var(--pal-brand-primary);
+    background: var(--color-purple-60);
     height: 1.5rem;
     width: 1.5rem;
   }
 
   &__domain {
-    color: var(--pal-text-tertiary);
+    color: var(--color-gray-60);
     font-size: var(--font-size-secondary);
     line-height: 1.375rem;
   }

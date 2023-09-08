@@ -10,7 +10,7 @@
   transition-delay: 0.1s;
 
   &--active {
-    background-color: rgba(var(--pal-shadow-rbg), 0.6);
+    background-color: rgba(var(--color-shadow-rgb), 0.6);
     opacity: 1;
     z-index: 1;
   }

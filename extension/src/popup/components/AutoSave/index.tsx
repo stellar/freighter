@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useFormikContext } from "formik";
-import { StatusBar } from "@stellar/design-system";
+import { Banner } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 
 import "./styles.scss";
@@ -55,7 +55,7 @@ export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
         didSaveFail ? "AutoSave--status--failed" : ""
       }`}
     >
-      <StatusBar variant={StatusBar.variant.error}>Save failed!</StatusBar>
+      <Banner variant="error">Save failed!</Banner>
     </div>
   );
 };

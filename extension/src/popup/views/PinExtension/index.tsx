@@ -1,10 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 
 import ExtensionsPin from "popup/assets/illo-pin-extension.svg";
+import { SubmitButtonWrapper } from "popup/basics/Forms";
 import { Header } from "popup/components/Header";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
+import { OnboardingHeader } from "popup/components/Onboarding";
 
 import "./styles.scss";
 
@@ -17,9 +19,9 @@ export const PinExtension = () => {
       <FullscreenStyle />
       <div className="PinExtension">
         <div className="PinExtension__wrapper">
-          <div className="PinExtension__title">
+          <OnboardingHeader className="FullscreenSuccessMessage__header">
             {t("Your Freighter install is complete")}
-          </div>
+          </OnboardingHeader>
           <div className="PinExtension__caption">
             <div>
               1.{" "}
@@ -35,15 +37,20 @@ export const PinExtension = () => {
           <div className="PinExtension__img">
             <img src={ExtensionsPin} alt="Extensions Pin" />
           </div>
-
-          {/* TODO: update to use SDS v2 button with icon */}
-          <Button
-            onClick={() => {
-              window.close();
-            }}
-          >
-            Done, I’m ready to go!
-          </Button>
+          <SubmitButtonWrapper>
+            <Button
+              variant="primary"
+              size="md"
+              isFullWidth
+              onClick={() => {
+                window.close();
+              }}
+              icon={<Icon.ArrowRight />}
+              iconPosition="right"
+            >
+              Done, I’m ready to go!
+            </Button>
+          </SubmitButtonWrapper>
         </div>
       </div>
     </>

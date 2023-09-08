@@ -1,6 +1,6 @@
 .InfoBlock {
   &__header {
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     display: inline-block;
     font-weight: var(--font-weight-bold);
     font-size: 1.1rem;
@@ -15,13 +15,14 @@
   ul {
     list-style-type: disc;
   }
+
   li {
     margin-top: 1rem;
     line-height: 1.5rem;
   }
 
   li::before {
-    content: none;
+    content: none !important;
   }
 }
 
@@ -44,35 +45,22 @@
     flex-direction: column;
     justify-content: start;
     padding: 0 0 2rem 0;
-    color: var(--pal-text-primary);
-    max-width: 24rem;
+    color: var(--color-gray-90);
+    max-width: 31rem;
   }
 
   &__infoBlock {
     margin-bottom: 0.5rem;
 
     &__list {
-      margin-top: -0.25rem;
-    }
+      list-style: inside;
 
-    .BasicInfoBlock .InfoBlock--warning {
-      border: 1px solid rgba(255, 153, 0, 1);
-      padding: 1rem;
+      ::before {
+        content: none !important;
+      }
 
-      .InfoBlock {
-        &__icon {
-          display: none;
-        }
-
-        &__header {
-          font-size: 1rem;
-          font-weight: var(--font-weight-medium);
-          line-height: 1.375rem;
-          margin-bottom: -0.25rem;
-          padding: 0;
-          text-transform: uppercase;
-          white-space: nowrap;
-        }
+      li:not(:last-of-type) {
+        margin-bottom: 1rem;
       }
     }
   }
@@ -91,14 +79,17 @@
   }
 
   &__copy {
-    text-align: center;
     font-size: 1rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-normal);
     margin-bottom: 1.5rem;
 
     p {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--color-gray-70) !important;
+
+      strong {
+        color: var(--color-gray-80) !important;
+      }
     }
   }
 }
