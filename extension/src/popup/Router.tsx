@@ -46,6 +46,7 @@ import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
 import { RecoverAccount } from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
+import { SignAuthEntry } from "popup/views/SignAuthEntry";
 import { UnlockAccount } from "popup/views/UnlockAccount";
 import { Welcome } from "popup/views/Welcome";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
@@ -65,6 +66,7 @@ import { PinExtension } from "popup/views/PinExtension";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
+import { SignBlob } from "./views/SignBlob";
 
 import { SorobanProvider } from "./SorobanContext";
 
@@ -275,6 +277,12 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.signAuthEntry}>
+          <SignAuthEntry />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.signBlob}>
+          <SignBlob />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
           <DisplayBackupPhrase />

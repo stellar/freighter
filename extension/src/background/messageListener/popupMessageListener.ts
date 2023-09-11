@@ -104,6 +104,13 @@ export const blobQueue: Array<{
   accountToSign: string;
 }> = [];
 
+export const authEntryQueue: Array<{
+  accountToSign: string;
+  tab: browser.Tabs.Tab | undefined;
+  entry: string; // xdr.SorobanAuthorizationEntry
+  url: string;
+}> = [];
+
 interface KeyPair {
   publicKey: string;
   privateKey: string;
@@ -949,6 +956,29 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
+  const signAuthEntry = async () => {
+    const privateKey = privateKeySelector(sessionStore.getState());
+
+    if (privateKey.length) {
+      const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
+
+      const authEntry = authEntryQueue.pop();
+
+      const response = authEntry
+        ? await sourceKeys.sign(Buffer.from(authEntry.entry))
+        : null;
+
+      const entryResponse = responseQueue.pop();
+
+      if (typeof entryResponse === "function") {
+        entryResponse(response);
+        return {};
+      }
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const rejectTransaction = () => {
     transactionQueue.pop();
     const response = responseQueue.pop();
@@ -1241,6 +1271,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.SIGN_BLOB]: signBlob,
+    [SERVICE_TYPES.SIGN_AUTH_ENTRY]: signAuthEntry,
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,

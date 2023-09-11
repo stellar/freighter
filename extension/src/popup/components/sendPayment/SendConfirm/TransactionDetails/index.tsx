@@ -5,10 +5,10 @@ import BigNumber from "bignumber.js";
 import StellarSdk, { Asset } from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
 import { Types } from "@stellar/wallet-sdk";
-import { Card, Loader, Icon } from "@stellar/design-system";
+import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { SorobanContext } from "popup/SorobanContext";
+import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -23,9 +23,8 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-import { accountIdentifier, numberToI128 } from "@shared/api/helpers/soroban";
+import { transfer } from "@shared/helpers/soroban/token";
 
-import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -265,10 +264,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
 
-    if (!sorobanClient.server) {
-      throw new Error("soroban rpc not supported")
-    }
-
     try {
       const assetAddress = asset.split(":")[1];
       const assetBalance = tokenBalances.find(
@@ -284,33 +279,24 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         Number(assetBalance.decimals),
       );
 
-      const sourceAccount = await sorobanClient.server.getAccount(publicKey);
-      const contract = new SorobanClient.Contract(assetAddress);
-      const contractOp = contract.call(
-        "transfer",
-        ...[
-          accountIdentifier(publicKey), // from
-          accountIdentifier(destination), // to
-          numberToI128(parsedAmount.toNumber()), // amount
-        ],
-      );
+      const params = [
+        new SorobanClient.Address(publicKey).toScVal(), // from
+        new SorobanClient.Address(destination).toScVal(), // to
+        new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
+      ];
 
-      const transaction = await new SorobanClient.TransactionBuilder(
-        sourceAccount,
-        {
-          fee: xlmToStroop(transactionFee).toFixed(),
-          networkPassphrase: networkDetails.networkPassphrase,
-        },
-      )
-        .addOperation(contractOp)
-        .setTimeout(180);
-
-      if (memo) {
-        transaction.addMemo(SorobanClient.Memo.text(memo));
+      if (!hasSorobanClient(sorobanClient)) {
+        throw new Error("Soroban RPC not supported for this network");
       }
 
+      const builder = await sorobanClient.newTxBuilder(
+        xlmToStroop(transactionFee).toFixed(),
+      );
+
+      const transaction = await transfer(assetAddress, params, memo, builder);
+
       const preparedTransaction = await sorobanClient.server.prepareTransaction(
-        transaction.build(),
+        transaction,
         networkDetails.networkPassphrase,
       );
 
@@ -443,8 +429,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const StellarExpertButton = () =>
     !isCustomNetwork(networkDetails) && !isToken ? (
       <Button
-        fullWidth
-        variant={Button.variant.tertiary}
+        size="md"
+        isFullWidth
+        variant="secondary"
         onClick={() =>
           openTab(
             `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
@@ -480,7 +467,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           }
           customBackAction={goBack}
           customBackIcon={
-            submission.submitStatus === ActionStatus.SUCCESS ? <Icon.X /> : null
+            submission.submitStatus === ActionStatus.SUCCESS ? (
+              <Icon.Close />
+            ) : null
           }
         />
         {!(isPathPayment || isSwap) && (
@@ -581,7 +570,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           ) : (
             <div className="TransactionDetails__bottom-wrapper__buttons">
               <Button
-                variant={Button.variant.tertiary}
+                size="md"
+                variant="secondary"
                 onClick={() => {
                   navigateTo(ROUTES.account);
                 }}
@@ -589,6 +579,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 {t("Cancel")}
               </Button>
               <Button
+                size="md"
+                variant="primary"
                 disabled={isSubmitDisabled}
                 onClick={handleSend}
                 isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}

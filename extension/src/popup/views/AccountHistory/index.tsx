@@ -6,6 +6,8 @@ import { Horizon } from "stellar-sdk";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import { NETWORKS } from "@shared/constants/stellar";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -23,10 +25,7 @@ import {
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
-import {
-  getAttrsFromSorobanHorizonOp,
-  SorobanTokenInterface,
-} from "popup/helpers/soroban";
+import { getAttrsFromSorobanHorizonOp } from "popup/helpers/soroban";
 
 import {
   historyItemDetailViewProps,
@@ -90,18 +89,20 @@ export const AccountHistory = () => {
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   // differentiate between if data is still loading and if no account history results came back from Horizon
+  const shouldLoadToken =
+    isExperimentalModeEnabled || networkDetails.network === NETWORKS.FUTURENET;
+  const isTokenBalanceLoading =
+    (getTokenBalancesStatus === ActionStatus.IDLE ||
+      getTokenBalancesStatus === ActionStatus.PENDING) &&
+    shouldLoadToken;
   const isAccountHistoryLoading = isExperimentalModeEnabled
-    ? historySegments === null ||
-      getTokenBalancesStatus === ActionStatus.IDLE ||
-      getTokenBalancesStatus === ActionStatus.PENDING
+    ? historySegments === null || isTokenBalanceLoading
     : historySegments === null;
 
   useEffect(() => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
-      // TODO: add mint and other common token interactions
       getIsSupportedSorobanOp(operation, networkDetails);
 
-    setIsLoading(true);
     const createSegments = (
       operations: HorizonOperation[],
       showSorobanTxs = false,
@@ -157,18 +158,24 @@ export const AccountHistory = () => {
           createSegments(res.operations, isExperimentalModeEnabled),
         );
 
-        if (isExperimentalModeEnabled) {
+        if (shouldLoadToken) {
           dispatch(getTokenBalances({ sorobanClient }));
         }
       } catch (e) {
         console.error(e);
       }
+    };
+
+    const getData = async () => {
+      setIsLoading(true);
+      await fetchAccountHistory();
       setIsLoading(false);
     };
-    fetchAccountHistory();
+
+    getData();
 
     return () => {
-      if (isExperimentalModeEnabled) {
+      if (shouldLoadToken) {
         dispatch(resetSorobanTokensStatus());
       }
     };
@@ -177,6 +184,7 @@ export const AccountHistory = () => {
     networkDetails,
     isExperimentalModeEnabled,
     sorobanClient,
+    shouldLoadToken,
     dispatch,
   ]);
 
@@ -184,7 +192,7 @@ export const AccountHistory = () => {
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
-      {isLoading ? (
+      {isLoading || isTokenBalanceLoading ? (
         <div className="AccountHistory__loader">
           <Loader size="2rem" />
         </div>

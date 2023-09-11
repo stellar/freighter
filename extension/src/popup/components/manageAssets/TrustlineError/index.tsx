@@ -3,9 +3,8 @@ import { useHistory, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { Button, Icon, Notification } from "@stellar/design-system";
 
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import {
   resetSubmission,
   transactionSubmissionSelector,
@@ -59,7 +58,7 @@ const RenderedError = ({
   switch (errorState) {
     case TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS:
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
+        <Notification variant="error" title={t("Error")}>
           <div>
             <p className="TrustlineError__title">{t("Not enough lumens")}</p>
             <p>0.500001 XLM {t("are required to add a new asset.")}</p>
@@ -73,16 +72,16 @@ const RenderedError = ({
               </Link>
             </p>
           </div>
-        </InfoBlock>
+        </Notification>
       );
     case TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE:
       return (
         <>
-          <InfoBlock variant={InfoBlock.variant.warning}>
-            <p className="TrustlineError__title">
-              {t("This asset has a balance")}
-            </p>
-          </InfoBlock>
+          <Notification
+            variant="warning"
+            title={t("This asset has a balance")}
+            icon={<Icon.Warning />}
+          />
           <p className="TrustlineError__subtitle">
             {t("This asset has a balance of")} <strong>{assetBalance}</strong>.{" "}
             {t("You must have a balance of")} <strong>0</strong>{" "}
@@ -94,18 +93,16 @@ const RenderedError = ({
     default:
       return (
         <>
-          <InfoBlock variant={InfoBlock.variant.error}>
-            <div>
-              <p className="TrustlineError__title">
-                {t("This transaction could not be completed.")}
+          <Notification
+            variant="error"
+            title={t("This transaction could not be completed.")}
+          >
+            {resultCodes ? (
+              <p className="TrustlineError__subtitle">
+                {t("Error code")}: {resultCodes}
               </p>
-              {resultCodes ? (
-                <p className="TrustlineError__subtitle">
-                  {t("Error code")}: {resultCodes}
-                </p>
-              ) : null}
-            </div>
-          </InfoBlock>
+            ) : null}
+          </Notification>
         </>
       );
   }
@@ -156,7 +153,9 @@ export const TrustlineError = ({
       </div>
       <div className="TrustlineError__button">
         <Button
-          fullWidth
+          size="md"
+          isFullWidth
+          variant="primary"
           onClick={() => {
             dispatch(resetSubmission());
             history.goBack();

@@ -14,11 +14,6 @@ export enum ActionStatus {
   ERROR = "ERROR",
 }
 
-export enum SorobanTxStatus {
-  PENDING = "pending",
-  SUCCESS = "success",
-}
-
 export interface UserInfo {
   publicKey: string;
 }
@@ -42,6 +37,7 @@ export interface Response {
   transactionXDR: string;
   signedTransaction: string;
   signedBlob: string;
+  signedAuthEntry: string;
   source: string;
   type: SERVICE_TYPES;
   url: string;
@@ -102,7 +98,14 @@ export interface ExternalRequestBlob extends ExternalRequestBase {
   blob: string;
 }
 
-export type ExternalRequest = ExternalRequestTx | ExternalRequestBlob;
+export interface ExternalRequestAuthEntry extends ExternalRequestBase {
+  entryXdr: string;
+}
+
+export type ExternalRequest =
+  | ExternalRequestTx
+  | ExternalRequestBlob
+  | ExternalRequestAuthEntry;
 
 export interface Account {
   publicKey: string;
@@ -149,7 +152,7 @@ export interface SorobanBalance {
   total: BigNumber;
   name: string;
   symbol: string;
-  decimals: string;
+  decimals: number;
 }
 
 export type AssetType =

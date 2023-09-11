@@ -1,10 +1,9 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { Formik, Form } from "formik";
-import { Icon } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { fundAccount } from "popup/ducks/accountServices";
 
 import "./styles.scss";
@@ -55,7 +54,13 @@ export const NotFundedMessage = ({
         <Formik initialValues={{}} onSubmit={handleFundAccount}>
           {({ isSubmitting }) => (
             <Form className="NotFunded__form">
-              <Button fullWidth isLoading={isSubmitting} type="submit">
+              <Button
+                variant="primary"
+                size="md"
+                isFullWidth
+                isLoading={isSubmitting}
+                type="submit"
+              >
                 {t("Fund with Friendbot")}
               </Button>
             </Form>

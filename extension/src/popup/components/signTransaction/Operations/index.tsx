@@ -10,6 +10,8 @@ import {
   TRANSACTION_WARNING,
 } from "constants/transaction";
 
+import { getDecimals } from "@shared/helpers/soroban/token";
+
 import { FlaggedKeys } from "types/transactions";
 
 import {
@@ -18,7 +20,6 @@ import {
   truncateString,
 } from "helpers/stellar";
 import {
-  getContractDecimals,
   getAttrsFromSorobanTxOp,
   formatTokenAmount,
 } from "popup/helpers/soroban";
@@ -26,9 +27,11 @@ import {
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
-import { SorobanContext } from "popup/SorobanContext";
+import { hasSorobanClient, SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
+import { xdr } from "soroban-client";
+import { buildInvocationTree } from "popup/components/signAuthEntry/invocation";
 
 interface Path {
   code: string;
@@ -164,6 +167,37 @@ const KeyValueWithScValue = ({
     </SimpleBarWrapper>
   </div>
 );
+
+const KeyValueWithScAuth = ({
+  operationKey,
+  operationValue,
+}: {
+  operationKey: string;
+  operationValue: {
+    _attributes: {
+      credentials: xdr.SorobanCredentials;
+      rootInvocation: xdr.SorobanAuthorizedInvocation;
+    };
+  }[];
+}) => {
+  // TODO: use getters in signTx to get these correctly
+  const rawEntry = operationValue[0] && operationValue[0]._attributes;
+  const authEntry = new xdr.SorobanAuthorizationEntry(rawEntry);
+  const rootJson = buildInvocationTree(authEntry.rootInvocation());
+  return (
+    <div className="Operations__pair--smart-contract">
+      <div>
+        {operationKey}
+        {operationKey ? ":" : null}
+      </div>
+      <SimpleBarWrapper className="Operations__scValue">
+        <div>
+          <pre>{JSON.stringify(rootJson, null, 2)}</pre>
+        </div>
+      </SimpleBarWrapper>
+    </div>
+  );
+};
 
 const PathList = ({ paths }: { paths: [Path] }) => {
   const { t } = useTranslation();
@@ -320,11 +354,12 @@ export const Operations = ({
   const [decimals, setDecimals] = useState(0);
 
   useEffect(() => {
-    if (!contractId) return;
+    if (!contractId || !hasSorobanClient(sorobanClient)) return;
     const fetchContractDecimals = async () => {
-      const contractDecimals = await getContractDecimals(
-        sorobanClient,
+      const contractDecimals = await getDecimals(
         contractId,
+        sorobanClient.server,
+        await sorobanClient.newTxBuilder(),
       );
       setDecimals(contractDecimals);
     };
@@ -781,15 +816,9 @@ export const Operations = ({
                   />
                 ))}
 
-                {scFunc ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Func")}
-                    operationValue={scFunc}
-                  />
-                ) : null}
                 {scAuth ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Auth")}
+                  <KeyValueWithScAuth
+                    operationKey={t("Invocation")}
                     operationValue={scAuth}
                   />
                 ) : null}

@@ -1,12 +1,21 @@
-import React from "react";
-import { Card, Icon } from "@stellar/design-system";
+import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { useTranslation, Trans } from "react-i18next";
+import { signBlob, rejectBlob } from "popup/ducks/access";
+import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
+import { AccountList, OptionTag } from "popup/components/account/AccountList";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import { Blob } from "popup/components/signBlob";
+import { settingsExperimentalModeSelector } from "popup/ducks/settings";
+import {
+  WarningMessageVariant,
+  WarningMessage,
+  FirstTimeWarningMessage,
+} from "popup/components/WarningMessages";
 
-import { truncatedPublicKey } from "helpers/stellar";
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
-import { signBlob } from "popup/ducks/access";
-import { confirmPassword } from "popup/ducks/accountServices";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
 import {
   ButtonsContainer,
@@ -14,93 +23,61 @@ import {
   ModalWrapper,
 } from "popup/basics/Modal";
 
-import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-import { AccountList, OptionTag } from "popup/components/account/AccountList";
-import { PunycodedDomain } from "popup/components/PunycodedDomain";
-import {
-  WarningMessageVariant,
-  WarningMessage,
-  FirstTimeWarningMessage,
-} from "popup/components/WarningMessages";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { AppDispatch } from "popup/App";
-import {
-  ShowOverlayStatus,
-  startHwSign,
-} from "popup/ducks/transactionSubmission";
+import { BlobToSign, parsedSearchParam } from "helpers/urls";
+import { truncatedPublicKey } from "helpers/stellar";
 
-import { Account } from "@shared/api/types";
-import { BlobToSign } from "helpers/urls";
+import "./styles.scss";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
-import "../styles.scss";
-import { useDispatch } from "react-redux";
-import { Blob } from "popup/components/signBlob";
+export const SignBlob = () => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-interface SignBlobBodyProps {
-  accountNotFound: boolean;
-  allAccounts: Account[];
-  blob: BlobToSign;
-  currentAccount: Account;
-  handleApprove: (signAndClose: () => Promise<void>) => () => Promise<void>;
-  hwStatus: ShowOverlayStatus;
-  isConfirming: boolean;
-  isDropdownOpen: boolean;
-  isExperimentalModeEnabled: boolean;
-  isHardwareWallet: boolean;
-  isPasswordRequired: boolean;
-  publicKey: string;
-  rejectAndClose: () => void;
-  setIsDropdownOpen: (isRequired: boolean) => void;
-  setIsPasswordRequired: (isRequired: boolean) => void;
-  setStartedHwSign: (hasStarted: boolean) => void;
-}
-
-export const SignBlobBody = ({
-  publicKey,
-  allAccounts,
-  isDropdownOpen,
-  handleApprove,
-  isConfirming,
-  accountNotFound,
-  rejectAndClose,
-  currentAccount,
-  setIsDropdownOpen,
-  setIsPasswordRequired,
-  isPasswordRequired,
-  blob,
-  isExperimentalModeEnabled,
-  hwStatus,
-  isHardwareWallet,
-  setStartedHwSign,
-}: SignBlobBodyProps) => {
-  const dispatch: AppDispatch = useDispatch();
+  const location = useLocation();
   const { t } = useTranslation();
+  const isExperimentalModeEnabled = useSelector(
+    settingsExperimentalModeSelector,
+  );
+
+  const blob = parsedSearchParam(location.search) as BlobToSign;
   const { accountToSign, domain, isDomainListedAllowed } = blob;
 
-  const signAndClose = async () => {
-    if (isHardwareWallet) {
-      await dispatch(
-        startHwSign({ transactionXDR: blob.blob, shouldSubmit: false }),
-      );
-      setStartedHwSign(true);
-    } else {
-      await dispatch(signBlob());
-      window.close();
-    }
-  };
+  const {
+    allAccounts,
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    publicKey,
+    handleApprove,
+    hwStatus,
+    isHardwareWallet,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+  } = useSetupSigningFlow(rejectBlob, signBlob, blob.blob, accountToSign);
 
-  const _handleApprove = handleApprove(signAndClose);
-
-  const verifyPasswordThenSign = async (password: string) => {
-    const confirmPasswordResp = await dispatch(confirmPassword(password));
-
-    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
-      await signAndClose();
-    }
-  };
+  if (isHardwareWallet) {
+    return (
+      <ModalWrapper>
+        <WarningMessage
+          variant={WarningMessageVariant.warning}
+          handleCloseClick={() => window.close()}
+          isActive
+          header={t("Unsupported signing method")}
+        >
+          <p>
+            {t(
+              "Signing arbitrary data with a hardware wallet is currently not supported.",
+            )}
+          </p>
+        </WarningMessage>
+      </ModalWrapper>
+    );
+  }
 
   if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
     return (
@@ -161,7 +138,7 @@ export const SignBlobBody = ({
           </WarningMessage>
           {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignBlob__info">
-            <Card variant={Card.variant.highlight}>
+            <Card variant="secondary">
               <PunycodedDomain domain={domain} isRow />
               <div className="SignBlob__subject">
                 {t("is requesting approval to sign a blob of data")}
@@ -194,13 +171,17 @@ export const SignBlobBody = ({
             </Card>
             {accountNotFound && accountToSign ? (
               <div className="SignBlob__account-not-found">
-                <InfoBlock variant={InfoBlock.variant.warning}>
+                <Notification
+                  variant="warning"
+                  icon={<Icon.Warning />}
+                  title={t("Account not available")}
+                >
                   {t("The application is requesting a specific account")} (
                   {truncatedPublicKey(accountToSign)}),{" "}
                   {t(
                     "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
                   )}
-                </InfoBlock>
+                </Notification>
               </div>
             ) : null}
           </div>
@@ -208,16 +189,19 @@ export const SignBlobBody = ({
         </ModalWrapper>
         <ButtonsContainer>
           <Button
-            fullWidth
-            variant={Button.variant.tertiary}
+            size="md"
+            isFullWidth
+            variant="secondary"
             onClick={() => rejectAndClose()}
           >
             {t("Reject")}
           </Button>
           <Button
-            fullWidth
+            size="md"
+            isFullWidth
+            variant="primary"
             isLoading={isConfirming}
-            onClick={() => _handleApprove()}
+            onClick={() => handleApprove()}
           >
             {t("Approve")}
           </Button>

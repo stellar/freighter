@@ -4,6 +4,7 @@ import browser from "webextension-polyfill";
 import { Store } from "redux";
 
 import {
+  ExternalRequestAuthEntry,
   ExternalRequestBlob,
   ExternalRequestTx,
   ExternalRequest as Request,
@@ -39,6 +40,7 @@ import {
 import { publicKeySelector } from "background/ducks/session";
 
 import {
+  authEntryQueue,
   blobQueue,
   responseQueue,
   transactionQueue,
@@ -254,9 +256,7 @@ export const freighterApiMessageListener = (
     blobQueue.push(blobData);
     const encodedBlob = encodeObject(blobData);
     const popup = browser.windows.create({
-      url: chrome.runtime.getURL(
-        `/index.html#/sign-transaction?${encodedBlob}`,
-      ),
+      url: chrome.runtime.getURL(`/index.html#/sign-blob?${encodedBlob}`),
       ...WINDOW_SETTINGS,
     });
 
@@ -277,6 +277,59 @@ export const freighterApiMessageListener = (
             localStore.setItem(ALLOWLIST_ID, allowList.join());
           }
           resolve({ signedBlob });
+        }
+
+        resolve({ error: "User declined access" });
+      };
+
+      responseQueue.push(response);
+    });
+  };
+
+  const submitAuthEntry = async () => {
+    const { entryXdr, accountToSign } = request as ExternalRequestAuthEntry;
+
+    const { tab, url: tabUrl = "" } = sender;
+    const domain = getUrlHostname(tabUrl);
+    const punycodedDomain = getPunycodedDomain(domain);
+
+    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
+    const allowList = allowListStr.split(",");
+    const isDomainListedAllowed = await isSenderAllowed({ sender });
+
+    const authEntry = {
+      entry: entryXdr,
+      accountToSign,
+      tab,
+      url: tabUrl,
+    };
+
+    authEntryQueue.push(authEntry);
+    const encodedAuthEntry = encodeObject(authEntry);
+    const popup = browser.windows.create({
+      url: chrome.runtime.getURL(
+        `/index.html#/sign-auth-entry?${encodedAuthEntry}`,
+      ),
+      ...WINDOW_SETTINGS,
+    });
+
+    return new Promise((resolve) => {
+      if (!popup) {
+        resolve({ error: "Couldn't open access prompt" });
+      } else {
+        browser.windows.onRemoved.addListener(() =>
+          resolve({
+            error: "User declined access",
+          }),
+        );
+      }
+      const response = (signedAuthEntry: string) => {
+        if (signedAuthEntry) {
+          if (!isDomainListedAllowed) {
+            allowList.push(punycodedDomain);
+            localStore.setItem(ALLOWLIST_ID, allowList.join());
+          }
+          resolve({ signedAuthEntry });
         }
 
         resolve({ error: "User declined access" });
@@ -378,6 +431,7 @@ export const freighterApiMessageListener = (
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB]: submitBlob,
+    [EXTERNAL_SERVICE_TYPES.SUBMIT_AUTH_ENTRY]: submitAuthEntry,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
     [EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS]: requestConnectionStatus,

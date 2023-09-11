@@ -1,13 +1,20 @@
 .HistoryItem {
-  color: var(--pal-text-primary);
+  color: var(--color-gray-90);
   cursor: pointer;
+
+  &__loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
   &__row {
     display: flex;
   }
 
   &__icon {
-    border: 1px solid var(--pal-border-primary);
+    border: 1px solid var(--color-gray-30);
     border-radius: 2rem;
     display: flex;
     align-items: center;
@@ -26,7 +33,7 @@
     }
 
     &--received {
-      color: var(--pal-success);
+      color: var(--color-green-60);
     }
   }
 
@@ -36,7 +43,7 @@
   }
 
   &__date {
-    color: var(--secondary-text);
+    color: var(--color-gray-70);
     font-size: 0.875rem;
     line-height: 1.375rem;
   }

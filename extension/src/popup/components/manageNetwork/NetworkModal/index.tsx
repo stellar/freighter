@@ -1,6 +1,7 @@
 import React from "react";
+import { Notification } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import "./styles.scss";
@@ -15,19 +16,21 @@ export const NetworkModal = ({
   children,
   buttonComponent,
   isConfirmation,
-}: NetworkModalProps) => (
-  <div className="NetworkModal">
-    <LoadingBackground isActive />
-    <div className="NetworkModal__content">
-      <InfoBlock
-        variant={InfoBlock.variant.warning}
-        className={`NetworkModal__infoBlock ${
-          isConfirmation ? "NetworkModal__infoBlock--confirmation" : ""
-        }`}
-      >
-        {children}
-      </InfoBlock>
-      <div className="NetworkModal__button-row">{buttonComponent}</div>
+}: NetworkModalProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="NetworkModal">
+      <LoadingBackground isActive />
+      <div className="NetworkModal__content">
+        <Notification
+          variant={isConfirmation ? "warning" : "error"}
+          title={t("Network")}
+        >
+          {children}
+        </Notification>
+        <div className="NetworkModal__button-row">{buttonComponent}</div>
+      </div>
     </div>
-  </div>
-);
+  );
+};

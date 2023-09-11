@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { CopyText, Icon, NavButton } from "@stellar/design-system";
+import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { getAccountHistory } from "@shared/api/internal";
@@ -11,7 +11,6 @@ import {
 } from "@shared/api/types";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
-import { Button } from "popup/basics/buttons/Button";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -48,6 +47,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
+import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
 import { SorobanContext } from "../../SorobanContext";
@@ -175,7 +175,9 @@ export const Account = () => {
     />
   ) : (
     <>
-      {isLoading ? null : (
+      {isLoading ? (
+        <Loading />
+      ) : (
         <div className="AccountView" data-testid="account-view">
           <AccountHeader
             accountDropDownRef={accountDropDownRef}
@@ -191,14 +193,10 @@ export const Account = () => {
               >
                 {currentAccountName}
               </div>
-              <CopyText
-                textToCopy={publicKey}
-                showTooltip
-                tooltipPosition={CopyText.tooltipPosition.RIGHT}
-              >
+              <CopyText textToCopy={publicKey} tooltipPlacement="right">
                 <div className="AccountView__account-num">
                   {truncatedPublicKey(publicKey)}
-                  <Icon.Copy />
+                  <Icon.ContentCopy />
                 </div>
               </CopyText>
             </div>
@@ -240,8 +238,9 @@ export const Account = () => {
           )}
           {isFunded ? (
             <Button
-              fullWidth
-              variant={Button.variant.tertiary}
+              size="md"
+              isFullWidth
+              variant="secondary"
               onClick={() => {
                 dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
                 navigateTo(ROUTES.manageAssets);
