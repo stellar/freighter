@@ -82,7 +82,7 @@ export const UnlockAccount = () => {
                   isLoading={isSubmitting}
                   disabled={!(dirty && isValid)}
                 >
-                  {t("LOG IN")}
+                  {t("Log In")}
                 </Button>
               </SubmitButtonWrapper>
             </div>
