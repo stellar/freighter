@@ -69,6 +69,19 @@ a {
   background: var(--color-gray-40);
 }
 
+// Form layout
+.FormLayoutView {
+  height: 100%;
+
+  .FormRows {
+    height: 100%;
+  }
+
+  .SubmitButtonWrapper {
+    margin-top: auto;
+  }
+}
+
 // TODO: fix in SDS
 .Notification {
   border-radius: 0.25rem;
