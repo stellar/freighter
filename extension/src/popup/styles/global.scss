@@ -69,6 +69,11 @@ a {
   background: var(--color-gray-40);
 }
 
+// TODO: fix in SDS
+.Notification {
+  border-radius: 0.25rem;
+}
+
 // TODO: Update in SDS
 .Tooltip__content__container {
   padding: 0.5rem !important;

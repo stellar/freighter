@@ -49,7 +49,7 @@ export const DisplayMnemonicPhrase = ({
         <OnboardingHalfScreen className="DisplayMnemonicPhrase__half-screen">
           <Notification
             variant="warning"
-            title={t("IMPORTANT WARNING")}
+            title={t("Important Warning")}
             icon={<Icon.Warning />}
           >
             {t("Never disclose your recovery phrase")}!
