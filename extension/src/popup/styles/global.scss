@@ -44,6 +44,10 @@ a {
 #root {
   position: relative;
   height: 100%;
+  // TODO: update in SDS?
+  min-height: auto !important;
+  min-width: auto !important;
+  display: block !important;
 
   // TODO: fix in SDS
   ul {
