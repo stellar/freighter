@@ -186,12 +186,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     }
   };
 
-  const supportsSorobanRpc = (network: string) => {
-    if (network === NETWORK_NAMES.FUTURENET) {
-      return true
-    }
-    return false
-  }
+  const supportsSorobanRpc = (network: string) => network === NETWORK_NAMES.FUTURENET
 
   const handleSubmit = async (values: FormValues) => {
     if (isEditing) {
