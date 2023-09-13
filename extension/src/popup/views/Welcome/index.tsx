@@ -36,7 +36,7 @@ export const Welcome = () => {
                   variant="primary"
                   onClick={() => navigateTo(ROUTES.accountCreator)}
                 >
-                  {t("CREATE WALLET")}
+                  {t("Create Wallet")}
                 </Button>
               </div>
             </Card>
@@ -56,7 +56,7 @@ export const Welcome = () => {
                   variant="secondary"
                   onClick={() => navigateTo(ROUTES.recoverAccount)}
                 >
-                  {t("IMPORT WALLET")}
+                  {t("Import Wallet")}
                 </Button>
               </div>
             </Card>

@@ -70,7 +70,7 @@ export const ImportAccount = () => {
         <Notification
           variant="warning"
           icon={<Icon.Warning />}
-          title={t("read before importing your key")}
+          title={t("Read before importing your key")}
         >
           {t(
             "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension.",

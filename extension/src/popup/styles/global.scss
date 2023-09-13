@@ -44,6 +44,10 @@ a {
 #root {
   position: relative;
   height: 100%;
+  // TODO: update in SDS?
+  min-height: auto !important;
+  min-width: auto !important;
+  display: block !important;
 
   // TODO: fix in SDS
   ul {
@@ -67,6 +71,24 @@ a {
 
 .simplebar-scrollbar::before {
   background: var(--color-gray-40);
+}
+
+// Form layout
+.FormLayoutView {
+  height: 100%;
+
+  .FormRows {
+    height: 100%;
+  }
+
+  .SubmitButtonWrapper {
+    margin-top: auto;
+  }
+}
+
+// TODO: fix in SDS
+.Notification {
+  border-radius: 0.25rem;
 }
 
 // TODO: Update in SDS

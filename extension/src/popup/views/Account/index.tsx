@@ -238,17 +238,18 @@ export const Account = () => {
             />
           )}
           {isFunded ? (
-            <Button
-              size="md"
-              isFullWidth
-              variant="secondary"
-              onClick={() => {
-                dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-                navigateTo(ROUTES.manageAssets);
-              }}
-            >
-              {t("Manage Assets")}
-            </Button>
+            <div className="AccountView__assets-button">
+              <Button
+                size="md"
+                variant="secondary"
+                onClick={() => {
+                  dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                  navigateTo(ROUTES.manageAssets);
+                }}
+              >
+                {t("Manage Assets")}
+              </Button>
+            </div>
           ) : null}
         </div>
       )}

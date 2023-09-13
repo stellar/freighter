@@ -37,6 +37,10 @@
       div:nth-child(2) {
         color: var(--color-white);
       }
+
+      &:empty {
+        display: none;
+      }
     }
   }
 }

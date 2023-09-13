@@ -1,6 +1,5 @@
 .ManageAssetRows {
   &__scrollbar {
-    padding-right: var(--popup--side-padding);
     width: calc(
       var(--popup--width) - var(--popup--side-padding) -
         var(--popup--side-padding)

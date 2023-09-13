@@ -235,7 +235,7 @@ export const RecoverAccount = () => {
                         )
                       }
                     >
-                      {t("IMPORT")}
+                      {t("Import")}
                     </Button>
                   </SubmitButtonWrapper>
                 </div>

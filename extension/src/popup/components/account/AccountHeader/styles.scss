@@ -16,18 +16,19 @@
 
   &__network-wrapper {
     cursor: pointer;
-    width: 6.25rem;
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: right;
+    border: 1px solid var(--color-gray-30);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
   }
 
   &__network-copy {
     font-size: 0.875rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-medium);
-    text-transform: uppercase;
     white-space: nowrap;
   }
 
@@ -64,7 +65,7 @@
     padding-bottom: 0.5rem;
 
     &__link {
-      color: var(--color-gray-60);
+      color: var(--color-gray-90);
       display: flex;
       align-items: center;
     }
