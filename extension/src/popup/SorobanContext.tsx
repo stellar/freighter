@@ -2,7 +2,10 @@ import React from "react";
 import { useSelector } from "react-redux";
 import * as SorobanClient from "soroban-client";
 
-import { NETWORKS, SOROBAN_RPC_URLS } from "@shared/constants/stellar";
+import {
+  SOROBAN_RPC_URLS,
+  NETWORKS
+} from "@shared/constants/stellar";
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
@@ -28,14 +31,28 @@ export const SorobanProvider = ({
   pubKey: string;
 }) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const serverUrl = SOROBAN_RPC_URLS[networkDetails.network as NETWORKS];
 
-  let server: SorobanContextInterface["server"];
-  let newTxBuilder: SorobanContextInterface["newTxBuilder"];
+  let server: SorobanContextInterface['server']
+  let newTxBuilder: SorobanContextInterface['newTxBuilder']
+  if (!networkDetails.sorobanRpcUrl && networkDetails.network === NETWORKS.FUTURENET) {
+    // TODO: after enough time has passed to assume most clients have ran
+    // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
+    const serverUrl = SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!
 
-  if (serverUrl) {
     server = new SorobanClient.Server(serverUrl, {
-      allowHttp: networkDetails.networkUrl.startsWith("http://"),
+      allowHttp: serverUrl.startsWith("http://"),
+    });
+
+    newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
+      const sourceAccount = await server!.getAccount(pubKey);
+      return new SorobanClient.TransactionBuilder(sourceAccount, {
+        fee,
+        networkPassphrase: networkDetails.networkPassphrase,
+      });
+    };
+  } else if (networkDetails.sorobanRpcUrl) {
+    server = new SorobanClient.Server(networkDetails.sorobanRpcUrl, {
+      allowHttp: networkDetails.sorobanRpcUrl.startsWith("http://"),
     });
 
     newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
@@ -46,7 +63,7 @@ export const SorobanProvider = ({
       });
     };
   }
-
+    
   return (
     <SorobanContext.Provider value={{ server, newTxBuilder }}>
       {children}
