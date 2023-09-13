@@ -155,7 +155,7 @@ export const AccountCreator = () => {
                       isLoading={isSubmitting}
                       disabled={!(dirty && isValid)}
                     >
-                      {t("CONFIRM")}
+                      {t("Confirm")}
                     </Button>
                   </SubmitButtonWrapper>
                 </OnboardingHalfScreen>

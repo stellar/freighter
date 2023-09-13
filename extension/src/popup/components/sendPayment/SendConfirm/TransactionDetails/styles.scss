@@ -105,12 +105,13 @@
     }
 
     &__copy {
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       line-height: 1.375rem;
       min-height: 1.375rem;
       margin-bottom: 1rem;
       align-items: center;
       text-align: center;
+      justify-content: center;
     }
   }
 }

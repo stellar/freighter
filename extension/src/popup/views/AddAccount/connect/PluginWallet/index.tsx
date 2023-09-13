@@ -26,7 +26,9 @@ export const PluginWallet = () => {
         />
         <p>
           Make sure your Ledger wallet is connected to your computer and the
-          Stellar app is open on the Ledger wallet.{" "}
+          Stellar app is open on the Ledger wallet.
+        </p>
+        <p>
           <Link
             variant="secondary"
             href="https://www.ledger.com/stellar-wallet"

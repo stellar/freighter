@@ -78,7 +78,7 @@ const MnemonicPhraseConfirmedMessage = () => {
             }
           }}
         >
-          {isChrome() ? t("CONTINUE") : t("ALL DONE")}
+          {isChrome() ? t("Continue") : t("All Done")}
         </Button>
       </SubmitButtonWrapper>
     </>

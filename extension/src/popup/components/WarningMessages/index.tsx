@@ -236,7 +236,7 @@ export const BackupPhraseWarningMessage = () => {
       <div className="WarningMessage__infoBlock">
         <div className="WarningMessage__header">
           <Icon.Warning className="WarningMessage__icon" />
-          <div>{t("IMPORTANT")}</div>
+          <div>{t("Important")}</div>
         </div>
 
         <p>

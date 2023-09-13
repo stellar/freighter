@@ -118,7 +118,7 @@ export const ConfirmMnemonicPhrase = ({
                   disabled={!dirty && !!joinSelectedWords().length}
                   isLoading={isSubmitting}
                 >
-                  {t("NEXT")}
+                  {t("Next")}
                 </Button>
               </SubmitButtonWrapper>
             </Form>
