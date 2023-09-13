@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 
-import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
+import { NETWORKS_LIST_ID, TOKEN_ID_LIST } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
@@ -9,6 +9,7 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
+import { Networks } from "soroban-client";
 
 interface SetItemParams {
   [key: string]: any;
@@ -129,5 +130,11 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 
 // This migration migrates the storage for custom tokens IDs to be keyed by network
 export const migrateTokenIdList = async () => {
-  // TODO
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  const tokenIdList = await localStore.getItem(TOKEN_ID_LIST)
+
+  // intially this was assumed to be Futurenet
+  const compositeKey = `${TOKEN_ID_LIST}__${Networks.FUTURENET}`
+  await localStore.setItem(compositeKey, tokenIdList);
 };

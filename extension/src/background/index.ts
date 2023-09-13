@@ -13,7 +13,8 @@ import { timeoutAccountAccess } from "./ducks/session";
 import {
   migrateFriendBotUrlNetworkDetails,
   normalizeMigratedData,
-  migrateSorobanRpcUrlNetworkDetails
+  migrateSorobanRpcUrlNetworkDetails,
+  migrateTokenIdList
 } from "./helpers/dataStorage";
 
 export const initContentScriptMessageListener = () => {
@@ -58,6 +59,7 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(normalizeMigratedData);
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateSorobanRpcUrlNetworkDetails);
+  browser?.runtime?.onInstalled.addListener(migrateTokenIdList); 
 };
 
 export const initAlarmListener = (sessionStore: Store) => {
