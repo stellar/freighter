@@ -263,6 +263,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   }, [dispatch]);
 
   const handleXferTransaction = async () => {
+
     try {
       const assetAddress = asset.split(":")[1];
       const assetBalance = tokenBalances.find(

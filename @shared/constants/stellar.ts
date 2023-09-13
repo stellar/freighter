@@ -33,6 +33,7 @@ export interface NetworkDetails {
   networkUrl: string;
   networkPassphrase: string;
   friendbotUrl?: string;
+  sorobanRpcUrl?: string
 }
 
 export const MAINNET_NETWORK_DETAILS: NetworkDetails = {

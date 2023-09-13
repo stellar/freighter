@@ -7,6 +7,7 @@ import {
   NETWORKS,
   TESTNET_NETWORK_DETAILS,
   FUTURENET_NETWORK_DETAILS,
+  SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
 
 interface SetItemParams {
@@ -105,3 +106,23 @@ export const migrateFriendBotUrlNetworkDetails = async () => {
 
   await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
 };
+
+export const migrateSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  const networksList: NetworkDetails[] =
+    (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+  const migratedNetworkList = networksList.map((network) => {
+    if (network.network === NETWORKS.FUTURENET) {
+      return {
+        ...FUTURENET_NETWORK_DETAILS,
+        sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.FUTURENET]
+      }
+    }
+
+    return network;
+  });
+
+  await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+}
