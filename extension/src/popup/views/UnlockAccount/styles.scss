@@ -11,6 +11,7 @@
     line-height: 2.4rem;
     color: var(--color-gray-90);
     max-width: 17rem;
+    font-weight: var(--font-weight-medium);
   }
 
   &__import-account {
@@ -19,6 +20,6 @@
     text-align: center;
     font-size: 1rem;
     line-height: 1.5rem;
-    font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-regular);
   }
 }
