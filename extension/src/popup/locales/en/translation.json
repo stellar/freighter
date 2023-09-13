@@ -246,7 +246,7 @@
   "Min Amount B": "Min Amount B",
   "Min Price": "Min Price",
   "Minimum Received": "Minimum Received",
-  "Mint": "Mint",
+  "Minted": "Minted",
   "Multiple assets": "Multiple assets",
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
   "must be below": "must be below",
@@ -415,8 +415,7 @@
   "Weight": "Weight",
   "Welcome! Is this your first time using Freighter?": "Welcome! Is this your first time using Freighter?",
   "which is not available on Freighter": {
-    " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
-    " If you own this account, you can import it into Freighter to complete this transaction": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction."
+    " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
   "Woo, you’re in!": "Woo, you’re in!",
   "You are attempting to sign arbitrary data": {
