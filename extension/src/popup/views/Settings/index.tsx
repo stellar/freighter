@@ -44,7 +44,7 @@ export const Settings = () => {
               {t("Preferences")}
             </ListNavLink>
             <ListNavLink href={ROUTES.security}>{t("Security")}</ListNavLink>
-            <ListNavLink href="http://freighter.app/help">
+            <ListNavLink href="https://www.freighter.app/faq">
               {t("Help")}
             </ListNavLink>
             <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">

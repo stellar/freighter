@@ -11,7 +11,6 @@ $activeColor: rgba(61, 204, 152, 1);
     font-size: 0.875rem;
     font-weight: var(--font-weight-medium);
     margin-bottom: 1rem;
-    text-transform: uppercase;
   }
 
   &__scrollbar {
@@ -25,7 +24,6 @@ $activeColor: rgba(61, 204, 152, 1);
     display: flex;
     font-size: 0.875rem;
     font-weight: var(--font-weight-medium);
-    text-transform: uppercase;
 
     &--active {
       color: $activeColor;

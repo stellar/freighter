@@ -437,7 +437,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           )
         }
       >
-        {t("View on")} Stellar.expert
+        {t("View on")} stellar.expert
       </Button>
     ) : null;
 
