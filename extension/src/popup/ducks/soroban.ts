@@ -1,4 +1,4 @@
-import { Address } from "soroban-client";
+import { Address, Networks } from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -15,9 +15,9 @@ import {
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
-  { sorobanClient: SorobanContextInterface },
+  { sorobanClient: SorobanContextInterface, network: Networks },
   { rejectValue: ErrorMessage }
->("getTokenBalances", async ({ sorobanClient }, thunkApi) => {
+>("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
 
   if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
     throw new Error("soroban rpc not supported")
@@ -25,7 +25,7 @@ export const getTokenBalances = createAsyncThunk<
 
   try {
     const { publicKey } = await internalLoadAccount();
-    const tokenIdList = await internalGetTokenIds();
+    const tokenIdList = await internalGetTokenIds(network);
 
     const params = [new Address(publicKey).toScVal()];
     const results = [] as TokenBalances;

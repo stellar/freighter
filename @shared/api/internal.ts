@@ -943,6 +943,7 @@ export const getSorobanTokenBalance = async (
 
 export const addTokenId = async (
   tokenId: string,
+  network: SorobanClient.Networks
 ): Promise<{
   tokenIdList: string[];
 }> => {
@@ -952,6 +953,7 @@ export const addTokenId = async (
   try {
     ({ tokenIdList, error } = await sendMessageToBackground({
       tokenId,
+      network,
       type: SERVICE_TYPES.ADD_TOKEN_ID,
     }));
   } catch (e) {
@@ -965,9 +967,10 @@ export const addTokenId = async (
   return { tokenIdList };
 };
 
-export const getTokenIds = async (): Promise<string[]> => {
+export const getTokenIds = async (network: SorobanClient.Networks): Promise<string[]> => {
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_TOKEN_IDS,
+    network
   });
   return resp.tokenIdList;
 };

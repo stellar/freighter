@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
+import { Networks } from "soroban-client";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
@@ -159,7 +160,7 @@ export const AccountHistory = () => {
         );
 
         if (shouldLoadToken) {
-          dispatch(getTokenBalances({ sorobanClient }));
+          dispatch(getTokenBalances({ sorobanClient, network: networkDetails.network as Networks }));
         }
       } catch (e) {
         console.error(e);

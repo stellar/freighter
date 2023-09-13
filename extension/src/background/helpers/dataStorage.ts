@@ -126,3 +126,8 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 
   await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
 }
+
+// This migration migrates the storage for custom tokens IDs to be keyed by network
+export const migrateTokenIdList = async () => {
+  // TODO
+};
