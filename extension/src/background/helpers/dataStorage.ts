@@ -11,7 +11,6 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
-import packageJson from "../../../package.json"
 
 interface SetItemParams {
   [key: string]: any;
@@ -136,7 +135,7 @@ export const migrateTokenIdList = async () => {
   const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST) as Record<string, object>
   const storageVersion = await localStore.getItem(STORAGE_VERSION) as string
 
-  if (!storageVersion || semver.lt(storageVersion, "5.5.0")) {
+  if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
    const newTokenList = {
     [Networks.FUTURENET]: tokenIdsByKey
    }
@@ -147,7 +146,8 @@ export const migrateTokenIdList = async () => {
 // Keeps storage version sync'd with package version
 export const migrateDataStorageVersion = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const newVersion = packageJson.version
 
-  await localStore.setItem(STORAGE_VERSION, newVersion);
+  // This value should be manually updated when a new schema change is made
+  const STORAGE_SCHEMA_VERSION = "1.0.0"
+  await localStore.setItem(STORAGE_VERSION, STORAGE_SCHEMA_VERSION);
 }
