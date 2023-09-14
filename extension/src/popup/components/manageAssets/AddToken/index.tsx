@@ -31,11 +31,13 @@ export const AddToken = () => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector)
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleSubmit = async (values: FormValues) => {
     const { tokenId } = values;
-    const res = await dispatch(addTokenId({ tokenId, network: networkDetails.network as Networks }));
+    const res = await dispatch(
+      addTokenId({ tokenId, network: networkDetails.network as Networks }),
+    );
 
     if (addTokenId.fulfilled.match(res)) {
       emitMetric(METRIC_NAMES.manageAssetAddToken);

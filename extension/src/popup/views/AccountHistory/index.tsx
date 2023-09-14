@@ -160,7 +160,12 @@ export const AccountHistory = () => {
         );
 
         if (shouldLoadToken) {
-          dispatch(getTokenBalances({ sorobanClient, network: networkDetails.network as Networks }));
+          dispatch(
+            getTokenBalances({
+              sorobanClient,
+              network: networkDetails.network as Networks,
+            }),
+          );
         }
       } catch (e) {
         console.error(e);

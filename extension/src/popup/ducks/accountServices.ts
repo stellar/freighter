@@ -344,7 +344,7 @@ export const signOut = createAsyncThunk<
 
 export const addTokenId = createAsyncThunk<
   { tokenIdList: string[] },
-  { tokenId: string, network: Networks },
+  { tokenId: string; network: Networks },
   { rejectValue: ErrorMessage }
 >("auth/addToken", async ({ tokenId, network }, thunkApi) => {
   let res = {

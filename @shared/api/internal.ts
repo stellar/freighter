@@ -20,7 +20,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
-  SOROBAN_RPC_URLS
+  SOROBAN_RPC_URLS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -637,15 +637,18 @@ export const submitFreighterSorobanTransaction = async ({
     console.error(e);
   }
 
-  if (!networkDetails.sorobanRpcUrl && networkDetails.network !== NETWORKS.FUTURENET) {
-    throw new Error("soroban rpc not supported")
+  if (
+    !networkDetails.sorobanRpcUrl &&
+    networkDetails.network !== NETWORKS.FUTURENET
+  ) {
+    throw new Error("soroban rpc not supported");
   }
 
   // TODO: after enough time has passed to assume most clients have ran
   // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
   const serverUrl = !networkDetails.sorobanRpcUrl
     ? SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!
-    : networkDetails.sorobanRpcUrl
+    : networkDetails.sorobanRpcUrl;
 
   const server = new SorobanClient.Server(serverUrl, {
     allowHttp: true,
@@ -943,7 +946,7 @@ export const getSorobanTokenBalance = async (
 
 export const addTokenId = async (
   tokenId: string,
-  network: SorobanClient.Networks
+  network: SorobanClient.Networks,
 ): Promise<{
   tokenIdList: string[];
 }> => {
@@ -967,10 +970,12 @@ export const addTokenId = async (
   return { tokenIdList };
 };
 
-export const getTokenIds = async (network: SorobanClient.Networks): Promise<string[]> => {
+export const getTokenIds = async (
+  network: SorobanClient.Networks,
+): Promise<string[]> => {
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_TOKEN_IDS,
-    network
+    network,
   });
   return resp.tokenIdList;
 };

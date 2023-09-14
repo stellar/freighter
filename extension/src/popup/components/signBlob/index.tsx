@@ -9,12 +9,14 @@ interface BlobProps {
 }
 
 export const Blob = (props: BlobProps) => {
-  let displayBlob = props.blob
+  let displayBlob = props.blob;
 
   try {
-    displayBlob = atob(props.blob)
+    displayBlob = atob(props.blob);
   } catch (error) {
-    Sentry.captureException(`Failed to convert blob to display - ${props.blob}`)
+    Sentry.captureException(
+      `Failed to convert blob to display - ${props.blob}`,
+    );
   }
 
   return (
@@ -24,5 +26,5 @@ export const Blob = (props: BlobProps) => {
       </Heading>
       <div className="Blob">{displayBlob}</div>
     </Card>
-  )
-}
+  );
+};

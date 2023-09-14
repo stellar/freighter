@@ -15,7 +15,7 @@ import {
   normalizeMigratedData,
   migrateSorobanRpcUrlNetworkDetails,
   migrateTokenIdList,
-  migrateDataStorageVersion
+  migrateDataStorageVersion,
 } from "./helpers/dataStorage";
 
 export const initContentScriptMessageListener = () => {

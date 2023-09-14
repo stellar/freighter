@@ -104,7 +104,12 @@ export const Account = () => {
     dispatch(getBlockedDomains());
 
     if (isExperimentalModeEnabled) {
-      dispatch(getTokenBalances({ sorobanClient, network: networkDetails.network as Networks }));
+      dispatch(
+        getTokenBalances({
+          sorobanClient,
+          network: networkDetails.network as Networks,
+        }),
+      );
     }
 
     return () => {

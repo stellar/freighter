@@ -2,10 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import * as SorobanClient from "soroban-client";
 
-import {
-  SOROBAN_RPC_URLS,
-  NETWORKS
-} from "@shared/constants/stellar";
+import { SOROBAN_RPC_URLS, NETWORKS } from "@shared/constants/stellar";
 
 import { settingsNetworkDetailsSelector } from "./ducks/settings";
 
@@ -32,12 +29,15 @@ export const SorobanProvider = ({
 }) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  let server: SorobanContextInterface['server']
-  let newTxBuilder: SorobanContextInterface['newTxBuilder']
-  if (!networkDetails.sorobanRpcUrl && networkDetails.network === NETWORKS.FUTURENET) {
+  let server: SorobanContextInterface["server"];
+  let newTxBuilder: SorobanContextInterface["newTxBuilder"];
+  if (
+    !networkDetails.sorobanRpcUrl &&
+    networkDetails.network === NETWORKS.FUTURENET
+  ) {
     // TODO: after enough time has passed to assume most clients have ran
     // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
-    const serverUrl = SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!
+    const serverUrl = SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!;
 
     server = new SorobanClient.Server(serverUrl, {
       allowHttp: serverUrl.startsWith("http://"),
@@ -63,7 +63,7 @@ export const SorobanProvider = ({
       });
     };
   }
-    
+
   return (
     <SorobanContext.Provider value={{ server, newTxBuilder }}>
       {children}

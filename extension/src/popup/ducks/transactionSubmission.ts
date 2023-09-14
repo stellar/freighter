@@ -134,7 +134,12 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
 
       if (refreshBalances) {
         thunkApi.dispatch(resetSorobanTokensStatus());
-        await thunkApi.dispatch(getTokenBalances({ sorobanClient, network: networkDetails.network as Networks }));
+        await thunkApi.dispatch(
+          getTokenBalances({
+            sorobanClient,
+            network: networkDetails.network as Networks,
+          }),
+        );
       }
 
       return txRes;

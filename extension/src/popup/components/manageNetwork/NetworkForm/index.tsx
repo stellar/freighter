@@ -10,7 +10,11 @@ import { AppDispatch } from "popup/App";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
-import { NETWORKS, NETWORK_NAMES, SOROBAN_RPC_URLS } from "@shared/constants/stellar";
+import {
+  NETWORKS,
+  NETWORK_NAMES,
+  SOROBAN_RPC_URLS,
+} from "@shared/constants/stellar";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { isNetworkUrlValid as isNetworkUrlValidHelper } from "popup/helpers/account";
@@ -37,7 +41,7 @@ interface FormValues {
   networkName: string;
   networkPassphrase: string;
   networkUrl: string;
-  sorobanRpcUrl?: string
+  sorobanRpcUrl?: string;
   isSwitchSelected?: boolean;
   isAllowHttpSelected: boolean;
   friendbotUrl?: string;
@@ -74,12 +78,12 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const isEditingDefaultNetworks =
     isEditing && (networkIndex === 0 || networkIndex === 1);
 
-
   const initialValues: FormValues = isEditing
     ? {
         ...networkDetailsToEdit,
         isSwitchSelected: false,
-        sorobanRpcUrl: SOROBAN_RPC_URLS[networkDetailsToEdit.network as NETWORKS],
+        sorobanRpcUrl:
+          SOROBAN_RPC_URLS[networkDetailsToEdit.network as NETWORKS],
         isAllowHttpSelected: !networkDetailsToEdit?.networkUrl.includes(
           "https",
         ),
@@ -98,7 +102,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     networkName: YupString().required(),
     networkPassphrase: YupString().required(),
     networkUrl: YupString().required(),
-    sorobanRpcUrl: YupString()
+    sorobanRpcUrl: YupString(),
   });
 
   const handleRemoveNetwork = async () => {
@@ -119,7 +123,13 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const getCustomNetworkDetailsFromFormValues = (values: FormValues) => {
-    const { friendbotUrl, networkName, networkUrl, networkPassphrase, sorobanRpcUrl } = values;
+    const {
+      friendbotUrl,
+      networkName,
+      networkUrl,
+      networkPassphrase,
+      sorobanRpcUrl,
+    } = values;
 
     return {
       friendbotUrl,
@@ -127,7 +137,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       networkName,
       networkUrl,
       networkPassphrase,
-      sorobanRpcUrl
+      sorobanRpcUrl,
     };
   };
 
@@ -186,7 +196,8 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     }
   };
 
-  const supportsSorobanRpc = (network: string) => network === NETWORK_NAMES.FUTURENET
+  const supportsSorobanRpc = (network: string) =>
+    network === NETWORK_NAMES.FUTURENET;
 
   const handleSubmit = async (values: FormValues) => {
     if (isEditing) {
@@ -358,7 +369,8 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 name="networkUrl"
                 placeholder={t("Enter network URL")}
               />
-              {supportsSorobanRpc(initialValues.networkName) || !isEditingDefaultNetworks ? (
+              {supportsSorobanRpc(initialValues.networkName) ||
+              !isEditingDefaultNetworks ? (
                 <Input
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}

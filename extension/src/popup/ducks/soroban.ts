@@ -15,12 +15,11 @@ import {
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
-  { sorobanClient: SorobanContextInterface, network: Networks },
+  { sorobanClient: SorobanContextInterface; network: Networks },
   { rejectValue: ErrorMessage }
 >("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
-
   if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
-    throw new Error("soroban rpc not supported")
+    throw new Error("soroban rpc not supported");
   }
 
   try {
