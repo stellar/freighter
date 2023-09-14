@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { Networks } from "soroban-client";
 
 import { getAccountHistory } from "@shared/api/internal";
 import {
@@ -103,7 +104,7 @@ export const Account = () => {
     dispatch(getBlockedDomains());
 
     if (isExperimentalModeEnabled) {
-      dispatch(getTokenBalances({ sorobanClient }));
+      dispatch(getTokenBalances({ sorobanClient, network: networkDetails.network as Networks }));
     }
 
     return () => {

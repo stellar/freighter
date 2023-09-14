@@ -9,7 +9,6 @@
   "account": "account",
   "Account": "Account",
   "Account minimum balance is too low": "Account minimum balance is too low",
-  "Account not available": "Account not available",
   "Action": "Action",
   "Add": "Add",
   "Add a Soroban token by ID": "Add a Soroban token by ID",
@@ -28,7 +27,7 @@
   "Add Soroban token": "Add Soroban token",
   "Addresses are uppercase and begin with letters “G“ or “M“": "Addresses are uppercase and begin with letters “G“ or “M“.",
   "ALL": "TUDO",
-  "All Done": "All Done",
+  "ALL DONE": "ALL DONE",
   "Allow connecting to non-HTTPS networks": "Allow connecting to non-HTTPS networks",
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
@@ -62,16 +61,15 @@
   "Authorization Revocable": "Authorization Revocable",
   "Authorization Revocable; Authorization Immutable": "Authorization Revocable; Authorization Immutable",
   "available": "available",
+  "Avoid scams and keep your account safe": "Avoid scams and keep your account safe",
   "Awesome, you passed the test": {
     " Keep your recovery phrase safe, it’s your responsibility": "Awesome, you passed the test. Keep your recovery phrase safe, it’s your responsibility."
   },
-  "Awesome, you passed the test! Pin the extension in your browser to access it easily": "Awesome, you passed the test! Pin the extension in your browser to access it easily.",
   "Balance Id": "Balance Id",
   "Base fee": "Base fee",
   "Before You Add This Asset": "Before You Add This Asset",
   "Block malicious or unsafe addresses and domains": "Block malicious or unsafe addresses and domains",
   "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
-  "Blocked asset": "Blocked asset",
   "Bump To": "Bump To",
   "Buying": "Buying",
   "Can’t find the asset you’re looking for?": "Can’t find the asset you’re looking for?",
@@ -84,7 +82,7 @@
   "Click on Freighter’s pin button to have it always visible": "Click on Freighter’s pin button to have it always visible",
   "Click on the extensions button at the top of your browser’s bar": "Click on the extensions button at the top of your browser’s bar",
   "Code": "Code",
-  "Confirm": "Confirm",
+  "CONFIRM": "CONFIRM",
   "Confirm Data": "Confirm Data",
   "Confirm password": "Confirm password",
   "Confirm removing Network": "Confirm removing Network",
@@ -97,6 +95,7 @@
   "Connect device to computer and open the Stellar app on it": "Connect device to computer and open the Stellar app on it.",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Continue": "Continue",
+  "CONTINUE": "CONTINUE",
   "Contract ID": "Contract ID",
   "Conversion rate": "Conversion rate",
   "Conversion rate changed": "Conversion rate changed",
@@ -104,7 +103,7 @@
   "Create a new Stellar address": "Create a new Stellar address",
   "Create a password": "Create a password",
   "Create Account": "Create Account",
-  "Create Wallet": "Create Wallet",
+  "CREATE WALLET": "CREATE WALLET",
   "Custom": "Custom",
   "Date": "Date",
   "Destination": "Destination",
@@ -130,7 +129,6 @@
   "Enter passphrase": "Enter passphrase",
   "Enter password": "Enter password",
   "Enter Password": "Enter Password",
-  "Enter Soroban RPC URL": "Enter Soroban RPC URL",
   "Enter Token ID": "Enter Token ID",
   "Enter your 12 word phrase to restore your wallet": "Enter your 12 word phrase to restore your wallet",
   "Enter your account password to authorize this transaction": "Enter your account password to authorize this transaction.",
@@ -176,9 +174,7 @@
   "High Threshold": "High Threshold",
   "History": "History",
   "Home": "Home",
-  "HORIZON RPC URL": "HORIZON RPC URL",
   "I have my 12 word seed phrase": "I have my 12 word seed phrase",
-  "I have my recovery phrase safe": "I have my recovery phrase safe",
   "I have read and agree to": "I have read and agree to",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
   "I’m going to need a seed phrase": "I’m going to need a seed phrase",
@@ -186,13 +182,14 @@
   "I’ve done this before": "I’ve done this before",
   "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam": "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
   "Import": "Import",
+  "IMPORT": "IMPORT",
   "Import a Stellar secret key": "Import a Stellar secret key",
   "Import Stellar Secret Key": "Import Stellar Secret Key",
   "Import using account seed phrase": "Import using account seed phrase",
-  "Import Wallet": "Import Wallet",
+  "IMPORT WALLET": "IMPORT WALLET",
   "Import wallet from recovery phrase": "Import wallet from recovery phrase",
-  "Important": "Important",
-  "Important Warning": "Important Warning",
+  "IMPORTANT": "IMPORTANT",
+  "IMPORTANT WARNING": "IMPORTANT WARNING",
   "in order to remove an asset": "in order to remove an asset.",
   "Include a custom memo to this transaction": "Include a custom memo to this transaction",
   "Inflation Destination": "Inflation Destination",
@@ -209,11 +206,9 @@
   "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
   "Keep it in a safe place": "Keep it in a safe place.",
-  "Keep your account safe": "Keep your account safe",
   "Keep your recovery phrase in a safe and secure place": {
     " Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place."
   },
-  "Keep your recovery phrase safe, it’s your responsibility": "Keep your recovery phrase safe, it’s your responsibility.",
   "Learn more": "Learn more",
   "Learn More": "Learn More",
   "Learn more about account creation": "Learn more about account creation",
@@ -229,7 +224,7 @@
   "Limit": "Limit",
   "LINKS": "LINKS",
   "Liquidity Pool ID": "Liquidity Pool ID",
-  "Log In": "Log In",
+  "LOG IN": "LOG IN",
   "Log Out": "Log Out",
   "Low Threshold": "Low Threshold",
   "Malicious": "Malicious",
@@ -252,21 +247,19 @@
   "Min Price": "Min Price",
   "Minimum Received": "Minimum Received",
   "Minted": "Minted",
-  "Multiple assets": "Multiple assets",
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
   "must be below": "must be below",
   "must be greater than": "must be greater than",
   "Name": "Name",
   "Network": "Network",
   "Network Details": "Network Details",
-  "Network fees": "Network fees",
   "Network is in use": "Network is in use",
   "Network Settings": "Network Settings",
   "Never disclose your recovery phrase": "Never disclose your recovery phrase",
-  "New account": "New account",
   "New Asset": "New Asset",
   "New password": "New password",
   "Next": "Next",
+  "NEXT": "NEXT",
   "No device detected": {
     " Please make sure your device is connected and the Stellar app is open on it": "No device detected. Please make sure your device is connected and the Stellar app is open on it."
   },
@@ -275,7 +268,6 @@
   "None": "None",
   "Not defined": "Not defined",
   "Not enough lumens": "Not enough lumens",
-  "Not recommended asset": "Not recommended asset",
   "Offer Id": "Offer Id",
   "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
   "only way to access it in a new browser": "only way to access it in a new browser",
@@ -284,6 +276,7 @@
   "Parameters": "Parameters",
   "Passphrase": "Passphrase",
   "Paths": "Paths",
+  "Pin the extension in your browser to access it easily": "Pin the extension in your browser to access it easily.",
   "Please check if the network information is correct and try again": {
     " Alternatively, this network may not be operational": "Please check if the network information is correct and try again. Alternatively, this network may not be operational."
   },
@@ -303,14 +296,13 @@
   "Projects related to this asset may be fraudulent even if the creators say otherwise": {
     " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
   },
-  "Read before importing your key": "Read before importing your key",
+  "read before importing your key": "read before importing your key",
   "Received": "Received",
   "RECEIVED": "RECEIVED",
   "RECENT": "RECENT",
   "Recipient Stellar address": "Recipient Stellar address",
   "Reject": "Reject",
   "Remove": "Remove",
-  "Remove trustline": "Remove trustline",
   "Reserved Balance*": "Reserved Balance*",
   "Review": "Review",
   "Review transaction on device": "Review transaction on device",
@@ -344,7 +336,6 @@
   "Signer": "Signer",
   "Signing arbitrary data with a hardware wallet is currently not supported": "Signing arbitrary data with a hardware wallet is currently not supported.",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
-  "SOROBAN RPC URL": "SOROBAN RPC URL",
   "Source": "Source",
   "Sponsored Id": "Sponsored Id",
   "Stellar address is not funded": "Stellar address is not funded",
@@ -367,7 +358,8 @@
     " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
   },
   "The destination account doesn’t exist": {
-    " Make sure it is a funded Stellar account and try again": "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again."
+    " Make sure it is a funded Stellar account and try again": "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again.",
+    " Send at least 1 XLM to create account": "The destination account doesn’t exist. Send at least 1 XLM to create account."
   },
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
@@ -406,6 +398,7 @@
   "Unable to search for assets": "Unable to search for assets",
   "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
+  "URL": "URL",
   "Validate addresses that require a memo": "Validate addresses that require a memo",
   "Value Data": "Value Data",
   "Value Type": "Value Type",
@@ -414,14 +407,15 @@
   "View on": "View on",
   "View public key": "View public key",
   "Wallet Address": "Wallet Address",
-  "Wallet created successfully!": "Wallet created successfully!",
   "Want to add another account?": "Want to add another account?",
   "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
   "Weight": "Weight",
   "Welcome! Is this your first time using Freighter?": "Welcome! Is this your first time using Freighter?",
   "which is not available on Freighter": {
-    " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
+    " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
+    " If you own this account, you can import it into Freighter to complete this transaction": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction."
   },
+  "Woo, you’re in!": "Woo, you’re in!",
   "You are attempting to sign arbitrary data": {
     " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data."
   },
@@ -436,11 +430,13 @@
     " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens": "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens."
   },
   "You must have a balance of": "You must have a balance of",
+  "You successfully imported your account": {
+    " Keep your recovery phrase safe, it’s your responsibility": "You successfully imported your account. Keep your recovery phrase safe, it’s your responsibility"
+  },
   "You’re good to go!": "You’re good to go!",
   "Your account balance is not sufficient for this transaction": {
     " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
   },
-  "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"
 }

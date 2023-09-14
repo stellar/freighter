@@ -1,5 +1,5 @@
 import StellarSdk, { Horizon, Server, ServerApi } from "stellar-sdk";
-import { SorobanRpc } from "soroban-client";
+import { Networks, SorobanRpc } from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -134,7 +134,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
 
       if (refreshBalances) {
         thunkApi.dispatch(resetSorobanTokensStatus());
-        await thunkApi.dispatch(getTokenBalances({ sorobanClient }));
+        await thunkApi.dispatch(getTokenBalances({ sorobanClient, network: networkDetails.network as Networks }));
       }
 
       return txRes;

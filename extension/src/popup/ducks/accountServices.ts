@@ -4,6 +4,8 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import * as Sentry from "@sentry/browser";
+import { Networks } from "soroban-client";
+
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   addAccount as addAccountService,
@@ -342,15 +344,15 @@ export const signOut = createAsyncThunk<
 
 export const addTokenId = createAsyncThunk<
   { tokenIdList: string[] },
-  string,
+  { tokenId: string, network: Networks },
   { rejectValue: ErrorMessage }
->("auth/addToken", async (tokenId, thunkApi) => {
+>("auth/addToken", async ({ tokenId, network }, thunkApi) => {
   let res = {
     tokenIdList: [] as string[],
   };
 
   try {
-    res = await addTokenIdService(tokenId);
+    res = await addTokenIdService(tokenId, network);
   } catch (e) {
     console.error("Failed when adding a token: ", e.message);
     return thunkApi.rejectWithValue({

@@ -1,6 +1,8 @@
 import browser from "webextension-polyfill";
+import { Networks } from "soroban-client";
+import semver from "semver";
 
-import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
+import { NETWORKS_LIST_ID, STORAGE_VERSION, TOKEN_ID_LIST } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
@@ -125,4 +127,27 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
   });
 
   await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+}
+
+// This migration migrates the storage for custom tokens IDs to be keyed by network
+export const migrateTokenIdList = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST) as Record<string, object>
+  const storageVersion = await localStore.getItem(STORAGE_VERSION) as string
+
+  if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
+   const newTokenList = {
+    [Networks.FUTURENET]: tokenIdsByKey
+   }
+   await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+  }
+};
+
+// Updates storage version
+export const migrateDataStorageVersion = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  // This value should be manually updated when a new schema change is made
+  const STORAGE_SCHEMA_VERSION = "1.0.0"
+  await localStore.setItem(STORAGE_VERSION, STORAGE_SCHEMA_VERSION);
 }
