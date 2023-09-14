@@ -1225,8 +1225,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const addTokenId = async () => {
     const { tokenId, network } = request;
-    const compositeStorageKey = `${TOKEN_ID_LIST}__${network}`
-    const tokenIdList = (await localStore.getItem(compositeStorageKey)) || {};
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdList = tokenIdsByNetwork[network] || {}
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
@@ -1236,21 +1236,27 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     accountTokenIdList.push(tokenId);
-    await localStore.setItem(compositeStorageKey, {
-      ...tokenIdList,
-      [keyId]: accountTokenIdList,
-    });
+    await localStore.setItem(
+      TOKEN_ID_LIST,
+      {
+        ...tokenIdsByNetwork,
+        [network]: {
+          ...tokenIdList,
+          [keyId]: accountTokenIdList
+        },
+      }
+      );
 
     return { accountTokenIdList };
   };
 
   const getTokenIds = async () => {
     const { network } = request;
-    const compositeStorageKey = `${TOKEN_ID_LIST}__${network}`
-    const tokenIdList = (await localStore.getItem(compositeStorageKey)) || {};
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdsByKey= tokenIdsByNetwork[network] || {}
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
-    return { tokenIdList: tokenIdList[keyId] || [] };
+    return { tokenIdList: tokenIdsByKey[keyId] || [] };
   };
 
   const messageResponder: MessageResponder = {
