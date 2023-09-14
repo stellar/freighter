@@ -1,4 +1,5 @@
 import browser from "webextension-polyfill";
+import { Networks } from "soroban-client";
 
 import { NETWORKS_LIST_ID, TOKEN_ID_LIST } from "constants/localStorageTypes";
 import {
@@ -9,7 +10,6 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
-import { Networks } from "soroban-client";
 
 interface SetItemParams {
   [key: string]: any;
@@ -129,15 +129,50 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 }
 
 // This migration migrates the storage for custom tokens IDs to be keyed by network
+/*
+  Possible Schemas - 
+  should all be Futurenet in first schema
+
+  before --
+  {
+    [KEY_ID]: tokenList,
+    ...
+  }
+
+  after --
+  {
+    [SorobanClient.Network]: {
+      [KEY_ID]: tokenList,
+      ...
+    },
+    ...
+  }
+*/
 export const migrateTokenIdList = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST)
+  const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST) as Record<string, object>
+
+  const isNetwork = (key: string) => (Object.keys(Networks) as Array<keyof typeof Networks>).some((network) => key === network)
 
   let newStorageSchema = tokenIdsByKey
   if (tokenIdsByKey) {
     // intially this was assumed to be Futurenet
+    const futurenetNetworks = Object.keys(tokenIdsByKey).reduce((prev, curr) => {
+      const next = prev
+      // if the key is not a network, assume old schema and move all keys(key ids) under futurenet key
+      if (!isNetwork(curr)) {
+        next[Networks.FUTURENET] = {
+          ...next[Networks.FUTURENET],
+          curr: tokenIdsByKey[curr]
+        }
+      }
+      next[curr as Networks] = tokenIdsByKey[curr]
+
+      return next
+    }, {} as Record<Networks, object>)
+
     newStorageSchema = {
-      [Networks.FUTURENET]: tokenIdsByKey || {}
+      [Networks.FUTURENET]: futurenetNetworks
     }
   }
   await localStore.setItem(TOKEN_ID_LIST, newStorageSchema);
