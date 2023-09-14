@@ -143,7 +143,7 @@ export const migrateTokenIdList = async () => {
   }
 };
 
-// Keeps storage version sync'd with package version
+// Updates storage version
 export const migrateDataStorageVersion = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
 
