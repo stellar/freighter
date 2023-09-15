@@ -44,9 +44,9 @@ export const SendTxStatus: {
 export const GetTxStatus: {
   [index: string]: SorobanClient.SorobanRpc.GetTransactionStatus;
 } = {
-  Success: "SUCCESS",
-  NotFound: "NOT_FOUND",
-  Failed: "FAILED",
+  Success: SorobanClient.SorobanRpc.GetTransactionStatus.SUCCESS,
+  NotFound: SorobanClient.SorobanRpc.GetTransactionStatus.NOT_FOUND,
+  Failed: SorobanClient.SorobanRpc.GetTransactionStatus.FAILED,
 };
 
 export const createAccount = async (
