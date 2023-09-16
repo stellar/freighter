@@ -651,7 +651,7 @@ export const submitFreighterSorobanTransaction = async ({
     : networkDetails.sorobanRpcUrl;
 
   const server = new SorobanClient.Server(serverUrl, {
-    allowHttp: true,
+    allowHttp: !serverUrl.startsWith("https"),
   });
 
   let response = await server.sendTransaction(tx);
