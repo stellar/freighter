@@ -53,7 +53,7 @@
   "Asset not found": "Asset not found",
   "Assets found in this domain": "Assets found in this domain",
   "At least one uppercase letter": "At least one uppercase letter",
-  "Auth": "Auth",
+  "Authorization Entry": "Authorization Entry",
   "Authorization Immutable": "Authorization Immutable",
   "Authorization Required": "Authorization Required",
   "Authorization Required; Authorization Immutable": "Authorization Required; Authorization Immutable",
@@ -62,10 +62,10 @@
   "Authorization Revocable": "Authorization Revocable",
   "Authorization Revocable; Authorization Immutable": "Authorization Revocable; Authorization Immutable",
   "available": "available",
-  "Avoid scams and keep your account safe": "Avoid scams and keep your account safe",
   "Awesome, you passed the test": {
     " Keep your recovery phrase safe, it’s your responsibility": "Awesome, you passed the test. Keep your recovery phrase safe, it’s your responsibility."
   },
+  "Awesome, you passed the test! Pin the extension in your browser to access it easily": "Awesome, you passed the test! Pin the extension in your browser to access it easily.",
   "Balance Id": "Balance Id",
   "Base fee": "Base fee",
   "Before You Add This Asset": "Before You Add This Asset",
@@ -130,6 +130,7 @@
   "Enter passphrase": "Enter passphrase",
   "Enter password": "Enter password",
   "Enter Password": "Enter Password",
+  "Enter Soroban RPC URL": "Enter Soroban RPC URL",
   "Enter Token ID": "Enter Token ID",
   "Enter your 12 word phrase to restore your wallet": "Enter your 12 word phrase to restore your wallet",
   "Enter your account password to authorize this transaction": "Enter your account password to authorize this transaction.",
@@ -168,7 +169,6 @@
   },
   "Friendbot URL": "Friendbot URL",
   "From": "From",
-  "Func": "Func",
   "Function Name": "Function Name",
   "Fund with Friendbot": "Fund with Friendbot",
   "Got it": "Got it",
@@ -176,7 +176,9 @@
   "High Threshold": "High Threshold",
   "History": "History",
   "Home": "Home",
+  "HORIZON RPC URL": "HORIZON RPC URL",
   "I have my 12 word seed phrase": "I have my 12 word seed phrase",
+  "I have my recovery phrase safe": "I have my recovery phrase safe",
   "I have read and agree to": "I have read and agree to",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
   "I’m going to need a seed phrase": "I’m going to need a seed phrase",
@@ -201,13 +203,17 @@
   "Invalid Format Asset": "Invalid Format Asset",
   "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
+  "Invocation": "Invocation",
   "is requesting approval to a": "is requesting approval to a",
   "is requesting approval to sign a blob of data": "is requesting approval to sign a blob of data",
+  "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
   "Keep it in a safe place": "Keep it in a safe place.",
+  "Keep your account safe": "Keep your account safe",
   "Keep your recovery phrase in a safe and secure place": {
     " Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place."
   },
+  "Keep your recovery phrase safe, it’s your responsibility": "Keep your recovery phrase safe, it’s your responsibility.",
   "Learn more": "Learn more",
   "Learn More": "Learn More",
   "Learn more about account creation": "Learn more about account creation",
@@ -245,7 +251,7 @@
   "Min Amount B": "Min Amount B",
   "Min Price": "Min Price",
   "Minimum Received": "Minimum Received",
-  "Mint": "Mint",
+  "Minted": "Minted",
   "Multiple assets": "Multiple assets",
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
   "must be below": "must be below",
@@ -278,7 +284,6 @@
   "Parameters": "Parameters",
   "Passphrase": "Passphrase",
   "Paths": "Paths",
-  "Pin the extension in your browser to access it easily": "Pin the extension in your browser to access it easily.",
   "Please check if the network information is correct and try again": {
     " Alternatively, this network may not be operational": "Please check if the network information is correct and try again. Alternatively, this network may not be operational."
   },
@@ -337,7 +342,9 @@
   "Share Public Key": "Share Public Key",
   "Show recovery phrase": "Show recovery phrase",
   "Signer": "Signer",
+  "Signing arbitrary data with a hardware wallet is currently not supported": "Signing arbitrary data with a hardware wallet is currently not supported.",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
+  "SOROBAN RPC URL": "SOROBAN RPC URL",
   "Source": "Source",
   "Sponsored Id": "Sponsored Id",
   "Stellar address is not funded": "Stellar address is not funded",
@@ -346,7 +353,6 @@
   "swap": "swap",
   "Swap": "Swap",
   "SWAP": "SWAP",
-  "Swap • {{date}}": "Swap • {{date}}",
   "Swap failed": "Swap failed",
   "swapped": "swapped",
   "Swapped": "Swapped",
@@ -399,7 +405,7 @@
   "Unable to connect to": "Unable to connect to",
   "Unable to search for assets": "Unable to search for assets",
   "Unsafe": "Unsafe",
-  "URL": "URL",
+  "Unsupported signing method": "Unsupported signing method",
   "Validate addresses that require a memo": "Validate addresses that require a memo",
   "Value Data": "Value Data",
   "Value Type": "Value Type",
@@ -408,15 +414,14 @@
   "View on": "View on",
   "View public key": "View public key",
   "Wallet Address": "Wallet Address",
+  "Wallet created successfully!": "Wallet created successfully!",
   "Want to add another account?": "Want to add another account?",
   "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
   "Weight": "Weight",
   "Welcome! Is this your first time using Freighter?": "Welcome! Is this your first time using Freighter?",
   "which is not available on Freighter": {
-    " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
-    " If you own this account, you can import it into Freighter to complete this transaction": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this transaction."
+    " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
-  "Woo, you’re in!": "Woo, you’re in!",
   "You are attempting to sign arbitrary data": {
     " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data."
   },
@@ -431,13 +436,11 @@
     " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens": "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens."
   },
   "You must have a balance of": "You must have a balance of",
-  "You successfully imported your account": {
-    " Keep your recovery phrase safe, it’s your responsibility": "You successfully imported your account. Keep your recovery phrase safe, it’s your responsibility"
-  },
   "You’re good to go!": "You’re good to go!",
   "Your account balance is not sufficient for this transaction": {
     " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
   },
+  "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"
 }

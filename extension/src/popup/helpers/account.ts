@@ -8,13 +8,14 @@ import {
   SorobanBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
   isTestnet,
 } from "helpers/stellar";
-import { getAttrsFromSorobanHorizonOp, SorobanTokenInterface } from "./soroban";
+import { getAttrsFromSorobanHorizonOp } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 

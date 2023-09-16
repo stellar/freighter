@@ -60,6 +60,7 @@ export const submitTransaction = async (
     });
   } catch (e) {
     console.error(e);
+    throw e;
   }
   const { signedTransaction, error } = response;
 
@@ -86,6 +87,7 @@ export const submitBlob = async (
     });
   } catch (e) {
     console.error(e);
+    throw e;
   }
   const { signedBlob, error } = response;
 
@@ -93,6 +95,32 @@ export const submitBlob = async (
     throw error;
   }
   return signedBlob;
+};
+
+export const submitAuthEntry = async (
+  entryXdr: string,
+  opts?: {
+    accountToSign?: string;
+  },
+): Promise<string> => {
+  let response = { signedAuthEntry: "", error: "" };
+  const _opts = opts || {};
+  const accountToSign = _opts.accountToSign || "";
+  try {
+    response = await sendMessageToContentScript({
+      entryXdr,
+      accountToSign,
+      type: EXTERNAL_SERVICE_TYPES.SUBMIT_AUTH_ENTRY,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  const { signedAuthEntry, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return signedAuthEntry;
 };
 
 export const requestNetwork = async (): Promise<string> => {

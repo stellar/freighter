@@ -1,0 +1,26 @@
+.AuthEntry {
+  .AuthEntryHeader {
+    border-bottom: 1px solid var(--pal-border-secondary);
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    line-height: 0.72rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  .AuthEntryAttributes {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+
+    pre {
+      background: var(--pal-example-details);
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      margin: 0.5rem 0;
+      padding: 1rem;
+    }
+  }
+}

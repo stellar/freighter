@@ -19,6 +19,7 @@ or import just the modules you require:
 import {
   isConnected,
   getPublicKey,
+  signAuthEntry,
   signTransaction,
   signBlob,
 } from "@stellar/freighter-api";
@@ -82,6 +83,7 @@ If the user has authorized your application previously, it will be on the extens
 import {
   isConnected,
   getPublicKey,
+  signAuthEntry,
   signTransaction,
   signBlob,
 } from "@stellar/freighter-api";
@@ -124,6 +126,7 @@ import {
   isAllowed,
   setAllowed,
   getUserInfo,
+  signAuthEntry,
   signTransaction,
   signBlob,
 } from "@stellar/freighter-api";
@@ -177,6 +180,7 @@ This function is useful for determining what network the user has configured Fre
 import {
   isConnected,
   getNetwork,
+  signAuthEntry,
   signTransaction,
   signBlob,
 } from "@stellar/freighter-api";
@@ -234,7 +238,7 @@ import {
   isConnected,
   getPublicKey,
   signTransaction,
-  signBlob
+  signBlob,
 } from "@stellar/freighter-api";
 
 if (await isConnected()) {

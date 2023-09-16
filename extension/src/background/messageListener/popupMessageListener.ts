@@ -104,6 +104,13 @@ export const blobQueue: Array<{
   accountToSign: string;
 }> = [];
 
+export const authEntryQueue: Array<{
+  accountToSign: string;
+  tab: browser.Tabs.Tab | undefined;
+  entry: string; // xdr.SorobanAuthorizationEntry
+  url: string;
+}> = [];
+
 interface KeyPair {
   publicKey: string;
   privateKey: string;
@@ -949,6 +956,29 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
+  const signAuthEntry = async () => {
+    const privateKey = privateKeySelector(sessionStore.getState());
+
+    if (privateKey.length) {
+      const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
+
+      const authEntry = authEntryQueue.pop();
+
+      const response = authEntry
+        ? await sourceKeys.sign(Buffer.from(authEntry.entry))
+        : null;
+
+      const entryResponse = responseQueue.pop();
+
+      if (typeof entryResponse === "function") {
+        entryResponse(response);
+        return {};
+      }
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const rejectTransaction = () => {
     transactionQueue.pop();
     const response = responseQueue.pop();
@@ -1194,8 +1224,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addTokenId = async () => {
-    const { tokenId } = request;
-    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const { tokenId, network } = request;
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdList = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
@@ -1206,18 +1237,23 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     accountTokenIdList.push(tokenId);
     await localStore.setItem(TOKEN_ID_LIST, {
-      ...tokenIdList,
-      [keyId]: accountTokenIdList,
+      ...tokenIdsByNetwork,
+      [network]: {
+        ...tokenIdList,
+        [keyId]: accountTokenIdList,
+      },
     });
 
     return { accountTokenIdList };
   };
 
   const getTokenIds = async () => {
-    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const { network } = request;
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdsByKey = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
-    return { tokenIdList: tokenIdList[keyId] || [] };
+    return { tokenIdList: tokenIdsByKey[keyId] || [] };
   };
 
   const messageResponder: MessageResponder = {
@@ -1241,6 +1277,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.SIGN_BLOB]: signBlob,
+    [SERVICE_TYPES.SIGN_AUTH_ENTRY]: signAuthEntry,
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,

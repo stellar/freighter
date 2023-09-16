@@ -2,18 +2,24 @@ import StellarSdk from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
+  getBalance,
+  getDecimals,
+  getName,
+  getSymbol,
+} from "@shared/helpers/soroban/token";
+import {
   Account,
   AccountBalancesInterface,
   AccountHistoryInterface,
   Balances,
   HorizonOperation,
   Settings,
-  SorobanTxStatus,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
   NetworkDetails,
+  NETWORKS,
   SOROBAN_RPC_URLS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
@@ -24,9 +30,24 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
-import { decodei128, decodeU32, decodeStr } from "./helpers/soroban";
-
 const TRANSACTIONS_LIMIT = 100;
+
+export const SendTxStatus: {
+  [index: string]: SorobanClient.SorobanRpc.SendTransactionStatus;
+} = {
+  Pending: "PENDING",
+  Duplicate: "DUPLICATE",
+  Retry: "TRY_AGAIN_LATER",
+  Error: "ERROR",
+};
+
+export const GetTxStatus: {
+  [index: string]: SorobanClient.SorobanRpc.GetTransactionStatus;
+} = {
+  Success: SorobanClient.SorobanRpc.GetTransactionStatus.SUCCESS,
+  NotFound: SorobanClient.SorobanRpc.GetTransactionStatus.NOT_FOUND,
+  Failed: SorobanClient.SorobanRpc.GetTransactionStatus.FAILED,
+};
 
 export const createAccount = async (
   password: string,
@@ -515,6 +536,16 @@ export const signBlob = async (): Promise<void> => {
   }
 };
 
+export const signAuthEntry = async (): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signFreighterTransaction = async ({
   transactionXDR,
   network,
@@ -606,28 +637,49 @@ export const submitFreighterSorobanTransaction = async ({
     console.error(e);
   }
 
-  const server = new SorobanClient.Server(SOROBAN_RPC_URLS.FUTURENET, {
-    allowHttp: true,
+  if (
+    !networkDetails.sorobanRpcUrl &&
+    networkDetails.network !== NETWORKS.FUTURENET
+  ) {
+    throw new Error("soroban rpc not supported");
+  }
+
+  // TODO: after enough time has passed to assume most clients have ran
+  // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
+  const serverUrl = !networkDetails.sorobanRpcUrl
+    ? SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!
+    : networkDetails.sorobanRpcUrl;
+
+  const server = new SorobanClient.Server(serverUrl, {
+    allowHttp: !serverUrl.startsWith("https"),
   });
 
-  // TODO: fixed in Sorobanclient, not yet released
-  let response = (await server.sendTransaction(tx)) as any;
+  let response = await server.sendTransaction(tx);
 
-  try {
-    // Poll this until the status is not "pending"
-    while (response.status === SorobanTxStatus.PENDING) {
+  if (response.errorResultXdr) {
+    throw new Error(response.errorResultXdr);
+  }
+
+  if (response.status === SendTxStatus.Pending) {
+    let txResponse = await server.getTransaction(response.hash);
+
+    // Poll this until the status is not "NOT_FOUND"
+    while (txResponse.status === GetTxStatus.NotFound) {
       // See if the transaction is complete
       // eslint-disable-next-line no-await-in-loop
-      response = await server.getTransaction(response.id);
+      txResponse = await server.getTransaction(response.hash);
       // Wait a second
       // eslint-disable-next-line no-await-in-loop
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-  } catch (e) {
-    throw new Error(e);
-  }
 
-  return response;
+    return response;
+    // eslint-disable-next-line no-else-return
+  } else {
+    throw new Error(
+      `Unabled to submit transaction, status: ${response.status}`,
+    );
+  }
 };
 
 export const addRecentAddress = async ({
@@ -859,98 +911,42 @@ export const getBlockedAccounts = async () => {
   return resp;
 };
 
-type TxToOp = {
-  [index: string]: {
-    tx: SorobanClient.Transaction<
-      SorobanClient.Memo<SorobanClient.MemoType>,
-      SorobanClient.Operation[]
-    >;
-    decoder: (xdr: string) => string | number;
-  };
-};
-
-interface SorobanTokenRecord {
-  [key: string]: unknown;
-  balance: number;
-  name: string;
-  symbol: string;
-  decimals: string;
-}
-
-export const getSorobanTokenBalance = (
+export const getSorobanTokenBalance = async (
   server: SorobanClient.Server,
   contractId: string,
   txBuilders: {
-    // need a builder per operation until multi-op transactions are released
+    // need a builder per operation, Soroban currently has single op transactions
     balance: SorobanClient.TransactionBuilder;
     name: SorobanClient.TransactionBuilder;
     decimals: SorobanClient.TransactionBuilder;
     symbol: SorobanClient.TransactionBuilder;
   },
-  params: SorobanClient.xdr.ScVal[],
+  balanceParams: SorobanClient.xdr.ScVal[],
 ) => {
-  const contract = new SorobanClient.Contract(contractId);
-
   // Right now we can only have 1 operation per TX in Soroban
-  // There is ongoing work to lift this restriction
-  // but for now we need to do 4 txs to show 1 user balance. :(
-  const balanceTx = txBuilders.balance
-    .addOperation(contract.call("balance", ...params))
-    .setTimeout(SorobanClient.TimeoutInfinite)
-    .build();
+  // for now we need to do 4 tx simulations to show 1 user balance. :(
+  // TODO: figure out how to fetch ledger keys to do this more efficiently
+  const decimals = await getDecimals(contractId, server, txBuilders.decimals);
+  const name = await getName(contractId, server, txBuilders.name);
+  const symbol = await getSymbol(contractId, server, txBuilders.symbol);
+  const balance = await getBalance(
+    contractId,
+    balanceParams,
+    server,
+    txBuilders.balance,
+  );
 
-  const nameTx = txBuilders.name
-    .addOperation(contract.call("name"))
-    .setTimeout(SorobanClient.TimeoutInfinite)
-    .build();
-
-  const symbolTx = txBuilders.symbol
-    .addOperation(contract.call("symbol"))
-    .setTimeout(SorobanClient.TimeoutInfinite)
-    .build();
-
-  const decimalsTx = txBuilders.decimals
-    .addOperation(contract.call("decimals"))
-    .setTimeout(SorobanClient.TimeoutInfinite)
-    .build();
-
-  const txs: TxToOp = {
-    balance: {
-      tx: balanceTx,
-      decoder: decodei128,
-    },
-    name: {
-      tx: nameTx,
-      decoder: decodeStr,
-    },
-    symbol: {
-      tx: symbolTx,
-      decoder: decodeStr,
-    },
-    decimals: {
-      tx: decimalsTx,
-      decoder: decodeU32,
-    },
+  return {
+    balance,
+    decimals,
+    name,
+    symbol,
   };
-
-  const tokenBalanceInfo = Object.keys(txs).reduce(async (prev, curr) => {
-    const _prev = await prev;
-    const { tx, decoder } = txs[curr];
-    const { results } = await server.simulateTransaction(tx);
-    if (!results || results.length !== 1) {
-      throw new Error("Invalid response from simulateTransaction");
-    }
-    const result = results[0];
-    _prev[curr] = decoder(result.xdr);
-
-    return _prev;
-  }, Promise.resolve({} as SorobanTokenRecord));
-
-  return tokenBalanceInfo;
 };
 
 export const addTokenId = async (
   tokenId: string,
+  network: SorobanClient.Networks,
 ): Promise<{
   tokenIdList: string[];
 }> => {
@@ -960,6 +956,7 @@ export const addTokenId = async (
   try {
     ({ tokenIdList, error } = await sendMessageToBackground({
       tokenId,
+      network,
       type: SERVICE_TYPES.ADD_TOKEN_ID,
     }));
   } catch (e) {
@@ -973,9 +970,12 @@ export const addTokenId = async (
   return { tokenIdList };
 };
 
-export const getTokenIds = async (): Promise<string[]> => {
+export const getTokenIds = async (
+  network: SorobanClient.Networks,
+): Promise<string[]> => {
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_TOKEN_IDS,
+    network,
   });
   return resp.tokenIdList;
 };

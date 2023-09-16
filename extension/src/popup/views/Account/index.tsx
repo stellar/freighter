@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { Networks } from "soroban-client";
 
 import { getAccountHistory } from "@shared/api/internal";
 import {
@@ -47,6 +48,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
+import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
 import { SorobanContext } from "../../SorobanContext";
@@ -102,7 +104,12 @@ export const Account = () => {
     dispatch(getBlockedDomains());
 
     if (isExperimentalModeEnabled) {
-      dispatch(getTokenBalances({ sorobanClient }));
+      dispatch(
+        getTokenBalances({
+          sorobanClient,
+          network: networkDetails.network as Networks,
+        }),
+      );
     }
 
     return () => {
@@ -174,7 +181,9 @@ export const Account = () => {
     />
   ) : (
     <>
-      {isLoading ? null : (
+      {isLoading ? (
+        <Loading />
+      ) : (
         <div className="AccountView" data-testid="account-view">
           <AccountHeader
             accountDropDownRef={accountDropDownRef}

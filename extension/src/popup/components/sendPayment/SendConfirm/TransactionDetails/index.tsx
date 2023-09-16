@@ -8,7 +8,7 @@ import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { SorobanContext } from "popup/SorobanContext";
+import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -23,7 +23,7 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-import { accountIdentifier, numberToI128 } from "@shared/api/helpers/soroban";
+import { transfer } from "@shared/helpers/soroban/token";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -215,8 +215,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const { t } = useTranslation();
 
-  const { server: sorobanServer } = useContext(SorobanContext);
-
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
@@ -280,33 +278,24 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         Number(assetBalance.decimals),
       );
 
-      const sourceAccount = await sorobanServer.getAccount(publicKey);
-      const contract = new SorobanClient.Contract(assetAddress);
-      const contractOp = contract.call(
-        "transfer",
-        ...[
-          accountIdentifier(publicKey), // from
-          accountIdentifier(destination), // to
-          numberToI128(parsedAmount.toNumber()), // amount
-        ],
-      );
+      const params = [
+        new SorobanClient.Address(publicKey).toScVal(), // from
+        new SorobanClient.Address(destination).toScVal(), // to
+        new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
+      ];
 
-      const transaction = await new SorobanClient.TransactionBuilder(
-        sourceAccount,
-        {
-          fee: xlmToStroop(transactionFee).toFixed(),
-          networkPassphrase: networkDetails.networkPassphrase,
-        },
-      )
-        .addOperation(contractOp)
-        .setTimeout(180);
-
-      if (memo) {
-        transaction.addMemo(SorobanClient.Memo.text(memo));
+      if (!hasSorobanClient(sorobanClient)) {
+        throw new Error("Soroban RPC not supported for this network");
       }
 
-      const preparedTransaction = await sorobanServer.prepareTransaction(
-        transaction.build(),
+      const builder = await sorobanClient.newTxBuilder(
+        xlmToStroop(transactionFee).toFixed(),
+      );
+
+      const transaction = await transfer(assetAddress, params, memo, builder);
+
+      const preparedTransaction = await sorobanClient.server.prepareTransaction(
+        transaction,
         networkDetails.networkPassphrase,
       );
 

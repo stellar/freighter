@@ -2,6 +2,13 @@
   color: var(--color-gray-90);
   cursor: pointer;
 
+  &__loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
   &__row {
     display: flex;
   }

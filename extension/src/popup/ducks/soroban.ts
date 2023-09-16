@@ -1,3 +1,4 @@
+import { Address, Networks } from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -7,19 +8,25 @@ import {
   getTokenIds as internalGetTokenIds,
 } from "@shared/api/internal";
 import { ErrorMessage, ActionStatus, TokenBalances } from "@shared/api/types";
-import { accountIdentifier } from "@shared/api/helpers/soroban";
-import { SorobanContextInterface } from "popup/SorobanContext";
+import {
+  SorobanContextInterface,
+  hasSorobanClient,
+} from "popup/SorobanContext";
 
 export const getTokenBalances = createAsyncThunk<
   TokenBalances,
-  { sorobanClient: SorobanContextInterface },
+  { sorobanClient: SorobanContextInterface; network: Networks },
   { rejectValue: ErrorMessage }
->("getTokenBalances", async ({ sorobanClient }, thunkApi) => {
+>("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
+  if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
+    throw new Error("soroban rpc not supported");
+  }
+
   try {
     const { publicKey } = await internalLoadAccount();
-    const tokenIdList = await internalGetTokenIds();
+    const tokenIdList = await internalGetTokenIds(network);
 
-    const params = [accountIdentifier(publicKey)];
+    const params = [new Address(publicKey).toScVal()];
     const results = [] as TokenBalances;
 
     for (let i = 0; i < tokenIdList.length; i += 1) {
@@ -27,25 +34,30 @@ export const getTokenBalances = createAsyncThunk<
       /*
         Right now, Soroban transactions only support 1 operation per tx
         so we need a builder per value from the contract,
-        once multi-op transactions are supported this can send
+        once/if multi-op transactions are supported this can send
         1 tx with an operation for each value.
       */
 
       try {
-        // eslint-disable-next-line no-await-in-loop
+        if (!hasSorobanClient(sorobanClient)) {
+          throw new Error("Soroban RPC is not supprted for this network");
+        }
+
+        /* eslint-disable no-await-in-loop */
         const { balance, ...rest } = await internalGetSorobanTokenBalance(
           sorobanClient.server,
           tokenId,
           {
-            balance: sorobanClient.newTxBuilder(),
-            name: sorobanClient.newTxBuilder(),
-            decimals: sorobanClient.newTxBuilder(),
-            symbol: sorobanClient.newTxBuilder(),
+            balance: await sorobanClient.newTxBuilder(),
+            name: await sorobanClient.newTxBuilder(),
+            decimals: await sorobanClient.newTxBuilder(),
+            symbol: await sorobanClient.newTxBuilder(),
           },
           params,
         );
+        /* eslint-enable no-await-in-loop */
 
-        const total = new BigNumber(balance) as any; // ?? why can't the BigNumber type work here
+        const total = new BigNumber(balance);
 
         results.push({
           contractId: tokenId,
@@ -64,7 +76,7 @@ export const getTokenBalances = createAsyncThunk<
   }
 });
 
-const initialState = {
+export const initialState = {
   getTokenBalancesStatus: ActionStatus.IDLE,
   tokenBalances: [] as TokenBalances,
 };

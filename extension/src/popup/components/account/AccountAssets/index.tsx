@@ -241,7 +241,7 @@ export const AccountAssets = ({
               <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
-              <div className="asset-amount">
+              <div className="asset-amount" data-testid="asset-amount">
                 {formatAmount(amountVal)} <span>{amountUnit}</span>
               </div>
             </div>

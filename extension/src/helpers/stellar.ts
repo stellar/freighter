@@ -10,6 +10,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 
+import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
 // .isBigNumber() not catching correctly, so checking .isBigNumber
@@ -34,11 +35,7 @@ export const truncatedFedAddress = (addr: string) => {
 export const truncatedPoolId = (poolId: string) => truncateString(poolId);
 
 export const getTransactionInfo = (search: string) => {
-  const searchParams = parsedSearchParam(search);
-
-  if ("blob" in searchParams) {
-    return searchParams;
-  }
+  const searchParams = parsedSearchParam(search) as TransactionInfo;
 
   const {
     accountToSign,

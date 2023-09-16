@@ -1,6 +1,7 @@
 import { getPublicKey } from "./getPublicKey";
 import { signTransaction } from "./signTransaction";
 import { signBlob } from "./signBlob";
+import { signAuthEntry } from "./signAuthEntry";
 import { isConnected } from "./isConnected";
 import { getNetwork } from "./getNetwork";
 import { getNetworkDetails } from "./getNetworkDetails";
@@ -14,6 +15,7 @@ export {
   getPublicKey,
   signTransaction,
   signBlob,
+  signAuthEntry,
   isConnected,
   getNetwork,
   getNetworkDetails,
@@ -25,6 +27,7 @@ export default {
   getPublicKey,
   signTransaction,
   signBlob,
+  signAuthEntry,
   isConnected,
   getNetwork,
   getNetworkDetails,

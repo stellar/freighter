@@ -15,6 +15,7 @@
   ul {
     list-style-type: disc;
   }
+
   li {
     margin-top: 1rem;
     line-height: 1.5rem;
@@ -45,7 +46,7 @@
     justify-content: start;
     padding: 0 0 2rem 0;
     color: var(--color-gray-90);
-    max-width: 24rem;
+    max-width: 31rem;
   }
 
   &__infoBlock {
@@ -53,10 +54,13 @@
 
     &__list {
       list-style: inside;
-      margin-top: -0.25rem;
 
       ::before {
         content: none !important;
+      }
+
+      li:not(:last-of-type) {
+        margin-bottom: 1rem;
       }
     }
   }
@@ -75,14 +79,17 @@
   }
 
   &__copy {
-    text-align: center;
     font-size: 1rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-regular);
     margin-bottom: 1.5rem;
 
     p {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--color-gray-70) !important;
+
+      strong {
+        color: var(--color-gray-80) !important;
+      }
     }
   }
 }

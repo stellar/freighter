@@ -34,6 +34,7 @@ const initialState: Settings = {
     networkName: "",
     networkUrl: "",
     networkPassphrase: "",
+    sorobanRpcUrl: "",
   } as NetworkDetails,
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,

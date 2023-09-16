@@ -1,4 +1,10 @@
-import { getTransactionInfo, truncatedPublicKey } from "../stellar";
+import BigNumber from "bignumber.js";
+import {
+  getTransactionInfo,
+  truncatedPublicKey,
+  stroopToXlm,
+  xlmToStroop,
+} from "../stellar";
 import * as urls from "../urls";
 
 describe("truncatedPublicKey", () => {
@@ -26,7 +32,7 @@ describe("getTransactionInfo", () => {
       tab: {},
     });
     const info = getTransactionInfo("foo");
-    if (!("blob" in info)) {
+    if (!("blob" in info) && !("entry" in info)) {
       expect(info.isHttpsDomain).toBe(true);
     }
   });
@@ -41,8 +47,47 @@ describe("getTransactionInfo", () => {
       tab: {},
     });
     const info = getTransactionInfo("foo");
-    if (!("blob" in info)) {
+    if (!("blob" in info) && !("entry" in info)) {
       expect(info.isHttpsDomain).toBe(false);
     }
+  });
+});
+
+describe("stroopToXlm", () => {
+  test("should convert a raw string representing stroops into the equivalent value in lumens", () => {
+    const stroops = "10000001";
+    const lumens = stroopToXlm(stroops);
+
+    expect(lumens).toEqual(new BigNumber(Number(stroops) / 1e7));
+  });
+
+  test("should convert a raw number representing stroops into the equivalent value in lumens", () => {
+    const stroops = 10000001;
+    const lumens = stroopToXlm(stroops);
+
+    expect(lumens).toEqual(new BigNumber(Number(stroops) / 1e7));
+  });
+
+  test("should convert a BigNumber representing stroops into the equivalent value in lumens", () => {
+    const stroops = new BigNumber("10000001");
+    const lumens = stroopToXlm(stroops);
+
+    expect(lumens).toEqual(stroops.dividedBy(1e7));
+  });
+});
+
+describe("xlmToStroop", () => {
+  test("should convert a raw string representing a value in lumens to its equivalent value in stroops", () => {
+    const lumens = "11";
+    const stroops = xlmToStroop(lumens);
+
+    expect(stroops).toEqual(new BigNumber(Math.round(Number(lumens) * 1e7)));
+  });
+
+  test("should convert a BigNumber representing a value in lumens to its equivalent value in stroops", () => {
+    const lumens = new BigNumber("11");
+    const stroops = xlmToStroop(lumens);
+
+    expect(stroops).toEqual(lumens.times(1e7));
   });
 });

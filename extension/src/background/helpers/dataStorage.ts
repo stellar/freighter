@@ -1,12 +1,18 @@
 import browser from "webextension-polyfill";
+import semver from "semver";
 
-import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
+import {
+  NETWORKS_LIST_ID,
+  STORAGE_VERSION,
+  TOKEN_ID_LIST,
+} from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
   TESTNET_NETWORK_DETAILS,
   FUTURENET_NETWORK_DETAILS,
+  SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
 
 interface SetItemParams {
@@ -104,4 +110,51 @@ export const migrateFriendBotUrlNetworkDetails = async () => {
   });
 
   await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+};
+
+export const migrateSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  const networksList: NetworkDetails[] =
+    (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+  const migratedNetworkList = networksList.map((network) => {
+    if (network.network === NETWORKS.FUTURENET) {
+      return {
+        ...FUTURENET_NETWORK_DETAILS,
+        sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.FUTURENET],
+      };
+    }
+
+    return network;
+  });
+
+  await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+};
+
+// This migration migrates the storage for custom tokens IDs to be keyed by network
+export const migrateTokenIdList = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const tokenIdsByKey = (await localStore.getItem(TOKEN_ID_LIST)) as Record<
+    string,
+    object
+  >;
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
+    const newTokenList = {
+      [NETWORKS.FUTURENET]: tokenIdsByKey,
+    };
+    await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+  }
+  await migrateDataStorageVersion();
+};
+
+// Updates storage version
+export const migrateDataStorageVersion = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  // This value should be manually updated when a new schema change is made
+  const STORAGE_SCHEMA_VERSION = "1.0.0";
+  await localStore.setItem(STORAGE_VERSION, STORAGE_SCHEMA_VERSION);
 };
