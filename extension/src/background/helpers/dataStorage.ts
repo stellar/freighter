@@ -1,5 +1,4 @@
 import browser from "webextension-polyfill";
-import { Networks } from "soroban-client";
 import semver from "semver";
 
 import {
@@ -146,7 +145,7 @@ export const migrateTokenIdList = async () => {
 
   if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
     const newTokenList = {
-      [Networks.FUTURENET]: tokenIdsByKey,
+      [NETWORKS.FUTURENET]: tokenIdsByKey,
     };
     await localStore.setItem(TOKEN_ID_LIST, newTokenList);
   }
