@@ -17,5 +17,5 @@ export const simulateTx = async <ArgType>(
     return scValToNative(simulatedTX.result.retval);
   }
 
-  throw new Error("Invalid response from simulateTransaction")
+  throw new Error("Invalid response from simulateTransaction");
 };
