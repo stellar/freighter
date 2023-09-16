@@ -142,12 +142,15 @@ export const migrateTokenIdList = async () => {
   >;
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
+  console.log(storageVersion);
+
   if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
     const newTokenList = {
       [Networks.FUTURENET]: tokenIdsByKey,
     };
     await localStore.setItem(TOKEN_ID_LIST, newTokenList);
   }
+  await migrateDataStorageVersion();
 };
 
 // Updates storage version

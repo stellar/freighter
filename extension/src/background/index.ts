@@ -15,7 +15,6 @@ import {
   normalizeMigratedData,
   migrateSorobanRpcUrlNetworkDetails,
   migrateTokenIdList,
-  migrateDataStorageVersion,
 } from "./helpers/dataStorage";
 
 export const initContentScriptMessageListener = () => {
@@ -61,8 +60,6 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateSorobanRpcUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateTokenIdList);
-  // migrate storage version last so that other migrations can compare versions
-  browser?.runtime?.onInstalled.addListener(migrateDataStorageVersion);
 };
 
 export const initAlarmListener = (sessionStore: Store) => {
