@@ -147,10 +147,10 @@ const getRootInvocationArgs = (
   }
 
   const contractId = SorobanClient.StrKey.encodeContract(
-    invokedContract[0].address().contractId(),
+    invokedContract.contractAddress().contractId(),
   );
-  const fnName = invokedContract[1].sym().toString();
-  const args = invokedContract.slice(2);
+  const fnName = invokedContract.functionName();
+  const args = invokedContract.args();
 
   // TODO: figure out how to make this extensible to all contract functions
   if (

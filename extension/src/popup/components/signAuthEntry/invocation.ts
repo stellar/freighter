@@ -13,7 +13,7 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
   switch (fn.switch().value) {
     // sorobanAuthorizedFunctionTypeContractFn
     case 0: {
-      const inner = fn.value() as xdr.SorobanAuthorizedContractFunction;
+      const inner = fn.value() as xdr.InvokeContractArgs;
       output.type = "execute";
       output.args = {
         source: Address.fromScAddress(inner.contractAddress()).toString(),

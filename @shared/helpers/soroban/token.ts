@@ -8,7 +8,7 @@ import {
 } from "soroban-client";
 import { simulateTx } from "./server";
 
-export const transfer = async (
+export const transfer = (
   contractId: string,
   params: xdr.ScVal[],
   memo: string | undefined,

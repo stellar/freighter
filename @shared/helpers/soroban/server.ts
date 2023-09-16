@@ -4,7 +4,6 @@ import {
   MemoType,
   Operation,
   Server,
-  xdr,
   scValToNative,
 } from "soroban-client";
 
@@ -12,12 +11,11 @@ export const simulateTx = async <ArgType>(
   tx: Transaction<Memo<MemoType>, Operation[]>,
   server: Server,
 ): Promise<ArgType> => {
-  const { results } = await server.simulateTransaction(tx);
-  if (!results || results.length !== 1) {
-    throw new Error("Invalid response from simulateTransaction");
-  }
-  const result = results[0];
-  const scVal = xdr.ScVal.fromXDR(result.xdr, "base64");
+  const simulatedTX = await server.simulateTransaction(tx);
 
-  return scValToNative(scVal);
+  if ("result" in simulatedTX && simulatedTX.result !== undefined) {
+    return scValToNative(simulatedTX.result.retval);
+  }
+
+  throw new Error("Invalid response from simulateTransaction");
 };
