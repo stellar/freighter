@@ -141,8 +141,6 @@ export const migrateTokenIdList = async () => {
   >;
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  console.log(storageVersion);
-
   if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
     const newTokenList = {
       [NETWORKS.FUTURENET]: tokenIdsByKey,
