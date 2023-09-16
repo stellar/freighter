@@ -3,6 +3,7 @@ import {
   MemoType,
   Operation,
   Server,
+  nativeToScVal,
   Transaction,
   TransactionBuilder,
 } from "soroban-client";
@@ -17,18 +18,18 @@ export const FUTURENET_DETAILS = {
 describe("Soroban Helpers - ", () => {
   describe("simulateTx", () => {
     const TEST_XDR =
-      "AAAAAgAAAACM6IR9GHiRoVVAO78JJNksy2fKDQNs2jBn8bacsRLcrAAAAGQAALDTAAAAmQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAACAAAAEgAAAAGvUaDMj6075hfTiVH7DPAwLD7vh/GD+dlkZfp6o9gqdgAAAA8AAAAGc3ltYm9sAAAAAAAAAAAAAAAAAAA=";
+      "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAGQAAAUcAAAABgAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAAByJKWoF9C6Tt+//t+9ocHp4kExcoTwAseKdAcKEUBTXAAAAAHYmFsYW5jZQAAAAABAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAAAAAAAAAAAAAA=";
     const testTx = TransactionBuilder.fromXDR(
       TEST_XDR,
       FUTURENET_DETAILS.networkPassphrase,
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const mockSimResult = {
       auth: [],
-      xdr: "AAAAAwAAAAA=",
+      retval: nativeToScVal(100),
     };
     const mockSim = jest.fn(
       (_tx: Transaction<Memo<MemoType>, Operation[]>) => ({
-        results: [mockSimResult],
+        result: mockSimResult,
       }),
     );
     const mockServer = ({
@@ -36,8 +37,8 @@ describe("Soroban Helpers - ", () => {
     } as any) as Server;
 
     test("should take tx/server and return a native type according to the generic type argument", async () => {
-      const result = await simulateTx<number>(testTx, mockServer);
-      expect(typeof result).toEqual("number");
+      const result = await simulateTx<bigint>(testTx, mockServer);
+      expect(typeof result).toEqual("bigint");
     });
   });
 });
