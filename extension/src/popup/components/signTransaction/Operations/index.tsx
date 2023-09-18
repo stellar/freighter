@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
+import { xdr } from "soroban-client";
 
 import {
   CLAIM_PREDICATES,
@@ -30,7 +31,6 @@ import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { hasSorobanClient, SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
-import { xdr } from "soroban-client";
 import { buildInvocationTree } from "popup/components/signAuthEntry/invocation";
 
 interface Path {
@@ -173,17 +173,10 @@ const KeyValueWithScAuth = ({
   operationValue,
 }: {
   operationKey: string;
-  operationValue: {
-    _attributes: {
-      credentials: xdr.SorobanCredentials;
-      rootInvocation: xdr.SorobanAuthorizedInvocation;
-    };
-  }[];
+  operationValue: xdr.SorobanAuthorizationEntry[];
 }) => {
-  // TODO: use getters in signTx to get these correctly
-  const rawEntry = operationValue[0] && operationValue[0]._attributes;
-  const authEntry = new xdr.SorobanAuthorizationEntry(rawEntry);
-  const rootJson = buildInvocationTree(authEntry.rootInvocation());
+  const firstEntry = operationValue[0]
+  const rootJson = buildInvocationTree(firstEntry.rootInvocation());
   return (
     <div className="Operations__pair--smart-contract">
       <div>
@@ -816,7 +809,7 @@ export const Operations = ({
                   />
                 ))}
 
-                {scAuth ? (
+                {scAuth && scAuth.length ? (
                   <KeyValueWithScAuth
                     operationKey={t("Invocation")}
                     operationValue={scAuth}
