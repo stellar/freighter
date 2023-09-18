@@ -184,7 +184,7 @@ export const SignAuthEntry = () => {
             isMemoRequired={false}
             transaction={{ _operations: [{ auth: params.entry }] }}
           /> */}
-          <AuthEntry authEntryXdr={params.entry} />
+          <AuthEntry preimageXdr={params.entry} />
         </ModalWrapper>
         <ButtonsContainer>
           <Button
