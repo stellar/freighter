@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-5.5.1
+
+### Bug
+
+SignTransaction not properly parsing auth field in Soroban XDR's
+
 # Release notes - Wallets - Freighter-5.2.6
 
 ### Story
