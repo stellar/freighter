@@ -7,16 +7,17 @@ import { buildInvocationTree } from "../invocation";
 import "./styles.scss";
 
 interface TransactionProps {
-  authEntryXdr: string;
+  preimageXdr: string;
 }
 
-export const AuthEntry = ({ authEntryXdr }: TransactionProps) => {
+export const AuthEntry = ({ preimageXdr }: TransactionProps) => {
   const { t } = useTranslation();
-  const authEntry = xdr.SorobanAuthorizationEntry.fromXDR(
-    authEntryXdr,
+  const preimage = xdr.HashIdPreimage.fromXDR(
+    preimageXdr,
     "base64",
   );
-  const rootJson = buildInvocationTree(authEntry.rootInvocation());
+
+  const rootJson = buildInvocationTree(preimage.sorobanAuthorization().invocation());
 
   return (
     <div className="AuthEntry">
