@@ -965,7 +965,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? await sourceKeys.sign(Buffer.from(authEntry.entry))
+        ? await sourceKeys.sign(Buffer.from(SorobanSdk.hash(Buffer.from(authEntry.entry))))
         : null;
 
       const entryResponse = responseQueue.pop();
