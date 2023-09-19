@@ -187,5 +187,3 @@ declare global {
     freighterApi: { [key: string]: any };
   }
 }
-
-export type CURRENCY = { code: string; issuer: string; image: string };

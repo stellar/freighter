@@ -1,4 +1,4 @@
-import StellarSdk from "stellar-sdk";
+import { TransactionBuilder } from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
@@ -593,7 +593,7 @@ export const submitFreighterTransaction = ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
-  const tx = StellarSdk.TransactionBuilder.fromXDR(
+  const tx = TransactionBuilder.fromXDR(
     signedXDR,
     networkDetails.networkPassphrase,
   );

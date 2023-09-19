@@ -71,7 +71,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              ({ home_domain: domain } = await server.loadAccount(issuer.key));
+              const acct = await server.loadAccount(issuer.key);
+              domain = acct.home_domain || "";
             } catch (e) {
               console.error(e);
             }

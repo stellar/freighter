@@ -1,4 +1,4 @@
-import StellarSdk from "stellar-sdk";
+import { Networks } from "stellar-sdk";
 
 export enum NETWORK_NAMES {
   TESTNET = "Test Net",
@@ -40,14 +40,14 @@ export const MAINNET_NETWORK_DETAILS: NetworkDetails = {
   network: NETWORKS.PUBLIC,
   networkName: NETWORK_NAMES.PUBNET,
   networkUrl: NETWORK_URLS.PUBLIC,
-  networkPassphrase: StellarSdk.Networks.PUBLIC,
+  networkPassphrase: Networks.PUBLIC,
 };
 
 export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
   network: NETWORKS.TESTNET,
   networkName: NETWORK_NAMES.TESTNET,
   networkUrl: NETWORK_URLS.TESTNET,
-  networkPassphrase: StellarSdk.Networks.TESTNET,
+  networkPassphrase: Networks.TESTNET,
   friendbotUrl: FRIENDBOT_URLS.TESTNET,
 };
 

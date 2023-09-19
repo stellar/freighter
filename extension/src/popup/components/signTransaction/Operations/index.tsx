@@ -175,7 +175,7 @@ const KeyValueWithScAuth = ({
   operationKey: string;
   operationValue: xdr.SorobanAuthorizationEntry[];
 }) => {
-  const firstEntry = operationValue[0]
+  const firstEntry = operationValue[0];
   const rootJson = buildInvocationTree(firstEntry.rootInvocation());
   return (
     <div className="Operations__pair--smart-contract">

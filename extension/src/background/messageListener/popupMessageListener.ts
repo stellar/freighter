@@ -1,5 +1,5 @@
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 // @ts-ignore
@@ -965,7 +965,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? await sourceKeys.sign(Buffer.from(SorobanSdk.hash(Buffer.from(authEntry.entry))))
+        ? await sourceKeys.sign(
+            Buffer.from(SorobanSdk.hash(Buffer.from(authEntry.entry))),
+          )
         : null;
 
       const entryResponse = responseQueue.pop();

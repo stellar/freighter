@@ -70,7 +70,7 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-    toml = await StellarTomlResolver.resolve(homeDomain);
+    toml = await StellarTomlResolver.resolve(homeDomain || "");
   } catch (e) {
     console.error(e);
     return iconUrl;
@@ -79,7 +79,7 @@ export const getIconUrlFromIssuer = async ({
   if (toml.CURRENCIES) {
     /* If we find some currencies listed, check to see if they have the currency we're looking for listed */
     toml.CURRENCIES.every(async ({ code: currencyCode, issuer, image }) => {
-      if (currencyCode === code && issuer == key && image) {
+      if (currencyCode === code && issuer === key && image) {
         /* We found the currency listing in the toml. 3. Get the image url from it */
         iconUrl = image;
         /* And also save into the cache to prevent having to do this process again */
