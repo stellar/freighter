@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import * as SorobanSdk from "soroban-client";
-import StellarSdk, { FederationServer, MuxedAccount } from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
@@ -90,7 +90,7 @@ export const SignTransaction = () => {
   const transaction = SDK.TransactionBuilder.fromXDR(
     transactionXdr,
     networkPassphrase,
-  );
+  ) as any;
 
   const {
     _fee,
@@ -137,7 +137,7 @@ export const SignTransaction = () => {
   const resolveFederatedAddress = useCallback(async (inputDest) => {
     let resolvedPublicKey;
     try {
-      const fedResp = await FederationServer.resolve(inputDest);
+      const fedResp = await StellarSdk.FederationServer.resolve(inputDest);
       resolvedPublicKey = fedResp.account_id;
     } catch (e) {
       console.error(e);
@@ -149,7 +149,10 @@ export const SignTransaction = () => {
   const decodeAccountToSign = async () => {
     if (_accountToSign) {
       if (isMuxedAccount(_accountToSign)) {
-        const mAccount = MuxedAccount.fromAddress(_accountToSign, "0");
+        const mAccount = StellarSdk.MuxedAccount.fromAddress(
+          _accountToSign,
+          "0",
+        );
         accountToSign = mAccount.baseAccount().accountId();
       }
       if (isFederationAddress(_accountToSign)) {
