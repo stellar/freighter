@@ -4,7 +4,7 @@ import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
-import StellarSdk from "stellar-sdk";
+import { Asset } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
@@ -297,18 +297,17 @@ export const SendAmount = ({
       let defaultDestAsset;
 
       // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
-      if (formik.values.asset !== StellarSdk.Asset.native().toString()) {
-        defaultDestAsset = StellarSdk.Asset.native().toString();
+      if (formik.values.asset !== Asset.native().toString()) {
+        defaultDestAsset = Asset.native().toString();
       } else {
         // otherwise default to first non-native asset if exists
         const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
           (b) =>
-            b !== StellarSdk.Asset.native().toString() &&
-            b.indexOf(LP_IDENTIFIER) === -1,
+            b !== Asset.native().toString() && b.indexOf(LP_IDENTIFIER) === -1,
         );
         defaultDestAsset = nonXlmAssets[0]
           ? nonXlmAssets[0]
-          : StellarSdk.Asset.native().toString();
+          : Asset.native().toString();
       }
 
       dispatch(saveDestinationAsset(defaultDestAsset));

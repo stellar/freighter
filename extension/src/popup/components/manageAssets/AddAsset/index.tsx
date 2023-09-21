@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Button, Input, Notification } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
-import StellarSdk from "stellar-sdk";
+import { Networks, StellarTomlResolver } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
 import { FormRows } from "popup/basics/Forms";
@@ -10,8 +10,6 @@ import { FormRows } from "popup/basics/Forms";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
-
-import { CURRENCY } from "@shared/api/types";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 
@@ -25,8 +23,8 @@ const initialValues: FormValues = {
 };
 
 interface AssetDomainToml {
-  CURRENCIES?: CURRENCY[];
-  DOCUMENTATION?: { ORG_URL: string };
+  CURRENCIES?: StellarTomlResolver.Currency[];
+  DOCUMENTATION?: StellarTomlResolver.Documentation;
   NETWORK_PASSPHRASE?: string;
 }
 
@@ -50,9 +48,7 @@ export const AddAsset = () => {
     let assetDomainToml = {} as AssetDomainToml;
 
     try {
-      assetDomainToml = await StellarSdk.StellarTomlResolver.resolve(
-        assetDomainUrl.host,
-      );
+      assetDomainToml = await StellarTomlResolver.resolve(assetDomainUrl.host);
     } catch (e) {
       console.error(e);
     }
@@ -64,7 +60,7 @@ export const AddAsset = () => {
 
       // check toml file for network passphrase
       const tomlNetworkPassphrase =
-        assetDomainToml.NETWORK_PASSPHRASE || StellarSdk.Networks.PUBLIC;
+        assetDomainToml.NETWORK_PASSPHRASE || Networks.PUBLIC;
 
       if (tomlNetworkPassphrase === networkPassphrase) {
         setAssetRows(

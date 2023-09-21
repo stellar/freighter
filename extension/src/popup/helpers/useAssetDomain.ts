@@ -9,7 +9,7 @@ interface UseAssetDomain {
   assetIssuer?: string;
 }
 
-export const useAssetDomain = ({ assetIssuer }: UseAssetDomain) => {
+export const useAssetDomain = ({ assetIssuer = "" }: UseAssetDomain) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [networkDomain, setNetworkDomain] = useState("");
 
@@ -21,7 +21,8 @@ export const useAssetDomain = ({ assetIssuer }: UseAssetDomain) => {
       let assetDomain = "";
 
       try {
-        ({ home_domain: assetDomain } = await server.loadAccount(assetIssuer));
+        const account = await server.loadAccount(assetIssuer);
+        assetDomain = account.home_domain || "";
       } catch (e) {
         console.error(e);
       }

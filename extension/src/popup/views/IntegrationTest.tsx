@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import StellarSdk from "stellar-sdk";
+import { Networks } from "stellar-sdk";
 
 import {
   createAccount,
@@ -67,7 +67,7 @@ const testCustomNetwork = {
   network: NETWORKS.TESTNET,
   networkName: `custom network ${random}`,
   networkUrl: NETWORK_URLS.TESTNET,
-  networkPassphrase: StellarSdk.Networks.TESTNET,
+  networkPassphrase: Networks.TESTNET,
 };
 const testBalances = ({
   native: {

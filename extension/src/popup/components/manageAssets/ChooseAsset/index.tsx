@@ -20,6 +20,7 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { Balances } from "@shared/api/types";
+import { NETWORKS } from "@shared/constants/stellar";
 
 import { ManageAssetCurrency, ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -36,7 +37,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     transactionSubmissionSelector,
   );
   const { isExperimentalModeEnabled } = useSelector(settingsSelector);
-  const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
+  const { network, networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -71,7 +72,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              ({ home_domain: domain } = await server.loadAccount(issuer.key));
+              const acct = await server.loadAccount(issuer.key);
+              domain = acct.home_domain || "";
             } catch (e) {
               console.error(e);
             }
@@ -161,7 +163,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         </div>
         {managingAssets && (
           <div className="ChooseAsset__button-container">
-            {isExperimentalModeEnabled ? (
+            {isExperimentalModeEnabled || network === NETWORKS.TESTNET ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
                   <Button size="md" isFullWidth variant="secondary">
