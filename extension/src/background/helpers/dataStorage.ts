@@ -134,7 +134,7 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 };
 
 // This migration migrates the storage for custom tokens IDs to be keyed by network
-export const migrateTokenIdList = async () => {
+const migrateTokenIdList = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const tokenIdsByKey = (await localStore.getItem(TOKEN_ID_LIST)) as Record<
     string,
@@ -151,7 +151,7 @@ export const migrateTokenIdList = async () => {
   await migrateDataStorageVersion("1.0.0");
 };
 
-export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
+const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
@@ -179,6 +179,13 @@ export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
     await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
     await migrateDataStorageVersion("2.0.0");
   }
+};
+
+export const versionedMigration = async () => {
+  // sequentially call migrations in order to enforce smooth schema upgrades
+
+  await migrateTokenIdList();
+  await migrateTestnetSorobanRpcUrlNetworkDetails();
 };
 
 // Updates storage version
