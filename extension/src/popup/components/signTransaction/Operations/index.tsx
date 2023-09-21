@@ -184,7 +184,15 @@ const KeyValueWithScAuth = ({
       </div>
       <SimpleBarWrapper className="Operations__scValue">
         <div>
-          <pre>{JSON.stringify(rootJson, null, 2)}</pre>
+          <pre>
+            {
+              JSON.stringify(
+                rootJson,
+                (_, val) => (typeof val === 'bigint' ? val.toString() : val),
+                2
+              )
+            }
+          </pre>
         </div>
       </SimpleBarWrapper>
     </div>

@@ -24,7 +24,13 @@ export const AuthEntry = ({ preimageXdr }: TransactionProps) => {
       <div className="AuthEntryAttributes">
         <pre>
           <SimpleBarWrapper>
-            {JSON.stringify(rootJson, null, 2)}
+            {
+              JSON.stringify(
+                rootJson,
+                (_, val) => (typeof val === 'bigint' ? val.toString() : val),
+                2
+              )
+            }
           </SimpleBarWrapper>
         </pre>
       </div>
