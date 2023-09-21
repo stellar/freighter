@@ -33,8 +33,8 @@ const MemoDisplay = ({
 };
 
 interface TransactionInfoProps {
-  _fee: number;
-  _sequence: string;
+  _fee: string;
+  _sequence?: string;
   isFeeBump?: boolean;
   isMemoRequired: boolean;
   memo?: string;

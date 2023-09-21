@@ -90,17 +90,27 @@ export const SignTransaction = () => {
   const transaction = SDK.TransactionBuilder.fromXDR(
     transactionXdr,
     networkPassphrase,
-  ) as any;
+  ) as
+    | StellarSdk.Transaction
+    | SorobanSdk.Transaction
+    | StellarSdk.FeeBumpTransaction
+    | SorobanSdk.FeeBumpTransaction;
 
-  const {
-    _fee,
-    _innerTransaction,
-    _memo,
-    _networkPassphrase,
-    _sequence,
-  } = transaction;
+  const { fee: _fee, networkPassphrase: _networkPassphrase } = transaction;
 
-  const isFeeBump = !!_innerTransaction;
+  let isFeeBump = false;
+  let _innerTransaction;
+  let _memo = {};
+  let _sequence;
+
+  if ("innerTransaction" in transaction) {
+    _innerTransaction = transaction.innerTransaction;
+    isFeeBump = true;
+  } else {
+    _sequence = transaction.sequence;
+    _memo = transaction.memo;
+  }
+
   const memo = decodeMemo(_memo);
   let accountToSign = _accountToSign;
 

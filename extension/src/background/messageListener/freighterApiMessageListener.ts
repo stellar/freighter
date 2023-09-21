@@ -46,6 +46,8 @@ import {
   transactionQueue,
 } from "./popupMessageListener";
 
+type Operation = StellarSdk.Operation | SorobanSdk.Operation;
+
 const localStore = dataStorageAccess(browserLocalStorage);
 
 interface WINDOW_PARAMS {
@@ -136,7 +138,7 @@ export const freighterApiMessageListener = (
     );
     const accountData = directoryLookupJson?._embedded?.records || [];
 
-    let _operations = [{}];
+    let _operations = [{}] as Operation[];
 
     if ("operations" in transaction) {
       _operations = transaction.operations;
@@ -153,10 +155,13 @@ export const freighterApiMessageListener = (
       (await getIsSafetyValidationEnabled()) && isMainnet;
 
     if (isValidatingMemo || isValidatingSafety) {
-      _operations.forEach((operation: any) => {
+      _operations.forEach((operation: Operation) => {
         accountData.forEach(
           ({ address, tags }: { address: string; tags: Array<string> }) => {
-            if (address === operation.destination) {
+            if (
+              "destination" in operation &&
+              address === operation.destination
+            ) {
               let collectedTags = [...tags];
 
               /* if the user has opted out of validation, remove applicable tags */
@@ -186,12 +191,14 @@ export const freighterApiMessageListener = (
     const server = stellarSdkServer(networkUrl);
 
     try {
-      await server.checkMemoRequired(transaction as any);
+      await server.checkMemoRequired(transaction as StellarSdk.Transaction);
     } catch (e) {
-      flaggedKeys[e.accountId] = {
-        ...flaggedKeys[e.accountId],
-        tags: [TRANSACTION_WARNING.memoRequired],
-      };
+      if (e.accountId) {
+        flaggedKeys[e.accountId] = {
+          ...flaggedKeys[e.accountId],
+          tags: [TRANSACTION_WARNING.memoRequired],
+        };
+      }
     }
 
     const transactionInfo = {
@@ -204,7 +211,9 @@ export const freighterApiMessageListener = (
       accountToSign,
     } as TransactionInfo;
 
-    transactionQueue.push(transaction as any);
+    transactionQueue.push(
+      transaction as StellarSdk.Transaction | SorobanSdk.Transaction,
+    );
     const encodedBlob = encodeObject(transactionInfo);
 
     const popup = browser.windows.create({

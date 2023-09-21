@@ -91,10 +91,9 @@ import { Store } from "redux";
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Array<{
-  sign: (sourceKeys: {}) => void;
-  toXDR: () => void;
-}> = [];
+export const transactionQueue: Array<
+  StellarSdk.Transaction | SorobanSdk.Transaction
+> = [];
 export const blobQueue: Array<{
   isDomainListedAllowed: boolean;
   domain: string;
