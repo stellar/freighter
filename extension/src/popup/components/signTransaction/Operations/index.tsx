@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
-import { xdr } from "soroban-client";
+import { xdr, buildInvocationTree } from "soroban-client";
 
 import {
   CLAIM_PREDICATES,
@@ -31,7 +31,6 @@ import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { hasSorobanClient, SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
-import { buildInvocationTree } from "popup/components/signAuthEntry/invocation";
 
 interface Path {
   code: string;
@@ -185,7 +184,15 @@ const KeyValueWithScAuth = ({
       </div>
       <SimpleBarWrapper className="Operations__scValue">
         <div>
-          <pre>{JSON.stringify(rootJson, null, 2)}</pre>
+          <pre>
+            {
+              JSON.stringify(
+                rootJson,
+                (_, val) => (typeof val === 'bigint' ? val.toString() : val),
+                2
+              )
+            }
+          </pre>
         </div>
       </SimpleBarWrapper>
     </div>
