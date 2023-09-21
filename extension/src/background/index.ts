@@ -14,6 +14,7 @@ import {
   migrateFriendBotUrlNetworkDetails,
   normalizeMigratedData,
   migrateSorobanRpcUrlNetworkDetails,
+  migrateTestnetSorobanRpcUrlNetworkDetails,
   migrateTokenIdList,
 } from "./helpers/dataStorage";
 
@@ -60,6 +61,9 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateSorobanRpcUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateTokenIdList);
+  browser?.runtime?.onInstalled.addListener(
+    migrateTestnetSorobanRpcUrlNetworkDetails,
+  );
 };
 
 export const initAlarmListener = (sessionStore: Store) => {

@@ -12,7 +12,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
-  settingsSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -20,7 +20,6 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { Balances } from "@shared/api/types";
-import { NETWORKS } from "@shared/constants/stellar";
 
 import { ManageAssetCurrency, ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -36,8 +35,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { assetIcons, assetSelect } = useSelector(
     transactionSubmissionSelector,
   );
-  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
-  const { network, networkUrl } = useSelector(settingsNetworkDetailsSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
+  const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -94,7 +93,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             domain: "",
           });
 
-          if (isExperimentalModeEnabled && sorobanBalances.length) {
+          if (isSorobanSuported && sorobanBalances.length) {
             sorobanBalances.forEach(({ symbol, contractId, name }) => {
               // TODO:
               // interestingly, if an ascii value is set for symbol
@@ -123,7 +122,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     balances,
     networkUrl,
     managingAssets,
-    isExperimentalModeEnabled,
+    isSorobanSuported,
     sorobanBalances,
   ]);
 
@@ -141,7 +140,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
       <div className="ChooseAsset__wrapper">
         <div
           className={`ChooseAsset__assets${
-            managingAssets && isExperimentalModeEnabled ? "--short" : ""
+            managingAssets && isSorobanSuported ? "--short" : ""
           }`}
           ref={ManageAssetRowsWrapperRef}
         >
@@ -163,7 +162,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         </div>
         {managingAssets && (
           <div className="ChooseAsset__button-container">
-            {isExperimentalModeEnabled || network === NETWORKS.TESTNET ? (
+            {isSorobanSuported ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
                   <Button size="md" isFullWidth variant="secondary">
