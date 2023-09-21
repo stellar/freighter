@@ -1,4 +1,12 @@
-import StellarSdk, { Horizon, Server, ServerApi } from "stellar-sdk";
+import {
+  Asset,
+  Horizon,
+  Keypair,
+  Server,
+  ServerApi,
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
 import { Networks, SorobanRpc } from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -168,10 +176,7 @@ export const signWithLedger = createAsyncThunk<
     thunkApi,
   ) => {
     try {
-      const tx = StellarSdk.TransactionBuilder.fromXDR(
-        transactionXDR,
-        networkPassphrase,
-      );
+      const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
       const transport = await TransportWebUSB.create();
       const ledgerApi = new LedgerApi(transport);
@@ -180,8 +185,8 @@ export const signWithLedger = createAsyncThunk<
         tx.signatureBase(),
       );
 
-      const keypair = StellarSdk.Keypair.fromPublicKey(publicKey);
-      const decoratedSignature = new StellarSdk.xdr.DecoratedSignature({
+      const keypair = Keypair.fromPublicKey(publicKey);
+      const decoratedSignature = new xdr.DecoratedSignature({
         hint: keypair.signatureHint(),
         signature: result.signature,
       });
@@ -325,9 +330,9 @@ export const getBestPath = createAsyncThunk<
     try {
       const server = new Server(networkDetails.networkUrl);
       const builder = server.strictSendPaths(
-        getAssetFromCanonical(sourceAsset),
+        getAssetFromCanonical(sourceAsset) as Asset,
         amount,
-        [getAssetFromCanonical(destAsset)],
+        [getAssetFromCanonical(destAsset)] as Asset[],
       );
 
       const paths = await builder.call();

@@ -1,4 +1,4 @@
-import StellarSdk, { Horizon } from "stellar-sdk";
+import { Horizon, Server } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   AssetType,
@@ -227,7 +227,7 @@ export const isNetworkUrlValid = (
 
   try {
     // eslint-disable-next-line no-new
-    new StellarSdk.Server(networkUrl, { allowHttp: isHttpAllowed });
+    new Server(networkUrl, { allowHttp: isHttpAllowed });
   } catch (e) {
     console.error(e);
     isValid = false;

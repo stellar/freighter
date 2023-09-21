@@ -68,55 +68,64 @@ export const SelectAssetRows = ({
       }}
     >
       <div className="SelectAssetRows__content">
-        {assetRows.map(({ code, domain, image, issuer, contractId, name }) => {
-          const isScamAsset = !!blockedDomains.domains[domain];
-          const _issuer = contractId || issuer;
-          const canonical = getCanonicalFromAsset(code, _issuer);
+        {assetRows.map(
+          ({
+            code = "",
+            domain,
+            image = "",
+            issuer = "",
+            contractId = "",
+            name,
+          }) => {
+            const isScamAsset = !!blockedDomains.domains[domain];
+            const _issuer = contractId || issuer;
+            const canonical = getCanonicalFromAsset(code, _issuer);
 
-          return (
-            <div
-              className="SelectAssetRows__row selectable"
-              key={canonical}
-              onClick={() => {
-                if (assetSelect.isSource) {
-                  dispatch(saveAsset(canonical));
-                  if (contractId) {
-                    dispatch(saveIsToken(true));
+            return (
+              <div
+                className="SelectAssetRows__row selectable"
+                key={canonical}
+                onClick={() => {
+                  if (assetSelect.isSource) {
+                    dispatch(saveAsset(canonical));
+                    if (contractId) {
+                      dispatch(saveIsToken(true));
+                    } else {
+                      dispatch(saveIsToken(false));
+                    }
+                    history.goBack();
                   } else {
-                    dispatch(saveIsToken(false));
+                    dispatch(saveDestinationAsset(canonical));
+                    history.goBack();
                   }
-                  history.goBack();
-                } else {
-                  dispatch(saveDestinationAsset(canonical));
-                  history.goBack();
-                }
-              }}
-            >
-              <AssetIcon
-                assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
-                code={code}
-                issuerKey={_issuer}
-              />
-              <div className="SelectAssetRows__row__info">
-                <div className="SelectAssetRows__row__info__header">
-                  {contractId ? name : code}
-                  <ScamAssetIcon isScamAsset={isScamAsset} />
+                }}
+              >
+                <AssetIcon
+                  assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
+                  code={code}
+                  issuerKey={_issuer}
+                />
+                <div className="SelectAssetRows__row__info">
+                  <div className="SelectAssetRows__row__info__header">
+                    {contractId ? name : code}
+                    <ScamAssetIcon isScamAsset={isScamAsset} />
+                  </div>
+                  <div className="SelectAssetRows__domain">
+                    {formatDomain(domain)}
+                  </div>
                 </div>
-                <div className="SelectAssetRows__domain">
-                  {formatDomain(domain)}
-                </div>
+                {!hideBalances && (
+                  <div>
+                    {contractId
+                      ? calculateTokenBalance(contractId)
+                      : formatAmount(getAccountBalance(canonical))}{" "}
+                    {code}
+                  </div>
+                )}
               </div>
-              {!hideBalances && (
-                <div>
-                  {contractId
-                    ? calculateTokenBalance(contractId)
-                    : formatAmount(getAccountBalance(canonical))}{" "}
-                  {code}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          },
+        )}
       </div>
     </SimpleBarWrapper>
   );

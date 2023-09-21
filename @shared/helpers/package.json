@@ -5,7 +5,7 @@
   "dependencies": {
     "typescript": "~3.7.2",
     "soroban-client": "^1.0.0-beta.2",
-    "stellar-sdk": "^10.4.1"
+    "stellar-sdk": "^11.0.0-beta.3"
   },
   "devDependencies": {
     "@stellar/prettier-config": "^1.0.1"

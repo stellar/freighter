@@ -12,7 +12,7 @@ import "./styles.scss";
 interface TransactionProps {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
-  transaction: { [key: string]: any };
+  transaction: any;
 }
 
 export const Transaction = ({
