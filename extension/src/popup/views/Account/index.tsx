@@ -14,7 +14,7 @@ import {
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import {
   settingsNetworkDetailsSelector,
-  settingsSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import {
   accountNameSelector,
@@ -75,7 +75,7 @@ export const Account = () => {
     false,
   );
 
-  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -102,8 +102,7 @@ export const Account = () => {
       }),
     );
     dispatch(getBlockedDomains());
-
-    if (isExperimentalModeEnabled) {
+    if (isSorobanSuported) {
       dispatch(
         getTokenBalances({
           sorobanClient,
@@ -114,13 +113,13 @@ export const Account = () => {
 
     return () => {
       dispatch(resetAccountBalanceStatus());
-      if (isExperimentalModeEnabled) {
+      if (isSorobanSuported) {
         dispatch(resetSorobanTokensStatus());
       }
     };
   }, [
     sorobanClient,
-    isExperimentalModeEnabled,
+    isSorobanSuported,
     publicKey,
     networkDetails,
     isAccountFriendbotFunded,
@@ -135,7 +134,7 @@ export const Account = () => {
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
   }, [
-    isExperimentalModeEnabled,
+    isSorobanSuported,
     getTokenBalancesStatus,
     tokenBalances,
     balances,
@@ -165,7 +164,7 @@ export const Account = () => {
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
     accountBalanceStatus === ActionStatus.IDLE ||
-    (isExperimentalModeEnabled &&
+    (isSorobanSuported &&
       (getTokenBalancesStatus === ActionStatus.PENDING ||
         getTokenBalancesStatus === ActionStatus.IDLE));
 

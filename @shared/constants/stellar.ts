@@ -24,6 +24,7 @@ export enum FRIENDBOT_URLS {
 }
 
 export const SOROBAN_RPC_URLS: { [key in NETWORKS]?: string } = {
+  [NETWORKS.TESTNET]: "https://soroban-testnet.stellar.org/",
   [NETWORKS.FUTURENET]: "https://rpc-futurenet.stellar.org/",
 };
 
@@ -48,6 +49,7 @@ export const TESTNET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.TESTNET,
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: Networks.TESTNET,
+  sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.TESTNET],
   friendbotUrl: FRIENDBOT_URLS.TESTNET,
 };
 
@@ -56,6 +58,7 @@ export const FUTURENET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.FUTURENET,
   networkUrl: NETWORK_URLS.FUTURENET,
   networkPassphrase: "Test SDF Future Network ; October 2022",
+  sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.FUTURENET],
   friendbotUrl: FRIENDBOT_URLS.FUTURENET,
 };
 
