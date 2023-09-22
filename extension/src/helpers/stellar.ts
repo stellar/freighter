@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import StellarSdk from "stellar-sdk";
+import { Asset, Networks } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 import { isPlain } from "@reduxjs/toolkit";
 
@@ -69,7 +69,7 @@ export const getTransactionInfo = (search: string) => {
 
 export const getAssetFromCanonical = (canonical: string) => {
   if (canonical === "native") {
-    return StellarSdk.Asset.native();
+    return Asset.native();
   }
   if (canonical.includes(":")) {
     const [code, issuer] = canonical.split(":");
@@ -80,7 +80,7 @@ export const getAssetFromCanonical = (canonical: string) => {
         issuer,
       };
     }
-    return new StellarSdk.Asset(code, issuer);
+    return new Asset(code, issuer);
   }
 
   throw new Error(`invalid asset canonical id: ${canonical}`);
@@ -134,8 +134,7 @@ export const isMainnet = (networkDetails: NetworkDetails) => {
   const { networkPassphrase, networkUrl } = networkDetails;
 
   return (
-    networkPassphrase === StellarSdk.Networks.PUBLIC &&
-    networkUrl === NETWORK_URLS.PUBLIC
+    networkPassphrase === Networks.PUBLIC && networkUrl === NETWORK_URLS.PUBLIC
   );
 };
 
@@ -143,7 +142,7 @@ export const isTestnet = (networkDetails: NetworkDetails) => {
   const { networkPassphrase, networkUrl } = networkDetails;
 
   return (
-    networkPassphrase === StellarSdk.Networks.TESTNET &&
+    networkPassphrase === Networks.TESTNET &&
     networkUrl === NETWORK_URLS.TESTNET
   );
 };

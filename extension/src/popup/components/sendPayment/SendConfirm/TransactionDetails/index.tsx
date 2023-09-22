@@ -2,9 +2,14 @@ import React, { useContext, useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import StellarSdk, { Asset } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Memo,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
-import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -138,8 +143,8 @@ const computeDestMinWithSlippage = (
 };
 
 const getOperation = (
-  sourceAsset: Asset,
-  destAsset: Asset,
+  sourceAsset: Asset | { code: string; issuer: string },
+  destAsset: Asset | { code: string; issuer: string },
   amount: string,
   destinationAmount: string,
   destination: string,
@@ -156,27 +161,27 @@ const getOperation = (
       allowedSlippage,
       destinationAmount,
     );
-    return StellarSdk.Operation.pathPaymentStrictSend({
-      sendAsset: sourceAsset,
+    return Operation.pathPaymentStrictSend({
+      sendAsset: sourceAsset as Asset,
       sendAmount: amount,
       destination: isSwap ? publicKey : destination,
-      destAsset,
+      destAsset: destAsset as Asset,
       destMin: destMin.toFixed(7),
-      path: path.map((p) => getAssetFromCanonical(p)),
+      path: path.map((p) => getAssetFromCanonical(p)) as Asset[],
     });
   }
 
   // create account if unfunded and sending xlm
-  if (!isFunded && sourceAsset.code === StellarSdk.Asset.native().code) {
-    return StellarSdk.Operation.createAccount({
+  if (!isFunded && sourceAsset.code === Asset.native().code) {
+    return Operation.createAccount({
       destination,
       startingBalance: amount,
     });
   }
   // regular payment
-  return StellarSdk.Operation.payment({
+  return Operation.payment({
     destination,
-    asset: sourceAsset,
+    asset: sourceAsset as Asset,
     amount,
   });
 };
@@ -333,7 +338,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const handlePaymentTransaction = async () => {
     try {
       const server = stellarSdkServer(networkDetails.networkUrl);
-      const sourceAccount: Types.Account = await server.loadAccount(publicKey);
+      const sourceAccount: Account = await server.loadAccount(publicKey);
 
       const operation = getOperation(
         sourceAsset,
@@ -349,18 +354,15 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new StellarSdk.TransactionBuilder(
-        sourceAccount,
-        {
-          fee: xlmToStroop(transactionFee).toFixed(),
-          networkPassphrase: networkDetails.networkPassphrase,
-        },
-      )
+      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+        fee: xlmToStroop(transactionFee).toFixed(),
+        networkPassphrase: networkDetails.networkPassphrase,
+      })
         .addOperation(operation)
         .setTimeout(180);
 
       if (memo) {
-        transactionXDR.addMemo(StellarSdk.Memo.text(memo));
+        transactionXDR.addMemo(Memo.text(memo));
       }
 
       if (isHardwareWallet) {

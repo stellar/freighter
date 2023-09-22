@@ -1,4 +1,4 @@
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
@@ -45,6 +45,8 @@ import {
   responseQueue,
   transactionQueue,
 } from "./popupMessageListener";
+
+type Operation = StellarSdk.Operation | SorobanSdk.Operation;
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -127,7 +129,7 @@ export const freighterApiMessageListener = (
     // try to build a tx xdr, if you cannot then assume the user wants to sign an arbitrary blob
     const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
-      networkPassphrase || SDK.Networks[network],
+      networkPassphrase || SDK.Networks[network as keyof typeof SDK.Networks],
     );
 
     const directoryLookupJson = await cachedFetch(
@@ -136,8 +138,15 @@ export const freighterApiMessageListener = (
     );
     const accountData = directoryLookupJson?._embedded?.records || [];
 
-    const _operations =
-      transaction._operations || transaction._innerTransaction._operations;
+    let _operations = [{}] as Operation[];
+
+    if ("operations" in transaction) {
+      _operations = transaction.operations;
+    }
+
+    if ("innerTransaction" in transaction) {
+      _operations = transaction.innerTransaction.operations;
+    }
 
     const flaggedKeys: FlaggedKeys = {};
 
@@ -146,10 +155,13 @@ export const freighterApiMessageListener = (
       (await getIsSafetyValidationEnabled()) && isMainnet;
 
     if (isValidatingMemo || isValidatingSafety) {
-      _operations.forEach((operation: { destination: string }) => {
+      _operations.forEach((operation: Operation) => {
         accountData.forEach(
           ({ address, tags }: { address: string; tags: Array<string> }) => {
-            if (address === operation.destination) {
+            if (
+              "destination" in operation &&
+              address === operation.destination
+            ) {
               let collectedTags = [...tags];
 
               /* if the user has opted out of validation, remove applicable tags */
@@ -179,12 +191,14 @@ export const freighterApiMessageListener = (
     const server = stellarSdkServer(networkUrl);
 
     try {
-      await server.checkMemoRequired(transaction);
+      await server.checkMemoRequired(transaction as StellarSdk.Transaction);
     } catch (e) {
-      flaggedKeys[e.accountId] = {
-        ...flaggedKeys[e.accountId],
-        tags: [TRANSACTION_WARNING.memoRequired],
-      };
+      if (e.accountId) {
+        flaggedKeys[e.accountId] = {
+          ...flaggedKeys[e.accountId],
+          tags: [TRANSACTION_WARNING.memoRequired],
+        };
+      }
     }
 
     const transactionInfo = {
@@ -197,7 +211,9 @@ export const freighterApiMessageListener = (
       accountToSign,
     } as TransactionInfo;
 
-    transactionQueue.push(transaction);
+    transactionQueue.push(
+      transaction as StellarSdk.Transaction | SorobanSdk.Transaction,
+    );
     const encodedBlob = encodeObject(transactionInfo);
 
     const popup = browser.windows.create({

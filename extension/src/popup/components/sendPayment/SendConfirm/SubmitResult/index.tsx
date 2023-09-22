@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
 import { Button, Icon, Link, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import StellarSdk, { Account } from "stellar-sdk";
+import { Account, Asset, Operation, TransactionBuilder } from "stellar-sdk";
 import { AppDispatch } from "popup/App";
 
 import { AssetIcons, ErrorMessage } from "@shared/api/types";
@@ -94,13 +94,13 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     const changeParams = { limit: "0" };
     const sourceAccount: Account = await server.loadAccount(publicKey);
 
-    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+    const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: new StellarSdk.Asset(assetCode, assetIssuer),
+        Operation.changeTrust({
+          asset: new Asset(assetCode, assetIssuer),
           ...changeParams,
         }),
       )

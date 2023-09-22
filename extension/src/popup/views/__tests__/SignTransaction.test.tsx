@@ -24,7 +24,7 @@ const defaultSettingsState = {
 const mockTransactionInfo = {
   accountToSign: "",
   transaction: {
-    _networkPassphrase: "foo",
+    networkPassphrase: "foo",
     _operations: [
       {
         flags: {

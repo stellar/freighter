@@ -335,6 +335,12 @@ export const settingsExperimentalModeSelector = createSelector(
   (settings) => settings.isExperimentalModeEnabled,
 );
 
+export const settingsSorobanSupportedSelector = createSelector(
+  settingsSelector,
+  (settings) =>
+    settings.isExperimentalModeEnabled || settings.networkDetails.sorobanRpcUrl,
+);
+
 export const settingsNetworkDetailsSelector = createSelector(
   settingsSelector,
   (settings) => settings.networkDetails,
