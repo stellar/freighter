@@ -18,7 +18,6 @@ import {
   NetworkDetails,
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
-  NETWORKS,
 } from "@shared/constants/stellar";
 
 import { Settings } from "@shared/api/types";
@@ -339,8 +338,7 @@ export const settingsExperimentalModeSelector = createSelector(
 export const settingsSorobanSupportedSelector = createSelector(
   settingsSelector,
   (settings) =>
-    settings.isExperimentalModeEnabled ||
-    settings.networkDetails.network === NETWORKS.TESTNET,
+    settings.isExperimentalModeEnabled || settings.networkDetails.sorobanRpcUrl,
 );
 
 export const settingsNetworkDetailsSelector = createSelector(
