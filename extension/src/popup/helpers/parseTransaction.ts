@@ -12,7 +12,11 @@ export const decodeMemo = (memo: {}) => {
     return get(memo, "_value.low", "");
   }
   const decodeMethod = memoType === MEMO_TYPES.MEMO_HASH ? "hex" : "utf-8";
-  return buffer.Buffer.from(get(memo, "_value", "")).toString(decodeMethod);
+  const memoValue = get(memo, "_value", "");
+  if (memoValue) {
+    return buffer.Buffer.from(memoValue).toString(decodeMethod);
+  }
+  return "";
 };
 
 /*  eslint-disable camelcase  */
