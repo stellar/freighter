@@ -21,7 +21,7 @@ export const SignAuthEntryDemo = () => {
     }
     setResult(JSON.stringify(signedAuthEntry) || error);
   };
-  console.log(result)
+
   return (
     <section>
       <div>
