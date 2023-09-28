@@ -35,6 +35,10 @@
       color: var(--color-gray-90);
       overflow-y: hidden;
       max-width: 10rem;
+
+      &__item {
+        margin-bottom: 0.25rem;
+      }
     }
   }
 

@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
+import * as SorobanClient from "soroban-client";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
@@ -7,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { isMuxedAccount } from "helpers/stellar";
+import { isMuxedAccount, xlmToStroop } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -17,10 +18,16 @@ import {
   transactionDataSelector,
   isPathPaymentSelector,
   saveTransactionFee,
+  savePreflightData,
 } from "popup/ducks/transactionSubmission";
 
 import "../styles.scss";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { transfer } from "@shared/helpers/soroban/token";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { parseTokenAmount } from "popup/helpers/soroban";
+import { sorobanSelector } from "popup/ducks/soroban";
+import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 
 export const SendSettings = ({
   previous,
@@ -29,9 +36,12 @@ export const SendSettings = ({
   previous: ROUTES;
   next: ROUTES;
 }) => {
+  const sorobanClient = useContext(SorobanContext);
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const {
+    asset,
+    amount,
     destination,
     transactionFee,
     memo,
@@ -39,6 +49,8 @@ export const SendSettings = ({
     isToken,
   } = useSelector(transactionDataSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const { tokenBalances } = useSelector(sorobanSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
 
@@ -60,6 +72,49 @@ export const SendSettings = ({
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = isPathPayment || isSwap;
+
+  async function goToReview() {
+    if (isToken) {
+      const assetAddress = asset.split(":")[1];
+      const assetBalance = tokenBalances.find(
+        (b) => b.contractId === assetAddress,
+      );
+
+      if (!assetBalance) {
+        throw new Error("Asset Balance not available");
+      }
+
+      if (!hasSorobanClient(sorobanClient)) {
+        throw new Error("Soroban RPC not supported for this network");
+      }
+
+      const builder = await sorobanClient.newTxBuilder(
+        xlmToStroop(transactionFee).toFixed(),
+      );
+
+      const parsedAmount = parseTokenAmount(
+        amount,
+        Number(assetBalance.decimals),
+      );
+      const params = [
+        new SorobanClient.Address(publicKey).toScVal(), // from
+        new SorobanClient.Address(destination).toScVal(), // to
+        new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
+      ];
+      const transaction = transfer(assetAddress, params, memo, builder);
+      const preflightSim = await sorobanClient.server.simulateTransaction(transaction)
+
+      if ("transactionData" in preflightSim) {
+        dispatch(
+          savePreflightData({
+            minResourceFee: preflightSim.minResourceFee,
+            cost: preflightSim.cost
+          })
+        )
+      }
+      navigateTo(next)
+    }
+  }
 
   return (
     <PopupWrapper>
@@ -216,7 +271,7 @@ export const SendSettings = ({
                     isFullWidth
                     type="submit"
                     variant="secondary"
-                    onClick={() => navigateTo(next)}
+                    onClick={goToReview}
                     data-testid="send-settings-btn-continue"
                   >
                     {t("Review")} {isSwap ? t("Swap") : t("Send")}
