@@ -413,6 +413,7 @@ interface InitialState {
     | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
+  preflightData: { minResourceFee: string, cost: SorobanRpc.Cost } | null
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
@@ -445,6 +446,7 @@ export const initialState: InitialState = {
     allowedSlippage: "1",
     isToken: false,
   },
+  preflightData: null,
   hardwareWalletData: {
     status: ShowOverlayStatus.IDLE,
     transactionXDR: "",
@@ -510,6 +512,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveIsToken: (state, action) => {
       state.transactionData.isToken = action.payload;
+    },
+    savePreflightData: (state, action) => {
+      state.preflightData = action.payload
     },
     startHwConnect: (state) => {
       state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
@@ -655,6 +660,7 @@ export const {
   saveDestinationAsset,
   saveAllowedSlippage,
   saveIsToken,
+  savePreflightData,
   startHwConnect,
   startHwSign,
   closeHwOverlay,

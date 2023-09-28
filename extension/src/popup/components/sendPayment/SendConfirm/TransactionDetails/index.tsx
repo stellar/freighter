@@ -208,6 +208,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     assetIcons,
     hardwareWalletData: { status: hwStatus },
     blockedAccounts,
+    preflightData
   } = submission;
 
   const transactionHash = submission.response?.hash;
@@ -297,11 +298,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         xlmToStroop(transactionFee).toFixed(),
       );
 
-      const transaction = await transfer(assetAddress, params, memo, builder);
+      const transaction = transfer(assetAddress, params, memo, builder);
 
+      // TODO: use preflight from SendSettings
       const preparedTransaction = await sorobanClient.server.prepareTransaction(
         transaction,
-        networkDetails.networkPassphrase,
+        networkDetails.networkPassphrase
       );
 
       const res = await dispatch(
@@ -541,6 +543,23 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             {transactionFee} XLM
           </div>
         </div>
+        {preflightData && (
+          <div className="TransactionDetails__row">
+            <div>{t("Resource cost")} </div>
+            <div className="TransactionDetails__row__right">
+              <div className="TransactionDetails__row__right__item">{preflightData.cost.cpuInsns} CPU</div>
+              <div className="TransactionDetails__row__right__item">{preflightData.cost.memBytes} Bytes</div>
+            </div>
+          </div>
+        )}
+        {preflightData && (
+          <div className="TransactionDetails__row">
+            <div>{t("Minimum resource fee")} </div>
+            <div className="TransactionDetails__row__right">
+              {preflightData.minResourceFee} XLM
+            </div>
+          </div>
+        )}
         {isSwap && (
           <div className="TransactionDetails__row">
             <div>{t("Minimum Received")} </div>
