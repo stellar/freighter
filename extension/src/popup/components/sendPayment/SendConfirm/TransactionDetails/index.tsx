@@ -28,7 +28,6 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-import { transfer } from "@shared/helpers/soroban/token";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -68,10 +67,10 @@ import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 
-import "./styles.scss";
-import { parseTokenAmount } from "popup/helpers/soroban";
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
+
+import "./styles.scss";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -208,7 +207,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     assetIcons,
     hardwareWalletData: { status: hwStatus },
     blockedAccounts,
-    preflightData
+    transactionSimulation
   } = submission;
 
   const transactionHash = submission.response?.hash;
@@ -270,45 +269,19 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
     try {
-      const assetAddress = asset.split(":")[1];
-      const assetBalance = tokenBalances.find(
-        (b) => b.contractId === assetAddress,
-      );
-
-      if (!assetBalance) {
-        throw new Error("Asset Balance not available");
-      }
-
-      const parsedAmount = parseTokenAmount(
-        amount,
-        Number(assetBalance.decimals),
-      );
-
-      const params = [
-        new SorobanClient.Address(publicKey).toScVal(), // from
-        new SorobanClient.Address(destination).toScVal(), // to
-        new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
-      ];
-
       if (!hasSorobanClient(sorobanClient)) {
         throw new Error("Soroban RPC not supported for this network");
       }
 
-      const builder = await sorobanClient.newTxBuilder(
-        xlmToStroop(transactionFee).toFixed(),
-      );
-
-      const transaction = transfer(assetAddress, params, memo, builder);
-
-      // TODO: use preflight from SendSettings
-      const preparedTransaction = await sorobanClient.server.prepareTransaction(
-        transaction,
-        networkDetails.networkPassphrase
+      const preparedTransaction = SorobanClient.assembleTransaction(
+        transactionSimulation.raw!,
+        networkDetails.networkPassphrase,
+        transactionSimulation.response!
       );
 
       const res = await dispatch(
         signFreighterSorobanTransaction({
-          transactionXDR: preparedTransaction.toXDR(),
+          transactionXDR: preparedTransaction.build().toXDR(),
           network: networkDetails.networkPassphrase,
         }),
       );
