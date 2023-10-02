@@ -23,6 +23,8 @@ import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { initialState as sorobanInitialState } from "popup/ducks/soroban";
 
+const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
+
 jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
 });
@@ -75,7 +77,23 @@ jest.mock("soroban-client", () => {
   const original = jest.requireActual("soroban-client");
   return {
     ...original,
+    assembleTransaction: (tx: any, _passphrase: string, _sim: any) => {
+      return new original.TransactionBuilder.cloneFrom(tx);
+    },
     Server: class {
+      getAccount(address: string) {
+        return Promise.resolve(new original.Account(address, "0"));
+      }
+      simulateTransaction = async (_tx: any) => {
+        return Promise.resolve({
+          transactionData: {},
+          cost: {
+            cpuInsns: 12389,
+            memBytes: 32478,
+          },
+          minResourceFee: 43289,
+        });
+      };
       prepareTransaction(tx: any, _passphrase: string) {
         return Promise.resolve(tx as any);
       }
@@ -104,8 +122,6 @@ jest.mock("popup/constants/history", () => ({
   },
 }));
 
-const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
-
 describe("SendTokenPayment", () => {
   const history = createMemoryHistory();
   history.push(ROUTES.sendPaymentTo);
@@ -133,6 +149,10 @@ describe("SendTokenPayment", () => {
             ...transactionSubmissionInitialState.transactionData,
             asset,
             isToken: true,
+          },
+          transactionSimulation: {
+            raw: null,
+            response: null,
           },
           accountBalances: mockBalances,
         },
