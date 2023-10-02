@@ -207,7 +207,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     assetIcons,
     hardwareWalletData: { status: hwStatus },
     blockedAccounts,
-    transactionSimulation
+    transactionSimulation,
   } = submission;
 
   const transactionHash = submission.response?.hash;
@@ -276,7 +276,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       const preparedTransaction = SorobanClient.assembleTransaction(
         transactionSimulation.raw!,
         networkDetails.networkPassphrase,
-        transactionSimulation.response!
+        transactionSimulation.response!,
       );
 
       const res = await dispatch(
@@ -520,8 +520,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           <div className="TransactionDetails__row">
             <div>{t("Resource cost")} </div>
             <div className="TransactionDetails__row__right">
-              <div className="TransactionDetails__row__right__item">{preflightData.cost.cpuInsns} CPU</div>
-              <div className="TransactionDetails__row__right__item">{preflightData.cost.memBytes} Bytes</div>
+              <div className="TransactionDetails__row__right__item">
+                {preflightData.cost.cpuInsns} CPU
+              </div>
+              <div className="TransactionDetails__row__right__item">
+                {preflightData.cost.memBytes} Bytes
+              </div>
             </div>
           </div>
         )}

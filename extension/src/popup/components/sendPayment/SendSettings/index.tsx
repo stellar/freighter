@@ -102,19 +102,21 @@ export const SendSettings = ({
         new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
       ];
       const transaction = transfer(assetAddress, params, memo, builder);
-      const preflightSim = await sorobanClient.server.simulateTransaction(transaction)
+      const preflightSim = await sorobanClient.server.simulateTransaction(
+        transaction,
+      );
 
       if ("transactionData" in preflightSim) {
         dispatch(
           saveSimulation({
             response: preflightSim,
-            raw: transaction
-          })
-        )
-        navigateTo(next)
+            raw: transaction,
+          }),
+        );
+        navigateTo(next);
       }
 
-      throw new Error(`Failed to simluate transaction, ID: ${preflightSim.id}`)
+      throw new Error(`Failed to simluate transaction, ID: ${preflightSim.id}`);
     }
   }
 
