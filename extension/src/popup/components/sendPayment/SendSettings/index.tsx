@@ -18,16 +18,16 @@ import {
   transactionDataSelector,
   isPathPaymentSelector,
   saveTransactionFee,
-  savePreflightData,
+  saveSimulation,
 } from "popup/ducks/transactionSubmission";
 
-import "../styles.scss";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { transfer } from "@shared/helpers/soroban/token";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { parseTokenAmount } from "popup/helpers/soroban";
 import { sorobanSelector } from "popup/ducks/soroban";
 import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
+import "../styles.scss";
 
 export const SendSettings = ({
   previous,
@@ -106,13 +106,15 @@ export const SendSettings = ({
 
       if ("transactionData" in preflightSim) {
         dispatch(
-          savePreflightData({
-            minResourceFee: preflightSim.minResourceFee,
-            cost: preflightSim.cost
+          saveSimulation({
+            response: preflightSim,
+            raw: transaction
           })
         )
+        navigateTo(next)
       }
-      navigateTo(next)
+
+      throw new Error(`Failed to simluate transaction, ID: ${preflightSim.id}`)
     }
   }
 

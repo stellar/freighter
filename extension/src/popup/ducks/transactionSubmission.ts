@@ -7,7 +7,7 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
-import { Networks, SorobanRpc } from "soroban-client";
+import { Memo, MemoType, Networks, Operation, SorobanRpc, Transaction } from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -413,7 +413,10 @@ interface InitialState {
     | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
-  preflightData: { minResourceFee: string, cost: SorobanRpc.Cost } | null
+  transactionSimulation: {
+    response: SorobanRpc.SimulateTransactionSuccessResponse | null,
+    raw: Transaction<Memo<MemoType>, Operation[]> | null
+  }
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
@@ -446,7 +449,10 @@ export const initialState: InitialState = {
     allowedSlippage: "1",
     isToken: false,
   },
-  preflightData: null,
+  transactionSimulation: {
+    response: null,
+    raw: null
+  },
   hardwareWalletData: {
     status: ShowOverlayStatus.IDLE,
     transactionXDR: "",
@@ -513,8 +519,8 @@ const transactionSubmissionSlice = createSlice({
     saveIsToken: (state, action) => {
       state.transactionData.isToken = action.payload;
     },
-    savePreflightData: (state, action) => {
-      state.preflightData = action.payload
+    saveSimulation: (state, action) => {
+      state.transactionSimulation = action.payload
     },
     startHwConnect: (state) => {
       state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
@@ -660,7 +666,7 @@ export const {
   saveDestinationAsset,
   saveAllowedSlippage,
   saveIsToken,
-  savePreflightData,
+  saveSimulation,
   startHwConnect,
   startHwSign,
   closeHwOverlay,
