@@ -43,7 +43,6 @@ import {
   ShowOverlayStatus,
   startHwSign,
 } from "popup/ducks/transactionSubmission";
-import { sorobanSelector } from "popup/ducks/soroban";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -212,7 +211,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const { tokenBalances } = useSelector(sorobanSelector);
   const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
     settingsSelector,
   );
@@ -516,24 +514,24 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             {transactionFee} XLM
           </div>
         </div>
-        {preflightData && (
+        {transactionSimulation.response && (
           <div className="TransactionDetails__row">
             <div>{t("Resource cost")} </div>
             <div className="TransactionDetails__row__right">
               <div className="TransactionDetails__row__right__item">
-                {preflightData.cost.cpuInsns} CPU
+                {transactionSimulation.response.cost.cpuInsns} CPU
               </div>
               <div className="TransactionDetails__row__right__item">
-                {preflightData.cost.memBytes} Bytes
+                {transactionSimulation.response.cost.memBytes} Bytes
               </div>
             </div>
           </div>
         )}
-        {preflightData && (
+        {transactionSimulation.response && (
           <div className="TransactionDetails__row">
             <div>{t("Minimum resource fee")} </div>
             <div className="TransactionDetails__row__right">
-              {preflightData.minResourceFee} XLM
+              {transactionSimulation.response.minResourceFee} XLM
             </div>
           </div>
         )}
