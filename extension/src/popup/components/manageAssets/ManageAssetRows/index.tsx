@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import {
   Account,
   Asset,
   Operation,
   StellarTomlResolver,
   TransactionBuilder,
+  Networks,
 } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -22,6 +23,7 @@ import {
   formatDomain,
   getCanonicalFromAsset,
   xlmToStroop,
+  truncateString,
 } from "helpers/stellar";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
@@ -35,6 +37,7 @@ import {
   hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { removeTokenId, sorobanSelector } from "popup/ducks/soroban";
 import {
   getAccountBalances,
   resetSubmission,
@@ -51,6 +54,7 @@ import {
   NewAssetWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
+import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -92,6 +96,10 @@ export const ManageAssetRows = ({
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const { getTokenBalancesStatus, tokensWithNoBalance } = useSelector(
+    sorobanSelector,
+  );
+  const sorobanClient = useContext(SorobanContext);
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
     false,
@@ -259,7 +267,12 @@ export const ManageAssetRows = ({
   };
 
   const handleRowClick = async (
-    assetRowData = { code: "", issuer: "", domain: "", image: "" },
+    assetRowData = {
+      code: "",
+      issuer: "",
+      domain: "",
+      image: "",
+    },
     isTrustlineActive: boolean,
   ) => {
     const resp = await checkForSuspiciousAsset(
@@ -285,6 +298,21 @@ export const ManageAssetRows = ({
         !isTrustlineActive,
       );
     }
+  };
+
+  const handleTokenRowClick = async (
+    contractId: string,
+    canonicalAsset?: string,
+  ) => {
+    setAssetSubmitting(canonicalAsset || contractId);
+    await dispatch(
+      removeTokenId({
+        contractId,
+        network: networkDetails.network as Networks,
+        sorobanClient,
+      }),
+    );
+    setAssetSubmitting("");
   };
 
   return (
@@ -321,37 +349,72 @@ export const ManageAssetRows = ({
       >
         {header}
         <div className="ManageAssetRows__content">
-          {assetRows.map(({ code = "", domain, image = "", issuer = "" }) => {
-            if (!balances) return null;
-            const canonicalAsset = getCanonicalFromAsset(code, issuer);
-            const isTrustlineActive = Object.keys(balances).some(
-              (balance) => balance === canonicalAsset,
-            );
-            const isActionPending = submitStatus === ActionStatus.PENDING;
+          {assetRows.map(
+            ({
+              code = "",
+              domain,
+              image = "",
+              issuer = "",
+              contractId = "",
+            }) => {
+              if (!balances) return null;
+              const canonicalAsset = getCanonicalFromAsset(code, issuer);
+              const isTrustlineActive = Object.keys(balances).some(
+                (balance) => balance === canonicalAsset,
+              );
+              const isActionPending =
+                submitStatus === ActionStatus.PENDING ||
+                getTokenBalancesStatus === ActionStatus.PENDING;
+
+              return (
+                <div className="ManageAssetRows__row" key={canonicalAsset}>
+                  <ManageAssetRow
+                    code={code}
+                    issuer={issuer}
+                    image={image}
+                    domain={contractId ? truncateString(contractId) : domain}
+                  />
+                  <div className="ManageAssetRows__button">
+                    <PillButton
+                      disabled={isActionPending}
+                      isLoading={
+                        isActionPending && assetSubmitting === canonicalAsset
+                      }
+                      onClick={() => {
+                        if (contractId) {
+                          handleTokenRowClick(contractId, canonicalAsset);
+                        } else {
+                          handleRowClick(
+                            { code, issuer, image, domain },
+                            isTrustlineActive,
+                          );
+                        }
+                      }}
+                      type="button"
+                    >
+                      {isTrustlineActive || contractId ? t("Remove") : t("Add")}
+                    </PillButton>
+                  </div>
+                </div>
+              );
+            },
+          )}
+
+          {tokensWithNoBalance.map((tokenId) => {
+            const isActionPending =
+              getTokenBalancesStatus === ActionStatus.PENDING;
 
             return (
-              <div className="ManageAssetRows__row" key={canonicalAsset}>
-                <ManageAssetRow
-                  code={code}
-                  issuer={issuer}
-                  image={image}
-                  domain={domain}
-                />
+              <div className="ManageAssetRows__row" key={tokenId}>
+                <ManageAssetRow domain={truncateString(tokenId)} />
                 <div className="ManageAssetRows__button">
                   <PillButton
                     disabled={isActionPending}
-                    isLoading={
-                      isActionPending && assetSubmitting === canonicalAsset
-                    }
-                    onClick={() =>
-                      handleRowClick(
-                        { code, issuer, image, domain },
-                        isTrustlineActive,
-                      )
-                    }
+                    isLoading={isActionPending && assetSubmitting === tokenId}
+                    onClick={() => handleTokenRowClick(tokenId)}
                     type="button"
                   >
-                    {isTrustlineActive ? t("Remove") : t("Add")}
+                    {t("Remove")}
                   </PillButton>
                 </div>
               </div>
