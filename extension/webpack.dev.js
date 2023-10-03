@@ -14,6 +14,7 @@ const devConfig = {
   plugins: [
     new webpack.DefinePlugin({
       DEV_SERVER: true,
+      DEV_EXTENSION: true,
     }),
     new webpack.NormalModuleReplacementPlugin(
       /webextension-polyfill/,
