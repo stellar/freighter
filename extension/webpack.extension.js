@@ -29,6 +29,7 @@ const prodConfig = (
       DEV_SERVER: false,
       AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
+      DEV_EXTENSION: !env.PRODUCTION,
     }),
     ...(env.TRANSLATIONS
       ? [
