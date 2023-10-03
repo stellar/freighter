@@ -121,6 +121,7 @@ export const SendSettings = ({
 
       throw new Error(`Failed to simluate transaction, ID: ${preflightSim.id}`);
     }
+    navigateTo(next);
   }
 
   return (
