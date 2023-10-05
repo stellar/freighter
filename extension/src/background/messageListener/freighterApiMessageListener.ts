@@ -14,7 +14,10 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/constants/stellar";
 import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import {
@@ -373,7 +376,8 @@ export const freighterApiMessageListener = (
       networkName: "",
       networkUrl: "",
       networkPassphrase: "",
-    };
+      sorobanRpcUrl: undefined,
+    } as NetworkDetails;
 
     try {
       networkDetails = await getNetworkDetails();
