@@ -90,7 +90,7 @@
 
   &__suggest-remove-tl {
     position: absolute;
-    top: calc(var(--popup--height) - 3.75 * var(--continue-btn-height));
+    top: calc(var(--popup--height) - 5.75 * var(--continue-btn-height));
     width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
 
     .remove-tl-contents {

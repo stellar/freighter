@@ -7,7 +7,14 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
-import { Networks, SorobanRpc } from "soroban-client";
+import {
+  Memo,
+  MemoType,
+  Networks,
+  Operation,
+  SorobanRpc,
+  Transaction,
+} from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -413,6 +420,10 @@ interface InitialState {
     | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
+  transactionSimulation: {
+    response: SorobanRpc.SimulateTransactionSuccessResponse | null;
+    raw: Transaction<Memo<MemoType>, Operation[]> | null;
+  };
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
@@ -444,6 +455,10 @@ export const initialState: InitialState = {
     path: [],
     allowedSlippage: "1",
     isToken: false,
+  },
+  transactionSimulation: {
+    response: null,
+    raw: null,
   },
   hardwareWalletData: {
     status: ShowOverlayStatus.IDLE,
@@ -510,6 +525,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveIsToken: (state, action) => {
       state.transactionData.isToken = action.payload;
+    },
+    saveSimulation: (state, action) => {
+      state.transactionSimulation = action.payload;
     },
     startHwConnect: (state) => {
       state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
@@ -655,6 +673,7 @@ export const {
   saveDestinationAsset,
   saveAllowedSlippage,
   saveIsToken,
+  saveSimulation,
   startHwConnect,
   startHwSign,
   closeHwOverlay,
