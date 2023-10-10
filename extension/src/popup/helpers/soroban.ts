@@ -101,7 +101,7 @@ export const parseTokenAmount = (value: string, decimals: number) => {
 };
 
 export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
-  let amount;
+  let amount: BigNumber;
   let from;
   let to;
 
@@ -122,7 +122,7 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
       amount = SorobanClient.scValToNative(args[1]);
       break;
     default:
-      amount = 0;
+      amount = new BigNumber(0);
   }
 
   return { from, to, amount };
