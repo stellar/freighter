@@ -125,7 +125,7 @@ const KeyValueList = ({
   operationKey: string;
   operationValue: string | number | React.ReactNode;
 }) => (
-  <div className="Operations__pair">
+  <div className="Operations__pair" data-testid="OperationKeyVal">
     <div>
       {operationKey}
       {operationKey ? ":" : null}
@@ -185,13 +185,11 @@ const KeyValueWithScAuth = ({
       <SimpleBarWrapper className="Operations__scValue">
         <div>
           <pre>
-            {
-              JSON.stringify(
-                rootJson,
-                (_, val) => (typeof val === 'bigint' ? val.toString() : val),
-                2
-              )
-            }
+            {JSON.stringify(
+              rootJson,
+              (_, val) => (typeof val === "bigint" ? val.toString() : val),
+              2,
+            )}
           </pre>
         </div>
       </SimpleBarWrapper>
