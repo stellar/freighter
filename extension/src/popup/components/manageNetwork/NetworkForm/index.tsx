@@ -10,11 +10,7 @@ import { AppDispatch } from "popup/App";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
-import {
-  NETWORKS,
-  NETWORK_NAMES,
-  SOROBAN_RPC_URLS,
-} from "@shared/constants/stellar";
+import { NETWORK_NAMES } from "@shared/constants/stellar";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { isNetworkUrlValid as isNetworkUrlValidHelper } from "popup/helpers/account";
@@ -82,8 +78,6 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     ? {
         ...networkDetailsToEdit,
         isSwitchSelected: false,
-        sorobanRpcUrl:
-          SOROBAN_RPC_URLS[networkDetailsToEdit.network as NETWORKS],
         isAllowHttpSelected: !networkDetailsToEdit?.networkUrl.includes(
           "https",
         ),
@@ -197,7 +191,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const supportsSorobanRpc = (network: string) =>
-    network === NETWORK_NAMES.FUTURENET;
+    network === NETWORK_NAMES.FUTURENET || network === NETWORK_NAMES.TESTNET;
 
   const handleSubmit = async (values: FormValues) => {
     if (isEditing) {
