@@ -8,7 +8,6 @@ import { Networks } from "soroban-client";
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { NETWORKS } from "@shared/constants/stellar";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -19,6 +18,7 @@ import {
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import {
   getIsPayment,
@@ -71,6 +71,7 @@ export const AccountHistory = () => {
   const { tokenBalances, getTokenBalancesStatus } = useSelector(
     sorobanSelector,
   );
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
@@ -89,13 +90,10 @@ export const AccountHistory = () => {
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  // differentiate between if data is still loading and if no account history results came back from Horizon
-  const shouldLoadToken =
-    isExperimentalModeEnabled || networkDetails.network === NETWORKS.FUTURENET;
   const isTokenBalanceLoading =
     (getTokenBalancesStatus === ActionStatus.IDLE ||
       getTokenBalancesStatus === ActionStatus.PENDING) &&
-    shouldLoadToken;
+    isSorobanSuported;
   const isAccountHistoryLoading = isExperimentalModeEnabled
     ? historySegments === null || isTokenBalanceLoading
     : historySegments === null;
@@ -159,7 +157,7 @@ export const AccountHistory = () => {
           createSegments(res.operations, isExperimentalModeEnabled),
         );
 
-        if (shouldLoadToken) {
+        if (isSorobanSuported) {
           dispatch(
             getTokenBalances({
               sorobanClient,
@@ -181,7 +179,7 @@ export const AccountHistory = () => {
     getData();
 
     return () => {
-      if (shouldLoadToken) {
+      if (isSorobanSuported) {
         dispatch(resetSorobanTokensStatus());
       }
     };
@@ -190,7 +188,7 @@ export const AccountHistory = () => {
     networkDetails,
     isExperimentalModeEnabled,
     sorobanClient,
-    shouldLoadToken,
+    isSorobanSuported,
     dispatch,
   ]);
 
