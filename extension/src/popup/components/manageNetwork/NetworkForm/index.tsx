@@ -10,7 +10,6 @@ import { AppDispatch } from "popup/App";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
-import { NETWORK_NAMES } from "@shared/constants/stellar";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { isNetworkUrlValid as isNetworkUrlValidHelper } from "popup/helpers/account";
@@ -25,6 +24,7 @@ import {
   settingsErrorSelector,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -55,6 +55,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
@@ -189,9 +190,6 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       history.goBack();
     }
   };
-
-  const supportsSorobanRpc = (network: string) =>
-    network === NETWORK_NAMES.FUTURENET || network === NETWORK_NAMES.TESTNET;
 
   const handleSubmit = async (values: FormValues) => {
     if (isEditing) {
@@ -363,8 +361,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 name="networkUrl"
                 placeholder={t("Enter network URL")}
               />
-              {supportsSorobanRpc(initialValues.networkName) ||
-              !isEditingDefaultNetworks ? (
+              {isSorobanSuported || !isEditingDefaultNetworks ? (
                 <Input
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}
