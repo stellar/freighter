@@ -17,7 +17,6 @@ import {
 } from "popup/ducks/soroban";
 import {
   settingsNetworkDetailsSelector,
-  settingsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import {
@@ -67,7 +66,6 @@ export const AccountHistory = () => {
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
   const { tokenBalances, getTokenBalancesStatus } = useSelector(
     sorobanSelector,
   );
@@ -94,7 +92,7 @@ export const AccountHistory = () => {
     (getTokenBalancesStatus === ActionStatus.IDLE ||
       getTokenBalancesStatus === ActionStatus.PENDING) &&
     isSorobanSuported;
-  const isAccountHistoryLoading = isExperimentalModeEnabled
+  const isAccountHistoryLoading = isSorobanSuported
     ? historySegments === null || isTokenBalanceLoading
     : historySegments === null;
 
@@ -154,7 +152,7 @@ export const AccountHistory = () => {
       try {
         const res = await getAccountHistory({ publicKey, networkDetails });
         setHistorySegments(
-          createSegments(res.operations, isExperimentalModeEnabled),
+          createSegments(res.operations, isSorobanSuported as boolean),
         );
 
         if (isSorobanSuported) {
@@ -183,14 +181,7 @@ export const AccountHistory = () => {
         dispatch(resetSorobanTokensStatus());
       }
     };
-  }, [
-    publicKey,
-    networkDetails,
-    isExperimentalModeEnabled,
-    sorobanClient,
-    isSorobanSuported,
-    dispatch,
-  ]);
+  }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
