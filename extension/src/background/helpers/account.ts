@@ -123,3 +123,8 @@ export const getNetworksList = async () => {
 
   return networksList;
 };
+
+export const getIsSorobanSupported = async () => {
+  const networkDetails = await getNetworkDetails();
+  return !!networkDetails.sorobanRpcUrl;
+};
