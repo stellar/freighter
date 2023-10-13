@@ -913,8 +913,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       if (transactionToSign) {
         try {
-          console.log(transactionToSign);
-
           transactionToSign.sign(sourceKeys);
           response = transactionToSign.toXDR();
         } catch (e) {
@@ -993,12 +991,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const isSorobanSupported = await getIsSorobanSupported();
     const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
-    console.log(isExperimentalModeEnabled);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
       const sourceKeys = SDK.Keypair.fromSecret(privateKey);
-      console.log(transaction);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
