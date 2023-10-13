@@ -60,6 +60,7 @@ import {
   getNetworksList,
   HW_PREFIX,
   getBipPath,
+  getIsSorobanSupported,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -902,8 +903,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+      const isSorobanSupported = await getIsSorobanSupported();
+      const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
       const sourceKeys = SDK.Keypair.fromSecret(privateKey);
 
       let response;
@@ -935,9 +936,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
 
       const blob = blobQueue.pop();
       const response = blob
@@ -960,11 +959,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     if (privateKey.length) {
       const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
-
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? await sourceKeys.sign(SorobanSdk.hash(Buffer.from(authEntry.entry, "base64")))
+        ? await sourceKeys.sign(
+            SorobanSdk.hash(Buffer.from(authEntry.entry, "base64")),
+          )
         : null;
 
       const entryResponse = responseQueue.pop();
@@ -988,8 +988,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signFreighterTransaction = async () => {
     const { transactionXDR, network } = request;
-    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    const isSorobanSupported = await getIsSorobanSupported();
+    const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());

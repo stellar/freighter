@@ -10,6 +10,7 @@ import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
   settingsNetworkDetailsSelector,
   settingsExperimentalModeSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
@@ -64,6 +65,7 @@ export const SignTransaction = () => {
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
@@ -86,7 +88,7 @@ export const SignTransaction = () => {
   But in this case, we will need the hostFn prototype associated with Soroban tx operations.
   */
 
-  const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+  const SDK = isSorobanSuported ? SorobanSdk : StellarSdk;
   const transaction = SDK.TransactionBuilder.fromXDR(
     transactionXdr,
     networkPassphrase,
