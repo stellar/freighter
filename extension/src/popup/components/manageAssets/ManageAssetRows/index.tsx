@@ -312,7 +312,7 @@ export const ManageAssetRows = ({
         sorobanClient,
       }),
     );
-    setAssetSubmitting("");
+    navigateTo(ROUTES.account);
   };
 
   return (
