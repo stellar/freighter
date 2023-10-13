@@ -19,7 +19,6 @@ export const getTokenBalances = createAsyncThunk<
   { sorobanClient: SorobanContextInterface; network: Networks },
   { rejectValue: ErrorMessage }
 >("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
-  console.log(1);
   if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
     throw new Error("soroban rpc not supported");
   }
@@ -90,8 +89,7 @@ export const removeTokenId = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("removeTokenId", async ({ contractId, network, sorobanClient }, thunkApi) => {
   try {
-    const tokenIdList = await internalRemoveTokenId({ contractId, network });
-    console.log(tokenIdList);
+    await internalRemoveTokenId({ contractId, network });
   } catch (e) {
     console.error(e);
     thunkApi.rejectWithValue({ errorMessage: e as string });

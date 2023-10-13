@@ -973,7 +973,6 @@ export const addTokenId = async (
 export const getTokenIds = async (
   network: SorobanClient.Networks,
 ): Promise<string[]> => {
-  console.log(network);
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_TOKEN_IDS,
     network,
