@@ -30,8 +30,8 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
-  getIsExperimentalModeEnabled,
   getNetworkDetails,
+  getIsSorobanSupported,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -118,8 +118,8 @@ export const freighterApiMessageListener = (
 
     const isMainnet = await getIsMainnet();
     const { networkUrl } = await getNetworkDetails();
-    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    const isSorobanSupported = await getIsSorobanSupported();
+    const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -129,7 +129,6 @@ export const freighterApiMessageListener = (
     const allowList = allowListStr.split(",");
     const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-    // try to build a tx xdr, if you cannot then assume the user wants to sign an arbitrary blob
     const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
       networkPassphrase || SDK.Networks[network as keyof typeof SDK.Networks],
