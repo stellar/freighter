@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-5.6.3
+
+### Bug
+
+getNetworkDetails does not return Soroban RPC URLs
+
 # Release notes - Wallets - Freighter-5.5.1
 
 ### Bug

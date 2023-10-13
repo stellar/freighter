@@ -62,3 +62,7 @@ export const EXTERNAL_MSG_RESPONSE = "FREIGHTER_EXTERNAL_MSG_RESPONSE";
 declare const DEV_SERVER: string;
 const _DEV_SERVER = DEV_SERVER;
 export { _DEV_SERVER as DEV_SERVER };
+
+declare const DEV_EXTENSION: string;
+const _DEV_EXTENSION = DEV_EXTENSION;
+export { _DEV_EXTENSION as DEV_EXTENSION };

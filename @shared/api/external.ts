@@ -1,4 +1,5 @@
 import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
+import { NetworkDetails } from "../constants/stellar";
 import { sendMessageToContentScript } from "./helpers/extensionMessaging";
 import { UserInfo } from "./types";
 
@@ -145,6 +146,7 @@ export const requestNetworkDetails = async (): Promise<{
   network: string;
   networkUrl: string;
   networkPassphrase: string;
+  sorobanRpcUrl?: string;
 }> => {
   let response = {
     networkDetails: {
@@ -152,7 +154,8 @@ export const requestNetworkDetails = async (): Promise<{
       networkName: "",
       networkUrl: "",
       networkPassphrase: "",
-    },
+      sorobanRpcUrl: undefined,
+    } as NetworkDetails,
     error: "",
   };
   try {
@@ -164,12 +167,17 @@ export const requestNetworkDetails = async (): Promise<{
   }
 
   const { networkDetails, error } = response;
-  const { network, networkUrl, networkPassphrase } = networkDetails;
+  const {
+    network,
+    networkUrl,
+    networkPassphrase,
+    sorobanRpcUrl,
+  } = networkDetails;
 
   if (error) {
     throw error;
   }
-  return { network, networkUrl, networkPassphrase };
+  return { network, networkUrl, networkPassphrase, sorobanRpcUrl };
 };
 
 export const requestConnectionStatus = async (): Promise<boolean> => {
