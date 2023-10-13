@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import {
   transactionSubmissionSelector,
   AssetSelectType,
@@ -42,6 +43,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const isSwap = useIsSwap();
 
   const managingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
@@ -96,20 +98,23 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
       }
 
       if (isSorobanSuported && sorobanBalances.length) {
-        sorobanBalances.forEach(({ symbol, contractId, name }) => {
-          // TODO:
-          // interestingly, if an ascii value is set for symbol
-          // it gets parsed and doesn't
-          // match the original value after this. How to escape this?
-          collection.push({
-            code: `${symbol}`,
-            issuer: "",
-            image: "",
-            domain: "",
-            contractId,
-            name,
+        // we can't swap with tokens yet, so don't show tokens
+        if (!isSwap) {
+          sorobanBalances.forEach(({ symbol, contractId, name }) => {
+            // TODO:
+            // interestingly, if an ascii value is set for symbol
+            // it gets parsed and doesn't
+            // match the original value after this. How to escape this?
+            collection.push({
+              code: `${symbol}`,
+              issuer: "",
+              image: "",
+              domain: "",
+              contractId,
+              name,
+            });
           });
-        });
+        }
       }
 
       setAssetRows(collection);
@@ -124,6 +129,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     managingAssets,
     isSorobanSuported,
     sorobanBalances,
+    isSwap,
   ]);
 
   return (
