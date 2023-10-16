@@ -162,6 +162,13 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         </div>
         {managingAssets && (
           <div className="ChooseAsset__button-container">
+            <div className="ChooseAsset__button">
+              <Link to={ROUTES.searchAsset}>
+                <Button size="md" isFullWidth variant="secondary">
+                  {t("Add another asset")}
+                </Button>
+              </Link>
+            </div>
             {isSorobanSuported ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
@@ -171,13 +178,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                 </Link>
               </div>
             ) : null}
-            <div className="ChooseAsset__button">
-              <Link to={ROUTES.searchAsset}>
-                <Button size="md" isFullWidth variant="secondary">
-                  {t("Add another asset")}
-                </Button>
-              </Link>
-            </div>
           </div>
         )}
       </div>
