@@ -92,24 +92,24 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             image: "",
             domain: "",
           });
-
-          if (isSorobanSuported && sorobanBalances.length) {
-            sorobanBalances.forEach(({ symbol, contractId, name }) => {
-              // TODO:
-              // interestingly, if an ascii value is set for symbol
-              // it gets parsed and doesn't
-              // match the original value after this. How to escape this?
-              collection.push({
-                code: `${symbol}`,
-                issuer: "",
-                image: "",
-                domain: "",
-                contractId,
-                name,
-              });
-            });
-          }
         }
+      }
+
+      if (isSorobanSuported && sorobanBalances.length) {
+        sorobanBalances.forEach(({ symbol, contractId, name }) => {
+          // TODO:
+          // interestingly, if an ascii value is set for symbol
+          // it gets parsed and doesn't
+          // match the original value after this. How to escape this?
+          collection.push({
+            code: `${symbol}`,
+            issuer: "",
+            image: "",
+            domain: "",
+            contractId,
+            name,
+          });
+        });
       }
 
       setAssetRows(collection);
@@ -162,6 +162,13 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         </div>
         {managingAssets && (
           <div className="ChooseAsset__button-container">
+            <div className="ChooseAsset__button">
+              <Link to={ROUTES.searchAsset}>
+                <Button size="md" isFullWidth variant="secondary">
+                  {t("Add another asset")}
+                </Button>
+              </Link>
+            </div>
             {isSorobanSuported ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
@@ -171,13 +178,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                 </Link>
               </div>
             ) : null}
-            <div className="ChooseAsset__button">
-              <Link to={ROUTES.searchAsset}>
-                <Button size="md" isFullWidth variant="secondary">
-                  {t("Add another asset")}
-                </Button>
-              </Link>
-            </div>
           </div>
         )}
       </div>

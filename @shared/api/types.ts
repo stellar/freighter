@@ -64,6 +64,7 @@ export interface Response {
   blockedDomains: BlockedDomains;
   blockedAccounts: BlockedAccount[];
   assetDomain: string;
+  contractId: string;
   tokenId: string;
   tokenIdList: string[];
   isConnected: boolean;
