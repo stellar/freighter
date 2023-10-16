@@ -1,3 +1,17 @@
+# Release notes - Wallets - 5.6.4
+
+### Bug
+
+Soroban Tx history isn't showing up on testnet
+
+Existing checks for experimental mode block some Testnet Soroban functionality
+
+### Story
+
+\[Automated Tests\] Add tests for signing Soroban tx's
+
+Show Soroban RPC Url for Testnet
+
 # Release notes - Wallets - Freighter-5.6.3
 
 ### Bug
