@@ -9,7 +9,7 @@ const playgroundPaths = [
   "getNetworkDetails",
   "signTransaction",
   "signAuthEntry",
-  "signBlob"
+  "signBlob",
 ];
 
 const GUIDE_BASE_PATH = "guide";

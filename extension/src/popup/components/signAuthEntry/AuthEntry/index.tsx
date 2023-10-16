@@ -11,12 +11,11 @@ interface TransactionProps {
 
 export const AuthEntry = ({ preimageXdr }: TransactionProps) => {
   const { t } = useTranslation();
-  const preimage = xdr.HashIdPreimage.fromXDR(
-    preimageXdr,
-    "base64",
-  );
+  const preimage = xdr.HashIdPreimage.fromXDR(preimageXdr, "base64");
 
-  const rootJson = buildInvocationTree(preimage.sorobanAuthorization().invocation());
+  const rootJson = buildInvocationTree(
+    preimage.sorobanAuthorization().invocation(),
+  );
 
   return (
     <div className="AuthEntry">
@@ -24,13 +23,11 @@ export const AuthEntry = ({ preimageXdr }: TransactionProps) => {
       <div className="AuthEntryAttributes">
         <pre>
           <SimpleBarWrapper>
-            {
-              JSON.stringify(
-                rootJson,
-                (_, val) => (typeof val === 'bigint' ? val.toString() : val),
-                2
-              )
-            }
+            {JSON.stringify(
+              rootJson,
+              (_, val) => (typeof val === "bigint" ? val.toString() : val),
+              2,
+            )}
           </SimpleBarWrapper>
         </pre>
       </div>
