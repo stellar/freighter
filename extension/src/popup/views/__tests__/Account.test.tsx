@@ -9,7 +9,12 @@ import {
 import * as ApiInternal from "@shared/api/internal";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 
-import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
+import {
+  Wrapper,
+  mockBalances,
+  mockTokenBalance,
+  mockAccounts,
+} from "../../__testHelpers__";
 import { Account } from "../Account";
 
 const mockHistoryOperations = {
@@ -27,6 +32,25 @@ const mockHistoryOperations = {
 jest
   .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
+// @ts-ignore
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+    tokenIdList: ["C1"],
+    hasPrivateKey: false,
+    applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "foo",
+  }),
+);
+
+jest
+  .spyOn(ApiInternal, "getTokenIds")
+  .mockImplementation(() => Promise.resolve(["C1"]));
+
+jest
+  .spyOn(ApiInternal, "getSorobanTokenBalance")
+  .mockImplementation(() => Promise.resolve(mockTokenBalance));
 
 jest
   .spyOn(ApiInternal, "makeAccountActive")
@@ -50,7 +74,8 @@ describe("Account view", () => {
           auth: {
             error: null,
             applicationState: ApplicationState.PASSWORD_CREATED,
-            publicKey: "G1",
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,
           },
           settings: {

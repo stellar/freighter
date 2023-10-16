@@ -1,106 +1,88 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
+import { useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
-
-import { truncatedPublicKey } from "helpers/stellar";
-import { signBlob } from "popup/ducks/access";
-import { confirmPassword } from "popup/ducks/accountServices";
-
 import {
   ButtonsContainer,
   ModalHeader,
   ModalWrapper,
 } from "popup/basics/Modal";
 
+import { truncatedPublicKey } from "helpers/stellar";
+import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
+import { SlideupModal } from "popup/components/SlideupModal";
 import {
+  FirstTimeWarningMessage,
   WarningMessageVariant,
   WarningMessage,
-  FirstTimeWarningMessage,
 } from "popup/components/WarningMessages";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
-import { SlideupModal } from "popup/components/SlideupModal";
-
+import { signEntry, rejectAuthEntry } from "popup/ducks/access";
+import { settingsExperimentalModeSelector } from "popup/ducks/settings";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { AppDispatch } from "popup/App";
-import {
-  ShowOverlayStatus,
-  startHwSign,
-} from "popup/ducks/transactionSubmission";
 
-import { Account } from "@shared/api/types";
-import { BlobToSign } from "helpers/urls";
+import { EntryToSign, parsedSearchParam } from "helpers/urls";
+import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 
-import "../styles.scss";
-import { useDispatch } from "react-redux";
-import { Blob } from "popup/components/signBlob";
+import "./styles.scss";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
-interface SignBlobBodyProps {
-  accountNotFound: boolean;
-  allAccounts: Account[];
-  blob: BlobToSign;
-  currentAccount: Account;
-  handleApprove: (signAndClose: () => Promise<void>) => () => Promise<void>;
-  hwStatus: ShowOverlayStatus;
-  isConfirming: boolean;
-  isDropdownOpen: boolean;
-  isExperimentalModeEnabled: boolean;
-  isHardwareWallet: boolean;
-  isPasswordRequired: boolean;
-  publicKey: string;
-  rejectAndClose: () => void;
-  setIsDropdownOpen: (isRequired: boolean) => void;
-  setIsPasswordRequired: (isRequired: boolean) => void;
-  setStartedHwSign: (hasStarted: boolean) => void;
-}
+export const SignAuthEntry = () => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-export const SignBlobBody = ({
-  publicKey,
-  allAccounts,
-  isDropdownOpen,
-  handleApprove,
-  isConfirming,
-  accountNotFound,
-  rejectAndClose,
-  currentAccount,
-  setIsDropdownOpen,
-  setIsPasswordRequired,
-  isPasswordRequired,
-  blob,
-  isExperimentalModeEnabled,
-  hwStatus,
-  isHardwareWallet,
-  setStartedHwSign,
-}: SignBlobBodyProps) => {
-  const dispatch: AppDispatch = useDispatch();
+  const location = useLocation();
   const { t } = useTranslation();
-  const { accountToSign, domain, isDomainListedAllowed } = blob;
+  const isExperimentalModeEnabled = useSelector(
+    settingsExperimentalModeSelector,
+  );
 
-  const signAndClose = async () => {
-    if (isHardwareWallet) {
-      await dispatch(
-        startHwSign({ transactionXDR: blob.blob, shouldSubmit: false }),
-      );
-      setStartedHwSign(true);
-    } else {
-      await dispatch(signBlob());
-      window.close();
-    }
-  };
+  const params = parsedSearchParam(location.search) as EntryToSign;
+  const { accountToSign } = params;
 
-  const _handleApprove = handleApprove(signAndClose);
+  const {
+    allAccounts,
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    publicKey,
+    handleApprove,
+    hwStatus,
+    isHardwareWallet,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+  } = useSetupSigningFlow(
+    rejectAuthEntry,
+    signEntry,
+    params.entry,
+    accountToSign,
+  );
 
-  const verifyPasswordThenSign = async (password: string) => {
-    const confirmPasswordResp = await dispatch(confirmPassword(password));
+  if (isHardwareWallet) {
+    return (
+      <ModalWrapper>
+        <WarningMessage
+          variant={WarningMessageVariant.warning}
+          handleCloseClick={() => window.close()}
+          isActive
+          header={t("Unsupported signing method")}
+        >
+          <p>
+            {t(
+              "Signing arbitrary data with a hardware wallet is currently not supported.",
+            )}
+          </p>
+        </WarningMessage>
+      </ModalWrapper>
+    );
+  }
 
-    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
-      await signAndClose();
-    }
-  };
-
-  if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
+  if (!params.url.startsWith("https") && !isExperimentalModeEnabled) {
     return (
       <ModalWrapper>
         <WarningMessage
@@ -110,10 +92,10 @@ export const SignBlobBody = ({
           header={t("WEBSITE CONNECTION IS NOT SECURE")}
         >
           <p>
-            <Trans domain={domain}>
-              The website <strong>{{ domain }}</strong> does not use an SSL
-              certificate. For additional safety Freighter only works with
-              websites that provide an SSL certificate.
+            <Trans domain={params.url}>
+              The website <strong>{{ domain: params.url }}</strong> does not use
+              an SSL certificate. For additional safety Freighter only works
+              with websites that provide an SSL certificate.
             </Trans>
           </p>
         </WarningMessage>
@@ -130,7 +112,7 @@ export const SignBlobBody = ({
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="SignBlob" data-testid="SignBlob">
+      <div className="SignAuthEntry" data-testid="SignAuthEntry">
         <ModalWrapper>
           <ModalHeader>
             <strong>{t("Confirm Data")}</strong>
@@ -147,29 +129,19 @@ export const SignBlobBody = ({
               </p>
             </WarningMessage>
           ) : null}
-          <WarningMessage
-            header="Unknown data"
-            variant={WarningMessageVariant.highAlert}
-          >
-            <p>
-              {t(
-                "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data.",
-              )}
-            </p>
-          </WarningMessage>
-          {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
-          <div className="SignBlob__info">
+          {!params.isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
+          <div className="SignAuthEntry__info">
             <Card variant="secondary">
-              <PunycodedDomain domain={domain} isRow />
-              <div className="SignBlob__subject">
-                {t("is requesting approval to sign a blob of data")}
+              <PunycodedDomain domain={params.url} isRow />
+              <div className="SignAuthEntry__subject">
+                {t("is requesting approval to sign an authorization entry")}
               </div>
-              <div className="SignBlob__approval">
-                <div className="SignBlob__approval__title">
+              <div className="SignAuthEntry__approval">
+                <div className="SignAuthEntry__approval__title">
                   {t("Approve using")}:
                 </div>
                 <div
-                  className="SignBlob__current-account"
+                  className="SignAuthEntry__current-account"
                   onClick={() => setIsDropdownOpen(true)}
                 >
                   <AccountListIdenticon
@@ -184,14 +156,14 @@ export const SignBlobBody = ({
                       imported={currentAccount.imported}
                     />
                   </AccountListIdenticon>
-                  <div className="SignBlob__current-account__chevron">
+                  <div className="SignAuthEntry__current-account__chevron">
                     <Icon.ChevronDown />
                   </div>
                 </div>
               </div>
             </Card>
             {accountNotFound && accountToSign ? (
-              <div className="SignBlob__account-not-found">
+              <div className="SignAuthEntry__account-not-found">
                 <Notification
                   variant="warning"
                   icon={<Icon.Warning />}
@@ -206,23 +178,29 @@ export const SignBlobBody = ({
               </div>
             ) : null}
           </div>
-          <Blob blob={blob.blob} />
+          {/* Can replace AuthEntry once SignTx supports xdr classes */}
+          {/* <Transaction
+            flaggedKeys={{}}
+            isMemoRequired={false}
+            transaction={{ _operations: [{ auth: params.entry }] }}
+          /> */}
+          <AuthEntry preimageXdr={params.entry} />
         </ModalWrapper>
         <ButtonsContainer>
           <Button
-            size="md"
             isFullWidth
-            variant="secondary"
+            size="md"
+            variant="tertiary"
             onClick={() => rejectAndClose()}
           >
             {t("Reject")}
           </Button>
           <Button
-            size="md"
             isFullWidth
+            size="md"
             variant="primary"
             isLoading={isConfirming}
-            onClick={() => _handleApprove()}
+            onClick={() => handleApprove()}
           >
             {t("Approve")}
           </Button>
@@ -231,7 +209,7 @@ export const SignBlobBody = ({
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
         >
-          <div className="SignBlob__modal">
+          <div className="SignAuthEntry__modal">
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}

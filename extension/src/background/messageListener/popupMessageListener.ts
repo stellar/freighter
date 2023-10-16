@@ -1,5 +1,5 @@
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 // @ts-ignore
@@ -60,6 +60,7 @@ import {
   getNetworksList,
   HW_PREFIX,
   getBipPath,
+  getIsSorobanSupported,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -91,10 +92,9 @@ import { Store } from "redux";
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Array<{
-  sign: (sourceKeys: {}) => void;
-  toXDR: () => void;
-}> = [];
+export const transactionQueue: Array<
+  StellarSdk.Transaction | SorobanSdk.Transaction
+> = [];
 export const blobQueue: Array<{
   isDomainListedAllowed: boolean;
   domain: string;
@@ -102,6 +102,13 @@ export const blobQueue: Array<{
   blob: string;
   url: string;
   accountToSign: string;
+}> = [];
+
+export const authEntryQueue: Array<{
+  accountToSign: string;
+  tab: browser.Tabs.Tab | undefined;
+  entry: string; // xdr.SorobanAuthorizationEntry
+  url: string;
 }> = [];
 
 interface KeyPair {
@@ -896,8 +903,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+      const isSorobanSupported = await getIsSorobanSupported();
+      const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
       const sourceKeys = SDK.Keypair.fromSecret(privateKey);
 
       let response;
@@ -929,9 +936,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
 
       const blob = blobQueue.pop();
       const response = blob
@@ -949,6 +954,30 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
+  const signAuthEntry = async () => {
+    const privateKey = privateKeySelector(sessionStore.getState());
+
+    if (privateKey.length) {
+      const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
+      const authEntry = authEntryQueue.pop();
+
+      const response = authEntry
+        ? await sourceKeys.sign(
+            SorobanSdk.hash(Buffer.from(authEntry.entry, "base64")),
+          )
+        : null;
+
+      const entryResponse = responseQueue.pop();
+
+      if (typeof entryResponse === "function") {
+        entryResponse(response);
+        return {};
+      }
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const rejectTransaction = () => {
     transactionQueue.pop();
     const response = responseQueue.pop();
@@ -959,8 +988,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signFreighterTransaction = async () => {
     const { transactionXDR, network } = request;
-    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    const isSorobanSupported = await getIsSorobanSupported();
+    const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
     const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
@@ -1194,8 +1223,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addTokenId = async () => {
-    const { tokenId } = request;
-    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const { tokenId, network } = request;
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdList = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
@@ -1206,18 +1236,45 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     accountTokenIdList.push(tokenId);
     await localStore.setItem(TOKEN_ID_LIST, {
-      ...tokenIdList,
-      [keyId]: accountTokenIdList,
+      ...tokenIdsByNetwork,
+      [network]: {
+        ...tokenIdList,
+        [keyId]: accountTokenIdList,
+      },
     });
 
     return { accountTokenIdList };
   };
 
   const getTokenIds = async () => {
-    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const { network } = request;
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdsByKey = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
-    return { tokenIdList: tokenIdList[keyId] || [] };
+    return { tokenIdList: tokenIdsByKey[keyId] || [] };
+  };
+
+  const removeTokenId = async () => {
+    const { contractId, network } = request;
+
+    const tokenIdsList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdsByNetwork = tokenIdsList[network] || {};
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+
+    const accountTokenIdList = tokenIdsByNetwork[keyId] || [];
+    const updatedTokenIdList = accountTokenIdList.filter(
+      (id: string) => id !== contractId,
+    );
+
+    await localStore.setItem(TOKEN_ID_LIST, {
+      ...tokenIdsList,
+      [network]: {
+        [keyId]: updatedTokenIdList,
+      },
+    });
+
+    return { tokenIdList: updatedTokenIdList };
   };
 
   const messageResponder: MessageResponder = {
@@ -1241,6 +1298,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.SIGN_BLOB]: signBlob,
+    [SERVICE_TYPES.SIGN_AUTH_ENTRY]: signAuthEntry,
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
@@ -1260,6 +1318,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
+    [SERVICE_TYPES.REMOVE_TOKEN_ID]: removeTokenId,
     [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
   };
 

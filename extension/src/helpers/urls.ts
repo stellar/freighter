@@ -5,8 +5,17 @@ import { TransactionInfo } from "../types/transactions";
 export interface BlobToSign {
   isDomainListedAllowed: boolean;
   domain: string;
-  tab: browser.Tabs.Tab | undefined;
+  tab?: browser.Tabs.Tab;
   blob: string;
+  url: string;
+  accountToSign: string;
+}
+
+export interface EntryToSign {
+  isDomainListedAllowed: boolean;
+  domain: string;
+  tab?: browser.Tabs.Tab;
+  entry: string;
   url: string;
   accountToSign: string;
 }
@@ -24,7 +33,7 @@ export const removeQueryParam = (url = "") => url.replace(/\?(.*)/, "");
 
 export const parsedSearchParam = (
   param: string,
-): TransactionInfo | BlobToSign => {
+): TransactionInfo | BlobToSign | EntryToSign => {
   const decodedSearchParam = decodeString(param.replace("?", ""));
   return decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
 };

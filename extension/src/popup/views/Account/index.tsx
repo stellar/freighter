@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { Networks } from "soroban-client";
 
 import { getAccountHistory } from "@shared/api/internal";
 import {
@@ -13,7 +14,7 @@ import {
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import {
   settingsNetworkDetailsSelector,
-  settingsSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import {
   accountNameSelector,
@@ -47,6 +48,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
+import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
 import { SorobanContext } from "../../SorobanContext";
@@ -73,7 +75,7 @@ export const Account = () => {
     false,
   );
 
-  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -100,20 +102,24 @@ export const Account = () => {
       }),
     );
     dispatch(getBlockedDomains());
-
-    if (isExperimentalModeEnabled) {
-      dispatch(getTokenBalances({ sorobanClient }));
+    if (isSorobanSuported) {
+      dispatch(
+        getTokenBalances({
+          sorobanClient,
+          network: networkDetails.network as Networks,
+        }),
+      );
     }
 
     return () => {
       dispatch(resetAccountBalanceStatus());
-      if (isExperimentalModeEnabled) {
+      if (isSorobanSuported) {
         dispatch(resetSorobanTokensStatus());
       }
     };
   }, [
     sorobanClient,
-    isExperimentalModeEnabled,
+    isSorobanSuported,
     publicKey,
     networkDetails,
     isAccountFriendbotFunded,
@@ -128,7 +134,7 @@ export const Account = () => {
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
   }, [
-    isExperimentalModeEnabled,
+    isSorobanSuported,
     getTokenBalancesStatus,
     tokenBalances,
     balances,
@@ -158,7 +164,7 @@ export const Account = () => {
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
     accountBalanceStatus === ActionStatus.IDLE ||
-    (isExperimentalModeEnabled &&
+    (isSorobanSuported &&
       (getTokenBalancesStatus === ActionStatus.PENDING ||
         getTokenBalancesStatus === ActionStatus.IDLE));
 
@@ -174,7 +180,9 @@ export const Account = () => {
     />
   ) : (
     <>
-      {isLoading ? null : (
+      {isLoading ? (
+        <Loading />
+      ) : (
         <div className="AccountView" data-testid="account-view">
           <AccountHeader
             accountDropDownRef={accountDropDownRef}
@@ -234,17 +242,18 @@ export const Account = () => {
             />
           )}
           {isFunded ? (
-            <Button
-              size="md"
-              isFullWidth
-              variant="secondary"
-              onClick={() => {
-                dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-                navigateTo(ROUTES.manageAssets);
-              }}
-            >
-              {t("Manage Assets")}
-            </Button>
+            <div className="AccountView__assets-button">
+              <Button
+                size="md"
+                variant="secondary"
+                onClick={() => {
+                  dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                  navigateTo(ROUTES.manageAssets);
+                }}
+              >
+                {t("Manage Assets")}
+              </Button>
+            </div>
           ) : null}
         </div>
       )}

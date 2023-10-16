@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import StellarSdk from "stellar-sdk";
+import { Asset, Networks } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 import { isPlain } from "@reduxjs/toolkit";
 
@@ -10,6 +10,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 
+import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
 // .isBigNumber() not catching correctly, so checking .isBigNumber
@@ -34,11 +35,7 @@ export const truncatedFedAddress = (addr: string) => {
 export const truncatedPoolId = (poolId: string) => truncateString(poolId);
 
 export const getTransactionInfo = (search: string) => {
-  const searchParams = parsedSearchParam(search);
-
-  if ("blob" in searchParams) {
-    return searchParams;
-  }
+  const searchParams = parsedSearchParam(search) as TransactionInfo;
 
   const {
     accountToSign,
@@ -72,7 +69,7 @@ export const getTransactionInfo = (search: string) => {
 
 export const getAssetFromCanonical = (canonical: string) => {
   if (canonical === "native") {
-    return StellarSdk.Asset.native();
+    return Asset.native();
   }
   if (canonical.includes(":")) {
     const [code, issuer] = canonical.split(":");
@@ -83,7 +80,7 @@ export const getAssetFromCanonical = (canonical: string) => {
         issuer,
       };
     }
-    return new StellarSdk.Asset(code, issuer);
+    return new Asset(code, issuer);
   }
 
   throw new Error(`invalid asset canonical id: ${canonical}`);
@@ -95,6 +92,9 @@ export const getCanonicalFromAsset = (
 ) => {
   if (assetCode === "XLM" && !assetIssuer) {
     return "native";
+  }
+  if (!assetIssuer) {
+    return assetCode;
   }
   return `${assetCode}:${assetIssuer}`;
 };
@@ -137,8 +137,7 @@ export const isMainnet = (networkDetails: NetworkDetails) => {
   const { networkPassphrase, networkUrl } = networkDetails;
 
   return (
-    networkPassphrase === StellarSdk.Networks.PUBLIC &&
-    networkUrl === NETWORK_URLS.PUBLIC
+    networkPassphrase === Networks.PUBLIC && networkUrl === NETWORK_URLS.PUBLIC
   );
 };
 
@@ -146,7 +145,7 @@ export const isTestnet = (networkDetails: NetworkDetails) => {
   const { networkPassphrase, networkUrl } = networkDetails;
 
   return (
-    networkPassphrase === StellarSdk.Networks.TESTNET &&
+    networkPassphrase === Networks.TESTNET &&
     networkUrl === NETWORK_URLS.TESTNET
   );
 };

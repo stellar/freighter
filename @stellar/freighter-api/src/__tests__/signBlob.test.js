@@ -8,6 +8,7 @@ describe("signBlob", () => {
     const blob = await signBlob();
     expect(blob).toBe(TEST_BLOB);
   });
+
   it("throws a generic error", () => {
     const TEST_ERROR = "Error!";
     apiExternal.submitBlob = jest.fn().mockImplementation(() => {

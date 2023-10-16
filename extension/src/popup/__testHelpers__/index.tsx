@@ -1,5 +1,6 @@
 import React from "react";
 import { Provider } from "react-redux";
+import * as SorobanClient from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createMemoryHistory } from "history";
 import {
@@ -8,7 +9,8 @@ import {
   getDefaultMiddleware,
 } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ActionStatus, Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types";
+import { FUTURENET_NETWORK_DETAILS } from "@shared/constants/stellar";
 
 import { isSerializable } from "helpers/stellar";
 import { reducer as auth } from "popup/ducks/accountServices";
@@ -17,7 +19,11 @@ import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
+import { initialState as sorobanInitialState } from "popup/ducks/soroban";
 import { reducer as soroban } from "popup/ducks/soroban";
+import { SorobanContext } from "../SorobanContext";
+
+const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
 const rootReducer = combineReducers({
   auth,
@@ -41,6 +47,35 @@ const makeDummyStore = (state: any) =>
     ],
   });
 
+const MockSorobanProvider = ({
+  children,
+  pubKey,
+}: {
+  children: React.ReactNode;
+  pubKey: string;
+}) => {
+  const server = new SorobanClient.Server(
+    FUTURENET_NETWORK_DETAILS.networkUrl,
+    {
+      allowHttp: FUTURENET_NETWORK_DETAILS.networkUrl.startsWith("http://"),
+    },
+  );
+
+  const newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
+    const sourceAccount = new SorobanClient.Account(pubKey, "0");
+    return new SorobanClient.TransactionBuilder(sourceAccount, {
+      fee,
+      networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+    });
+  };
+
+  return (
+    <SorobanContext.Provider value={{ server, newTxBuilder }}>
+      {children}
+    </SorobanContext.Provider>
+  );
+};
+
 export const Wrapper: React.FunctionComponent<any> = ({
   children,
   state,
@@ -63,14 +98,13 @@ export const Wrapper: React.FunctionComponent<any> = ({
               applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
             },
             transactionSubmission: transactionSubmissionInitialState,
-            soroban: {
-              getTokenBalancesStatus: ActionStatus.IDLE,
-              tokenBalances: [],
-            },
+            soroban: sorobanInitialState,
             ...state,
           })}
         >
-          {children}
+          <MockSorobanProvider pubKey={publicKey}>
+            {children}
+          </MockSorobanProvider>
         </Provider>
       </Router>
     </>
@@ -97,6 +131,25 @@ export const mockBalances = {
   } as any) as Balances,
   isFunded: true,
   subentryCount: 1,
+};
+
+export const mockTokenBalances = {
+  tokenBalances: [
+    {
+      contractId: "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+      decimals: 0,
+      name: "Demo Token",
+      symbol: "DT",
+      total: new BigNumber(10),
+    },
+  ],
+};
+
+export const mockTokenBalance = {
+  balance: 10,
+  decimals: 0,
+  name: "Demo Token",
+  symbol: "DT",
 };
 
 export const mockAccounts = [

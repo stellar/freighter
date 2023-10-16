@@ -1,12 +1,19 @@
 import browser from "webextension-polyfill";
+import semver from "semver";
 
-import { NETWORKS_LIST_ID } from "constants/localStorageTypes";
+import {
+  NETWORK_ID,
+  NETWORKS_LIST_ID,
+  STORAGE_VERSION,
+  TOKEN_ID_LIST,
+} from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
   TESTNET_NETWORK_DETAILS,
   FUTURENET_NETWORK_DETAILS,
+  SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
 
 interface SetItemParams {
@@ -104,4 +111,87 @@ export const migrateFriendBotUrlNetworkDetails = async () => {
   });
 
   await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+};
+
+export const migrateSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  const networksList: NetworkDetails[] =
+    (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+  const migratedNetworkList = networksList.map((network) => {
+    if (network.network === NETWORKS.FUTURENET) {
+      return {
+        ...FUTURENET_NETWORK_DETAILS,
+        sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.FUTURENET],
+      };
+    }
+
+    return network;
+  });
+
+  await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+};
+
+// This migration migrates the storage for custom tokens IDs to be keyed by network
+const migrateTokenIdList = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const tokenIdsByKey = (await localStore.getItem(TOKEN_ID_LIST)) as Record<
+    string,
+    object
+  >;
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
+    const newTokenList = {
+      [NETWORKS.FUTURENET]: tokenIdsByKey,
+    };
+    await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+  }
+  await migrateDataStorageVersion("1.0.0");
+};
+
+const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "2.0.0")) {
+    const networksList: NetworkDetails[] =
+      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+    const migratedNetworkList = networksList.map((network) => {
+      if (network.network === NETWORKS.TESTNET) {
+        return {
+          ...TESTNET_NETWORK_DETAILS,
+          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.TESTNET],
+        };
+      }
+
+      return network;
+    });
+
+    const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+    if (currentNetwork.network === NETWORKS.TESTNET) {
+      await localStore.setItem(NETWORK_ID, TESTNET_NETWORK_DETAILS);
+    }
+
+    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    await migrateDataStorageVersion("2.0.0");
+  }
+};
+
+export const versionedMigration = async () => {
+  // sequentially call migrations in order to enforce smooth schema upgrades
+
+  await migrateTokenIdList();
+  await migrateTestnetSorobanRpcUrlNetworkDetails();
+};
+
+// Updates storage version
+export const migrateDataStorageVersion = async (version: string) => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  // This value should be manually updated when a new schema change is made
+  await localStore.setItem(STORAGE_VERSION, version);
 };

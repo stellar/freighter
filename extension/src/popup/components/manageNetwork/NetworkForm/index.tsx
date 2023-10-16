@@ -24,6 +24,7 @@ import {
   settingsErrorSelector,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -36,6 +37,7 @@ interface FormValues {
   networkName: string;
   networkPassphrase: string;
   networkUrl: string;
+  sorobanRpcUrl?: string;
   isSwitchSelected?: boolean;
   isAllowHttpSelected: boolean;
   friendbotUrl?: string;
@@ -53,6 +55,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
@@ -84,6 +87,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         networkName: "",
         networkPassphrase: "",
         networkUrl: "",
+        sorobanRpcUrl: "",
         friendbotUrl: "",
         isSwitchSelected: false,
         isAllowHttpSelected: false,
@@ -93,6 +97,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     networkName: YupString().required(),
     networkPassphrase: YupString().required(),
     networkUrl: YupString().required(),
+    sorobanRpcUrl: YupString(),
   });
 
   const handleRemoveNetwork = async () => {
@@ -113,7 +118,13 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const getCustomNetworkDetailsFromFormValues = (values: FormValues) => {
-    const { friendbotUrl, networkName, networkUrl, networkPassphrase } = values;
+    const {
+      friendbotUrl,
+      networkName,
+      networkUrl,
+      networkPassphrase,
+      sorobanRpcUrl,
+    } = values;
 
     return {
       friendbotUrl,
@@ -121,6 +132,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       networkName,
       networkUrl,
       networkPassphrase,
+      sorobanRpcUrl,
     };
   };
 
@@ -345,10 +357,27 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                     : ""
                 }
                 customInput={<Field />}
-                label={t("URL")}
+                label={t("HORIZON RPC URL")}
                 name="networkUrl"
                 placeholder={t("Enter network URL")}
               />
+              {isSorobanSuported || !isEditingDefaultNetworks ? (
+                <Input
+                  fieldSize="md"
+                  disabled={isEditingDefaultNetworks}
+                  id="sorobanRpcUrl"
+                  autoComplete="off"
+                  error={
+                    errors.sorobanRpcUrl && touched.sorobanRpcUrl
+                      ? errors.sorobanRpcUrl
+                      : ""
+                  }
+                  customInput={<Field />}
+                  label={t("SOROBAN RPC URL")}
+                  name="sorobanRpcUrl"
+                  placeholder={t("Enter Soroban RPC URL")}
+                />
+              ) : null}
               <Input
                 fieldSize="md"
                 disabled={isEditingDefaultNetworks}

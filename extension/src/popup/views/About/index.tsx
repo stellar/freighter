@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
-import FreighterLogoLockup from "popup/assets/logo-lockup-freighter.svg";
+import FreighterLogo from "popup/assets/logo-freighter.svg";
 
 import "./styles.scss";
 
@@ -30,7 +30,7 @@ export const About = () => {
     <div className="About">
       <SubviewHeader title="About" />
       <div>
-        <img alt="Freighter logo" src={FreighterLogoLockup} />
+        <img alt="Freighter logo" src={FreighterLogo} />
       </div>
       <div className="About__body">
         <div className="About__info">

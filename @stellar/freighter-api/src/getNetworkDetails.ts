@@ -5,6 +5,7 @@ export const getNetworkDetails = (): Promise<{
   network: string;
   networkUrl: string;
   networkPassphrase: string;
+  sorobanRpcUrl?: string;
 }> =>
   isBrowser
     ? requestNetworkDetails()
@@ -12,4 +13,5 @@ export const getNetworkDetails = (): Promise<{
         network: "",
         networkUrl: "",
         networkPassphrase: "",
+        sorobanRpcUrl: "",
       });

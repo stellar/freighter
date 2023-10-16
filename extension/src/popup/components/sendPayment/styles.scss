@@ -1,7 +1,7 @@
 :root {
   --bottom-btn-margin: 24px;
 
-  --continue-btn-height: 3.7rem;
+  --continue-btn-height: 2.625rem;
 }
 
 .SendPayment {
@@ -17,8 +17,7 @@
 }
 
 .SendAmount {
-  padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
-    var(--account-view-padding-side);
+  padding: var(--popup-vertical-padding) var(--account-view-padding-side);
   height: var(--popup--height);
   display: flex;
   flex-direction: column;
@@ -255,6 +254,10 @@
 
   &__clickable {
     cursor: pointer;
+  }
+
+  .FormRows {
+    gap: 0.75rem;
   }
 }
 

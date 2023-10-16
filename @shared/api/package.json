@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@stellar/wallet-sdk": "^0.8.0",
+    "@stellar/wallet-sdk": "^0.10.0",
     "bignumber.js": "^9.1.1",
     "prettier": "^2.0.5",
-    "soroban-client": "^0.9.1",
-    "stellar-sdk": "^10.4.1",
+    "soroban-client": "^1.0.0-beta.2",
+    "stellar-sdk": "^11.0.0-beta.3",
     "typescript": "~3.7.2",
     "webextension-polyfill": "^0.10.0"
   },

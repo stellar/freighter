@@ -1,9 +1,10 @@
-import StellarSdk from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
 
 import {
+  ExternalRequestAuthEntry,
   ExternalRequestBlob,
   ExternalRequestTx,
   ExternalRequest as Request,
@@ -13,7 +14,10 @@ import { MessageResponder } from "background/types";
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/constants/stellar";
 import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import {
@@ -26,8 +30,8 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
-  getIsExperimentalModeEnabled,
   getNetworkDetails,
+  getIsSorobanSupported,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -39,10 +43,13 @@ import {
 import { publicKeySelector } from "background/ducks/session";
 
 import {
+  authEntryQueue,
   blobQueue,
   responseQueue,
   transactionQueue,
 } from "./popupMessageListener";
+
+type Operation = StellarSdk.Operation | SorobanSdk.Operation;
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -111,8 +118,8 @@ export const freighterApiMessageListener = (
 
     const isMainnet = await getIsMainnet();
     const { networkUrl } = await getNetworkDetails();
-    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
+    const isSorobanSupported = await getIsSorobanSupported();
+    const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -122,10 +129,9 @@ export const freighterApiMessageListener = (
     const allowList = allowListStr.split(",");
     const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-    // try to build a tx xdr, if you cannot then assume the user wants to sign an arbitrary blob
     const transaction = SDK.TransactionBuilder.fromXDR(
       transactionXdr,
-      networkPassphrase || SDK.Networks[network],
+      networkPassphrase || SDK.Networks[network as keyof typeof SDK.Networks],
     );
 
     const directoryLookupJson = await cachedFetch(
@@ -134,8 +140,15 @@ export const freighterApiMessageListener = (
     );
     const accountData = directoryLookupJson?._embedded?.records || [];
 
-    const _operations =
-      transaction._operations || transaction._innerTransaction._operations;
+    let _operations = [{}] as Operation[];
+
+    if ("operations" in transaction) {
+      _operations = transaction.operations;
+    }
+
+    if ("innerTransaction" in transaction) {
+      _operations = transaction.innerTransaction.operations;
+    }
 
     const flaggedKeys: FlaggedKeys = {};
 
@@ -144,10 +157,13 @@ export const freighterApiMessageListener = (
       (await getIsSafetyValidationEnabled()) && isMainnet;
 
     if (isValidatingMemo || isValidatingSafety) {
-      _operations.forEach((operation: { destination: string }) => {
+      _operations.forEach((operation: Operation) => {
         accountData.forEach(
           ({ address, tags }: { address: string; tags: Array<string> }) => {
-            if (address === operation.destination) {
+            if (
+              "destination" in operation &&
+              address === operation.destination
+            ) {
               let collectedTags = [...tags];
 
               /* if the user has opted out of validation, remove applicable tags */
@@ -177,12 +193,14 @@ export const freighterApiMessageListener = (
     const server = stellarSdkServer(networkUrl);
 
     try {
-      await server.checkMemoRequired(transaction);
+      await server.checkMemoRequired(transaction as StellarSdk.Transaction);
     } catch (e) {
-      flaggedKeys[e.accountId] = {
-        ...flaggedKeys[e.accountId],
-        tags: [TRANSACTION_WARNING.memoRequired],
-      };
+      if (e.accountId) {
+        flaggedKeys[e.accountId] = {
+          ...flaggedKeys[e.accountId],
+          tags: [TRANSACTION_WARNING.memoRequired],
+        };
+      }
     }
 
     const transactionInfo = {
@@ -195,7 +213,9 @@ export const freighterApiMessageListener = (
       accountToSign,
     } as TransactionInfo;
 
-    transactionQueue.push(transaction);
+    transactionQueue.push(
+      transaction as StellarSdk.Transaction | SorobanSdk.Transaction,
+    );
     const encodedBlob = encodeObject(transactionInfo);
 
     const popup = browser.windows.create({
@@ -254,9 +274,7 @@ export const freighterApiMessageListener = (
     blobQueue.push(blobData);
     const encodedBlob = encodeObject(blobData);
     const popup = browser.windows.create({
-      url: chrome.runtime.getURL(
-        `/index.html#/sign-transaction?${encodedBlob}`,
-      ),
+      url: chrome.runtime.getURL(`/index.html#/sign-blob?${encodedBlob}`),
       ...WINDOW_SETTINGS,
     });
 
@@ -286,6 +304,59 @@ export const freighterApiMessageListener = (
     });
   };
 
+  const submitAuthEntry = async () => {
+    const { entryXdr, accountToSign } = request as ExternalRequestAuthEntry;
+
+    const { tab, url: tabUrl = "" } = sender;
+    const domain = getUrlHostname(tabUrl);
+    const punycodedDomain = getPunycodedDomain(domain);
+
+    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
+    const allowList = allowListStr.split(",");
+    const isDomainListedAllowed = await isSenderAllowed({ sender });
+
+    const authEntry = {
+      entry: entryXdr,
+      accountToSign,
+      tab,
+      url: tabUrl,
+    };
+
+    authEntryQueue.push(authEntry);
+    const encodedAuthEntry = encodeObject(authEntry);
+    const popup = browser.windows.create({
+      url: chrome.runtime.getURL(
+        `/index.html#/sign-auth-entry?${encodedAuthEntry}`,
+      ),
+      ...WINDOW_SETTINGS,
+    });
+
+    return new Promise((resolve) => {
+      if (!popup) {
+        resolve({ error: "Couldn't open access prompt" });
+      } else {
+        browser.windows.onRemoved.addListener(() =>
+          resolve({
+            error: "User declined access",
+          }),
+        );
+      }
+      const response = (signedAuthEntry: string) => {
+        if (signedAuthEntry) {
+          if (!isDomainListedAllowed) {
+            allowList.push(punycodedDomain);
+            localStore.setItem(ALLOWLIST_ID, allowList.join());
+          }
+          resolve({ signedAuthEntry });
+        }
+
+        resolve({ error: "User declined access" });
+      };
+
+      responseQueue.push(response);
+    });
+  };
+
   const requestNetwork = async () => {
     let network = "";
 
@@ -304,7 +375,8 @@ export const freighterApiMessageListener = (
       networkName: "",
       networkUrl: "",
       networkPassphrase: "",
-    };
+      sorobanRpcUrl: undefined,
+    } as NetworkDetails;
 
     try {
       networkDetails = await getNetworkDetails();
@@ -378,6 +450,7 @@ export const freighterApiMessageListener = (
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB]: submitBlob,
+    [EXTERNAL_SERVICE_TYPES.SUBMIT_AUTH_ENTRY]: submitAuthEntry,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK]: requestNetwork,
     [EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS]: requestNetworkDetails,
     [EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS]: requestConnectionStatus,

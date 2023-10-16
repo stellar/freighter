@@ -35,6 +35,10 @@
       color: var(--color-gray-90);
       overflow-y: hidden;
       max-width: 10rem;
+
+      &__item {
+        margin-bottom: 0.25rem;
+      }
     }
   }
 
@@ -105,12 +109,13 @@
     }
 
     &__copy {
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       line-height: 1.375rem;
       min-height: 1.375rem;
       margin-bottom: 1rem;
       align-items: center;
       text-align: center;
+      justify-content: center;
     }
   }
 }

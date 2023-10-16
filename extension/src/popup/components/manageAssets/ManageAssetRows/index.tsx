@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from "react";
-import StellarSdk, { Account } from "stellar-sdk";
+import React, { useContext, useState, useEffect } from "react";
+import {
+  Account,
+  Asset,
+  Operation,
+  StellarTomlResolver,
+  TransactionBuilder,
+  Networks,
+} from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { CURRENCY, ActionStatus } from "@shared/api/types";
+import { ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -16,6 +23,7 @@ import {
   formatDomain,
   getCanonicalFromAsset,
   xlmToStroop,
+  truncateString,
 } from "helpers/stellar";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
@@ -29,6 +37,7 @@ import {
   hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { removeTokenId, sorobanSelector } from "popup/ducks/soroban";
 import {
   getAccountBalances,
   resetSubmission,
@@ -45,10 +54,11 @@ import {
   NewAssetWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
+import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
-export type ManageAssetCurrency = CURRENCY & {
+export type ManageAssetCurrency = StellarTomlResolver.Currency & {
   domain: string;
   contractId?: string;
   name?: string;
@@ -86,6 +96,10 @@ export const ManageAssetRows = ({
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const { getTokenBalancesStatus, tokensWithNoBalance } = useSelector(
+    sorobanSelector,
+  );
+  const sorobanClient = useContext(SorobanContext);
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
     false,
@@ -116,13 +130,13 @@ export const ManageAssetRows = ({
 
     setAssetSubmitting(canonicalAsset);
 
-    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+    const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: new StellarSdk.Asset(assetCode, assetIssuer),
+        Operation.changeTrust({
+          asset: new Asset(assetCode, assetIssuer),
           ...changeParams,
         }),
       )
@@ -234,13 +248,15 @@ export const ManageAssetRows = ({
     // check domain
     let isInvalidDomain = false;
     try {
-      const resp = await StellarSdk.StellarTomlResolver.resolve(domain);
+      const resp = await StellarTomlResolver.resolve(domain);
       let found = false;
-      resp.CURRENCIES.forEach((c: { code: string; issuer: string }) => {
-        if (c.code === code && c.issuer === issuer) {
-          found = true;
-        }
-      });
+      (resp?.CURRENCIES || []).forEach(
+        (c: { code?: string; issuer?: string }) => {
+          if (c.code === code && c.issuer === issuer) {
+            found = true;
+          }
+        },
+      );
       isInvalidDomain = !found;
     } catch (e) {
       console.error(e);
@@ -251,7 +267,12 @@ export const ManageAssetRows = ({
   };
 
   const handleRowClick = async (
-    assetRowData: AssetRowData,
+    assetRowData = {
+      code: "",
+      issuer: "",
+      domain: "",
+      image: "",
+    },
     isTrustlineActive: boolean,
   ) => {
     const resp = await checkForSuspiciousAsset(
@@ -277,6 +298,21 @@ export const ManageAssetRows = ({
         !isTrustlineActive,
       );
     }
+  };
+
+  const handleTokenRowClick = async (
+    contractId: string,
+    canonicalAsset?: string,
+  ) => {
+    setAssetSubmitting(canonicalAsset || contractId);
+    await dispatch(
+      removeTokenId({
+        contractId,
+        network: networkDetails.network as Networks,
+        sorobanClient,
+      }),
+    );
+    navigateTo(ROUTES.account);
   };
 
   return (
@@ -313,37 +349,72 @@ export const ManageAssetRows = ({
       >
         {header}
         <div className="ManageAssetRows__content">
-          {assetRows.map(({ code, domain, image, issuer }) => {
-            if (!balances) return null;
-            const canonicalAsset = getCanonicalFromAsset(code, issuer);
-            const isTrustlineActive = Object.keys(balances).some(
-              (balance) => balance === canonicalAsset,
-            );
-            const isActionPending = submitStatus === ActionStatus.PENDING;
+          {assetRows.map(
+            ({
+              code = "",
+              domain,
+              image = "",
+              issuer = "",
+              contractId = "",
+            }) => {
+              if (!balances) return null;
+              const canonicalAsset = getCanonicalFromAsset(code, issuer);
+              const isTrustlineActive = Object.keys(balances).some(
+                (balance) => balance === canonicalAsset,
+              );
+              const isActionPending =
+                submitStatus === ActionStatus.PENDING ||
+                getTokenBalancesStatus === ActionStatus.PENDING;
+
+              return (
+                <div className="ManageAssetRows__row" key={canonicalAsset}>
+                  <ManageAssetRow
+                    code={code}
+                    issuer={issuer}
+                    image={image}
+                    domain={contractId ? truncateString(contractId) : domain}
+                  />
+                  <div className="ManageAssetRows__button">
+                    <PillButton
+                      disabled={isActionPending}
+                      isLoading={
+                        isActionPending && assetSubmitting === canonicalAsset
+                      }
+                      onClick={() => {
+                        if (contractId) {
+                          handleTokenRowClick(contractId, canonicalAsset);
+                        } else {
+                          handleRowClick(
+                            { code, issuer, image, domain },
+                            isTrustlineActive,
+                          );
+                        }
+                      }}
+                      type="button"
+                    >
+                      {isTrustlineActive || contractId ? t("Remove") : t("Add")}
+                    </PillButton>
+                  </div>
+                </div>
+              );
+            },
+          )}
+
+          {tokensWithNoBalance.map((tokenId) => {
+            const isActionPending =
+              getTokenBalancesStatus === ActionStatus.PENDING;
 
             return (
-              <div className="ManageAssetRows__row" key={canonicalAsset}>
-                <ManageAssetRow
-                  code={code}
-                  issuer={issuer}
-                  image={image}
-                  domain={domain}
-                />
+              <div className="ManageAssetRows__row" key={tokenId}>
+                <ManageAssetRow domain={truncateString(tokenId)} />
                 <div className="ManageAssetRows__button">
                   <PillButton
                     disabled={isActionPending}
-                    isLoading={
-                      isActionPending && assetSubmitting === canonicalAsset
-                    }
-                    onClick={() =>
-                      handleRowClick(
-                        { code, issuer, image, domain },
-                        isTrustlineActive,
-                      )
-                    }
+                    isLoading={isActionPending && assetSubmitting === tokenId}
+                    onClick={() => handleTokenRowClick(tokenId)}
                     type="button"
                   >
-                    {isTrustlineActive ? t("Remove") : t("Add")}
+                    {t("Remove")}
                   </PillButton>
                 </div>
               </div>
@@ -361,16 +432,16 @@ export const ManageAssetRows = ({
 };
 
 interface AssetRowData {
-  code: string;
-  issuer: string;
-  image: string;
+  code?: string;
+  issuer?: string;
+  image?: string;
   domain: string;
 }
 
 export const ManageAssetRow = ({
-  code,
-  issuer,
-  image,
+  code = "",
+  issuer = "",
+  image = "",
   domain,
 }: AssetRowData) => {
   const { blockedDomains } = useSelector(transactionSubmissionSelector);

@@ -1,4 +1,4 @@
-import StellarSdk, { Horizon } from "stellar-sdk";
+import { Horizon, Server } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   AssetType,
@@ -8,13 +8,14 @@ import {
   SorobanBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
   isTestnet,
 } from "helpers/stellar";
-import { getAttrsFromSorobanHorizonOp, SorobanTokenInterface } from "./soroban";
+import { getAttrsFromSorobanHorizonOp } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -226,7 +227,7 @@ export const isNetworkUrlValid = (
 
   try {
     // eslint-disable-next-line no-new
-    new StellarSdk.Server(networkUrl, { allowHttp: isHttpAllowed });
+    new Server(networkUrl, { allowHttp: isHttpAllowed });
   } catch (e) {
     console.error(e);
     isValid = false;

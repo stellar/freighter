@@ -3,9 +3,11 @@ import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
+import { Networks } from "soroban-client";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -15,7 +17,7 @@ import {
 } from "popup/ducks/soroban";
 import {
   settingsNetworkDetailsSelector,
-  settingsSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import {
   getIsPayment,
@@ -23,10 +25,7 @@ import {
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
-import {
-  getAttrsFromSorobanHorizonOp,
-  SorobanTokenInterface,
-} from "popup/helpers/soroban";
+import { getAttrsFromSorobanHorizonOp } from "popup/helpers/soroban";
 
 import {
   historyItemDetailViewProps,
@@ -67,10 +66,10 @@ export const AccountHistory = () => {
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
   const { tokenBalances, getTokenBalancesStatus } = useSelector(
     sorobanSelector,
   );
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
@@ -89,19 +88,18 @@ export const AccountHistory = () => {
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  // differentiate between if data is still loading and if no account history results came back from Horizon
-  const isAccountHistoryLoading = isExperimentalModeEnabled
-    ? historySegments === null ||
-      getTokenBalancesStatus === ActionStatus.IDLE ||
-      getTokenBalancesStatus === ActionStatus.PENDING
+  const isTokenBalanceLoading =
+    (getTokenBalancesStatus === ActionStatus.IDLE ||
+      getTokenBalancesStatus === ActionStatus.PENDING) &&
+    isSorobanSuported;
+  const isAccountHistoryLoading = isSorobanSuported
+    ? historySegments === null || isTokenBalanceLoading
     : historySegments === null;
 
   useEffect(() => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
-      // TODO: add mint and other common token interactions
       getIsSupportedSorobanOp(operation, networkDetails);
 
-    setIsLoading(true);
     const createSegments = (
       operations: HorizonOperation[],
       showSorobanTxs = false,
@@ -154,37 +152,42 @@ export const AccountHistory = () => {
       try {
         const res = await getAccountHistory({ publicKey, networkDetails });
         setHistorySegments(
-          createSegments(res.operations, isExperimentalModeEnabled),
+          createSegments(res.operations, isSorobanSuported as boolean),
         );
 
-        if (isExperimentalModeEnabled) {
-          dispatch(getTokenBalances({ sorobanClient }));
+        if (isSorobanSuported) {
+          dispatch(
+            getTokenBalances({
+              sorobanClient,
+              network: networkDetails.network as Networks,
+            }),
+          );
         }
       } catch (e) {
         console.error(e);
       }
+    };
+
+    const getData = async () => {
+      setIsLoading(true);
+      await fetchAccountHistory();
       setIsLoading(false);
     };
-    fetchAccountHistory();
+
+    getData();
 
     return () => {
-      if (isExperimentalModeEnabled) {
+      if (isSorobanSuported) {
         dispatch(resetSorobanTokensStatus());
       }
     };
-  }, [
-    publicKey,
-    networkDetails,
-    isExperimentalModeEnabled,
-    sorobanClient,
-    dispatch,
-  ]);
+  }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
-      {isLoading ? (
+      {isLoading || isTokenBalanceLoading ? (
         <div className="AccountHistory__loader">
           <Loader size="2rem" />
         </div>

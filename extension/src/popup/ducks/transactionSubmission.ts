@@ -1,4 +1,20 @@
-import StellarSdk, { Horizon, Server, ServerApi } from "stellar-sdk";
+import {
+  Asset,
+  Horizon,
+  Keypair,
+  Server,
+  ServerApi,
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
+import {
+  Memo,
+  MemoType,
+  Networks,
+  Operation,
+  SorobanRpc,
+  Transaction,
+} from "soroban-client";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -109,7 +125,7 @@ export const submitFreighterTransaction = createAsyncThunk<
 );
 
 export const submitFreighterSorobanTransaction = createAsyncThunk<
-  Horizon.TransactionResponse,
+  SorobanRpc.SendTransactionResponse,
   {
     signedXDR: string;
     networkDetails: NetworkDetails;
@@ -133,7 +149,12 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
 
       if (refreshBalances) {
         thunkApi.dispatch(resetSorobanTokensStatus());
-        await thunkApi.dispatch(getTokenBalances({ sorobanClient }));
+        await thunkApi.dispatch(
+          getTokenBalances({
+            sorobanClient,
+            network: networkDetails.network as Networks,
+          }),
+        );
       }
 
       return txRes;
@@ -162,10 +183,7 @@ export const signWithLedger = createAsyncThunk<
     thunkApi,
   ) => {
     try {
-      const tx = StellarSdk.TransactionBuilder.fromXDR(
-        transactionXDR,
-        networkPassphrase,
-      );
+      const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
       const transport = await TransportWebUSB.create();
       const ledgerApi = new LedgerApi(transport);
@@ -174,8 +192,8 @@ export const signWithLedger = createAsyncThunk<
         tx.signatureBase(),
       );
 
-      const keypair = StellarSdk.Keypair.fromPublicKey(publicKey);
-      const decoratedSignature = new StellarSdk.xdr.DecoratedSignature({
+      const keypair = Keypair.fromPublicKey(publicKey);
+      const decoratedSignature = new xdr.DecoratedSignature({
         hint: keypair.signatureHint(),
         signature: result.signature,
       });
@@ -319,9 +337,9 @@ export const getBestPath = createAsyncThunk<
     try {
       const server = new Server(networkDetails.networkUrl);
       const builder = server.strictSendPaths(
-        getAssetFromCanonical(sourceAsset),
+        getAssetFromCanonical(sourceAsset) as Asset,
         amount,
-        [getAssetFromCanonical(destAsset)],
+        [getAssetFromCanonical(destAsset)] as Asset[],
       );
 
       const paths = await builder.call();
@@ -396,9 +414,16 @@ interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
-  response: Horizon.TransactionResponse | null;
+  response:
+    | Horizon.TransactionResponse
+    | SorobanRpc.SendTransactionResponse
+    | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
+  transactionSimulation: {
+    response: SorobanRpc.SimulateTransactionSuccessResponse | null;
+    raw: Transaction<Memo<MemoType>, Operation[]> | null;
+  };
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
@@ -430,6 +455,10 @@ export const initialState: InitialState = {
     path: [],
     allowedSlippage: "1",
     isToken: false,
+  },
+  transactionSimulation: {
+    response: null,
+    raw: null,
   },
   hardwareWalletData: {
     status: ShowOverlayStatus.IDLE,
@@ -496,6 +525,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveIsToken: (state, action) => {
       state.transactionData.isToken = action.payload;
+    },
+    saveSimulation: (state, action) => {
+      state.transactionSimulation = action.payload;
     },
     startHwConnect: (state) => {
       state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
@@ -641,6 +673,7 @@ export const {
   saveDestinationAsset,
   saveAllowedSlippage,
   saveIsToken,
+  saveSimulation,
   startHwConnect,
   startHwSign,
   closeHwOverlay,

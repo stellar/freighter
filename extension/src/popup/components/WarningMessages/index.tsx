@@ -4,7 +4,13 @@ import { createPortal } from "react-dom";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
-import StellarSdk, { Account } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Operation,
+  Server,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { ActionStatus } from "@shared/api/types";
 
@@ -236,7 +242,7 @@ export const BackupPhraseWarningMessage = () => {
       <div className="WarningMessage__infoBlock">
         <div className="WarningMessage__header">
           <Icon.Warning className="WarningMessage__icon" />
-          <div>{t("IMPORTANT")}</div>
+          <div>{t("Important")}</div>
         </div>
 
         <p>
@@ -298,15 +304,15 @@ export const ScamAssetWarning = ({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const server = new Server(networkDetails.networkUrl);
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+    const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: new StellarSdk.Asset(code, issuer),
+        Operation.changeTrust({
+          asset: new Asset(code, issuer),
         }),
       )
       .setTimeout(180)
@@ -486,15 +492,15 @@ export const NewAssetWarning = ({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const server = new Server(networkDetails.networkUrl);
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+    const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: new StellarSdk.Asset(code, issuer),
+        Operation.changeTrust({
+          asset: new Asset(code, issuer),
         }),
       )
       .setTimeout(180)

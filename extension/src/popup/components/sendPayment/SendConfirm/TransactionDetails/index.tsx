@@ -2,13 +2,18 @@ import React, { useContext, useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import StellarSdk, { Asset } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Memo,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
-import { Types } from "@stellar/wallet-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { SorobanContext } from "popup/SorobanContext";
+import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -23,7 +28,6 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-import { accountIdentifier, numberToI128 } from "@shared/api/helpers/soroban";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -39,7 +43,6 @@ import {
   ShowOverlayStatus,
   startHwSign,
 } from "popup/ducks/transactionSubmission";
-import { sorobanSelector } from "popup/ducks/soroban";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -63,10 +66,10 @@ import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 
-import "./styles.scss";
-import { parseTokenAmount } from "popup/helpers/soroban";
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
+
+import "./styles.scss";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -138,8 +141,8 @@ const computeDestMinWithSlippage = (
 };
 
 const getOperation = (
-  sourceAsset: Asset,
-  destAsset: Asset,
+  sourceAsset: Asset | { code: string; issuer: string },
+  destAsset: Asset | { code: string; issuer: string },
   amount: string,
   destinationAmount: string,
   destination: string,
@@ -156,27 +159,27 @@ const getOperation = (
       allowedSlippage,
       destinationAmount,
     );
-    return StellarSdk.Operation.pathPaymentStrictSend({
-      sendAsset: sourceAsset,
+    return Operation.pathPaymentStrictSend({
+      sendAsset: sourceAsset as Asset,
       sendAmount: amount,
       destination: isSwap ? publicKey : destination,
-      destAsset,
+      destAsset: destAsset as Asset,
       destMin: destMin.toFixed(7),
-      path: path.map((p) => getAssetFromCanonical(p)),
+      path: path.map((p) => getAssetFromCanonical(p)) as Asset[],
     });
   }
 
   // create account if unfunded and sending xlm
-  if (!isFunded && sourceAsset.code === StellarSdk.Asset.native().code) {
-    return StellarSdk.Operation.createAccount({
+  if (!isFunded && sourceAsset.code === Asset.native().code) {
+    return Operation.createAccount({
       destination,
       startingBalance: amount,
     });
   }
   // regular payment
-  return StellarSdk.Operation.payment({
+  return Operation.payment({
     destination,
-    asset: sourceAsset,
+    asset: sourceAsset as Asset,
     amount,
   });
 };
@@ -203,19 +206,17 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     assetIcons,
     hardwareWalletData: { status: hwStatus },
     blockedAccounts,
+    transactionSimulation,
   } = submission;
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const { tokenBalances } = useSelector(sorobanSelector);
   const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
     settingsSelector,
   );
   const isSwap = useIsSwap();
 
   const { t } = useTranslation();
-
-  const { server: sorobanServer } = useContext(SorobanContext);
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -266,53 +267,19 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
     try {
-      const assetAddress = asset.split(":")[1];
-      const assetBalance = tokenBalances.find(
-        (b) => b.contractId === assetAddress,
-      );
-
-      if (!assetBalance) {
-        throw new Error("Asset Balance not available");
+      if (!hasSorobanClient(sorobanClient)) {
+        throw new Error("Soroban RPC not supported for this network");
       }
 
-      const parsedAmount = parseTokenAmount(
-        amount,
-        Number(assetBalance.decimals),
-      );
-
-      const sourceAccount = await sorobanServer.getAccount(publicKey);
-      const contract = new SorobanClient.Contract(assetAddress);
-      const contractOp = contract.call(
-        "transfer",
-        ...[
-          accountIdentifier(publicKey), // from
-          accountIdentifier(destination), // to
-          numberToI128(parsedAmount.toNumber()), // amount
-        ],
-      );
-
-      const transaction = await new SorobanClient.TransactionBuilder(
-        sourceAccount,
-        {
-          fee: xlmToStroop(transactionFee).toFixed(),
-          networkPassphrase: networkDetails.networkPassphrase,
-        },
-      )
-        .addOperation(contractOp)
-        .setTimeout(180);
-
-      if (memo) {
-        transaction.addMemo(SorobanClient.Memo.text(memo));
-      }
-
-      const preparedTransaction = await sorobanServer.prepareTransaction(
-        transaction.build(),
+      const preparedTransaction = SorobanClient.assembleTransaction(
+        transactionSimulation.raw!,
         networkDetails.networkPassphrase,
+        transactionSimulation.response!,
       );
 
       const res = await dispatch(
         signFreighterSorobanTransaction({
-          transactionXDR: preparedTransaction.toXDR(),
+          transactionXDR: preparedTransaction.build().toXDR(),
           network: networkDetails.networkPassphrase,
         }),
       );
@@ -344,7 +311,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const handlePaymentTransaction = async () => {
     try {
       const server = stellarSdkServer(networkDetails.networkUrl);
-      const sourceAccount: Types.Account = await server.loadAccount(publicKey);
+      const sourceAccount: Account = await server.loadAccount(publicKey);
 
       const operation = getOperation(
         sourceAsset,
@@ -360,18 +327,15 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new StellarSdk.TransactionBuilder(
-        sourceAccount,
-        {
-          fee: xlmToStroop(transactionFee).toFixed(),
-          networkPassphrase: networkDetails.networkPassphrase,
-        },
-      )
+      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+        fee: xlmToStroop(transactionFee).toFixed(),
+        networkPassphrase: networkDetails.networkPassphrase,
+      })
         .addOperation(operation)
         .setTimeout(180);
 
       if (memo) {
-        transactionXDR.addMemo(StellarSdk.Memo.text(memo));
+        transactionXDR.addMemo(Memo.text(memo));
       }
 
       if (isHardwareWallet) {
@@ -448,7 +412,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           )
         }
       >
-        {t("View on")} Stellar.expert
+        {t("View on")} stellar.expert
       </Button>
     ) : null;
 
@@ -550,6 +514,27 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             {transactionFee} XLM
           </div>
         </div>
+        {transactionSimulation.response && (
+          <>
+            <div className="TransactionDetails__row">
+              <div>{t("Resource cost")} </div>
+              <div className="TransactionDetails__row__right">
+                <div className="TransactionDetails__row__right__item">
+                  {transactionSimulation.response.cost.cpuInsns} CPU
+                </div>
+                <div className="TransactionDetails__row__right__item">
+                  {transactionSimulation.response.cost.memBytes} Bytes
+                </div>
+              </div>
+            </div>
+            <div className="TransactionDetails__row">
+              <div>{t("Minimum resource fee")} </div>
+              <div className="TransactionDetails__row__right">
+                {transactionSimulation.response.minResourceFee} XLM
+              </div>
+            </div>
+          </>
+        )}
         {isSwap && (
           <div className="TransactionDetails__row">
             <div>{t("Minimum Received")} </div>

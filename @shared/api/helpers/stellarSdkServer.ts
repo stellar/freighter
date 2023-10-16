@@ -1,9 +1,9 @@
-import StellarSdk from "stellar-sdk";
+import { Server } from "stellar-sdk";
 
 export const getIsAllowHttp = (networkUrl: string) =>
   !networkUrl.includes("https");
 
 export const stellarSdkServer = (networkUrl: string) =>
-  new StellarSdk.Server(networkUrl, {
+  new Server(networkUrl, {
     allowHttp: getIsAllowHttp(networkUrl),
   });
