@@ -81,7 +81,7 @@ export function PathPayAssetSelect({
       ),
     );
     dispatch(saveAssetSelectSource(source));
-    navigateTo(ROUTES.manageAssets);
+    navigateTo(ROUTES.manageAssets, isSwap ? "?swap=true" : "");
   };
 
   const truncateLongAssetCode = (code: string) => {
