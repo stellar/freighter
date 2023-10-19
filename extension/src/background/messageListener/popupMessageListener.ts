@@ -1255,6 +1255,28 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { tokenIdList: tokenIdsByKey[keyId] || [] };
   };
 
+  const removeTokenId = async () => {
+    const { contractId, network } = request;
+
+    const tokenIdsList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdsByNetwork = tokenIdsList[network] || {};
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+
+    const accountTokenIdList = tokenIdsByNetwork[keyId] || [];
+    const updatedTokenIdList = accountTokenIdList.filter(
+      (id: string) => id !== contractId,
+    );
+
+    await localStore.setItem(TOKEN_ID_LIST, {
+      ...tokenIdsList,
+      [network]: {
+        [keyId]: updatedTokenIdList,
+      },
+    });
+
+    return { tokenIdList: updatedTokenIdList };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1296,6 +1318,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
+    [SERVICE_TYPES.REMOVE_TOKEN_ID]: removeTokenId,
     [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
   };
 

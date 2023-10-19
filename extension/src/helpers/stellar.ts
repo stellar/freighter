@@ -93,6 +93,9 @@ export const getCanonicalFromAsset = (
   if (assetCode === "XLM" && !assetIssuer) {
     return "native";
   }
+  if (!assetIssuer) {
+    return assetCode;
+  }
   return `${assetCode}:${assetIssuer}`;
 };
 

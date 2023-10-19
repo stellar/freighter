@@ -6,6 +6,7 @@ import {
   getSorobanTokenBalance as internalGetSorobanTokenBalance,
   loadAccount as internalLoadAccount,
   getTokenIds as internalGetTokenIds,
+  removeTokenId as internalRemoveTokenId,
 } from "@shared/api/internal";
 import { ErrorMessage, ActionStatus, TokenBalances } from "@shared/api/types";
 import {
@@ -14,7 +15,7 @@ import {
 } from "popup/SorobanContext";
 
 export const getTokenBalances = createAsyncThunk<
-  TokenBalances,
+  { tokenBalances: TokenBalances; tokensWithNoBalance: string[] },
   { sorobanClient: SorobanContextInterface; network: Networks },
   { rejectValue: ErrorMessage }
 >("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
@@ -28,6 +29,7 @@ export const getTokenBalances = createAsyncThunk<
 
     const params = [new Address(publicKey).toScVal()];
     const results = [] as TokenBalances;
+    const tokensWithNoBalance = [];
 
     for (let i = 0; i < tokenIdList.length; i += 1) {
       const tokenId = tokenIdList[i];
@@ -66,19 +68,40 @@ export const getTokenBalances = createAsyncThunk<
         });
       } catch (e) {
         console.error(`Token "${tokenId}" missing data on RPC server`);
+        tokensWithNoBalance.push(tokenId);
       }
     }
 
-    return results;
+    return { tokenBalances: results, tokensWithNoBalance };
   } catch (e) {
     console.error(e);
     return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
+export const removeTokenId = createAsyncThunk<
+  void,
+  {
+    contractId: string;
+    network: Networks;
+    sorobanClient: SorobanContextInterface;
+  },
+  { rejectValue: ErrorMessage }
+>("removeTokenId", async ({ contractId, network, sorobanClient }, thunkApi) => {
+  try {
+    await internalRemoveTokenId({ contractId, network });
+  } catch (e) {
+    console.error(e);
+    thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+
+  thunkApi.dispatch(getTokenBalances({ sorobanClient, network }));
+});
+
 export const initialState = {
   getTokenBalancesStatus: ActionStatus.IDLE,
   tokenBalances: [] as TokenBalances,
+  tokensWithNoBalance: [] as string[],
 };
 
 const sorobanSlice = createSlice({
@@ -97,8 +120,12 @@ const sorobanSlice = createSlice({
       state.getTokenBalancesStatus = ActionStatus.ERROR;
     });
     builder.addCase(getTokenBalances.fulfilled, (state, action) => {
-      state.tokenBalances = action.payload;
+      state.tokenBalances = action.payload.tokenBalances;
+      state.tokensWithNoBalance = action.payload.tokensWithNoBalance;
       state.getTokenBalancesStatus = ActionStatus.SUCCESS;
+    });
+    builder.addCase(removeTokenId.pending, (state) => {
+      state.getTokenBalancesStatus = ActionStatus.PENDING;
     });
   },
 });

@@ -979,3 +979,18 @@ export const getTokenIds = async (
   });
   return resp.tokenIdList;
 };
+
+export const removeTokenId = async ({
+  contractId,
+  network,
+}: {
+  contractId: string;
+  network: SorobanClient.Networks;
+}): Promise<string[]> => {
+  const resp = await sendMessageToBackground({
+    type: SERVICE_TYPES.REMOVE_TOKEN_ID,
+    contractId,
+    network,
+  });
+  return resp.tokenIdList;
+};
