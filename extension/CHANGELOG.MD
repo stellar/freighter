@@ -1,3 +1,11 @@
+# Release notes - Wallets - Freighter-5.7.0
+
+### Bug
+
+Soroban Preview 10: Allow removing old tokens from token list
+
+Disable Soroban tokens in swap
+
 # Release notes - Wallets - 5.6.4
 
 ### Bug
