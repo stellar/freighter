@@ -4,7 +4,6 @@ import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 
 import { metricsMiddleware } from "helpers/metrics";
-import { isSerializable } from "helpers/stellar";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
@@ -30,9 +29,7 @@ export const store = configureStore({
 
   middleware: [
     ...getDefaultMiddleware({
-      serializableCheck: {
-        isSerializable,
-      },
+      serializableCheck: false,
     }),
   ].concat(metricsMiddleware<AppState>()),
 });
