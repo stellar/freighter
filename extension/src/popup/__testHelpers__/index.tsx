@@ -12,7 +12,6 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { Balances } from "@shared/api/types";
 import { FUTURENET_NETWORK_DETAILS } from "@shared/constants/stellar";
 
-import { isSerializable } from "helpers/stellar";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import {
@@ -40,9 +39,7 @@ const makeDummyStore = (state: any) =>
     preloadedState: state,
     middleware: [
       ...getDefaultMiddleware({
-        serializableCheck: {
-          isSerializable,
-        },
+        serializableCheck: false,
       }),
     ],
   });
