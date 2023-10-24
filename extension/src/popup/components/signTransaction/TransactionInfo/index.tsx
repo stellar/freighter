@@ -21,7 +21,7 @@ const MemoDisplay = ({
         label={t("Not defined")}
         altText="Error"
         icon={<Icon.Info />}
-        variant={IconButton.variant.error}
+        variant="error"
       />
     );
   }
