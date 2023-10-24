@@ -3785,14 +3785,15 @@
     p-map "^4.0.0"
     webpack-sources "^3.2.2"
 
-"@stellar/design-system@^1.0.0-beta.14":
-  version "1.0.0-beta.14"
-  resolved "https://registry.yarnpkg.com/@stellar/design-system/-/design-system-1.0.0-beta.14.tgz#56914f4d575eb93b65129ec280f077e845fb6cce"
-  integrity sha512-51MpT/bg1ShJmbYnB17bphd8jSHCgqfTqudNInXGEM2BcXwH8PQWFDIgQ07jD6wIvOGhRAktyYNE7wQv1X2O2w==
+"@stellar/design-system@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@stellar/design-system/-/design-system-1.0.0.tgz#8e1d3be5b20baa475ae373bef5cb7bb92bec9087"
+  integrity sha512-EKEIY2Ze80DgN6N0TuRxnag6FN9UWkKrM6Uo0Hows/3oSX13c+4DUJdVpuuBsd0J7rgGXZUJ1HE841kLI8dv5Q==
   dependencies:
     "@floating-ui/dom" "^1.2.5"
     bignumber.js "^9.1.1"
     configurable-date-input-polyfill "^3.1.5"
+    lodash "^4.17.21"
     react-copy-to-clipboard "^5.1.0"
     tslib "^2.5.0"
 
