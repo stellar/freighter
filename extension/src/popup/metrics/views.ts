@@ -63,6 +63,9 @@ const routeToEventName = {
   [ROUTES.addNetwork]: METRIC_NAMES.viewAddNetwork,
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
+  [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
+  [ROUTES.accountMigrationReviewMigration]:
+    METRIC_NAMES.viewAccountMigrationReviewMigration,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

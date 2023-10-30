@@ -331,11 +331,13 @@ export const getAccountBalances = async ({
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 
+    // eslint-disable-next-line no-plusplus
     for (let i = 0; i < Object.keys(resp.balances).length; i++) {
       const k = Object.keys(resp.balances)[i];
       const v: any = resp.balances[k];
       if (v.liquidity_pool_id) {
         const server = stellarSdkServer(networkUrl);
+        // eslint-disable-next-line no-await-in-loop
         const lp = await server
           .liquidityPools()
           .liquidityPoolId(v.liquidity_pool_id)
