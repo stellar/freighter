@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Button, Input, Notification } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
-import { Networks, StellarTomlResolver } from "stellar-sdk";
+import { Networks, StellarToml } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
 import { FormRows } from "popup/basics/Forms";
@@ -23,8 +23,8 @@ const initialValues: FormValues = {
 };
 
 interface AssetDomainToml {
-  CURRENCIES?: StellarTomlResolver.Currency[];
-  DOCUMENTATION?: StellarTomlResolver.Documentation;
+  CURRENCIES?: StellarToml.Api.Currency[];
+  DOCUMENTATION?: StellarToml.Api.Documentation;
   NETWORK_PASSPHRASE?: string;
 }
 
@@ -48,7 +48,7 @@ export const AddAsset = () => {
     let assetDomainToml = {} as AssetDomainToml;
 
     try {
-      assetDomainToml = await StellarTomlResolver.resolve(assetDomainUrl.host);
+      assetDomainToml = await StellarToml.Resolver.resolve(assetDomainUrl.host);
     } catch (e) {
       console.error(e);
     }

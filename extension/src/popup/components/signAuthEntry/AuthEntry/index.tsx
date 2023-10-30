@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { xdr, buildInvocationTree } from "soroban-client";
+import { xdr, buildInvocationTree } from "stellar-sdk";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import "./styles.scss";

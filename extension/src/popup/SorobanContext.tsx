@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import * as SorobanClient from "soroban-client";
+import { BASE_FEE, SorobanRpc, TransactionBuilder } from "stellar-sdk";
 
 import { SOROBAN_RPC_URLS, NETWORKS } from "@shared/constants/stellar";
 
@@ -12,8 +12,8 @@ export const hasSorobanClient = (
   context.server !== undefined && context.newTxBuilder !== undefined;
 
 export interface SorobanContextInterface {
-  server?: SorobanClient.Server;
-  newTxBuilder?: (fee?: string) => Promise<SorobanClient.TransactionBuilder>;
+  server?: SorobanRpc.Server;
+  newTxBuilder?: (fee?: string) => Promise<TransactionBuilder>;
 }
 
 export const SorobanContext = React.createContext(
@@ -39,25 +39,25 @@ export const SorobanProvider = ({
     // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
     const serverUrl = SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!;
 
-    server = new SorobanClient.Server(serverUrl, {
+    server = new SorobanRpc.Server(serverUrl, {
       allowHttp: serverUrl.startsWith("http://"),
     });
 
-    newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
+    newTxBuilder = async (fee = BASE_FEE) => {
       const sourceAccount = await server!.getAccount(pubKey);
-      return new SorobanClient.TransactionBuilder(sourceAccount, {
+      return new TransactionBuilder(sourceAccount, {
         fee,
         networkPassphrase: networkDetails.networkPassphrase,
       });
     };
   } else if (networkDetails.sorobanRpcUrl) {
-    server = new SorobanClient.Server(networkDetails.sorobanRpcUrl, {
+    server = new SorobanRpc.Server(networkDetails.sorobanRpcUrl, {
       allowHttp: networkDetails.sorobanRpcUrl.startsWith("http://"),
     });
 
-    newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
+    newTxBuilder = async (fee = BASE_FEE) => {
       const sourceAccount = await server!.getAccount(pubKey);
-      return new SorobanClient.TransactionBuilder(sourceAccount, {
+      return new TransactionBuilder(sourceAccount, {
         fee,
         networkPassphrase: networkDetails.networkPassphrase,
       });

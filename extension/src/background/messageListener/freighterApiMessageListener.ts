@@ -1,5 +1,9 @@
-import * as StellarSdk from "stellar-sdk";
-import * as SorobanSdk from "soroban-client";
+import {
+  TransactionBuilder,
+  Networks,
+  Transaction,
+  Operation,
+} from "stellar-sdk";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
 
@@ -31,7 +35,6 @@ import {
   getIsMemoValidationEnabled,
   getIsSafetyValidationEnabled,
   getNetworkDetails,
-  getIsSorobanSupported,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -48,8 +51,6 @@ import {
   responseQueue,
   transactionQueue,
 } from "./popupMessageListener";
-
-type Operation = StellarSdk.Operation | SorobanSdk.Operation;
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -118,8 +119,6 @@ export const freighterApiMessageListener = (
 
     const isMainnet = await getIsMainnet();
     const { networkUrl } = await getNetworkDetails();
-    const isSorobanSupported = await getIsSorobanSupported();
-    const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -129,9 +128,9 @@ export const freighterApiMessageListener = (
     const allowList = allowListStr.split(",");
     const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-    const transaction = SDK.TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXDR(
       transactionXdr,
-      networkPassphrase || SDK.Networks[network as keyof typeof SDK.Networks],
+      networkPassphrase || Networks[network as keyof typeof Networks],
     );
 
     const directoryLookupJson = await cachedFetch(
@@ -193,7 +192,7 @@ export const freighterApiMessageListener = (
     const server = stellarSdkServer(networkUrl);
 
     try {
-      await server.checkMemoRequired(transaction as StellarSdk.Transaction);
+      await server.checkMemoRequired(transaction as Transaction);
     } catch (e) {
       if (e.accountId) {
         flaggedKeys[e.accountId] = {
@@ -213,9 +212,7 @@ export const freighterApiMessageListener = (
       accountToSign,
     } as TransactionInfo;
 
-    transactionQueue.push(
-      transaction as StellarSdk.Transaction | SorobanSdk.Transaction,
-    );
+    transactionQueue.push(transaction as Transaction);
     const encodedBlob = encodeObject(transactionInfo);
 
     const popup = browser.windows.create({

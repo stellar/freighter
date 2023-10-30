@@ -1,5 +1,14 @@
 import BigNumber from "bignumber.js";
-import * as SorobanClient from "soroban-client";
+import {
+  Memo,
+  MemoType,
+  Operation,
+  StrKey,
+  Transaction,
+  TransactionBuilder,
+  scValToNative,
+  xdr,
+} from "stellar-sdk";
 
 import { HorizonOperation, TokenBalances } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -100,26 +109,26 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   return wholeValue.shiftedBy(decimals).plus(fractionValue);
 };
 
-export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
+export const getOpArgs = (fnName: string, args: xdr.ScVal[]) => {
   let amount: BigNumber;
   let from;
   let to;
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
-      from = SorobanClient.StrKey.encodeEd25519PublicKey(
+      from = StrKey.encodeEd25519PublicKey(
         args[0].address().accountId().ed25519(),
       );
-      to = SorobanClient.StrKey.encodeEd25519PublicKey(
+      to = StrKey.encodeEd25519PublicKey(
         args[1].address().accountId().ed25519(),
       );
-      amount = SorobanClient.scValToNative(args[2]);
+      amount = scValToNative(args[2]);
       break;
     case SorobanTokenInterface.mint:
-      to = SorobanClient.StrKey.encodeEd25519PublicKey(
+      to = StrKey.encodeEd25519PublicKey(
         args[0].address().accountId().ed25519(),
       );
-      amount = SorobanClient.scValToNative(args[1]);
+      amount = scValToNative(args[1]);
       break;
     default:
       amount = new BigNumber(0);
@@ -131,9 +140,7 @@ export const getOpArgs = (fnName: string, args: SorobanClient.xdr.ScVal[]) => {
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-const getRootInvocationArgs = (
-  hostFn: SorobanClient.Operation.InvokeHostFunction,
-) => {
+const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
@@ -146,7 +153,7 @@ const getRootInvocationArgs = (
     return null;
   }
 
-  const contractId = SorobanClient.StrKey.encodeContract(
+  const contractId = StrKey.encodeContract(
     invokedContract.contractAddress().contractId(),
   );
   const fnName = invokedContract.functionName().toString();
@@ -190,13 +197,10 @@ export const getAttrsFromSorobanHorizonOp = (
     return null;
   }
 
-  const txEnvelope = SorobanClient.TransactionBuilder.fromXDR(
+  const txEnvelope = TransactionBuilder.fromXDR(
     operation.transaction_attr.envelope_xdr,
     networkDetails.networkPassphrase,
-  ) as SorobanClient.Transaction<
-    SorobanClient.Memo<SorobanClient.MemoType>,
-    SorobanClient.Operation.InvokeHostFunction[]
-  >;
+  ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
 
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
