@@ -253,7 +253,7 @@ const UnsafeMaliciousWarning = ({
           )}`}
           altText="Error"
           icon={<Icon.Info />}
-          variant={IconButton.variant.error}
+          variant="error"
         />
       }
     />
@@ -275,7 +275,7 @@ const MemoRequiredWarning = ({
           label={t("Memo required")}
           altText="Error"
           icon={<Icon.Info />}
-          variant={IconButton.variant.error}
+          variant="error"
         />
       }
     />

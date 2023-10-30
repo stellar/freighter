@@ -1,7 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Asset, Networks } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
-import { isPlain } from "@reduxjs/toolkit";
 
 import { isSorobanIssuer } from "popup/helpers/account";
 import {
@@ -12,11 +11,6 @@ import {
 
 import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
-
-// .isBigNumber() not catching correctly, so checking .isBigNumber
-// property as well
-export const isSerializable = (value: any) =>
-  value?.isBigNumber || BigNumber.isBigNumber(value) || isPlain(value);
 
 export const truncateString = (str: string) =>
   str ? `${str.slice(0, 4)}…${str.slice(-4)}` : "";
