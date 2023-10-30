@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Button, Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
-import { Networks } from "soroban-client";
+import { Networks } from "stellar-sdk";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";

@@ -1,5 +1,4 @@
-import { StellarTomlResolver } from "stellar-sdk";
-
+import { StellarToml } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { stellarSdkServer } from "./stellarSdkServer";
 import { SERVICE_TYPES } from "../../constants/services";
@@ -70,7 +69,7 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-    toml = await StellarTomlResolver.resolve(homeDomain || "");
+    toml = await StellarToml.Resolver.resolve(homeDomain || "");
   } catch (e) {
     console.error(e);
     return iconUrl;

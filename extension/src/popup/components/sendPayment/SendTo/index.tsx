@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
+import { Asset, StrKey, MuxedAccount, Federation } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
 import {
@@ -161,7 +161,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       // federation address
       else if (isFederationAddress(inputDest)) {
         try {
-          const fedResp = await FederationServer.resolve(inputDest);
+          const fedResp = await Federation.Server.resolve(inputDest);
           setValidatedPubKey(fedResp.account_id);
           setFedAddress(inputDest);
         } catch (e) {
@@ -256,7 +256,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                             setIsLoading(true);
                             // recentAddresses already validated so safe to dispatch
                             if (isFederationAddress(address)) {
-                              const fedResp = await FederationServer.resolve(
+                              const fedResp = await Federation.Server.resolve(
                                 address,
                               );
                               const publicKey = fedResp.account_id;

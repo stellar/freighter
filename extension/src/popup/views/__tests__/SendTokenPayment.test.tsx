@@ -73,37 +73,40 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   };
 });
 
-jest.mock("soroban-client", () => {
-  const original = jest.requireActual("soroban-client");
+jest.mock("stellar-sdk", () => {
+  const original = jest.requireActual("stellar-sdk");
   return {
     ...original,
     assembleTransaction: (tx: any, _passphrase: string, _sim: any) => {
       return new original.TransactionBuilder.cloneFrom(tx);
     },
-    Server: class {
-      getAccount(address: string) {
-        return Promise.resolve(new original.Account(address, "0"));
-      }
-      simulateTransaction = async (_tx: any) => {
-        return Promise.resolve({
-          transactionData: {},
-          cost: {
-            cpuInsns: 12389,
-            memBytes: 32478,
-          },
-          minResourceFee: 43289,
-        });
-      };
-      prepareTransaction(tx: any, _passphrase: string) {
-        return Promise.resolve(tx as any);
-      }
-      loadAccount() {
-        return {
-          sequenceNumber: () => 1,
-          accountId: () => publicKey,
-          incrementSequenceNumber: () => {},
+    SorobanRpc: {
+      ...original.SorobanRpc,
+      Server: class {
+        getAccount(address: string) {
+          return Promise.resolve(new original.Account(address, "0"));
+        }
+        simulateTransaction = async (_tx: any) => {
+          return Promise.resolve({
+            transactionData: {},
+            cost: {
+              cpuInsns: 12389,
+              memBytes: 32478,
+            },
+            minResourceFee: 43289,
+          });
         };
-      }
+        prepareTransaction(tx: any, _passphrase: string) {
+          return Promise.resolve(tx as any);
+        }
+        loadAccount() {
+          return {
+            sequenceNumber: () => 1,
+            accountId: () => publicKey,
+            incrementSequenceNumber: () => {},
+          };
+        }
+      },
     },
   };
 });

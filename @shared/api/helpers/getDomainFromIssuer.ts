@@ -1,4 +1,4 @@
-import { Server } from "stellar-sdk";
+import { Horizon } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
@@ -33,7 +33,7 @@ export const getDomainFromIssuer = async ({
     /* Otherwise, 1. load their account from the API */
     const { networkUrl } = networkDetails;
 
-    const server = new Server(networkUrl);
+    const server = new Horizon.Server(networkUrl);
     response = await server.loadAccount(key);
   } catch (e) {
     return assetDomain;
