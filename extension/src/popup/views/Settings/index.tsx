@@ -47,7 +47,7 @@ export const Settings = () => {
             <ListNavLink href="https://www.freighter.app/faq">
               {t("Help")}
             </ListNavLink>
-            <ListNavLink href="https://stellarform.typeform.com/to/r4FiNpX1">
+            <ListNavLink href={ROUTES.leaveFeedback}>
               {t("Leave Feedback")}
             </ListNavLink>
             <ListNavLink href={ROUTES.about}>{t("About")}</ListNavLink>
