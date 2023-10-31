@@ -77,11 +77,11 @@ jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
   return {
     ...original,
-    assembleTransaction: (tx: any, _passphrase: string, _sim: any) => {
-      return new original.TransactionBuilder.cloneFrom(tx);
-    },
     SorobanRpc: {
       ...original.SorobanRpc,
+      assembleTransaction: (tx: any, _sim: any) => {
+        return new original.TransactionBuilder.cloneFrom(tx);
+      },
       Server: class {
         getAccount(address: string) {
           return Promise.resolve(new original.Account(address, "0"));

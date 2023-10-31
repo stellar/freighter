@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@stellar/wallet-sdk": "^0.10.0",
+    "@stellar/wallet-sdk": "v0.11.0-beta.1",
     "bignumber.js": "^9.1.1",
     "prettier": "^2.0.5",
     "stellar-sdk": "11.0.0-beta.5",

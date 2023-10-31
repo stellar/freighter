@@ -6,9 +6,9 @@ import {
   Asset,
   Memo,
   Operation,
+  SorobanRpc,
   TransactionBuilder,
 } from "stellar-sdk";
-import { assembleTransaction } from "stellar-sdk/lib/soroban";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -270,7 +270,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         throw new Error("Soroban RPC not supported for this network");
       }
 
-      const preparedTransaction = assembleTransaction(
+      const preparedTransaction = SorobanRpc.assembleTransaction(
         transactionSimulation.raw!,
         transactionSimulation.response!,
       );

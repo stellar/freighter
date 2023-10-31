@@ -23,7 +23,7 @@
     "@shared/constants": "1.0.0",
     "@shared/helpers": "1.0.0",
     "@stellar/design-system": "^1.0.0",
-    "@stellar/wallet-sdk": "^0.10.0",
+    "@stellar/wallet-sdk": "v0.11.0-beta.1",
     "@testing-library/react": "^10.4.8",
     "@testing-library/user-event": "^7.1.2",
     "@types/chrome": "^0.0.104",
@@ -100,7 +100,6 @@
       "@testing-library/react>@testing-library/dom>aria-query>@babel/runtime-corejs3>core-js-pure": false,
       "css-loader>webpack>watchpack>watchpack-chokidar2>chokidar>fsevents": false,
       "simplebar-react>simplebar>core-js": false,
-      "soroban-client>stellar-base>sodium-native": false,
       "stellar-hd-wallet>stellar-base>sodium-native": false,
       "stellar-sdk>stellar-base>sodium-native": false
     }
