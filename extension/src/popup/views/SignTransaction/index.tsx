@@ -8,8 +8,8 @@ import {
   MuxedAccount,
   Transaction,
   TransactionBuilder,
+  Federation,
 } from "stellar-sdk";
-import { FederationServer } from "stellar-sdk/lib/federation/server";
 
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
@@ -147,7 +147,7 @@ export const SignTransaction = () => {
   const resolveFederatedAddress = useCallback(async (inputDest) => {
     let resolvedPublicKey;
     try {
-      const fedResp = await FederationServer.resolve(inputDest);
+      const fedResp = await Federation.Server.resolve(inputDest);
       resolvedPublicKey = fedResp.account_id;
     } catch (e) {
       console.error(e);

@@ -317,7 +317,6 @@ export const getAccountBalances = async ({
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<AccountBalancesInterface> => {
-  console.log(networkDetails);
   const { networkUrl, networkPassphrase } = networkDetails;
 
   let balances: any = null;
@@ -333,10 +332,8 @@ export const getAccountBalances = async ({
         allowHttp: networkUrl.startsWith("http://"),
       },
     });
-    console.log(dataProvider);
 
     const resp = await dataProvider.fetchAccountDetails();
-    console.log(resp);
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 
@@ -359,7 +356,7 @@ export const getAccountBalances = async ({
     }
     isFunded = true;
   } catch (e) {
-    console.log("aristides", e);
+    console.error(e);
     return {
       balances,
       isFunded: false,
@@ -635,6 +632,7 @@ export const submitFreighterSorobanTransaction = async ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
+  console.log(signedXDR);
   let tx = {} as Transaction | FeeBumpTransaction;
 
   try {
@@ -645,6 +643,7 @@ export const submitFreighterSorobanTransaction = async ({
   } catch (e) {
     console.error(e);
   }
+  console.log(networkDetails);
 
   if (
     !networkDetails.sorobanRpcUrl &&
@@ -663,7 +662,13 @@ export const submitFreighterSorobanTransaction = async ({
     allowHttp: !serverUrl.startsWith("https"),
   });
 
-  let response = await server.sendTransaction(tx);
+  let response = null as any;
+  try {
+    response = await server.sendTransaction(tx);
+    console.log(response);
+  } catch (error) {
+    console.log(error);
+  }
 
   if (response.errorResult) {
     throw new Error(response.errorResult.result().toString());
