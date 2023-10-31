@@ -632,7 +632,6 @@ export const submitFreighterSorobanTransaction = async ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
-  console.log(signedXDR);
   let tx = {} as Transaction | FeeBumpTransaction;
 
   try {
@@ -643,7 +642,6 @@ export const submitFreighterSorobanTransaction = async ({
   } catch (e) {
     console.error(e);
   }
-  console.log(networkDetails);
 
   if (
     !networkDetails.sorobanRpcUrl &&
@@ -662,13 +660,7 @@ export const submitFreighterSorobanTransaction = async ({
     allowHttp: !serverUrl.startsWith("https"),
   });
 
-  let response = null as any;
-  try {
-    response = await server.sendTransaction(tx);
-    console.log(response);
-  } catch (error) {
-    console.log(error);
-  }
+  let response = await server.sendTransaction(tx);
 
   if (response.errorResult) {
     throw new Error(response.errorResult.result().toString());
