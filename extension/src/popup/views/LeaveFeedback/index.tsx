@@ -4,8 +4,6 @@ import { Button, Icon } from "@stellar/design-system";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
-import DiscordIcon from "popup/assets/icon-discord.svg";
-
 import "./styles.scss";
 
 export const LeaveFeedback = () => {
@@ -24,8 +22,7 @@ export const LeaveFeedback = () => {
         {/* Discord */}
         <div className="LeaveFeedback__item">
           <div className="LeaveFeedback__item__icon">
-            {/* TODO: add Discord icon to SDS */}
-            <img src={DiscordIcon} alt="Discord icon" />
+            <Icon.Discord />
           </div>
           <div>
             {t("Join the #wallets Discord channel for updates and questions")}
