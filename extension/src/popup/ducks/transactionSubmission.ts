@@ -2,19 +2,15 @@ import {
   Asset,
   Horizon,
   Keypair,
-  Server,
-  ServerApi,
-  TransactionBuilder,
-  xdr,
-} from "stellar-sdk";
-import {
   Memo,
   MemoType,
   Networks,
   Operation,
   SorobanRpc,
   Transaction,
-} from "soroban-client";
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
@@ -88,7 +84,7 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
 );
 
 export const submitFreighterTransaction = createAsyncThunk<
-  Horizon.TransactionResponse,
+  Horizon.HorizonApi.TransactionResponse,
   {
     publicKey: string;
     signedXDR: string;
@@ -125,7 +121,7 @@ export const submitFreighterTransaction = createAsyncThunk<
 );
 
 export const submitFreighterSorobanTransaction = createAsyncThunk<
-  SorobanRpc.SendTransactionResponse,
+  SorobanRpc.Api.SendTransactionResponse,
   {
     signedXDR: string;
     networkDetails: NetworkDetails;
@@ -323,7 +319,7 @@ export const getAssetDomains = createAsyncThunk<
 
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
-  ServerApi.PaymentPathRecord,
+  Horizon.ServerApi.PaymentPathRecord,
   {
     amount: string;
     sourceAsset: string;
@@ -335,7 +331,7 @@ export const getBestPath = createAsyncThunk<
   "getBestPath",
   async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
     try {
-      const server = new Server(networkDetails.networkUrl);
+      const server = new Horizon.Server(networkDetails.networkUrl);
       const builder = server.strictSendPaths(
         getAssetFromCanonical(sourceAsset) as Asset,
         amount,
@@ -415,13 +411,13 @@ interface InitialState {
   accountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
   response:
-    | Horizon.TransactionResponse
-    | SorobanRpc.SendTransactionResponse
+    | Horizon.HorizonApi.TransactionResponse
+    | SorobanRpc.Api.SendTransactionResponse
     | null;
   error: ErrorMessage | undefined;
   transactionData: TransactionData;
   transactionSimulation: {
-    response: SorobanRpc.SimulateTransactionSuccessResponse | null;
+    response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
     raw: Transaction<Memo<MemoType>, Operation[]> | null;
   };
   accountBalances: AccountBalancesInterface;

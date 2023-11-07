@@ -1,4 +1,4 @@
-import { Address, Networks } from "soroban-client";
+import { Address, Networks } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 

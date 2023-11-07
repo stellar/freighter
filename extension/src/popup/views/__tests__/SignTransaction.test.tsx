@@ -1,5 +1,4 @@
 import React from "react";
-import * as SDK from "soroban-client";
 import { render, waitFor, screen } from "@testing-library/react";
 import * as createStellarIdenticon from "stellar-identicon-js";
 
@@ -9,6 +8,14 @@ import { getAttrsFromSorobanTxOp } from "popup/helpers/soroban";
 import { SignTransaction } from "../SignTransaction";
 
 import { Wrapper } from "../../__testHelpers__";
+import {
+  Memo,
+  MemoType,
+  Networks,
+  Operation,
+  Transaction,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 jest.mock("stellar-identicon-js");
 
@@ -62,19 +69,16 @@ describe("SignTransactions", () => {
     jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
   });
   it("renders", async () => {
-    const transaction = SDK.TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
-      SDK.Networks.FUTURENET,
-    ) as SDK.Transaction<
-      SDK.Memo<SDK.MemoType>,
-      SDK.Operation.InvokeHostFunction[]
-    >;
+      Networks.FUTURENET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
-        networkPassphrase: SDK.Networks.FUTURENET,
+        networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -98,19 +102,16 @@ describe("SignTransactions", () => {
     expect(screen.getByTestId("SignTransaction")).toBeDefined();
   });
   it("shows non-https domain error", async () => {
-    const transaction = SDK.TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
-      SDK.Networks.TESTNET,
-    ) as SDK.Transaction<
-      SDK.Memo<SDK.MemoType>,
-      SDK.Operation.InvokeHostFunction[]
-    >;
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
       transactionXdr: transactions.classic,
       transaction: {
-        networkPassphrase: SDK.Networks.TESTNET,
+        networkPassphrase: Networks.TESTNET,
         _operations: [op],
       },
       isHttpsDomain: false,
@@ -137,19 +138,16 @@ describe("SignTransactions", () => {
     );
   });
   it("displays token payment parameters for Soroban token payment operations", async () => {
-    const transaction = SDK.TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
-      SDK.Networks.FUTURENET,
-    ) as SDK.Transaction<
-      SDK.Memo<SDK.MemoType>,
-      SDK.Operation.InvokeHostFunction[]
-    >;
+      Networks.FUTURENET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
-        networkPassphrase: SDK.Networks.FUTURENET,
+        networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -192,19 +190,16 @@ describe("SignTransactions", () => {
     expect(opDetails.includes(`Function Name:${args?.fnName}`));
   });
   it("displays mint parameters for Soroban mint operations", async () => {
-    const transaction = SDK.TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanMint,
-      SDK.Networks.FUTURENET,
-    ) as SDK.Transaction<
-      SDK.Memo<SDK.MemoType>,
-      SDK.Operation.InvokeHostFunction[]
-    >;
+      Networks.FUTURENET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanMint,
       transaction: {
-        networkPassphrase: SDK.Networks.FUTURENET,
+        networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));

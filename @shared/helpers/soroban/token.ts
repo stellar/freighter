@@ -2,10 +2,10 @@ import {
   Contract,
   TransactionBuilder,
   Memo,
-  Server,
+  SorobanRpc,
   TimeoutInfinite,
   xdr,
-} from "soroban-client";
+} from "stellar-sdk";
 import { simulateTx } from "./server";
 
 export const transfer = (
@@ -30,7 +30,7 @@ export const transfer = (
 export const getBalance = async (
   contractId: string,
   params: xdr.ScVal[],
-  server: Server,
+  server: SorobanRpc.Server,
   builder: TransactionBuilder,
 ) => {
   const contract = new Contract(contractId);
@@ -46,7 +46,7 @@ export const getBalance = async (
 
 export const getDecimals = async (
   contractId: string,
-  server: Server,
+  server: SorobanRpc.Server,
   builder: TransactionBuilder,
 ) => {
   const contract = new Contract(contractId);
@@ -62,7 +62,7 @@ export const getDecimals = async (
 
 export const getName = async (
   contractId: string,
-  server: Server,
+  server: SorobanRpc.Server,
   builder: TransactionBuilder,
 ) => {
   const contract = new Contract(contractId);
@@ -78,7 +78,7 @@ export const getName = async (
 
 export const getSymbol = async (
   contractId: string,
-  server: Server,
+  server: SorobanRpc.Server,
   builder: TransactionBuilder,
 ) => {
   const contract = new Contract(contractId);

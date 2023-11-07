@@ -179,7 +179,7 @@ export interface AccountHistoryInterface {
 
 export interface ErrorMessage {
   errorMessage: string;
-  response?: Horizon.ErrorResponseData.TransactionFailed;
+  response?: Horizon.HorizonApi.ErrorResponseData.TransactionFailed;
 }
 
 declare global {

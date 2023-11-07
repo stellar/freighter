@@ -3,13 +3,13 @@ import {
   Memo,
   MemoType,
   Operation,
-  Server,
+  SorobanRpc,
   scValToNative,
-} from "soroban-client";
+} from "stellar-sdk";
 
 export const simulateTx = async <ArgType>(
   tx: Transaction<Memo<MemoType>, Operation[]>,
-  server: Server,
+  server: SorobanRpc.Server,
 ): Promise<ArgType> => {
   const simulatedTX = await server.simulateTransaction(tx);
 

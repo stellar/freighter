@@ -3,7 +3,7 @@ import {
   Account,
   Asset,
   Operation,
-  StellarTomlResolver,
+  StellarToml,
   TransactionBuilder,
   Networks,
 } from "stellar-sdk";
@@ -58,7 +58,7 @@ import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
-export type ManageAssetCurrency = StellarTomlResolver.Currency & {
+export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
   contractId?: string;
   name?: string;
@@ -248,7 +248,7 @@ export const ManageAssetRows = ({
     // check domain
     let isInvalidDomain = false;
     try {
-      const resp = await StellarTomlResolver.resolve(domain);
+      const resp = await StellarToml.Resolver.resolve(domain);
       let found = false;
       (resp?.CURRENCIES || []).forEach(
         (c: { code?: string; issuer?: string }) => {
