@@ -1,4 +1,5 @@
 import {
+  Horizon,
   TransactionBuilder,
   SorobanRpc,
   Transaction,
@@ -334,10 +335,10 @@ export const getAccountInfo = async ({
 }) => {
   const { networkUrl } = networkDetails;
 
-  const server = new Server(networkUrl);
+  const server = new Horizon.Server(networkUrl);
 
   let account;
-  let signerArr = { records: [] as ServerApi.AccountRecord[] };
+  let signerArr = { records: [] as Horizon.ServerApi.AccountRecord[] };
 
   try {
     account = await server.loadAccount(publicKey);
