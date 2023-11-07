@@ -7,12 +7,14 @@ import { BigNumber } from "bignumber.js";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, boolean as YupBoolean } from "yup";
 
+import { ROUTES } from "popup/constants/routes";
 import { BASE_RESERVE } from "popup/constants/transaction";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { saveIsMergeSelected } from "popup/ducks/transactionSubmission";
 
 import { truncatedPublicKey } from "helpers/stellar";
+import { navigateTo } from "popup/helpers/navigate";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import { MigrationHeader, MigrationParagraph } from "../basics";
@@ -173,6 +175,7 @@ export const ReviewMigration = () => {
 
   const handleSubmit = (values: FormValues) => {
     dispatch(saveIsMergeSelected(values.isMergeSelected));
+    navigateTo(ROUTES.accountMigrationMnemonicPhrase);
   };
 
   const initialValues: FormValues = {
