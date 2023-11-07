@@ -8,6 +8,8 @@
   "About": "About",
   "account": "account",
   "Account": "Account",
+  "Account migration": "Account migration",
+  "Account Migration": "Account Migration",
   "Account minimum balance is too low": "Account minimum balance is too low",
   "Account not available": "Account not available",
   "Action": "Action",
@@ -53,6 +55,9 @@
   "Asset not found": "Asset not found",
   "Assets found in this domain": "Assets found in this domain",
   "At least one uppercase letter": "At least one uppercase letter",
+  "At the end of this process, Freighter will only display accounts related to the new backup phrase": {
+    " You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts": "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts."
+  },
   "Authorization Entry": "Authorization Entry",
   "Authorization Immutable": "Authorization Immutable",
   "Authorization Required": "Authorization Required",
@@ -101,11 +106,13 @@
   "Conversion rate": "Conversion rate",
   "Conversion rate changed": "Conversion rate changed",
   "COPY": "COPY",
+  "Cost to migrate": "Cost to migrate",
   "Create a new Stellar address": "Create a new Stellar address",
   "Create a password": "Create a password",
   "Create Account": "Create Account",
   "Create Wallet": "Create Wallet",
   "Custom": "Custom",
+  "data entries": "data entries",
   "Date": "Date",
   "Destination": "Destination",
   "Destination account does not accept this asset": "Destination account does not accept this asset",
@@ -194,6 +201,7 @@
   "Important": "Important",
   "Important Warning": "Important Warning",
   "in order to remove an asset": "in order to remove an asset.",
+  "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account": "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account.",
   "Include a custom memo to this transaction": "Include a custom memo to this transaction",
   "Inflation Destination": "Inflation Destination",
   "Inner Transaction": "Inner Transaction",
@@ -232,6 +240,8 @@
   "Log In": "Log In",
   "Log Out": "Log Out",
   "Low Threshold": "Low Threshold",
+  "Make sure you have your 12 word backup phrase": "Make sure you have your 12 word backup phrase",
+  "Make sure you have your current 12 words backup phrase before continuing": "Make sure you have your current 12 words backup phrase before continuing.",
   "Malicious": "Malicious",
   "Manage Assets": "Manage Assets",
   "Manage connected apps": "Manage connected apps",
@@ -246,12 +256,16 @@
   "Memo": "Memo",
   "Memo (optional)": "Memo (optional)",
   "Memo required": "Memo required",
+  "Merge accounts after migrating (you funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts": {
+    ")": "Merge accounts after migrating (you funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"
+  },
   "Min 8 characters": "Min 8 characters",
   "Min Amount A": "Min Amount A",
   "Min Amount B": "Min Amount B",
   "Min Price": "Min Price",
   "Minimum Received": "Minimum Received",
   "Minimum resource fee": "Minimum resource fee",
+  "Minimum XLM needed": "Minimum XLM needed",
   "Minted": "Minted",
   "Multiple assets": "Multiple assets",
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
@@ -276,12 +290,15 @@
   "None": "None",
   "Not defined": "Not defined",
   "Not enough lumens": "Not enough lumens",
+  "Not funded": "Not funded",
   "Not recommended asset": "Not recommended asset",
   "Offer Id": "Offer Id",
   "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
+  "Only accounts ready for migration will be migrated": "Only accounts ready for migration will be migrated.",
   "only way to access it in a new browser": "only way to access it in a new browser",
   "Operation": "Operation",
   "Operations": "Operations",
+  "Optional": "Optional",
   "Parameters": "Parameters",
   "Passphrase": "Passphrase",
   "Paths": "Paths",
@@ -305,6 +322,7 @@
     " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
   },
   "Read before importing your key": "Read before importing your key",
+  "Ready to migrate": "Ready to migrate",
   "Received": "Received",
   "RECEIVED": "RECEIVED",
   "RECENT": "RECENT",
@@ -315,6 +333,7 @@
   "Reserved Balance*": "Reserved Balance*",
   "Resource cost": "Resource cost",
   "Review": "Review",
+  "Review accounts to migrate": "Review accounts to migrate",
   "Review transaction on device": "Review transaction on device",
   "Revocable Asset": "Revocable Asset",
   "Same source and destination asset": "Same source and destination asset",
@@ -346,6 +365,7 @@
   "Signer": "Signer",
   "Signing arbitrary data with a hardware wallet is currently not supported": "Signing arbitrary data with a hardware wallet is currently not supported.",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
+  "Signs for external accounts": "Signs for external accounts",
   "SOROBAN RPC URL": "SOROBAN RPC URL",
   "Source": "Source",
   "Sponsored Id": "Sponsored Id",
@@ -403,6 +423,7 @@
   "Transaction Rejected": "Transaction Rejected.",
   "Transaction sequence number": "Transaction sequence number",
   "Transactions": "Transactions",
+  "trustlines": "trustlines",
   "Trustor": "Trustor",
   "Unable to connect to": "Unable to connect to",
   "Unable to search for assets": "Unable to search for assets",
@@ -424,6 +445,8 @@
   "which is not available on Freighter": {
     " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
+  "XLM": "XLM",
+  "XLM balance": "XLM balance",
   "You are attempting to sign arbitrary data": {
     " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data."
   },
@@ -434,6 +457,9 @@
     " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."
   },
   "You can": "You can",
+  "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
+    " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
+  },
   "You can fund this account using the friendbot tool": {
     " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens": "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens."
   },
