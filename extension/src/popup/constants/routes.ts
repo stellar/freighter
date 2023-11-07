@@ -54,4 +54,5 @@ export enum ROUTES {
   networkSettings = "/manage-network/network-settings",
   accountMigration = "/account-migration",
   accountMigrationReviewMigration = "/account-migration/review-migration",
+  accountMigrationMnemonicPhrase = "/account-migration/mnemonic-phrase",
 }

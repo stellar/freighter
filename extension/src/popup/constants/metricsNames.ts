@@ -44,6 +44,8 @@ export const METRIC_NAMES = {
   viewAccountMigration: "loaded screen: account migration",
   viewAccountMigrationReviewMigration:
     "loaded screen: account migration review migration",
+  viewAccountMigrationMnemonicPhrase:
+    "loaded screen: account migration mnemonic phrase",
 
   sendPaymentRecentAddress: "send payment: recent address",
   sendPaymentSetMax: "send payment: set max",

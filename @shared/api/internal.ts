@@ -1,4 +1,4 @@
-import { TransactionBuilder } from "stellar-sdk";
+import { Server, ServerApi, TransactionBuilder } from "stellar-sdk";
 import * as SorobanClient from "soroban-client";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
@@ -222,6 +222,21 @@ export const getMnemonicPhrase = async (): Promise<{
   return response;
 };
 
+export const getMigratedMnemonicPhrase = async (): Promise<{
+  mnemonicPhrase: string;
+}> => {
+  let response = { mnemonicPhrase: "" };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
 export const confirmMnemonicPhrase = async (
   mnemonicPhraseToConfirm: string,
 ): Promise<{
@@ -302,6 +317,47 @@ export const confirmPassword = async (
   }
 
   return response;
+};
+
+export const getAccountInfo = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const { networkUrl } = networkDetails;
+
+  const server = new Server(networkUrl);
+
+  let account;
+  let signerArr = { records: [] as ServerApi.AccountRecord[] };
+
+  try {
+    account = await server.loadAccount(publicKey);
+    signerArr = await server.accounts().forSigner(publicKey).call();
+  } catch (e) {
+    console.error(e);
+  }
+
+  return {
+    account,
+    isSigner: signerArr.records.length > 1,
+  };
+};
+
+export const getMigratableAccounts = async () => {
+  let migratableAccounts: Account[] = [];
+
+  try {
+    ({ migratableAccounts } = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { migratableAccounts };
 };
 
 export const getAccountBalances = async ({

@@ -1,71 +1,245 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Button, Heading, Paragraph } from "@stellar/design-system";
-import { getAccountBalances } from "@shared/api/internal";
+import { useDispatch, useSelector } from "react-redux";
+import { Badge, Button, Checkbox, Loader } from "@stellar/design-system";
+import { getAccountInfo, getMigratableAccounts } from "@shared/api/internal";
+import { useTranslation } from "react-i18next";
+import { BigNumber } from "bignumber.js";
+import { Field, FieldProps, Form, Formik } from "formik";
+import { object as YupObject, boolean as YupBoolean } from "yup";
 
-import { allAccountsSelector } from "popup/ducks/accountServices";
+import { BASE_RESERVE } from "popup/constants/transaction";
+
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { saveIsMergeSelected } from "popup/ducks/transactionSubmission";
+
+import { truncatedPublicKey } from "helpers/stellar";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+
+import { MigrationHeader, MigrationParagraph } from "../basics";
+
+import "./styles.scss";
 
 type AccountList = {
   publicKey: string;
   name: string;
   trustlines: number;
   dataEntries: number;
+  xlmBalance: string;
+  isSigner: boolean;
+  minBalance: string;
 }[];
 
-export const ReviewMigration = () => {
-  const allAccounts = useSelector(allAccountsSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [accountList, setAccountList] = useState(
-    allAccounts.map(({ publicKey, name }) => ({
-      publicKey,
-      name,
-      trustlines: 0,
-      dataEntries: 0,
-    })) as AccountList,
+interface FormValues {
+  isMergeSelected: boolean;
+}
+
+const AccountInfo = ({
+  account,
+}: {
+  account: { publicKey: string; name: string };
+}) => (
+  <div className="ReviewMigration__account">
+    <div className="ReviewMigration__account__identicon-wrapper">
+      <IdenticonImg publicKey={account.publicKey} />
+    </div>
+    <div className="ReviewMigration__account__name">{account.name}</div>
+    <div className="ReviewMigration__account__public-key">
+      ({truncatedPublicKey(account.publicKey)})
+    </div>
+  </div>
+);
+
+const AccountListItems = ({ accountList }: { accountList: AccountList }) => {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      {accountList.map((acct) => (
+        <section className="ReviewMigration__section" key={acct.publicKey}>
+          {acct.xlmBalance ? (
+            <>
+              <div className="ReviewMigration__row ReviewMigration__account-row">
+                <AccountInfo account={acct} />
+                <div className="ReviewMigration__badge">
+                  <Badge>{t("Ready to migrate")}</Badge>
+                </div>
+              </div>
+              <div className="ReviewMigration__row ReviewMigration__detail-row">
+                <div>
+                  {acct.trustlines} {t("trustlines")}
+                </div>
+                <div className="ReviewMigration__row__description">
+                  {t("XLM balance")}:{" "}
+                  <span className="ReviewMigration__highlight">
+                    {acct.xlmBalance} {t("XLM")}
+                  </span>
+                </div>
+              </div>
+              <div className="ReviewMigration__row ReviewMigration__detail-row">
+                <div>
+                  {acct.dataEntries} {t("data entries")}
+                </div>
+                <div className="ReviewMigration__row__description">
+                  {t("Minimum XLM needed")}:{" "}
+                  <span className="ReviewMigration__highlight">
+                    {acct.minBalance} XLM
+                  </span>
+                </div>
+              </div>
+              <div className="ReviewMigration__row ReviewMigration__detail-row">
+                <div>
+                  {acct.isSigner ? t("Signs for external accounts") : ""}
+                </div>
+                <div className="ReviewMigration__row__description">
+                  {t("Cost to migrate")}:{" "}
+                  <span className="ReviewMigration__highlight">0.0001 XLM</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="ReviewMigration__row ReviewMigration__account-row">
+                <AccountInfo account={acct} />
+                <div className="ReviewMigration__badge">
+                  <Badge variant="warning">{t("Not funded")}</Badge>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+      ))}
+    </>
   );
+};
+
+export const ReviewMigration = () => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [accountList, setAccountList] = useState([] as AccountList);
 
   useEffect(() => {
-    console.log(setAccountList);
+    const acctItemArr: AccountList = [];
 
     const fetchAccountData = async () => {
+      const { migratableAccounts } = await getMigratableAccounts();
+
       // eslint-disable-next-line no-plusplus
-      for (let i = 0; i < accountList.length; i++) {
-        const publicKey = accountList[i].publicKey;
+      for (let i = 0; i < migratableAccounts.length; i++) {
+        const publicKey = migratableAccounts[i].publicKey;
+
         // eslint-disable-next-line no-await-in-loop
-        const res = await getAccountBalances({ publicKey, networkDetails });
-        console.log(res);
+        const { account, isSigner } = await getAccountInfo({
+          publicKey,
+          networkDetails,
+        });
+
+        const DEFAULT_ACCT_ITEM = {
+          publicKey,
+          name: migratableAccounts[i].name,
+          trustlines: 0,
+          dataEntries: 0,
+          xlmBalance: "",
+          isSigner,
+          minBalance: "",
+        };
+
+        let acctItem = {
+          ...DEFAULT_ACCT_ITEM,
+        };
+
+        if (account) {
+          const minBalance = new BigNumber(
+            (2 + account.subentry_count) * BASE_RESERVE,
+          ).toString();
+
+          acctItem = {
+            ...DEFAULT_ACCT_ITEM,
+            trustlines: account.balances.length - 1,
+            dataEntries: Object.keys(account.data_attr).length,
+            xlmBalance: account.balances[account.balances.length - 1].balance,
+            minBalance,
+          };
+        }
+
+        acctItemArr.push(acctItem);
       }
+
+      setAccountList(acctItemArr);
     };
 
     fetchAccountData();
-  }, [accountList, networkDetails]);
+  }, [networkDetails]);
+
+  const handleSubmit = (values: FormValues) => {
+    dispatch(saveIsMergeSelected(values.isMergeSelected));
+  };
+
+  const initialValues: FormValues = {
+    isMergeSelected: false,
+  };
+
+  const ReviewMigrationFormSchema = YupObject().shape({
+    isMergeSelected: YupBoolean(),
+  });
 
   return (
     <div className="ReviewMigration">
-      <div>
-        <Heading as="h1" size="md">
-          Review accounts to migrate
-        </Heading>
-        <Paragraph size="md">
-          Only accounts ready for migration will be migrated.
-        </Paragraph>
-      </div>
-      <div>
-        {accountList.map((acct) => (
-          <div>
-            <div>{acct.publicKey}</div>
-            <div>{acct.name}</div>
-            <div>{acct.trustlines} trustlines</div>
-            <div>{acct.dataEntries} data entries</div>
-          </div>
-        ))}
-      </div>
-      <div className="ReviewMigration__button">
-        <Button size="md" variant="secondary">
-          Continue
-        </Button>
-      </div>
+      <header className="ReviewMigration__header">
+        <MigrationHeader>{t("Review accounts to migrate")}</MigrationHeader>
+        <MigrationParagraph>
+          {t("Only accounts ready for migration will be migrated.")}
+        </MigrationParagraph>
+      </header>
+      {accountList.length ? (
+        <AccountListItems accountList={accountList} />
+      ) : (
+        <div className="ReviewMigration__loader">
+          <Loader />
+        </div>
+      )}
+      <Formik
+        onSubmit={handleSubmit}
+        initialValues={initialValues}
+        validationSchema={ReviewMigrationFormSchema}
+      >
+        {({ isSubmitting }) => (
+          <Form className="NetworkForm__form">
+            <div className="ReviewMigration__option">
+              <Field name="isMergeSelected">
+                {({ field }: FieldProps) => (
+                  <Checkbox
+                    fieldSize="md"
+                    autoComplete="off"
+                    id="isMergeSelected-input"
+                    label={
+                      <div>
+                        <span className="ReviewMigration__highlight">
+                          {t("Optional")}:{" "}
+                        </span>
+                        {t(
+                          "Merge accounts after migrating (you funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
+                        )}
+                      </div>
+                    }
+                    {...field}
+                  />
+                )}
+              </Field>
+            </div>
+            <div className="ReviewMigration__button">
+              <Button
+                size="md"
+                variant="secondary"
+                isLoading={isSubmitting}
+                type="submit"
+              >
+                {t("Continue")}
+              </Button>
+            </div>
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 };

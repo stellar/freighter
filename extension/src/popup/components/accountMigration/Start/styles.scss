@@ -10,8 +10,8 @@
   &__body {
     margin-bottom: 2rem;
 
-    .MigrationParagraph {
-      color: var(--color-gray-70);
+    &--warning {
+      margin-bottom: 1.5rem;
     }
   }
 }

@@ -396,6 +396,7 @@ interface TransactionData {
   path: Array<string>;
   allowedSlippage: string;
   isToken: boolean;
+  isMergeSelected: boolean;
 }
 
 interface HardwareWalletData {
@@ -455,6 +456,7 @@ export const initialState: InitialState = {
     path: [],
     allowedSlippage: "1",
     isToken: false,
+    isMergeSelected: false,
   },
   transactionSimulation: {
     response: null,
@@ -548,6 +550,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAssetSelectSource: (state, action) => {
       state.assetSelect.isSource = action.payload;
+    },
+    saveIsMergeSelected: (state, action) => {
+      state.transactionData.isMergeSelected = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -679,6 +684,7 @@ export const {
   closeHwOverlay,
   saveAssetSelectType,
   saveAssetSelectSource,
+  saveIsMergeSelected,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 

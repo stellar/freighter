@@ -71,6 +71,7 @@ export interface Response {
   isAllowed: boolean;
   userInfo: UserInfo;
   allowList: string[];
+  migratableAccounts: Account[];
 }
 
 export interface BlockedDomains {
