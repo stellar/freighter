@@ -1,6 +1,6 @@
+import { Store } from "redux";
+import { Keypair, Transaction, TransactionBuilder, hash } from "stellar-sdk";
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
-import * as StellarSdk from "stellar-sdk";
-import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
@@ -60,7 +60,6 @@ import {
   getNetworksList,
   HW_PREFIX,
   getBipPath,
-  getIsSorobanSupported,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -89,14 +88,11 @@ import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
-import { Store } from "redux";
 
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Array<
-  StellarSdk.Transaction | SorobanSdk.Transaction
-> = [];
+export const transactionQueue: Array<Transaction> = [];
 export const blobQueue: Array<{
   isDomainListedAllowed: boolean;
   domain: string;
@@ -398,7 +394,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     try {
       await _unlockKeystore({ keyID, password });
-      sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      sourceKeys = Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
       return { error: "Please enter a valid secret key/password combination" };
@@ -903,13 +899,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signTransaction = async () => {
+  const signTransaction = () => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const isSorobanSupported = await getIsSorobanSupported();
-      const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
-      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
 
       let response;
 
@@ -940,7 +934,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
 
       const blob = blobQueue.pop();
       const response = blob
@@ -962,13 +956,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? await sourceKeys.sign(
-            SorobanSdk.hash(Buffer.from(authEntry.entry, "base64")),
-          )
+        ? await sourceKeys.sign(hash(Buffer.from(authEntry.entry, "base64")))
         : null;
 
       const entryResponse = responseQueue.pop();
@@ -990,15 +982,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
   };
 
-  const signFreighterTransaction = async () => {
+  const signFreighterTransaction = () => {
     const { transactionXDR, network } = request;
-    const isSorobanSupported = await getIsSorobanSupported();
-    const SDK = isSorobanSupported ? SorobanSdk : StellarSdk;
-    const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
+    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -1009,14 +999,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const signFreighterSorobanTransaction = () => {
     const { transactionXDR, network } = request;
 
-    const transaction = SorobanSdk.TransactionBuilder.fromXDR(
-      transactionXDR,
-      network,
-    );
+    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }

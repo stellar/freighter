@@ -63,6 +63,7 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
 import { PinExtension } from "popup/views/PinExtension";
+import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 
 import "popup/metrics/views";
@@ -305,6 +306,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.about}>
           <About />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.leaveFeedback}>
+          <LeaveFeedback />
         </PublicKeyRoute>
         <UnlockAccountRoute path={ROUTES.unlockAccount}>
           <UnlockAccount />

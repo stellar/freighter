@@ -4,7 +4,7 @@ import {
   createSlice,
 } from "@reduxjs/toolkit";
 import * as Sentry from "@sentry/browser";
-import { Networks } from "soroban-client";
+import { Networks } from "stellar-sdk";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {

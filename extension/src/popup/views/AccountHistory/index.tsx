@@ -2,8 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
-import { Horizon } from "stellar-sdk";
-import { Networks } from "soroban-client";
+import { Horizon, Networks } from "stellar-sdk";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
@@ -121,7 +120,8 @@ export const AccountHistory = () => {
           SorobanTokenInterface.transfer;
         const isSwap = getIsSwap(operation);
         const isCreateExternalAccount =
-          operation.type === Horizon.OperationResponseType.createAccount &&
+          operation.type ===
+            Horizon.HorizonApi.OperationResponseType.createAccount &&
           operation.account !== publicKey;
         const historyOperation = {
           ...operation,

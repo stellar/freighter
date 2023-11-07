@@ -1,5 +1,4 @@
 import React, { useContext, useState, useEffect } from "react";
-
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -7,9 +6,9 @@ import {
   Asset,
   Memo,
   Operation,
+  SorobanRpc,
   TransactionBuilder,
 } from "stellar-sdk";
-import * as SorobanClient from "soroban-client";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -271,9 +270,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         throw new Error("Soroban RPC not supported for this network");
       }
 
-      const preparedTransaction = SorobanClient.assembleTransaction(
+      const preparedTransaction = SorobanRpc.assembleTransaction(
         transactionSimulation.raw!,
-        networkDetails.networkPassphrase,
         transactionSimulation.response!,
       );
 

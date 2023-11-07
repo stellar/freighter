@@ -1,3 +1,11 @@
+# Release notes - Wallets - Freighter-5.7.1
+
+### Story
+
+Remove serializable check in Redux
+
+Update SDS to stable build \(v1.0.0\)
+
 # Release notes - Wallets - Freighter-5.7.0
 
 ### Bug

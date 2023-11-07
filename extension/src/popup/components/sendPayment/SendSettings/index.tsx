@@ -1,6 +1,6 @@
 import React, { useContext, useEffect } from "react";
-import * as SorobanClient from "soroban-client";
 import { useSelector, useDispatch } from "react-redux";
+import { Address, XdrLargeInt } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -98,9 +98,9 @@ export const SendSettings = ({
       );
 
       const params = [
-        new SorobanClient.Address(publicKey).toScVal(), // from
-        new SorobanClient.Address(destination).toScVal(), // to
-        new SorobanClient.XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
+        new Address(publicKey).toScVal(), // from
+        new Address(destination).toScVal(), // to
+        new XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
       ];
 
       const transaction = transfer(assetAddress, params, memo, builder);

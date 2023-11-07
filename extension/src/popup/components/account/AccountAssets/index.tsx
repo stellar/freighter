@@ -167,7 +167,7 @@ export const AccountAssets = ({
     }
   };
 
-  const getLPShareCode = (reserves: Horizon.Reserve[]) => {
+  const getLPShareCode = (reserves: Horizon.HorizonApi.Reserve[]) => {
     if (!reserves[0] || !reserves[1]) {
       return "";
     }

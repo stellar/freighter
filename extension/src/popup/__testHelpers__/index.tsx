@@ -1,6 +1,6 @@
 import React from "react";
 import { Provider } from "react-redux";
-import * as SorobanClient from "soroban-client";
+import { Account, BASE_FEE, SorobanRpc, TransactionBuilder } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { createMemoryHistory } from "history";
 import {
@@ -51,16 +51,13 @@ const MockSorobanProvider = ({
   children: React.ReactNode;
   pubKey: string;
 }) => {
-  const server = new SorobanClient.Server(
-    FUTURENET_NETWORK_DETAILS.networkUrl,
-    {
-      allowHttp: FUTURENET_NETWORK_DETAILS.networkUrl.startsWith("http://"),
-    },
-  );
+  const server = new SorobanRpc.Server(FUTURENET_NETWORK_DETAILS.networkUrl, {
+    allowHttp: FUTURENET_NETWORK_DETAILS.networkUrl.startsWith("http://"),
+  });
 
-  const newTxBuilder = async (fee = SorobanClient.BASE_FEE) => {
-    const sourceAccount = new SorobanClient.Account(pubKey, "0");
-    return new SorobanClient.TransactionBuilder(sourceAccount, {
+  const newTxBuilder = async (fee = BASE_FEE) => {
+    const sourceAccount = new Account(pubKey, "0");
+    return new TransactionBuilder(sourceAccount, {
       fee,
       networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
     });
