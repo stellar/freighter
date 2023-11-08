@@ -32,6 +32,8 @@ import { stellarSdkServer } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
 
+export const INDEXER_URL = "http://localhost:3002/api/v1";
+
 export const SendTxStatus: {
   [index: string]: SorobanClient.SorobanRpc.SendTransactionStatus;
 } = {
@@ -304,6 +306,44 @@ export const confirmPassword = async (
   return response;
 };
 
+export const getAccountBalancesINDEXER = async (
+  pubKey: string,
+  network: NETWORKS,
+) => {
+  try {
+    const contractIds = await getTokenIds(network);
+    const url = new URL(`${INDEXER_URL}/account-balances/${pubKey}`);
+    for (const id of contractIds) {
+      url.searchParams.append("contract_ids", id);
+    }
+    const response = await fetch(url.href);
+    const json = (await response.json()) as Balances;
+    console.log(json);
+    const balances = json.map((balance: any) => {
+      const totalScVal = SorobanClient.xdr.ScVal.fromXDR(
+        Buffer.from(balance.valueXdr, "base64"),
+      );
+      return {
+        ...balance,
+        total: SorobanClient.scValToNative(totalScVal),
+      };
+    });
+
+    return {
+      balances,
+      isFunded: true,
+      subentryCount: 0, // TODO: can we index this?
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      balances: {} as Balances,
+      isFunded: null,
+      subentryCount: 0,
+    };
+  }
+};
+
 export const getAccountBalances = async ({
   publicKey,
   networkDetails,
@@ -411,7 +451,7 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
+      const { token } = balanceValues[i] as any;
       if (token && "issuer" in token) {
         const {
           issuer: { key },
@@ -465,7 +505,7 @@ export const getAssetDomains = async ({
     const balanceValues = Object.values(balances);
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
+      const { token } = balanceValues[i] as any;
       if (token && "issuer" in token) {
         const {
           issuer: { key },
@@ -970,9 +1010,7 @@ export const addTokenId = async (
   return { tokenIdList };
 };
 
-export const getTokenIds = async (
-  network: SorobanClient.Networks,
-): Promise<string[]> => {
+export const getTokenIds = async (network: NETWORKS): Promise<string[]> => {
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_TOKEN_IDS,
     network,
@@ -985,7 +1023,7 @@ export const removeTokenId = async ({
   network,
 }: {
   contractId: string;
-  network: SorobanClient.Networks;
+  network: NETWORKS;
 }): Promise<string[]> => {
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.REMOVE_TOKEN_ID,

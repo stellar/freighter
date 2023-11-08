@@ -10,7 +10,6 @@ import {
 import {
   Memo,
   MemoType,
-  Networks,
   Operation,
   SorobanRpc,
   Transaction,
@@ -25,6 +24,7 @@ import {
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
+  getAccountBalancesINDEXER as internalgetAccountBalancesINDEXER,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
@@ -43,7 +43,7 @@ import {
   BlockedAccount,
 } from "@shared/api/types";
 
-import { NetworkDetails } from "@shared/constants/stellar";
+import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
@@ -152,7 +152,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         await thunkApi.dispatch(
           getTokenBalances({
             sorobanClient,
-            network: networkDetails.network as Networks,
+            network: networkDetails.network as NETWORKS,
           }),
         );
       }
@@ -272,6 +272,23 @@ export const getAccountBalances = createAsyncThunk<
 >("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
     const res = await internalGetAccountBalances({ publicKey, networkDetails });
+    storeBalanceMetricData(publicKey, res.isFunded || false);
+    return res;
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
+
+export const getAccountBalancesINDEXER = createAsyncThunk<
+  AccountBalancesInterface,
+  { publicKey: string; networkDetails: NetworkDetails },
+  { rejectValue: ErrorMessage }
+>("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    const res = await internalgetAccountBalancesINDEXER(
+      publicKey,
+      networkDetails.network as NETWORKS,
+    );
     storeBalanceMetricData(publicKey, res.isFunded || false);
     return res;
   } catch (e) {
@@ -601,13 +618,23 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     });
-    builder.addCase(getAccountBalances.pending, (state) => {
+    // builder.addCase(getAccountBalances.pending, (state) => {
+    //   state.accountBalanceStatus = ActionStatus.PENDING;
+    // });
+    // builder.addCase(getAccountBalances.rejected, (state) => {
+    //   state.accountBalanceStatus = ActionStatus.ERROR;
+    // });
+    // builder.addCase(getAccountBalances.fulfilled, (state, action) => {
+    //   state.accountBalances = action.payload;
+    //   state.accountBalanceStatus = ActionStatus.SUCCESS;
+    // });
+    builder.addCase(getAccountBalancesINDEXER.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
     });
-    builder.addCase(getAccountBalances.rejected, (state) => {
+    builder.addCase(getAccountBalancesINDEXER.rejected, (state) => {
       state.accountBalanceStatus = ActionStatus.ERROR;
     });
-    builder.addCase(getAccountBalances.fulfilled, (state, action) => {
+    builder.addCase(getAccountBalancesINDEXER.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
       state.accountBalanceStatus = ActionStatus.SUCCESS;
     });

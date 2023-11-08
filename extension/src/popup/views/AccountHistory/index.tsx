@@ -3,11 +3,11 @@ import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
-import { Networks } from "soroban-client";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import { NETWORKS } from "@shared/constants/stellar";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -159,7 +159,7 @@ export const AccountHistory = () => {
           dispatch(
             getTokenBalances({
               sorobanClient,
-              network: networkDetails.network as Networks,
+              network: networkDetails.network as NETWORKS,
             }),
           );
         }

@@ -1,4 +1,4 @@
-import { Address, Networks } from "soroban-client";
+import { Address } from "soroban-client";
 import BigNumber from "bignumber.js";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -13,10 +13,11 @@ import {
   SorobanContextInterface,
   hasSorobanClient,
 } from "popup/SorobanContext";
+import { NETWORKS } from "@shared/constants/stellar";
 
 export const getTokenBalances = createAsyncThunk<
   { tokenBalances: TokenBalances; tokensWithNoBalance: string[] },
-  { sorobanClient: SorobanContextInterface; network: Networks },
+  { sorobanClient: SorobanContextInterface; network: NETWORKS },
   { rejectValue: ErrorMessage }
 >("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
   if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
@@ -83,7 +84,7 @@ export const removeTokenId = createAsyncThunk<
   void,
   {
     contractId: string;
-    network: Networks;
+    network: NETWORKS;
     sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }

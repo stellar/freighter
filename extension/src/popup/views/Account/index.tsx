@@ -2,27 +2,20 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Networks } from "soroban-client";
 
 import { getAccountHistory } from "@shared/api/internal";
-import {
-  AssetType,
-  AccountBalancesInterface,
-  ActionStatus,
-} from "@shared/api/types";
+import { AccountBalancesInterface, ActionStatus } from "@shared/api/types";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import {
-  getAccountBalances,
+  // getAccountBalances,
+  getAccountBalancesINDEXER,
   getAssetIcons,
   getAssetDomains,
   transactionSubmissionSelector,
@@ -32,17 +25,8 @@ import {
   AssetSelectType,
   getBlockedDomains,
 } from "popup/ducks/transactionSubmission";
-import {
-  sorobanSelector,
-  getTokenBalances,
-  resetSorobanTokensStatus,
-} from "popup/ducks/soroban";
 import { ROUTES } from "popup/constants/routes";
-import {
-  AssetOperations,
-  sortBalances,
-  sortOperationsByAsset,
-} from "popup/helpers/account";
+import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
@@ -68,20 +52,15 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const { tokenBalances, getTokenBalancesStatus } = useSelector(
-    sorobanSelector,
-  );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
-
-  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
+  // const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 
@@ -96,30 +75,18 @@ export const Account = () => {
     // previous stale sends
     dispatch(resetSubmission());
     dispatch(
-      getAccountBalances({
+      getAccountBalancesINDEXER({
         publicKey,
         networkDetails,
       }),
     );
     dispatch(getBlockedDomains());
-    if (isSorobanSuported) {
-      dispatch(
-        getTokenBalances({
-          sorobanClient,
-          network: networkDetails.network as Networks,
-        }),
-      );
-    }
 
     return () => {
       dispatch(resetAccountBalanceStatus());
-      if (isSorobanSuported) {
-        dispatch(resetSorobanTokensStatus());
-      }
     };
   }, [
     sorobanClient,
-    isSorobanSuported,
     publicKey,
     networkDetails,
     isAccountFriendbotFunded,
@@ -129,27 +96,20 @@ export const Account = () => {
   useEffect(() => {
     if (!balances) return;
 
-    setSortedBalances(sortBalances(balances, tokenBalances));
-
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [
-    isSorobanSuported,
-    getTokenBalancesStatus,
-    tokenBalances,
-    balances,
-    networkDetails,
-    dispatch,
-  ]);
+  }, [balances, networkDetails, dispatch]);
 
   useEffect(() => {
+    if (!balances) return;
+
     const fetchAccountHistory = async () => {
       try {
         const res = await getAccountHistory({ publicKey, networkDetails });
         setAssetOperations(
           sortOperationsByAsset({
             operations: res.operations,
-            balances: sortedBalances,
+            balances,
             networkDetails,
             publicKey,
           }),
@@ -159,18 +119,15 @@ export const Account = () => {
       }
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails, sortedBalances]);
+  }, [publicKey, networkDetails, balances]);
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.IDLE ||
-    (isSorobanSuported &&
-      (getTokenBalancesStatus === ActionStatus.PENDING ||
-        getTokenBalancesStatus === ActionStatus.IDLE));
+    accountBalanceStatus === ActionStatus.IDLE;
 
   return selectedAsset ? (
     <AssetDetail
-      accountBalances={sortedBalances}
+      accountBalances={balances}
       assetOperations={assetOperations[selectedAsset]}
       networkDetails={networkDetails}
       publicKey={publicKey}
@@ -229,7 +186,7 @@ export const Account = () => {
           {isFunded ? (
             <SimpleBarWrapper className="AccountView__assets-wrapper">
               <AccountAssets
-                sortedBalances={sortedBalances}
+                sortedBalances={balances}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />

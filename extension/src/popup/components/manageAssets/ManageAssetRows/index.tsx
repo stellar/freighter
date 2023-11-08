@@ -5,7 +5,6 @@ import {
   Operation,
   StellarTomlResolver,
   TransactionBuilder,
-  Networks,
 } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -57,6 +56,7 @@ import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
+import { NETWORKS } from "@shared/constants/stellar";
 
 export type ManageAssetCurrency = StellarTomlResolver.Currency & {
   domain: string;
@@ -308,7 +308,7 @@ export const ManageAssetRows = ({
     await dispatch(
       removeTokenId({
         contractId,
-        network: networkDetails.network as Networks,
+        network: networkDetails.network as NETWORKS,
         sorobanClient,
       }),
     );
