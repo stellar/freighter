@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
-import { xdr, buildInvocationTree } from "soroban-client";
+import { xdr, buildInvocationTree } from "stellar-sdk";
 
 import {
   CLAIM_PREDICATES,

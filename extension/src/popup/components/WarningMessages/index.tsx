@@ -8,7 +8,7 @@ import {
   Account,
   Asset,
   Operation,
-  Server,
+  Horizon,
   TransactionBuilder,
 } from "stellar-sdk";
 
@@ -304,7 +304,7 @@ export const ScamAssetWarning = ({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const server = new Server(networkDetails.networkUrl);
+    const server = new Horizon.Server(networkDetails.networkUrl);
     const sourceAccount: Account = await server.loadAccount(publicKey);
     const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
@@ -492,7 +492,7 @@ export const NewAssetWarning = ({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const server = new Server(networkDetails.networkUrl);
+    const server = new Horizon.Server(networkDetails.networkUrl);
     const sourceAccount: Account = await server.loadAccount(publicKey);
     const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),

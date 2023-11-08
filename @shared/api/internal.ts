@@ -1,5 +1,11 @@
-import { TransactionBuilder } from "stellar-sdk";
-import * as SorobanClient from "soroban-client";
+import {
+  TransactionBuilder,
+  SorobanRpc,
+  Transaction,
+  FeeBumpTransaction,
+  xdr,
+  Networks,
+} from "stellar-sdk";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
   getBalance,
@@ -35,7 +41,7 @@ const TRANSACTIONS_LIMIT = 100;
 export const INDEXER_URL = "http://localhost:3002/api/v1";
 
 export const SendTxStatus: {
-  [index: string]: SorobanClient.SorobanRpc.SendTransactionStatus;
+  [index: string]: SorobanRpc.Api.SendTransactionStatus;
 } = {
   Pending: "PENDING",
   Duplicate: "DUPLICATE",
@@ -44,11 +50,11 @@ export const SendTxStatus: {
 };
 
 export const GetTxStatus: {
-  [index: string]: SorobanClient.SorobanRpc.GetTransactionStatus;
+  [index: string]: SorobanRpc.Api.GetTransactionStatus;
 } = {
-  Success: SorobanClient.SorobanRpc.GetTransactionStatus.SUCCESS,
-  NotFound: SorobanClient.SorobanRpc.GetTransactionStatus.NOT_FOUND,
-  Failed: SorobanClient.SorobanRpc.GetTransactionStatus.FAILED,
+  Success: SorobanRpc.Api.GetTransactionStatus.SUCCESS,
+  NotFound: SorobanRpc.Api.GetTransactionStatus.NOT_FOUND,
+  Failed: SorobanRpc.Api.GetTransactionStatus.FAILED,
 };
 
 export const createAccount = async (
@@ -353,20 +359,20 @@ export const getAccountBalances = async ({
 }): Promise<AccountBalancesInterface> => {
   const { networkUrl, networkPassphrase } = networkDetails;
 
-  const dataProvider = new DataProvider({
-    serverUrl: networkUrl,
-    accountOrKey: publicKey,
-    networkPassphrase,
-    metadata: {
-      allowHttp: networkUrl.startsWith("http://"),
-    },
-  });
-
   let balances: any = null;
   let isFunded = null;
   let subentryCount = 0;
 
   try {
+    const dataProvider = new DataProvider({
+      serverUrl: networkUrl,
+      accountOrKey: publicKey,
+      networkPassphrase,
+      metadata: {
+        allowHttp: networkUrl.startsWith("http://"),
+      },
+    });
+
     const resp = await dataProvider.fetchAccountDetails();
     balances = resp.balances;
     subentryCount = resp.subentryCount;
@@ -666,10 +672,10 @@ export const submitFreighterSorobanTransaction = async ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
-  let tx = {} as SorobanClient.Transaction | SorobanClient.FeeBumpTransaction;
+  let tx = {} as Transaction | FeeBumpTransaction;
 
   try {
-    tx = SorobanClient.TransactionBuilder.fromXDR(
+    tx = TransactionBuilder.fromXDR(
       signedXDR,
       networkDetails.networkPassphrase,
     );
@@ -690,14 +696,14 @@ export const submitFreighterSorobanTransaction = async ({
     ? SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!
     : networkDetails.sorobanRpcUrl;
 
-  const server = new SorobanClient.Server(serverUrl, {
+  const server = new SorobanRpc.Server(serverUrl, {
     allowHttp: !serverUrl.startsWith("https"),
   });
 
   let response = await server.sendTransaction(tx);
 
-  if (response.errorResultXdr) {
-    throw new Error(response.errorResultXdr);
+  if (response.errorResult) {
+    throw new Error(response.errorResult.result().toString());
   }
 
   if (response.status === SendTxStatus.Pending) {
@@ -952,16 +958,16 @@ export const getBlockedAccounts = async () => {
 };
 
 export const getSorobanTokenBalance = async (
-  server: SorobanClient.Server,
+  server: SorobanRpc.Server,
   contractId: string,
   txBuilders: {
     // need a builder per operation, Soroban currently has single op transactions
-    balance: SorobanClient.TransactionBuilder;
-    name: SorobanClient.TransactionBuilder;
-    decimals: SorobanClient.TransactionBuilder;
-    symbol: SorobanClient.TransactionBuilder;
+    balance: TransactionBuilder;
+    name: TransactionBuilder;
+    decimals: TransactionBuilder;
+    symbol: TransactionBuilder;
   },
-  balanceParams: SorobanClient.xdr.ScVal[],
+  balanceParams: xdr.ScVal[],
 ) => {
   // Right now we can only have 1 operation per TX in Soroban
   // for now we need to do 4 tx simulations to show 1 user balance. :(
@@ -986,7 +992,7 @@ export const getSorobanTokenBalance = async (
 
 export const addTokenId = async (
   tokenId: string,
-  network: SorobanClient.Networks,
+  network: Networks,
 ): Promise<{
   tokenIdList: string[];
 }> => {

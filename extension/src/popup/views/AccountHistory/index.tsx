@@ -121,7 +121,8 @@ export const AccountHistory = () => {
           SorobanTokenInterface.transfer;
         const isSwap = getIsSwap(operation);
         const isCreateExternalAccount =
-          operation.type === Horizon.OperationResponseType.createAccount &&
+          operation.type ===
+            Horizon.HorizonApi.OperationResponseType.createAccount &&
           operation.account !== publicKey;
         const historyOperation = {
           ...operation,

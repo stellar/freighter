@@ -1,4 +1,4 @@
-import { xdr, Address, ScInt, scValToBigInt } from "soroban-client";
+import { Address, scValToBigInt, xdr, ScInt } from "stellar-sdk";
 
 export const accountIdentifier = (account: string) =>
   new Address(account).toScVal();

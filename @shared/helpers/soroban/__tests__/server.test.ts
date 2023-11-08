@@ -2,11 +2,11 @@ import {
   Memo,
   MemoType,
   Operation,
-  Server,
+  SorobanRpc,
   nativeToScVal,
   Transaction,
   TransactionBuilder,
-} from "soroban-client";
+} from "stellar-sdk";
 import { simulateTx } from "../server";
 
 export const FUTURENET_DETAILS = {
@@ -34,7 +34,7 @@ describe("Soroban Helpers - ", () => {
     );
     const mockServer = ({
       simulateTransaction: mockSim,
-    } as any) as Server;
+    } as any) as SorobanRpc.Server;
 
     test("should take tx/server and return a native type according to the generic type argument", async () => {
       const result = await simulateTx<bigint>(testTx, mockServer);
