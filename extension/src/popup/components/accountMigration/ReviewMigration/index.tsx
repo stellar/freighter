@@ -221,7 +221,7 @@ export const ReviewMigration = () => {
                           {t("Optional")}:{" "}
                         </span>
                         {t(
-                          "Merge accounts after migrating (you funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
+                          "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
                         )}
                       </div>
                     }
