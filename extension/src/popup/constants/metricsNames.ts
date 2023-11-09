@@ -41,6 +41,12 @@ export const METRIC_NAMES = {
   sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
   sendPaymentConfirm: "loaded screen: send payment confirm",
 
+  viewAccountMigration: "loaded screen: account migration",
+  viewAccountMigrationReviewMigration:
+    "loaded screen: account migration review migration",
+  viewAccountMigrationMnemonicPhrase:
+    "loaded screen: account migration mnemonic phrase",
+
   sendPaymentRecentAddress: "send payment: recent address",
   sendPaymentSetMax: "send payment: set max",
   sendPaymentTypePayment: "send payment: selected type payment",

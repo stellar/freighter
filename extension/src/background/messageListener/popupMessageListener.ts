@@ -78,6 +78,8 @@ import {
   publicKeySelector,
   setActivePublicKey,
   setActivePrivateKey,
+  setPassword,
+  setMigratedMnemonicPhrase,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
   reset,
@@ -845,6 +847,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
     }
 
+    sessionStore.dispatch(setPassword({ password }));
+
     return {
       publicKey: publicKeySelector(sessionStore.getState()),
       hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),
@@ -1264,6 +1268,39 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { tokenIdList: updatedTokenIdList };
   };
 
+  const getMigratableAccounts = async () => {
+    const keyIdList = await getKeyIdList();
+
+    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
+    const allAccounts = allAccountsSelector(sessionStore.getState());
+    const wallet = fromMnemonic(mnemonicPhrase);
+
+    const mnemonicPublicKeyArr: string[] = [];
+
+    for (let i = 0; i < keyIdList.length; i += 1) {
+      mnemonicPublicKeyArr.push(wallet.getPublicKey(i));
+    }
+
+    // only use accounts that were derived from the mnemonic phrase
+    const migratableAccounts = allAccounts.filter((acct) =>
+      mnemonicPublicKeyArr.includes(acct.publicKey),
+    );
+
+    return {
+      migratableAccounts,
+    };
+  };
+
+  const getMigratedMnemonicPhrase = () => {
+    const migratedMnemonicPhrase = generateMnemonic({ entropyBits: 128 });
+
+    sessionStore.dispatch(
+      setMigratedMnemonicPhrase({ migratedMnemonicPhrase }),
+    );
+
+    return { mnemonicPhrase: migratedMnemonicPhrase };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1307,6 +1344,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
     [SERVICE_TYPES.REMOVE_TOKEN_ID]: removeTokenId,
     [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
+    [SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS]: getMigratableAccounts,
+    [SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE]: getMigratedMnemonicPhrase,
   };
 
   return messageResponder[request.type]();

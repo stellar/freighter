@@ -1,4 +1,5 @@
 import {
+  Horizon,
   TransactionBuilder,
   SorobanRpc,
   Transaction,
@@ -228,6 +229,21 @@ export const getMnemonicPhrase = async (): Promise<{
   return response;
 };
 
+export const getMigratedMnemonicPhrase = async (): Promise<{
+  mnemonicPhrase: string;
+}> => {
+  let response = { mnemonicPhrase: "" };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
 export const confirmMnemonicPhrase = async (
   mnemonicPhraseToConfirm: string,
 ): Promise<{
@@ -310,6 +326,47 @@ export const confirmPassword = async (
   return response;
 };
 
+export const getAccountInfo = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const { networkUrl } = networkDetails;
+
+  const server = new Horizon.Server(networkUrl);
+
+  let account;
+  let signerArr = { records: [] as Horizon.ServerApi.AccountRecord[] };
+
+  try {
+    account = await server.loadAccount(publicKey);
+    signerArr = await server.accounts().forSigner(publicKey).call();
+  } catch (e) {
+    console.error(e);
+  }
+
+  return {
+    account,
+    isSigner: signerArr.records.length > 1,
+  };
+};
+
+export const getMigratableAccounts = async () => {
+  let migratableAccounts: Account[] = [];
+
+  try {
+    ({ migratableAccounts } = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { migratableAccounts };
+};
+
 export const getAccountBalances = async ({
   publicKey,
   networkDetails,
@@ -337,11 +394,13 @@ export const getAccountBalances = async ({
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 
+    // eslint-disable-next-line no-plusplus
     for (let i = 0; i < Object.keys(resp.balances).length; i++) {
       const k = Object.keys(resp.balances)[i];
       const v: any = resp.balances[k];
       if (v.liquidity_pool_id) {
         const server = stellarSdkServer(networkUrl);
+        // eslint-disable-next-line no-await-in-loop
         const lp = await server
           .liquidityPools()
           .liquidityPoolId(v.liquidity_pool_id)

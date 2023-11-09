@@ -113,7 +113,7 @@ export const ConfirmMnemonicPhrase = ({
                   size="md"
                   data-testid="display-mnemonic-phrase-confirm-btn"
                   isFullWidth
-                  variant="primary"
+                  variant="secondary"
                   type="submit"
                   disabled={!dirty && !!joinSelectedWords().length}
                   isLoading={isSubmitting}

@@ -53,4 +53,7 @@ export enum ROUTES {
   addNetwork = "/manage-network/add-network",
   editNetwork = "/manage-network/edit-network",
   networkSettings = "/manage-network/network-settings",
+  accountMigration = "/account-migration",
+  accountMigrationReviewMigration = "/account-migration/review-migration",
+  accountMigrationMnemonicPhrase = "/account-migration/mnemonic-phrase",
 }

@@ -64,6 +64,11 @@ const routeToEventName = {
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
   [ROUTES.leaveFeedback]: METRIC_NAMES.viewLeaveFeedback,
+  [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
+  [ROUTES.accountMigrationReviewMigration]:
+    METRIC_NAMES.viewAccountMigrationReviewMigration,
+  [ROUTES.accountMigrationMnemonicPhrase]:
+    METRIC_NAMES.viewAccountMigrationMnemonicPhrase,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {
