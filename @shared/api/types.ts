@@ -146,7 +146,7 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
-export type Balances = any; //Types.BalanceMap | null;
+export type Balances = Types.BalanceMap | null;
 
 export interface SorobanBalance {
   contractId: string;

@@ -4,7 +4,11 @@ import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { AccountBalancesInterface, ActionStatus } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  ActionStatus,
+  AssetType,
+} from "@shared/api/types";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -26,7 +30,11 @@ import {
   getBlockedDomains,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
-import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
+import {
+  AssetOperations,
+  sortBalances,
+  sortOperationsByAsset,
+} from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
@@ -60,7 +68,7 @@ export const Account = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  // const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
+  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 
@@ -96,6 +104,7 @@ export const Account = () => {
   useEffect(() => {
     if (!balances) return;
 
+    setSortedBalances(sortBalances(balances));
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
   }, [balances, networkDetails, dispatch]);
@@ -109,7 +118,7 @@ export const Account = () => {
         setAssetOperations(
           sortOperationsByAsset({
             operations: res.operations,
-            balances,
+            balances: sortedBalances,
             networkDetails,
             publicKey,
           }),
@@ -119,7 +128,7 @@ export const Account = () => {
       }
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails, balances]);
+  }, [publicKey, networkDetails, balances, sortedBalances]);
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
@@ -127,7 +136,7 @@ export const Account = () => {
 
   return selectedAsset ? (
     <AssetDetail
-      accountBalances={balances}
+      accountBalances={sortedBalances}
       assetOperations={assetOperations[selectedAsset]}
       networkDetails={networkDetails}
       publicKey={publicKey}
@@ -186,7 +195,7 @@ export const Account = () => {
           {isFunded ? (
             <SimpleBarWrapper className="AccountView__assets-wrapper">
               <AccountAssets
-                sortedBalances={balances}
+                sortedBalances={sortedBalances}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />

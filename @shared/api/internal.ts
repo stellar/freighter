@@ -5,6 +5,7 @@ import {
   FeeBumpTransaction,
   xdr,
   Networks,
+  scValToNative,
 } from "stellar-sdk";
 import { DataProvider } from "@stellar/wallet-sdk";
 import {
@@ -35,6 +36,8 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
+import BigNumber from "bignumber.js";
+import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -312,10 +315,21 @@ export const confirmPassword = async (
   return response;
 };
 
+type BalancesResponse = {
+  contractId?: string;
+  issuer?: {
+    key: string;
+  };
+  decimals: number;
+  name: string;
+  symbol: string;
+  valueXdr: string;
+}[];
+
 export const getAccountBalancesINDEXER = async (
   pubKey: string,
   network: NETWORKS,
-) => {
+): Promise<AccountBalancesInterface> => {
   try {
     const contractIds = await getTokenIds(network);
     const url = new URL(`${INDEXER_URL}/account-balances/${pubKey}`);
@@ -323,27 +337,59 @@ export const getAccountBalancesINDEXER = async (
       url.searchParams.append("contract_ids", id);
     }
     const response = await fetch(url.href);
-    const json = (await response.json()) as Balances;
-    console.log(json);
-    const balances = json.map((balance: any) => {
-      const totalScVal = SorobanClient.xdr.ScVal.fromXDR(
+    const json = (await response.json()) as BalancesResponse;
+    const formattedBalances = json.map((balance) => {
+      const totalScVal = xdr.ScVal.fromXDR(
         Buffer.from(balance.valueXdr, "base64"),
       );
       return {
         ...balance,
-        total: SorobanClient.scValToNative(totalScVal),
+        total: scValToNative(totalScVal),
       };
     });
+
+    const balances = formattedBalances.reduce((prev, curr) => {
+      if (curr.symbol === "XLM") {
+        prev["native"] = {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber(curr.total),
+          available: new BigNumber(curr.total), // TODO: how to get available for xlm?
+        } as NativeBalance;
+      }
+      if (curr.contractId) {
+        prev[`${curr.symbol}:${curr.contractId}`] = {
+          token: {
+            code: curr.symbol,
+            issuer: {
+              key: curr.contractId,
+            },
+          },
+          total: new BigNumber(curr.total),
+          available: new BigNumber(curr.total),
+        } as AssetBalance;
+      }
+      if (curr.issuer) {
+        prev[`${curr.symbol}:${curr.issuer.key}`] = {
+          token: {
+            code: curr.symbol,
+            issuer: curr.issuer,
+          },
+          total: new BigNumber(curr.total),
+          available: new BigNumber(curr.total),
+        } as AssetBalance;
+      }
+      return prev;
+    }, {} as NonNullable<AccountBalancesInterface["balances"]>);
 
     return {
       balances,
       isFunded: true,
-      subentryCount: 0, // TODO: can we index this?
+      subentryCount: 0, // TODO: Mercury will index this with account subs, and will add to query
     };
   } catch (error) {
     console.error(error);
     return {
-      balances: {} as Balances,
+      balances: {} as AccountBalancesInterface["balances"],
       isFunded: null,
       subentryCount: 0,
     };
@@ -457,7 +503,7 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i] as any;
+      const { token } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
           issuer: { key },
@@ -511,7 +557,7 @@ export const getAssetDomains = async ({
     const balanceValues = Object.values(balances);
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i] as any;
+      const { token } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
           issuer: { key },
