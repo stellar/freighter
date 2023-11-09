@@ -1,3 +1,15 @@
+# Release notes - Wallets - Freighter-5.8.0
+
+### Bug
+
+Send Settings view warns about React keys because of SDS Tooltip
+
+### Story
+
+Direct users to discord and GH to leave feedback
+
+Remove split between soroban-client and js-stellar-sdk
+
 # Release notes - Wallets - Freighter-5.7.1
 
 ### Story
