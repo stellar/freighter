@@ -5,6 +5,7 @@ import {
   Balances,
   HorizonOperation,
   SorobanBalance,
+  TokenBalances,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -18,7 +19,10 @@ import { getAttrsFromSorobanHorizonOp } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 
-export const sortBalances = (balances: Balances) => {
+export const sortBalances = (
+  balances: Balances,
+  sortBalances?: TokenBalances,
+) => {
   const collection = [] as Array<any>;
   const lpBalances = [] as Array<any>;
   if (!balances) return collection;
@@ -33,7 +37,7 @@ export const sortBalances = (balances: Balances) => {
       collection.push(v);
     }
   });
-  return collection.concat(lpBalances);
+  return collection.concat(sortBalances).concat(lpBalances);
 };
 
 export const getIsPayment = (type: Horizon.HorizonApi.OperationResponseType) =>

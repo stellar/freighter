@@ -60,6 +60,7 @@ import {
   getNetworksList,
   HW_PREFIX,
   getBipPath,
+  subscribeAccount,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -828,6 +829,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
 
+      await subscribeAccount(hwPublicKey || activePublicKey);
       sessionStore.dispatch(
         logIn({
           publicKey: hwPublicKey || activePublicKey,

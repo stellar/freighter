@@ -9,6 +9,7 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
+  HAS_ACCOUNT_SUBSCRIPTION,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
@@ -17,6 +18,8 @@ import {
   dataStorageAccess,
   browserLocalStorage,
 } from "background/helpers/dataStorage";
+
+export const INDEXER_URL = "http://localhost:3002/api/v1";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -127,4 +130,29 @@ export const getNetworksList = async () => {
 export const getIsSorobanSupported = async () => {
   const networkDetails = await getNetworkDetails();
   return !!networkDetails.sorobanRpcUrl;
+};
+
+export const subscribeAccount = async (publicKey: string) => {
+  // if pub key already has a subscription setup, skip this
+  const hasAccountSub = await localStore.getItem(KEY_ID);
+  if (hasAccountSub) {
+    return { publicKey };
+  }
+
+  try {
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pub_key: publicKey }),
+    };
+    await fetch(`${INDEXER_URL}/subscription/account`, options);
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, true);
+  } catch (e) {
+    console.error(e);
+    throw new Error("Error subscribing account");
+  }
+
+  return { publicKey };
 };
