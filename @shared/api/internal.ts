@@ -14,6 +14,7 @@ import {
   getName,
   getSymbol,
 } from "@shared/helpers/soroban/token";
+import { INDEXER_URLS } from "@shared/constants/mercury";
 import {
   Account,
   AccountBalancesInterface,
@@ -40,8 +41,6 @@ import BigNumber from "bignumber.js";
 import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
 
 const TRANSACTIONS_LIMIT = 100;
-
-export const INDEXER_URL = "http://localhost:3002/api/v1";
 
 export const SendTxStatus: {
   [index: string]: SorobanRpc.Api.SendTransactionStatus;
@@ -331,8 +330,12 @@ export const getAccountBalancesINDEXER = async (
   network: NETWORKS,
 ): Promise<AccountBalancesInterface> => {
   try {
+    const indexerUrl = INDEXER_URLS[network];
+    if (!indexerUrl) {
+      throw new Error("Indexer URL not found");
+    }
     const contractIds = await getTokenIds(network);
-    const url = new URL(`${INDEXER_URL}/account-balances/${pubKey}`);
+    const url = new URL(`${indexerUrl}/account-balances/${pubKey}`);
     for (const id of contractIds) {
       url.searchParams.append("contract_ids", id);
     }
