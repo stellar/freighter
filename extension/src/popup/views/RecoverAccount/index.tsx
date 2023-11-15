@@ -5,10 +5,15 @@ import { object as YupObject } from "yup";
 import { Input, Checkbox, Icon, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Onboarding } from "popup/components/Onboarding";
-import { FormError, FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { Header } from "popup/components/Header";
+import {
+  Onboarding,
+  OnboardingButtons,
+  OnboardingHeader,
+  OnboardingOneCol,
+  OnboardingTwoCol,
+} from "popup/components/Onboarding";
+import { FormError, FormRows } from "popup/basics/Forms";
+import { View } from "popup/basics/layout/View";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 import { ROUTES } from "popup/constants/routes";
@@ -132,68 +137,74 @@ export const RecoverAccount = () => {
   };
 
   return (
-    <>
-      <Header />
-      <FullscreenStyle />
-      <Onboarding hasGoBackBtn>
+    <View isAppLayout={false}>
+      <View.Header />
+      <View.Content alignment="center">
         <Formik
           initialValues={initialValues}
           validationSchema={RecoverAccountSchema}
           onSubmit={handleSubmit}
         >
           {({ dirty, touched, isSubmitting, isValid, errors }) => (
-            <Form>
-              <div className="RecoverAccount__screen">
-                <div className="RecoverAccount__half-screen">
-                  <div className="RecoverAccount__header">
+            <Onboarding layout="full">
+              <Form>
+                <OnboardingOneCol>
+                  <OnboardingHeader>
                     {t("Import wallet from recovery phrase")}
-                  </div>
+                  </OnboardingHeader>
                   <div className="RecoverAccount__subheader">
                     {t("Enter your 12 word phrase to restore your wallet")}
                   </div>
-                  <div className="RecoverAccount__mnemonic-input">
-                    {phraseInputs.map((phraseInput, i) => (
-                      <PhraseInput
-                        key={phraseInput}
-                        phraseInput={phraseInput}
-                        handleMnemonicInputChange={handleMnemonicInputChange}
-                        index={i}
+                </OnboardingOneCol>
+
+                <OnboardingTwoCol>
+                  <OnboardingOneCol>
+                    <div className="RecoverAccount__mnemonic-input">
+                      {phraseInputs.map((phraseInput, i) => (
+                        <PhraseInput
+                          key={phraseInput}
+                          phraseInput={phraseInput}
+                          handleMnemonicInputChange={handleMnemonicInputChange}
+                          index={i}
+                        />
+                      ))}
+                    </div>
+                    {authError ? <FormError>{authError}</FormError> : <></>}
+                  </OnboardingOneCol>
+
+                  <OnboardingOneCol>
+                    <FormRows>
+                      <Input
+                        fieldSize="md"
+                        autoComplete="off"
+                        customInput={<Field />}
+                        id="password-input"
+                        name="password"
+                        placeholder={t("New password")}
+                        type="password"
+                        error={
+                          errors.password && touched.password
+                            ? errors.password
+                            : ""
+                        }
                       />
-                    ))}
-                  </div>
-                  <FormError>{authError}</FormError>
-                </div>
-                <div className="RecoverAccount__half-screen">
-                  <FormRows>
-                    <Input
-                      fieldSize="md"
-                      autoComplete="off"
-                      customInput={<Field />}
-                      id="password-input"
-                      name="password"
-                      placeholder={t("New password")}
-                      type="password"
-                      error={
-                        errors.password && touched.password
-                          ? errors.password
-                          : ""
-                      }
-                    />
-                    <Input
-                      fieldSize="md"
-                      autoComplete="off"
-                      customInput={<Field />}
-                      id="confirm-password-input"
-                      name="confirmPassword"
-                      placeholder={t("Confirm password")}
-                      type="password"
-                      error={
-                        errors.confirmPassword && touched.confirmPassword
-                          ? errors.confirmPassword
-                          : null
-                      }
-                    />
-                    <PasswordRequirements />
+                      <Input
+                        fieldSize="md"
+                        autoComplete="off"
+                        customInput={<Field />}
+                        id="confirm-password-input"
+                        name="confirmPassword"
+                        placeholder={t("Confirm password")}
+                        type="password"
+                        error={
+                          errors.confirmPassword && touched.confirmPassword
+                            ? errors.confirmPassword
+                            : null
+                        }
+                      />
+                      <PasswordRequirements />
+                    </FormRows>
+
                     <Field name="termsOfUse">
                       {({ field }: FieldProps) => (
                         <Checkbox
@@ -220,30 +231,30 @@ export const RecoverAccount = () => {
                         />
                       )}
                     </Field>
-                  </FormRows>
-                  <SubmitButtonWrapper>
-                    <Button
-                      size="md"
-                      isFullWidth
-                      variant="primary"
-                      isLoading={isSubmitting}
-                      disabled={
-                        !(
-                          dirty &&
-                          isValid &&
-                          buildMnemonicPhrase(mnemonicPhraseArr).length
-                        )
-                      }
-                    >
-                      {t("Import")}
-                    </Button>
-                  </SubmitButtonWrapper>
-                </div>
-              </div>
-            </Form>
+
+                    <OnboardingButtons hasGoBackBtn>
+                      <Button
+                        size="md"
+                        variant="tertiary"
+                        isLoading={isSubmitting}
+                        disabled={
+                          !(
+                            dirty &&
+                            isValid &&
+                            buildMnemonicPhrase(mnemonicPhraseArr).length
+                          )
+                        }
+                      >
+                        {t("Import")}
+                      </Button>
+                    </OnboardingButtons>
+                  </OnboardingOneCol>
+                </OnboardingTwoCol>
+              </Form>
+            </Onboarding>
           )}
         </Formik>
-      </Onboarding>
-    </>
+      </View.Content>
+    </View>
   );
 };

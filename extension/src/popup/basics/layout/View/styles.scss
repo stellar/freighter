@@ -1,0 +1,106 @@
+@use "../../../styles/utils.scss" as *;
+
+.View {
+  position: relative;
+  width: 100%;
+  min-width: pxToRem(420px);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  &__header {
+    --View-header-height: #{pxToRem(60px)};
+
+    min-height: var(--View-header-height);
+    flex-shrink: 0;
+    flex-grow: 0;
+
+    &--tall {
+      --View-header-height: #{pxToRem(80px)};
+    }
+
+    &--border {
+      border-bottom: 1px solid var(--color-gray-30);
+    }
+
+    &__logo {
+      width: pxToRem(100px);
+      height: pxToRem(24px);
+      display: block;
+    }
+
+    &__box {
+      display: flex;
+      align-items: center;
+      height: var(--View-header-height);
+      gap: 1rem;
+
+      &--left {
+        justify-content: flex-start;
+      }
+
+      &--center {
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      &--right {
+        justify-content: flex-end;
+      }
+    }
+
+    &__subtitle {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(22px);
+      color: var(--color-gray-60);
+      margin-top: -1.5rem;
+    }
+  }
+
+  &__content {
+    flex: 1;
+    overflow: hidden;
+
+    // TODO: fix padding when scrollbar is visible
+    .View__inset {
+      height: 100%;
+      overflow: auto;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
+  }
+
+  &__footer {
+    height: pxToRem(80px);
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+
+  &__inset {
+    position: relative;
+    margin: 0 auto;
+    // 848px = 796 + 16 * 2 (padding) + 20 (scrollbar)
+    max-width: pxToRem(848px);
+    padding-left: 1rem;
+    padding-right: 1rem;
+
+    &--align-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &--wide {
+      // 1200px = 1200 + 16 * 2 (padding)
+      max-width: pxToRem(1232px);
+    }
+
+    &--inline {
+      display: flex;
+      justify-content: space-between;
+      height: 100%;
+      gap: 1rem;
+    }
+  }
+}
