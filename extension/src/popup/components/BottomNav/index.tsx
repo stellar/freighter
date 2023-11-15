@@ -31,7 +31,7 @@ export const BottomNav = () => {
   const { t } = useTranslation();
 
   return (
-    <View.Footer>
+    <View.Footer hasTopBorder>
       <div className="BottomNav">
         <BottomNavLink to={ROUTES.account}>
           <img src={WalletIcon} alt="wallet icon" title={t("Home")} />

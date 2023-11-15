@@ -1,6 +1,6 @@
 import React from "react";
 
-import { BackButton } from "popup/basics/buttons/BackButton";
+import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
 
@@ -19,15 +19,11 @@ export const SubviewHeader = ({
   hasBackButton = true,
   rightButton,
 }: SubviewHeaderProps) => (
-  <header className="SubviewHeader">
-    {hasBackButton ? (
-      <BackButton
-        customBackAction={customBackAction}
-        customBackIcon={customBackIcon}
-      />
-    ) : null}
-    <div className="SubviewHeader--title">{title}</div>
-    {rightButton ||
-      (hasBackButton ? <div className="SubviewHeader--spacer"></div> : null)}
-  </header>
+  <View.AppHeader
+    pageTitle={title}
+    rightContent={rightButton}
+    hasBackButton={hasBackButton}
+    customBackAction={customBackAction}
+    customBackIcon={customBackIcon}
+  />
 );

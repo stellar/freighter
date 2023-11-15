@@ -2,18 +2,17 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: var(--popup-vertical-padding) var(--popup--side-padding);
 
-  &__wrapper {
-    max-height: calc(
-      var(--popup--height) - var(--subview--header--height) -
-        var(--popup-vertical-padding)
-    );
-    width: calc(
-      var(--popup--width) - var(--popup--side-padding) -
-        var(--popup--side-padding)
-    );
-  }
+  // &__wrapper {
+  //   max-height: calc(
+  //     var(--popup--height) - var(--subview--header--height) -
+  //       var(--popup-vertical-padding)
+  //   );
+  //   width: calc(
+  //     var(--popup--width) - var(--popup--side-padding) -
+  //       var(--popup--side-padding)
+  //   );
+  // }
 
   &__content {
     display: flex;

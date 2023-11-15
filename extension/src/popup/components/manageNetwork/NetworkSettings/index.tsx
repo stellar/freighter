@@ -16,6 +16,7 @@ import {
 } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
+import { View } from "popup/basics/layout/View";
 
 import { NETWORK_INDEX_SEARCH_PARAM } from "../NetworkForm";
 
@@ -27,51 +28,52 @@ export const NetworkSettings = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="NetworkSettings">
+    <View>
       <SubviewHeader title={t("Network Settings")} />
-      <div className="NetworkSettings__header">{t("Network")}</div>
-      <SimpleBarWrapper className="NetworkSettings__scrollbar">
-        <ListNavLinkWrapper>
-          {networksList.map((network, i) => {
-            const isActive = isActiveNetwork(activeNetworkDetails, network);
+      <View.Content>
+        <div className="NetworkSettings__header">{t("Network")}</div>
+        <SimpleBarWrapper className="NetworkSettings__scrollbar">
+          <ListNavLinkWrapper>
+            {networksList.map((network, i) => {
+              const isActive = isActiveNetwork(activeNetworkDetails, network);
 
-            return (
-              <ListNavLink
-                key={network.networkName}
-                href={ROUTES.editNetwork}
-                searchParams={`?${NETWORK_INDEX_SEARCH_PARAM}=${i}`}
-              >
-                <div key={network.networkName}>
-                  <div
-                    className={`NetworkSettings__name ${
-                      isActive ? "NetworkSettings__name--active" : ""
-                    }`}
-                  >
-                    {isActive ? (
-                      <div className="NetworkSettings__active-marker"></div>
-                    ) : null}
-                    <NetworkIcon index={i} />
-                    <div>{network.networkName}</div>
+              return (
+                <ListNavLink
+                  key={network.networkName}
+                  href={ROUTES.editNetwork}
+                  searchParams={`?${NETWORK_INDEX_SEARCH_PARAM}=${i}`}
+                >
+                  <div key={network.networkName}>
+                    <div
+                      className={`NetworkSettings__name ${
+                        isActive ? "NetworkSettings__name--active" : ""
+                      }`}
+                    >
+                      {isActive ? (
+                        <div className="NetworkSettings__active-marker"></div>
+                      ) : null}
+                      <NetworkIcon index={i} />
+                      <div>{network.networkName}</div>
+                    </div>
+                    <div className="NetworkSettings__url">
+                      {network.networkUrl}
+                    </div>
                   </div>
-                  <div className="NetworkSettings__url">
-                    {network.networkUrl}
-                  </div>
-                </div>
-              </ListNavLink>
-            );
-          })}
-        </ListNavLinkWrapper>
-      </SimpleBarWrapper>
-      <div className="NetworkSettings__bottom">
+                </ListNavLink>
+              );
+            })}
+          </ListNavLinkWrapper>
+        </SimpleBarWrapper>
+      </View.Content>
+      <View.Footer>
         <Button
           size="md"
-          isFullWidth
           variant="secondary"
           onClick={() => navigateTo(ROUTES.addNetwork)}
         >
           {t("Add custom network")}
         </Button>
-      </div>
-    </div>
+      </View.Footer>
+    </View>
   );
 };

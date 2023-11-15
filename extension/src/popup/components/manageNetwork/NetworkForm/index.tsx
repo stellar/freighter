@@ -7,8 +7,9 @@ import { object as YupObject, string as YupString } from "yup";
 import { useHistory, useLocation } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
+// import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
+import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
@@ -272,7 +273,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     ) : null;
 
   return (
-    <div className="NetworkForm">
+    <View>
       {isNetworkInUse ? (
         <NetworkModal buttonComponent={<CloseModalButton />}>
           <div>
@@ -322,13 +323,14 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       <SubviewHeader
         title={isEditing ? t("Add Custom Network") : t("Network Details")}
       />
-      <SimpleBarWrapper className="NetworkForm__simplebar">
-        <Formik
-          onSubmit={handleSubmit}
-          initialValues={initialValues}
-          validationSchema={NetworkFormSchema}
-        >
-          {({ dirty, errors, isSubmitting, isValid, touched }) => (
+      {/* <SimpleBarWrapper className="NetworkForm__simplebar"> */}
+      <Formik
+        onSubmit={handleSubmit}
+        initialValues={initialValues}
+        validationSchema={NetworkFormSchema}
+      >
+        {({ dirty, errors, isSubmitting, isValid, touched }) => (
+          <View.Content>
             <Form className="NetworkForm__form">
               <Input
                 fieldSize="md"
@@ -463,6 +465,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                   )}
                 </Field>
               )}
+
               {isEditing ? (
                 <EditingButtons isValid={isValid} isSubmitting={isSubmitting} />
               ) : (
@@ -480,9 +483,10 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 </div>
               )}
             </Form>
-          )}
-        </Formik>
-      </SimpleBarWrapper>
-    </div>
+          </View.Content>
+        )}
+      </Formik>
+      {/* </SimpleBarWrapper> */}
+    </View>
   );
 };

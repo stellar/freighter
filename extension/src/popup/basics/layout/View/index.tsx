@@ -157,7 +157,7 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
 
   return (
     <footer className="View__footer" style={customStyle} {...props}>
-      <ViewInset isInline={true} hasVerticalBorder hasTopBorder>
+      <ViewInset isInline={true} hasVerticalBorder hasTopBorder={hasTopBorder}>
         {children}
       </ViewInset>
     </footer>
