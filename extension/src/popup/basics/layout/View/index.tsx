@@ -102,14 +102,33 @@ const ViewContent: React.FC<ViewContentProps> = ({
 );
 
 // Footer
-// TODO: add props
-interface ViewFooterProps {}
+interface ViewFooterProps {
+  children: React.ReactNode;
+  customHeight?: string;
+  customGap?: string;
+  hasExtraPaddingBottom?: boolean;
+}
 
-const ViewFooter: React.FC<ViewFooterProps> = () => (
-  <footer className="View__footer">
-    <ViewInset isInline={true}>Footer content</ViewInset>
-  </footer>
-);
+const ViewFooter: React.FC<ViewFooterProps> = ({
+  children,
+  customHeight,
+  customGap,
+  hasExtraPaddingBottom,
+}: ViewFooterProps) => {
+  const customStyle = {
+    ...(customHeight ? { "--View-footer-height": customHeight } : {}),
+    ...(hasExtraPaddingBottom
+      ? { "--View-footer-padding-bottom": "1.5rem" }
+      : {}),
+    ...(customGap ? { "--View-footer-gap": customGap } : {}),
+  } as React.CSSProperties;
+
+  return (
+    <footer className="View__footer" style={customStyle}>
+      <ViewInset isInline={true}>{children}</ViewInset>
+    </footer>
+  );
+};
 
 // Inset
 interface ViewInsetProps {
