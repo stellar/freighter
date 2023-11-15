@@ -95,6 +95,17 @@
       justify-content: flex-end;
       gap: var(--View-footer-gap);
       padding-bottom: var(--View-footer-padding-bottom);
+      height: 100%;
+
+      &--inline {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+
+        & > * {
+          flex: 1;
+        }
+      }
     }
   }
 
@@ -119,6 +130,7 @@
 
     &--inline {
       display: flex;
+      flex-direction: row;
       justify-content: space-between;
       height: 100%;
       gap: 1rem;

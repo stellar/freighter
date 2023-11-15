@@ -74,14 +74,12 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
-  maxHeight: number;
 }
 
 export const ManageAssetRows = ({
   children,
   header,
   assetRows,
-  maxHeight,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -341,12 +339,7 @@ export const ManageAssetRows = ({
           }}
         />
       )}
-      <SimpleBarWrapper
-        className="ManageAssetRows__scrollbar"
-        style={{
-          maxHeight: `${maxHeight}px`,
-        }}
-      >
+      <SimpleBarWrapper className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
           {assetRows.map(

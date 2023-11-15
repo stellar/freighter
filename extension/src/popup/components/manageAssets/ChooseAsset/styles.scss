@@ -1,6 +1,4 @@
 .ChooseAsset {
-  padding: var(--popup-vertical-padding) var(--popup--side-padding);
-
   &__loader {
     height: var(--popup--height);
     width: var(--popup--width);
@@ -21,18 +19,10 @@
 
   &__assets {
     flex-grow: 1;
-    height: 28.75rem;
 
     &--short {
       flex-grow: 1;
-      height: 22.5rem;
     }
-  }
-
-  &__button-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
   }
 
   &__button {

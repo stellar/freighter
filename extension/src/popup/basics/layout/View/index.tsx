@@ -137,6 +137,7 @@ interface ViewFooterProps {
   customGap?: string;
   hasExtraPaddingBottom?: boolean;
   hasTopBorder?: boolean;
+  isInline?: boolean;
 }
 
 const ViewFooter: React.FC<ViewFooterProps> = ({
@@ -145,6 +146,7 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   customGap,
   hasExtraPaddingBottom,
   hasTopBorder,
+  isInline,
   ...props
 }: ViewFooterProps) => {
   const customStyle = {
@@ -157,7 +159,11 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
 
   return (
     <footer className="View__footer" style={customStyle} {...props}>
-      <ViewInset isInline={true} hasVerticalBorder hasTopBorder={hasTopBorder}>
+      <ViewInset
+        hasVerticalBorder
+        hasTopBorder={hasTopBorder}
+        isInline={isInline}
+      >
         {children}
       </ViewInset>
     </footer>
