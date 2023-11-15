@@ -22,7 +22,7 @@
     }
 
     &--border {
-      border-bottom: 1px solid var(--color-gray-30);
+      border-bottom: 1px solid var(--color-gray-40);
     }
 
     &__logo {
@@ -62,13 +62,20 @@
   &__content {
     flex: 1;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 
     // TODO: fix padding when scrollbar is visible
     .View__inset {
-      height: 100%;
+      flex: 1;
+      width: 100%;
       overflow: auto;
       padding-top: 1.5rem;
       padding-bottom: 1.5rem;
+
+      &__footer {
+        flex: none;
+      }
     }
   }
 
@@ -115,6 +122,17 @@
       justify-content: space-between;
       height: 100%;
       gap: 1rem;
+    }
+
+    &--vertical-border {
+      @media (min-width: 850px) {
+        border-left: 1px solid var(--color-gray-40);
+        border-right: 1px solid var(--color-gray-40);
+      }
+    }
+
+    &--top-border {
+      border-top: 1px solid var(--color-gray-40);
     }
   }
 }

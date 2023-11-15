@@ -15,18 +15,41 @@ const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 
 // Header
 interface ViewHeaderProps {
+  showFreighterLogo?: boolean;
+}
+
+const ViewHeader: React.FC<ViewHeaderProps> = ({
+  showFreighterLogo,
+  ...props
+}: ViewHeaderProps) => (
+  <header className="View__header View__header--border" {...props}>
+    <ViewInset isWide={true} isInline={true}>
+      <div className="View__header__box View__header__box--left">
+        {showFreighterLogo ? (
+          <img
+            className="View__header__logo"
+            alt="Freighter logo"
+            src={FreighterLogo}
+          />
+        ) : null}
+      </div>
+    </ViewInset>
+  </header>
+);
+
+// App header
+interface ViewAppHeaderProps {
   leftContent?: React.ReactNode;
   rightContent?: React.ReactNode;
-  showFreighterLogo?: boolean;
   pageTitle?: React.ReactNode;
   pageSubtitle?: React.ReactNode;
   hasBackButton?: boolean;
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
-const ViewHeader: React.FC<ViewHeaderProps> = ({
-  showFreighterLogo,
+const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   leftContent,
   rightContent,
   pageTitle,
@@ -34,72 +57,78 @@ const ViewHeader: React.FC<ViewHeaderProps> = ({
   hasBackButton,
   customBackAction,
   customBackIcon,
-}: ViewHeaderProps) => {
-  const { isAppLayout } = useContext(ViewContext);
+  children,
+  ...props
+}: ViewAppHeaderProps) => (
+  <div className="View__header View__header--tall" {...props}>
+    <ViewInset isInline={true} hasVerticalBorder>
+      {/* Left */}
+      <div className="View__header__box View__header__box--left">
+        {hasBackButton ? (
+          <BackButton
+            customBackAction={customBackAction}
+            customBackIcon={customBackIcon}
+          />
+        ) : null}
 
-  return (
-    <header
-      className={`View__header ${
-        isAppLayout ? "View__header--tall" : "View__header--border"
-      }`}
-    >
-      <ViewInset isWide={true} isInline={true}>
-        {/* Left */}
-        <div className="View__header__box View__header__box--left">
-          {!isAppLayout || showFreighterLogo ? (
-            <img
-              className="View__header__logo"
-              alt="Freighter logo"
-              src={FreighterLogo}
-            />
-          ) : null}
+        {leftContent ?? null}
+      </div>
 
-          {hasBackButton ? (
-            <BackButton
-              customBackAction={customBackAction}
-              customBackIcon={customBackIcon}
-            />
-          ) : null}
-
-          {leftContent ?? null}
+      {/* Center */}
+      <div>
+        <div className="View__header__box View__header__box--center">
+          <Title size="md" role="heading" aria-level={2}>
+            {pageTitle}
+          </Title>
         </div>
+        {pageSubtitle ? (
+          <div className="View__header__subtitle">{pageSubtitle}</div>
+        ) : null}
+      </div>
 
-        {/* Center */}
-        <div>
-          <div className="View__header__box View__header__box--center">
-            <Title size="md" role="heading" aria-level={2}>
-              {pageTitle}
-            </Title>
-          </div>
-          {pageSubtitle ? (
-            <div className="View__header__subtitle">{pageSubtitle}</div>
-          ) : null}
-        </div>
+      {/* Right */}
+      <div className="View__header__box View__header__box--right">
+        {rightContent}
+      </div>
+    </ViewInset>
 
-        {/* Right */}
-        <div className="View__header__box View__header__box--right">
-          {rightContent}
-        </div>
-      </ViewInset>
-    </header>
-  );
-};
+    {children}
+  </div>
+);
 
 // Content
 interface ViewContentProps {
   children: React.ReactNode;
   // TODO: handle other cases: "start", "end"
   alignment?: "center";
+  contentFooter?: React.ReactNode;
 }
 
 const ViewContent: React.FC<ViewContentProps> = ({
   children,
   alignment,
-}: ViewContentProps) => (
-  <div className="View__content">
-    <ViewInset alignment={alignment}>{children}</ViewInset>
-  </div>
-);
+  contentFooter,
+  ...props
+}: ViewContentProps) => {
+  const { isAppLayout } = useContext(ViewContext);
+
+  return (
+    <div className="View__content" {...props}>
+      <ViewInset alignment={alignment} hasVerticalBorder={isAppLayout}>
+        {children}
+      </ViewInset>
+      {contentFooter ? (
+        <ViewInset
+          alignment={alignment}
+          hasVerticalBorder={isAppLayout}
+          additionalClassName="View__inset__footer"
+        >
+          {contentFooter}
+        </ViewInset>
+      ) : null}
+    </div>
+  );
+};
 
 // Footer
 interface ViewFooterProps {
@@ -107,6 +136,7 @@ interface ViewFooterProps {
   customHeight?: string;
   customGap?: string;
   hasExtraPaddingBottom?: boolean;
+  hasTopBorder?: boolean;
 }
 
 const ViewFooter: React.FC<ViewFooterProps> = ({
@@ -114,6 +144,8 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   customHeight,
   customGap,
   hasExtraPaddingBottom,
+  hasTopBorder,
+  ...props
 }: ViewFooterProps) => {
   const customStyle = {
     ...(customHeight ? { "--View-footer-height": customHeight } : {}),
@@ -124,8 +156,10 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   } as React.CSSProperties;
 
   return (
-    <footer className="View__footer" style={customStyle}>
-      <ViewInset isInline={true}>{children}</ViewInset>
+    <footer className="View__footer" style={customStyle} {...props}>
+      <ViewInset isInline={true} hasVerticalBorder hasTopBorder>
+        {children}
+      </ViewInset>
     </footer>
   );
 };
@@ -139,6 +173,9 @@ interface ViewInsetProps {
   isInline?: boolean;
   // TODO: handle other cases: "start", "end"
   alignment?: "center";
+  hasVerticalBorder?: boolean;
+  hasTopBorder?: boolean;
+  additionalClassName?: string;
 }
 
 export const ViewInset: React.FC<ViewInsetProps> = ({
@@ -146,13 +183,20 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   isWide,
   isInline,
   alignment,
+  hasVerticalBorder,
+  hasTopBorder,
+  additionalClassName,
+  ...props
 }: ViewInsetProps) => (
   <div
     className={`View__inset ${addStyleClasses([
       isWide ? "View__inset--wide" : "",
       isInline ? "View__inset--inline" : "",
       alignment === "center" ? "View__inset--align-center" : "",
-    ])}`}
+      hasVerticalBorder ? "View__inset--vertical-border" : "",
+      hasTopBorder ? "View__inset--top-border" : "",
+    ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
+    {...props}
   >
     {children}
   </div>
@@ -161,6 +205,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
 // View
 interface ViewComponent {
   Header: React.FC<ViewHeaderProps>;
+  AppHeader: React.FC<ViewAppHeaderProps>;
   Content: React.FC<ViewContentProps>;
   Footer: React.FC<ViewFooterProps>;
   Inset: React.FC<ViewInsetProps>;
@@ -182,6 +227,7 @@ export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
 );
 
 View.Header = ViewHeader;
+View.AppHeader = ViewAppHeader;
 View.Content = ViewContent;
 View.Footer = ViewFooter;
 View.Inset = ViewInset;
