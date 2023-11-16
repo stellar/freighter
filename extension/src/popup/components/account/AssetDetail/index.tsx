@@ -37,6 +37,7 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 import {
   saveAsset,
   saveDestinationAsset,
@@ -127,144 +128,147 @@ export const AssetDetail = ({
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
-    <div className="AssetDetail">
-      <div className="AssetDetail__wrapper">
-        <SubviewHeader
-          title={canonical.code}
-          customBackAction={() => setSelectedAsset("")}
-        />
-        {balance && "name" in balance && (
-          <span className="AssetDetail__token-name">{balance.name}</span>
-        )}
-        {isNative ? (
-          <div className="AssetDetail__available">
-            <span className="AssetDetail__available__copy">
-              {availableTotal} {t("available")}
-            </span>
-            <span
-              className="AssetDetail__available__icon"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <IconButton altText="Available Info" icon={<Icon.Info />} />{" "}
-            </span>
-          </div>
-        ) : null}
-        <div className="AssetDetail__total">
-          <div
-            className="AssetDetail__total__copy"
-            data-testid="asset-detail-available-copy"
-          >
-            {displayTotal}
-          </div>
-          <div className="AssetDetail__total__network">
-            <AssetNetworkInfo
-              assetCode={canonical.code}
-              assetIssuer={assetIssuer}
-              assetType={
-                (balance && "token" in balance && balance?.token.type) || ""
-              }
-              assetDomain={assetDomain}
-              contractId={
-                balance && "contractId" in balance
-                  ? balance.contractId
-                  : undefined
-              }
-            />
-          </div>
-        </div>
-        <div className="AssetDetail__actions">
-          {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
-            <>
-              {/* Hide send for Soroban until send work is ready for Soroban tokens */}
-              {!isSorobanAsset && (
-                <PillButton
-                  onClick={() => {
-                    dispatch(saveAsset(selectedAsset));
-                    navigateTo(ROUTES.sendPayment);
-                  }}
-                >
-                  {t("SEND")}
-                </PillButton>
-              )}
-              {!isSorobanAsset && (
-                <PillButton
-                  onClick={() => {
-                    dispatch(saveAsset(selectedAsset));
-                    navigateTo(ROUTES.swap);
-                  }}
-                >
-                  {t("SWAP")}
-                </PillButton>
-              )}
-            </>
-          ) : (
-            <PillButton
-              onClick={() => {
-                dispatch(saveDestinationAsset(selectedAsset));
-                navigateTo(ROUTES.swap);
-              }}
-            >
-              {t("SWAP")}
-            </PillButton>
+    <View>
+      <SubviewHeader
+        title={canonical.code}
+        customBackAction={() => setSelectedAsset("")}
+      />
+      <View.Content>
+        <div className="AssetDetail__wrapper">
+          {balance && "name" in balance && (
+            <span className="AssetDetail__token-name">{balance.name}</span>
           )}
-        </div>
-        <SimpleBarWrapper>
-          <div className="AssetDetail__scam-warning">
-            {isOwnedScamAsset && (
-              <Notification variant="error" title={t("Error")}>
-                <div>
-                  <p>
-                    This asset was tagged as fraudulent by stellar.expert, a
-                    reliable community-maintained directory.
-                  </p>
-                  <p>
-                    Trading or sending this asset is not recommended. Projects
-                    related to this asset may be fraudulent even if the creators
-                    say otherwise.
-                  </p>
-                </div>
-              </Notification>
+          {isNative ? (
+            <div className="AssetDetail__available">
+              <span className="AssetDetail__available__copy">
+                {availableTotal} {t("available")}
+              </span>
+              <span
+                className="AssetDetail__available__icon"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <IconButton altText="Available Info" icon={<Icon.Info />} />{" "}
+              </span>
+            </div>
+          ) : null}
+          <div className="AssetDetail__total">
+            <div
+              className="AssetDetail__total__copy"
+              data-testid="asset-detail-available-copy"
+            >
+              {displayTotal}
+            </div>
+            <div className="AssetDetail__total__network">
+              <AssetNetworkInfo
+                assetCode={canonical.code}
+                assetIssuer={assetIssuer}
+                assetType={
+                  (balance && "token" in balance && balance?.token.type) || ""
+                }
+                assetDomain={assetDomain}
+                contractId={
+                  balance && "contractId" in balance
+                    ? balance.contractId
+                    : undefined
+                }
+              />
+            </div>
+          </div>
+          <div className="AssetDetail__actions">
+            {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
+              <>
+                {/* Hide send for Soroban until send work is ready for Soroban tokens */}
+                {!isSorobanAsset && (
+                  <PillButton
+                    onClick={() => {
+                      dispatch(saveAsset(selectedAsset));
+                      navigateTo(ROUTES.sendPayment);
+                    }}
+                  >
+                    {t("SEND")}
+                  </PillButton>
+                )}
+                {!isSorobanAsset && (
+                  <PillButton
+                    onClick={() => {
+                      dispatch(saveAsset(selectedAsset));
+                      navigateTo(ROUTES.swap);
+                    }}
+                  >
+                    {t("SWAP")}
+                  </PillButton>
+                )}
+              </>
+            ) : (
+              <PillButton
+                onClick={() => {
+                  dispatch(saveDestinationAsset(selectedAsset));
+                  navigateTo(ROUTES.swap);
+                }}
+              >
+                {t("SWAP")}
+              </PillButton>
             )}
           </div>
-
-          {assetOperations.length ? (
-            <HistoryList assetDetail>
-              <>
-                {assetOperations.map((operation) => {
-                  const historyItemOperation = {
-                    ...operation,
-                    isPayment: getIsPayment(operation.type),
-                    isSwap: getIsSwap(operation),
-                  };
-
-                  const tokenBalances =
-                    balance &&
-                    "contractId" in balance &&
-                    getIsSupportedSorobanOp(operation, networkDetails)
-                      ? [balance]
-                      : [];
-                  return (
-                    <HistoryItem
-                      key={operation.id}
-                      tokenBalances={tokenBalances}
-                      operation={historyItemOperation}
-                      publicKey={publicKey}
-                      url={stellarExpertUrl}
-                      networkDetails={networkDetails}
-                      setDetailViewProps={setDetailViewProps}
-                      setIsDetailViewShowing={setIsDetailViewShowing}
-                    />
-                  );
-                })}
-              </>
-            </HistoryList>
-          ) : (
-            <div className="AssetDetail__empty">
-              {t("No transactions to show")}
+          <SimpleBarWrapper>
+            <div className="AssetDetail__scam-warning">
+              {isOwnedScamAsset && (
+                <Notification variant="error" title={t("Error")}>
+                  <div>
+                    <p>
+                      This asset was tagged as fraudulent by stellar.expert, a
+                      reliable community-maintained directory.
+                    </p>
+                    <p>
+                      Trading or sending this asset is not recommended. Projects
+                      related to this asset may be fraudulent even if the
+                      creators say otherwise.
+                    </p>
+                  </div>
+                </Notification>
+              )}
             </div>
-          )}
-        </SimpleBarWrapper>
-      </div>
+
+            {assetOperations.length ? (
+              <HistoryList assetDetail>
+                <>
+                  {assetOperations.map((operation) => {
+                    const historyItemOperation = {
+                      ...operation,
+                      isPayment: getIsPayment(operation.type),
+                      isSwap: getIsSwap(operation),
+                    };
+
+                    const tokenBalances =
+                      balance &&
+                      "contractId" in balance &&
+                      getIsSupportedSorobanOp(operation, networkDetails)
+                        ? [balance]
+                        : [];
+                    return (
+                      <HistoryItem
+                        key={operation.id}
+                        tokenBalances={tokenBalances}
+                        operation={historyItemOperation}
+                        publicKey={publicKey}
+                        url={stellarExpertUrl}
+                        networkDetails={networkDetails}
+                        setDetailViewProps={setDetailViewProps}
+                        setIsDetailViewShowing={setIsDetailViewShowing}
+                      />
+                    );
+                  })}
+                </>
+              </HistoryList>
+            ) : (
+              <div className="AssetDetail__empty">
+                {t("No transactions to show")}
+              </div>
+            )}
+          </SimpleBarWrapper>
+        </div>
+      </View.Content>
+      {/* TODO: fix the slideup modal */}
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <div className="AssetDetail__info-modal">
@@ -316,6 +320,6 @@ export const AssetDetail = ({
           </div>
         </SlideupModal>
       )}
-    </div>
+    </View>
   );
 };
