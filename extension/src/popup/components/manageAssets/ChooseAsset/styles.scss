@@ -1,7 +1,7 @@
 .ChooseAsset {
   &__loader {
-    height: var(--popup--height);
-    width: var(--popup--width);
+    height: 100%;
+    width: 100%;
     z-index: calc(var(--back--button-z-index) + 1);
     position: absolute;
     display: flex;

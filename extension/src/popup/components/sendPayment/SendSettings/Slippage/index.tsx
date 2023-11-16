@@ -11,8 +11,8 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import "./styles.scss";
@@ -33,7 +33,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
   }
 
   return (
-    <PopupWrapper>
+    <View>
       <SubviewHeader
         title="Allowed Slippage"
         customBackAction={() => navigateTo(previous)}
@@ -52,22 +52,32 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
           </InfoTooltip>
         }
       />
-      <div className="Slippage">
-        <Formik
-          initialValues={{ presetSlippage, customSlippage }}
-          onSubmit={(values) => {
-            dispatch(
-              saveAllowedSlippage(
-                values.customSlippage || values.presetSlippage,
-              ),
-            );
-            navigateTo(previous);
-          }}
-          validationSchema={YupObject().shape({
-            customSlippage: YupNumber().max(10, `${t("must be below")} 10%`),
-          })}
-        >
-          {({ setFieldValue, values, errors }) => (
+      <Formik
+        initialValues={{ presetSlippage, customSlippage }}
+        onSubmit={(values) => {
+          dispatch(
+            saveAllowedSlippage(values.customSlippage || values.presetSlippage),
+          );
+          navigateTo(previous);
+        }}
+        validationSchema={YupObject().shape({
+          customSlippage: YupNumber().max(10, `${t("must be below")} 10%`),
+        })}
+      >
+        {({ setFieldValue, values, errors }) => (
+          <View.Content
+            contentFooter={
+              <Button
+                size="md"
+                isFullWidth
+                disabled={!values.presetSlippage && !values.customSlippage}
+                variant="secondary"
+                type="submit"
+              >
+                {t("Done")}
+              </Button>
+            }
+          >
             <Form>
               <div className="Slippage__cards">
                 <label className="Slippage--radio-label">
@@ -140,21 +150,10 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
               >
                 {t("Set default")}
               </Link>
-              <div className="SendPayment__btn-continue">
-                <Button
-                  size="md"
-                  isFullWidth
-                  disabled={!values.presetSlippage && !values.customSlippage}
-                  variant="secondary"
-                  type="submit"
-                >
-                  {t("Done")}
-                </Button>
-              </div>
             </Form>
-          )}
-        </Formik>
-      </div>
-    </PopupWrapper>
+          </View.Content>
+        )}
+      </Formik>
+    </View>
   );
 };

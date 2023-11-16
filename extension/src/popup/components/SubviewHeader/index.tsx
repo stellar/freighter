@@ -8,6 +8,7 @@ interface SubviewHeaderProps {
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
   title: string;
+  subtitle?: React.ReactNode;
   hasBackButton?: boolean;
   rightButton?: React.ReactNode;
 }
@@ -16,11 +17,13 @@ export const SubviewHeader = ({
   customBackAction,
   customBackIcon,
   title,
+  subtitle,
   hasBackButton = true,
   rightButton,
 }: SubviewHeaderProps) => (
   <View.AppHeader
     pageTitle={title}
+    pageSubtitle={subtitle}
     rightContent={rightButton}
     hasBackButton={hasBackButton}
     customBackAction={customBackAction}

@@ -155,12 +155,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             {managingAssets ? (
               <ManageAssetRows assetRows={assetRows} />
             ) : (
-              <SelectAssetRows
-                assetRows={assetRows}
-                maxHeight={
-                  ManageAssetRowsWrapperRef?.current?.clientHeight || 600
-                }
-              />
+              <SelectAssetRows assetRows={assetRows} />
             )}
           </div>
         </div>

@@ -1,6 +1,11 @@
 @use "../../../styles/utils.scss" as *;
 
 .View {
+  --View-header-height: #{pxToRem(60px)};
+  --View-footer-height: #{pxToRem(80px)};
+  --View-footer-padding-bottom: 1rem;
+  --View-footer-gap: 1rem;
+
   position: relative;
   width: 100%;
   min-width: pxToRem(360px);
@@ -11,8 +16,6 @@
   justify-content: space-between;
 
   &__header {
-    --View-header-height: #{pxToRem(60px)};
-
     min-height: var(--View-header-height);
     flex-shrink: 0;
     flex-grow: 0;
@@ -76,15 +79,13 @@
 
       &__footer {
         flex: none;
+        padding-bottom: var(--View-footer-padding-bottom);
+        padding-top: 0;
       }
     }
   }
 
   &__footer {
-    --View-footer-height: #{pxToRem(80px)};
-    --View-footer-padding-bottom: 1rem;
-    --View-footer-gap: 1rem;
-
     height: var(--View-footer-height);
     flex-shrink: 0;
     flex-grow: 0;

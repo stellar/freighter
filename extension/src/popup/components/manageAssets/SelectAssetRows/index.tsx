@@ -25,13 +25,9 @@ import { formatAmount } from "popup/helpers/formatters";
 
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
-  maxHeight: number;
 }
 
-export const SelectAssetRows = ({
-  assetRows,
-  maxHeight,
-}: SelectAssetRowsProps) => {
+export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
   const {
     accountBalances: { balances = {} },
     assetSelect,
@@ -61,12 +57,7 @@ export const SelectAssetRows = ({
     assetSelect.isSource === false;
 
   return (
-    <SimpleBarWrapper
-      className="SelectAssetRows__scrollbar"
-      style={{
-        maxHeight: `${maxHeight}px`,
-      }}
-    >
+    <SimpleBarWrapper className="SelectAssetRows__scrollbar">
       <div className="SelectAssetRows__content">
         {assetRows.map(
           ({

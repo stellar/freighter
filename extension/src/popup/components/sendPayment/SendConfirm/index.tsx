@@ -7,7 +7,6 @@ import {
   transactionSubmissionSelector,
   resetSubmission,
 } from "popup/ducks/transactionSubmission";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 
@@ -46,5 +45,5 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
     }
   };
 
-  return <PopupWrapper>{render()}</PopupWrapper>;
+  return render();
 };

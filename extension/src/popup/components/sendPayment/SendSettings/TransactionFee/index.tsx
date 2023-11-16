@@ -9,9 +9,9 @@ import { useTranslation } from "react-i18next";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { FormRows } from "popup/basics/Forms";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveTransactionFee,
@@ -27,7 +27,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
   const { networkCongestion, recommendedFee } = useNetworkFees();
 
   return (
-    <PopupWrapper>
+    <View>
       <SubviewHeader
         title="Transaction Fee"
         customBackAction={() => navigateTo(previous)}
@@ -53,21 +53,34 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
           </InfoTooltip>
         }
       />
-      <div className="TransactionFee">
-        <Formik
-          initialValues={{ transactionFee }}
-          onSubmit={(values) => {
-            dispatch(saveTransactionFee(String(values.transactionFee)));
-            navigateTo(previous);
-          }}
-          validationSchema={YupObject().shape({
-            transactionFee: YupNumber().min(
-              0.00001,
-              `${t("must be greater than")} 0.00001`,
-            ),
-          })}
-        >
-          {({ setFieldValue, values, isValid, errors }) => (
+
+      <Formik
+        initialValues={{ transactionFee }}
+        onSubmit={(values) => {
+          dispatch(saveTransactionFee(String(values.transactionFee)));
+          navigateTo(previous);
+        }}
+        validationSchema={YupObject().shape({
+          transactionFee: YupNumber().min(
+            0.00001,
+            `${t("must be greater than")} 0.00001`,
+          ),
+        })}
+      >
+        {({ setFieldValue, values, isValid, errors }) => (
+          <View.Content
+            contentFooter={
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                disabled={!values.transactionFee || !isValid}
+                type="submit"
+              >
+                {t("Done")}
+              </Button>
+            }
+          >
             <Form>
               <FormRows>
                 <Field name="transactionFee">
@@ -102,21 +115,10 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                   )}
                 </Field>
               </FormRows>
-              <div className="SendPayment__btn-continue">
-                <Button
-                  size="md"
-                  isFullWidth
-                  variant="secondary"
-                  disabled={!values.transactionFee || !isValid}
-                  type="submit"
-                >
-                  {t("Done")}
-                </Button>
-              </div>
             </Form>
-          )}
-        </Formik>
-      </div>
-    </PopupWrapper>
+          </View.Content>
+        )}
+      </Formik>
+    </View>
   );
 };
