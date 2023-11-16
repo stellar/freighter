@@ -41,6 +41,7 @@ const ViewHeader: React.FC<ViewHeaderProps> = ({
 interface ViewAppHeaderProps {
   leftContent?: React.ReactNode;
   rightContent?: React.ReactNode;
+  centerContent?: React.ReactNode;
   pageTitle?: React.ReactNode;
   pageSubtitle?: React.ReactNode;
   hasBackButton?: boolean;
@@ -52,6 +53,7 @@ interface ViewAppHeaderProps {
 const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   leftContent,
   rightContent,
+  centerContent,
   pageTitle,
   pageSubtitle,
   hasBackButton,
@@ -75,16 +77,22 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
       </div>
 
       {/* Center */}
-      <div>
+      {centerContent ? (
         <div className="View__header__box View__header__box--center">
-          <Title size="md" role="heading" aria-level={2}>
-            {pageTitle}
-          </Title>
+          {centerContent}
         </div>
-        {pageSubtitle ? (
-          <div className="View__header__subtitle">{pageSubtitle}</div>
-        ) : null}
-      </div>
+      ) : (
+        <div>
+          <div className="View__header__box View__header__box--center">
+            <Title size="md" role="heading" aria-level={2}>
+              {pageTitle}
+            </Title>
+          </div>
+          {pageSubtitle ? (
+            <div className="View__header__subtitle">{pageSubtitle}</div>
+          ) : null}
+        </div>
+      )}
 
       {/* Right */}
       <div className="View__header__box View__header__box--right">

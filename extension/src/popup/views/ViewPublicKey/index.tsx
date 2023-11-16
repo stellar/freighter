@@ -13,7 +13,7 @@ import { truncatedPublicKey, isCustomNetwork } from "helpers/stellar";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
-import { BackButton } from "popup/basics/buttons/BackButton";
+import { View } from "popup/basics/layout/View";
 import {
   accountNameSelector,
   publicKeySelector,
@@ -64,57 +64,87 @@ export const ViewPublicKey = () => {
   };
 
   return (
-    <>
-      <div className="ViewPublicKey">
-        <div className="ViewPublicKey__content">
-          <Formik
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            validationSchema={YupObject().shape({
-              accountName: YupString().max(
-                24,
-                t("max of 24 characters allowed"),
-              ),
-            })}
-          >
-            {({ errors }) => (
-              <div
-                className={`ViewPublicKey__header ${
-                  isEditingName ? "ViewPublicKey__header--is-editing" : ""
-                }`}
-              >
-                <BackButton />
-                {isEditingName ? (
-                  <>
-                    <Form className="ViewPublicKey__form">
-                      <Field name="accountName">
-                        {({ field }: FieldProps) => (
-                          <Input
-                            fieldSize="md"
-                            autoComplete="off"
-                            id="accountName"
-                            placeholder={accountName}
-                            {...field}
-                            error={errors.accountName}
-                          />
-                        )}
-                      </Field>
-                    </Form>
-                  </>
+    <View>
+      <Formik
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        validationSchema={YupObject().shape({
+          accountName: YupString().max(24, t("max of 24 characters allowed")),
+        })}
+      >
+        {({ errors }) => (
+          <>
+            <View.AppHeader
+              hasBackButton
+              centerContent={
+                isEditingName ? (
+                  <Form className="ViewPublicKey__form">
+                    <Field name="accountName">
+                      {({ field }: FieldProps) => (
+                        <Input
+                          fieldSize="md"
+                          autoComplete="off"
+                          id="accountName"
+                          placeholder={accountName}
+                          {...field}
+                          error={errors.accountName}
+                        />
+                      )}
+                    </Field>
+                  </Form>
                 ) : (
-                  <>
-                    <div className="ViewPublicKey__account-name-display">
-                      {accountName}
-                    </div>
-                  </>
-                )}
+                  <div className="ViewPublicKey__account-name-display">
+                    {accountName}
+                  </div>
+                )
+              }
+              rightContent={
                 <div className="ViewPublicKey--account-name-div">
                   <EditNameButton />
                 </div>
-              </div>
-            )}
-          </Formik>
+              }
+            />
 
+            {/* <div
+              className={`ViewPublicKey__header ${
+                isEditingName ? "ViewPublicKey__header--is-editing" : ""
+              }`}
+            >
+              <BackButton />
+              {isEditingName ? (
+                <>
+                  <Form className="ViewPublicKey__form">
+                    <Field name="accountName">
+                      {({ field }: FieldProps) => (
+                        <Input
+                          fieldSize="md"
+                          autoComplete="off"
+                          id="accountName"
+                          placeholder={accountName}
+                          {...field}
+                          error={errors.accountName}
+                        />
+                      )}
+                    </Field>
+                  </Form>
+                </>
+              ) : (
+                <>
+                  <div className="ViewPublicKey__account-name-display">
+                    {accountName}
+                  </div>
+                </>
+              )}
+              <div className="ViewPublicKey--account-name-div">
+                <EditNameButton />
+              </div>
+            </div> */}
+          </>
+        )}
+      </Formik>
+      {/* <div className="ViewPublicKey"> */}
+      <View.Content>
+        <div className="ViewPublicKey__content">
           <div className="ViewPublicKey__qr-code">
             <QrCode
               value={publicKey}
@@ -136,6 +166,8 @@ export const ViewPublicKey = () => {
             </CopyText>
           </div>
         </div>
+      </View.Content>
+      <View.Footer>
         <div className="ViewPublicKey__external-link">
           {!isCustomNetwork(networkDetails) ? (
             <Button
@@ -153,7 +185,8 @@ export const ViewPublicKey = () => {
             </Button>
           ) : null}
         </div>
-      </div>
-    </>
+      </View.Footer>
+      {/* </div> */}
+    </View>
   );
 };
