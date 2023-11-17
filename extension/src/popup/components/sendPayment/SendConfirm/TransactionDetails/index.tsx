@@ -290,8 +290,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           submitFreighterSorobanTransaction({
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
-            refreshBalances: true,
           }),
         );
 
@@ -358,10 +356,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
-            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            refreshBalances: true,
           }),
         );
 

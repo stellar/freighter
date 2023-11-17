@@ -22,13 +22,12 @@ import {
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountBalances as internalGetAccountBalances,
-  getAccountBalancesINDEXER as internalgetAccountBalancesINDEXER,
+  getAccountIndexerBalances as internalgetAccountIndexerBalances,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
   getBlockedAccounts as internalGetBlockedAccounts,
   getSorobanTokenBalance as internalGetSorobanTokenBalance,
-  loadAccount as internalLoadAccount,
   getTokenIds as internalGetTokenIds,
   removeTokenId as internalRemoveTokenId,
 } from "@shared/api/internal";
@@ -95,29 +94,20 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.HorizonApi.TransactionResponse,
   {
-    publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
-    refreshBalances?: boolean;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterTransaction",
-  async (
-    { publicKey, signedXDR, networkDetails, refreshBalances = false },
-    thunkApi,
-  ) => {
+  async ({ signedXDR, networkDetails }, thunkApi) => {
     try {
       const txRes = await internalSubmitFreighterTransaction({
         signedXDR,
         networkDetails,
       });
-
-      if (refreshBalances) {
-        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
-      }
 
       return txRes;
     } catch (e) {
@@ -134,33 +124,18 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   {
     signedXDR: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
-    refreshBalances?: boolean;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterSorobanTransaction",
-  async (
-    { signedXDR, networkDetails, sorobanClient, refreshBalances = false },
-    thunkApi,
-  ) => {
+  async ({ signedXDR, networkDetails }, thunkApi) => {
     try {
       const txRes = await internalSubmitFreighterSorobanTransaction({
         signedXDR,
         networkDetails,
       });
-
-      if (refreshBalances) {
-        thunkApi.dispatch(resetAccountBalanceStatus());
-        await thunkApi.dispatch(
-          getTokenBalances({
-            sorobanClient,
-            network: networkDetails.network as NETWORKS,
-          }),
-        );
-      }
 
       return txRes;
     } catch (e) {
@@ -270,85 +245,6 @@ const storeBalanceMetricData = (publicKey: string, accountFunded: boolean) => {
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 };
 
-export const getAccountBalances = createAsyncThunk<
-  AccountBalancesInterface,
-  { publicKey: string; networkDetails: NetworkDetails },
-  { rejectValue: ErrorMessage }
->("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    const res = await internalGetAccountBalances({ publicKey, networkDetails });
-    storeBalanceMetricData(publicKey, res.isFunded || false);
-    return res;
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
-  }
-});
-
-export const getTokenBalances = createAsyncThunk<
-  { tokenBalances: TokenBalances; tokensWithNoBalance: string[] },
-  { sorobanClient: SorobanContextInterface; network: NETWORKS },
-  { rejectValue: ErrorMessage }
->("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
-  if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
-    throw new Error("soroban rpc not supported");
-  }
-
-  try {
-    const { publicKey } = await internalLoadAccount();
-    const tokenIdList = await internalGetTokenIds(network);
-
-    const params = [new Address(publicKey).toScVal()];
-    const results = [] as TokenBalances;
-    const tokensWithNoBalance = [];
-
-    for (let i = 0; i < tokenIdList.length; i += 1) {
-      const tokenId = tokenIdList[i];
-      /*
-        Right now, Soroban transactions only support 1 operation per tx
-        so we need a builder per value from the contract,
-        once/if multi-op transactions are supported this can send
-        1 tx with an operation for each value.
-      */
-
-      try {
-        if (!hasSorobanClient(sorobanClient)) {
-          throw new Error("Soroban RPC is not supprted for this network");
-        }
-
-        /* eslint-disable no-await-in-loop */
-        const { balance, ...rest } = await internalGetSorobanTokenBalance(
-          sorobanClient.server,
-          tokenId,
-          {
-            balance: await sorobanClient.newTxBuilder(),
-            name: await sorobanClient.newTxBuilder(),
-            decimals: await sorobanClient.newTxBuilder(),
-            symbol: await sorobanClient.newTxBuilder(),
-          },
-          params,
-        );
-        /* eslint-enable no-await-in-loop */
-
-        const total = new BigNumber(balance);
-
-        results.push({
-          contractId: tokenId,
-          total,
-          ...rest,
-        });
-      } catch (e) {
-        console.error(`Token "${tokenId}" missing data on RPC server`);
-        tokensWithNoBalance.push(tokenId);
-      }
-    }
-
-    return { tokenBalances: results, tokensWithNoBalance };
-  } catch (e) {
-    console.error(e);
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
-
 export const removeTokenId = createAsyncThunk<
   void,
   {
@@ -357,6 +253,7 @@ export const removeTokenId = createAsyncThunk<
     sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
+  // @ts-ignore
 >("removeTokenId", async ({ contractId, network, sorobanClient }, thunkApi) => {
   try {
     await internalRemoveTokenId({ contractId, network });
@@ -364,29 +261,7 @@ export const removeTokenId = createAsyncThunk<
     console.error(e);
     thunkApi.rejectWithValue({ errorMessage: e as string });
   }
-
-  thunkApi.dispatch(getTokenBalances({ sorobanClient, network }));
 });
-
-export const getAccountBalancesINDEXER = createAsyncThunk<
-  AccountBalancesInterface,
-  { publicKey: string; networkDetails: NetworkDetails },
-  { rejectValue: ErrorMessage }
->(
-  "getAccountBalancesINDEXER",
-  async ({ publicKey, networkDetails }, thunkApi) => {
-    try {
-      const res = await internalgetAccountBalancesINDEXER(
-        publicKey,
-        networkDetails.network as NETWORKS,
-      );
-      storeBalanceMetricData(publicKey, res.isFunded || false);
-      return res;
-    } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
-    }
-  },
-);
 
 export const getAccountBalancesWithFallback = createAsyncThunk<
   {
@@ -401,13 +276,14 @@ export const getAccountBalancesWithFallback = createAsyncThunk<
   },
   { rejectValue: ErrorMessage }
 >(
-  "getAccountBalancesWithFall",
+  "getAccountBalancesWithFallback",
   async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
     try {
-      const balances = await internalgetAccountBalancesINDEXER(
+      const balances = await internalgetAccountIndexerBalances(
         publicKey,
         networkDetails.network as NETWORKS,
       );
+      storeBalanceMetricData(publicKey, balances.isFunded || false);
       return {
         balances,
       };
@@ -479,6 +355,7 @@ export const getAccountBalancesWithFallback = createAsyncThunk<
         });
       }
 
+      storeBalanceMetricData(publicKey, balances.isFunded || false);
       return {
         balances,
         tokenBalances,
@@ -916,7 +793,7 @@ export const tokensSelector = (state: {
   accountBalanceStatus: ActionStatus;
   tokensWithNoBalance: string[];
 }) => ({
-  tokenBalances: state.tokenBalances,
+  tokenBalances: state.tokenBalances || [],
   accountBalanceStatus: state.accountBalanceStatus,
-  tokensWithNoBalance: state.tokensWithNoBalance,
+  tokensWithNoBalance: state.tokensWithNoBalance || [],
 });

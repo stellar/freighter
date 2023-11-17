@@ -32,6 +32,10 @@ jest.spyOn(ApiInternal, "getSorobanTokenBalance").mockImplementation(() => {
   return Promise.resolve(mockTokenBalance);
 });
 
+jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
+  return Promise.resolve(mockBalances);
+});
+
 jest
   .spyOn(ApiInternal, "signFreighterSorobanTransaction")
   .mockImplementation(() => {

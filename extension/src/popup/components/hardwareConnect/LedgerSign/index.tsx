@@ -86,7 +86,6 @@ export const LedgerSign = () => {
         if (shouldSubmit) {
           const submitResp = await dispatch(
             submitFreighterTransaction({
-              publicKey: response.publicKey,
               signedXDR: res.payload,
               networkDetails,
             }),

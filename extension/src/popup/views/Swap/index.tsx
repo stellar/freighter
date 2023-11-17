@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Switch, Redirect } from "react-router-dom";
 
@@ -11,38 +11,44 @@ import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/Trans
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import {
-  getAccountBalances,
+  getAccountBalancesWithFallback,
   getAssetIcons,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { SorobanContext } from "popup/SorobanContext";
 
 export const Swap = () => {
   const dispatch: AppDispatch = useDispatch();
   const { accountBalances } = useSelector(transactionSubmissionSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const sorobanClient = useContext(SorobanContext);
 
   // load needed swap data here in case didn't go to home screen first
   useEffect(() => {
     (async () => {
       if (!accountBalances.balances) {
         const res = await dispatch(
-          getAccountBalances({
+          getAccountBalancesWithFallback({
             publicKey,
             networkDetails,
+            sorobanClient,
           }),
         );
 
-        if (getAccountBalances.fulfilled.match(res)) {
+        if (getAccountBalancesWithFallback.fulfilled.match(res)) {
           dispatch(
-            getAssetIcons({ balances: res.payload.balances, networkDetails }),
+            getAssetIcons({
+              balances: res.payload.balances.balances,
+              networkDetails,
+            }),
           );
         }
       }
     })();
-  }, [dispatch, publicKey, networkDetails, accountBalances]);
+  }, [dispatch, publicKey, networkDetails, accountBalances, sorobanClient]);
 
   return (
     <Switch>

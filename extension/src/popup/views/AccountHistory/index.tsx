@@ -7,7 +7,6 @@ import { Horizon } from "stellar-sdk";
 import { getAccountHistory } from "@shared/api/internal";
 import { HorizonOperation, ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { NETWORKS } from "@shared/constants/stellar";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -15,7 +14,6 @@ import {
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import {
-  getTokenBalances,
   resetAccountBalanceStatus,
   tokensSelector,
 } from "popup/ducks/transactionSubmission";
@@ -153,15 +151,6 @@ export const AccountHistory = () => {
         setHistorySegments(
           createSegments(res.operations, isSorobanSuported as boolean),
         );
-
-        if (isSorobanSuported) {
-          dispatch(
-            getTokenBalances({
-              sorobanClient,
-              network: networkDetails.network as NETWORKS,
-            }),
-          );
-        }
       } catch (e) {
         console.error(e);
       }

@@ -325,7 +325,7 @@ type BalancesResponse = {
   valueXdr: string;
 }[];
 
-export const getAccountBalancesINDEXER = async (
+export const getAccountIndexerBalances = async (
   pubKey: string,
   network: NETWORKS,
 ): Promise<AccountBalancesInterface> => {

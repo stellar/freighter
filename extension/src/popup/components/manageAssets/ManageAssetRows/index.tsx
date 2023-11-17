@@ -37,7 +37,7 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  getAccountBalances,
+  getAccountBalancesWithFallback,
   resetSubmission,
   signFreighterTransaction,
   submitFreighterTransaction,
@@ -176,7 +176,6 @@ export const ManageAssetRows = ({
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
-          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
         }),
@@ -185,9 +184,10 @@ export const ManageAssetRows = ({
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         setAssetSubmitting("");
         dispatch(
-          getAccountBalances({
+          getAccountBalancesWithFallback({
             publicKey,
             networkDetails,
+            sorobanClient,
           }),
         );
         trackChangeTrustline();
