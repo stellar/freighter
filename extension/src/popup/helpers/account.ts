@@ -196,24 +196,13 @@ export const getRawBalance = (
       if ("issuer" in balance.token) {
         return asset === `${balance.token.code}:${balance.token.issuer.key}`;
       }
-
-      throw new Error("Asset type not supported");
     }
-
-    if ("contractId" in balance) {
-      return asset === `${balance.symbol}:${balance.contractId}`;
-    }
-
     throw new Error("Asset type not supported");
   });
 
 export const getIssuerFromBalance = (balance: AssetType) => {
   if ("token" in balance && "issuer" in balance?.token) {
     return balance.token.issuer.key.toString();
-  }
-
-  if (balance && "contractId" in balance) {
-    return balance.contractId;
   }
 
   return "";

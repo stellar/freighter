@@ -74,7 +74,6 @@ export const Account = () => {
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
   const { balances, isFunded } = accountBalances;
-
   const sorobanClient = useContext(SorobanContext);
 
   useEffect(() => {

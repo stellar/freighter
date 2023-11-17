@@ -166,10 +166,7 @@ export interface SorobanBalance {
   decimals: number;
 }
 
-export type AssetType =
-  | Types.AssetBalance
-  | Types.NativeBalance
-  | SorobanBalance;
+export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 

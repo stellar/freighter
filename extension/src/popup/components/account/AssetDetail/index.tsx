@@ -80,10 +80,12 @@ export const AssetDetail = ({
   const { accountBalances: balances } = useSelector(
     transactionSubmissionSelector,
   );
-  const balance = getRawBalance(accountBalances, selectedAsset) || null;
+
+  const balance =
+    getRawBalance(accountBalances, selectedAsset) || (null as any); // TODO;
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
-    balance && "contractId" in balance
+    balance && "decimals" in balance
       ? formatTokenAmount(
           new BigNumber(balance.total || "0"),
           Number(balance.decimals),
@@ -168,8 +170,8 @@ export const AssetDetail = ({
               }
               assetDomain={assetDomain}
               contractId={
-                balance && "contractId" in balance
-                  ? balance.contractId
+                balance && "decimals" in balance
+                  ? balance.token.issuer.key
                   : undefined
               }
             />
