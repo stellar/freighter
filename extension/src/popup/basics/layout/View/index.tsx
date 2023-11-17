@@ -234,9 +234,12 @@ export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
   children,
   // Most views have "app" layout, so defaulting to that
   isAppLayout = true,
+  ...props
 }: ViewLayoutProps) => (
   <ViewContext.Provider value={{ isAppLayout }}>
-    <div className="View">{children}</div>
+    <div className="View" {...props}>
+      {children}
+    </div>
   </ViewContext.Provider>
 );
 

@@ -315,7 +315,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
         </div>
       </View.Content>
       <View.Footer>
-        {formik.isValid ? (
+        {!isLoading && formik.values.destination && formik.isValid ? (
           <Button
             size="md"
             isFullWidth
