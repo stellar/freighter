@@ -133,8 +133,9 @@ export const SendAmount = ({
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
   const [loadingRate, setLoadingRate] = useState(false);
+  // TODO: put back
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
-    false,
+    true,
   );
   const [suspiciousAssetData, setSuspiciousAssetData] = useState({
     domain: "",

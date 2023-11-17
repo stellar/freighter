@@ -20,7 +20,7 @@ import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
+// import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -131,14 +131,8 @@ export const AssetDetail = ({
     <View>
       <SubviewHeader
         title={canonical.code}
-        customBackAction={() => setSelectedAsset("")}
-      />
-      <View.Content>
-        <div className="AssetDetail__wrapper">
-          {balance && "name" in balance && (
-            <span className="AssetDetail__token-name">{balance.name}</span>
-          )}
-          {isNative ? (
+        subtitle={
+          isNative ? (
             <div className="AssetDetail__available">
               <span className="AssetDetail__available__copy">
                 {availableTotal} {t("available")}
@@ -150,7 +144,15 @@ export const AssetDetail = ({
                 <IconButton altText="Available Info" icon={<Icon.Info />} />{" "}
               </span>
             </div>
-          ) : null}
+          ) : null
+        }
+        customBackAction={() => setSelectedAsset("")}
+      />
+      <View.Content>
+        <div className="AssetDetail__wrapper">
+          {balance && "name" in balance && (
+            <span className="AssetDetail__token-name">{balance.name}</span>
+          )}
           <div className="AssetDetail__total">
             <div
               className="AssetDetail__total__copy"
@@ -210,62 +212,62 @@ export const AssetDetail = ({
               </PillButton>
             )}
           </div>
-          <SimpleBarWrapper>
-            <div className="AssetDetail__scam-warning">
-              {isOwnedScamAsset && (
-                <Notification variant="error" title={t("Error")}>
-                  <div>
-                    <p>
-                      This asset was tagged as fraudulent by stellar.expert, a
-                      reliable community-maintained directory.
-                    </p>
-                    <p>
-                      Trading or sending this asset is not recommended. Projects
-                      related to this asset may be fraudulent even if the
-                      creators say otherwise.
-                    </p>
-                  </div>
-                </Notification>
-              )}
-            </div>
-
-            {assetOperations.length ? (
-              <HistoryList assetDetail>
-                <>
-                  {assetOperations.map((operation) => {
-                    const historyItemOperation = {
-                      ...operation,
-                      isPayment: getIsPayment(operation.type),
-                      isSwap: getIsSwap(operation),
-                    };
-
-                    const tokenBalances =
-                      balance &&
-                      "contractId" in balance &&
-                      getIsSupportedSorobanOp(operation, networkDetails)
-                        ? [balance]
-                        : [];
-                    return (
-                      <HistoryItem
-                        key={operation.id}
-                        tokenBalances={tokenBalances}
-                        operation={historyItemOperation}
-                        publicKey={publicKey}
-                        url={stellarExpertUrl}
-                        networkDetails={networkDetails}
-                        setDetailViewProps={setDetailViewProps}
-                        setIsDetailViewShowing={setIsDetailViewShowing}
-                      />
-                    );
-                  })}
-                </>
-              </HistoryList>
-            ) : (
-              <div className="AssetDetail__empty">
-                {t("No transactions to show")}
-              </div>
+          {/* <SimpleBarWrapper> */}
+          <div className="AssetDetail__scam-warning">
+            {isOwnedScamAsset && (
+              <Notification variant="error" title={t("Error")}>
+                <div>
+                  <p>
+                    This asset was tagged as fraudulent by stellar.expert, a
+                    reliable community-maintained directory.
+                  </p>
+                  <p>
+                    Trading or sending this asset is not recommended. Projects
+                    related to this asset may be fraudulent even if the creators
+                    say otherwise.
+                  </p>
+                </div>
+              </Notification>
             )}
-          </SimpleBarWrapper>
+          </div>
+
+          {assetOperations.length ? (
+            <HistoryList assetDetail>
+              <>
+                {assetOperations.map((operation) => {
+                  const historyItemOperation = {
+                    ...operation,
+                    isPayment: getIsPayment(operation.type),
+                    isSwap: getIsSwap(operation),
+                  };
+
+                  const tokenBalances =
+                    balance &&
+                    "contractId" in balance &&
+                    getIsSupportedSorobanOp(operation, networkDetails)
+                      ? [balance]
+                      : [];
+                  return (
+                    <HistoryItem
+                      key={operation.id}
+                      tokenBalances={tokenBalances}
+                      operation={historyItemOperation}
+                      publicKey={publicKey}
+                      url={stellarExpertUrl}
+                      networkDetails={networkDetails}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  );
+                })}
+              </>
+            </HistoryList>
+          ) : (
+            <div className="AssetDetail__empty">
+              {t("No transactions to show")}
+            </div>
+          )}
+          {/* </SimpleBarWrapper> */}
         </div>
       </View.Content>
       {/* TODO: fix the slideup modal */}
