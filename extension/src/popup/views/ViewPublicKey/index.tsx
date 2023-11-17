@@ -104,45 +104,9 @@ export const ViewPublicKey = () => {
                 </div>
               }
             />
-
-            {/* <div
-              className={`ViewPublicKey__header ${
-                isEditingName ? "ViewPublicKey__header--is-editing" : ""
-              }`}
-            >
-              <BackButton />
-              {isEditingName ? (
-                <>
-                  <Form className="ViewPublicKey__form">
-                    <Field name="accountName">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          fieldSize="md"
-                          autoComplete="off"
-                          id="accountName"
-                          placeholder={accountName}
-                          {...field}
-                          error={errors.accountName}
-                        />
-                      )}
-                    </Field>
-                  </Form>
-                </>
-              ) : (
-                <>
-                  <div className="ViewPublicKey__account-name-display">
-                    {accountName}
-                  </div>
-                </>
-              )}
-              <div className="ViewPublicKey--account-name-div">
-                <EditNameButton />
-              </div>
-            </div> */}
           </>
         )}
       </Formik>
-      {/* <div className="ViewPublicKey"> */}
       <View.Content>
         <div className="ViewPublicKey__content">
           <div className="ViewPublicKey__qr-code">
@@ -186,7 +150,6 @@ export const ViewPublicKey = () => {
           ) : null}
         </div>
       </View.Footer>
-      {/* </div> */}
     </View>
   );
 };
