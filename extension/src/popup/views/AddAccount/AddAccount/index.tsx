@@ -10,8 +10,8 @@ import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 
-import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { FormRows } from "popup/basics/Forms";
+import { View } from "popup/basics/layout/View";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
@@ -54,12 +54,12 @@ export const AddAccount = () => {
   ]);
 
   return (
-    <>
-      <PopupWrapper>
-        <SubviewHeader title="Add a new Stellar address" />
-        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-          {({ dirty, isSubmitting, isValid, errors, touched }) => (
-            <Form className="FormLayoutView">
+    <View>
+      <SubviewHeader title="Add a new Stellar address" />
+      <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+        {({ dirty, isSubmitting, isValid, errors, touched }) => (
+          <Form className="FormLayoutView">
+            <View.Content>
               <FormRows>
                 <Field name="password">
                   {({ field }: FieldProps) => (
@@ -79,23 +79,23 @@ export const AddAccount = () => {
                     />
                   )}
                 </Field>
-                <SubmitButtonWrapper>
-                  <Button
-                    size="md"
-                    isFullWidth
-                    variant="primary"
-                    disabled={!(dirty && isValid)}
-                    isLoading={isSubmitting}
-                    type="submit"
-                  >
-                    {t("Add New Address")}
-                  </Button>
-                </SubmitButtonWrapper>
               </FormRows>
-            </Form>
-          )}
-        </Formik>
-      </PopupWrapper>
-    </>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                isFullWidth
+                variant="primary"
+                disabled={!(dirty && isValid)}
+                isLoading={isSubmitting}
+                type="submit"
+              >
+                {t("Add New Address")}
+              </Button>
+            </View.Footer>
+          </Form>
+        )}
+      </Formik>
+    </View>
   );
 };

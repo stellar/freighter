@@ -163,7 +163,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   return (
     <View data-testid="submit-success-view">
       <View.AppHeader
-        pageTitle={`${t("Successfully")} {isSwap ? t("swapped") : t("sent")}`}
+        pageTitle={`${t("Successfully")} ${isSwap ? t("swapped") : t("sent")}`}
       />
       <View.Content
         contentFooter={

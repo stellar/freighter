@@ -77,6 +77,10 @@ a {
 // Form layout
 .FormLayoutView {
   height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
 
   .FormRows {
     height: 100%;

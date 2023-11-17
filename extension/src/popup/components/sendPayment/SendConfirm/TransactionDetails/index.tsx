@@ -415,6 +415,14 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       </Button>
     ) : null;
 
+  const renderPageTitle = (isSuccess: boolean) => {
+    if (isSuccess) {
+      return isSwap ? t("Swapped") : `${t("Sent")} ${sourceAsset.code}`;
+    }
+
+    return isSwap ? t("Confirm Swap") : `${t("Confirm Send")}`;
+  };
+
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
@@ -433,11 +441,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           </div>
         )}
         <SubviewHeader
-          title={
-            submission.submitStatus === ActionStatus.SUCCESS
-              ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
-              : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
-          }
+          title={renderPageTitle(
+            submission.submitStatus === ActionStatus.SUCCESS,
+          )}
           customBackAction={goBack}
           customBackIcon={
             submission.submitStatus === ActionStatus.SUCCESS ? (
