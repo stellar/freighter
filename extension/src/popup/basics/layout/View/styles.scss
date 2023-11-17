@@ -8,9 +8,10 @@
 
   position: relative;
   width: 100%;
-  min-width: pxToRem(360px);
+  min-width: var(--popup--width);
   // dvh = dynamic viewport height
   height: 100dvh;
+  min-height: var(--popup--height);
   display: flex;
   flex-direction: column;
   justify-content: space-between;

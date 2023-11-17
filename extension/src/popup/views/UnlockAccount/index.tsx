@@ -45,7 +45,7 @@ export const UnlockAccount = () => {
 
   return (
     <View>
-      <View.Header showFreighterLogo />
+      <View.Header showFreighterLogo showBottomBorder={false} />
       <View.Content alignment="center">
         <div className="UnlockAccount">
           <Heading as="h1" size="lg">

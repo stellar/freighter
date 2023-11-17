@@ -16,13 +16,20 @@ const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 // Header
 interface ViewHeaderProps {
   showFreighterLogo?: boolean;
+  showBottomBorder?: boolean;
 }
 
 const ViewHeader: React.FC<ViewHeaderProps> = ({
   showFreighterLogo,
+  showBottomBorder = true,
   ...props
 }: ViewHeaderProps) => (
-  <header className="View__header View__header--border" {...props}>
+  <header
+    className={`View__header ${addStyleClasses([
+      showBottomBorder ? "View__header--border" : "",
+    ])}`}
+    {...props}
+  >
     <ViewInset isWide={true} isInline={true}>
       <div className="View__header__box View__header__box--left">
         {showFreighterLogo ? (
