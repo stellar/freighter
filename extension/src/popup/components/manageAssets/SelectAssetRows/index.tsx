@@ -11,8 +11,8 @@ import {
   saveDestinationAsset,
   saveIsToken,
   AssetSelectType,
+  tokensSelector,
 } from "popup/ducks/transactionSubmission";
-import { sorobanSelector } from "popup/ducks/soroban";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
@@ -37,7 +37,7 @@ export const SelectAssetRows = ({
     assetSelect,
     blockedDomains,
   } = useSelector(transactionSubmissionSelector);
-  const { tokenBalances } = useSelector(sorobanSelector);
+  const { tokenBalances } = useSelector(tokensSelector);
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
 

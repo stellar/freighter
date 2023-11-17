@@ -39,8 +39,8 @@ import {
   saveDestinationAsset,
   getBestPath,
   resetDestinationAmount,
+  tokensSelector,
 } from "popup/ducks/transactionSubmission";
-import { sorobanSelector } from "popup/ducks/soroban";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
@@ -120,7 +120,7 @@ export const SendAmount = ({
     blockedDomains,
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
-  const { tokenBalances } = useSelector(sorobanSelector);
+  const { tokenBalances } = useSelector(tokensSelector);
 
   const {
     amount,

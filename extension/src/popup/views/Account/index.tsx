@@ -18,8 +18,6 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import {
-  // getAccountBalances,
-  getAccountBalancesINDEXER,
   getAssetIcons,
   getAssetDomains,
   transactionSubmissionSelector,
@@ -28,6 +26,7 @@ import {
   saveAssetSelectType,
   AssetSelectType,
   getBlockedDomains,
+  getAccountBalancesWithFallback,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -57,9 +56,12 @@ export const defaultAccountBalances = {
 export const Account = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const {
+    accountBalances,
+    assetIcons,
+    accountBalanceStatus,
+    tokenBalances,
+  } = useSelector(transactionSubmissionSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -83,9 +85,10 @@ export const Account = () => {
     // previous stale sends
     dispatch(resetSubmission());
     dispatch(
-      getAccountBalancesINDEXER({
+      getAccountBalancesWithFallback({
         publicKey,
         networkDetails,
+        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());
@@ -104,10 +107,10 @@ export const Account = () => {
   useEffect(() => {
     if (!balances) return;
 
-    setSortedBalances(sortBalances(balances));
+    setSortedBalances(sortBalances(balances, tokenBalances));
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch]);
+  }, [balances, networkDetails, tokenBalances, dispatch]);
 
   useEffect(() => {
     if (!balances) return;
@@ -128,7 +131,7 @@ export const Account = () => {
       }
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails, balances, sortedBalances]);
+  }, [publicKey, networkDetails, balances, sortedBalances, tokenBalances]);
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||

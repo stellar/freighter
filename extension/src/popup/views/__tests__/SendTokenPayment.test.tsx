@@ -21,7 +21,6 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
-import { initialState as sorobanInitialState } from "popup/ducks/soroban";
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
@@ -31,19 +30,6 @@ jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
 
 jest.spyOn(ApiInternal, "getSorobanTokenBalance").mockImplementation(() => {
   return Promise.resolve(mockTokenBalance);
-});
-
-jest.mock("popup/ducks/soroban", () => {
-  const original = jest.requireActual("popup/ducks/soroban");
-  return {
-    ...original,
-    getTokenBalances: () => {
-      return {
-        type: "test-action",
-        payload: mockTokenBalances,
-      };
-    },
-  };
 });
 
 jest
@@ -158,9 +144,6 @@ describe("SendTokenPayment", () => {
             response: null,
           },
           accountBalances: mockBalances,
-        },
-        soroban: {
-          ...sorobanInitialState,
           tokenBalances: mockTokenBalances.tokenBalances,
         },
       }}

@@ -18,8 +18,6 @@ import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
-import { initialState as sorobanInitialState } from "popup/ducks/soroban";
-import { reducer as soroban } from "popup/ducks/soroban";
 import { SorobanContext } from "../SorobanContext";
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
@@ -28,7 +26,6 @@ const rootReducer = combineReducers({
   auth,
   settings,
   transactionSubmission,
-  soroban,
 });
 
 const { Router } = jest.requireActual("react-router-dom");
@@ -92,7 +89,6 @@ export const Wrapper: React.FunctionComponent<any> = ({
               applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
             },
             transactionSubmission: transactionSubmissionInitialState,
-            soroban: sorobanInitialState,
             ...state,
           })}
         >

@@ -10,12 +10,12 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import {
   transactionSubmissionSelector,
   AssetSelectType,
+  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -38,7 +38,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
+  const { tokenBalances } = useSelector(tokensSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
@@ -97,10 +97,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         }
       }
 
-      if (isSorobanSuported && sorobanBalances.length) {
+      if (isSorobanSuported && tokenBalances.length) {
         // we can't swap with tokens yet, so don't show tokens
         if (!isSwap) {
-          sorobanBalances.forEach(({ symbol, contractId, name }) => {
+          tokenBalances.forEach(({ symbol, contractId, name }) => {
             // TODO:
             // interestingly, if an ascii value is set for symbol
             // it gets parsed and doesn't
@@ -128,7 +128,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     networkUrl,
     managingAssets,
     isSorobanSuported,
-    sorobanBalances,
+    tokenBalances,
     isSwap,
   ]);
 

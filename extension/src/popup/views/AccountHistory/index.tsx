@@ -11,14 +11,14 @@ import { NETWORKS } from "@shared/constants/stellar";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
-  sorobanSelector,
-  getTokenBalances,
-  resetSorobanTokensStatus,
-} from "popup/ducks/soroban";
-import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
+import {
+  getTokenBalances,
+  resetAccountBalanceStatus,
+  tokensSelector,
+} from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
   getIsSupportedSorobanOp,
@@ -66,9 +66,7 @@ export const AccountHistory = () => {
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances, getTokenBalancesStatus } = useSelector(
-    sorobanSelector,
-  );
+  const { tokenBalances, accountBalanceStatus } = useSelector(tokensSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
@@ -89,8 +87,8 @@ export const AccountHistory = () => {
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   const isTokenBalanceLoading =
-    (getTokenBalancesStatus === ActionStatus.IDLE ||
-      getTokenBalancesStatus === ActionStatus.PENDING) &&
+    (accountBalanceStatus === ActionStatus.IDLE ||
+      accountBalanceStatus === ActionStatus.PENDING) &&
     isSorobanSuported;
   const isAccountHistoryLoading = isSorobanSuported
     ? historySegments === null || isTokenBalanceLoading
@@ -179,7 +177,7 @@ export const AccountHistory = () => {
 
     return () => {
       if (isSorobanSuported) {
-        dispatch(resetSorobanTokensStatus());
+        dispatch(resetAccountBalanceStatus());
       }
     };
   }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);

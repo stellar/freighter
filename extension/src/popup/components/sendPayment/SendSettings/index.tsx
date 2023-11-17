@@ -19,13 +19,13 @@ import {
   isPathPaymentSelector,
   saveTransactionFee,
   saveSimulation,
+  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { transfer } from "@shared/helpers/soroban/token";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { parseTokenAmount } from "popup/helpers/soroban";
-import { sorobanSelector } from "popup/ducks/soroban";
 import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import "../styles.scss";
 
@@ -50,7 +50,7 @@ export const SendSettings = ({
   } = useSelector(transactionDataSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { tokenBalances } = useSelector(sorobanSelector);
+  const { tokenBalances } = useSelector(tokensSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
 

@@ -1,4 +1,5 @@
 import {
+  Address,
   Asset,
   Horizon,
   Keypair,
@@ -11,6 +12,7 @@ import {
   xdr,
 } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import BigNumber from "bignumber.js";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -25,6 +27,10 @@ import {
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
   getBlockedAccounts as internalGetBlockedAccounts,
+  getSorobanTokenBalance as internalGetSorobanTokenBalance,
+  loadAccount as internalLoadAccount,
+  getTokenIds as internalGetTokenIds,
+  removeTokenId as internalRemoveTokenId,
 } from "@shared/api/internal";
 
 import {
@@ -37,6 +43,7 @@ import {
   AccountType,
   ActionStatus,
   BlockedAccount,
+  TokenBalances,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -47,8 +54,10 @@ import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { SorobanContextInterface } from "popup/SorobanContext";
-import { getTokenBalances, resetSorobanTokensStatus } from "./soroban";
+import {
+  SorobanContextInterface,
+  hasSorobanClient,
+} from "popup/SorobanContext";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -144,7 +153,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
       });
 
       if (refreshBalances) {
-        thunkApi.dispatch(resetSorobanTokensStatus());
+        thunkApi.dispatch(resetAccountBalanceStatus());
         await thunkApi.dispatch(
           getTokenBalances({
             sorobanClient,
@@ -275,22 +284,208 @@ export const getAccountBalances = createAsyncThunk<
   }
 });
 
+export const getTokenBalances = createAsyncThunk<
+  { tokenBalances: TokenBalances; tokensWithNoBalance: string[] },
+  { sorobanClient: SorobanContextInterface; network: NETWORKS },
+  { rejectValue: ErrorMessage }
+>("getTokenBalances", async ({ sorobanClient, network }, thunkApi) => {
+  if (!sorobanClient.server || !sorobanClient.newTxBuilder) {
+    throw new Error("soroban rpc not supported");
+  }
+
+  try {
+    const { publicKey } = await internalLoadAccount();
+    const tokenIdList = await internalGetTokenIds(network);
+
+    const params = [new Address(publicKey).toScVal()];
+    const results = [] as TokenBalances;
+    const tokensWithNoBalance = [];
+
+    for (let i = 0; i < tokenIdList.length; i += 1) {
+      const tokenId = tokenIdList[i];
+      /*
+        Right now, Soroban transactions only support 1 operation per tx
+        so we need a builder per value from the contract,
+        once/if multi-op transactions are supported this can send
+        1 tx with an operation for each value.
+      */
+
+      try {
+        if (!hasSorobanClient(sorobanClient)) {
+          throw new Error("Soroban RPC is not supprted for this network");
+        }
+
+        /* eslint-disable no-await-in-loop */
+        const { balance, ...rest } = await internalGetSorobanTokenBalance(
+          sorobanClient.server,
+          tokenId,
+          {
+            balance: await sorobanClient.newTxBuilder(),
+            name: await sorobanClient.newTxBuilder(),
+            decimals: await sorobanClient.newTxBuilder(),
+            symbol: await sorobanClient.newTxBuilder(),
+          },
+          params,
+        );
+        /* eslint-enable no-await-in-loop */
+
+        const total = new BigNumber(balance);
+
+        results.push({
+          contractId: tokenId,
+          total,
+          ...rest,
+        });
+      } catch (e) {
+        console.error(`Token "${tokenId}" missing data on RPC server`);
+        tokensWithNoBalance.push(tokenId);
+      }
+    }
+
+    return { tokenBalances: results, tokensWithNoBalance };
+  } catch (e) {
+    console.error(e);
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
+
+export const removeTokenId = createAsyncThunk<
+  void,
+  {
+    contractId: string;
+    network: NETWORKS;
+    sorobanClient: SorobanContextInterface;
+  },
+  { rejectValue: ErrorMessage }
+>("removeTokenId", async ({ contractId, network, sorobanClient }, thunkApi) => {
+  try {
+    await internalRemoveTokenId({ contractId, network });
+  } catch (e) {
+    console.error(e);
+    thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+
+  thunkApi.dispatch(getTokenBalances({ sorobanClient, network }));
+});
+
 export const getAccountBalancesINDEXER = createAsyncThunk<
   AccountBalancesInterface,
   { publicKey: string; networkDetails: NetworkDetails },
   { rejectValue: ErrorMessage }
->("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    const res = await internalgetAccountBalancesINDEXER(
-      publicKey,
-      networkDetails.network as NETWORKS,
-    );
-    storeBalanceMetricData(publicKey, res.isFunded || false);
-    return res;
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
-  }
-});
+>(
+  "getAccountBalancesINDEXER",
+  async ({ publicKey, networkDetails }, thunkApi) => {
+    try {
+      const res = await internalgetAccountBalancesINDEXER(
+        publicKey,
+        networkDetails.network as NETWORKS,
+      );
+      storeBalanceMetricData(publicKey, res.isFunded || false);
+      return res;
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e });
+    }
+  },
+);
+
+export const getAccountBalancesWithFallback = createAsyncThunk<
+  {
+    balances: AccountBalancesInterface;
+    tokenBalances?: TokenBalances;
+    tokensWithNoBalance?: string[];
+  },
+  {
+    publicKey: string;
+    networkDetails: NetworkDetails;
+    sorobanClient: SorobanContextInterface;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "getAccountBalancesWithFall",
+  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
+    try {
+      const balances = await internalgetAccountBalancesINDEXER(
+        publicKey,
+        networkDetails.network as NETWORKS,
+      );
+      return {
+        balances,
+      };
+    } catch (e) {
+      // fallback to trying the rpcs
+      let balances = {} as AccountBalancesInterface;
+      const tokenBalances = [] as TokenBalances;
+      const tokensWithNoBalance = [];
+
+      try {
+        balances = await internalGetAccountBalances({
+          publicKey,
+          networkDetails,
+        });
+
+        const tokenIdList = await internalGetTokenIds(
+          networkDetails.network as NETWORKS,
+        );
+
+        const params = [new Address(publicKey).toScVal()];
+
+        if (sorobanClient.server || sorobanClient.newTxBuilder) {
+          for (let i = 0; i < tokenIdList.length; i += 1) {
+            const tokenId = tokenIdList[i];
+            /*
+          Right now, Soroban transactions only support 1 operation per tx
+          so we need a builder per value from the contract,
+          once/if multi-op transactions are supported this can send
+          1 tx with an operation for each value.
+        */
+
+            try {
+              if (!hasSorobanClient(sorobanClient)) {
+                throw new Error("Soroban RPC is not supprted for this network");
+              }
+
+              /* eslint-disable no-await-in-loop */
+              const { balance, ...rest } = await internalGetSorobanTokenBalance(
+                sorobanClient.server,
+                tokenId,
+                {
+                  balance: await sorobanClient.newTxBuilder(),
+                  name: await sorobanClient.newTxBuilder(),
+                  decimals: await sorobanClient.newTxBuilder(),
+                  symbol: await sorobanClient.newTxBuilder(),
+                },
+                params,
+              );
+              /* eslint-enable no-await-in-loop */
+
+              const total = new BigNumber(balance);
+
+              tokenBalances.push({
+                contractId: tokenId,
+                total,
+                ...rest,
+              });
+            } catch (err) {
+              console.error(err);
+              console.error(`Token "${tokenId}" missing data on RPC server`);
+              tokensWithNoBalance.push(tokenId);
+            }
+          }
+        }
+      } catch (fallbackErr) {
+        console.error(fallbackErr);
+        return thunkApi.rejectWithValue({
+          errorMessage: fallbackErr as string,
+        });
+      }
+
+      return {
+        balances,
+        tokenBalances,
+      };
+    }
+  },
+);
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
@@ -449,6 +644,8 @@ interface InitialState {
     domains: BlockedDomains;
   };
   blockedAccounts: BlockedAccount[];
+  tokenBalances: TokenBalances;
+  tokensWithNoBalance: string[];
 }
 
 export const initialState: InitialState = {
@@ -498,6 +695,8 @@ export const initialState: InitialState = {
     domains: {},
   },
   blockedAccounts: [],
+  tokenBalances: [] as TokenBalances,
+  tokensWithNoBalance: [] as string[],
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -614,26 +813,21 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     });
-    // builder.addCase(getAccountBalances.pending, (state) => {
-    //   state.accountBalanceStatus = ActionStatus.PENDING;
-    // });
-    // builder.addCase(getAccountBalances.rejected, (state) => {
-    //   state.accountBalanceStatus = ActionStatus.ERROR;
-    // });
-    // builder.addCase(getAccountBalances.fulfilled, (state, action) => {
-    //   state.accountBalances = action.payload;
-    //   state.accountBalanceStatus = ActionStatus.SUCCESS;
-    // });
-    builder.addCase(getAccountBalancesINDEXER.pending, (state) => {
+    builder.addCase(getAccountBalancesWithFallback.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
     });
-    builder.addCase(getAccountBalancesINDEXER.rejected, (state) => {
+    builder.addCase(getAccountBalancesWithFallback.rejected, (state) => {
       state.accountBalanceStatus = ActionStatus.ERROR;
     });
-    builder.addCase(getAccountBalancesINDEXER.fulfilled, (state, action) => {
-      state.accountBalances = action.payload;
-      state.accountBalanceStatus = ActionStatus.SUCCESS;
-    });
+    builder.addCase(
+      getAccountBalancesWithFallback.fulfilled,
+      (state, action) => {
+        state.accountBalances = action.payload.balances;
+        state.tokenBalances = action.payload.tokenBalances || [];
+        state.tokensWithNoBalance = action.payload.tokensWithNoBalance || [];
+        state.accountBalanceStatus = ActionStatus.SUCCESS;
+      },
+    );
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
     });
@@ -716,3 +910,13 @@ export const transactionDataSelector = (state: {
 export const isPathPaymentSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData.destinationAsset !== "";
+
+export const tokensSelector = (state: {
+  tokenBalances: TokenBalances;
+  accountBalanceStatus: ActionStatus;
+  tokensWithNoBalance: string[];
+}) => ({
+  tokenBalances: state.tokenBalances,
+  accountBalanceStatus: state.accountBalanceStatus,
+  tokensWithNoBalance: state.tokensWithNoBalance,
+});

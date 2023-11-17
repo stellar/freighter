@@ -36,7 +36,6 @@ import {
   hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { removeTokenId, sorobanSelector } from "popup/ducks/soroban";
 import {
   getAccountBalances,
   resetSubmission,
@@ -45,6 +44,8 @@ import {
   transactionSubmissionSelector,
   startHwSign,
   ShowOverlayStatus,
+  removeTokenId,
+  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
@@ -96,8 +97,8 @@ export const ManageAssetRows = ({
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const { getTokenBalancesStatus, tokensWithNoBalance } = useSelector(
-    sorobanSelector,
+  const { accountBalanceStatus, tokensWithNoBalance } = useSelector(
+    tokensSelector,
   );
   const sorobanClient = useContext(SorobanContext);
 
@@ -364,7 +365,7 @@ export const ManageAssetRows = ({
               );
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
-                getTokenBalancesStatus === ActionStatus.PENDING;
+                accountBalanceStatus === ActionStatus.PENDING;
 
               return (
                 <div className="ManageAssetRows__row" key={canonicalAsset}>
@@ -402,7 +403,7 @@ export const ManageAssetRows = ({
 
           {tokensWithNoBalance.map((tokenId) => {
             const isActionPending =
-              getTokenBalancesStatus === ActionStatus.PENDING;
+              accountBalanceStatus === ActionStatus.PENDING;
 
             return (
               <div className="ManageAssetRows__row" key={tokenId}>
