@@ -24,7 +24,7 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
+import { getAssetDecimals } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -39,7 +39,6 @@ import {
   saveDestinationAsset,
   getBestPath,
   resetDestinationAmount,
-  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -120,7 +119,6 @@ export const SendAmount = ({
     blockedDomains,
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
-  const { tokenBalances } = useSelector(tokensSelector);
 
   const {
     amount,
@@ -146,10 +144,6 @@ export const SendAmount = ({
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
       let availBalance = new BigNumber("0");
-      if (isToken) {
-        const contractId = selectedAsset.split(":")[1];
-        return getTokenBalance(tokenBalances, contractId);
-      }
       if (accountBalances.balances) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
@@ -179,13 +173,7 @@ export const SendAmount = ({
 
       return availBalance.toFixed().toString();
     },
-    [
-      accountBalances.balances,
-      accountBalances.subentryCount,
-      recommendedFee,
-      isToken,
-      tokenBalances,
-    ],
+    [accountBalances.balances, accountBalances.subentryCount, recommendedFee],
   );
 
   const [availBalance, setAvailBalance] = useState(
@@ -369,7 +357,7 @@ export const SendAmount = ({
           ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
-            getAssetDecimals(asset, tokenBalances, isToken),
+            getAssetDecimals(asset, accountBalances, isToken),
           )}
           )`}
         />
@@ -461,7 +449,7 @@ export const SendAmount = ({
                     } = formatAmountPreserveCursor(
                       e.target.value,
                       formik.values.amount,
-                      getAssetDecimals(asset, tokenBalances, isToken),
+                      getAssetDecimals(asset, accountBalances, isToken),
                       e.target.selectionStart || 1,
                     );
                     formik.setFieldValue("amount", newAmount);

@@ -11,12 +11,10 @@ import {
   saveDestinationAsset,
   saveIsToken,
   AssetSelectType,
-  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
-import { getTokenBalance } from "popup/helpers/soroban";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { Balances } from "@shared/api/types";
 
@@ -37,7 +35,6 @@ export const SelectAssetRows = ({
     assetSelect,
     blockedDomains,
   } = useSelector(transactionSubmissionSelector);
-  const { tokenBalances } = useSelector(tokensSelector);
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
 
@@ -51,9 +48,6 @@ export const SelectAssetRows = ({
     }
     return "";
   };
-
-  const calculateTokenBalance = (contractId: string) =>
-    getTokenBalance(tokenBalances, contractId);
 
   // hide balances for path pay dest asset
   const hideBalances =
@@ -116,10 +110,7 @@ export const SelectAssetRows = ({
                 </div>
                 {!hideBalances && (
                   <div>
-                    {contractId
-                      ? calculateTokenBalance(contractId)
-                      : formatAmount(getAccountBalance(canonical))}{" "}
-                    {code}
+                    {formatAmount(getAccountBalance(canonical))} {code}
                   </div>
                 )}
               </div>

@@ -56,12 +56,9 @@ export const defaultAccountBalances = {
 export const Account = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const {
-    accountBalances,
-    assetIcons,
-    accountBalanceStatus,
-    tokenBalances,
-  } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -107,10 +104,10 @@ export const Account = () => {
   useEffect(() => {
     if (!balances) return;
 
-    setSortedBalances(sortBalances(balances, tokenBalances));
+    setSortedBalances(sortBalances(balances));
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, tokenBalances, dispatch]);
+  }, [balances, networkDetails, dispatch]);
 
   useEffect(() => {
     if (!balances) return;
@@ -131,7 +128,7 @@ export const Account = () => {
       }
     };
     fetchAccountHistory();
-  }, [publicKey, networkDetails, balances, sortedBalances, tokenBalances]);
+  }, [publicKey, networkDetails, balances, sortedBalances]);
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||

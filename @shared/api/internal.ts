@@ -22,6 +22,7 @@ import {
   Balances,
   HorizonOperation,
   Settings,
+  TokenBalance,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -367,9 +368,10 @@ export const getAccountIndexerBalances = async (
               key: curr.contractId,
             },
           },
+          decimals: curr.decimals,
           total: new BigNumber(curr.total),
           available: new BigNumber(curr.total),
-        } as AssetBalance;
+        } as TokenBalance;
       }
       if (curr.issuer) {
         prev[`${curr.symbol}:${curr.issuer.key}`] = {

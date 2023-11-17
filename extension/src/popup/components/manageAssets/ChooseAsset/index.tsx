@@ -10,7 +10,6 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import {
   transactionSubmissionSelector,
   AssetSelectType,
-  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
@@ -38,7 +37,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances } = useSelector(tokensSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
@@ -97,26 +95,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         }
       }
 
-      if (isSorobanSuported && tokenBalances.length) {
-        // we can't swap with tokens yet, so don't show tokens
-        if (!isSwap) {
-          tokenBalances.forEach(({ symbol, contractId, name }) => {
-            // TODO:
-            // interestingly, if an ascii value is set for symbol
-            // it gets parsed and doesn't
-            // match the original value after this. How to escape this?
-            collection.push({
-              code: `${symbol}`,
-              issuer: "",
-              image: "",
-              domain: "",
-              contractId,
-              name,
-            });
-          });
-        }
-      }
-
       setAssetRows(collection);
       setIsLoading(false);
     };
@@ -128,7 +106,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     networkUrl,
     managingAssets,
     isSorobanSuported,
-    tokenBalances,
     isSwap,
   ]);
 

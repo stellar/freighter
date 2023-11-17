@@ -12,7 +12,6 @@ import {
   mockBalances,
   mockAccounts,
   mockTokenBalance,
-  mockTokenBalances,
 } from "../../__testHelpers__";
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
@@ -148,7 +147,6 @@ describe("SendTokenPayment", () => {
             response: null,
           },
           accountBalances: mockBalances,
-          tokenBalances: mockTokenBalances.tokenBalances,
         },
       }}
     >

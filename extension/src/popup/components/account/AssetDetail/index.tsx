@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Notification } from "@stellar/design-system";
@@ -9,7 +9,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
-  getIsSupportedSorobanOp,
   getIsSwap,
   getStellarExpertUrl,
   getRawBalance,
@@ -40,6 +39,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveAsset,
   saveDestinationAsset,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
@@ -77,6 +77,9 @@ export const AssetDetail = ({
     canonical.issuer,
   );
 
+  const { accountBalances: balances } = useSelector(
+    transactionSubmissionSelector,
+  );
   const balance = getRawBalance(accountBalances, selectedAsset) || null;
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
@@ -236,17 +239,10 @@ export const AssetDetail = ({
                     isPayment: getIsPayment(operation.type),
                     isSwap: getIsSwap(operation),
                   };
-
-                  const tokenBalances =
-                    balance &&
-                    "contractId" in balance &&
-                    getIsSupportedSorobanOp(operation, networkDetails)
-                      ? [balance]
-                      : [];
                   return (
                     <HistoryItem
                       key={operation.id}
-                      tokenBalances={tokenBalances}
+                      accountBalances={balances}
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       url={stellarExpertUrl}

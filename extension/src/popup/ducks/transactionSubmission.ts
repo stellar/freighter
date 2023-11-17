@@ -42,7 +42,6 @@ import {
   AccountType,
   ActionStatus,
   BlockedAccount,
-  TokenBalances,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -57,6 +56,7 @@ import {
   SorobanContextInterface,
   hasSorobanClient,
 } from "popup/SorobanContext";
+import { AssetBalance, BalanceMap } from "@stellar/wallet-sdk/dist/types";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -266,7 +266,6 @@ export const removeTokenId = createAsyncThunk<
 export const getAccountBalancesWithFallback = createAsyncThunk<
   {
     balances: AccountBalancesInterface;
-    tokenBalances?: TokenBalances;
     tokensWithNoBalance?: string[];
   },
   {
@@ -290,7 +289,6 @@ export const getAccountBalancesWithFallback = createAsyncThunk<
     } catch (e) {
       // fallback to trying the rpcs
       let balances = {} as AccountBalancesInterface;
-      const tokenBalances = [] as TokenBalances;
       const tokensWithNoBalance = [];
 
       try {
@@ -335,12 +333,18 @@ export const getAccountBalancesWithFallback = createAsyncThunk<
               /* eslint-enable no-await-in-loop */
 
               const total = new BigNumber(balance);
-
-              tokenBalances.push({
-                contractId: tokenId,
+              (balances.balances || ({} as BalanceMap))[
+                `${rest.symbol}:${tokenId}`
+              ] = {
+                token: {
+                  code: rest.symbol,
+                  issuer: {
+                    key: tokenId,
+                  },
+                },
                 total,
-                ...rest,
-              });
+                available: total,
+              } as AssetBalance;
             } catch (err) {
               console.error(err);
               console.error(`Token "${tokenId}" missing data on RPC server`);
@@ -358,7 +362,6 @@ export const getAccountBalancesWithFallback = createAsyncThunk<
       storeBalanceMetricData(publicKey, balances.isFunded || false);
       return {
         balances,
-        tokenBalances,
       };
     }
   },
@@ -521,7 +524,6 @@ interface InitialState {
     domains: BlockedDomains;
   };
   blockedAccounts: BlockedAccount[];
-  tokenBalances: TokenBalances;
   tokensWithNoBalance: string[];
 }
 
@@ -572,7 +574,6 @@ export const initialState: InitialState = {
     domains: {},
   },
   blockedAccounts: [],
-  tokenBalances: [] as TokenBalances,
   tokensWithNoBalance: [] as string[],
 };
 
@@ -700,7 +701,6 @@ const transactionSubmissionSlice = createSlice({
       getAccountBalancesWithFallback.fulfilled,
       (state, action) => {
         state.accountBalances = action.payload.balances;
-        state.tokenBalances = action.payload.tokenBalances || [];
         state.tokensWithNoBalance = action.payload.tokensWithNoBalance || [];
         state.accountBalanceStatus = ActionStatus.SUCCESS;
       },
@@ -789,11 +789,9 @@ export const isPathPaymentSelector = (state: {
 }) => state.transactionSubmission.transactionData.destinationAsset !== "";
 
 export const tokensSelector = (state: {
-  tokenBalances: TokenBalances;
   accountBalanceStatus: ActionStatus;
   tokensWithNoBalance: string[];
 }) => ({
-  tokenBalances: state.tokenBalances || [],
   accountBalanceStatus: state.accountBalanceStatus,
   tokensWithNoBalance: state.tokensWithNoBalance || [],
 });

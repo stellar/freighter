@@ -15,7 +15,7 @@ import {
 } from "popup/ducks/settings";
 import {
   resetAccountBalanceStatus,
-  tokensSelector,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
@@ -64,7 +64,9 @@ export const AccountHistory = () => {
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances, accountBalanceStatus } = useSelector(tokensSelector);
+  const { accountBalances, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
@@ -207,7 +209,7 @@ export const AccountHistory = () => {
                     (operation: HistoryItemOperation) => (
                       <HistoryItem
                         key={operation.id}
-                        tokenBalances={tokenBalances}
+                        accountBalances={accountBalances}
                         operation={operation}
                         publicKey={publicKey}
                         url={stellarExpertUrl}

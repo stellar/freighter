@@ -18,7 +18,12 @@ import {
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
 
-import { HorizonOperation, TokenBalances } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  Balances,
+  HorizonOperation,
+  TokenBalance,
+} from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 import { TransactionDetailProps } from "../TransactionDetail";
@@ -47,7 +52,7 @@ export type HistoryItemOperation = HorizonOperation & {
 };
 
 interface HistoryItemProps {
-  tokenBalances: TokenBalances;
+  accountBalances: AccountBalancesInterface;
   operation: HistoryItemOperation;
   publicKey: string;
   url: string;
@@ -57,8 +62,8 @@ interface HistoryItemProps {
 }
 
 export const HistoryItem = ({
+  accountBalances,
   operation,
-  tokenBalances,
   publicKey,
   url,
   networkDetails,
@@ -203,9 +208,15 @@ export const HistoryItem = ({
         }));
       } else if (isInvokeHostFn) {
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-        const token = tokenBalances.find(
-          (balance) => attrs && balance.contractId === attrs.contractId,
+        const balances =
+          accountBalances.balances || ({} as NonNullable<Balances>);
+        const tokenKey = Object.keys(balances).find(
+          (balanceKey) => attrs?.contractId === balanceKey.split(":")[1],
         );
+        if (!tokenKey) {
+          return;
+        }
+        const { token, decimals } = balances[tokenKey] as TokenBalance;
 
         if (!attrs) {
           setRowText(operationString);
@@ -326,12 +337,12 @@ export const HistoryItem = ({
           } else {
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
-              token.decimals,
+              decimals,
             );
             setBodyComponent(
               <>
                 {isRecieving && "+"}
-                {formattedTokenAmount} {token.symbol}
+                {formattedTokenAmount} {token.code}
               </>,
             );
 
@@ -347,10 +358,10 @@ export const HistoryItem = ({
                 from: attrs.from,
                 to: attrs.to,
               },
-              headerTitle: `${t(capitalize(attrs.fnName))} ${token.symbol}`,
+              headerTitle: `${t(capitalize(attrs.fnName))} ${token.code}`,
               isPayment: false,
               isRecipient: isRecieving,
-              operationText: `${formattedTokenAmount} ${token.symbol}`,
+              operationText: `${formattedTokenAmount} ${token.code}`,
             }));
           }
         } else if (attrs.fnName === SorobanTokenInterface.transfer) {
@@ -369,11 +380,11 @@ export const HistoryItem = ({
           } else {
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
-              token.decimals,
+              decimals,
             );
             setBodyComponent(
               <>
-                - {formattedTokenAmount} {token.symbol}
+                - {formattedTokenAmount} {token.code}
               </>,
             );
 
@@ -386,10 +397,10 @@ export const HistoryItem = ({
                 from: attrs.from,
                 to: attrs.to,
               },
-              headerTitle: `${t(capitalize(attrs.fnName))} ${token.symbol}`,
+              headerTitle: `${t(capitalize(attrs.fnName))} ${token.code}`,
               isPayment: false,
               isRecipient: false,
-              operationText: `${formattedTokenAmount} ${token.symbol}`,
+              operationText: `${formattedTokenAmount} ${token.code}`,
             }));
           }
         } else {
@@ -430,7 +441,7 @@ export const HistoryItem = ({
     startingBalance,
     t,
     to,
-    tokenBalances,
+    accountBalances.balances,
   ]);
 
   return (

@@ -103,6 +103,17 @@ export const Wrapper: React.FunctionComponent<any> = ({
 
 export const mockBalances = {
   balances: ({
+    ["DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ"]: {
+      token: {
+        code: "DT",
+        issuer: {
+          key: "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        },
+      },
+      decimals: 7,
+      total: new BigNumber("10"),
+      available: new BigNumber("10"),
+    },
     ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
       token: {
         code: "USDC",
@@ -121,18 +132,6 @@ export const mockBalances = {
   } as any) as Balances,
   isFunded: true,
   subentryCount: 1,
-};
-
-export const mockTokenBalances = {
-  tokenBalances: [
-    {
-      contractId: "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-      decimals: 0,
-      name: "Demo Token",
-      symbol: "DT",
-      total: new BigNumber(10),
-    },
-  ],
 };
 
 export const mockTokenBalance = {

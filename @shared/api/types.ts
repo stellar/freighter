@@ -6,6 +6,7 @@ import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
+import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -146,7 +147,16 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
-export type Balances = Types.BalanceMap | null;
+export interface TokenBalance extends AssetBalance {
+  decimals: number;
+}
+
+export interface BalanceMap {
+  [key: string]: AssetBalance | NativeBalance | TokenBalance;
+  native: NativeBalance;
+}
+
+export type Balances = BalanceMap | null;
 
 export interface SorobanBalance {
   contractId: string;

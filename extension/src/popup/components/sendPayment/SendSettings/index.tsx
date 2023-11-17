@@ -19,7 +19,7 @@ import {
   isPathPaymentSelector,
   saveTransactionFee,
   saveSimulation,
-  tokensSelector,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
@@ -28,6 +28,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { parseTokenAmount } from "popup/helpers/soroban";
 import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import "../styles.scss";
+import { Balances, TokenBalance } from "@shared/api/types";
 
 export const SendSettings = ({
   previous,
@@ -50,7 +51,7 @@ export const SendSettings = ({
   } = useSelector(transactionDataSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { tokenBalances } = useSelector(tokensSelector);
+  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
 
@@ -76,9 +77,9 @@ export const SendSettings = ({
   async function goToReview() {
     if (isToken) {
       const assetAddress = asset.split(":")[1];
-      const assetBalance = tokenBalances.find(
-        (b) => b.contractId === assetAddress,
-      );
+      const balances =
+        accountBalances.balances || ({} as NonNullable<Balances>);
+      const assetBalance = balances[asset] as TokenBalance;
 
       if (!assetBalance) {
         throw new Error("Asset Balance not available");
