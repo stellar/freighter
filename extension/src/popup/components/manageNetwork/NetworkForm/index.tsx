@@ -6,6 +6,8 @@ import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 import { useHistory, useLocation } from "react-router-dom";
 
+import { NETWORKS } from "@shared/constants/stellar";
+
 import { AppDispatch } from "popup/App";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -24,7 +26,6 @@ import {
   settingsErrorSelector,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
-  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -55,7 +56,6 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
-  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
@@ -361,7 +361,8 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 name="networkUrl"
                 placeholder={t("Enter network URL")}
               />
-              {isSorobanSuported || !isEditingDefaultNetworks ? (
+              {!isEditingDefaultNetworks ||
+              networkDetailsToEdit.network !== NETWORKS.PUBLIC ? (
                 <Input
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}
