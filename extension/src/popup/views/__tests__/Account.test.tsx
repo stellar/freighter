@@ -30,6 +30,10 @@ const mockHistoryOperations = {
 };
 
 jest
+  .spyOn(ApiInternal, "getAccountIndexerBalances")
+  .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest
   .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
 // @ts-ignore
@@ -139,7 +143,7 @@ describe("Account view", () => {
     );
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets");
-      expect(assetNodes.length).toEqual(2);
+      expect(assetNodes.length).toEqual(3);
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
   });

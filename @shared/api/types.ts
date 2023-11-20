@@ -149,6 +149,7 @@ export interface AssetDomains {
 
 export interface TokenBalance extends AssetBalance {
   decimals: number;
+  name: string;
 }
 
 export interface BalanceMap {

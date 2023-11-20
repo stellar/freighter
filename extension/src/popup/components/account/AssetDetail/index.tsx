@@ -81,8 +81,8 @@ export const AssetDetail = ({
     transactionSubmissionSelector,
   );
 
-  const balance =
-    getRawBalance(accountBalances, selectedAsset) || (null as any); // TODO;
+  const balance = getRawBalance(accountBalances, selectedAsset);
+
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
     balance && "decimals" in balance
@@ -129,6 +129,10 @@ export const AssetDetail = ({
     return null;
   }
 
+  if (!balance) {
+    return null;
+  }
+
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
@@ -138,7 +142,7 @@ export const AssetDetail = ({
           title={canonical.code}
           customBackAction={() => setSelectedAsset("")}
         />
-        {balance && "name" in balance && (
+        {"name" in balance && (
           <span className="AssetDetail__token-name">{balance.name}</span>
         )}
         {isNative ? (
@@ -170,7 +174,7 @@ export const AssetDetail = ({
               }
               assetDomain={assetDomain}
               contractId={
-                balance && "decimals" in balance
+                balance && "issuer" in balance.token
                   ? balance.token.issuer.key
                   : undefined
               }
