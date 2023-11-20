@@ -28,6 +28,10 @@ import { WalletType } from "@shared/constants/hardwareWallet";
 import { AppState } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData } from "helpers/metrics";
+import {
+  subscribeTokenBalance,
+  subscribeTokenHistory,
+} from "background/helpers/account";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },
@@ -344,14 +348,16 @@ export const signOut = createAsyncThunk<
 
 export const addTokenId = createAsyncThunk<
   { tokenIdList: string[] },
-  { tokenId: string; network: Networks },
+  { publicKey: string; tokenId: string; network: Networks },
   { rejectValue: ErrorMessage }
->("auth/addToken", async ({ tokenId, network }, thunkApi) => {
+>("auth/addToken", async ({ publicKey, tokenId, network }, thunkApi) => {
   let res = {
     tokenIdList: [] as string[],
   };
 
   try {
+    await subscribeTokenBalance(publicKey, tokenId);
+    await subscribeTokenHistory(publicKey, tokenId);
     res = await addTokenIdService(tokenId, network);
   } catch (e) {
     console.error("Failed when adding a token: ", e.message);

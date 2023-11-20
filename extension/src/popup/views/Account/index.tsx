@@ -3,7 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { getAccountHistory } from "@shared/api/internal";
+import {
+  getAccountHistory,
+  getIndexerAccountHistory,
+} from "@shared/api/internal";
 import {
   AccountBalancesInterface,
   ActionStatus,
@@ -113,6 +116,11 @@ export const Account = () => {
 
     const fetchAccountHistory = async () => {
       try {
+        const res2 = await getIndexerAccountHistory({
+          publicKey,
+          networkDetails,
+        });
+        console.log(res2);
         const res = await getAccountHistory({ publicKey, networkDetails });
         setAssetOperations(
           sortOperationsByAsset({

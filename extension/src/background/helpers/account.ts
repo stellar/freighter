@@ -160,3 +160,53 @@ export const subscribeAccount = async (publicKey: string) => {
 
   return { publicKey };
 };
+
+export const subscribeTokenBalance = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  const networkDetails = await getNetworkDetails();
+  const indexerUrl = INDEXER_URLS[networkDetails.network];
+  if (!indexerUrl) {
+    throw new Error("Indexer not supported");
+  }
+
+  try {
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
+    };
+    await fetch(`${indexerUrl}/subscription/token-balance`, options);
+  } catch (e) {
+    console.error(e);
+    throw new Error(`Error subscribing to token: ${contractId}`);
+  }
+};
+
+export const subscribeTokenHistory = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  const networkDetails = await getNetworkDetails();
+  const indexerUrl = INDEXER_URLS[networkDetails.network];
+  if (!indexerUrl) {
+    throw new Error("Indexer not supported");
+  }
+
+  try {
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
+    };
+    await fetch(`${indexerUrl}/subscription/token`, options);
+  } catch (e) {
+    console.error(e);
+    throw new Error(`Error subscribing to token: ${contractId}`);
+  }
+};

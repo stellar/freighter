@@ -462,6 +462,30 @@ export const getAccountBalances = async ({
   };
 };
 
+export const getIndexerAccountHistory = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const indexerUrl = INDEXER_URLS[networkDetails.network];
+  if (!indexerUrl) {
+    throw new Error("Indexer URL not found");
+  }
+
+  try {
+    const url = new URL(`${indexerUrl}/account-history/${publicKey}`);
+    const response = await fetch(url.href);
+    const json = await response.json();
+    console.log(json);
+
+    return json;
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const getAccountHistory = async ({
   publicKey,
   networkDetails,
