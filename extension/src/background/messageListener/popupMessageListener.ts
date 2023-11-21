@@ -1424,7 +1424,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       1. We create a new keypair that will be the destination account
       2. We send the minimum amount of XLM needed to create the destination acct and also provide
         enough funds to create necessary trustlines
-      3. Replace the old sourc eaccount with the destination account in redux and in local storage
+      3. Replace the old source account with the destination account in redux and in local storage. 
+        When the user refreshes the app, they will already be logged into their new accounts.
       4. Migrate the trustlines from the source account to destination
       5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account 
     */
