@@ -14,7 +14,6 @@ interface MigrateTrustLinesParams {
   sourceKeys: Keypair;
   newKeyPair: { publicKey: string; privateKey: string };
   fee: string;
-  migrationErrors: any[];
 }
 
 /*

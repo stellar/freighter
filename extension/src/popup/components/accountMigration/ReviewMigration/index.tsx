@@ -157,7 +157,7 @@ export const ReviewMigration = () => {
           trustlines: 0,
           dataEntries: 0,
           xlmBalance: "",
-          trustlineBalances: [] as any,
+          trustlineBalances: [] as Horizon.HorizonApi.BalanceLine[],
           isSigner,
           minBalance: "",
           keyIdIndex: migratableAccounts[i].keyIdIndex,
