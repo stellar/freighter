@@ -1419,6 +1419,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const fee = xlmToStroop(recommendedFee).toFixed();
     const server = stellarSdkServer(NETWORK_URLS.TESTNET);
 
+    /*
+      For each migratable balance, we'll go through the following steps:
+      1. We create a new keypair that will be the destination account
+      2. We send the minimum amount of XLM needed to create the destination acct and also provide
+        enough funds to create necessary trustlines
+      3. Replace the old sourc eaccount with the destination account in redux and in local storage
+      4. Migrate the trustlines from the source account to destination
+      5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account 
+    */
+
     for (let i = 0; i < balancesToMigrate.length; i += 1) {
       const {
         publicKey,
@@ -1565,14 +1575,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const currentState = sessionStore.getState();
 
-    const res = {
+    return {
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
       hasPrivateKey: await hasPrivateKeySelector(currentState),
       error: JSON.stringify(migrationErrors),
     };
-
-    return res;
   };
 
   const messageResponder: MessageResponder = {
