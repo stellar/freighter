@@ -1404,7 +1404,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const newWallet = fromMnemonic(migratedMnemonicPhrase);
     const keyIdList: string = await getKeyIdList();
-    const migrationErrors = [];
+    const migrationErrors: {
+      source: string;
+      destination: string;
+      asset?: string;
+      error: any;
+    }[] = [];
     const fee = xlmToStroop(recommendedFee).toFixed();
     const server = stellarSdkServer(NETWORK_URLS.TESTNET);
 
@@ -1441,29 +1446,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         break;
       }
 
-      // i think these are the same??
-      // if (isMergeSelected) {
-      //   transaction.addOperation(
-      //     Operation.createAccount({
-      //       destination: newKeyPair.publicKey,
-      //       startingBalance: new BigNumber(1)
-      //         .plus(
-      //           new BigNumber(0.5).times(
-      //             new BigNumber(trustlineBalances.length),
-      //           ),
-      //         )
-      //         .toString(),
-      //     }),
-      //   );
-      // } else {
-
-      // }
-
       // the amount the sender needs to hold to complete the migration
       const senderAccountMinBal = new BigNumber(minBalance).plus(
         new BigNumber(recommendedFee).times(trustlineBalances.length + 1),
       );
-      console.log(senderAccountMinBal.toString());
       const startingBalance = new BigNumber(xlmBalance)
         .minus(senderAccountMinBal)
         .toString();
@@ -1489,9 +1475,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         await server.submitTransaction(builtTransaction);
       } catch (e) {
         console.error(e);
-        migrationErrors.push([publicKey, newKeyPair.publicKey]);
+        migrationErrors.push({
+          source: publicKey,
+          destination: newKeyPair.publicKey,
+          error: e,
+        });
+        break;
       }
 
+      // replace the source account with the new one in `allAccounts` and store the keys
       // eslint-disable-next-line no-await-in-loop
       await _replaceAccount({
         mnemonicPhrase: migratedMnemonicPhrase,
@@ -1500,104 +1492,28 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         indexToReplace: keyIdIndex,
       });
 
-      // now that the accounts are funded, we can add the trustline balances
-      migrateTrustlines({
-        trustlineBalances,
-        server,
-        newKeyPair,
-        fee,
-        sourceAccount,
-        sourceKeys,
-        migrationErrors,
-      });
-
-      // if (trustlineBalances.length) {
-      //   // eslint-disable-next-line no-await-in-loop
-      //   const trustlineRecipientAccount = await server.loadAccount(
-      //     newKeyPair.publicKey,
-      //   );
-
-      //   // eslint-disable-next-line no-await-in-loop
-      //   const changeTrustTx = await new TransactionBuilder(
-      //     trustlineRecipientAccount,
-      //     {
-      //       fee,
-      //       networkPassphrase: Networks.TESTNET,
-      //     },
-      //   );
-
-      //   for (let k = 0; k < trustlineBalances.length; k += 1) {
-      //     const bal = trustlineBalances[k];
-      //     let asset;
-      //     if ("asset_code" in bal && "asset_issuer" in bal) {
-      //       asset = new Asset(bal.asset_code, bal.asset_issuer);
-      //       changeTrustTx.addOperation(
-      //         Operation.changeTrust({
-      //           asset,
-      //         }),
-      //       );
-      //     }
-
-      //     const recipientSourceKeys = Keypair.fromSecret(
-      //       newKeyPair.privateKey,
-      //     );
-      //     const builtChangeTrustTx = changeTrustTx.setTimeout(180).build();
-
-      //     try {
-      //       builtChangeTrustTx.sign(recipientSourceKeys);
-      //     } catch (e) {
-      //       console.error(e);
-      //     }
-
-      //     try {
-      //       // eslint-disable-next-line no-await-in-loop
-      //       await server.submitTransaction(builtChangeTrustTx);
-      //     } catch (e) {
-      //       console.error(e);
-      //       migrationErrors.push([publicKey, newKeyPair.publicKey, asset]);
-      //     }
-
-      //     if (asset) {
-      //       // trustline established, send the balance
-      //       // eslint-disable-next-line no-await-in-loop
-      //       const sendTrustlineBalanceTx = await new TransactionBuilder(
-      //         sourceAccount,
-      //         {
-      //           fee,
-      //           networkPassphrase: Networks.TESTNET,
-      //         },
-      //       );
-
-      //       sendTrustlineBalanceTx.addOperation(
-      //         Operation.payment({
-      //           destination: newKeyPair.publicKey,
-      //           asset,
-      //           amount: bal.balance,
-      //         }),
-      //       );
-
-      //       const builtSendTrustlineBalanceTx = sendTrustlineBalanceTx
-      //         .setTimeout(180)
-      //         .build();
-
-      //       try {
-      //         builtSendTrustlineBalanceTx.sign(sourceKeys);
-      //       } catch (e) {
-      //         console.error(e);
-      //       }
-
-      //       try {
-      //         // eslint-disable-next-line no-await-in-loop
-      //         await server.submitTransaction(builtSendTrustlineBalanceTx);
-      //       } catch (e) {
-      //         console.error(e);
-      //         migrationErrors.push([publicKey, newKeyPair.publicKey, asset]);
-      //       }
-      //     }
-      //   }
-      // }
+      try {
+        // now that the destination accounts are funded, we can add the trustline balances
+        migrateTrustlines({
+          trustlineBalances,
+          server,
+          newKeyPair,
+          fee,
+          sourceAccount,
+          sourceKeys,
+          migrationErrors,
+        });
+      } catch (e) {
+        console.error(e);
+        migrationErrors.push({
+          source: publicKey,
+          destination: newKeyPair.publicKey,
+          error: e,
+        });
+      }
 
       if (isMergeSelected) {
+        // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
         // eslint-disable-next-line no-await-in-loop
         const mergeTransaction = await new TransactionBuilder(sourceAccount, {
           fee,
@@ -1622,7 +1538,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           await server.submitTransaction(builtMergeTransaction);
         } catch (e) {
           console.error(e);
-          migrationErrors.push([publicKey, newKeyPair.publicKey]);
+          migrationErrors.push({
+            source: publicKey,
+            destination: newKeyPair.publicKey,
+            error: e,
+          });
         }
       }
     }

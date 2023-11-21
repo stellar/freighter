@@ -24,7 +24,6 @@ export const migrateTrustlines = async ({
   fee,
   sourceAccount,
   sourceKeys,
-  migrationErrors,
 }: MigrateTrustLinesParams) => {
   if (!trustlineBalances.length) return;
 
@@ -63,20 +62,11 @@ export const migrateTrustlines = async ({
       console.error(e);
     }
 
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await server.submitTransaction(builtChangeTrustTx);
-    } catch (e) {
-      console.error(e);
-      migrationErrors.push([
-        sourceKeys.publicKey(),
-        newKeyPair.publicKey,
-        asset,
-      ]);
-    }
+    // eslint-disable-next-line no-await-in-loop
+    await server.submitTransaction(builtChangeTrustTx);
 
     if (asset) {
-      // trustline established, send the balance
+      // trustline established, send the balance from source account to new account
       // eslint-disable-next-line no-await-in-loop
       const sendTrustlineBalanceTx = await new TransactionBuilder(
         sourceAccount,
@@ -104,17 +94,8 @@ export const migrateTrustlines = async ({
         console.error(e);
       }
 
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        await server.submitTransaction(builtSendTrustlineBalanceTx);
-      } catch (e) {
-        console.error(e);
-        migrationErrors.push([
-          sourceKeys.publicKey(),
-          newKeyPair.publicKey,
-          asset,
-        ]);
-      }
+      // eslint-disable-next-line no-await-in-loop
+      await server.submitTransaction(builtSendTrustlineBalanceTx);
     }
   }
 };
