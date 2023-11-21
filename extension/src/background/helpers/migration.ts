@@ -17,6 +17,14 @@ interface MigrateTrustLinesParams {
   migrationErrors: any[];
 }
 
+/*
+  Migrating a trustline from one account is done in 2 separate transactions:
+  1. Add the trustline to the destination account
+  2. Send the entire trustline balance from the source account to the destination account
+
+  We repeat for every trustline
+*/
+
 export const migrateTrustlines = async ({
   trustlineBalances,
   server,
