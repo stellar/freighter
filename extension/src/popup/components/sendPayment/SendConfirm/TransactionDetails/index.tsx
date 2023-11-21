@@ -414,8 +414,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       </Button>
     ) : null;
 
-  console.log(xlmToStroop(transactionFee).toFixed());
-
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}

@@ -159,7 +159,6 @@ export const SendAmount = ({
           const currentBal = new BigNumber(
             accountBalances.balances[selectedAsset].total.toFixed(),
           );
-          console.log(recommendedFee);
           availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));

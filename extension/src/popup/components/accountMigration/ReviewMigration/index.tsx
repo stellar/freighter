@@ -136,7 +136,6 @@ export const ReviewMigration = () => {
 
     const fetchAccountData = async () => {
       const { migratableAccounts } = await getMigratableAccounts();
-      console.log(migratableAccounts);
 
       if (!migratableAccounts) {
         return;
@@ -227,8 +226,6 @@ export const ReviewMigration = () => {
   const ReviewMigrationFormSchema = YupObject().shape({
     isMergeSelected: YupBoolean(),
   });
-
-  console.log(accountList);
 
   return (
     <div className="ReviewMigration">
