@@ -279,6 +279,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     });
   };
 
+  /*
+    _replaceAccount is only used during the migration process. It is analagous to _storeAccount above.
+    1. We login with the new account, which sets the new active public key and new allAccounts in Redux for the UI to consume
+    2. We save the key store in storage
+    3. We save the new account name in storage
+  */
   const _replaceAccount = async ({
     mnemonicPhrase,
     password,
