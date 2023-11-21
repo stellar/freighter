@@ -2,6 +2,20 @@
   margin-bottom: 1.5rem;
 }
 
+.MigrationBody {
+  margin-bottom: 2rem;
+
+  &--warning {
+    margin-bottom: 1.5rem;
+  }
+}
+
 .MigrationParagraph {
   color: var(--color-gray-70) !important;
+}
+
+.MigrationButton {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
 }

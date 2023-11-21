@@ -47,11 +47,9 @@ import {
 } from "popup/components/sendPayment/SendTo";
 import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
-import { TX_SEND_MAX } from "popup/constants/transaction";
+import { BASE_RESERVE, TX_SEND_MAX } from "popup/constants/transaction";
 
 import "../styles.scss";
-
-const BASE_RESERVE = 0.5 as const;
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -161,7 +159,7 @@ export const SendAmount = ({
           const currentBal = new BigNumber(
             accountBalances.balances[selectedAsset].total.toFixed(),
           );
-
+          console.log(recommendedFee);
           availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));

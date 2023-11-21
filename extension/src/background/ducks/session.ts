@@ -131,6 +131,10 @@ export const mnemonicPhraseSelector = createSelector(
   sessionSelector,
   (session) => session.mnemonicPhrase,
 );
+export const migratedMnemonicPhraseSelector = createSelector(
+  sessionSelector,
+  (session) => session.migratedMnemonicPhrase,
+);
 export const allAccountsSelector = createSelector(
   sessionSelector,
   (session) => session.allAccounts || [],
@@ -149,8 +153,4 @@ export const privateKeySelector = createSelector(
 export const passwordSelector = createSelector(
   sessionSelector,
   (session) => session.password,
-);
-export const migratedMnemonicPhraseSelector = createSelector(
-  sessionSelector,
-  (session) => session.migratedMnemonicPhrase,
 );

@@ -5,11 +5,16 @@ import { useTranslation } from "react-i18next";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 
-import { MigrationHeader, MigrationParagraph } from "../basics";
+import {
+  MigrationHeader,
+  MigrationBody,
+  MigrationParagraph,
+  MigrationButton,
+} from "../basics";
 
 import "./styles.scss";
 
-export const AccountMigrationStart = () => {
+export const MigrationStart = () => {
   const { t } = useTranslation();
   const [isConfirmed, setIsConfirmed] = useState(false);
 
@@ -18,11 +23,11 @@ export const AccountMigrationStart = () => {
   };
 
   return isConfirmed ? (
-    <div className="AccountMigrationStart">
+    <div className="MigrationStart">
       <MigrationHeader>
         {t("Make sure you have your 12 word backup phrase")}
       </MigrationHeader>
-      <div className="AccountMigrationStart__body AccountMigrationStart__body--warning">
+      <MigrationBody hasWarning>
         <MigrationParagraph>
           {t(
             "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts.",
@@ -33,17 +38,17 @@ export const AccountMigrationStart = () => {
             "Make sure you have your current 12 words backup phrase before continuing.",
           )}
         </Notification>
-      </div>
-      <div className="AccountMigrationStart__button">
+      </MigrationBody>
+      <MigrationButton>
         <Button onClick={handleContinue} size="md" variant="secondary">
           {t("Continue")}
         </Button>
-      </div>
+      </MigrationButton>
     </div>
   ) : (
     <div className="AccountMigrationStart">
       <MigrationHeader>{t("Account Migration")}</MigrationHeader>
-      <div className="AccountMigrationStart__body">
+      <MigrationBody>
         <MigrationParagraph>
           {t(
             "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account.",
@@ -54,8 +59,8 @@ export const AccountMigrationStart = () => {
             "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts.",
           )}
         </MigrationParagraph>
-      </div>
-      <div className="AccountMigrationStart__button">
+      </MigrationBody>
+      <MigrationButton>
         <Button
           size="md"
           variant="secondary"
@@ -63,7 +68,7 @@ export const AccountMigrationStart = () => {
         >
           {t("Continue")}
         </Button>
-      </div>
+      </MigrationButton>
     </div>
   );
 };

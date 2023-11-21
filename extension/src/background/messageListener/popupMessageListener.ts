@@ -1,19 +1,29 @@
 import { Store } from "redux";
-import { Keypair, Transaction, TransactionBuilder, hash } from "stellar-sdk";
+import {
+  Keypair,
+  Networks,
+  Operation,
+  Transaction,
+  TransactionBuilder,
+  hash,
+} from "stellar-sdk";
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
 import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
+import { BigNumber } from "bignumber.js";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import {
   Account,
   Response as Request,
   BlockedDomains,
   BlockedAccount,
+  MigratableAccount,
 } from "@shared/api/types";
 import { MessageResponder } from "background/types";
 
@@ -41,6 +51,7 @@ import {
   FUTURENET_NETWORK_DETAILS,
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
+  NETWORK_URLS,
 } from "@shared/constants/stellar";
 
 import { EXPERIMENTAL } from "constants/featureFlag";
@@ -67,6 +78,8 @@ import {
   dataStorageAccess,
   browserLocalStorage,
 } from "background/helpers/dataStorage";
+import { migrateTrustlines } from "background/helpers/migration";
+import { xlmToStroop } from "helpers/stellar";
 
 import {
   allAccountsSelector,
@@ -74,6 +87,7 @@ import {
   privateKeySelector,
   logIn,
   logOut,
+  migratedMnemonicPhraseSelector,
   mnemonicPhraseSelector,
   publicKeySelector,
   setActivePublicKey,
@@ -83,6 +97,7 @@ import {
   timeoutAccountAccess,
   updateAllAccountsAccountName,
   reset,
+  passwordSelector,
 } from "background/ducks/session";
 import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
@@ -255,6 +270,68 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
+
+    await localStore.setItem(KEY_ID_LIST, keyIdListArr);
+    await localStore.setItem(KEY_ID, keyStore.id);
+    await addAccountName({
+      keyId: keyStore.id,
+      accountName,
+    });
+  };
+
+  const _replaceAccount = async ({
+    mnemonicPhrase,
+    password,
+    keyPair,
+    indexToReplace,
+  }: {
+    mnemonicPhrase: string;
+    password: string;
+    keyPair: KeyPair;
+    indexToReplace: number;
+  }) => {
+    const { publicKey, privateKey } = keyPair;
+
+    const allAccounts = allAccountsSelector(sessionStore.getState());
+    const accountName = `Account ${indexToReplace + 1}`;
+    const newAllAccounts = [...allAccounts];
+
+    newAllAccounts[indexToReplace] = {
+      publicKey,
+      name: accountName,
+      imported: false,
+    };
+
+    sessionStore.dispatch(
+      logIn({
+        publicKey,
+        mnemonicPhrase,
+        allAccounts: newAllAccounts,
+      }),
+    );
+
+    const keyMetadata = {
+      key: {
+        extra: { imported: false, mnemonicPhrase },
+        type: KeyType.plaintextKey,
+        publicKey,
+        privateKey,
+      },
+
+      password,
+      encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
+    };
+
+    let keyStore = { id: "" };
+
+    try {
+      keyStore = await keyManager.storeKey(keyMetadata);
+    } catch (e) {
+      console.error(e);
+    }
+
+    const keyIdListArr = await getKeyIdList();
+    keyIdListArr[indexToReplace] = keyStore.id;
 
     await localStore.setItem(KEY_ID_LIST, keyIdListArr);
     await localStore.setItem(KEY_ID, keyStore.id);
@@ -620,6 +697,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return {
       isCorrectPhrase,
       applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
+    };
+  };
+
+  const confirmMigratedMnemonicPhrase = () => {
+    const isCorrectPhrase =
+      migratedMnemonicPhraseSelector(sessionStore.getState()) ===
+      request.mnemonicPhraseToConfirm;
+
+    return {
+      isCorrectPhrase,
     };
   };
 
@@ -1282,9 +1369,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     // only use accounts that were derived from the mnemonic phrase
-    const migratableAccounts = allAccounts.filter((acct) =>
-      mnemonicPublicKeyArr.includes(acct.publicKey),
-    );
+    const migratableAccounts: MigratableAccount[] = [];
+
+    allAccounts.forEach((acct, i) => {
+      if (mnemonicPublicKeyArr.includes(acct.publicKey)) {
+        migratableAccounts.push({ ...acct, keyIdIndex: i });
+      }
+    });
 
     return {
       migratableAccounts,
@@ -1299,6 +1390,263 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
 
     return { mnemonicPhrase: migratedMnemonicPhrase };
+  };
+
+  const migrateAccounts = async () => {
+    const { balancesToMigrate, isMergeSelected, recommendedFee } = request;
+
+    const migratedMnemonicPhrase = migratedMnemonicPhraseSelector(
+      sessionStore.getState(),
+    );
+    const password = passwordSelector(sessionStore.getState());
+    if (!password || !migratedMnemonicPhrase)
+      return { error: "Authentication error" };
+
+    const newWallet = fromMnemonic(migratedMnemonicPhrase);
+    const keyIdList: string = await getKeyIdList();
+    const migrationErrors = [];
+    const fee = xlmToStroop(recommendedFee).toFixed();
+    const server = stellarSdkServer(NETWORK_URLS.TESTNET);
+
+    for (let i = 0; i < balancesToMigrate.length; i += 1) {
+      const {
+        publicKey,
+        xlmBalance,
+        minBalance,
+        trustlineBalances,
+        keyIdIndex,
+      } = balancesToMigrate[i];
+
+      const keyID = keyIdList[keyIdIndex];
+
+      // eslint-disable-next-line no-await-in-loop
+      const store = await _unlockKeystore({ password, keyID });
+
+      // eslint-disable-next-line no-await-in-loop
+      const sourceAccount = await server.loadAccount(publicKey);
+
+      // create a new keystore and migrate while replacing the keyId in the list
+      const newKeyPair = {
+        publicKey: newWallet.getPublicKey(keyIdIndex),
+        privateKey: newWallet.getSecret(keyIdIndex),
+      };
+
+      // eslint-disable-next-line no-await-in-loop
+      const transaction = await new TransactionBuilder(sourceAccount, {
+        fee,
+        networkPassphrase: Networks.TESTNET,
+      });
+
+      if (!xlmBalance) {
+        break;
+      }
+
+      // i think these are the same??
+      // if (isMergeSelected) {
+      //   transaction.addOperation(
+      //     Operation.createAccount({
+      //       destination: newKeyPair.publicKey,
+      //       startingBalance: new BigNumber(1)
+      //         .plus(
+      //           new BigNumber(0.5).times(
+      //             new BigNumber(trustlineBalances.length),
+      //           ),
+      //         )
+      //         .toString(),
+      //     }),
+      //   );
+      // } else {
+
+      // }
+
+      // the amount the sender needs to hold to complete the migration
+      const senderAccountMinBal = new BigNumber(minBalance).plus(
+        new BigNumber(recommendedFee).times(trustlineBalances.length + 1),
+      );
+      console.log(senderAccountMinBal.toString());
+      const startingBalance = new BigNumber(xlmBalance)
+        .minus(senderAccountMinBal)
+        .toString();
+
+      transaction.addOperation(
+        Operation.createAccount({
+          destination: newKeyPair.publicKey,
+          startingBalance,
+        }),
+      );
+
+      const sourceKeys = Keypair.fromSecret(store.privateKey);
+      const builtTransaction = transaction.setTimeout(180).build();
+
+      try {
+        builtTransaction.sign(sourceKeys);
+      } catch (e) {
+        console.error(e);
+      }
+
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await server.submitTransaction(builtTransaction);
+      } catch (e) {
+        console.error(e);
+        migrationErrors.push([publicKey, newKeyPair.publicKey]);
+      }
+
+      // eslint-disable-next-line no-await-in-loop
+      await _replaceAccount({
+        mnemonicPhrase: migratedMnemonicPhrase,
+        password,
+        keyPair: newKeyPair,
+        indexToReplace: keyIdIndex,
+      });
+
+      // now that the accounts are funded, we can add the trustline balances
+      migrateTrustlines({
+        trustlineBalances,
+        server,
+        newKeyPair,
+        fee,
+        sourceAccount,
+        sourceKeys,
+        migrationErrors,
+      });
+
+      // if (trustlineBalances.length) {
+      //   // eslint-disable-next-line no-await-in-loop
+      //   const trustlineRecipientAccount = await server.loadAccount(
+      //     newKeyPair.publicKey,
+      //   );
+
+      //   // eslint-disable-next-line no-await-in-loop
+      //   const changeTrustTx = await new TransactionBuilder(
+      //     trustlineRecipientAccount,
+      //     {
+      //       fee,
+      //       networkPassphrase: Networks.TESTNET,
+      //     },
+      //   );
+
+      //   for (let k = 0; k < trustlineBalances.length; k += 1) {
+      //     const bal = trustlineBalances[k];
+      //     let asset;
+      //     if ("asset_code" in bal && "asset_issuer" in bal) {
+      //       asset = new Asset(bal.asset_code, bal.asset_issuer);
+      //       changeTrustTx.addOperation(
+      //         Operation.changeTrust({
+      //           asset,
+      //         }),
+      //       );
+      //     }
+
+      //     const recipientSourceKeys = Keypair.fromSecret(
+      //       newKeyPair.privateKey,
+      //     );
+      //     const builtChangeTrustTx = changeTrustTx.setTimeout(180).build();
+
+      //     try {
+      //       builtChangeTrustTx.sign(recipientSourceKeys);
+      //     } catch (e) {
+      //       console.error(e);
+      //     }
+
+      //     try {
+      //       // eslint-disable-next-line no-await-in-loop
+      //       await server.submitTransaction(builtChangeTrustTx);
+      //     } catch (e) {
+      //       console.error(e);
+      //       migrationErrors.push([publicKey, newKeyPair.publicKey, asset]);
+      //     }
+
+      //     if (asset) {
+      //       // trustline established, send the balance
+      //       // eslint-disable-next-line no-await-in-loop
+      //       const sendTrustlineBalanceTx = await new TransactionBuilder(
+      //         sourceAccount,
+      //         {
+      //           fee,
+      //           networkPassphrase: Networks.TESTNET,
+      //         },
+      //       );
+
+      //       sendTrustlineBalanceTx.addOperation(
+      //         Operation.payment({
+      //           destination: newKeyPair.publicKey,
+      //           asset,
+      //           amount: bal.balance,
+      //         }),
+      //       );
+
+      //       const builtSendTrustlineBalanceTx = sendTrustlineBalanceTx
+      //         .setTimeout(180)
+      //         .build();
+
+      //       try {
+      //         builtSendTrustlineBalanceTx.sign(sourceKeys);
+      //       } catch (e) {
+      //         console.error(e);
+      //       }
+
+      //       try {
+      //         // eslint-disable-next-line no-await-in-loop
+      //         await server.submitTransaction(builtSendTrustlineBalanceTx);
+      //       } catch (e) {
+      //         console.error(e);
+      //         migrationErrors.push([publicKey, newKeyPair.publicKey, asset]);
+      //       }
+      //     }
+      //   }
+      // }
+
+      if (isMergeSelected) {
+        // eslint-disable-next-line no-await-in-loop
+        const mergeTransaction = await new TransactionBuilder(sourceAccount, {
+          fee,
+          networkPassphrase: Networks.TESTNET,
+        });
+        mergeTransaction.addOperation(
+          Operation.accountMerge({
+            destination: newKeyPair.publicKey,
+          }),
+        );
+
+        const builtMergeTransaction = mergeTransaction.setTimeout(180).build();
+
+        try {
+          builtMergeTransaction.sign(sourceKeys);
+        } catch (e) {
+          console.error(e);
+        }
+
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await server.submitTransaction(builtMergeTransaction);
+        } catch (e) {
+          console.error(e);
+          migrationErrors.push([publicKey, newKeyPair.publicKey]);
+        }
+      }
+    }
+
+    // let's make the first public key the active one
+    await _activatePublicKey({ publicKey: newWallet.getPublicKey(0) });
+
+    sessionStore.dispatch(timeoutAccountAccess());
+
+    sessionTimer.startSession();
+    sessionStore.dispatch(
+      setActivePrivateKey({ privateKey: newWallet.getSecret(0) }),
+    );
+
+    const currentState = sessionStore.getState();
+
+    const res = {
+      publicKey: publicKeySelector(currentState),
+      allAccounts: allAccountsSelector(currentState),
+      hasPrivateKey: await hasPrivateKeySelector(currentState),
+      error: JSON.stringify(migrationErrors),
+    };
+
+    return res;
   };
 
   const messageResponder: MessageResponder = {
@@ -1316,6 +1664,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,
+    [SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE]: confirmMigratedMnemonicPhrase,
     [SERVICE_TYPES.RECOVER_ACCOUNT]: recoverAccount,
     [SERVICE_TYPES.CONFIRM_PASSWORD]: confirmPassword,
     [SERVICE_TYPES.GRANT_ACCESS]: grantAccess,
@@ -1346,6 +1695,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
     [SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS]: getMigratableAccounts,
     [SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE]: getMigratedMnemonicPhrase,
+    [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
   };
 
   return messageResponder[request.type]();

@@ -6,6 +6,8 @@ import { getMigratedMnemonicPhrase } from "@shared/api/internal";
 import { ConfirmMnemonicPhrase } from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
 import { DisplayMnemonicPhrase } from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
 
+import "./styles.scss";
+
 export const MnemonicPhrase = () => {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
@@ -22,11 +24,18 @@ export const MnemonicPhrase = () => {
   }, []);
 
   return isConfirmed ? (
-    <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />
+    <div className="MigrationMnemonicPhrase">
+      <ConfirmMnemonicPhrase
+        isMigration
+        words={shuffle(mnemonicPhrase.split(" "))}
+      />
+    </div>
   ) : (
-    <DisplayMnemonicPhrase
-      mnemonicPhrase={mnemonicPhrase}
-      setIsConfirmed={setIsConfirmed}
-    />
+    <div className="MigrationMnemonicPhrase--display">
+      <DisplayMnemonicPhrase
+        mnemonicPhrase={mnemonicPhrase}
+        setIsConfirmed={setIsConfirmed}
+      />
+    </div>
   );
 };

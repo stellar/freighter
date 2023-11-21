@@ -6,9 +6,10 @@ import { ROUTES } from "popup/constants/routes";
 
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
-import { AccountMigrationStart } from "popup/components/accountMigration/Start";
+import { MigrationStart } from "popup/components/accountMigration/MigrationStart";
 import { ReviewMigration } from "popup/components/accountMigration/ReviewMigration";
 import { MnemonicPhrase } from "popup/components/accountMigration/MnemonicPhrase";
+import { ConfirmMigration } from "popup/components/accountMigration/ConfirmMigration";
 
 import "./styles.scss";
 
@@ -20,7 +21,7 @@ export const AccountMigration = () => (
     <Switch>
       <PublicKeyRoute exact path={ROUTES.accountMigration}>
         <div className="AccountMigration">
-          <AccountMigrationStart />
+          <MigrationStart />
         </div>
       </PublicKeyRoute>
       <PublicKeyRoute exact path={ROUTES.accountMigrationReviewMigration}>
@@ -30,6 +31,11 @@ export const AccountMigration = () => (
       </PublicKeyRoute>
       <PublicKeyRoute exact path={ROUTES.accountMigrationMnemonicPhrase}>
         <MnemonicPhrase />
+      </PublicKeyRoute>
+      <PublicKeyRoute exact path={ROUTES.accountMigrationConfirmMigration}>
+        <div className="AccountMigration">
+          <ConfirmMigration />
+        </div>
       </PublicKeyRoute>
     </Switch>
   </>
