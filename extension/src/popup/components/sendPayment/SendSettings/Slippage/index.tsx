@@ -65,20 +65,8 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
         })}
       >
         {({ setFieldValue, values, errors }) => (
-          <View.Content
-            contentFooter={
-              <Button
-                size="md"
-                isFullWidth
-                disabled={!values.presetSlippage && !values.customSlippage}
-                variant="secondary"
-                type="submit"
-              >
-                {t("Done")}
-              </Button>
-            }
-          >
-            <Form>
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
               <div className="Slippage__cards">
                 <label className="Slippage--radio-label">
                   <Field
@@ -150,8 +138,19 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
               >
                 {t("Set default")}
               </Link>
-            </Form>
-          </View.Content>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                isFullWidth
+                disabled={!values.presetSlippage && !values.customSlippage}
+                variant="secondary"
+                type="submit"
+              >
+                {t("Done")}
+              </Button>
+            </View.Footer>
+          </Form>
         )}
       </Formik>
     </View>

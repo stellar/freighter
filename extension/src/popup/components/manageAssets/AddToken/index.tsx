@@ -50,8 +50,8 @@ export const AddToken = () => {
       {({ dirty, isSubmitting, isValid, errors, touched }) => (
         <View>
           <SubviewHeader title={t("Add a Soroban token by ID")} />
-          <View.Content>
-            <Form>
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
               <FormRows>
                 <Field name="tokenId">
                   {({ field }: FieldProps) => (
@@ -71,20 +71,20 @@ export const AddToken = () => {
                   )}
                 </Field>
               </FormRows>
-            </Form>
-          </View.Content>
-          <View.Footer>
-            <Button
-              size="md"
-              variant="primary"
-              isFullWidth
-              disabled={!(dirty && isValid)}
-              isLoading={isSubmitting}
-              type="submit"
-            >
-              {t("Add New Token")}
-            </Button>
-          </View.Footer>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                variant="primary"
+                isFullWidth
+                disabled={!(dirty && isValid)}
+                isLoading={isSubmitting}
+                type="submit"
+              >
+                {t("Add New Token")}
+              </Button>
+            </View.Footer>
+          </Form>
         </View>
       )}
     </Formik>

@@ -129,7 +129,11 @@ const ViewContent: React.FC<ViewContentProps> = ({
 
   return (
     <div className="View__content" {...props}>
-      <ViewInset alignment={alignment} hasVerticalBorder={isAppLayout}>
+      <ViewInset
+        alignment={alignment}
+        hasVerticalBorder={isAppLayout}
+        hasScrollShadow
+      >
         {children}
       </ViewInset>
       {contentFooter ? (
@@ -153,6 +157,8 @@ interface ViewFooterProps {
   hasExtraPaddingBottom?: boolean;
   hasTopBorder?: boolean;
   isInline?: boolean;
+  allowWrap?: boolean;
+  style?: React.CSSProperties;
 }
 
 const ViewFooter: React.FC<ViewFooterProps> = ({
@@ -162,6 +168,8 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   hasExtraPaddingBottom,
   hasTopBorder,
   isInline,
+  allowWrap,
+  style,
   ...props
 }: ViewFooterProps) => {
   const customStyle = {
@@ -173,7 +181,13 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   } as React.CSSProperties;
 
   return (
-    <footer className="View__footer" style={customStyle} {...props}>
+    <footer
+      className={`View__footer ${addStyleClasses([
+        allowWrap ? "View__footer--wrap" : "",
+      ])}`}
+      style={{ ...style, ...customStyle }}
+      {...props}
+    >
       <ViewInset
         hasVerticalBorder
         hasTopBorder={hasTopBorder}
@@ -197,6 +211,7 @@ interface ViewInsetProps {
   hasVerticalBorder?: boolean;
   hasTopBorder?: boolean;
   additionalClassName?: string;
+  hasScrollShadow?: boolean;
 }
 
 export const ViewInset: React.FC<ViewInsetProps> = ({
@@ -207,6 +222,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   hasVerticalBorder,
   hasTopBorder,
   additionalClassName,
+  hasScrollShadow,
   ...props
 }: ViewInsetProps) => (
   <div
@@ -216,6 +232,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
       alignment === "center" ? "View__inset--align-center" : "",
       hasVerticalBorder ? "View__inset--vertical-border" : "",
       hasTopBorder ? "View__inset--top-border" : "",
+      hasScrollShadow ? "View__inset--scroll-shadows" : "",
     ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
     {...props}
   >

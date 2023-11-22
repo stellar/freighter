@@ -52,7 +52,7 @@ export const VerifyAccount = ({
       />
       <Formik initialValues={{ password: "" }} onSubmit={handleSubmit}>
         {({ dirty, isValid, isSubmitting, errors, touched }) => (
-          <Form className="FormLayoutView">
+          <Form className="View__contentAndFooterWrapper">
             <View.Content>
               <div className="VerifyAccount__copy">
                 {isApproval

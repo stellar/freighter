@@ -58,7 +58,7 @@ export const AddAccount = () => {
       <SubviewHeader title="Add a new Stellar address" />
       <Formik initialValues={initialValues} onSubmit={handleSubmit}>
         {({ dirty, isSubmitting, isValid, errors, touched }) => (
-          <Form className="FormLayoutView">
+          <Form className="View__contentAndFooterWrapper">
             <View.Content>
               <FormRows>
                 <Field name="password">

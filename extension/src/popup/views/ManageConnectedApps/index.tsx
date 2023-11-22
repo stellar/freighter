@@ -2,7 +2,6 @@ import React from "react";
 
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 
 import { saveAllowList, settingsSelector } from "popup/ducks/settings";
@@ -32,7 +31,7 @@ export const ManageConnectedApps = () => {
       <View.Content>
         <div className="ManageConnectedApps">
           {allowList.length ? (
-            <SimpleBarWrapper className="ManageConnectedApps__wrapper">
+            <div className="ManageConnectedApps__wrapper">
               <div className="ManageConnectedApps__content">
                 {allowList.map(
                   (allowedDomain) =>
@@ -49,7 +48,7 @@ export const ManageConnectedApps = () => {
                     ),
                 )}
               </div>
-            </SimpleBarWrapper>
+            </div>
           ) : (
             <div className="ManageConnectedApps__empty">
               No connected apps found

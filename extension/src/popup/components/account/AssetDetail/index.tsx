@@ -20,7 +20,6 @@ import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
-// import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -212,7 +211,6 @@ export const AssetDetail = ({
               </PillButton>
             )}
           </div>
-          {/* <SimpleBarWrapper> */}
           <div className="AssetDetail__scam-warning">
             {isOwnedScamAsset && (
               <Notification variant="error" title={t("Error")}>
@@ -267,7 +265,6 @@ export const AssetDetail = ({
               {t("No transactions to show")}
             </div>
           )}
-          {/* </SimpleBarWrapper> */}
         </div>
       </View.Content>
       {/* TODO: fix the slideup modal */}

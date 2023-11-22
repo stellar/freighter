@@ -7,7 +7,6 @@ import { object as YupObject, string as YupString } from "yup";
 import { useHistory, useLocation } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
-// import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
@@ -249,7 +248,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
   const EditingButtons = ({ isValid, isSubmitting }: EditingButtonsProps) =>
     !isEditingDefaultNetworks ? (
-      <div className="NetworkForm__editing-buttons">
+      <>
         <Button
           size="md"
           onClick={() => history.goBack()}
@@ -269,7 +268,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         >
           {t("Save")}
         </Button>
-      </div>
+      </>
     ) : null;
 
   return (
@@ -323,170 +322,172 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       <SubviewHeader
         title={isEditing ? t("Add Custom Network") : t("Network Details")}
       />
-      {/* <SimpleBarWrapper className="NetworkForm__simplebar"> */}
       <Formik
         onSubmit={handleSubmit}
         initialValues={initialValues}
         validationSchema={NetworkFormSchema}
       >
         {({ dirty, errors, isSubmitting, isValid, touched }) => (
-          <View.Content>
-            <Form className="NetworkForm__form">
-              <Input
-                fieldSize="md"
-                disabled={isEditingDefaultNetworks}
-                id="networkName"
-                autoComplete="off"
-                error={
-                  settingsError ||
-                  (errors.networkName && touched.networkName
-                    ? errors.networkName
-                    : "")
-                }
-                customInput={<Field />}
-                label={t("Name")}
-                name="networkName"
-                placeholder={t("Enter network name")}
-              />
-              <Input
-                fieldSize="md"
-                disabled={isEditingDefaultNetworks}
-                id="networkUrl"
-                autoComplete="off"
-                error={
-                  errors.networkUrl && touched.networkUrl
-                    ? errors.networkUrl
-                    : ""
-                }
-                customInput={<Field />}
-                label={t("HORIZON RPC URL")}
-                name="networkUrl"
-                placeholder={t("Enter network URL")}
-              />
-              {isSorobanSuported || !isEditingDefaultNetworks ? (
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
+              <div className="NetworkForm__form">
                 <Input
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}
-                  id="sorobanRpcUrl"
+                  id="networkName"
                   autoComplete="off"
                   error={
-                    errors.sorobanRpcUrl && touched.sorobanRpcUrl
-                      ? errors.sorobanRpcUrl
+                    settingsError ||
+                    (errors.networkName && touched.networkName
+                      ? errors.networkName
+                      : "")
+                  }
+                  customInput={<Field />}
+                  label={t("Name")}
+                  name="networkName"
+                  placeholder={t("Enter network name")}
+                />
+                <Input
+                  fieldSize="md"
+                  disabled={isEditingDefaultNetworks}
+                  id="networkUrl"
+                  autoComplete="off"
+                  error={
+                    errors.networkUrl && touched.networkUrl
+                      ? errors.networkUrl
                       : ""
                   }
                   customInput={<Field />}
-                  label={t("SOROBAN RPC URL")}
-                  name="sorobanRpcUrl"
-                  placeholder={t("Enter Soroban RPC URL")}
+                  label={t("HORIZON RPC URL")}
+                  name="networkUrl"
+                  placeholder={t("Enter network URL")}
                 />
-              ) : null}
-              <Input
-                fieldSize="md"
-                disabled={isEditingDefaultNetworks}
-                id="networkPassphrase"
-                autoComplete="off"
-                error={
-                  errors.networkPassphrase && touched.networkPassphrase
-                    ? errors.networkPassphrase
-                    : ""
-                }
-                customInput={<Field />}
-                label={t("Passphrase")}
-                name="networkPassphrase"
-                placeholder={t("Enter passphrase")}
-              />
-              <Input
-                fieldSize="md"
-                disabled={isEditingDefaultNetworks}
-                id="friendbotUrl"
-                autoComplete="off"
-                error={
-                  errors.friendbotUrl && touched.friendbotUrl
-                    ? errors.friendbotUrl
-                    : ""
-                }
-                customInput={<Field />}
-                label={t("Friendbot URL")}
-                name="friendbotUrl"
-                placeholder={t("Enter Friendbot URL")}
-              />
-              {!isEditingDefaultNetworks ? (
-                <Field name="isAllowHttpSelected">
-                  {({ field }: FieldProps) => (
-                    <Checkbox
-                      fieldSize="md"
-                      checked={field.value}
-                      id="isAllowHttpSelected-input"
-                      error={
-                        errors.isAllowHttpSelected &&
-                        touched.isAllowHttpSelected
-                          ? errors.isAllowHttpSelected
-                          : null
-                      }
-                      label={t("Allow connecting to non-HTTPS networks")}
-                      {...field}
-                    />
-                  )}
-                </Field>
-              ) : null}
-
-              {isEditing ? (
-                <div className="NetworkForm__remove-wrapper">
-                  {!isEditingDefaultNetworks && (
-                    <PillButton
-                      type="button"
-                      onClick={() => {
-                        if (isCurrentNetworkActive) {
-                          setIsNetworkInUse(true);
-                        } else {
-                          setIsConfirmingRemoval(true);
+                {isSorobanSuported || !isEditingDefaultNetworks ? (
+                  <Input
+                    fieldSize="md"
+                    disabled={isEditingDefaultNetworks}
+                    id="sorobanRpcUrl"
+                    autoComplete="off"
+                    error={
+                      errors.sorobanRpcUrl && touched.sorobanRpcUrl
+                        ? errors.sorobanRpcUrl
+                        : ""
+                    }
+                    customInput={<Field />}
+                    label={t("SOROBAN RPC URL")}
+                    name="sorobanRpcUrl"
+                    placeholder={t("Enter Soroban RPC URL")}
+                  />
+                ) : null}
+                <Input
+                  fieldSize="md"
+                  disabled={isEditingDefaultNetworks}
+                  id="networkPassphrase"
+                  autoComplete="off"
+                  error={
+                    errors.networkPassphrase && touched.networkPassphrase
+                      ? errors.networkPassphrase
+                      : ""
+                  }
+                  customInput={<Field />}
+                  label={t("Passphrase")}
+                  name="networkPassphrase"
+                  placeholder={t("Enter passphrase")}
+                />
+                <Input
+                  fieldSize="md"
+                  disabled={isEditingDefaultNetworks}
+                  id="friendbotUrl"
+                  autoComplete="off"
+                  error={
+                    errors.friendbotUrl && touched.friendbotUrl
+                      ? errors.friendbotUrl
+                      : ""
+                  }
+                  customInput={<Field />}
+                  label={t("Friendbot URL")}
+                  name="friendbotUrl"
+                  placeholder={t("Enter Friendbot URL")}
+                />
+                {!isEditingDefaultNetworks ? (
+                  <Field name="isAllowHttpSelected">
+                    {({ field }: FieldProps) => (
+                      <Checkbox
+                        fieldSize="md"
+                        checked={field.value}
+                        id="isAllowHttpSelected-input"
+                        error={
+                          errors.isAllowHttpSelected &&
+                          touched.isAllowHttpSelected
+                            ? errors.isAllowHttpSelected
+                            : null
                         }
-                      }}
-                    >
-                      {t("Remove")}
-                    </PillButton>
-                  )}
-                </div>
-              ) : (
-                <Field name="isSwitchSelected">
-                  {({ field }: FieldProps) => (
-                    <Checkbox
-                      fieldSize="md"
-                      autoComplete="off"
-                      id="isSwitchSelected-input"
-                      error={
-                        errors.isSwitchSelected && touched.isSwitchSelected
-                          ? errors.isSwitchSelected
-                          : null
-                      }
-                      label={t("Switch to this network")}
-                      {...field}
-                    />
-                  )}
-                </Field>
-              )}
+                        label={t("Allow connecting to non-HTTPS networks")}
+                        {...field}
+                      />
+                    )}
+                  </Field>
+                ) : null}
 
+                {isEditing ? (
+                  <div className="NetworkForm__remove-wrapper">
+                    {!isEditingDefaultNetworks && (
+                      <PillButton
+                        type="button"
+                        onClick={() => {
+                          if (isCurrentNetworkActive) {
+                            setIsNetworkInUse(true);
+                          } else {
+                            setIsConfirmingRemoval(true);
+                          }
+                        }}
+                      >
+                        {t("Remove")}
+                      </PillButton>
+                    )}
+                  </div>
+                ) : (
+                  <Field name="isSwitchSelected">
+                    {({ field }: FieldProps) => (
+                      <Checkbox
+                        fieldSize="md"
+                        autoComplete="off"
+                        id="isSwitchSelected-input"
+                        error={
+                          errors.isSwitchSelected && touched.isSwitchSelected
+                            ? errors.isSwitchSelected
+                            : null
+                        }
+                        label={t("Switch to this network")}
+                        {...field}
+                      />
+                    )}
+                  </Field>
+                )}
+              </div>
+            </View.Content>
+            <View.Footer
+              isInline
+              style={{ display: isEditingDefaultNetworks ? "none" : "block" }}
+            >
               {isEditing ? (
                 <EditingButtons isValid={isValid} isSubmitting={isSubmitting} />
               ) : (
-                <div className="NetworkForm__add-button">
-                  <Button
-                    size="md"
-                    variant="primary"
-                    disabled={!(isValid && dirty)}
-                    isFullWidth
-                    isLoading={isSubmitting}
-                    type="submit"
-                  >
-                    {t("Add network")}
-                  </Button>
-                </div>
+                <Button
+                  size="md"
+                  variant="primary"
+                  disabled={!(isValid && dirty)}
+                  isFullWidth
+                  isLoading={isSubmitting}
+                  type="submit"
+                >
+                  {t("Add network")}
+                </Button>
               )}
-            </Form>
-          </View.Content>
+            </View.Footer>
+          </Form>
         )}
       </Formik>
-      {/* </SimpleBarWrapper> */}
     </View>
   );
 };

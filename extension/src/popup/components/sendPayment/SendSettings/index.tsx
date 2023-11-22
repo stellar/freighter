@@ -137,21 +137,8 @@ export const SendSettings = ({
         }}
       >
         {({ submitForm }) => (
-          <View.Content
-            contentFooter={
-              <Button
-                size="md"
-                isFullWidth
-                type="submit"
-                variant="secondary"
-                onClick={goToReview}
-                data-testid="send-settings-btn-continue"
-              >
-                {t("Review")} {isSwap ? t("Swap") : t("Send")}
-              </Button>
-            }
-          >
-            <Form>
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
               <FormRows>
                 {!isToken ? (
                   <div className="SendSettings__row">
@@ -286,8 +273,20 @@ export const SendSettings = ({
                   </>
                 )}
               </FormRows>
-            </Form>
-          </View.Content>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                isFullWidth
+                type="submit"
+                variant="secondary"
+                onClick={goToReview}
+                data-testid="send-settings-btn-continue"
+              >
+                {t("Review")} {isSwap ? t("Swap") : t("Send")}
+              </Button>
+            </View.Footer>
+          </Form>
         )}
       </Formik>
     </View>

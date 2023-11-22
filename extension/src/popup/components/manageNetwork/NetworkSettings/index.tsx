@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Button } from "@stellar/design-system";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 
@@ -32,7 +31,7 @@ export const NetworkSettings = () => {
       <SubviewHeader title={t("Network Settings")} />
       <View.Content>
         <div className="NetworkSettings__header">{t("Network")}</div>
-        <SimpleBarWrapper className="NetworkSettings__scrollbar">
+        <div className="NetworkSettings__scrollbar">
           <ListNavLinkWrapper>
             {networksList.map((network, i) => {
               const isActive = isActiveNetwork(activeNetworkDetails, network);
@@ -63,7 +62,7 @@ export const NetworkSettings = () => {
               );
             })}
           </ListNavLinkWrapper>
-        </SimpleBarWrapper>
+        </div>
       </View.Content>
       <View.Footer>
         <Button

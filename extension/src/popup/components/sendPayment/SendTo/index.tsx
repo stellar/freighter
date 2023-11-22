@@ -28,7 +28,6 @@ import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { View } from "popup/basics/layout/View";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -247,7 +246,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                   {recentAddresses.length > 0 && (
                     <div className="SendTo__subheading">{t("RECENT")}</div>
                   )}
-                  <SimpleBarWrapper className="SendTo__simplebar">
+                  <div className="SendTo__simplebar">
                     <ul className="SendTo__recent-accts-ul">
                       {recentAddresses.map((address) => (
                         <li key={address}>
@@ -280,7 +279,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                         </li>
                       ))}
                     </ul>
-                  </SimpleBarWrapper>
+                  </div>
                 </>
               ) : (
                 <div>

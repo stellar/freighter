@@ -4,7 +4,6 @@ import { useHistory } from "react-router-dom";
 import { Types } from "@stellar/wallet-sdk";
 
 import { AppDispatch } from "popup/App";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import {
   transactionSubmissionSelector,
   saveAsset,
@@ -57,7 +56,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     assetSelect.isSource === false;
 
   return (
-    <SimpleBarWrapper className="SelectAssetRows__scrollbar">
+    <div className="SelectAssetRows__scrollbar">
       <div className="SelectAssetRows__content">
         {assetRows.map(
           ({
@@ -118,6 +117,6 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
           },
         )}
       </div>
-    </SimpleBarWrapper>
+    </div>
   );
 };

@@ -68,20 +68,8 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
         })}
       >
         {({ setFieldValue, values, isValid, errors }) => (
-          <View.Content
-            contentFooter={
-              <Button
-                size="md"
-                isFullWidth
-                variant="secondary"
-                disabled={!values.transactionFee || !isValid}
-                type="submit"
-              >
-                {t("Done")}
-              </Button>
-            }
-          >
-            <Form>
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
               <FormRows>
                 <Field name="transactionFee">
                   {({ field }: FieldProps) => (
@@ -115,8 +103,19 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                   )}
                 </Field>
               </FormRows>
-            </Form>
-          </View.Content>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                disabled={!values.transactionFee || !isValid}
+                type="submit"
+              >
+                {t("Done")}
+              </Button>
+            </View.Footer>
+          </Form>
         )}
       </Formik>
     </View>

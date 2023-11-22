@@ -160,7 +160,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           </div>
         </div>
       </View.Content>
-      <View.Footer isInline>
+      <View.Footer isInline allowWrap>
         {managingAssets && (
           <>
             <div className="ChooseAsset__button">

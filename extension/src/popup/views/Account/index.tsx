@@ -11,7 +11,6 @@ import {
   ActionStatus,
 } from "@shared/api/types";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { View } from "popup/basics/layout/View";
 import {
   settingsNetworkDetailsSelector,
@@ -248,14 +247,13 @@ export const Account = () => {
                 </div>
               </div>
               {isFunded ? (
-                // TODO: ??? do we want to keep SimpleBar
-                <SimpleBarWrapper className="AccountView__assets-wrapper">
+                <div className="AccountView__assets-wrapper">
                   <AccountAssets
                     sortedBalances={sortedBalances}
                     assetIcons={assetIcons}
                     setSelectedAsset={setSelectedAsset}
                   />
-                </SimpleBarWrapper>
+                </div>
               ) : (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}

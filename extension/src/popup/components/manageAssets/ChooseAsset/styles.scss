@@ -29,5 +29,9 @@
     a {
       color: var(--color-gray-90);
     }
+
+    button {
+      text-wrap: nowrap;
+    }
   }
 }
