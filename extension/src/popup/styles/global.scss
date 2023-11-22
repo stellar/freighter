@@ -95,20 +95,6 @@ a {
   }
 }
 
-// TODO: do we have to do this? seems hacky
-// * {
-//   scrollbar-color: rgba(var(--color-shadow-rgb), 0.25) var(--color-gray-00);
-
-//   &::-webkit-scrollbar {
-//     background-color: var(--color-gray-00);
-//   }
-
-//   &::-webkit-scrollbar-thumb {
-//     background: rgba(var(--color-shadow-rgb), 0.25);
-//     border-radius: 0.5rem;
-//   }
-// }
-
 // TODO: fix in SDS
 .sds-theme-light p,
 .sds-theme-light ul,
