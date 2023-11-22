@@ -6,6 +6,8 @@ import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 import { useHistory, useLocation } from "react-router-dom";
 
+import { NETWORKS } from "@shared/constants/stellar";
+
 import { AppDispatch } from "popup/App";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { View } from "popup/basics/layout/View";
@@ -24,7 +26,6 @@ import {
   settingsErrorSelector,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
-  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -55,7 +56,6 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
-  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
@@ -248,7 +248,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
   const EditingButtons = ({ isValid, isSubmitting }: EditingButtonsProps) =>
     !isEditingDefaultNetworks ? (
-      <>
+      <div className="NetworkForm__editing-buttons">
         <Button
           size="md"
           onClick={() => history.goBack()}
@@ -268,57 +268,11 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         >
           {t("Save")}
         </Button>
-      </>
+      </div>
     ) : null;
 
   return (
     <View>
-      {isNetworkInUse ? (
-        <NetworkModal buttonComponent={<CloseModalButton />}>
-          <div>
-            <div className="NetworkForm__modal__title">
-              {t("Network is in use")}
-            </div>
-            <div className="NetworkForm__modal__body">
-              {t("Please select a different network before removing it.")}
-            </div>
-          </div>
-        </NetworkModal>
-      ) : null}
-      {isConfirmingRemoval ? (
-        <NetworkModal
-          isConfirmation
-          buttonComponent={<ConfirmRemovalButtons />}
-        >
-          <div>
-            <div className="NetworkForm__modal__title">
-              {t("Confirm removing Network")}
-            </div>
-            <div className="NetworkForm__modal__body">
-              {t(
-                "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
-              )}
-            </div>
-          </div>
-        </NetworkModal>
-      ) : null}
-      {isNetworkUrlValid ? (
-        <NetworkModal buttonComponent={<CloseModalButton />}>
-          <div>
-            <div className="NetworkForm__modal__title">
-              {t("CONNECTION ERROR")}
-            </div>
-            <div className="NetworkForm__modal__body">
-              {t("Unable to connect to")} <em>{invalidUrl}</em>
-            </div>
-            <div className="NetworkForm__modal__body">
-              {t(
-                "Please check if the network information is correct and try again. Alternatively, this network may not be operational.",
-              )}{" "}
-            </div>
-          </div>
-        </NetworkModal>
-      ) : null}
       <SubviewHeader
         title={isEditing ? t("Add Custom Network") : t("Network Details")}
       />
@@ -331,6 +285,55 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
           <Form className="View__contentAndFooterWrapper">
             <View.Content>
               <div className="NetworkForm__form">
+                {isNetworkInUse ? (
+                  <NetworkModal buttonComponent={<CloseModalButton />}>
+                    <div>
+                      <div className="NetworkForm__modal__title">
+                        {t("Network is in use")}
+                      </div>
+                      <div className="NetworkForm__modal__body">
+                        {t(
+                          "Please select a different network before removing it.",
+                        )}
+                      </div>
+                    </div>
+                  </NetworkModal>
+                ) : null}
+                {isConfirmingRemoval ? (
+                  <NetworkModal
+                    isConfirmation
+                    buttonComponent={<ConfirmRemovalButtons />}
+                  >
+                    <div>
+                      <div className="NetworkForm__modal__title">
+                        {t("Confirm removing Network")}
+                      </div>
+                      <div className="NetworkForm__modal__body">
+                        {t(
+                          "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
+                        )}
+                      </div>
+                    </div>
+                  </NetworkModal>
+                ) : null}
+                {isNetworkUrlValid ? (
+                  <NetworkModal buttonComponent={<CloseModalButton />}>
+                    <div>
+                      <div className="NetworkForm__modal__title">
+                        {t("CONNECTION ERROR")}
+                      </div>
+                      <div className="NetworkForm__modal__body">
+                        {t("Unable to connect to")} <em>{invalidUrl}</em>
+                      </div>
+                      <div className="NetworkForm__modal__body">
+                        {t(
+                          "Please check if the network information is correct and try again. Alternatively, this network may not be operational.",
+                        )}{" "}
+                      </div>
+                    </div>
+                  </NetworkModal>
+                ) : null}
+
                 <Input
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}
@@ -362,7 +365,8 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                   name="networkUrl"
                   placeholder={t("Enter network URL")}
                 />
-                {isSorobanSuported || !isEditingDefaultNetworks ? (
+                {!isEditingDefaultNetworks ||
+                networkDetailsToEdit.network !== NETWORKS.PUBLIC ? (
                   <Input
                     fieldSize="md"
                     disabled={isEditingDefaultNetworks}
@@ -467,22 +471,24 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               </div>
             </View.Content>
             <View.Footer
-              isInline
               style={{ display: isEditingDefaultNetworks ? "none" : "block" }}
+              isInline
             >
               {isEditing ? (
                 <EditingButtons isValid={isValid} isSubmitting={isSubmitting} />
               ) : (
-                <Button
-                  size="md"
-                  variant="primary"
-                  disabled={!(isValid && dirty)}
-                  isFullWidth
-                  isLoading={isSubmitting}
-                  type="submit"
-                >
-                  {t("Add network")}
-                </Button>
+                <div className="NetworkForm__add-button">
+                  <Button
+                    size="md"
+                    variant="primary"
+                    disabled={!(isValid && dirty)}
+                    isFullWidth
+                    isLoading={isSubmitting}
+                    type="submit"
+                  >
+                    {t("Add network")}
+                  </Button>
+                </div>
               )}
             </View.Footer>
           </Form>
