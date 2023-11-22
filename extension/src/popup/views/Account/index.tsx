@@ -4,7 +4,7 @@ import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
-  getAccountHistory,
+  // getAccountHistory,
   getIndexerAccountHistory,
 } from "@shared/api/internal";
 import {
@@ -116,15 +116,14 @@ export const Account = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        const res2 = await getIndexerAccountHistory({
+        const operations = await getIndexerAccountHistory({
           publicKey,
           networkDetails,
         });
-        console.log(res2);
-        const res = await getAccountHistory({ publicKey, networkDetails });
+        // const res = await getAccountHistory({ publicKey, networkDetails });
         setAssetOperations(
           sortOperationsByAsset({
-            operations: res.operations,
+            operations,
             balances: sortedBalances,
             networkDetails,
             publicKey,
@@ -137,6 +136,8 @@ export const Account = () => {
     fetchAccountHistory();
   }, [publicKey, networkDetails, balances, sortedBalances]);
 
+  console.log(assetOperations, selectedAsset);
+
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
     accountBalanceStatus === ActionStatus.IDLE;
@@ -144,7 +145,7 @@ export const Account = () => {
   return selectedAsset ? (
     <AssetDetail
       accountBalances={sortedBalances}
-      assetOperations={assetOperations[selectedAsset]}
+      assetOperations={assetOperations[selectedAsset] || []}
       networkDetails={networkDetails}
       publicKey={publicKey}
       selectedAsset={selectedAsset}

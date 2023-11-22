@@ -477,10 +477,9 @@ export const getIndexerAccountHistory = async ({
   try {
     const url = new URL(`${indexerUrl}/account-history/${publicKey}`);
     const response = await fetch(url.href);
-    const json = await response.json();
-    console.log(json);
+    const data = (await response.json()) as HorizonOperation;
 
-    return json;
+    return data;
   } catch (e) {
     console.error(e);
   }

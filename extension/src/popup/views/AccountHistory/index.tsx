@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
-import { getAccountHistory } from "@shared/api/internal";
-import { HorizonOperation, ActionStatus } from "@shared/api/types";
+import { getIndexerAccountHistory } from "@shared/api/internal";
+import { HorizonOperation } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -64,9 +64,7 @@ export const AccountHistory = () => {
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { accountBalances, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
@@ -86,12 +84,8 @@ export const AccountHistory = () => {
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const isTokenBalanceLoading =
-    (accountBalanceStatus === ActionStatus.IDLE ||
-      accountBalanceStatus === ActionStatus.PENDING) &&
-    isSorobanSuported;
   const isAccountHistoryLoading = isSorobanSuported
-    ? historySegments === null || isTokenBalanceLoading
+    ? historySegments === null
     : historySegments === null;
 
   useEffect(() => {
@@ -149,9 +143,13 @@ export const AccountHistory = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        const res = await getAccountHistory({ publicKey, networkDetails });
+        const operations = await getIndexerAccountHistory({
+          publicKey,
+          networkDetails,
+        });
+        // const res = await getAccountHistory({ publicKey, networkDetails });
         setHistorySegments(
-          createSegments(res.operations, isSorobanSuported as boolean),
+          createSegments(operations, isSorobanSuported as boolean),
         );
       } catch (e) {
         console.error(e);
@@ -177,7 +175,7 @@ export const AccountHistory = () => {
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
-      {isLoading || isTokenBalanceLoading ? (
+      {isLoading ? (
         <div className="AccountHistory__loader">
           <Loader size="2rem" />
         </div>

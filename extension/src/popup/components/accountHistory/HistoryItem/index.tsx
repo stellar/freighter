@@ -83,7 +83,7 @@ export const HistoryItem = ({
     starting_balance: startingBalance,
     type,
     type_i: typeI,
-    transaction_attr: { operation_count: operationCount },
+    transaction_attr: txAttr,
     isCreateExternalAccount = false,
     isPayment = false,
     isSwap = false,
@@ -94,8 +94,9 @@ export const HistoryItem = ({
   }
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const opTypeStr = OPERATION_TYPES[operationType] || t("Transaction");
+  const _opCount = txAttr ? txAttr.operation_count : 0; // TODO: Mercury is working on adding tx op count to op records
   const operationString = `${opTypeStr}${
-    operationCount > 1 ? ` + ${operationCount - 1} ops` : ""
+    _opCount > 1 ? ` + ${_opCount - 1} ops` : ""
   }`;
   const date = new Date(Date.parse(createdAt))
     .toDateString()
