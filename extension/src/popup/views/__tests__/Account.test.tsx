@@ -33,9 +33,6 @@ jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
 
-jest
-  .spyOn(ApiInternal, "getAccountBalances")
-  .mockImplementation(() => Promise.resolve(mockBalances));
 // @ts-ignore
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({

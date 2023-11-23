@@ -34,14 +34,13 @@ export const Swap = () => {
           getAccountBalancesWithFallback({
             publicKey,
             networkDetails,
-            sorobanClient,
           }),
         );
 
         if (getAccountBalancesWithFallback.fulfilled.match(res)) {
           dispatch(
             getAssetIcons({
-              balances: res.payload.balances.balances,
+              balances: res.payload.balances,
               networkDetails,
             }),
           );

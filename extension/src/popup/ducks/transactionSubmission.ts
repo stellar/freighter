@@ -1,5 +1,4 @@
 import {
-  Address,
   Asset,
   Horizon,
   Keypair,
@@ -12,7 +11,6 @@ import {
   xdr,
 } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import BigNumber from "bignumber.js";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -21,14 +19,11 @@ import {
   submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
-  getAccountBalances as internalGetAccountBalances,
   getAccountIndexerBalances as internalgetAccountIndexerBalances,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
   getBlockedAccounts as internalGetBlockedAccounts,
-  getSorobanTokenBalance as internalGetSorobanTokenBalance,
-  getTokenIds as internalGetTokenIds,
   removeTokenId as internalRemoveTokenId,
 } from "@shared/api/internal";
 
@@ -52,11 +47,7 @@ import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import {
-  SorobanContextInterface,
-  hasSorobanClient,
-} from "popup/SorobanContext";
-import { AssetBalance, BalanceMap } from "@stellar/wallet-sdk/dist/types";
+import { SorobanContextInterface } from "popup/SorobanContext";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -264,105 +255,24 @@ export const removeTokenId = createAsyncThunk<
 });
 
 export const getAccountBalancesWithFallback = createAsyncThunk<
-  {
-    balances: AccountBalancesInterface;
-    tokensWithNoBalance?: string[];
-  },
+  AccountBalancesInterface,
   {
     publicKey: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
 >(
   "getAccountBalancesWithFallback",
-  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
+  async ({ publicKey, networkDetails }, thunkApi) => {
     try {
       const balances = await internalgetAccountIndexerBalances(
         publicKey,
         networkDetails.network as NETWORKS,
       );
       storeBalanceMetricData(publicKey, balances.isFunded || false);
-      return {
-        balances,
-      };
+      return balances;
     } catch (e) {
-      // fallback to trying the rpcs
-      let balances = {} as AccountBalancesInterface;
-      const tokensWithNoBalance = [];
-
-      try {
-        balances = await internalGetAccountBalances({
-          publicKey,
-          networkDetails,
-        });
-
-        const tokenIdList = await internalGetTokenIds(
-          networkDetails.network as NETWORKS,
-        );
-
-        const params = [new Address(publicKey).toScVal()];
-
-        if (sorobanClient.server || sorobanClient.newTxBuilder) {
-          for (let i = 0; i < tokenIdList.length; i += 1) {
-            const tokenId = tokenIdList[i];
-            /*
-          Right now, Soroban transactions only support 1 operation per tx
-          so we need a builder per value from the contract,
-          once/if multi-op transactions are supported this can send
-          1 tx with an operation for each value.
-        */
-
-            try {
-              if (!hasSorobanClient(sorobanClient)) {
-                throw new Error("Soroban RPC is not supprted for this network");
-              }
-
-              /* eslint-disable no-await-in-loop */
-              const { balance, ...rest } = await internalGetSorobanTokenBalance(
-                sorobanClient.server,
-                tokenId,
-                {
-                  balance: await sorobanClient.newTxBuilder(),
-                  name: await sorobanClient.newTxBuilder(),
-                  decimals: await sorobanClient.newTxBuilder(),
-                  symbol: await sorobanClient.newTxBuilder(),
-                },
-                params,
-              );
-              /* eslint-enable no-await-in-loop */
-
-              const total = new BigNumber(balance);
-              (balances.balances || ({} as BalanceMap))[
-                `${rest.symbol}:${tokenId}`
-              ] = {
-                token: {
-                  code: rest.symbol,
-                  issuer: {
-                    key: tokenId,
-                  },
-                },
-                total,
-                available: total,
-              } as AssetBalance;
-            } catch (err) {
-              console.error(err);
-              console.error(`Token "${tokenId}" missing data on RPC server`);
-              tokensWithNoBalance.push(tokenId);
-            }
-          }
-        }
-      } catch (fallbackErr) {
-        console.error(fallbackErr);
-        return thunkApi.rejectWithValue({
-          errorMessage: fallbackErr as string,
-        });
-      }
-
-      storeBalanceMetricData(publicKey, balances.isFunded || false);
-      return {
-        balances,
-      };
+      return thunkApi.rejectWithValue({ errorMessage: e });
     }
   },
 );
@@ -373,7 +283,10 @@ export const getDestinationBalances = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
-    return await internalGetAccountBalances({ publicKey, networkDetails });
+    return await internalgetAccountIndexerBalances(
+      publicKey,
+      networkDetails.network as NETWORKS,
+    );
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e });
   }
@@ -700,8 +613,8 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(
       getAccountBalancesWithFallback.fulfilled,
       (state, action) => {
-        state.accountBalances = action.payload.balances;
-        state.tokensWithNoBalance = action.payload.tokensWithNoBalance || [];
+        state.accountBalances = action.payload;
+        state.tokensWithNoBalance = []; // TODO
         state.accountBalanceStatus = ActionStatus.SUCCESS;
       },
     );

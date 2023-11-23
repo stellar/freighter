@@ -59,6 +59,7 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
+  console.log(accountBalances);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -84,7 +85,6 @@ export const Account = () => {
       getAccountBalancesWithFallback({
         publicKey,
         networkDetails,
-        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());

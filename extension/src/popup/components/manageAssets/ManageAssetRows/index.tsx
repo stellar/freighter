@@ -187,7 +187,6 @@ export const ManageAssetRows = ({
           getAccountBalancesWithFallback({
             publicKey,
             networkDetails,
-            sorobanClient,
           }),
         );
         trackChangeTrustline();
