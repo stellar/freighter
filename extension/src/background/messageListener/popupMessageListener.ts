@@ -1518,7 +1518,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           fee,
           sourceAccount,
           sourceKeys,
-          migrationErrors,
         });
       } catch (e) {
         console.error(e);
