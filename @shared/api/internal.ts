@@ -12,7 +12,7 @@ import {
   getName,
   getSymbol,
 } from "@shared/helpers/soroban/token";
-import { INDEXER_URLS } from "@shared/constants/mercury";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import {
   Account,
   AccountBalancesInterface,
@@ -316,12 +316,8 @@ export const getAccountIndexerBalances = async (
   network: NETWORKS,
 ): Promise<AccountBalancesInterface> => {
   try {
-    const indexerUrl = INDEXER_URLS[network];
-    if (!indexerUrl) {
-      throw new Error("Indexer URL not found");
-    }
     const contractIds = await getTokenIds(network);
-    const url = new URL(`${indexerUrl}/account-balances/${pubKey}`);
+    const url = new URL(`${INDEXER_URL}/account-balances/${pubKey}`);
     for (const id of contractIds) {
       url.searchParams.append("contract_ids", id);
     }

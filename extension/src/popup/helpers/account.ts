@@ -162,7 +162,6 @@ export const getAvailableBalance = ({
     if (!balance) {
       return availBalance;
     }
-    console.log(balance);
     if (selectedAsset === "native") {
       // take base reserve into account for XLM payments
       const baseReserve = (2 + subentryCount) * 0.5;

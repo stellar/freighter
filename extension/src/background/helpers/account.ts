@@ -18,7 +18,7 @@ import {
   dataStorageAccess,
   browserLocalStorage,
 } from "background/helpers/dataStorage";
-import { INDEXER_URLS } from "@shared/constants/mercury";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -137,11 +137,6 @@ export const subscribeAccount = async (publicKey: string) => {
   if (hasAccountSub) {
     return { publicKey };
   }
-  const networkDetails = await getNetworkDetails();
-  const indexerUrl = INDEXER_URLS[networkDetails.network];
-  if (!indexerUrl) {
-    throw new Error("Indexer not supported");
-  }
 
   try {
     const options = {
@@ -151,7 +146,7 @@ export const subscribeAccount = async (publicKey: string) => {
       },
       body: JSON.stringify({ pub_key: publicKey }),
     };
-    await fetch(`${indexerUrl}/subscription/account`, options);
+    await fetch(`${INDEXER_URL}/subscription/account`, options);
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, true);
   } catch (e) {
     console.error(e);

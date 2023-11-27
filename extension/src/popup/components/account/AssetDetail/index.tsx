@@ -81,7 +81,7 @@ export const AssetDetail = ({
     transactionSubmissionSelector,
   );
 
-  const balance = getRawBalance(accountBalances, selectedAsset);
+  const balance = getRawBalance(accountBalances, selectedAsset)!;
 
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
@@ -126,10 +126,6 @@ export const AssetDetail = ({
 
   if (assetIssuer && !assetDomain && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
-    return null;
-  }
-
-  if (!balance) {
     return null;
   }
 
