@@ -66,3 +66,5 @@ export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 ];
+
+export const BASE_RESERVE = 0.5 as const;

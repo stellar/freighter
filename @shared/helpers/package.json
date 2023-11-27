@@ -3,6 +3,7 @@
   "prettier": "@stellar/prettier-config",
   "version": "1.0.0",
   "dependencies": {
+    "bignumber.js": "^9.1.1",
     "stellar-sdk": "11.0.0-beta.5",
     "typescript": "~3.7.2"
   },
