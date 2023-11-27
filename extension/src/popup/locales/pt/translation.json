@@ -48,6 +48,9 @@
   "Approve using": "Approve using",
   "are required to add a new asset": "are required to add a new asset.",
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
+  "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged": {
+    " For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)": "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)."
+  },
   "Asset Code": "Asset Code",
   "Asset domain": "Asset domain",
   "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
@@ -73,6 +76,7 @@
   "Awesome, you passed the test! Pin the extension in your browser to access it easily": "Awesome, you passed the test! Pin the extension in your browser to access it easily.",
   "Balance Id": "Balance Id",
   "Base fee": "Base fee",
+  "Before we start with migration, please read": "Before we start with migration, please read",
   "Before You Add This Asset": "Before You Add This Asset",
   "Block malicious or unsafe addresses and domains": "Block malicious or unsafe addresses and domains",
   "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
@@ -188,6 +192,7 @@
   "I have my 12 word seed phrase": "I have my 12 word seed phrase",
   "I have my recovery phrase safe": "I have my recovery phrase safe",
   "I have read and agree to": "I have read and agree to",
+  "I understand, start migration": "I understand, start migration",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
   "I’m going to need a seed phrase": "I’m going to need a seed phrase",
   "I’m new!": "I’m new!",
@@ -280,6 +285,7 @@
   "Network is in use": "Network is in use",
   "Network Settings": "Network Settings",
   "Never disclose your recovery phrase": "Never disclose your recovery phrase",
+  "Nevermind, cancel": "Nevermind, cancel",
   "New account": "New account",
   "New Asset": "New Asset",
   "New password": "New password",
@@ -295,6 +301,11 @@
   "Not funded": "Not funded",
   "Not recommended asset": "Not recommended asset",
   "Offer Id": "Offer Id",
+  "One of your accounts is a signer for another account": {
+    " Freighter won’t migrate signing settings": {
+      " For your safety, Freighter won’t merge accounts with signature set up so you can still control it": "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it."
+    }
+  },
   "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
   "Only accounts ready for migration will be migrated": "Only accounts ready for migration will be migrated.",
   "only way to access it in a new browser": "only way to access it in a new browser",

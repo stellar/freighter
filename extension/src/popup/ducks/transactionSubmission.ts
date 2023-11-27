@@ -37,6 +37,7 @@ import {
   AccountType,
   ActionStatus,
   BlockedAccount,
+  BalanceToMigrate,
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -393,6 +394,7 @@ interface TransactionData {
   allowedSlippage: string;
   isToken: boolean;
   isMergeSelected: boolean;
+  balancesToMigrate: BalanceToMigrate[];
 }
 
 interface HardwareWalletData {
@@ -453,6 +455,7 @@ export const initialState: InitialState = {
     allowedSlippage: "1",
     isToken: false,
     isMergeSelected: false,
+    balancesToMigrate: [] as BalanceToMigrate[],
   },
   transactionSimulation: {
     response: null,
@@ -549,6 +552,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveIsMergeSelected: (state, action) => {
       state.transactionData.isMergeSelected = action.payload;
+    },
+    saveBalancesToMigrate: (state, action) => {
+      state.transactionData.balancesToMigrate = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -681,6 +687,7 @@ export const {
   saveAssetSelectType,
   saveAssetSelectSource,
   saveIsMergeSelected,
+  saveBalancesToMigrate,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
