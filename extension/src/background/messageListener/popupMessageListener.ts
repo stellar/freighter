@@ -17,6 +17,7 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { calculateSenderMinBalance } from "@shared/helpers/migration";
 
 import {
   Account,
@@ -1459,14 +1460,20 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         networkPassphrase: Networks.TESTNET,
       });
 
-      if (!xlmBalance) {
-        break;
-      }
+      // the number of transaction submissions needs to complete the migration:
+      // 1 tx to send the balance. This is always required
+      // For trustline balance(s), 1 tx to send them
+      // If we're merging, 1 tx to to remove trustlines as well as 1 tx to complete the merge
+      const opCount =
+        1 + (trustlineBalances.length ? 1 : 0) + (isMergeSelected ? 2 : 0);
 
       // the amount the sender needs to hold to complete the migration
-      const senderAccountMinBal = new BigNumber(minBalance).plus(
-        new BigNumber(recommendedFee).times(trustlineBalances.length + 1),
-      );
+      const senderAccountMinBal = calculateSenderMinBalance({
+        minBalance,
+        recommendedFee,
+        opCount,
+      });
+
       const startingBalance = new BigNumber(xlmBalance)
         .minus(senderAccountMinBal)
         .toString();
@@ -1511,13 +1518,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       try {
         // now that the destination accounts are funded, we can add the trustline balances
-        migrateTrustlines({
+        // eslint-disable-next-line no-await-in-loop
+        await migrateTrustlines({
           trustlineBalances,
           server,
           newKeyPair,
           fee,
           sourceAccount,
           sourceKeys,
+          isMergeSelected,
         });
       } catch (e) {
         console.error(e);
@@ -1526,6 +1535,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           destination: newKeyPair.publicKey,
           error: e,
         });
+        return { error: JSON.stringify(migrationErrors) };
       }
 
       if (isMergeSelected) {
