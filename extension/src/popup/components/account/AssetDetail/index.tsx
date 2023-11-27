@@ -170,7 +170,7 @@ export const AssetDetail = ({
               }
               assetDomain={assetDomain}
               contractId={
-                balance && "issuer" in balance.token
+                balance && "decimals" in balance
                   ? balance.token.issuer.key
                   : undefined
               }
