@@ -63,6 +63,11 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           token: { code, issuer },
         } = sortedBalances[i];
 
+        if (isSwap && sortedBalances[i].decimals) {
+          // eslint-disable-next-line
+          continue;
+        }
+
         if (code !== "XLM") {
           const server = stellarSdkServer(networkUrl);
 

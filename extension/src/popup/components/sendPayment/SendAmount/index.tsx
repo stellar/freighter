@@ -49,6 +49,7 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 
 import "../styles.scss";
+import { BalanceMap } from "@shared/api/types";
 
 const BASE_RESERVE = 0.5 as const;
 
@@ -288,10 +289,15 @@ export const SendAmount = ({
       if (formik.values.asset !== Asset.native().toString()) {
         defaultDestAsset = Asset.native().toString();
       } else {
-        // otherwise default to first non-native asset if exists
+        // otherwise default to first non-native/classic side asset if exists
         const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
           (b) =>
-            b !== Asset.native().toString() && b.indexOf(LP_IDENTIFIER) === -1,
+            b !== Asset.native().toString() &&
+            b.indexOf(LP_IDENTIFIER) === -1 &&
+            !(
+              "decimals" in
+              (accountBalances.balances || ({} as NonNullable<BalanceMap>))[b]
+            ),
         );
         defaultDestAsset = nonXlmAssets[0]
           ? nonXlmAssets[0]
