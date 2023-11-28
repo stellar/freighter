@@ -2,6 +2,7 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { Formik, Form } from "formik";
 
 import { ROUTES } from "popup/constants/routes";
 import { AppDispatch } from "popup/App";
@@ -60,14 +61,25 @@ export const ConfirmMigration = () => {
           )}
         </Notification>
       </MigrationBody>
-      <MigrationButton>
-        <Button onClick={handleCancel} size="md" variant="secondary">
-          {t("Nevermind, cancel")}
-        </Button>
-        <Button onClick={handleContinue} size="md" variant="primary">
-          {t("I understand, start migration")}
-        </Button>
-      </MigrationButton>
+      <Formik initialValues={{}} onSubmit={handleContinue}>
+        {({ isSubmitting }) => (
+          <Form className="NotFunded__form">
+            <MigrationButton>
+              <Button onClick={handleCancel} size="md" variant="secondary">
+                {t("Nevermind, cancel")}
+              </Button>
+              <Button
+                isLoading={isSubmitting}
+                size="md"
+                type="submit"
+                variant="primary"
+              >
+                {t("I understand, start migration")}
+              </Button>
+            </MigrationButton>
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 };

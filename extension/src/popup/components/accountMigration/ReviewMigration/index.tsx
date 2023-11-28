@@ -6,17 +6,22 @@ import { getAccountInfo, getMigratableAccounts } from "@shared/api/internal";
 import { BalanceToMigrate } from "@shared/api/types";
 import { useTranslation } from "react-i18next";
 import { BigNumber } from "bignumber.js";
-import { Field, FieldProps, Form, Formik } from "formik";
+import { Field, FieldProps, Form, Formik, useFormikContext } from "formik";
 import { object as YupObject, boolean as YupBoolean } from "yup";
 
 import { ROUTES } from "popup/constants/routes";
-import { BASE_RESERVE } from "popup/constants/transaction";
+import { BASE_RESERVE } from "@shared/constants/stellar";
+import {
+  calculateSenderMinBalance,
+  getMigrationFeeAmount,
+} from "@shared/helpers/migration";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveBalancesToMigrate,
   saveIsMergeSelected,
 } from "popup/ducks/transactionSubmission";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
@@ -30,7 +35,7 @@ import {
 
 import "./styles.scss";
 
-type AccountList = {
+type AccountToMigrate = {
   publicKey: string;
   name: string;
   trustlines: number;
@@ -40,11 +45,40 @@ type AccountList = {
   isSigner: boolean;
   minBalance: string;
   keyIdIndex: number;
-}[];
+};
 
 interface FormValues {
   isMergeSelected: boolean;
 }
+
+const isReadyToMigrate = ({
+  xlmBalance,
+  dataEntries,
+  isSigner,
+  minBalance,
+  recommendedFee,
+  trustlineBalancesLength,
+  isMergeSelected,
+}: {
+  xlmBalance: string;
+  dataEntries: number;
+  isSigner: boolean;
+  minBalance: string;
+  recommendedFee: string;
+  trustlineBalancesLength: number;
+  isMergeSelected: boolean;
+}) =>
+  Boolean(
+    xlmBalance &&
+      !dataEntries &&
+      !isSigner &&
+      calculateSenderMinBalance({
+        minBalance,
+        recommendedFee,
+        hasTrustlineBalances: Boolean(trustlineBalancesLength),
+        isMergeSelected,
+      }) < new BigNumber(xlmBalance),
+  );
 
 const AccountInfo = ({
   account,
@@ -62,14 +96,56 @@ const AccountInfo = ({
   </div>
 );
 
-const AccountListItems = ({ accountList }: { accountList: AccountList }) => {
-  const { t } = useTranslation();
+type AccountListItemRow = AccountToMigrate & { isReadyToMigrate: boolean };
 
-  return (
+const AccountListItems = ({
+  accountList,
+  setIsSubmitDisabled,
+}: {
+  accountList: AccountToMigrate[];
+  setIsSubmitDisabled: (isSubmitDisabled: boolean) => void;
+}) => {
+  const { t } = useTranslation();
+  const { recommendedFee } = useNetworkFees();
+  const formik = useFormikContext<FormValues>();
+  const [accountListItems, setAccountListItems] = useState(
+    [] as AccountListItemRow[],
+  );
+
+  const { isMergeSelected } = formik.values;
+
+  useEffect(() => {
+    const acctListItems: AccountListItemRow[] = [];
+    if (!recommendedFee) return;
+    accountList.forEach((acct) => {
+      const acctIsReadyToMigrate = isReadyToMigrate({
+        xlmBalance: acct.xlmBalance,
+        dataEntries: acct.dataEntries,
+        isSigner: acct.isSigner,
+        minBalance: acct.minBalance,
+        recommendedFee,
+        trustlineBalancesLength: acct.trustlineBalances.length,
+        isMergeSelected,
+      });
+
+      if (!acctIsReadyToMigrate) {
+        setIsSubmitDisabled(true);
+      }
+
+      acctListItems.push({
+        ...acct,
+        isReadyToMigrate: acctIsReadyToMigrate,
+      });
+    });
+
+    setAccountListItems(acctListItems);
+  }, [accountList, isMergeSelected, recommendedFee, setIsSubmitDisabled]);
+
+  return accountListItems.length ? (
     <>
-      {accountList.map((acct) => (
+      {accountListItems.map((acct) => (
         <section className="ReviewMigration__section" key={acct.publicKey}>
-          {acct.xlmBalance ? (
+          {acct.isReadyToMigrate ? (
             <>
               <div className="ReviewMigration__row ReviewMigration__account-row">
                 <AccountInfo account={acct} />
@@ -105,7 +181,16 @@ const AccountListItems = ({ accountList }: { accountList: AccountList }) => {
                 </div>
                 <div className="ReviewMigration__row__description">
                   {t("Cost to migrate")}:{" "}
-                  <span className="ReviewMigration__highlight">0.0001 XLM</span>
+                  <span className="ReviewMigration__highlight">
+                    {getMigrationFeeAmount({
+                      recommendedFee,
+                      hasTrustlineBalances: Boolean(
+                        acct.trustlineBalances.length,
+                      ),
+                      isMergeSelected,
+                    }).toString()}{" "}
+                    XLM
+                  </span>
                 </div>
               </div>
             </>
@@ -122,6 +207,10 @@ const AccountListItems = ({ accountList }: { accountList: AccountList }) => {
         </section>
       ))}
     </>
+  ) : (
+    <div className="ReviewMigration__loader">
+      <Loader />
+    </div>
   );
 };
 
@@ -129,15 +218,21 @@ export const ReviewMigration = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [accountList, setAccountList] = useState([] as AccountList);
+  const [accountToMigrateList, setAccountToMigrateList] = useState(
+    [] as AccountToMigrate[],
+  );
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
+  const { recommendedFee } = useNetworkFees();
 
   useEffect(() => {
-    const acctItemArr: AccountList = [];
+    const acctItemArr: AccountToMigrate[] = [];
+    let hasUnmigratableAccount = false;
 
     const fetchAccountData = async () => {
       const { migratableAccounts } = await getMigratableAccounts();
 
-      if (!migratableAccounts) {
+      if (!migratableAccounts || !recommendedFee) {
+        hasUnmigratableAccount = true;
         return;
       }
 
@@ -172,30 +267,38 @@ export const ReviewMigration = () => {
             (2 + account.subentry_count) * BASE_RESERVE,
           ).toString();
 
+          const xlmBalance =
+            account.balances[account.balances.length - 1].balance;
+          const dataEntries = Object.keys(account.data_attr).length;
+          const trustlineBalances = account.balances.filter(
+            ({ asset_type: assetType }) => assetType !== "native",
+          );
+
           acctItem = {
             ...DEFAULT_ACCT_ITEM,
             trustlines: account.balances.length - 1,
-            dataEntries: Object.keys(account.data_attr).length,
-            xlmBalance: account.balances[account.balances.length - 1].balance,
-            trustlineBalances: account.balances.filter(
-              ({ asset_type: assetType }) => assetType !== "native",
-            ),
+            dataEntries,
+            xlmBalance,
+            trustlineBalances,
             minBalance,
           };
+        } else {
+          hasUnmigratableAccount = true;
         }
 
         acctItemArr.push(acctItem);
       }
 
-      setAccountList(acctItemArr);
+      setAccountToMigrateList(acctItemArr);
+      setIsSubmitDisabled(hasUnmigratableAccount);
     };
 
     fetchAccountData();
-  }, [networkDetails]);
+  }, [networkDetails, recommendedFee]);
 
   const handleSubmit = (values: FormValues) => {
     const migratableBalances: BalanceToMigrate[] = [];
-    accountList.forEach(
+    accountToMigrateList.forEach(
       ({
         publicKey,
         minBalance,
@@ -203,15 +306,13 @@ export const ReviewMigration = () => {
         trustlineBalances,
         keyIdIndex,
       }) => {
-        if (xlmBalance) {
-          migratableBalances.push({
-            publicKey,
-            minBalance,
-            xlmBalance,
-            trustlineBalances,
-            keyIdIndex,
-          });
-        }
+        migratableBalances.push({
+          publicKey,
+          minBalance,
+          xlmBalance,
+          trustlineBalances,
+          keyIdIndex,
+        });
       },
     );
     dispatch(saveBalancesToMigrate(migratableBalances));
@@ -235,53 +336,53 @@ export const ReviewMigration = () => {
           {t("Only accounts ready for migration will be migrated.")}
         </MigrationParagraph>
       </header>
-      {accountList.length ? (
-        <AccountListItems accountList={accountList} />
-      ) : (
-        <div className="ReviewMigration__loader">
-          <Loader />
-        </div>
-      )}
       <Formik
         onSubmit={handleSubmit}
         initialValues={initialValues}
         validationSchema={ReviewMigrationFormSchema}
       >
         {({ isSubmitting }) => (
-          <Form className="NetworkForm__form">
-            <div className="ReviewMigration__option">
-              <Field name="isMergeSelected">
-                {({ field }: FieldProps) => (
-                  <Checkbox
-                    fieldSize="md"
-                    autoComplete="off"
-                    id="isMergeSelected-input"
-                    label={
-                      <div>
-                        <span className="ReviewMigration__highlight">
-                          {t("Optional")}:{" "}
-                        </span>
-                        {t(
-                          "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
-                        )}
-                      </div>
-                    }
-                    {...field}
-                  />
-                )}
-              </Field>
-            </div>
-            <MigrationButton>
-              <Button
-                size="md"
-                variant="secondary"
-                isLoading={isSubmitting}
-                type="submit"
-              >
-                {t("Continue")}
-              </Button>
-            </MigrationButton>
-          </Form>
+          <>
+            <AccountListItems
+              accountList={accountToMigrateList}
+              setIsSubmitDisabled={setIsSubmitDisabled}
+            />
+            <Form className="NetworkForm__form">
+              <div className="ReviewMigration__option">
+                <Field name="isMergeSelected">
+                  {({ field }: FieldProps) => (
+                    <Checkbox
+                      fieldSize="md"
+                      autoComplete="off"
+                      id="isMergeSelected-input"
+                      label={
+                        <div>
+                          <span className="ReviewMigration__highlight">
+                            {t("Optional")}:{" "}
+                          </span>
+                          {t(
+                            "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
+                          )}
+                        </div>
+                      }
+                      {...field}
+                    />
+                  )}
+                </Field>
+              </div>
+              <MigrationButton>
+                <Button
+                  disabled={isSubmitDisabled}
+                  size="md"
+                  variant="secondary"
+                  isLoading={isSubmitting}
+                  type="submit"
+                >
+                  {t("Continue")}
+                </Button>
+              </MigrationButton>
+            </Form>
+          </>
         )}
       </Formik>
     </div>
