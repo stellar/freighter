@@ -15,12 +15,35 @@ export const MigrationHeader = ({ children }: MigrationHeaderProps) => (
   </div>
 );
 
+interface MigrationBodyProps {
+  children: React.ReactNode;
+  hasWarning?: boolean;
+}
+
+export const MigrationBody = ({ children, hasWarning }: MigrationBodyProps) => (
+  <div
+    className={`MigrationBody  ${hasWarning ? "MigrationBody--warning" : ""}`}
+  >
+    {children}
+  </div>
+);
+
 interface MigrationParagraphProps {
   children: React.ReactNode;
 }
 
 export const MigrationParagraph = ({ children }: MigrationParagraphProps) => (
   <Paragraph size="md" className="MigrationParagraph">
+    {children}
+  </Paragraph>
+);
+
+interface MigrationButtonProps {
+  children: React.ReactNode;
+}
+
+export const MigrationButton = ({ children }: MigrationButtonProps) => (
+  <Paragraph size="md" className="MigrationButton">
     {children}
   </Paragraph>
 );

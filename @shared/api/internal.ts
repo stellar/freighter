@@ -19,7 +19,9 @@ import {
   AccountBalancesInterface,
   AccountHistoryInterface,
   Balances,
+  BalanceToMigrate,
   HorizonOperation,
+  MigratableAccount,
   Settings,
 } from "./types";
 import {
@@ -266,6 +268,26 @@ export const confirmMnemonicPhrase = async (
   return response;
 };
 
+export const confirmMigratedMnemonicPhrase = async (
+  mnemonicPhraseToConfirm: string,
+): Promise<{
+  isCorrectPhrase: boolean;
+}> => {
+  let response = {
+    isCorrectPhrase: false,
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      mnemonicPhraseToConfirm,
+      type: SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
 export const recoverAccount = async (
   password: string,
   recoverMnemonic: string,
@@ -354,7 +376,7 @@ export const getAccountInfo = async ({
 };
 
 export const getMigratableAccounts = async () => {
-  let migratableAccounts: Account[] = [];
+  let migratableAccounts: MigratableAccount[] = [];
 
   try {
     ({ migratableAccounts } = await sendMessageToBackground({
@@ -365,6 +387,44 @@ export const getMigratableAccounts = async () => {
   }
 
   return { migratableAccounts };
+};
+
+export const migrateAccounts = async ({
+  balancesToMigrate,
+  isMergeSelected,
+  recommendedFee,
+}: {
+  balancesToMigrate: BalanceToMigrate[];
+  isMergeSelected: boolean;
+  recommendedFee: string;
+}): Promise<{
+  publicKey: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+  error: string;
+}> => {
+  let publicKey = "";
+  let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
+  let error = "";
+
+  try {
+    ({
+      allAccounts,
+      publicKey,
+      hasPrivateKey,
+      error,
+    } = await sendMessageToBackground({
+      balancesToMigrate,
+      isMergeSelected,
+      recommendedFee,
+      type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { allAccounts, publicKey, hasPrivateKey, error };
 };
 
 export const getAccountBalances = async ({

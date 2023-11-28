@@ -4,11 +4,16 @@ import { useSelector, useDispatch } from "react-redux";
 import { Button, Card } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { AppDispatch } from "popup/App";
 import {
   confirmMnemonicPhrase,
+  confirmMigratedMnemonicPhrase,
   authErrorSelector,
 } from "popup/ducks/accountServices";
 import { FormError } from "popup/basics/Forms";
+
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
 
 import {
   OnboardingHeader,
@@ -24,15 +29,17 @@ const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
 
 export const ConfirmMnemonicPhrase = ({
   words = [""],
+  isMigration,
   customBackAction,
   hasGoBackBtn,
 }: {
   words: string[];
+  isMigration?: boolean;
   customBackAction?: () => void;
   hasGoBackBtn?: boolean;
 }) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
 
   const initialWordState = words.reduce(
     (obj, current, i) => ({
@@ -58,11 +65,21 @@ export const ConfirmMnemonicPhrase = ({
 
   const wordStateArr: [string, boolean][] = Object.entries(initialWordState);
 
-  const handleSubmit = (
+  const handleSubmit = async (
     _values: FormikValues,
     formikHelpers: FormikHelpers<FormikValues>,
-  ): void => {
-    dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+  ): Promise<void> => {
+    if (isMigration) {
+      const res = await dispatch(
+        confirmMigratedMnemonicPhrase(joinSelectedWords()),
+      );
+      if (confirmMigratedMnemonicPhrase.fulfilled.match(res)) {
+        navigateTo(ROUTES.accountMigrationConfirmMigration);
+      }
+    } else {
+      dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+    }
+
     setSelectedWords([]);
     formikHelpers.resetForm();
   };

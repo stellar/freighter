@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Badge, Button, Checkbox, Loader } from "@stellar/design-system";
+import { Horizon } from "stellar-sdk";
 import { getAccountInfo, getMigratableAccounts } from "@shared/api/internal";
+import { BalanceToMigrate } from "@shared/api/types";
 import { useTranslation } from "react-i18next";
 import { BigNumber } from "bignumber.js";
 import { Field, FieldProps, Form, Formik } from "formik";
@@ -11,13 +13,20 @@ import { ROUTES } from "popup/constants/routes";
 import { BASE_RESERVE } from "popup/constants/transaction";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { saveIsMergeSelected } from "popup/ducks/transactionSubmission";
+import {
+  saveBalancesToMigrate,
+  saveIsMergeSelected,
+} from "popup/ducks/transactionSubmission";
 
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
-import { MigrationHeader, MigrationParagraph } from "../basics";
+import {
+  MigrationHeader,
+  MigrationButton,
+  MigrationParagraph,
+} from "../basics";
 
 import "./styles.scss";
 
@@ -27,8 +36,10 @@ type AccountList = {
   trustlines: number;
   dataEntries: number;
   xlmBalance: string;
+  trustlineBalances: Horizon.HorizonApi.BalanceLine[];
   isSigner: boolean;
   minBalance: string;
+  keyIdIndex: number;
 }[];
 
 interface FormValues {
@@ -126,6 +137,10 @@ export const ReviewMigration = () => {
     const fetchAccountData = async () => {
       const { migratableAccounts } = await getMigratableAccounts();
 
+      if (!migratableAccounts) {
+        return;
+      }
+
       // eslint-disable-next-line no-plusplus
       for (let i = 0; i < migratableAccounts.length; i++) {
         const publicKey = migratableAccounts[i].publicKey;
@@ -142,8 +157,10 @@ export const ReviewMigration = () => {
           trustlines: 0,
           dataEntries: 0,
           xlmBalance: "",
+          trustlineBalances: [] as Horizon.HorizonApi.BalanceLine[],
           isSigner,
           minBalance: "",
+          keyIdIndex: migratableAccounts[i].keyIdIndex,
         };
 
         let acctItem = {
@@ -160,6 +177,9 @@ export const ReviewMigration = () => {
             trustlines: account.balances.length - 1,
             dataEntries: Object.keys(account.data_attr).length,
             xlmBalance: account.balances[account.balances.length - 1].balance,
+            trustlineBalances: account.balances.filter(
+              ({ asset_type: assetType }) => assetType !== "native",
+            ),
             minBalance,
           };
         }
@@ -174,6 +194,27 @@ export const ReviewMigration = () => {
   }, [networkDetails]);
 
   const handleSubmit = (values: FormValues) => {
+    const migratableBalances: BalanceToMigrate[] = [];
+    accountList.forEach(
+      ({
+        publicKey,
+        minBalance,
+        xlmBalance,
+        trustlineBalances,
+        keyIdIndex,
+      }) => {
+        if (xlmBalance) {
+          migratableBalances.push({
+            publicKey,
+            minBalance,
+            xlmBalance,
+            trustlineBalances,
+            keyIdIndex,
+          });
+        }
+      },
+    );
+    dispatch(saveBalancesToMigrate(migratableBalances));
     dispatch(saveIsMergeSelected(values.isMergeSelected));
     navigateTo(ROUTES.accountMigrationMnemonicPhrase);
   };
@@ -230,7 +271,7 @@ export const ReviewMigration = () => {
                 )}
               </Field>
             </div>
-            <div className="ReviewMigration__button">
+            <MigrationButton>
               <Button
                 size="md"
                 variant="secondary"
@@ -239,7 +280,7 @@ export const ReviewMigration = () => {
               >
                 {t("Continue")}
               </Button>
-            </div>
+            </MigrationButton>
           </Form>
         )}
       </Formik>
