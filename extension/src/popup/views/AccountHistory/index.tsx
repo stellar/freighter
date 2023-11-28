@@ -5,7 +5,7 @@ import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { HorizonOperation, ActionStatus } from "@shared/api/types";
+import { ActionStatus, HorizonOperation } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -13,10 +13,7 @@ import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import {
-  resetAccountBalanceStatus,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
   getIsSupportedSorobanOp,
@@ -86,13 +83,10 @@ export const AccountHistory = () => {
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const isTokenBalanceLoading =
-    (accountBalanceStatus === ActionStatus.IDLE ||
-      accountBalanceStatus === ActionStatus.PENDING) &&
-    isSorobanSuported;
-  const isAccountHistoryLoading = isSorobanSuported
-    ? historySegments === null || isTokenBalanceLoading
-    : historySegments === null;
+  const isAccountHistoryLoading =
+    historySegments === null ||
+    accountBalanceStatus === ActionStatus.IDLE ||
+    accountBalanceStatus === ActionStatus.PENDING;
 
   useEffect(() => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
@@ -165,19 +159,13 @@ export const AccountHistory = () => {
     };
 
     getData();
-
-    return () => {
-      if (isSorobanSuported) {
-        dispatch(resetAccountBalanceStatus());
-      }
-    };
   }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
     <div className="AccountHistory">
-      {isLoading || isTokenBalanceLoading ? (
+      {isLoading ? (
         <div className="AccountHistory__loader">
           <Loader size="2rem" />
         </div>
