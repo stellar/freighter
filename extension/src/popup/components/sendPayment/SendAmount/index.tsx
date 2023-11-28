@@ -47,7 +47,8 @@ import {
 } from "popup/components/sendPayment/SendTo";
 import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
-import { BASE_RESERVE, TX_SEND_MAX } from "popup/constants/transaction";
+import { TX_SEND_MAX } from "popup/constants/transaction";
+import { BASE_RESERVE } from "@shared/constants/stellar";
 
 import "../styles.scss";
 
