@@ -63,7 +63,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           token: { code, issuer },
         } = sortedBalances[i];
 
-        if (isSwap && sortedBalances[i].decimals) {
+        if (isSwap && "decimals" in sortedBalances[i]) {
           // eslint-disable-next-line
           continue;
         }
