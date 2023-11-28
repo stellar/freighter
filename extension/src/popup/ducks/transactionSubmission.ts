@@ -254,28 +254,25 @@ export const removeTokenId = createAsyncThunk<
   }
 });
 
-export const getAccountBalancesWithFallback = createAsyncThunk<
+export const getAccountBalances = createAsyncThunk<
   AccountBalancesInterface,
   {
     publicKey: string;
     networkDetails: NetworkDetails;
   },
   { rejectValue: ErrorMessage }
->(
-  "getAccountBalancesWithFallback",
-  async ({ publicKey, networkDetails }, thunkApi) => {
-    try {
-      const balances = await internalgetAccountIndexerBalances(
-        publicKey,
-        networkDetails.network as NETWORKS,
-      );
-      storeBalanceMetricData(publicKey, balances.isFunded || false);
-      return balances;
-    } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
-    }
-  },
-);
+>("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    const balances = await internalgetAccountIndexerBalances(
+      publicKey,
+      networkDetails.network as NETWORKS,
+    );
+    storeBalanceMetricData(publicKey, balances.isFunded || false);
+    return balances;
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e });
+  }
+});
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
@@ -604,20 +601,17 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     });
-    builder.addCase(getAccountBalancesWithFallback.pending, (state) => {
+    builder.addCase(getAccountBalances.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
     });
-    builder.addCase(getAccountBalancesWithFallback.rejected, (state) => {
+    builder.addCase(getAccountBalances.rejected, (state) => {
       state.accountBalanceStatus = ActionStatus.ERROR;
     });
-    builder.addCase(
-      getAccountBalancesWithFallback.fulfilled,
-      (state, action) => {
-        state.accountBalances = action.payload;
-        state.tokensWithNoBalance = []; // TODO
-        state.accountBalanceStatus = ActionStatus.SUCCESS;
-      },
-    );
+    builder.addCase(getAccountBalances.fulfilled, (state, action) => {
+      state.accountBalances = action.payload;
+      state.tokensWithNoBalance = []; // TODO
+      state.accountBalanceStatus = ActionStatus.SUCCESS;
+    });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
     });

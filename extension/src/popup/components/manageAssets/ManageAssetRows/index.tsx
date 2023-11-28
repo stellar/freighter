@@ -37,7 +37,7 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  getAccountBalancesWithFallback,
+  getAccountBalances,
   resetSubmission,
   signFreighterTransaction,
   submitFreighterTransaction,
@@ -184,7 +184,7 @@ export const ManageAssetRows = ({
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         setAssetSubmitting("");
         dispatch(
-          getAccountBalancesWithFallback({
+          getAccountBalances({
             publicKey,
             networkDetails,
           }),

@@ -11,7 +11,7 @@ import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/Trans
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import {
-  getAccountBalancesWithFallback,
+  getAccountBalances,
   getAssetIcons,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
@@ -31,13 +31,13 @@ export const Swap = () => {
     (async () => {
       if (!accountBalances.balances) {
         const res = await dispatch(
-          getAccountBalancesWithFallback({
+          getAccountBalances({
             publicKey,
             networkDetails,
           }),
         );
 
-        if (getAccountBalancesWithFallback.fulfilled.match(res)) {
+        if (getAccountBalances.fulfilled.match(res)) {
           dispatch(
             getAssetIcons({
               balances: res.payload.balances,
