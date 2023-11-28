@@ -1460,18 +1460,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         networkPassphrase: Networks.TESTNET,
       });
 
-      // the number of transaction submissions needs to complete the migration:
-      // 1 tx to send the balance. This is always required
-      // For trustline balance(s), 1 tx to send them
-      // If we're merging, 1 tx to to remove trustlines as well as 1 tx to complete the merge
-      const opCount =
-        1 + (trustlineBalances.length ? 1 : 0) + (isMergeSelected ? 2 : 0);
-
       // the amount the sender needs to hold to complete the migration
       const senderAccountMinBal = calculateSenderMinBalance({
         minBalance,
         recommendedFee,
-        opCount,
+        hasTrustlineBalances: true,
+        isMergeSelected,
       });
 
       const startingBalance = new BigNumber(xlmBalance)
