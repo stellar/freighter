@@ -26,7 +26,6 @@ import {
   truncateString,
 } from "helpers/stellar";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
@@ -74,14 +73,12 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
-  maxHeight: number;
 }
 
 export const ManageAssetRows = ({
   children,
   header,
   assetRows,
-  maxHeight,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -341,12 +338,7 @@ export const ManageAssetRows = ({
           }}
         />
       )}
-      <SimpleBarWrapper
-        className="ManageAssetRows__scrollbar"
-        style={{
-          maxHeight: `${maxHeight}px`,
-        }}
-      >
+      <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
           {assetRows.map(
@@ -422,7 +414,7 @@ export const ManageAssetRows = ({
           })}
         </div>
         {children}
-      </SimpleBarWrapper>
+      </div>
       <LoadingBackground
         onClick={() => {}}
         isActive={showNewAssetWarning || showBlockedDomainWarning}

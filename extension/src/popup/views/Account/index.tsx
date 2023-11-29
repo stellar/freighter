@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,7 @@ import {
   ActionStatus,
 } from "@shared/api/types";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
+import { View } from "popup/basics/layout/View";
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
@@ -85,7 +85,8 @@ export const Account = () => {
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 
-  const accountDropDownRef = useRef<HTMLDivElement>(null);
+  // TODO: what is this ref used for?
+  // const accountDropDownRef = useRef<HTMLDivElement>(null);
 
   const { balances, isFunded } = accountBalances;
 
@@ -179,85 +180,92 @@ export const Account = () => {
       subentryCount={accountBalances.subentryCount}
     />
   ) : (
-    <>
+    <View>
       {isLoading ? (
         <Loading />
       ) : (
-        <div className="AccountView" data-testid="account-view">
+        <>
           <AccountHeader
-            accountDropDownRef={accountDropDownRef}
+            // accountDropDownRef={accountDropDownRef}
             allAccounts={allAccounts}
             currentAccountName={currentAccountName}
             publicKey={publicKey}
           />
-          <div className="AccountView__account-actions">
-            <div className="AccountView__name-key-display">
-              <div
-                className="AccountView__account-name"
-                data-testid="account-view-account-name"
-              >
-                {currentAccountName}
-              </div>
-              <CopyText textToCopy={publicKey} tooltipPlacement="right">
-                <div className="AccountView__account-num">
-                  {truncatedPublicKey(publicKey)}
-                  <Icon.ContentCopy />
+          <View.Content
+            contentFooter={
+              isFunded ? (
+                <div className="AccountView__assets-button">
+                  <Button
+                    size="md"
+                    variant="secondary"
+                    onClick={() => {
+                      dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                      navigateTo(ROUTES.manageAssets);
+                    }}
+                  >
+                    {t("Manage Assets")}
+                  </Button>
                 </div>
-              </CopyText>
-            </div>
-            <div className="AccountView__send-receive-display">
-              <div className="AccountView__send-receive-button">
-                <NavButton
-                  showBorder
-                  title={t("View public key")}
-                  id="nav-btn-qr"
-                  icon={<Icon.QrCode />}
-                  onClick={() => navigateTo(ROUTES.viewPublicKey)}
-                />
+              ) : null
+            }
+          >
+            <div className="AccountView" data-testid="account-view">
+              <div className="AccountView__account-actions">
+                <div className="AccountView__name-key-display">
+                  <div
+                    className="AccountView__account-name"
+                    data-testid="account-view-account-name"
+                  >
+                    {currentAccountName}
+                  </div>
+                  <CopyText textToCopy={publicKey} tooltipPlacement="right">
+                    <div className="AccountView__account-num">
+                      {truncatedPublicKey(publicKey)}
+                      <Icon.ContentCopy />
+                    </div>
+                  </CopyText>
+                </div>
+                <div className="AccountView__send-receive-display">
+                  <div className="AccountView__send-receive-button">
+                    <NavButton
+                      showBorder
+                      title={t("View public key")}
+                      id="nav-btn-qr"
+                      icon={<Icon.QrCode />}
+                      onClick={() => navigateTo(ROUTES.viewPublicKey)}
+                    />
+                  </div>
+                  <div className="AccountView__send-receive-button">
+                    <NavButton
+                      showBorder
+                      title={t("Send Payment")}
+                      id="nav-btn-send"
+                      icon={<Icon.Send />}
+                      onClick={() => navigateTo(ROUTES.sendPayment)}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="AccountView__send-receive-button">
-                <NavButton
-                  showBorder
-                  title={t("Send Payment")}
-                  id="nav-btn-send"
-                  icon={<Icon.Send />}
-                  onClick={() => navigateTo(ROUTES.sendPayment)}
+              {isFunded ? (
+                <div className="AccountView__assets-wrapper">
+                  <AccountAssets
+                    sortedBalances={sortedBalances}
+                    assetIcons={assetIcons}
+                    setSelectedAsset={setSelectedAsset}
+                  />
+                </div>
+              ) : (
+                <NotFundedMessage
+                  canUseFriendbot={!!networkDetails.friendbotUrl}
+                  setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+                  publicKey={publicKey}
                 />
-              </div>
+              )}
             </div>
-          </div>
-          {isFunded ? (
-            <SimpleBarWrapper className="AccountView__assets-wrapper">
-              <AccountAssets
-                sortedBalances={sortedBalances}
-                assetIcons={assetIcons}
-                setSelectedAsset={setSelectedAsset}
-              />
-            </SimpleBarWrapper>
-          ) : (
-            <NotFundedMessage
-              canUseFriendbot={!!networkDetails.friendbotUrl}
-              setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-              publicKey={publicKey}
-            />
-          )}
-          {isFunded ? (
-            <div className="AccountView__assets-button">
-              <Button
-                size="md"
-                variant="secondary"
-                onClick={() => {
-                  dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-                  navigateTo(ROUTES.manageAssets);
-                }}
-              >
-                {t("Manage Assets")}
-              </Button>
-            </div>
-          ) : null}
-        </div>
+          </View.Content>
+        </>
       )}
       <BottomNav />
-    </>
+    </View>
   );
 };

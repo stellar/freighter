@@ -1,13 +1,9 @@
-:root {
-  --acount-row-height: 4.25rem;
-}
-
 .AccountHeader {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  height: var(--acount-row-height);
+  height: 5rem;
 
   &__icon-btn {
     cursor: pointer;

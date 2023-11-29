@@ -16,18 +16,16 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
+import { FormRows } from "popup/basics/Forms";
+import { View } from "popup/basics/layout/View";
 
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import {
   Onboarding,
-  OnboardingScreen,
-  OnboardingHalfScreen,
+  OnboardingButtons,
   OnboardingHeader,
+  OnboardingOneCol,
 } from "popup/components/Onboarding";
-import { Header } from "popup/components/Header";
 import { PasswordRequirements } from "popup/components/PasswordRequirements";
-
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 
 import "./styles.scss";
@@ -67,22 +65,19 @@ export const AccountCreator = () => {
   return mnemonicPhrase && publicKey ? (
     <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
   ) : (
-    <>
-      <FullscreenStyle />
-      <Header />
-      <Onboarding hasGoBackBtn>
-        <OnboardingScreen className="AccountCreator__screen">
-          <OnboardingHeader className="AccountCreator__header">
-            {t("Create a password")}
-          </OnboardingHeader>
-          <Formik
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            validationSchema={AccountCreatorSchema}
-          >
-            {({ isValid, dirty, isSubmitting, errors, touched }) => (
+    <View isAppLayout={false}>
+      <View.Header />
+      <View.Content alignment="center">
+        <Formik
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          validationSchema={AccountCreatorSchema}
+        >
+          {({ isValid, dirty, isSubmitting, errors, touched }) => (
+            <Onboarding layout="half">
+              <OnboardingHeader>{t("Create a password")}</OnboardingHeader>
               <Form>
-                <OnboardingHalfScreen className="AccountCreator__half-screen">
+                <OnboardingOneCol>
                   <FormRows>
                     <Field name="password">
                       {({ field }: FieldProps) => (
@@ -121,49 +116,49 @@ export const AccountCreator = () => {
                       )}
                     </Field>
                   </FormRows>
+
                   <PasswordRequirements />
-                  <div>
-                    <Field name="termsOfUse">
-                      {({ field }: FieldProps) => (
-                        <Checkbox
-                          fieldSize="md"
-                          autoComplete="off"
-                          error={touched.termsOfUse ? errors.termsOfUse : null}
-                          id="termsOfUse-input"
-                          label={
-                            <>
-                              {t("I have read and agree to")}{" "}
-                              <Link
-                                variant="secondary"
-                                href="https://stellar.org/terms-of-service"
-                              >
-                                {t("Terms of Use")}
-                              </Link>
-                            </>
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                  </div>
-                  <SubmitButtonWrapper>
+
+                  <Field name="termsOfUse">
+                    {({ field }: FieldProps) => (
+                      <Checkbox
+                        fieldSize="md"
+                        autoComplete="off"
+                        error={touched.termsOfUse ? errors.termsOfUse : null}
+                        id="termsOfUse-input"
+                        label={
+                          <>
+                            {t("I have read and agree to")}{" "}
+                            <Link
+                              variant="secondary"
+                              href="https://stellar.org/terms-of-service"
+                            >
+                              {t("Terms of Use")}
+                            </Link>
+                          </>
+                        }
+                        {...field}
+                      />
+                    )}
+                  </Field>
+
+                  <OnboardingButtons hasGoBackBtn>
                     <Button
                       size="md"
-                      isFullWidth
-                      variant="primary"
+                      variant="tertiary"
                       type="submit"
                       isLoading={isSubmitting}
                       disabled={!(dirty && isValid)}
                     >
                       {t("Confirm")}
                     </Button>
-                  </SubmitButtonWrapper>
-                </OnboardingHalfScreen>
+                  </OnboardingButtons>
+                </OnboardingOneCol>
               </Form>
-            )}
-          </Formik>
-        </OnboardingScreen>
-      </Onboarding>
-    </>
+            </Onboarding>
+          )}
+        </Formik>
+      </View.Content>
+    </View>
   );
 };

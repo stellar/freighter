@@ -1,10 +1,4 @@
 .SubmitResult {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 70%;
-
   &__content {
     flex-grow: 1;
     display: flex;
@@ -89,10 +83,6 @@
   }
 
   &__suggest-remove-tl {
-    position: absolute;
-    top: calc(var(--popup--height) - 5.75 * var(--continue-btn-height));
-    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-
     .remove-tl-contents {
       display: flex;
       flex-direction: column;
@@ -121,20 +111,9 @@
     &__success {
       display: flex;
       column-gap: 1rem;
-      position: absolute;
-      top: calc(var(--popup--height) - 1.5 * var(--continue-btn-height));
-      width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
       button {
         flex: 1;
       }
-    }
-    &__fail {
-      position: absolute;
-      top: calc(
-        var(--popup--height) - 1 * var(--continue-btn-height) -
-          var(--bottom-btn-margin)
-      );
-      width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
     }
   }
 

@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import {
@@ -24,14 +25,14 @@ import IconCube from "popup/assets/icon-cube.svg";
 import "./styles.scss";
 
 interface AccountHeaderProps {
-  accountDropDownRef: React.RefObject<HTMLDivElement>;
+  // accountDropDownRef: React.RefObject<HTMLDivElement>;
   allAccounts: Array<Account>;
   currentAccountName: string;
   publicKey: string;
 }
 
 export const AccountHeader = ({
-  accountDropDownRef,
+  // accountDropDownRef,
   allAccounts,
   currentAccountName,
   publicKey,
@@ -64,30 +65,33 @@ export const AccountHeader = ({
   activeNetworkIndex.current = index;
 
   return (
-    <div
-      className="AccountHeader"
-      ref={accountDropDownRef}
+    <View.AppHeader
+      // ref={accountDropDownRef}
       data-testid="account-header"
-    >
-      <div
-        className="AccountHeader__icon-btn"
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-      >
-        <AccountListIdenticon
-          active
-          accountName={currentAccountName}
-          publicKey={publicKey}
-        />
-      </div>
-      <div
-        className="AccountHeader__network-wrapper"
-        onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
-      >
-        <NetworkIcon index={activeNetworkIndex.current} />
-        <div className="AccountHeader__network-copy">
-          {networkDetails.networkName}
+      leftContent={
+        <div
+          className="AccountHeader__icon-btn"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        >
+          <AccountListIdenticon
+            active
+            accountName={currentAccountName}
+            publicKey={publicKey}
+          />
         </div>
-      </div>
+      }
+      rightContent={
+        <div
+          className="AccountHeader__network-wrapper"
+          onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
+        >
+          <NetworkIcon index={activeNetworkIndex.current} />
+          <div className="AccountHeader__network-copy">
+            {networkDetails.networkName}
+          </div>
+        </div>
+      }
+    >
       <AccountHeaderModal
         isDropdownOpen={isDropdownOpen}
         maxHeight={accountsModalHeight.current}
@@ -213,6 +217,6 @@ export const AccountHeader = ({
         }}
         isActive={isDropdownOpen || isNetworkSelectorOpen}
       />
-    </div>
+    </View.AppHeader>
   );
 };

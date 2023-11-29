@@ -11,9 +11,19 @@ export const FormRows = ({ children }: FormRowsProps) => (
 
 interface SubmitButtonWrapperProps {
   children: React.ReactNode;
+  isCenterAligned?: boolean;
 }
-export const SubmitButtonWrapper = ({ children }: SubmitButtonWrapperProps) => (
-  <div className="SubmitButtonWrapper">{children}</div>
+export const SubmitButtonWrapper = ({
+  children,
+  isCenterAligned,
+}: SubmitButtonWrapperProps) => (
+  <div
+    className={`SubmitButtonWrapper ${
+      isCenterAligned ? "SubmitButtonWrapper--center" : ""
+    }`}
+  >
+    {children}
+  </div>
 );
 
 interface ErrorMessageProps {

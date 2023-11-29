@@ -3,11 +3,6 @@
 }
 
 .TransactionDetail {
-  display: flex;
-  flex-direction: column;
-  height: var(--popup--height);
-  padding: var(--popup-vertical-padding) var(--popup--side-padding);
-
   &__header {
     border-bottom: 1px solid var(--color-gray-40);
     color: var(--color-white);

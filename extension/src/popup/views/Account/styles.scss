@@ -3,8 +3,6 @@
 }
 
 .AccountView {
-  padding: 0.25rem var(--account-view-padding-side);
-
   &__account-actions {
     align-items: center;
     justify-content: space-between;
@@ -67,13 +65,6 @@
   }
 
   &__assets-wrapper {
-    // TODO: Standardize scrollbar implementation
-    //https://github.com/stellar/freighter/issues/419
-
-    height: 20.375rem;
-    padding-right: var(--popup--side-padding);
-    width: calc(var(--popup--width) - var(--popup--side-padding));
-
     .AccountAssets__asset {
       margin: 2rem 0;
     }

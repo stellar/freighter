@@ -73,7 +73,6 @@
     "sass-loader": "8.0.0",
     "semver": "^7.5.4",
     "ses": "^0.18.5",
-    "simplebar-react": "^2.3.6",
     "stellar-hd-wallet": "^0.0.10",
     "stellar-identicon-js": "^1.0.0",
     "stellar-sdk": "11.0.0-beta.5",
@@ -99,7 +98,6 @@
     "allowScripts": {
       "@testing-library/react>@testing-library/dom>aria-query>@babel/runtime-corejs3>core-js-pure": false,
       "css-loader>webpack>watchpack>watchpack-chokidar2>chokidar>fsevents": false,
-      "simplebar-react>simplebar>core-js": false,
       "stellar-hd-wallet>stellar-base>sodium-native": false,
       "stellar-sdk>stellar-base>sodium-native": false
     }

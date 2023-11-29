@@ -1,0 +1,215 @@
+@use "../../../styles/utils.scss" as *;
+
+.View {
+  --View-header-height: #{pxToRem(60px)};
+  --View-footer-height: #{pxToRem(80px)};
+  --View-footer-padding-bottom: 1rem;
+  --View-footer-gap: 1rem;
+
+  position: relative;
+  width: 100%;
+  min-width: var(--popup--width);
+  // dvh = dynamic viewport height
+  height: 100dvh;
+  min-height: var(--popup--height);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+
+  &__header {
+    min-height: var(--View-header-height);
+    flex-shrink: 0;
+    flex-grow: 0;
+
+    &--tall {
+      --View-header-height: #{pxToRem(80px)};
+    }
+
+    &--border {
+      border-bottom: 1px solid var(--color-gray-40);
+    }
+
+    &__logo {
+      width: pxToRem(100px);
+      height: pxToRem(24px);
+      display: block;
+    }
+
+    &__box {
+      display: flex;
+      align-items: center;
+      height: var(--View-header-height);
+      gap: 1rem;
+
+      &--left {
+        justify-content: flex-start;
+      }
+
+      &--center {
+        justify-content: center;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      &--right {
+        justify-content: flex-end;
+      }
+    }
+
+    &__subtitle {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(22px);
+      color: var(--color-gray-60);
+      margin-top: -1.5rem;
+    }
+  }
+
+  &__contentAndFooterWrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .View__inset {
+      flex: 1;
+      width: 100%;
+      overflow: auto;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+
+      // TODO: update styling
+      &--scroll-shadows {
+        // https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
+        --bgRGB: 0, 0, 0;
+        --bg: rgb(var(--bgRGB));
+        --bgTrans: rgba(var(--bgRGB), 0);
+        --shadow: rgba(255, 255, 255, 0.2);
+
+        background:
+            /* Shadow Cover TOP */ linear-gradient(
+              var(--bg) 30%,
+              var(--bgTrans)
+            )
+            center top,
+          /* Shadow Cover BOTTOM */
+            linear-gradient(var(--bgTrans), var(--bg) 70%) center bottom,
+          /* Shadow TOP */
+            radial-gradient(
+              farthest-side at 50% 0,
+              var(--shadow),
+              rgba(0, 0, 0, 0.1)
+            )
+            center top,
+          /* Shadow BOTTOM */
+            radial-gradient(
+              farthest-side at 50% 100%,
+              var(--shadow),
+              rgba(0, 0, 0, 0.1)
+            )
+            center bottom;
+
+        background-repeat: no-repeat;
+        background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+        background-attachment: local, local, scroll, scroll;
+
+        // Hide scrollbar
+        &::-webkit-scrollbar {
+          // Chrome, Edge, Brave, etc
+          display: none;
+          // Firefox
+          scrollbar-width: none;
+          // Old Microsoft browsers
+          -ms-overflow-style: none;
+        }
+      }
+
+      &__footer {
+        flex: none;
+        padding-bottom: var(--View-footer-padding-bottom);
+        padding-top: 0;
+      }
+    }
+  }
+
+  &__footer {
+    height: var(--View-footer-height);
+    flex-shrink: 0;
+    flex-grow: 0;
+
+    .View__inset {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--View-footer-gap);
+      padding-bottom: var(--View-footer-padding-bottom);
+      height: 100%;
+
+      &--inline {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+
+        & > * {
+          flex: 1;
+        }
+      }
+    }
+
+    &--wrap {
+      height: fit-content;
+
+      .View__inset {
+        flex-wrap: wrap;
+        padding-top: var(--View-footer-padding-bottom);
+      }
+    }
+  }
+
+  &__inset {
+    position: relative;
+    margin: 0 auto;
+    // 848px = 796 + 16 * 2 (padding) + 20 (scrollbar)
+    max-width: pxToRem(848px);
+    padding-left: 1rem;
+    padding-right: 1rem;
+
+    &--align-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &--wide {
+      // 1200px = 1200 + 16 * 2 (padding)
+      max-width: pxToRem(1232px);
+    }
+
+    &--inline {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      height: 100%;
+      gap: 1rem;
+    }
+
+    &--vertical-border {
+      @media (min-width: 850px) {
+        border-left: 1px solid var(--color-gray-40);
+        border-right: 1px solid var(--color-gray-40);
+      }
+    }
+
+    &--top-border {
+      border-top: 1px solid var(--color-gray-40);
+    }
+  }
+}

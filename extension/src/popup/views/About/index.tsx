@@ -3,6 +3,7 @@ import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 
 import FreighterLogo from "popup/assets/logo-freighter.svg";
 
@@ -27,31 +28,36 @@ export const About = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="About">
+    <View>
       <SubviewHeader title="About" />
-      <div>
-        <img alt="Freighter logo" src={FreighterLogo} />
-      </div>
-      <div className="About__body">
-        <div className="About__info">
-          {t(
-            "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps.",
-          )}
+      <View.Content>
+        <div className="About">
+          <div>
+            <img alt="Freighter logo" src={FreighterLogo} />
+          </div>
+          <div className="About__body">
+            <div className="About__info">
+              {t(
+                "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps.",
+              )}
+            </div>
+            <div className="About__links-header">{t("LINKS")}</div>
+            <AboutLink url="freighter.app" />
+            <AboutLink url="stellar.org" />
+            <AboutLink url="stellar.org/privacy-policy">
+              {t("Privacy Policy")}
+            </AboutLink>
+            <AboutLink url="stellar.org/terms-of-service">
+              {t("Terms of Service")}
+            </AboutLink>
+          </div>
         </div>
-        <div className="About__links-header">{t("LINKS")}</div>
-        <AboutLink url="freighter.app" />
-        <AboutLink url="stellar.org" />
-        <AboutLink url="stellar.org/privacy-policy">
-          {t("Privacy Policy")}
-        </AboutLink>
-        <AboutLink url="stellar.org/terms-of-service">
-          {t("Terms of Service")}
-        </AboutLink>
-      </div>
-
-      <div className="About__copyright">
-        {`© ${currentYear} Stellar Development Foundation`}
-      </div>
-    </div>
+      </View.Content>
+      <View.Footer>
+        <div className="About__copyright">
+          {`© ${currentYear} Stellar Development Foundation`}
+        </div>
+      </View.Footer>
+    </View>
   );
 };
