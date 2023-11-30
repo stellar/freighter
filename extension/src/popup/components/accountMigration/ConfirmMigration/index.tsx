@@ -48,7 +48,7 @@ export const ConfirmMigration = () => {
     );
 
     if (migrateAccounts.fulfilled.match(migrateAccountsRes)) {
-      navigateTo(ROUTES.accountMigration);
+      navigateTo(ROUTES.accountMigrationMigrationComplete);
     }
   };
 

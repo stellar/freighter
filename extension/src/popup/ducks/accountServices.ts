@@ -460,6 +460,7 @@ interface InitialState {
 
 const initialState: InitialState = {
   allAccounts: [],
+  migratedAccounts: [],
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   hasPrivateKey: false,
   publicKey: "",
