@@ -3,10 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import {
-  // getAccountHistory,
-  getIndexerAccountHistory,
-} from "@shared/api/internal";
+import { getIndexerAccountHistory } from "@shared/api/internal";
 import {
   AccountBalancesInterface,
   ActionStatus,
@@ -117,9 +114,7 @@ export const Account = () => {
       try {
         const operations = await getIndexerAccountHistory({
           publicKey,
-          networkDetails,
         });
-        // const res = await getAccountHistory({ publicKey, networkDetails });
         setAssetOperations(
           sortOperationsByAsset({
             operations,
@@ -134,8 +129,6 @@ export const Account = () => {
     };
     fetchAccountHistory();
   }, [publicKey, networkDetails, balances, sortedBalances]);
-
-  console.log(assetOperations, selectedAsset);
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||

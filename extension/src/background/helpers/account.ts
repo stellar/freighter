@@ -160,12 +160,6 @@ export const subscribeTokenBalance = async (
   publicKey: string,
   contractId: string,
 ) => {
-  const networkDetails = await getNetworkDetails();
-  const indexerUrl = INDEXER_URLS[networkDetails.network];
-  if (!indexerUrl) {
-    throw new Error("Indexer not supported");
-  }
-
   try {
     const options = {
       method: "POST",
@@ -174,7 +168,7 @@ export const subscribeTokenBalance = async (
       },
       body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
     };
-    await fetch(`${indexerUrl}/subscription/token-balance`, options);
+    await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
   } catch (e) {
     console.error(e);
     throw new Error(`Error subscribing to token: ${contractId}`);
@@ -185,12 +179,6 @@ export const subscribeTokenHistory = async (
   publicKey: string,
   contractId: string,
 ) => {
-  const networkDetails = await getNetworkDetails();
-  const indexerUrl = INDEXER_URLS[networkDetails.network];
-  if (!indexerUrl) {
-    throw new Error("Indexer not supported");
-  }
-
   try {
     const options = {
       method: "POST",
@@ -199,7 +187,7 @@ export const subscribeTokenHistory = async (
       },
       body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
     };
-    await fetch(`${indexerUrl}/subscription/token`, options);
+    await fetch(`${INDEXER_URL}/subscription/token`, options);
   } catch (e) {
     console.error(e);
     throw new Error(`Error subscribing to token: ${contractId}`);
