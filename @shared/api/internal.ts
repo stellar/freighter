@@ -5,16 +5,14 @@ import {
   FeeBumpTransaction,
   xdr,
   Networks,
-  scValToNative,
 } from "stellar-sdk";
-import { DataProvider } from "@stellar/wallet-sdk";
 import {
   getBalance,
   getDecimals,
   getName,
   getSymbol,
 } from "@shared/helpers/soroban/token";
-import { INDEXER_URLS } from "@shared/constants/mercury";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import {
   Account,
   AccountBalancesInterface,
@@ -22,7 +20,6 @@ import {
   Balances,
   HorizonOperation,
   Settings,
-  TokenBalance,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -39,7 +36,6 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
 import BigNumber from "bignumber.js";
-import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -315,81 +311,34 @@ export const confirmPassword = async (
   return response;
 };
 
-type BalancesResponse = {
-  contractId?: string;
-  issuer?: {
-    key: string;
-  };
-  decimals: number;
-  name: string;
-  symbol: string;
-  valueXdr: string;
-}[];
-
 export const getAccountIndexerBalances = async (
   pubKey: string,
   network: NETWORKS,
 ): Promise<AccountBalancesInterface> => {
   try {
-    const indexerUrl = INDEXER_URLS[network];
-    if (!indexerUrl) {
-      throw new Error("Indexer URL not found");
-    }
     const contractIds = await getTokenIds(network);
-    const url = new URL(`${indexerUrl}/account-balances/${pubKey}`);
+    const url = new URL(`${INDEXER_URL}/account-balances/${pubKey}`);
     for (const id of contractIds) {
       url.searchParams.append("contract_ids", id);
     }
     const response = await fetch(url.href);
-    const json = (await response.json()) as BalancesResponse;
-    const formattedBalances = json.map((balance) => {
-      const totalScVal = xdr.ScVal.fromXDR(
-        Buffer.from(balance.valueXdr, "base64"),
-      );
-      return {
+    const { data } = (await response.json()) as {
+      data: AccountBalancesInterface;
+    };
+    const formattedBalances = {} as NonNullable<
+      AccountBalancesInterface["balances"]
+    >;
+    for (const balanceKey of Object.keys(data.balances || {})) {
+      const balance = data.balances![balanceKey];
+      formattedBalances[balanceKey] = {
         ...balance,
-        total: scValToNative(totalScVal),
+        available: new BigNumber(balance.available),
+        total: new BigNumber(balance.total),
       };
-    });
-
-    const balances = formattedBalances.reduce((prev, curr) => {
-      if (curr.symbol === "XLM") {
-        prev["native"] = {
-          token: { type: "native", code: "XLM" },
-          total: new BigNumber(curr.total),
-          available: new BigNumber(curr.total), // TODO: how to get available for xlm?
-        } as NativeBalance;
-      }
-      if (curr.contractId) {
-        prev[`${curr.symbol}:${curr.contractId}`] = {
-          token: {
-            code: curr.symbol,
-            issuer: {
-              key: curr.contractId,
-            },
-          },
-          decimals: curr.decimals,
-          total: new BigNumber(curr.total),
-          available: new BigNumber(curr.total),
-        } as TokenBalance;
-      }
-      if (curr.issuer) {
-        prev[`${curr.symbol}:${curr.issuer.key}`] = {
-          token: {
-            code: curr.symbol,
-            issuer: curr.issuer,
-          },
-          total: new BigNumber(curr.total),
-          available: new BigNumber(curr.total),
-        } as AssetBalance;
-      }
-      return prev;
-    }, {} as NonNullable<AccountBalancesInterface["balances"]>);
-
+    }
     return {
-      balances,
-      isFunded: true,
-      subentryCount: 0, // TODO: Mercury will index this with account subs, and will add to query
+      ...data,
+      balances: formattedBalances,
     };
   } catch (error) {
     console.error(error);
@@ -398,90 +347,6 @@ export const getAccountIndexerBalances = async (
       isFunded: null,
       subentryCount: 0,
     };
-  }
-};
-
-export const getAccountBalances = async ({
-  publicKey,
-  networkDetails,
-}: {
-  publicKey: string;
-  networkDetails: NetworkDetails;
-}): Promise<AccountBalancesInterface> => {
-  const { networkUrl, networkPassphrase } = networkDetails;
-
-  let balances: any = null;
-  let isFunded = null;
-  let subentryCount = 0;
-
-  try {
-    const dataProvider = new DataProvider({
-      serverUrl: networkUrl,
-      accountOrKey: publicKey,
-      networkPassphrase,
-      metadata: {
-        allowHttp: networkUrl.startsWith("http://"),
-      },
-    });
-
-    const resp = await dataProvider.fetchAccountDetails();
-    balances = resp.balances;
-    subentryCount = resp.subentryCount;
-
-    for (let i = 0; i < Object.keys(resp.balances).length; i++) {
-      const k = Object.keys(resp.balances)[i];
-      const v: any = resp.balances[k];
-      if (v.liquidity_pool_id) {
-        const server = stellarSdkServer(networkUrl);
-        const lp = await server
-          .liquidityPools()
-          .liquidityPoolId(v.liquidity_pool_id)
-          .call();
-        balances[k] = {
-          ...balances[k],
-          liquidityPoolId: v.liquidity_pool_id,
-          reserves: lp.reserves,
-        };
-        delete balances[k].liquidity_pool_id;
-      }
-    }
-    isFunded = true;
-  } catch (e) {
-    console.error(e);
-    return {
-      balances,
-      isFunded: false,
-      subentryCount,
-    };
-  }
-
-  return {
-    balances,
-    isFunded,
-    subentryCount,
-  };
-};
-
-export const getIndexerAccountHistory = async ({
-  publicKey,
-  networkDetails,
-}: {
-  publicKey: string;
-  networkDetails: NetworkDetails;
-}) => {
-  const indexerUrl = INDEXER_URLS[networkDetails.network];
-  if (!indexerUrl) {
-    throw new Error("Indexer URL not found");
-  }
-
-  try {
-    const url = new URL(`${indexerUrl}/account-history/${publicKey}`);
-    const response = await fetch(url.href);
-    const data = (await response.json()) as HorizonOperation;
-
-    return data;
-  } catch (e) {
-    console.error(e);
   }
 };
 
@@ -515,6 +380,22 @@ export const getAccountHistory = async ({
   return {
     operations,
   };
+};
+
+export const getIndexerAccountHistory = async ({
+  publicKey,
+}: {
+  publicKey: string;
+}) => {
+  try {
+    const url = new URL(`${INDEXER_URL}/account-history/${publicKey}`);
+    const response = await fetch(url.href);
+    const data = (await response.json()) as HorizonOperation;
+
+    return data;
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 export const getAssetIcons = async ({

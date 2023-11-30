@@ -23,10 +23,6 @@ import { initialState as transactionSubmissionInitialState } from "popup/ducks/t
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
-jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
-  return Promise.resolve(mockBalances);
-});
-
 jest.spyOn(ApiInternal, "getSorobanTokenBalance").mockImplementation(() => {
   return Promise.resolve(mockTokenBalance);
 });

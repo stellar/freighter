@@ -81,7 +81,7 @@ export const AssetDetail = ({
     transactionSubmissionSelector,
   );
 
-  const balance = getRawBalance(accountBalances, selectedAsset);
+  const balance = getRawBalance(accountBalances, selectedAsset)!;
 
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
@@ -129,10 +129,6 @@ export const AssetDetail = ({
     return null;
   }
 
-  if (!balance) {
-    return null;
-  }
-
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
@@ -174,7 +170,7 @@ export const AssetDetail = ({
               }
               assetDomain={assetDomain}
               contractId={
-                balance && "issuer" in balance.token
+                balance && "decimals" in balance
                   ? balance.token.issuer.key
                   : undefined
               }

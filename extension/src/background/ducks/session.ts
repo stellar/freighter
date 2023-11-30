@@ -1,7 +1,31 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+} from "@reduxjs/toolkit";
 
-import { Account } from "@shared/api/types";
-import { getIsHardwareWalletActive } from "background/helpers/account";
+import { Account, ErrorMessage } from "@shared/api/types";
+import {
+  getIsHardwareWalletActive,
+  subscribeAccount as internalSubscribeAccount,
+} from "background/helpers/account";
+
+export const logIn = createAsyncThunk<
+  UiData,
+  UiData,
+  { rejectValue: ErrorMessage }
+>("logIn", async ({ publicKey, mnemonicPhrase, allAccounts }, thunkApi) => {
+  try {
+    await internalSubscribeAccount(publicKey);
+    return {
+      publicKey,
+      mnemonicPhrase,
+      allAccounts,
+    };
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+  }
+});
 
 const initialState = {
   publicKey: "",
@@ -25,20 +49,6 @@ export const sessionSlice = createSlice({
   initialState,
   reducers: {
     reset: () => initialState,
-    logIn: (state, action: { payload: UiData }) => {
-      const {
-        publicKey,
-        mnemonicPhrase = "",
-        allAccounts = [],
-      } = action.payload;
-
-      return {
-        ...state,
-        publicKey,
-        mnemonicPhrase,
-        allAccounts,
-      };
-    },
     logOut: () => initialState,
     setActivePrivateKey: (state, action: { payload: AppData }) => {
       const { privateKey } = action.payload;
@@ -82,6 +92,13 @@ export const sessionSlice = createSlice({
       };
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(logIn.fulfilled, (state, action) => {
+      state.publicKey = action.payload.publicKey;
+      state.mnemonicPhrase = action.payload.mnemonicPhrase || "";
+      state.allAccounts = action.payload.allAccounts || [];
+    });
+  },
 });
 
 export const sessionSelector = (state: { session: UiData & AppData }) =>
@@ -90,7 +107,6 @@ export const sessionSelector = (state: { session: UiData & AppData }) =>
 export const {
   actions: {
     reset,
-    logIn,
     logOut,
     setActivePrivateKey,
     setActivePublicKey,

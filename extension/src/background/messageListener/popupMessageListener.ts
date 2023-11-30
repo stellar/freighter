@@ -60,7 +60,7 @@ import {
   getNetworksList,
   HW_PREFIX,
   getBipPath,
-  subscribeAccount,
+  // subscribeAccount,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -189,12 +189,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(KEY_ID, keyId);
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
         allAccounts,
-      }),
+      }) as any,
     );
 
     // an active hw account should not have an active private key
@@ -217,7 +217,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const allAccounts = allAccountsSelector(sessionStore.getState());
     const accountName = `Account ${allAccounts.length + 1}`;
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
@@ -229,7 +229,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             imported,
           },
         ],
-      }),
+      }) as any,
     );
 
     const keyMetadata = {
@@ -829,13 +829,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
 
-      await subscribeAccount(hwPublicKey || activePublicKey);
-      sessionStore.dispatch(
+      await sessionStore.dispatch(
         logIn({
           publicKey: hwPublicKey || activePublicKey,
           mnemonicPhrase: activeMnemonicPhrase,
           allAccounts: await _getLocalStorageAccounts(password),
-        }),
+        }) as any,
       );
     }
 

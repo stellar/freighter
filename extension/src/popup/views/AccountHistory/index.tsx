@@ -5,7 +5,7 @@ import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
 import { getIndexerAccountHistory } from "@shared/api/internal";
-import { HorizonOperation } from "@shared/api/types";
+import { ActionStatus, HorizonOperation } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -13,10 +13,7 @@ import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import {
-  resetAccountBalanceStatus,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
   getIsSupportedSorobanOp,
@@ -64,7 +61,9 @@ export const AccountHistory = () => {
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
@@ -84,9 +83,10 @@ export const AccountHistory = () => {
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const isAccountHistoryLoading = isSorobanSuported
-    ? historySegments === null
-    : historySegments === null;
+  const isAccountHistoryLoading =
+    historySegments === null ||
+    accountBalanceStatus === ActionStatus.IDLE ||
+    accountBalanceStatus === ActionStatus.PENDING;
 
   useEffect(() => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
@@ -145,9 +145,7 @@ export const AccountHistory = () => {
       try {
         const operations = await getIndexerAccountHistory({
           publicKey,
-          networkDetails,
         });
-        // const res = await getAccountHistory({ publicKey, networkDetails });
         setHistorySegments(
           createSegments(operations, isSorobanSuported as boolean),
         );
@@ -163,12 +161,6 @@ export const AccountHistory = () => {
     };
 
     getData();
-
-    return () => {
-      if (isSorobanSuported) {
-        dispatch(resetAccountBalanceStatus());
-      }
-    };
   }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);
 
   return isDetailViewShowing ? (

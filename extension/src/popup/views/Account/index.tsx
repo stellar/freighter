@@ -29,7 +29,7 @@ import {
   saveAssetSelectType,
   AssetSelectType,
   getBlockedDomains,
-  getAccountBalancesWithFallback,
+  getAccountBalances,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -84,10 +84,9 @@ export const Account = () => {
     // previous stale sends
     dispatch(resetSubmission());
     dispatch(
-      getAccountBalancesWithFallback({
+      getAccountBalances({
         publicKey,
         networkDetails,
-        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());

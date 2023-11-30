@@ -15,7 +15,7 @@ import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 
-jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
+jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
 });
 
