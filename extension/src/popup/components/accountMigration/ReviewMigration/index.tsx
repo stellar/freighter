@@ -204,7 +204,7 @@ const AccountListItems = ({
               </MigrationReviewListHeader>
               <MigrationReviewListHeader>
                 <MigrationReviewBadge>
-                  <Badge variant="warning">{t("Unfunded")}</Badge>
+                  <Badge variant="warning">{t("Not funded")}</Badge>
                 </MigrationReviewBadge>
               </MigrationReviewListHeader>
             </>
