@@ -10,8 +10,10 @@
   }
 }
 
-.MigrationParagraph {
-  color: var(--color-gray-70) !important;
+.sds-theme-dark {
+  .MigrationParagraph {
+    color: var(--color-gray-70) !important;
+  }
 }
 
 .MigrationButton {
@@ -55,15 +57,15 @@
   margin: 0 0 1.0625rem 0;
 }
 
+.MigrationReviewHighlight {
+  color: var(--color-white);
+}
+
 .MigrationReviewDescription {
   color: var(--color-gray-60);
   font-size: 0.75rem;
   line-height: 1.25rem;
   text-align: right;
-
-  &__highlight {
-    color: var(--color-white);
-  }
 }
 
 .MigrationReviewDetailRow {
