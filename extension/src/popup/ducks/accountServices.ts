@@ -29,6 +29,7 @@ import {
   AccountType,
   BalanceToMigrate,
   ErrorMessage,
+  MigratedAccount,
 } from "@shared/api/types";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
@@ -406,6 +407,7 @@ export const addTokenId = createAsyncThunk<
 export const migrateAccounts = createAsyncThunk<
   {
     allAccounts: Array<Account>;
+    migratedAccounts: Array<MigratedAccount>;
     hasPrivateKey: boolean;
     publicKey: string;
     error: string;
@@ -420,6 +422,7 @@ export const migrateAccounts = createAsyncThunk<
   "auth/migrateAccounts",
   async ({ balancesToMigrate, isMergeSelected, recommendedFee }, thunkApi) => {
     let res = {
+      migratedAccounts: [] as Array<MigratedAccount>,
       allAccounts: [] as Array<Account>,
       publicKey: "",
       hasPrivateKey: false,
@@ -445,6 +448,7 @@ export const migrateAccounts = createAsyncThunk<
 
 interface InitialState {
   allAccounts: Array<Account>;
+  migratedAccounts: Array<MigratedAccount>;
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
@@ -761,9 +765,15 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(migrateAccounts.fulfilled, (state, action) => {
-      const { publicKey, allAccounts, hasPrivateKey } = action.payload || {
+      const {
+        publicKey,
+        allAccounts,
+        migratedAccounts,
+        hasPrivateKey,
+      } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        migratedAccounts: [],
         hasPrivateKey: false,
       };
 
@@ -771,6 +781,7 @@ const authSlice = createSlice({
         ...state,
         error: "",
         allAccounts,
+        migratedAccounts,
         hasPrivateKey,
         publicKey,
       };
@@ -811,6 +822,10 @@ export const publicKeySelector = createSelector(
 export const bipPathSelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.bipPath,
+);
+export const migratedAccountsSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.migratedAccounts,
 );
 
 export const accountNameSelector = createSelector(

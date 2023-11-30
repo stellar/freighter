@@ -53,6 +53,7 @@ export interface Response {
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
+  migratedAccounts: MigratedAccount[];
   accountName: string;
   assetCode: string;
   assetCanonical: string;
@@ -190,11 +191,17 @@ export interface ErrorMessage {
 
 export interface BalanceToMigrate {
   publicKey: string;
+  name: string;
   minBalance: string;
   xlmBalance: string;
   trustlineBalances: Horizon.HorizonApi.BalanceLine[];
   keyIdIndex: number;
 }
+
+export type MigratedAccount = BalanceToMigrate & {
+  newPublicKey: string;
+  isMigrated: boolean;
+};
 
 declare global {
   interface Window {

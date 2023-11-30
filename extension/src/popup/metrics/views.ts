@@ -71,6 +71,8 @@ const routeToEventName = {
     METRIC_NAMES.viewAccountMigrationMnemonicPhrase,
   [ROUTES.accountMigrationConfirmMigration]:
     METRIC_NAMES.viewAccountMigrationConfirmMigration,
+  [ROUTES.accountMigrationMigrationComplete]:
+    METRIC_NAMES.viewAccountMigrationMigrationComplete,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

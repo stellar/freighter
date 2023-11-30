@@ -1,71 +1,8 @@
 .ReviewMigration {
-  &__header {
-    border-bottom: 1px solid var(--color-gray-40);
-    margin-bottom: 1.75rem;
-    padding-bottom: 1.5rem;
-  }
-
   &__loader {
     display: flex;
     justify-content: space-evenly;
     margin-bottom: 1.75rem;
-  }
-
-  &__section {
-    border-bottom: 1px solid var(--color-gray-40);
-    margin-bottom: 1.75rem;
-    padding-bottom: 1.5rem;
-  }
-
-  &__highlight {
-    color: var(--color-white);
-  }
-
-  &__row {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-left: 2.5rem;
-
-    &__description {
-      color: var(--color-gray-60);
-      font-size: 0.75rem;
-    }
-  }
-
-  &__account-row {
-    line-height: 1.375rem;
-    margin: 0 0 1.0625rem 0;
-  }
-
-  &__detail-row {
-    color: var(--color-white);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  &__account {
-    align-items: center;
-    display: flex;
-    font-size: 0.875rem;
-    gap: 0.5rem;
-
-    &__name {
-      color: var(--color-white);
-      font-weight: var(--font-weight-medium);
-    }
-
-    &__identicon-wrapper {
-      border: 1px solid var(--color-gray-40);
-      border-radius: 2rem;
-      height: 2rem;
-      padding: 0.33rem;
-      width: 2rem;
-    }
-
-    &__public-key {
-      color: var(--color-gray-60);
-    }
   }
 
   &__option {

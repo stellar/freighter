@@ -1,0 +1,32 @@
+.MigrationComplete {
+  margin-top: 0.5rem;
+
+  &__arrow {
+    margin-top: 0.5rem;
+
+    svg {
+      height: 1rem;
+    }
+  }
+
+  &__migrated-account {
+    flex-grow: 1;
+  }
+
+  .MigrationReviewListSection {
+    justify-content: initial;
+    gap: 2.5rem;
+  }
+
+  .MigrationReviewAccountInfo {
+    margin-top: 0.5rem;
+  }
+
+  .MigrationReviewAccountInfo__identicon-wrapper {
+    margin-top: -1.5rem;
+  }
+
+  .MigrationReviewAccountInfo__text {
+    display: block;
+  }
+}

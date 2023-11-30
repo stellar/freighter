@@ -1,6 +1,12 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Notification } from "@stellar/design-system";
+import {
+  Button,
+  Heading,
+  Notification,
+  Loader,
+  Paragraph,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Formik, Form } from "formik";
 
@@ -17,6 +23,8 @@ import {
   MigrationButton,
   MigrationParagraph,
 } from "../basics";
+
+import "./styles.scss";
 
 export const ConfirmMigration = () => {
   const { t } = useTranslation();
@@ -45,38 +53,53 @@ export const ConfirmMigration = () => {
   };
 
   return (
-    <div className="AccountMigrationStart">
-      <MigrationHeader>
-        {t("Before we start with migration, please read")}
-      </MigrationHeader>
-      <MigrationBody>
-        <MigrationParagraph>
-          {t(
-            "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time).",
-          )}
-        </MigrationParagraph>
-        <Notification title="Important" variant="warning">
-          {t(
-            "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it.",
-          )}
-        </Notification>
-      </MigrationBody>
+    <div className="ConfirmMigration">
       <Formik initialValues={{}} onSubmit={handleContinue}>
         {({ isSubmitting }) => (
-          <Form className="NotFunded__form">
-            <MigrationButton>
-              <Button onClick={handleCancel} size="md" variant="secondary">
-                {t("Nevermind, cancel")}
-              </Button>
-              <Button
-                isLoading={isSubmitting}
-                size="md"
-                type="submit"
-                variant="primary"
-              >
-                {t("I understand, start migration")}
-              </Button>
-            </MigrationButton>
+          <Form className="ConfirmMigration__form">
+            {isSubmitting ? (
+              <div className="ConfirmMigration__loader">
+                <Loader size="2rem" />
+                <Heading as="h1" size="xl">
+                  <div>{t("Migrating...")}</div>
+                </Heading>
+                <Paragraph asDiv size="md" className="MigrationParagraph">
+                  {t("Please don’t close this window.")}
+                </Paragraph>
+              </div>
+            ) : (
+              <>
+                <MigrationHeader>
+                  {t("Before we start with migration, please read")}
+                </MigrationHeader>
+                <MigrationBody>
+                  <MigrationParagraph>
+                    {t(
+                      "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time).",
+                    )}
+                  </MigrationParagraph>
+                  <Notification title="Important" variant="warning">
+                    {t(
+                      "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it.",
+                    )}
+                  </Notification>
+                </MigrationBody>
+
+                <MigrationButton>
+                  <Button onClick={handleCancel} size="md" variant="secondary">
+                    {t("Nevermind, cancel")}
+                  </Button>
+                  <Button
+                    isLoading={isSubmitting}
+                    size="md"
+                    type="submit"
+                    variant="primary"
+                  >
+                    {t("I understand, start migration")}
+                  </Button>
+                </MigrationButton>
+              </>
+            )}
           </Form>
         )}
       </Formik>
