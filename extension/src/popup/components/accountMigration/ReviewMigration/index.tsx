@@ -133,8 +133,11 @@ const AccountListItems = ({
   return accountListItems.length ? (
     <>
       {accountListItems.map((acct) => (
-        <MigrationReviewListSection key={acct.publicKey}>
-          {acct.isReadyToMigrate ? (
+        <MigrationReviewListSection
+          isUnfunded={!acct.xlmBalance}
+          key={acct.publicKey}
+        >
+          {acct.xlmBalance ? (
             <>
               <div>
                 <MigrationReviewListHeader>
@@ -163,7 +166,11 @@ const AccountListItems = ({
               <div>
                 <MigrationReviewListHeader>
                   <MigrationReviewBadge>
-                    <Badge>{t("Ready to migrate")}</Badge>
+                    {acct.isReadyToMigrate ? (
+                      <Badge>{t("Ready to migrate")}</Badge>
+                    ) : (
+                      <Badge variant="warning">{t("Unable to migrate")}</Badge>
+                    )}
                   </MigrationReviewBadge>
                 </MigrationReviewListHeader>
 
@@ -189,15 +196,17 @@ const AccountListItems = ({
             </>
           ) : (
             <>
-              <div className="ReviewMigration__row ReviewMigration__account-row">
+              <MigrationReviewListHeader>
                 <MigrationReviewAccountInfo
                   publicKey={acct.publicKey}
                   name={acct.name}
                 />
-                <div className="ReviewMigration__badge">
-                  <Badge variant="warning">{t("Not funded")}</Badge>
-                </div>
-              </div>
+              </MigrationReviewListHeader>
+              <MigrationReviewListHeader>
+                <MigrationReviewBadge>
+                  <Badge variant="warning">{t("Unfunded")}</Badge>
+                </MigrationReviewBadge>
+              </MigrationReviewListHeader>
             </>
           )}
         </MigrationReviewListSection>

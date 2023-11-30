@@ -47,10 +47,21 @@ export const MigrationReviewHeader = ({ children }: MigrationBasicProps) => (
   <header className="MigrationReviewHeader">{children}</header>
 );
 
+type MigrationReviewListSectionProps = MigrationBasicProps & {
+  isUnfunded?: boolean;
+};
+
 export const MigrationReviewListSection = ({
   children,
-}: MigrationBasicProps) => (
-  <section className="MigrationReviewListSection">{children}</section>
+  isUnfunded,
+}: MigrationReviewListSectionProps) => (
+  <section
+    className={`MigrationReviewListSection ${
+      isUnfunded ? "MigrationReviewListSection--unfunded" : ""
+    }`}
+  >
+    {children}
+  </section>
 );
 
 export const MigrationReviewAccountRow = ({

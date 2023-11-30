@@ -1506,24 +1506,29 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         indexToReplace: keyIdIndex,
       });
 
-      try {
-        // now that the destination accounts are funded, we can add the trustline balances
-        // eslint-disable-next-line no-await-in-loop
-        await migrateTrustlines({
-          trustlineBalances,
-          server,
-          newKeyPair,
-          fee,
-          sourceAccount,
-          sourceKeys,
-          isMergeSelected,
-        });
-      } catch (e) {
-        console.error(e);
-        migratedAccount.isMigrated = false;
+      // if the preceding step has failed, this will fail as well. Don't bother making the API call
+      if (migratedAccount.isMigrated) {
+        try {
+          // now that the destination accounts are funded, we can add the trustline balances
+          // eslint-disable-next-line no-await-in-loop
+          await migrateTrustlines({
+            trustlineBalances,
+            server,
+            newKeyPair,
+            fee,
+            sourceAccount,
+            sourceKeys,
+            isMergeSelected,
+          });
+        } catch (e) {
+          console.error(e);
+          migratedAccount.isMigrated = false;
+        }
       }
 
-      if (isMergeSelected) {
+      // if the preceding step has failed, this will fail as well. Don't bother making the API call
+
+      if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
         // eslint-disable-next-line no-await-in-loop
         const mergeTransaction = await new TransactionBuilder(sourceAccount, {
@@ -1561,6 +1566,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       ({ isMigrated }) => isMigrated,
     );
 
+    // if any of the accounts have been successfully migrated, go ahead and log in
     if (successfullyMigratedAccts.length) {
       // let's make the first public key the active one
       await _activatePublicKey({ publicKey: newWallet.getPublicKey(0) });

@@ -32,6 +32,10 @@
   justify-content: space-between;
   margin-bottom: 1.75rem;
   padding-bottom: 1.5rem;
+
+  &--unfunded {
+    padding-bottom: 0.5rem;
+  }
 }
 
 %migrationRow {
