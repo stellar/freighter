@@ -32,6 +32,7 @@ import {
   MigrationReviewHeader,
   MigrationReviewListSection,
   MigrationReviewListHeader,
+  MigrationReviewHighlight,
   MigrationReviewDetailRow,
   MigrationReviewDescription,
   MigrationReviewAccountInfo,
@@ -364,9 +365,9 @@ export const ReviewMigration = () => {
                       id="isMergeSelected-input"
                       label={
                         <div>
-                          <span className="ReviewMigration__highlight">
-                            {t("Optional")}:{" "}
-                          </span>
+                          <MigrationReviewHighlight
+                            text={`${t("Optional")}: `}
+                          />
                           {t(
                             "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
                           )}

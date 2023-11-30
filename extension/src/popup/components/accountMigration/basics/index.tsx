@@ -13,7 +13,7 @@ interface MigrationBasicProps {
 
 export const MigrationHeader = ({ children }: MigrationBasicProps) => (
   <div className="MigrationHeader">
-    <Heading as="h1" size="md">
+    <Heading as="h1" size="xl">
       {children}
     </Heading>
   </div>
@@ -74,6 +74,16 @@ export const MigrationReviewDetailRow = ({ children }: MigrationBasicProps) => (
   <div className="MigrationReviewDetailRow">{children}</div>
 );
 
+interface MigrationReviewHighlightProps {
+  text: string;
+}
+
+export const MigrationReviewHighlight = ({
+  text,
+}: MigrationReviewHighlightProps) => (
+  <span className="MigrationReviewHighlight">{text}</span>
+);
+
 interface MigrationReviewDescriptionProps {
   description: string;
   highlight: string;
@@ -87,9 +97,7 @@ export const MigrationReviewDescription = ({
   return (
     <section className="MigrationReviewDescription">
       {t(description)}:{" "}
-      <span className="MigrationReviewDescription__highlight">
-        {highlight} {t("XLM")}
-      </span>
+      <MigrationReviewHighlight text={`${highlight} ${t("XLM")}`} />
     </section>
   );
 };

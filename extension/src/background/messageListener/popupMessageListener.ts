@@ -1526,8 +1526,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         }
       }
 
-      // if the preceding step has failed, this will fail as well. Don't bother making the API call
-
+      // if any of the preceding steps have failed, this will fail as well. Don't bother making the API call
       if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
         // eslint-disable-next-line no-await-in-loop
