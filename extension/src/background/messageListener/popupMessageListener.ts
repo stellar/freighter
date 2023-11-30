@@ -1405,18 +1405,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const migratedMnemonicPhrase = migratedMnemonicPhraseSelector(
       sessionStore.getState(),
     );
+    const migratedAccounts = [];
+
     const password = passwordSelector(sessionStore.getState());
     if (!password || !migratedMnemonicPhrase)
       return { error: "Authentication error" };
 
     const newWallet = fromMnemonic(migratedMnemonicPhrase);
     const keyIdList: string = await getKeyIdList();
-    const migrationErrors: {
-      source: string;
-      destination: string;
-      asset?: string;
-      error: any;
-    }[] = [];
     const fee = xlmToStroop(recommendedFee).toFixed();
     const server = stellarSdkServer(NETWORK_URLS.TESTNET);
 
@@ -1439,6 +1435,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         trustlineBalances,
         keyIdIndex,
       } = balancesToMigrate[i];
+      const migratedAccount = {
+        ...balancesToMigrate[i],
+        newPublicKey: "",
+        isMigrated: true,
+      };
 
       const keyID = keyIdList[keyIdIndex];
 
@@ -1493,12 +1494,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         await server.submitTransaction(builtTransaction);
       } catch (e) {
         console.error(e);
-        migrationErrors.push({
-          source: publicKey,
-          destination: newKeyPair.publicKey,
-          error: e,
-        });
-        break;
+        migratedAccount.isMigrated = false;
       }
 
       // replace the source account with the new one in `allAccounts` and store the keys
@@ -1510,29 +1506,29 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         indexToReplace: keyIdIndex,
       });
 
-      try {
-        // now that the destination accounts are funded, we can add the trustline balances
-        // eslint-disable-next-line no-await-in-loop
-        await migrateTrustlines({
-          trustlineBalances,
-          server,
-          newKeyPair,
-          fee,
-          sourceAccount,
-          sourceKeys,
-          isMergeSelected,
-        });
-      } catch (e) {
-        console.error(e);
-        migrationErrors.push({
-          source: publicKey,
-          destination: newKeyPair.publicKey,
-          error: e,
-        });
-        return { error: JSON.stringify(migrationErrors) };
+      // if the preceding step has failed, this will fail as well. Don't bother making the API call
+      if (migratedAccount.isMigrated) {
+        try {
+          // now that the destination accounts are funded, we can add the trustline balances
+          // eslint-disable-next-line no-await-in-loop
+          await migrateTrustlines({
+            trustlineBalances,
+            server,
+            newKeyPair,
+            fee,
+            sourceAccount,
+            sourceKeys,
+            isMergeSelected,
+          });
+        } catch (e) {
+          console.error(e);
+          migratedAccount.isMigrated = false;
+        }
       }
 
-      if (isMergeSelected) {
+      // if the preceding step has failed, this will fail as well. Don't bother making the API call
+
+      if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
         // eslint-disable-next-line no-await-in-loop
         const mergeTransaction = await new TransactionBuilder(sourceAccount, {
@@ -1558,32 +1554,38 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           await server.submitTransaction(builtMergeTransaction);
         } catch (e) {
           console.error(e);
-          migrationErrors.push({
-            source: publicKey,
-            destination: newKeyPair.publicKey,
-            error: e,
-          });
+          migratedAccount.isMigrated = false;
         }
       }
+
+      migratedAccount.newPublicKey = newKeyPair.publicKey;
+      migratedAccounts.push(migratedAccount);
     }
 
-    // let's make the first public key the active one
-    await _activatePublicKey({ publicKey: newWallet.getPublicKey(0) });
-
-    sessionStore.dispatch(timeoutAccountAccess());
-
-    sessionTimer.startSession();
-    sessionStore.dispatch(
-      setActivePrivateKey({ privateKey: newWallet.getSecret(0) }),
+    const successfullyMigratedAccts = migratedAccounts.filter(
+      ({ isMigrated }) => isMigrated,
     );
+
+    // if any of the accounts have been successfully migrated, go ahead and log in
+    if (successfullyMigratedAccts.length) {
+      // let's make the first public key the active one
+      await _activatePublicKey({ publicKey: newWallet.getPublicKey(0) });
+
+      sessionStore.dispatch(timeoutAccountAccess());
+
+      sessionTimer.startSession();
+      sessionStore.dispatch(
+        setActivePrivateKey({ privateKey: newWallet.getSecret(0) }),
+      );
+    }
 
     const currentState = sessionStore.getState();
 
     return {
+      migratedAccounts,
       publicKey: publicKeySelector(currentState),
       allAccounts: allAccountsSelector(currentState),
       hasPrivateKey: await hasPrivateKeySelector(currentState),
-      error: JSON.stringify(migrationErrors),
     };
   };
 

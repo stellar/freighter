@@ -23,6 +23,7 @@ import {
   HorizonOperation,
   MigratableAccount,
   Settings,
+  MigratedAccount,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -399,17 +400,20 @@ export const migrateAccounts = async ({
   recommendedFee: string;
 }): Promise<{
   publicKey: string;
+  migratedAccounts: Array<MigratedAccount>;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
   error: string;
 }> => {
   let publicKey = "";
+  let migratedAccounts = [] as Array<MigratedAccount>;
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let error = "";
 
   try {
     ({
+      migratedAccounts,
       allAccounts,
       publicKey,
       hasPrivateKey,
@@ -424,7 +428,7 @@ export const migrateAccounts = async ({
     console.error(e);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey, error };
+  return { migratedAccounts, allAccounts, publicKey, hasPrivateKey, error };
 };
 
 export const getAccountBalances = async ({

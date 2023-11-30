@@ -23,14 +23,19 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
-import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import {
   MigrationHeader,
   MigrationButton,
   MigrationParagraph,
+  MigrationReviewHeader,
+  MigrationReviewListSection,
+  MigrationReviewListHeader,
+  MigrationReviewDetailRow,
+  MigrationReviewDescription,
+  MigrationReviewAccountInfo,
+  MigrationReviewBadge,
 } from "../basics";
 
 import "./styles.scss";
@@ -80,22 +85,6 @@ const isReadyToMigrate = ({
       }) < new BigNumber(xlmBalance),
   );
 
-const AccountInfo = ({
-  account,
-}: {
-  account: { publicKey: string; name: string };
-}) => (
-  <div className="ReviewMigration__account">
-    <div className="ReviewMigration__account__identicon-wrapper">
-      <IdenticonImg publicKey={account.publicKey} />
-    </div>
-    <div className="ReviewMigration__account__name">{account.name}</div>
-    <div className="ReviewMigration__account__public-key">
-      ({truncatedPublicKey(account.publicKey)})
-    </div>
-  </div>
-);
-
 type AccountListItemRow = AccountToMigrate & { isReadyToMigrate: boolean };
 
 const AccountListItems = ({
@@ -144,67 +133,83 @@ const AccountListItems = ({
   return accountListItems.length ? (
     <>
       {accountListItems.map((acct) => (
-        <section className="ReviewMigration__section" key={acct.publicKey}>
-          {acct.isReadyToMigrate ? (
+        <MigrationReviewListSection
+          isUnfunded={!acct.xlmBalance}
+          key={acct.publicKey}
+        >
+          {acct.xlmBalance ? (
             <>
-              <div className="ReviewMigration__row ReviewMigration__account-row">
-                <AccountInfo account={acct} />
-                <div className="ReviewMigration__badge">
-                  <Badge>{t("Ready to migrate")}</Badge>
-                </div>
+              <div>
+                <MigrationReviewListHeader>
+                  <MigrationReviewAccountInfo
+                    publicKey={acct.publicKey}
+                    name={acct.name}
+                  />
+                </MigrationReviewListHeader>
+                <MigrationReviewDetailRow>
+                  <div>
+                    {acct.trustlines} {t("trustlines")}
+                  </div>
+                </MigrationReviewDetailRow>
+                <MigrationReviewDetailRow>
+                  <div>
+                    {acct.dataEntries} {t("data entries")}
+                  </div>
+                </MigrationReviewDetailRow>
+                <MigrationReviewDetailRow>
+                  <div>
+                    {acct.isSigner ? t("Signs for external accounts") : ""}
+                  </div>
+                </MigrationReviewDetailRow>
               </div>
-              <div className="ReviewMigration__row ReviewMigration__detail-row">
-                <div>
-                  {acct.trustlines} {t("trustlines")}
-                </div>
-                <div className="ReviewMigration__row__description">
-                  {t("XLM balance")}:{" "}
-                  <span className="ReviewMigration__highlight">
-                    {acct.xlmBalance} {t("XLM")}
-                  </span>
-                </div>
-              </div>
-              <div className="ReviewMigration__row ReviewMigration__detail-row">
-                <div>
-                  {acct.dataEntries} {t("data entries")}
-                </div>
-                <div className="ReviewMigration__row__description">
-                  {t("Minimum XLM needed")}:{" "}
-                  <span className="ReviewMigration__highlight">
-                    {acct.minBalance} XLM
-                  </span>
-                </div>
-              </div>
-              <div className="ReviewMigration__row ReviewMigration__detail-row">
-                <div>
-                  {acct.isSigner ? t("Signs for external accounts") : ""}
-                </div>
-                <div className="ReviewMigration__row__description">
-                  {t("Cost to migrate")}:{" "}
-                  <span className="ReviewMigration__highlight">
-                    {getMigrationFeeAmount({
-                      recommendedFee,
-                      hasTrustlineBalances: Boolean(
-                        acct.trustlineBalances.length,
-                      ),
-                      isMergeSelected,
-                    }).toString()}{" "}
-                    XLM
-                  </span>
-                </div>
+
+              <div>
+                <MigrationReviewListHeader>
+                  <MigrationReviewBadge>
+                    {acct.isReadyToMigrate ? (
+                      <Badge>{t("Ready to migrate")}</Badge>
+                    ) : (
+                      <Badge variant="warning">{t("Unable to migrate")}</Badge>
+                    )}
+                  </MigrationReviewBadge>
+                </MigrationReviewListHeader>
+
+                <MigrationReviewDescription
+                  description="XLM balance"
+                  highlight={acct.xlmBalance}
+                />
+                <MigrationReviewDescription
+                  description="Minimum XLM needed"
+                  highlight={acct.minBalance}
+                />
+                <MigrationReviewDescription
+                  description="Cost to migrate"
+                  highlight={getMigrationFeeAmount({
+                    recommendedFee,
+                    hasTrustlineBalances: Boolean(
+                      acct.trustlineBalances.length,
+                    ),
+                    isMergeSelected,
+                  }).toString()}
+                />
               </div>
             </>
           ) : (
             <>
-              <div className="ReviewMigration__row ReviewMigration__account-row">
-                <AccountInfo account={acct} />
-                <div className="ReviewMigration__badge">
+              <MigrationReviewListHeader>
+                <MigrationReviewAccountInfo
+                  publicKey={acct.publicKey}
+                  name={acct.name}
+                />
+              </MigrationReviewListHeader>
+              <MigrationReviewListHeader>
+                <MigrationReviewBadge>
                   <Badge variant="warning">{t("Not funded")}</Badge>
-                </div>
-              </div>
+                </MigrationReviewBadge>
+              </MigrationReviewListHeader>
             </>
           )}
-        </section>
+        </MigrationReviewListSection>
       ))}
     </>
   ) : (
@@ -301,6 +306,7 @@ export const ReviewMigration = () => {
     accountToMigrateList.forEach(
       ({
         publicKey,
+        name,
         minBalance,
         xlmBalance,
         trustlineBalances,
@@ -308,6 +314,7 @@ export const ReviewMigration = () => {
       }) => {
         migratableBalances.push({
           publicKey,
+          name,
           minBalance,
           xlmBalance,
           trustlineBalances,
@@ -330,12 +337,12 @@ export const ReviewMigration = () => {
 
   return (
     <div className="ReviewMigration">
-      <header className="ReviewMigration__header">
+      <MigrationReviewHeader>
         <MigrationHeader>{t("Review accounts to migrate")}</MigrationHeader>
         <MigrationParagraph>
           {t("Only accounts ready for migration will be migrated.")}
         </MigrationParagraph>
-      </header>
+      </MigrationReviewHeader>
       <Formik
         onSubmit={handleSubmit}
         initialValues={initialValues}
