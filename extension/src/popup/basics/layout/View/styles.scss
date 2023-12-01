@@ -2,8 +2,9 @@
 
 .View {
   --View-header-height: #{pxToRem(60px)};
+  --View-inset-padding-top: #{pxToRem(24px)};
   --View-footer-height: #{pxToRem(80px)};
-  --View-footer-padding-bottom: 1rem;
+  --View-footer-padding-bottom: 1.5rem;
   --View-footer-gap: 1rem;
 
   position: relative;
@@ -82,7 +83,7 @@
       flex: 1;
       width: 100%;
       overflow: auto;
-      padding-top: 1.5rem;
+      padding-top: var(--View-inset-padding-top);
       padding-bottom: 1.5rem;
 
       // TODO: update styling

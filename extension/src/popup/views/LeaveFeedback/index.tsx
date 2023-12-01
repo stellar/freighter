@@ -18,7 +18,7 @@ export const LeaveFeedback = () => {
   return (
     <View>
       <SubviewHeader title="Leave Feedback" />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <div className="LeaveFeedback">
           <div className="LeaveFeedback__itemsContainer">
             {/* Discord */}

@@ -188,25 +188,27 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           </div>
         }
       >
-        <div className="SubmitResult__amount">
-          {formatAmount(amount)} {sourceAsset.code}
-        </div>
-        <div className="SubmitResult__icon SubmitResult__success">
-          <Icon.ArrowCircleDown />
-        </div>
-        <div className="SubmitResult__identicon">
-          {isSwap ? (
-            <SwapAssetsIcon
-              sourceCanon={asset}
-              destCanon={destinationAsset}
-              assetIcons={assetIcons}
-            />
-          ) : (
-            <FedOrGAddress
-              fedAddress={federationAddress}
-              gAddress={destination}
-            />
-          )}
+        <div className="SubmitResult__content">
+          <div className="SubmitResult__amount">
+            {formatAmount(amount)} {sourceAsset.code}
+          </div>
+          <div className="SubmitResult__icon SubmitResult__success">
+            <Icon.ArrowCircleDown />
+          </div>
+          <div className="SubmitResult__identicon">
+            {isSwap ? (
+              <SwapAssetsIcon
+                sourceCanon={asset}
+                destCanon={destinationAsset}
+                assetIcons={assetIcons}
+              />
+            ) : (
+              <FedOrGAddress
+                fedAddress={federationAddress}
+                gAddress={destination}
+              />
+            )}
+          </div>
         </div>
       </View.Content>
       <View.Footer isInline>
