@@ -23,7 +23,7 @@ export const Security = () => {
   return (
     <View>
       <SubviewHeader title="Security" />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <ListNavLinkWrapper>
           {/*
       TODO: Add Change Password

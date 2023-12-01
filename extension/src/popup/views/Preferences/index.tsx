@@ -67,7 +67,7 @@ export const Preferences = () => {
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        <View.Content>
+        <View.Content hasNoTopPadding>
           <div className="Preferences">
             <Form>
               <AutoSaveFields />

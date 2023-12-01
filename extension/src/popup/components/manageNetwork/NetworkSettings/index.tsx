@@ -29,7 +29,7 @@ export const NetworkSettings = () => {
   return (
     <View>
       <SubviewHeader title={t("Network Settings")} />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <div className="NetworkSettings__header">{t("Network")}</div>
         <div className="NetworkSettings__scrollbar">
           <ListNavLinkWrapper>

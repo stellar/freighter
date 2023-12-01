@@ -192,6 +192,7 @@ export const Account = () => {
             publicKey={publicKey}
           />
           <View.Content
+            hasNoTopPadding
             contentFooter={
               isFunded ? (
                 <div className="AccountView__assets-button">

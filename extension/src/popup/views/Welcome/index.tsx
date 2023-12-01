@@ -13,7 +13,7 @@ export const Welcome = () => {
 
   return (
     <View isAppLayout={false}>
-      <View.Header showFreighterLogo />
+      <View.Header />
       <View.Content>
         <div className="Welcome__column">
           <div className="Welcome__centered-screen">

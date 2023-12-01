@@ -20,7 +20,7 @@ interface ViewHeaderProps {
 }
 
 const ViewHeader: React.FC<ViewHeaderProps> = ({
-  showFreighterLogo,
+  showFreighterLogo = true,
   showBottomBorder = true,
   ...props
 }: ViewHeaderProps) => (
@@ -117,12 +117,14 @@ interface ViewContentProps {
   // TODO: handle other cases: "start", "end"
   alignment?: "center";
   contentFooter?: React.ReactNode;
+  hasNoTopPadding?: boolean;
 }
 
 const ViewContent: React.FC<ViewContentProps> = ({
   children,
   alignment,
   contentFooter,
+  hasNoTopPadding,
   ...props
 }: ViewContentProps) => {
   const { isAppLayout } = useContext(ViewContext);
@@ -132,6 +134,7 @@ const ViewContent: React.FC<ViewContentProps> = ({
       <ViewInset
         alignment={alignment}
         hasVerticalBorder={isAppLayout}
+        hasNoTopPadding={hasNoTopPadding}
         hasScrollShadow
       >
         {children}
@@ -212,6 +215,7 @@ interface ViewInsetProps {
   hasTopBorder?: boolean;
   additionalClassName?: string;
   hasScrollShadow?: boolean;
+  hasNoTopPadding?: boolean;
 }
 
 export const ViewInset: React.FC<ViewInsetProps> = ({
@@ -223,22 +227,30 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   hasTopBorder,
   additionalClassName,
   hasScrollShadow,
+  hasNoTopPadding,
   ...props
-}: ViewInsetProps) => (
-  <div
-    className={`View__inset ${addStyleClasses([
-      isWide ? "View__inset--wide" : "",
-      isInline ? "View__inset--inline" : "",
-      alignment === "center" ? "View__inset--align-center" : "",
-      hasVerticalBorder ? "View__inset--vertical-border" : "",
-      hasTopBorder ? "View__inset--top-border" : "",
-      hasScrollShadow ? "View__inset--scroll-shadows" : "",
-    ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
-    {...props}
-  >
-    {children}
-  </div>
-);
+}: ViewInsetProps) => {
+  const customStyle = {
+    ...(hasNoTopPadding ? { "--View-inset-padding-top": "0" } : {}),
+  } as React.CSSProperties;
+
+  return (
+    <div
+      className={`View__inset ${addStyleClasses([
+        isWide ? "View__inset--wide" : "",
+        isInline ? "View__inset--inline" : "",
+        alignment === "center" ? "View__inset--align-center" : "",
+        hasVerticalBorder ? "View__inset--vertical-border" : "",
+        hasTopBorder ? "View__inset--top-border" : "",
+        hasScrollShadow ? "View__inset--scroll-shadows" : "",
+      ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
+      style={customStyle}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
 
 // View
 interface ViewComponent {

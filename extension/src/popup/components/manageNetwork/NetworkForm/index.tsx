@@ -283,7 +283,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       >
         {({ dirty, errors, isSubmitting, isValid, touched }) => (
           <Form className="View__contentAndFooterWrapper">
-            <View.Content>
+            <View.Content hasNoTopPadding>
               <div className="NetworkForm__form">
                 {isNetworkInUse ? (
                   <NetworkModal buttonComponent={<CloseModalButton />}>

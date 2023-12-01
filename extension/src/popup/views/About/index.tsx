@@ -30,7 +30,7 @@ export const About = () => {
   return (
     <View>
       <SubviewHeader title="About" />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <div className="About">
           <div>
             <img alt="Freighter logo" src={FreighterLogo} />
