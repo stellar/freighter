@@ -1,7 +1,7 @@
 import React from "react";
 import { Switch } from "react-router-dom";
 
-import { PublicKeyRoute } from "popup/Router";
+import { PublicKeyRoute, PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
 
@@ -29,14 +29,14 @@ export const AccountMigration = () => (
               <ReviewMigration />
             </div>
           </PublicKeyRoute>
-          <PublicKeyRoute exact path={ROUTES.accountMigrationMnemonicPhrase}>
+          <PrivateKeyRoute exact path={ROUTES.accountMigrationMnemonicPhrase}>
             <MnemonicPhrase />
-          </PublicKeyRoute>
-          <PublicKeyRoute exact path={ROUTES.accountMigrationConfirmMigration}>
+          </PrivateKeyRoute>
+          <PrivateKeyRoute exact path={ROUTES.accountMigrationConfirmMigration}>
             <div className="AccountMigration">
               <ConfirmMigration />
             </div>
-          </PublicKeyRoute>
+          </PrivateKeyRoute>
           <PublicKeyRoute exact path={ROUTES.accountMigrationMigrationComplete}>
             <div className="AccountMigration">
               <MigrationComplete />
