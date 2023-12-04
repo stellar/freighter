@@ -27,6 +27,22 @@ export const logIn = createAsyncThunk<
   }
 });
 
+export const setActivePublicKey = createAsyncThunk<
+  UiData,
+  UiData,
+  { rejectValue: ErrorMessage }
+>("setActivePublicKey", async ({ publicKey }, thunkApi) => {
+  try {
+    await internalSubscribeAccount(publicKey);
+    return {
+      publicKey,
+      privateKey: "",
+    };
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+  }
+});
+
 const initialState = {
   publicKey: "",
   privateKey: "",
@@ -58,15 +74,6 @@ export const sessionSlice = createSlice({
         privateKey,
       };
     },
-    setActivePublicKey: (state, action: { payload: UiData }) => {
-      const { publicKey } = action.payload;
-
-      return {
-        ...state,
-        publicKey,
-        privateKey: "",
-      };
-    },
     timeoutAccountAccess: (state) => ({ ...state, privateKey: "" }),
     updateAllAccountsAccountName: (
       state,
@@ -94,9 +101,14 @@ export const sessionSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(logIn.fulfilled, (state, action) => {
+      console.log(action.payload);
       state.publicKey = action.payload.publicKey;
       state.mnemonicPhrase = action.payload.mnemonicPhrase || "";
       state.allAccounts = action.payload.allAccounts || [];
+    });
+    builder.addCase(setActivePublicKey.fulfilled, (state, action) => {
+      state.publicKey = action.payload.publicKey;
+      state.privateKey = "";
     });
   },
 });
@@ -109,7 +121,6 @@ export const {
     reset,
     logOut,
     setActivePrivateKey,
-    setActivePublicKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
   },

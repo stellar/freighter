@@ -133,8 +133,10 @@ export const getIsSorobanSupported = async () => {
 
 export const subscribeAccount = async (publicKey: string) => {
   // if pub key already has a subscription setup, skip this
-  const hasAccountSub = await localStore.getItem(KEY_ID);
-  if (hasAccountSub) {
+  const keyId = await localStore.getItem(KEY_ID);
+  const hasAccountSubByKeyId =
+    (await localStore.getItem(HAS_ACCOUNT_SUBSCRIPTION)) || {};
+  if (!keyId || hasAccountSubByKeyId[keyId]) {
     return { publicKey };
   }
 
@@ -147,7 +149,10 @@ export const subscribeAccount = async (publicKey: string) => {
       body: JSON.stringify({ pub_key: publicKey }),
     };
     await fetch(`${INDEXER_URL}/subscription/account`, options);
-    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, true);
+    const subsByKeyId = {
+      [keyId]: true,
+    };
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
   } catch (e) {
     console.error(e);
     throw new Error("Error subscribing account");

@@ -189,7 +189,7 @@ export const migrateToAccountSubscriptions = async () => {
   // we only want to run this once per user
   if (!storageVersion || semver.eq(storageVersion, "3.0.0")) {
     // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
-    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, false);
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
   }
 };
 

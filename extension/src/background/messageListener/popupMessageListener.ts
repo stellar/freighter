@@ -276,7 +276,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(KEY_ID, activeKeyId);
 
-    sessionStore.dispatch(setActivePublicKey({ publicKey }));
+    await sessionStore.dispatch(setActivePublicKey({ publicKey }) as any);
   };
 
   const fundAccount = async () => {
@@ -643,7 +643,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       localStore.clear();
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
-      _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
+      await _storeAccount({
+        mnemonicPhrase: recoverMnemonic,
+        password,
+        keyPair,
+      });
 
       // if we don't have an application state, assign them one
       applicationState =
