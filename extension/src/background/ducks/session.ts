@@ -101,7 +101,6 @@ export const sessionSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(logIn.fulfilled, (state, action) => {
-      console.log(action.payload);
       state.publicKey = action.payload.publicKey;
       state.mnemonicPhrase = action.payload.mnemonicPhrase || "";
       state.allAccounts = action.payload.allAccounts || [];

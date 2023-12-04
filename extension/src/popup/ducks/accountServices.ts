@@ -22,7 +22,12 @@ import {
   signOut as signOutService,
   addTokenId as addTokenIdService,
 } from "@shared/api/internal";
-import { Account, AccountType, ErrorMessage } from "@shared/api/types";
+import {
+  Account,
+  AccountType,
+  ActionStatus,
+  ErrorMessage,
+} from "@shared/api/types";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { AppState } from "popup/App";
@@ -371,6 +376,7 @@ interface InitialState {
   bipPath: string;
   tokenIdList: string[];
   error: string;
+  accountStatus: ActionStatus;
 }
 
 const initialState: InitialState = {
@@ -382,6 +388,7 @@ const initialState: InitialState = {
   bipPath: "",
   tokenIdList: [],
   error: "",
+  accountStatus: ActionStatus.IDLE,
 };
 
 const authSlice = createSlice({
@@ -486,6 +493,10 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(makeAccountActive.pending, (state) => ({
+      ...state,
+      accountStatus: ActionStatus.PENDING,
+    }));
     builder.addCase(makeAccountActive.fulfilled, (state, action) => {
       const { publicKey, hasPrivateKey, bipPath } = action.payload || {
         publicKey: "",
@@ -498,6 +509,7 @@ const authSlice = createSlice({
         publicKey,
         hasPrivateKey,
         bipPath,
+        accountStatus: ActionStatus.SUCCESS,
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
@@ -508,6 +520,7 @@ const authSlice = createSlice({
       return {
         ...state,
         error: message,
+        accountStatus: ActionStatus.ERROR,
       };
     });
     builder.addCase(updateAccountName.fulfilled, (state, action) => {
@@ -720,6 +733,11 @@ export const hardwareWalletTypeSelector = createSelector(
     ) || { hardwareWalletType: WalletType.NONE };
     return account.hardwareWalletType;
   },
+);
+
+export const accountStatusSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.accountStatus,
 );
 
 export const { clearApiError, setConnectingWalletType } = authSlice.actions;

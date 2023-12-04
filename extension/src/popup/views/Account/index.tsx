@@ -13,6 +13,7 @@ import {
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
+  accountStatusSelector,
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
@@ -59,6 +60,7 @@ export const Account = () => {
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
+  const accountStatus = useSelector(accountStatusSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
     false,
   );
@@ -130,7 +132,8 @@ export const Account = () => {
 
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.IDLE;
+    accountBalanceStatus === ActionStatus.IDLE ||
+    accountStatus === ActionStatus.PENDING;
 
   return selectedAsset ? (
     <AssetDetail
