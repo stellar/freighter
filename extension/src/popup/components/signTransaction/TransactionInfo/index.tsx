@@ -3,6 +3,7 @@ import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { stroopToXlm } from "helpers/stellar";
+import { MEMO_TYPES } from "popup/constants/memoTypes";
 
 import "./styles.scss";
 
@@ -10,10 +11,17 @@ const MemoDisplay = ({
   memo,
   isMemoRequired,
 }: {
-  memo: string;
+  memo: { value: string; type: MEMO_TYPES };
   isMemoRequired: boolean;
 }) => {
   const { t } = useTranslation();
+
+  const mapMemoLabel = {
+    memoId: "MEMO_ID",
+    memoHash: "MEMO_HASH",
+    memoText: "MEMO_TEXT",
+    memoReturn: "MEMO_RETURN",
+  };
 
   if (isMemoRequired) {
     return (
@@ -25,8 +33,13 @@ const MemoDisplay = ({
       />
     );
   }
+
   if (memo) {
-    return <span>{`${memo} (MEMO_TEXT)`}</span>;
+    return (
+      <span data-testid="SignTransactionMemo">{`${memo.value} (${
+        mapMemoLabel[memo.type]
+      })`}</span>
+    );
   }
 
   return null;
@@ -37,7 +50,7 @@ interface TransactionInfoProps {
   _sequence?: string;
   isFeeBump?: boolean;
   isMemoRequired: boolean;
-  memo?: string;
+  memo?: { value: string; type: MEMO_TYPES };
 }
 
 export const TransactionInfo = ({
@@ -50,7 +63,7 @@ export const TransactionInfo = ({
   const { t } = useTranslation();
 
   return (
-    <div className="TransactionInfo">
+    <div className="TransactionInfo" data-testid="TransactionInfoWrapper">
       {_fee ? (
         <div>
           <div>

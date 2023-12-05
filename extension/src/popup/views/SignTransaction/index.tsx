@@ -106,7 +106,9 @@ export const SignTransaction = () => {
     _memo = transaction.memo;
   }
 
-  const memo = decodeMemo(_memo);
+  const decodedMemo = decodeMemo(_memo);
+
+  const memo = decodedMemo?.value;
   let accountToSign = _accountToSign;
 
   const {
@@ -321,6 +323,7 @@ export const SignTransaction = () => {
             _sequence={_sequence}
             isFeeBump={isFeeBump}
             isMemoRequired={isMemoRequired}
+            memo={memo ? decodedMemo : undefined}
           />
         </View.Content>
         <View.Footer isInline>

@@ -5,18 +5,35 @@ import { MEMO_TYPES } from "popup/constants/memoTypes";
 
 import { ErrorMessage } from "@shared/api/types";
 
-export const decodeMemo = (memo: {}) => {
-  const memoType = get(memo, "_switch.name", "");
+type Memo = {
+  _value: any;
+  _type: "text" | "id" | "hash" | "return";
+};
 
-  if (memoType === MEMO_TYPES.MEMO_ID) {
-    return get(memo, "_value.low", "");
+const mappedMemoType = {
+  text: MEMO_TYPES.MEMO_TEXT,
+  id: MEMO_TYPES.MEMO_ID,
+  hash: MEMO_TYPES.MEMO_HASH,
+  return: MEMO_TYPES.MEMO_RETURN,
+};
+
+export const decodeMemo = (memo: any): { value: string; type: MEMO_TYPES } => {
+  const _memo = memo as Memo;
+
+  if (_memo._type === "id") {
+    return { value: _memo._value, type: mappedMemoType[_memo._type] };
   }
-  const decodeMethod = memoType === MEMO_TYPES.MEMO_HASH ? "hex" : "utf-8";
-  const memoValue = get(memo, "_value", "");
-  if (memoValue) {
-    return buffer.Buffer.from(memoValue).toString(decodeMethod);
-  }
-  return "";
+
+  const decodeMethod = ["hash", "return"].includes(_memo._type)
+    ? "hex"
+    : "utf-8";
+
+  return {
+    value: _memo._value
+      ? buffer.Buffer.from(_memo._value).toString(decodeMethod)
+      : "",
+    type: mappedMemoType[_memo._type],
+  };
 };
 
 /*  eslint-disable camelcase  */
