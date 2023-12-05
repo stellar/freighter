@@ -318,6 +318,7 @@ export const getAccountIndexerBalances = async (
   try {
     const contractIds = await getTokenIds(network);
     const url = new URL(`${INDEXER_URL}/account-balances/${pubKey}`);
+    url.searchParams.append("network", network);
     for (const id of contractIds) {
       url.searchParams.append("contract_ids", id);
     }
@@ -930,6 +931,7 @@ export const getSorobanTokenBalance = async (
 };
 
 export const addTokenId = async (
+  publicKey: string,
   tokenId: string,
   network: Networks,
 ): Promise<{
@@ -940,6 +942,7 @@ export const addTokenId = async (
 
   try {
     ({ tokenIdList, error } = await sendMessageToBackground({
+      publicKey,
       tokenId,
       network,
       type: SERVICE_TYPES.ADD_TOKEN_ID,

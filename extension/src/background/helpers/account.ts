@@ -141,12 +141,16 @@ export const subscribeAccount = async (publicKey: string) => {
   }
 
   try {
+    const networkDetails = await getNetworkDetails();
     const options = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ pub_key: publicKey }),
+      body: JSON.stringify({
+        pub_key: publicKey,
+        network: networkDetails.network,
+      }),
     };
     await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
@@ -159,4 +163,28 @@ export const subscribeAccount = async (publicKey: string) => {
   }
 
   return { publicKey };
+};
+
+export const subscribeTokenBalance = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  try {
+    const networkDetails = await getNetworkDetails();
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pub_key: publicKey,
+        contract_id: contractId,
+        network: networkDetails.network,
+      }),
+    };
+    await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
+  } catch (e) {
+    console.error(e);
+    throw new Error(`Error subscribing to token: ${contractId}`);
+  }
 };

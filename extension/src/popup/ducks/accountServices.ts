@@ -349,15 +349,15 @@ export const signOut = createAsyncThunk<
 
 export const addTokenId = createAsyncThunk<
   { tokenIdList: string[] },
-  { tokenId: string; network: Networks },
+  { publicKey: string; tokenId: string; network: Networks },
   { rejectValue: ErrorMessage }
->("auth/addToken", async ({ tokenId, network }, thunkApi) => {
+>("auth/addToken", async ({ publicKey, tokenId, network }, thunkApi) => {
   let res = {
     tokenIdList: [] as string[],
   };
 
   try {
-    res = await addTokenIdService(tokenId, network);
+    res = await addTokenIdService(publicKey, tokenId, network);
   } catch (e) {
     console.error("Failed when adding a token: ", e.message);
     return thunkApi.rejectWithValue({

@@ -60,6 +60,8 @@ import {
   getNetworksList,
   HW_PREFIX,
   getBipPath,
+  subscribeTokenBalance,
+  subscribeAccount,
   // subscribeAccount,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
@@ -546,14 +548,17 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const changeNetwork = async () => {
     const { networkName } = request;
+    const currentState = sessionStore.getState();
 
     const savedNetworks = await getSavedNetworks();
+    const pubKey = publicKeySelector(currentState);
     const networkDetails =
       savedNetworks.find(
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
     await localStore.setItem(NETWORK_ID, networkDetails);
+    await subscribeAccount(pubKey);
 
     return { networkDetails };
   };
@@ -1215,12 +1220,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addTokenId = async () => {
-    const { tokenId, network } = request;
+    const { tokenId, network, publicKey } = request;
     const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
     const tokenIdList = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
+
+    try {
+      await subscribeTokenBalance(publicKey, tokenId);
+    } catch (error) {
+      console.error(error);
+    }
 
     if (accountTokenIdList.includes(tokenId)) {
       return { error: "Token ID already exists" };

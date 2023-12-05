@@ -18,6 +18,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { addTokenId, authErrorSelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "background/ducks/session";
 
 interface FormValues {
   tokenId: string;
@@ -32,11 +33,16 @@ export const AddToken = () => {
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
 
   const handleSubmit = async (values: FormValues) => {
     const { tokenId } = values;
     const res = await dispatch(
-      addTokenId({ tokenId, network: networkDetails.network as Networks }),
+      addTokenId({
+        publicKey,
+        tokenId,
+        network: networkDetails.network as Networks,
+      }),
     );
 
     if (addTokenId.fulfilled.match(res)) {
