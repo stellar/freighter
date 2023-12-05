@@ -1414,7 +1414,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const newWallet = fromMnemonic(migratedMnemonicPhrase);
     const keyIdList: string = await getKeyIdList();
     const fee = xlmToStroop(recommendedFee).toFixed();
-    const server = stellarSdkServer(NETWORK_URLS.TESTNET);
+
+    // we expect all migrations to be done on MAINNET
+    const server = stellarSdkServer(NETWORK_URLS.PUBLIC);
+    const networkPassphrase = Networks.PUBLIC;
 
     /*
       For each migratable balance, we'll go through the following steps:
@@ -1458,7 +1461,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // eslint-disable-next-line no-await-in-loop
       const transaction = await new TransactionBuilder(sourceAccount, {
         fee,
-        networkPassphrase: Networks.TESTNET,
+        networkPassphrase,
       });
 
       // the amount the sender needs to hold to complete the migration
@@ -1519,6 +1522,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             sourceAccount,
             sourceKeys,
             isMergeSelected,
+            networkPassphrase,
           });
         } catch (e) {
           console.error(e);
@@ -1532,7 +1536,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         // eslint-disable-next-line no-await-in-loop
         const mergeTransaction = await new TransactionBuilder(sourceAccount, {
           fee,
-          networkPassphrase: Networks.TESTNET,
+          networkPassphrase,
         });
         mergeTransaction.addOperation(
           Operation.accountMerge({

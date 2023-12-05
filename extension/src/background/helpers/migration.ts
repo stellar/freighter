@@ -2,7 +2,6 @@ import {
   Asset,
   Horizon,
   Keypair,
-  Networks,
   Operation,
   TransactionBuilder,
 } from "stellar-sdk";
@@ -15,6 +14,7 @@ interface MigrateTrustLinesParams {
   newKeyPair: { publicKey: string; privateKey: string };
   fee: string;
   isMergeSelected: boolean;
+  networkPassphrase: string;
 }
 
 /*
@@ -34,6 +34,7 @@ export const migrateTrustlines = async ({
   sourceAccount,
   sourceKeys,
   isMergeSelected,
+  networkPassphrase,
 }: MigrateTrustLinesParams) => {
   if (!trustlineBalances.length) return;
 
@@ -45,18 +46,18 @@ export const migrateTrustlines = async ({
     trustlineRecipientAccount,
     {
       fee,
-      networkPassphrase: Networks.TESTNET,
+      networkPassphrase,
     },
   );
 
   const removeTrustTx = await new TransactionBuilder(sourceAccount, {
     fee,
-    networkPassphrase: Networks.TESTNET,
+    networkPassphrase,
   });
 
   const sendTrustlineBalanceTx = await new TransactionBuilder(sourceAccount, {
     fee,
-    networkPassphrase: Networks.TESTNET,
+    networkPassphrase,
   });
 
   const recipientSourceKeys = Keypair.fromSecret(newKeyPair.privateKey);
