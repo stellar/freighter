@@ -59,6 +59,29 @@ jest
   .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(swapMockBalances));
 
+jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
+  Promise.resolve({
+    signedTransaction:
+      "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A",
+  }),
+);
+
+jest
+  .spyOn(ApiInternal, "submitFreighterTransaction")
+  .mockImplementation(() => Promise.resolve({}));
+
+jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
+  recommendedFee: "0.00001",
+  networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
+}));
+
+const mockHistoryGetter = jest.fn();
+jest.mock("popup/constants/history", () => ({
+  get history() {
+    return mockHistoryGetter();
+  },
+}));
+
 jest.mock("popup/helpers/horizonGetBestPath", () => ({
   get horizonGetBestPath() {
     return jest.fn(() => ({
@@ -83,28 +106,7 @@ jest.mock("popup/helpers/horizonGetBestPath", () => ({
   },
 }));
 
-jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
-  Promise.resolve({
-    signedTransaction:
-      "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A",
-  }),
-);
-
-jest
-  .spyOn(ApiInternal, "submitFreighterTransaction")
-  .mockImplementation(() => Promise.resolve({}));
-
-jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
-  recommendedFee: "0.00001",
-  networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
-}));
-
-const mockHistoryGetter = jest.fn();
-jest.mock("popup/constants/history", () => ({
-  get history() {
-    return mockHistoryGetter();
-  },
-}));
+jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
 
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 

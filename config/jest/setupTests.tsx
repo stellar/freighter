@@ -47,5 +47,3 @@ jest.mock("react-dom", () => ({
   ...jest.requireActual("react-dom"),
   createPortal: (element: React.ReactElement) => element,
 }));
-
-jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
