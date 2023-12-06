@@ -74,13 +74,15 @@ const ConversionRate = ({
   const { t } = useTranslation();
 
   return (
-    <div className="SendAmount__row__rate">
+    <div className="SendAmount__row__rate" data-testid="SendAmountRate">
       {loading ? (
-        <Loader />
+        <div data-testid="SendAmountRateLoader">
+          <Loader />
+        </div>
       ) : (
         <>
           {destAmount ? (
-            <span>
+            <span data-testid="SendAmountRateAmount">
               1 {source} ≈{" "}
               {new BigNumber(destAmount)
                 .div(new BigNumber(sourceAmount))
@@ -290,8 +292,13 @@ export const SendAmount = ({
   ]);
 
   // for swaps we're loading and choosing the default destinationAsset here
+  // also, need to check if both source and destination are native
   useEffect(() => {
-    if (isSwap && !destinationAsset) {
+    if (
+      isSwap &&
+      (!destinationAsset ||
+        (destinationAsset === "native" && asset === "native"))
+    ) {
       let defaultDestAsset;
 
       // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
@@ -316,6 +323,7 @@ export const SendAmount = ({
     destinationAsset,
     accountBalances,
     formik.values.asset,
+    asset,
   ]);
 
   const getAmountFontSize = () => {
@@ -447,6 +455,7 @@ export const SendAmount = ({
                       calculateAvailBalance(formik.values.asset),
                     );
                   }}
+                  data-testid="SendAmountSetMax"
                 >
                   {t("SET MAX")}
                 </PillButton>

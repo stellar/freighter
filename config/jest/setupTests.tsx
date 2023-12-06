@@ -21,6 +21,7 @@ global.EXPERIMENTAL = false;
 
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
+  emitMetric: () => {},
 }));
 
 /* eslint-disable react/no-array-index-key */
@@ -46,3 +47,5 @@ jest.mock("react-dom", () => ({
   ...jest.requireActual("react-dom"),
   createPortal: (element: React.ReactElement) => element,
 }));
+
+jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
