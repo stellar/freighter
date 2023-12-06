@@ -83,7 +83,7 @@ const isReadyToMigrate = ({
         recommendedFee,
         hasTrustlineBalances: Boolean(trustlineBalancesLength),
         isMergeSelected,
-      }) < new BigNumber(xlmBalance),
+      }) < new BigNumber(xlmBalance).minus(minBalance),
   );
 
 type AccountListItemRow = AccountToMigrate & { isReadyToMigrate: boolean };
