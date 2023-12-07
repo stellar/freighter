@@ -16,7 +16,10 @@ import { BigNumber } from "bignumber.js";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import {
+  stellarSdkServer,
+  submitTx,
+} from "@shared/api/helpers/stellarSdkServer";
 import { calculateSenderMinBalance } from "@shared/helpers/migration";
 
 import {
@@ -105,6 +108,8 @@ import {
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
 
+// number of public keys to auto-import
+const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
@@ -754,7 +759,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
 
       // lets check first couple of accounts and pre-load them if funded on mainnet
-      const numOfPublicKeysToCheck = 5;
       // eslint-disable-next-line no-restricted-syntax
       for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
         try {
@@ -1371,7 +1375,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const mnemonicPublicKeyArr: string[] = [];
 
-    for (let i = 0; i < keyIdList.length; i += 1) {
+    // a bit of brute force; we'll check the number of keyIds the user has plus the number of keyIds we auto-import.
+    const numberOfKeyIdsToCheck = keyIdList.length + numOfPublicKeysToCheck;
+
+    for (let i = 0; i < numberOfKeyIdsToCheck; i += 1) {
       mnemonicPublicKeyArr.push(wallet.getPublicKey(i));
     }
 
@@ -1468,7 +1475,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const senderAccountMinBal = calculateSenderMinBalance({
         minBalance,
         recommendedFee,
-        hasTrustlineBalances: true,
+        trustlineBalancesLength: trustlineBalances.length,
         isMergeSelected,
       });
 
@@ -1494,20 +1501,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       try {
         // eslint-disable-next-line no-await-in-loop
-        await server.submitTransaction(builtTransaction);
+        await submitTx({ server, tx: builtTransaction });
       } catch (e) {
         console.error(e);
         migratedAccount.isMigrated = false;
       }
-
-      // replace the source account with the new one in `allAccounts` and store the keys
-      // eslint-disable-next-line no-await-in-loop
-      await _replaceAccount({
-        mnemonicPhrase: migratedMnemonicPhrase,
-        password,
-        keyPair: newKeyPair,
-        indexToReplace: keyIdIndex,
-      });
 
       // if the preceding step has failed, this will fail as well. Don't bother making the API call
       if (migratedAccount.isMigrated) {
@@ -1554,11 +1552,22 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
         try {
           // eslint-disable-next-line no-await-in-loop
-          await server.submitTransaction(builtMergeTransaction);
+          await submitTx({ server, tx: builtMergeTransaction });
         } catch (e) {
           console.error(e);
           migratedAccount.isMigrated = false;
         }
+      }
+
+      if (migratedAccount.isMigrated) {
+        // replace the source account with the new one in `allAccounts` and store the keys
+        // eslint-disable-next-line no-await-in-loop
+        await _replaceAccount({
+          mnemonicPhrase: migratedMnemonicPhrase,
+          password,
+          keyPair: newKeyPair,
+          indexToReplace: keyIdIndex,
+        });
       }
 
       migratedAccount.newPublicKey = newKeyPair.publicKey;

@@ -38,7 +38,7 @@ import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
-import { stellarSdkServer } from "./helpers/stellarSdkServer";
+import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -727,25 +727,8 @@ export const submitFreighterTransaction = ({
     networkDetails.networkPassphrase,
   );
   const server = stellarSdkServer(networkDetails.networkUrl);
-  const submitTx = async (): Promise<any> => {
-    let submittedTx;
 
-    try {
-      submittedTx = await server.submitTransaction(tx);
-    } catch (e) {
-      if (e.response.status === 504) {
-        // in case of 504, keep retrying this tx until submission succeeds or we get a different error
-        // https://developers.stellar.org/api/errors/http-status-codes/horizon-specific/timeout
-        // https://developers.stellar.org/docs/encyclopedia/error-handling
-        return submitTx();
-      }
-      throw e;
-    }
-
-    return submittedTx;
-  };
-
-  return submitTx();
+  return submitTx({ server, tx });
 };
 
 export const submitFreighterSorobanTransaction = async ({
