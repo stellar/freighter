@@ -2,12 +2,12 @@ import { BigNumber } from "bignumber.js";
 
 export const getMigrationFeeAmount = ({
   recommendedFee,
-  hasTrustlineBalances,
+  trustlineBalancesLength,
   isMergeSelected,
 }: {
   recommendedFee: string;
 
-  hasTrustlineBalances: boolean;
+  trustlineBalancesLength: number;
   isMergeSelected: boolean;
 }) => {
   /* the number of transaction submissions needs to complete the migration:
@@ -16,7 +16,7 @@ export const getMigrationFeeAmount = ({
  - If we're merging, 1 tx to to remove trustlines as well as 1 tx to complete the merge
  */
   const txCount =
-    1 + (hasTrustlineBalances ? 1 : 0) + (isMergeSelected ? 2 : 0);
+    1 + (trustlineBalancesLength || 0) + (isMergeSelected ? 2 : 0);
 
   return new BigNumber(recommendedFee).times(txCount);
 };
@@ -24,18 +24,18 @@ export const getMigrationFeeAmount = ({
 export const calculateSenderMinBalance = ({
   minBalance,
   recommendedFee,
-  hasTrustlineBalances,
+  trustlineBalancesLength,
   isMergeSelected,
 }: {
   minBalance: string;
   recommendedFee: string;
-  hasTrustlineBalances: boolean;
+  trustlineBalancesLength: number;
   isMergeSelected: boolean;
 }) =>
   new BigNumber(minBalance).plus(
     getMigrationFeeAmount({
       recommendedFee,
-      hasTrustlineBalances,
+      trustlineBalancesLength,
       isMergeSelected,
     }),
   );
