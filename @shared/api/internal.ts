@@ -6,6 +6,8 @@ import {
   xdr,
   Networks,
 } from "stellar-sdk";
+import BigNumber from "bignumber.js";
+
 import {
   getBalance,
   getDecimals,
@@ -35,7 +37,6 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer } from "./helpers/stellarSdkServer";
-import BigNumber from "bignumber.js";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -312,12 +313,12 @@ export const confirmPassword = async (
 };
 
 export const getAccountIndexerBalances = async (
-  pubKey: string,
+  publicKey: string,
   network: NETWORKS,
 ): Promise<AccountBalancesInterface> => {
   try {
     const contractIds = await getTokenIds(network);
-    const url = new URL(`${INDEXER_URL}/account-balances/${pubKey}`);
+    const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
     url.searchParams.append("network", network);
     for (const id of contractIds) {
       url.searchParams.append("contract_ids", id);
@@ -345,7 +346,7 @@ export const getAccountIndexerBalances = async (
     console.error(error);
     return {
       balances: {} as AccountBalancesInterface["balances"],
-      isFunded: null,
+      isFunded: false,
       subentryCount: 0,
     };
   }
