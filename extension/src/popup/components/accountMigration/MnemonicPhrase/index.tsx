@@ -39,6 +39,7 @@ export const MnemonicPhrase = () => {
         <DisplayMnemonicPhrase
           mnemonicPhrase={mnemonicPhrase}
           setIsConfirmed={setIsConfirmed}
+          isMigration
         />
       </div>
     </Onboarding>
