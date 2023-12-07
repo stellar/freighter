@@ -10,15 +10,18 @@ export const getMigrationFeeAmount = ({
   trustlineBalancesLength: number;
   isMergeSelected: boolean;
 }) => {
-  /* the number of transaction submissions needs to complete the migration:
- - 1 tx to send the balance. This is always required
- - For trustline balance(s), 1 tx to send them
- - If we're merging, 1 tx to to remove trustlines as well as 1 tx to complete the merge
+  /* the number of operations needs to complete the migration:
+ - 1 op to send the balance. This is always required
+ - For trustline balance(s), 1 op each to send them
+ - If we're merging, 1 op each to remove trustlines
+ - Plus one more tx to merge
  */
-  const txCount =
-    1 + (trustlineBalancesLength || 0) + (isMergeSelected ? 2 : 0);
+  const opCount =
+    1 +
+    (trustlineBalancesLength * (isMergeSelected ? 2 : 1) || 0) +
+    (isMergeSelected ? 1 : 0);
 
-  return new BigNumber(recommendedFee).times(txCount);
+  return new BigNumber(recommendedFee).times(opCount);
 };
 
 export const calculateSenderMinBalance = ({
