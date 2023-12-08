@@ -3802,10 +3802,29 @@
   resolved "https://registry.npmjs.org/@stellar/eslint-config/-/eslint-config-1.0.5.tgz"
   integrity sha512-RpkhdJffBU1oEsdyAJgfKHDSRJCWbyNOp08F1UP0yGp1tBLp0FopURl7m1Nx2Xd1o1PkN6h01wV6lpdiCbZWYQ==
 
+"@stellar/js-xdr@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@stellar/js-xdr/-/js-xdr-3.0.1.tgz#d500f1e1332210cd56e0ef95e44c54506d9f48f3"
+  integrity sha512-dp5Eh7Nr1YjiIeqpdkj2cQYxfoPudDAH3ck8MWggp48Htw66Z/hUssNYUQG/OftLjEmHT90Z/dtey2Y77DOxIw==
+
 "@stellar/prettier-config@^1.0.1":
   version "1.0.1"
   resolved "https://registry.npmjs.org/@stellar/prettier-config/-/prettier-config-1.0.1.tgz"
   integrity sha512-w9OPycQp1XGfmHC2VUHe5shpZjNFRlmsRBaK7IHvOvVpglzV2QNJsVFh8RdLREWA0mzF59AWvQbyUCCJLPfdWw==
+
+"@stellar/stellar-base@10.0.0":
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-base/-/stellar-base-10.0.0.tgz#b9ef7e84e644d06ec08b8ba88ad6b38da7b80494"
+  integrity sha512-zHlGzWefiB2gkt13l+I8Dvo2k7+n6+vxizay4lDEc5si0zjSZbCUUzMIdVIQ86dao7+TvZ3aNw8CdncOWLDu2A==
+  dependencies:
+    "@stellar/js-xdr" "^3.0.1"
+    base32.js "^0.1.0"
+    bignumber.js "^9.1.2"
+    buffer "^6.0.3"
+    sha.js "^2.3.6"
+    tweetnacl "^1.0.3"
+  optionalDependencies:
+    sodium-native "^4.0.1"
 
 "@stellar/tsconfig@^1.0.2":
   version "1.0.2"
@@ -5438,10 +5457,10 @@ axios@^0.25.0:
   dependencies:
     follow-redirects "^1.14.7"
 
-axios@^1.5.1:
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.5.1.tgz#11fbaa11fc35f431193a9564109c88c1f27b585f"
-  integrity sha512-Q28iYCWzNHjAm+yEAot5QaAMxhMghWLFVf7rRdwhUI+c2jix2DUXjAHXVi+s1ibs3mjPO/cCgbA++3BjD0vP/A==
+axios@^1.6.0:
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.2.tgz#de67d42c755b571d3e698df1b6504cde9b0ee9f2"
+  integrity sha512-7i24Ri4pmDRfJTR7LDBhsOTtcm+9kjX5WiY1X3wIisx6G9So3pfMkEiU7emUBe46oceVImccTEM3k6C5dbVW8A==
   dependencies:
     follow-redirects "^1.15.0"
     form-data "^4.0.0"
@@ -10610,11 +10629,6 @@ js-xdr@^1.1.1:
     lodash "^4.17.5"
     long "^2.2.3"
 
-js-xdr@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/js-xdr/-/js-xdr-3.0.0.tgz"
-  integrity sha512-tSt6UKJ2L7t+yaQURGkHo9kop9qnVbChTlCu62zNiDbDZQoZb/YjUj2iFJ3lgelhfg9p5bhO2o/QX+g36TPsSQ==
-
 js-yaml@4.1.0, js-yaml@^4.1.0:
   version "4.1.0"
   resolved "https://registry.npmjs.org/js-yaml/-/js-yaml-4.1.0.tgz"
@@ -14702,34 +14716,6 @@ std-env@^3.0.1:
   resolved "https://registry.npmjs.org/std-env/-/std-env-3.3.2.tgz"
   integrity sha512-uUZI65yrV2Qva5gqE0+A7uVAvO40iPo6jGhs7s8keRfHCmtg+uB2X6EiLGCI9IgL1J17xGhvoOqSz79lzICPTA==
 
-stellar-base@10.0.0-beta.2:
-  version "10.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-10.0.0-beta.2.tgz#36452bb14a7a9e66175e6231feb64de3d2fe3627"
-  integrity sha512-fgVcNzlGuXTte4gEg3fDA/pJB5VbqfE8+gkbjsphVecDELR8t3K+QalbDhcafi3g54nRYUaHnN7LcGeoschuIA==
-  dependencies:
-    base32.js "^0.1.0"
-    bignumber.js "^9.1.2"
-    buffer "^6.0.3"
-    js-xdr "^3.0.0"
-    sha.js "^2.3.6"
-    tweetnacl "^1.0.3"
-  optionalDependencies:
-    sodium-native "^4.0.1"
-
-stellar-base@10.0.0-beta.3:
-  version "10.0.0-beta.3"
-  resolved "https://registry.yarnpkg.com/stellar-base/-/stellar-base-10.0.0-beta.3.tgz#c90e261945c58e2176b0a50b9a7b96003ecb0768"
-  integrity sha512-+B1fOdsDWJEnYSYkKSAVHVngzaqDtD8wdDMT/FC+11MrohP3uGY1OmrEeVn34jiBmUlpYZVudDnpDMSXD4RqDA==
-  dependencies:
-    base32.js "^0.1.0"
-    bignumber.js "^9.1.2"
-    buffer "^6.0.3"
-    js-xdr "^3.0.0"
-    sha.js "^2.3.6"
-    tweetnacl "^1.0.3"
-  optionalDependencies:
-    sodium-native "^4.0.1"
-
 stellar-base@^0.13.1:
   version "0.13.2"
   resolved "https://registry.npmjs.org/stellar-base/-/stellar-base-0.13.2.tgz"
@@ -14762,29 +14748,16 @@ stellar-identicon-js@^1.0.0:
   dependencies:
     html-webpack-plugin "^3.2.0"
 
-stellar-sdk@11.0.0-beta.5:
-  version "11.0.0-beta.5"
-  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.0.0-beta.5.tgz#5c45c6db0b0f1528532d4e2496e7b38d912b8913"
-  integrity sha512-jJTY7GbLoYo1x7nX67fTgjwCvhRsn8EeLvHqfh0GKGBddDNn2X4Y3Zy8slMWV1yDLr3Ueh5snfWyKtD7gx8xgA==
+stellar-sdk@^11.0.1:
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.0.1.tgz#de53748d648e732d0d8a3fdcb292b18e30a217cc"
+  integrity sha512-uRXK9NcsJNoo7F2P3JQRY9GC9+LFVQQjz9N5nmsLdUDrOT9cM8bb3MoUt9jdY5+nBsrEVnuJTZzLG29GyowBew==
   dependencies:
-    axios "^1.5.1"
+    "@stellar/stellar-base" "10.0.0"
+    axios "^1.6.0"
     bignumber.js "^9.1.2"
     eventsource "^2.0.2"
     randombytes "^2.1.0"
-    stellar-base "10.0.0-beta.3"
-    toml "^3.0.0"
-    urijs "^1.19.1"
-
-stellar-sdk@^11.0.0-beta.4:
-  version "11.0.0-beta.4"
-  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.0.0-beta.4.tgz#aa79beb9a636bc4c8f4069c35248e8b1a46526df"
-  integrity sha512-Okq3LzpTOOLxYMyAhkdhzo1OwsPO6kVZGtxkqYApqOpSjzCDtXje9b1YGO7NycRH4ICJftxQ6TF+VZEaBvXRlQ==
-  dependencies:
-    axios "^1.5.1"
-    bignumber.js "^9.1.2"
-    eventsource "^2.0.2"
-    randombytes "^2.1.0"
-    stellar-base "10.0.0-beta.2"
     toml "^3.0.0"
     urijs "^1.19.1"
 
