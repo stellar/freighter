@@ -1,3 +1,57 @@
+# Release notes - Wallets - Freighter-5.8.0
+
+### Bug
+
+Send Settings view warns about React keys because of SDS Tooltip
+
+### Story
+
+Direct users to discord and GH to leave feedback
+
+Remove split between soroban-client and js-stellar-sdk
+
+# Release notes - Wallets - Freighter-5.7.1
+
+### Story
+
+Remove serializable check in Redux
+
+Update SDS to stable build \(v1.0.0\)
+
+# Release notes - Wallets - Freighter-5.7.0
+
+### Bug
+
+Soroban Preview 10: Allow removing old tokens from token list
+
+Disable Soroban tokens in swap
+
+# Release notes - Wallets - 5.6.4
+
+### Bug
+
+Soroban Tx history isn't showing up on testnet
+
+Existing checks for experimental mode block some Testnet Soroban functionality
+
+### Story
+
+\[Automated Tests\] Add tests for signing Soroban tx's
+
+Show Soroban RPC Url for Testnet
+
+# Release notes - Wallets - Freighter-5.6.3
+
+### Bug
+
+getNetworkDetails does not return Soroban RPC URLs
+
+# Release notes - Wallets - Freighter-5.5.1
+
+### Bug
+
+SignTransaction not properly parsing auth field in Soroban XDR's
+
 # Release notes - Wallets - Freighter-5.2.6
 
 ### Story

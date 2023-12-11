@@ -102,7 +102,7 @@ export const getBipPath = async () => {
 export const getSavedNetworks = async (): Promise<NetworkDetails[]> =>
   (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
-export const getNetworkDetails = async () => {
+export const getNetworkDetails = async (): Promise<NetworkDetails> => {
   if (!(await localStore.getItem(NETWORK_ID))) {
     await localStore.setItem(NETWORK_ID, DEFAULT_NETWORKS[0]);
   }
@@ -122,4 +122,9 @@ export const getNetworksList = async () => {
     (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
   return networksList;
+};
+
+export const getIsSorobanSupported = async () => {
+  const networkDetails = await getNetworkDetails();
+  return !!networkDetails.sorobanRpcUrl;
 };

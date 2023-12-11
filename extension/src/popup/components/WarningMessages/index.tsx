@@ -1,17 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import { Icon } from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
-import StellarSdk, { Account } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Operation,
+  Horizon,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { ActionStatus } from "@shared/api/types";
 
 import { xlmToStroop } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
@@ -84,7 +88,7 @@ export const WarningMessage = ({
       data-testid="WarningMessage"
     >
       <div className="WarningMessage__header">
-        <Icon.AlertTriangle className="WarningMessage__icon" />
+        <Icon.Warning className="WarningMessage__icon" />
         <div>{header}</div>
         {headerChildren}
       </div>
@@ -97,8 +101,9 @@ export const WarningMessage = ({
         <WarningInfoBlock />
         <div className="WarningMessage__children-wrapper">{children}</div>
         <Button
-          variant={Button.variant.tertiary}
-          fullWidth
+          size="md"
+          variant="secondary"
+          isFullWidth
           type="button"
           onClick={() =>
             handleCloseClick ? handleCloseClick() : setIsWarningActive(false)
@@ -236,8 +241,8 @@ export const BackupPhraseWarningMessage = () => {
     <div className="WarningMessage__backup">
       <div className="WarningMessage__infoBlock">
         <div className="WarningMessage__header">
-          <Icon.AlertTriangle className="WarningMessage__icon" />
-          <div>{t("IMPORTANT")}</div>
+          <Icon.Warning className="WarningMessage__icon" />
+          <div>{t("Important")}</div>
         </div>
 
         <p>
@@ -299,15 +304,15 @@ export const ScamAssetWarning = ({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const server = new Horizon.Server(networkDetails.networkUrl);
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+    const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: new StellarSdk.Asset(code, issuer),
+        Operation.changeTrust({
+          asset: new Asset(code, issuer),
         }),
       )
       .setTimeout(180)
@@ -364,15 +369,15 @@ export const ScamAssetWarning = ({
         <div className="ScamAssetWarning__bottom-content">
           <div>
             {isSendWarning ? (
-              <InfoBlock variant={InfoBlock.variant.error}>
+              <Notification variant="error" title={t("Not recommended asset")}>
                 <p>
                   {t(
                     "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise.",
                   )}
                 </p>
-              </InfoBlock>
+              </Notification>
             ) : (
-              <InfoBlock variant={InfoBlock.variant.error}>
+              <Notification variant="error" title={t("Blocked asset")}>
                 <div>
                   <p>
                     {isValidatingSafeAssetsEnabled
@@ -392,13 +397,14 @@ export const ScamAssetWarning = ({
                     <strong>{t("Settings > Preferences")}</strong>
                   </p>
                 </div>
-              </InfoBlock>
+              </Notification>
             )}
           </div>
           <div className="ScamAssetWarning__btns">
             <Button
-              fullWidth
-              variant={Button.variant.tertiary}
+              size="md"
+              isFullWidth
+              variant="secondary"
               type="button"
               onClick={closeOverlay}
             >
@@ -406,9 +412,11 @@ export const ScamAssetWarning = ({
             </Button>
             {isSendWarning && (
               <Button
-                fullWidth
+                size="md"
+                isFullWidth
                 onClick={onContinue}
                 type="button"
+                variant="primary"
                 isLoading={
                   isSubmitting || submitStatus === ActionStatus.PENDING
                 }
@@ -418,9 +426,11 @@ export const ScamAssetWarning = ({
             )}
             {!isValidatingSafeAssetsEnabled && !isSendWarning && (
               <Button
-                fullWidth
+                size="md"
+                isFullWidth
                 onClick={handleSubmit}
                 type="button"
+                variant="primary"
                 isLoading={
                   isSubmitting || submitStatus === ActionStatus.PENDING
                 }
@@ -482,15 +492,15 @@ export const NewAssetWarning = ({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const server = new StellarSdk.Server(networkDetails.networkUrl);
+    const server = new Horizon.Server(networkDetails.networkUrl);
     const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new StellarSdk.TransactionBuilder(sourceAccount, {
+    const transactionXDR = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(recommendedFee).toFixed(),
       networkPassphrase: networkDetails.networkPassphrase,
     })
       .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: new StellarSdk.Asset(code, issuer),
+        Operation.changeTrust({
+          asset: new Asset(code, issuer),
         }),
       )
       .setTimeout(180)
@@ -603,15 +613,18 @@ export const NewAssetWarning = ({
           </div>
           <div className="NewAssetWarning__btns">
             <Button
-              fullWidth
-              variant={Button.variant.tertiary}
+              size="md"
+              isFullWidth
+              variant="secondary"
               type="button"
               onClick={closeOverlay}
             >
               {t("Cancel")}
             </Button>
             <Button
-              fullWidth
+              size="md"
+              isFullWidth
+              variant="primary"
               onClick={handleSubmit}
               type="button"
               isLoading={isSubmitting}

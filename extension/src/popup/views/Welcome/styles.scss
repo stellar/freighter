@@ -24,16 +24,17 @@
 
   &__heading {
     &--large {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
       font-size: 2.5rem;
       line-height: 3rem;
       margin-bottom: 2.5rem;
       text-align: center;
       max-width: 36rem;
+      font-weight: var(--font-weight-medium);
     }
 
     &--small {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
       font-size: 1.125rem;
       font-weight: var(--font-weight-medium);
       margin-bottom: 0.75rem;
@@ -52,12 +53,11 @@
     justify-content: center;
     padding: 0;
     width: 24rem;
-    height: 13.25rem;
   }
 
   &__import {
     .Card--default {
-      background: var(--background-color);
+      background: var(--color-gray-00);
     }
   }
 

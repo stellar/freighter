@@ -14,11 +14,6 @@ export enum ActionStatus {
   ERROR = "ERROR",
 }
 
-export enum SorobanTxStatus {
-  PENDING = "pending",
-  SUCCESS = "success",
-}
-
 export interface UserInfo {
   publicKey: string;
 }
@@ -42,6 +37,7 @@ export interface Response {
   transactionXDR: string;
   signedTransaction: string;
   signedBlob: string;
+  signedAuthEntry: string;
   source: string;
   type: SERVICE_TYPES;
   url: string;
@@ -52,6 +48,7 @@ export interface Response {
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
   networkDetails: NetworkDetails;
+  sorobanRpcUrl: string;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
   accountName: string;
@@ -67,6 +64,7 @@ export interface Response {
   blockedDomains: BlockedDomains;
   blockedAccounts: BlockedAccount[];
   assetDomain: string;
+  contractId: string;
   tokenId: string;
   tokenIdList: string[];
   isConnected: boolean;
@@ -101,7 +99,14 @@ export interface ExternalRequestBlob extends ExternalRequestBase {
   blob: string;
 }
 
-export type ExternalRequest = ExternalRequestTx | ExternalRequestBlob;
+export interface ExternalRequestAuthEntry extends ExternalRequestBase {
+  entryXdr: string;
+}
+
+export type ExternalRequest =
+  | ExternalRequestTx
+  | ExternalRequestBlob
+  | ExternalRequestAuthEntry;
 
 export interface Account {
   publicKey: string;
@@ -148,7 +153,7 @@ export interface SorobanBalance {
   total: BigNumber;
   name: string;
   symbol: string;
-  decimals: string;
+  decimals: number;
 }
 
 export type AssetType =
@@ -174,7 +179,7 @@ export interface AccountHistoryInterface {
 
 export interface ErrorMessage {
   errorMessage: string;
-  response?: Horizon.ErrorResponseData.TransactionFailed;
+  response?: Horizon.HorizonApi.ErrorResponseData.TransactionFailed;
 }
 
 declare global {
@@ -183,5 +188,3 @@ declare global {
     freighterApi: { [key: string]: any };
   }
 }
-
-export type CURRENCY = { code: string; issuer: string; image: string };

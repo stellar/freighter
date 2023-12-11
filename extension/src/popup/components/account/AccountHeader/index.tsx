@@ -111,7 +111,7 @@ export const AccountHeader = ({
               }}
             >
               <div className="AccountHeader__account-list-item__icon">
-                <Icon.PlusCircle />
+                <Icon.AddCircle />
               </div>
               <span className="AccountHeader__account-list-item__link-copy">
                 {t("Create a new Stellar address")}
@@ -184,7 +184,7 @@ export const AccountHeader = ({
               to={ROUTES.addNetwork}
             >
               <div className="AccountHeader__account-list-item__icon">
-                <Icon.PlusCircle />
+                <Icon.AddCircle />
               </div>
               <span className="AccountHeader__account-list-item__link-copy">
                 {t("Add custom network")}
@@ -197,7 +197,7 @@ export const AccountHeader = ({
               to={ROUTES.networkSettings}
             >
               <div className="AccountHeader__account-list-item__icon">
-                <Icon.Tool />
+                <Icon.Settings />
               </div>
               <span className="AccountHeader__account-list-item__link-copy">
                 {t("Manage network settings")}

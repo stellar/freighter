@@ -1,7 +1,7 @@
 :root {
   --bottom-btn-margin: 24px;
 
-  --continue-btn-height: 3.7rem;
+  --continue-btn-height: 2.625rem;
 }
 
 .SendPayment {
@@ -17,8 +17,7 @@
 }
 
 .SendAmount {
-  padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
-    var(--account-view-padding-side);
+  padding: var(--popup-vertical-padding) var(--account-view-padding-side);
   height: var(--popup--height);
   display: flex;
   flex-direction: column;
@@ -65,7 +64,7 @@
   &__asset-copy {
     font-size: 0.875rem;
     line-height: 1.375rem;
-    color: var(--pal-text-tertiary);
+    color: var(--color-gray-60);
     margin-bottom: 1rem;
   }
 
@@ -94,7 +93,7 @@
     font-size: 2.5rem;
     line-height: 4.5rem;
     font-weight: var(--font-weight-light);
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     background: none;
     border: none;
     text-align: center;
@@ -137,7 +136,7 @@
       font-size: 0.875rem;
       line-height: 1.375rem;
       height: 1.375rem;
-      color: var(--pal-text-tertiary);
+      color: var(--color-gray-60);
     }
   }
 
@@ -167,21 +166,21 @@
     font-size: 0.875rem;
     line-height: 1.375rem;
     font-weight: var(--font-weight-medium);
-    color: var(--pal-text-tertiary);
+    color: var(--color-gray-60);
   }
 
   &__subsection-copy {
     font-size: 0.875rem;
     line-height: 1.375rem;
     margin-top: 0.75rem;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
   }
 
   &__recent-accts-ul {
     padding: 0;
 
     li::before {
-      content: none;
+      content: none !important;
     }
 
     button {
@@ -192,7 +191,7 @@
   &__subheading-identicon {
     font-size: 0.875rem;
     line-height: 1.375rem;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     font-weight: var(--font-weight-medium);
     background: none;
     border: 0;
@@ -206,7 +205,7 @@
       width: 0.75rem;
       height: 0.75rem;
       border-radius: 1rem;
-      background: var(--pal-brand-primary-on);
+      background: var(--color-white);
     }
 
     span {
@@ -234,7 +233,7 @@
     width: 100%;
 
     &__title {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
     }
 
     &__right {
@@ -255,6 +254,10 @@
 
   &__clickable {
     cursor: pointer;
+  }
+
+  .FormRows {
+    gap: 0.75rem;
   }
 }
 

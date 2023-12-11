@@ -5,6 +5,7 @@ import {
   grantAccess as internalGrantAccess,
   signTransaction as internalSignTransaction,
   signBlob as internalSignBlob,
+  signAuthEntry as internalSignAuthEntry,
 } from "@shared/api/internal";
 
 export const grantAccess = createAsyncThunk("grantAccess", internalGrantAccess);
@@ -20,6 +21,7 @@ export const signTransaction = createAsyncThunk(
 );
 
 export const signBlob = createAsyncThunk("signBlob", internalSignBlob);
+export const signEntry = createAsyncThunk("signEntry", internalSignAuthEntry);
 
 // Basically an alias for metrics purposes
 export const rejectTransaction = createAsyncThunk(
@@ -29,3 +31,7 @@ export const rejectTransaction = createAsyncThunk(
 
 // Basically an alias for metrics purposes
 export const rejectBlob = createAsyncThunk("rejectBlob", internalRejectAccess);
+export const rejectAuthEntry = createAsyncThunk(
+  "rejectAuthEntry",
+  internalRejectAccess,
+);

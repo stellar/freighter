@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Checkbox, Input } from "@stellar/design-system";
+import { Button, Checkbox, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
@@ -8,7 +8,6 @@ import { useHistory, useLocation } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
-import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { ROUTES } from "popup/constants/routes";
 
@@ -25,6 +24,7 @@ import {
   settingsErrorSelector,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -37,6 +37,7 @@ interface FormValues {
   networkName: string;
   networkPassphrase: string;
   networkUrl: string;
+  sorobanRpcUrl?: string;
   isSwitchSelected?: boolean;
   isAllowHttpSelected: boolean;
   friendbotUrl?: string;
@@ -54,6 +55,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
@@ -85,6 +87,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
         networkName: "",
         networkPassphrase: "",
         networkUrl: "",
+        sorobanRpcUrl: "",
         friendbotUrl: "",
         isSwitchSelected: false,
         isAllowHttpSelected: false,
@@ -94,6 +97,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     networkName: YupString().required(),
     networkPassphrase: YupString().required(),
     networkUrl: YupString().required(),
+    sorobanRpcUrl: YupString(),
   });
 
   const handleRemoveNetwork = async () => {
@@ -114,7 +118,13 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   };
 
   const getCustomNetworkDetailsFromFormValues = (values: FormValues) => {
-    const { friendbotUrl, networkName, networkUrl, networkPassphrase } = values;
+    const {
+      friendbotUrl,
+      networkName,
+      networkUrl,
+      networkPassphrase,
+      sorobanRpcUrl,
+    } = values;
 
     return {
       friendbotUrl,
@@ -122,6 +132,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       networkName,
       networkUrl,
       networkPassphrase,
+      sorobanRpcUrl,
     };
   };
 
@@ -190,9 +201,10 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
   const CloseModalButton = () => (
     <Button
+      size="md"
       type="button"
-      fullWidth
-      variant={Button.variant.tertiary}
+      isFullWidth
+      variant="secondary"
       onClick={() => {
         setIsNetworkInUse(false);
         setIsNetworkUrlValid(false);
@@ -205,16 +217,19 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const ConfirmRemovalButtons = () => (
     <div className="NetworkForm__removal-buttons">
       <Button
-        fullWidth
+        size="md"
+        isFullWidth
         type="button"
-        variant={Button.variant.tertiary}
+        variant="secondary"
         onClick={() => setIsConfirmingRemoval(false)}
       >
         {t("Cancel")}
       </Button>
       <div className="NetworkForm__remove-button">
         <Button
-          fullWidth
+          size="md"
+          isFullWidth
+          variant="primary"
           type="button"
           onClick={() => {
             handleRemoveNetwork();
@@ -235,17 +250,20 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     !isEditingDefaultNetworks ? (
       <div className="NetworkForm__editing-buttons">
         <Button
+          size="md"
           onClick={() => history.goBack()}
           type="button"
-          variant={Button.variant.tertiary}
-          fullWidth
+          variant="secondary"
+          isFullWidth
         >
           {t("Cancel")}
         </Button>
         <Button
+          size="md"
+          variant="primary"
           disabled={!isValid}
           isLoading={isSubmitting}
-          fullWidth
+          isFullWidth
           type="submit"
         >
           {t("Save")}
@@ -313,6 +331,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
           {({ dirty, errors, isSubmitting, isValid, touched }) => (
             <Form className="NetworkForm__form">
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="networkName"
                 autoComplete="off"
@@ -328,6 +347,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 placeholder={t("Enter network name")}
               />
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="networkUrl"
                 autoComplete="off"
@@ -337,11 +357,29 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                     : ""
                 }
                 customInput={<Field />}
-                label={t("URL")}
+                label={t("HORIZON RPC URL")}
                 name="networkUrl"
                 placeholder={t("Enter network URL")}
               />
+              {isSorobanSuported || !isEditingDefaultNetworks ? (
+                <Input
+                  fieldSize="md"
+                  disabled={isEditingDefaultNetworks}
+                  id="sorobanRpcUrl"
+                  autoComplete="off"
+                  error={
+                    errors.sorobanRpcUrl && touched.sorobanRpcUrl
+                      ? errors.sorobanRpcUrl
+                      : ""
+                  }
+                  customInput={<Field />}
+                  label={t("SOROBAN RPC URL")}
+                  name="sorobanRpcUrl"
+                  placeholder={t("Enter Soroban RPC URL")}
+                />
+              ) : null}
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="networkPassphrase"
                 autoComplete="off"
@@ -356,6 +394,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 placeholder={t("Enter passphrase")}
               />
               <Input
+                fieldSize="md"
                 disabled={isEditingDefaultNetworks}
                 id="friendbotUrl"
                 autoComplete="off"
@@ -373,6 +412,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 <Field name="isAllowHttpSelected">
                   {({ field }: FieldProps) => (
                     <Checkbox
+                      fieldSize="md"
                       checked={field.value}
                       id="isAllowHttpSelected-input"
                       error={
@@ -381,11 +421,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                           ? errors.isAllowHttpSelected
                           : null
                       }
-                      label={
-                        <span>
-                          {t("Allow connecting to non-HTTPS networks")}
-                        </span>
-                      }
+                      label={t("Allow connecting to non-HTTPS networks")}
                       {...field}
                     />
                   )}
@@ -413,6 +449,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 <Field name="isSwitchSelected">
                   {({ field }: FieldProps) => (
                     <Checkbox
+                      fieldSize="md"
                       autoComplete="off"
                       id="isSwitchSelected-input"
                       error={
@@ -420,7 +457,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                           ? errors.isSwitchSelected
                           : null
                       }
-                      label={<span>{t("Switch to this network")}</span>}
+                      label={t("Switch to this network")}
                       {...field}
                     />
                   )}
@@ -431,8 +468,10 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               ) : (
                 <div className="NetworkForm__add-button">
                   <Button
+                    size="md"
+                    variant="primary"
                     disabled={!(isValid && dirty)}
-                    fullWidth
+                    isFullWidth
                     isLoading={isSubmitting}
                     type="submit"
                   >

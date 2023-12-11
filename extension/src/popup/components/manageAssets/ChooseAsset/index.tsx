@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Icon, Loader } from "@stellar/design-system";
+import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import {
   transactionSubmissionSelector,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
-  settingsSelector,
+  settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -36,13 +36,14 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { assetIcons, assetSelect } = useSelector(
     transactionSubmissionSelector,
   );
-  const { isExperimentalModeEnabled } = useSelector(settingsSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
   const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const isSwap = useIsSwap();
 
   const managingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
@@ -72,7 +73,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              ({ home_domain: domain } = await server.loadAccount(issuer.key));
+              const acct = await server.loadAccount(issuer.key);
+              domain = acct.home_domain || "";
             } catch (e) {
               console.error(e);
             }
@@ -92,23 +94,26 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             image: "",
             domain: "",
           });
+        }
+      }
 
-          if (isExperimentalModeEnabled && sorobanBalances.length) {
-            sorobanBalances.forEach(({ symbol, contractId, name }) => {
-              // TODO:
-              // interestingly, if an ascii value is set for symbol
-              // it gets parsed and doesn't
-              // match the original value after this. How to escape this?
-              collection.push({
-                code: `${symbol}`,
-                issuer: "",
-                image: "",
-                domain: "",
-                contractId,
-                name,
-              });
+      if (isSorobanSuported && sorobanBalances.length) {
+        // we can't swap with tokens yet, so don't show tokens
+        if (!isSwap) {
+          sorobanBalances.forEach(({ symbol, contractId, name }) => {
+            // TODO:
+            // interestingly, if an ascii value is set for symbol
+            // it gets parsed and doesn't
+            // match the original value after this. How to escape this?
+            collection.push({
+              code: `${symbol}`,
+              issuer: "",
+              image: "",
+              domain: "",
+              contractId,
+              name,
             });
-          }
+          });
         }
       }
 
@@ -122,8 +127,9 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     balances,
     networkUrl,
     managingAssets,
-    isExperimentalModeEnabled,
+    isSorobanSuported,
     sorobanBalances,
+    isSwap,
   ]);
 
   return (
@@ -135,12 +141,12 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
       )}
       <SubviewHeader
         title="Choose Asset"
-        customBackIcon={!managingAssets ? <Icon.X /> : undefined}
+        customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
       />
       <div className="ChooseAsset__wrapper">
         <div
           className={`ChooseAsset__assets${
-            managingAssets && isExperimentalModeEnabled ? "--short" : ""
+            managingAssets && isSorobanSuported ? "--short" : ""
           }`}
           ref={ManageAssetRowsWrapperRef}
         >
@@ -162,22 +168,22 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         </div>
         {managingAssets && (
           <div className="ChooseAsset__button-container">
-            {isExperimentalModeEnabled ? (
+            <div className="ChooseAsset__button">
+              <Link to={ROUTES.searchAsset}>
+                <Button size="md" isFullWidth variant="secondary">
+                  {t("Add another asset")}
+                </Button>
+              </Link>
+            </div>
+            {isSorobanSuported ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
-                  <Button fullWidth variant={Button.variant.tertiary}>
+                  <Button size="md" isFullWidth variant="secondary">
                     {t("Add Soroban token")}
                   </Button>
                 </Link>
               </div>
             ) : null}
-            <div className="ChooseAsset__button">
-              <Link to={ROUTES.searchAsset}>
-                <Button fullWidth variant={Button.variant.tertiary}>
-                  {t("Add another asset")}
-                </Button>
-              </Link>
-            </div>
           </div>
         )}
       </div>

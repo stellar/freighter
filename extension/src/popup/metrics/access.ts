@@ -3,6 +3,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   grantAccess,
   rejectAccess,
+  signEntry,
   signTransaction,
   signBlob,
   rejectTransaction,
@@ -33,6 +34,14 @@ registerHandler<AppState>(signBlob.fulfilled, () => {
     localStorage.getItem(METRICS_DATA) || "{}",
   );
   emitMetric(METRIC_NAMES.signBlob, {
+    accountType: metricsData.accountType,
+  });
+});
+registerHandler<AppState>(signEntry.fulfilled, () => {
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+  emitMetric(METRIC_NAMES.signAuthEntry, {
     accountType: metricsData.accountType,
   });
 });

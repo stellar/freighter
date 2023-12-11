@@ -1,19 +1,17 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Button, Notification } from "@stellar/design-system";
 
 import { emitMetric } from "helpers/metrics";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo } from "popup/helpers/navigate";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { SubmitButtonWrapper } from "popup/basics/Forms";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 import { OnboardingHeader } from "popup/components/Onboarding";
-import { Button } from "popup/basics/buttons/Button";
-import SuccessIllo from "popup/assets/illo-success-screen.svg";
 import ExtensionIllo from "popup/assets/illo-extension.png";
 
 import "./styles.scss";
@@ -28,15 +26,12 @@ const AvoidScamsWarningBlock = () => {
 
   return (
     <div className="FullscreenSuccessMessage__infoBlock">
-      <InfoBlock variant={InfoBlock.variant.warning}>
+      <Notification variant="primary" title={t("Keep your account safe")}>
         <div className="InfoBlock__content">
-          <div className="InfoBlock__header">
-            {t("Avoid scams and keep your account safe")}
-          </div>
           <ul className="FullscreenSuccessMessage__infoBlock__list">
             <li>
               {t(
-                "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
+                "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website",
               )}
             </li>
             <li>
@@ -51,7 +46,7 @@ const AvoidScamsWarningBlock = () => {
             </li>
           </ul>
         </div>
-      </InfoBlock>
+      </Notification>
     </div>
   );
 };
@@ -71,7 +66,9 @@ const MnemonicPhraseConfirmedMessage = () => {
       <AvoidScamsWarningBlock />
       <SubmitButtonWrapper>
         <Button
-          fullWidth
+          size="md"
+          variant="primary"
+          isFullWidth
           onClick={() => {
             emitMetric(METRIC_NAMES.accountCreatorFinished);
             if (isChrome()) {
@@ -81,7 +78,7 @@ const MnemonicPhraseConfirmedMessage = () => {
             }
           }}
         >
-          {isChrome() ? t("CONTINUE") : t("ALL DONE")}
+          {isChrome() ? t("Continue") : t("All Done")}
         </Button>
       </SubmitButtonWrapper>
     </>
@@ -96,8 +93,11 @@ const RecoverAccountSuccessMessage = () => {
       <div className="FullscreenSuccessMessage__copy">
         <p>
           {t(
-            "You successfully imported your account. Keep your recovery phrase safe, it’s your responsibility",
-          )}
+            "Awesome, you passed the test! Pin the extension in your browser to access it easily.",
+          )}{" "}
+          <strong>
+            {t("Keep your recovery phrase safe, it’s your responsibility.")}
+          </strong>
         </p>
         {!isChrome() && (
           <p>
@@ -120,7 +120,9 @@ const RecoverAccountSuccessMessage = () => {
       )}
       <SubmitButtonWrapper>
         <Button
-          fullWidth
+          size="md"
+          variant="primary"
+          isFullWidth
           onClick={() => {
             emitMetric(METRIC_NAMES.recoverAccountFinished);
             if (isChrome()) {
@@ -130,7 +132,7 @@ const RecoverAccountSuccessMessage = () => {
             }
           }}
         >
-          {isChrome() ? t("CONTINUE") : t("ALL DONE")}
+          {t("I have my recovery phrase safe")}
         </Button>
       </SubmitButtonWrapper>
     </>
@@ -149,15 +151,8 @@ export const FullscreenSuccessMessage = () => {
       <Header />
       <FullscreenStyle />
       <div className="FullscreenSuccessMessage__wrapper">
-        <div className="FullscreenSuccessMessage__illo-container">
-          <img
-            className="FullscreenSuccessMessage__success-image"
-            src={SuccessIllo}
-            alt="Success"
-          />
-        </div>
         <OnboardingHeader className="FullscreenSuccessMessage__header">
-          {t("Woo, you’re in!")}
+          {t("Wallet created successfully!")}
         </OnboardingHeader>
         <div className="FullscreenSuccessMessage__content-wrapper">
           {IS_MNEMONIC_PHRASE_STATE ? (

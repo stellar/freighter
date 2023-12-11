@@ -3,10 +3,9 @@ import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useHistory } from "react-router-dom";
 import { Field, Form, Formik, FieldProps } from "formik";
-import { Input, TextLink } from "@stellar/design-system";
+import { Button, Input, Link } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
 import { ROUTES } from "popup/constants/routes";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
@@ -58,6 +57,7 @@ export const UnlockAccount = () => {
                 <Field name="password">
                   {({ field }: FieldProps) => (
                     <Input
+                      fieldSize="md"
                       autoComplete="off"
                       id="password-input"
                       placeholder={t("Enter Password")}
@@ -75,12 +75,14 @@ export const UnlockAccount = () => {
               </FormRows>
               <SubmitButtonWrapper>
                 <Button
-                  fullWidth
+                  size="md"
+                  isFullWidth
+                  variant="primary"
                   type="submit"
                   isLoading={isSubmitting}
                   disabled={!(dirty && isValid)}
                 >
-                  {t("LOG IN")}
+                  {t("Log In")}
                 </Button>
               </SubmitButtonWrapper>
             </div>
@@ -90,14 +92,16 @@ export const UnlockAccount = () => {
       <div className="UnlockAccount__import-account">
         <div>{t("Want to add another account?")}</div>
         <div>
-          <TextLink
-            variant={TextLink.variant.secondary}
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+          <Link
+            variant="secondary"
+            role="button"
             onClick={() => {
               openTab(newTabHref(ROUTES.recoverAccount));
             }}
           >
             {t("Import using account seed phrase")}
-          </TextLink>
+          </Link>
         </div>
       </div>
     </div>

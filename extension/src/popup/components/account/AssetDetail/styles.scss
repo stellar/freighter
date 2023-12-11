@@ -1,6 +1,6 @@
 .AssetDetail {
   height: var(--popup--height);
-  overflow-x: hidden;
+  overflow: hidden;
   position: relative;
 
   &__wrapper {
@@ -9,6 +9,7 @@
 
   .SubviewHeader {
     padding-bottom: 0.25rem;
+    height: auto;
   }
 
   &__available {
@@ -26,7 +27,7 @@
       height: 0.75rem;
 
       svg {
-        stroke: rgba(255, 255, 255, 0.6);
+        fill: rgba(255, 255, 255, 0.6);
       }
     }
   }
@@ -114,7 +115,7 @@
     }
 
     &__total-available-row {
-      border-top: 1px solid var(--button-bg--tertiary);
+      border-top: 1px solid var(--color-gray-30);
       color: #fff;
       display: flex;
       justify-content: space-between;

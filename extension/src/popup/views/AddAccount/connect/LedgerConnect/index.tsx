@@ -4,12 +4,11 @@ import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
-import { InfoBlock } from "@stellar/design-system";
+import { Button, Notification } from "@stellar/design-system";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { AppDispatch } from "popup/App";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { Button } from "popup/basics/buttons/Button";
 import Ledger from "popup/assets/ledger.png";
 import LedgerConnected from "popup/assets/ledger-connected.png";
 import { importHardwareWallet } from "popup/ducks/accountServices";
@@ -71,7 +70,9 @@ export const LedgerErrorBlock = ({ error }: { error: LEDGER_ERROR }) => {
     return null;
   }
   return (
-    <InfoBlock variant={InfoBlock.variant.warning}>{errorMessage}</InfoBlock>
+    <Notification variant="error" title="Error">
+      {errorMessage}
+    </Notification>
   );
 };
 
@@ -116,8 +117,9 @@ export const LedgerConnect = () => {
     if (ledgerConnectSuccessful) {
       return (
         <Button
-          fullWidth
-          variant={Button.variant.tertiary}
+          size="md"
+          isFullWidth
+          variant="secondary"
           onClick={() => window.close()}
         >
           Done
@@ -126,8 +128,9 @@ export const LedgerConnect = () => {
     }
     return (
       <Button
-        fullWidth
-        variant={Button.variant.tertiary}
+        size="md"
+        isFullWidth
+        variant="secondary"
         onClick={handleConnect}
         isLoading={isDetecting}
       >

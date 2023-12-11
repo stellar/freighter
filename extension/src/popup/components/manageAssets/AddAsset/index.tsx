@@ -1,19 +1,15 @@
 import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Input } from "@stellar/design-system";
+import { Button, Input, Notification } from "@stellar/design-system";
 import { Form, Formik, Field, FieldProps } from "formik";
-import StellarSdk from "stellar-sdk";
+import { Networks, StellarToml } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "popup/basics/buttons/Button";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
-
-import { CURRENCY } from "@shared/api/types";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 
@@ -27,8 +23,8 @@ const initialValues: FormValues = {
 };
 
 interface AssetDomainToml {
-  CURRENCIES?: CURRENCY[];
-  DOCUMENTATION?: { ORG_URL: string };
+  CURRENCIES?: StellarToml.Api.Currency[];
+  DOCUMENTATION?: StellarToml.Api.Documentation;
   NETWORK_PASSPHRASE?: string;
 }
 
@@ -52,9 +48,7 @@ export const AddAsset = () => {
     let assetDomainToml = {} as AssetDomainToml;
 
     try {
-      assetDomainToml = await StellarSdk.StellarTomlResolver.resolve(
-        assetDomainUrl.host,
-      );
+      assetDomainToml = await StellarToml.Resolver.resolve(assetDomainUrl.host);
     } catch (e) {
       console.error(e);
     }
@@ -66,7 +60,7 @@ export const AddAsset = () => {
 
       // check toml file for network passphrase
       const tomlNetworkPassphrase =
-        assetDomainToml.NETWORK_PASSPHRASE || StellarSdk.Networks.PUBLIC;
+        assetDomainToml.NETWORK_PASSPHRASE || Networks.PUBLIC;
 
       if (tomlNetworkPassphrase === networkPassphrase) {
         setAssetRows(
@@ -93,6 +87,7 @@ export const AddAsset = () => {
                 <Field name="assetDomain">
                   {({ field }: FieldProps) => (
                     <Input
+                      fieldSize="md"
                       autoComplete="off"
                       id="assetDomain"
                       placeholder={`${t("Asset domain")}, e.g. “centre.io”`}
@@ -108,7 +103,10 @@ export const AddAsset = () => {
               </div>
               <div className="AddAsset__results">
                 {isCurrencyNotFound ? (
-                  <InfoBlock>{t("Asset not found")}</InfoBlock>
+                  <Notification
+                    variant="primary"
+                    title={t("Asset not found")}
+                  />
                 ) : null}
                 {assetRows.length ? (
                   <>
@@ -132,7 +130,9 @@ export const AddAsset = () => {
               </div>
               <div>
                 <Button
-                  fullWidth
+                  size="md"
+                  variant="primary"
+                  isFullWidth
                   type="submit"
                   isLoading={isSubmitting}
                   disabled={!(dirty && isValid)}

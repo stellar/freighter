@@ -11,11 +11,11 @@
     }
 
     .AccountListIdenticon__active-wrapper.active {
-      border-color: var(--pal-brand-primary-on);
+      border-color: var(--color-white);
     }
 
     &::before {
-      content: none;
+      content: none !important;
     }
   }
 
@@ -27,7 +27,7 @@
   }
 
   &__option-tag {
-    color: var(--secondary-text);
+    color: var(--color-gray-70);
     flex: 1;
     text-align: left;
     font-size: 0.875rem;

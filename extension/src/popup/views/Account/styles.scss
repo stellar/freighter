@@ -17,6 +17,10 @@
     width: 67%;
     font-size: 0.875rem;
     line-height: 1.375rem;
+
+    .Tooltip {
+      padding: 0.125rem 0.375rem;
+    }
   }
 
   &__send-receive-display {
@@ -45,14 +49,14 @@
   }
 
   &__account-name {
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     width: 100%;
     font-weight: var(--font-weight-medium);
   }
 
   &__account-num {
     align-items: center;
-    color: var(--secondary-text);
+    color: var(--color-gray-70);
     gap: 0.5rem;
     display: flex;
     width: 100%;
@@ -73,5 +77,10 @@
     .AccountAssets__asset {
       margin: 2rem 0;
     }
+  }
+
+  &__assets-button {
+    display: flex;
+    justify-content: center;
   }
 }

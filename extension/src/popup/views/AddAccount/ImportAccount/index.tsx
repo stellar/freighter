@@ -2,7 +2,13 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Form, Field, FieldProps, Formik } from "formik";
 import { bool as YupBool, object as YupObject, string as YupString } from "yup";
-import { Checkbox, Input } from "@stellar/design-system";
+import {
+  Button,
+  Checkbox,
+  Icon,
+  Input,
+  Notification,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
@@ -10,9 +16,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
-import { Button } from "popup/basics/buttons/Button";
 import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -63,20 +67,15 @@ export const ImportAccount = () => {
     <div className="ImportAccount">
       <SubviewHeader title={t("Import Stellar Secret Key")} />
       <div className="ImportAccount__warning-block">
-        <InfoBlock variant={InfoBlock.variant.warning}>
-          <div>
-            <div className="ImportAccount__warning-header">
-              {t("read before importing your key")}
-            </div>
-            <div className="ImportAccount__warning-copy">
-              <p>
-                {t(
-                  "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension.",
-                )}
-              </p>
-            </div>
-          </div>
-        </InfoBlock>
+        <Notification
+          variant="warning"
+          icon={<Icon.Warning />}
+          title={t("Read before importing your key")}
+        >
+          {t(
+            "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension.",
+          )}
+        </Notification>
       </div>
       <Formik
         initialValues={initialValues}
@@ -89,6 +88,7 @@ export const ImportAccount = () => {
               <Field name="privateKey">
                 {({ field }: FieldProps) => (
                   <Input
+                    fieldSize="md"
                     autoComplete="off"
                     id="privateKey-input"
                     type="password"
@@ -101,6 +101,7 @@ export const ImportAccount = () => {
               <Field name="password">
                 {({ field }: FieldProps) => (
                   <Input
+                    fieldSize="md"
                     autoComplete="off"
                     id="password-input"
                     type="password"
@@ -113,6 +114,7 @@ export const ImportAccount = () => {
               <Field name="authorization">
                 {({ field }: FieldProps) => (
                   <Checkbox
+                    fieldSize="md"
                     autoComplete="off"
                     id="authorization-input"
                     label={t(
@@ -125,14 +127,17 @@ export const ImportAccount = () => {
             </FormRows>
             <div className="ImportAccount__btn-row">
               <Button
-                fullWidth
-                variant={Button.variant.tertiary}
+                size="md"
+                isFullWidth
+                variant="secondary"
                 onClick={() => navigateTo(ROUTES.account)}
               >
                 {t("Cancel")}
               </Button>
               <Button
-                fullWidth
+                size="md"
+                isFullWidth
+                variant="primary"
                 type="submit"
                 isLoading={isSubmitting}
                 disabled={!(dirty && isValid)}

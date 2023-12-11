@@ -19,17 +19,13 @@
   --back--button-dimension: 1rem;
   --back--button-z-index: 2;
 
-  // TODO: migrate to SDS
-  --background-color: #1f212a;
-  --button-bg--tertiary: #303448;
-  --button-bg--primary: #6432f1;
-  --secondary-text: #797a7f;
-
   --dropdown-animation: 0.3s ease-out;
+
+  --color-shadow-rgb: 0, 0, 0;
 }
 
 body {
-  background: var(--background-color) !important;
+  color: var(--color-gray-80);
   overscroll-behavior: none;
   margin: 0;
   padding: 0;
@@ -48,10 +44,51 @@ a {
 #root {
   position: relative;
   height: 100%;
+  // TODO: update in SDS?
+  min-height: auto !important;
+  min-width: auto !important;
+  display: block !important;
+
+  // TODO: fix in SDS
+  ul {
+    padding-left: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 }
 
 .simplebar-content {
   height: 100%;
+}
+
+.simplebar-scrollbar::before {
+  background: var(--color-gray-40);
+}
+
+// Form layout
+.FormLayoutView {
+  height: 100%;
+
+  .FormRows {
+    height: 100%;
+  }
+
+  .SubmitButtonWrapper {
+    margin-top: auto;
+  }
+}
+
+// TODO: fix in SDS
+.Notification {
+  border-radius: 0.25rem;
 }
 
 // TODO: Update in SDS
@@ -69,15 +106,14 @@ a {
 }
 
 * {
-  scrollbar-color: rgba(var(--pal-shadow-rbg), 0.25)
-    var(--pal-background-primary);
+  scrollbar-color: rgba(var(--color-shadow-rgb), 0.25) var(--color-gray-00);
 
   &::-webkit-scrollbar {
-    background-color: var(--pal-background-primary);
+    background-color: var(--color-gray-00);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(var(--pal-shadow-rbg), 0.25);
+    background: rgba(var(--color-shadow-rgb), 0.25);
     border-radius: 0.5rem;
   }
 }

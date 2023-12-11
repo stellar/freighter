@@ -6,23 +6,31 @@
   align-items: center;
 
   &__wrapper {
-    max-width: 24rem;
+    max-width: 31rem;
   }
 
   &__title {
     font-size: 1.5rem;
     line-height: 2.25rem;
     text-align: center;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
+    margin-bottom: 1rem;
+    font-weight: var(--font-weight-medium);
   }
 
   &__caption {
     line-height: 1.5rem;
-    margin: 2rem 0;
-    color: var(--pal-text-tertiary);
+    margin-bottom: 2rem;
+    color: var(--color-gray-70);
+
+    div:not(:last-child) {
+      margin-bottom: 0.4rem;
+    }
   }
 
   &__img {
+    margin-bottom: 2rem;
+
     img {
       width: 100%;
     }

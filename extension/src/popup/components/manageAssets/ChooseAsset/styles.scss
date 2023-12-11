@@ -21,7 +21,7 @@
 
   &__assets {
     flex-grow: 1;
-    height: 27.75rem;
+    height: 28.75rem;
 
     &--short {
       flex-grow: 1;
@@ -37,7 +37,7 @@
 
   &__button {
     a {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
     }
   }
 }

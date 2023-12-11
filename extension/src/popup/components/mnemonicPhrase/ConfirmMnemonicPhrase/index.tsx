@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Form, Formik, FormikHelpers, FormikValues } from "formik";
 import { useSelector, useDispatch } from "react-redux";
-import { Card } from "@stellar/design-system";
+import { Button, Card } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -9,7 +9,6 @@ import {
   authErrorSelector,
 } from "popup/ducks/accountServices";
 import { FormError, SubmitButtonWrapper } from "popup/basics/Forms";
-import { Button } from "popup/basics/buttons/Button";
 
 import {
   OnboardingScreen,
@@ -84,7 +83,7 @@ export const ConfirmMnemonicPhrase = ({
           {({ dirty, isSubmitting, handleChange }) => (
             <Form className="ConfirmMnemonicPhrase--form-wrapper">
               <div className="ConfirmMnemonicPhrase__selected-words-wrapper">
-                <Card variant={Card.variant.highlight}>
+                <Card variant="secondary">
                   <ul
                     className="ConfirmMnemonicPhrase__selected-words-text"
                     onCopy={(e) => e.preventDefault()}
@@ -111,13 +110,15 @@ export const ConfirmMnemonicPhrase = ({
               </div>
               <SubmitButtonWrapper>
                 <Button
+                  size="md"
                   data-testid="display-mnemonic-phrase-confirm-btn"
-                  fullWidth
+                  isFullWidth
+                  variant="primary"
                   type="submit"
                   disabled={!dirty && !!joinSelectedWords().length}
                   isLoading={isSubmitting}
                 >
-                  {t("NEXT")}
+                  {t("Next")}
                 </Button>
               </SubmitButtonWrapper>
             </Form>

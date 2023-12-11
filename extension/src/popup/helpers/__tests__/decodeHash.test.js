@@ -19,9 +19,7 @@ describe("decodeMemo", () => {
       _switch: {
         name: MEMO_TYPES.MEMO_HASH,
       },
-      _value: {
-        data: [84, 104, 105],
-      },
+      _value: [84, 104, 105],
     };
 
     expect(decodeMemo(MEMO)).toBe("546869");
@@ -31,9 +29,7 @@ describe("decodeMemo", () => {
       _switch: {
         name: MEMO_TYPES.MEMO_TEXT,
       },
-      _value: {
-        data: [97, 115, 100, 102],
-      },
+      _value: [97, 115, 100, 102],
     };
 
     expect(decodeMemo(MEMO)).toBe("asdf");

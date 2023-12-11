@@ -3,15 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
 import { useTranslation } from "react-i18next";
-import {
-  Input,
-  Icon,
-  TextLink,
-  Card,
-  DetailsTooltip,
-} from "@stellar/design-system";
+import { Input, Icon, Link, Card, Button } from "@stellar/design-system";
 
-import { Button } from "popup/basics/buttons/Button";
 import {
   transactionDataSelector,
   saveAllowedSlippage,
@@ -19,6 +12,7 @@ import {
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import "./styles.scss";
@@ -43,19 +37,19 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
       <SubviewHeader
         title="Allowed Slippage"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.X />}
+        customBackIcon={<Icon.Close />}
         rightButton={
-          <DetailsTooltip
+          <InfoTooltip
             // TODO - add link to FAQ when added
-            details={
+            infoText={
               <span>
                 {t("Allowed downward variation in the destination amount")}
               </span>
             }
-            tooltipPosition={DetailsTooltip.tooltipPosition.BOTTOM}
+            placement="bottom"
           >
-            <span></span>
-          </DetailsTooltip>
+            <></>
+          </InfoTooltip>
         }
       />
       <div className="Slippage">
@@ -120,6 +114,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                 <Field name="customSlippage">
                   {({ field }: FieldProps) => (
                     <Input
+                      fieldSize="md"
                       id="custom-input"
                       placeholder={`${t("Custom")} %`}
                       type="number"
@@ -133,21 +128,24 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                   )}
                 </Field>
               </div>
-              <TextLink
-                underline
-                variant={TextLink.variant.secondary}
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+              <Link
+                isUnderline
+                variant="secondary"
+                role="button"
                 onClick={() => {
                   setFieldValue("presetSlippage", defaultSlippage);
                   setFieldValue("customSlippage", "");
                 }}
               >
                 {t("Set default")}
-              </TextLink>
+              </Link>
               <div className="SendPayment__btn-continue">
                 <Button
-                  fullWidth
+                  size="md"
+                  isFullWidth
                   disabled={!values.presetSlippage && !values.customSlippage}
-                  variant={Button.variant.tertiary}
+                  variant="secondary"
                   type="submit"
                 >
                   {t("Done")}

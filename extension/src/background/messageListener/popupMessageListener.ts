@@ -1,6 +1,6 @@
+import { Store } from "redux";
+import { Keypair, Transaction, TransactionBuilder, hash } from "stellar-sdk";
 import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
-import StellarSdk from "stellar-sdk";
-import * as SorobanSdk from "soroban-client";
 import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
@@ -86,15 +86,11 @@ import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
-import { Store } from "redux";
 
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Array<{
-  sign: (sourceKeys: {}) => void;
-  toXDR: () => void;
-}> = [];
+export const transactionQueue: Array<Transaction> = [];
 export const blobQueue: Array<{
   isDomainListedAllowed: boolean;
   domain: string;
@@ -102,6 +98,13 @@ export const blobQueue: Array<{
   blob: string;
   url: string;
   accountToSign: string;
+}> = [];
+
+export const authEntryQueue: Array<{
+  accountToSign: string;
+  tab: browser.Tabs.Tab | undefined;
+  entry: string; // xdr.SorobanAuthorizationEntry
+  url: string;
 }> = [];
 
 interface KeyPair {
@@ -389,7 +392,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     try {
       await _unlockKeystore({ keyID, password });
-      sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
+      sourceKeys = Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
       return { error: "Please enter a valid secret key/password combination" };
@@ -892,13 +895,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signTransaction = async () => {
+  const signTransaction = () => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
 
       let response;
 
@@ -929,9 +930,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
-      const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-      const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
 
       const blob = blobQueue.pop();
       const response = blob
@@ -949,6 +948,28 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
+  const signAuthEntry = async () => {
+    const privateKey = privateKeySelector(sessionStore.getState());
+
+    if (privateKey.length) {
+      const sourceKeys = Keypair.fromSecret(privateKey);
+      const authEntry = authEntryQueue.pop();
+
+      const response = authEntry
+        ? await sourceKeys.sign(hash(Buffer.from(authEntry.entry, "base64")))
+        : null;
+
+      const entryResponse = responseQueue.pop();
+
+      if (typeof entryResponse === "function") {
+        entryResponse(response);
+        return {};
+      }
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const rejectTransaction = () => {
     transactionQueue.pop();
     const response = responseQueue.pop();
@@ -957,15 +978,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
   };
 
-  const signFreighterTransaction = async () => {
+  const signFreighterTransaction = () => {
     const { transactionXDR, network } = request;
-    const isExperimentalModeEnabled = await getIsExperimentalModeEnabled();
-    const SDK = isExperimentalModeEnabled ? SorobanSdk : StellarSdk;
-    const transaction = SDK.TransactionBuilder.fromXDR(transactionXDR, network);
+    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = SDK.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -976,14 +995,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const signFreighterSorobanTransaction = () => {
     const { transactionXDR, network } = request;
 
-    const transaction = SorobanSdk.TransactionBuilder.fromXDR(
-      transactionXDR,
-      network,
-    );
+    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = SorobanSdk.Keypair.fromSecret(privateKey);
+      const sourceKeys = Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -1037,8 +1053,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     } = request;
 
-    const currentIsExperimentalModeEnabled =
-      await getIsExperimentalModeEnabled();
+    const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
@@ -1195,8 +1210,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addTokenId = async () => {
-    const { tokenId } = request;
-    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const { tokenId, network } = request;
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdList = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     const accountTokenIdList = tokenIdList[keyId] || [];
@@ -1207,18 +1223,45 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     accountTokenIdList.push(tokenId);
     await localStore.setItem(TOKEN_ID_LIST, {
-      ...tokenIdList,
-      [keyId]: accountTokenIdList,
+      ...tokenIdsByNetwork,
+      [network]: {
+        ...tokenIdList,
+        [keyId]: accountTokenIdList,
+      },
     });
 
     return { accountTokenIdList };
   };
 
   const getTokenIds = async () => {
-    const tokenIdList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const { network } = request;
+    const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdsByKey = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
-    return { tokenIdList: tokenIdList[keyId] || [] };
+    return { tokenIdList: tokenIdsByKey[keyId] || [] };
+  };
+
+  const removeTokenId = async () => {
+    const { contractId, network } = request;
+
+    const tokenIdsList = (await localStore.getItem(TOKEN_ID_LIST)) || {};
+    const tokenIdsByNetwork = tokenIdsList[network] || {};
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+
+    const accountTokenIdList = tokenIdsByNetwork[keyId] || [];
+    const updatedTokenIdList = accountTokenIdList.filter(
+      (id: string) => id !== contractId,
+    );
+
+    await localStore.setItem(TOKEN_ID_LIST, {
+      ...tokenIdsList,
+      [network]: {
+        [keyId]: updatedTokenIdList,
+      },
+    });
+
+    return { tokenIdList: updatedTokenIdList };
   };
 
   const messageResponder: MessageResponder = {
@@ -1242,11 +1285,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.SIGN_BLOB]: signBlob,
+    [SERVICE_TYPES.SIGN_AUTH_ENTRY]: signAuthEntry,
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
-    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]:
-      signFreighterSorobanTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]: signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
@@ -1262,6 +1305,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
+    [SERVICE_TYPES.REMOVE_TOKEN_ID]: removeTokenId,
     [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
   };
 

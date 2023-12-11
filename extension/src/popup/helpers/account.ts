@@ -1,4 +1,4 @@
-import StellarSdk, { Horizon } from "stellar-sdk";
+import { Horizon } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   AssetType,
@@ -8,13 +8,14 @@ import {
   SorobanBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
   isTestnet,
 } from "helpers/stellar";
-import { getAttrsFromSorobanHorizonOp, SorobanTokenInterface } from "./soroban";
+import { getAttrsFromSorobanHorizonOp } from "./soroban";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -40,11 +41,11 @@ export const sortBalances = (
   return collection.concat(_sorobanBalances).concat(lpBalances);
 };
 
-export const getIsPayment = (type: Horizon.OperationResponseType) =>
+export const getIsPayment = (type: Horizon.HorizonApi.OperationResponseType) =>
   [
-    Horizon.OperationResponseType.payment,
-    Horizon.OperationResponseType.pathPayment,
-    Horizon.OperationResponseType.pathPaymentStrictSend,
+    Horizon.HorizonApi.OperationResponseType.payment,
+    Horizon.HorizonApi.OperationResponseType.pathPayment,
+    Horizon.HorizonApi.OperationResponseType.pathPaymentStrictSend,
   ].includes(type);
 
 export const getIsSupportedSorobanOp = (
@@ -226,7 +227,7 @@ export const isNetworkUrlValid = (
 
   try {
     // eslint-disable-next-line no-new
-    new StellarSdk.Server(networkUrl, { allowHttp: isHttpAllowed });
+    new Horizon.Server(networkUrl, { allowHttp: isHttpAllowed });
   } catch (e) {
     console.error(e);
     isValid = false;

@@ -19,6 +19,8 @@ export const METRIC_NAMES = {
   viewRecoverAccount: "loaded screen: recover account",
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
+  viewSignBlob: "loaded screen: sign blob",
+  viewSignAuthEntry: "loaded screen: sign auth entry",
   viewUnlockAccount: "loaded screen: unlock account",
   viewVerifyAccount: "loaded screen: verify account",
   viewUnlockBackupPhrase: "loaded screen: unlock backup phrase",
@@ -116,6 +118,9 @@ export const METRIC_NAMES = {
   signBlob: "sign blob: confirmed",
   rejectBlob: "sign blob: rejected",
 
+  signAuthEntry: "sign auth entry: confirmed",
+  rejectAuthEntry: "sign auth entry: rejected",
+
   backupPhraseSuccess: "backup phrase: success",
   backupPhraseFail: "backup phrase: error",
 
@@ -125,4 +130,6 @@ export const METRIC_NAMES = {
   viewPublicKeyAccountRenamed: "viewPublicKey: renamed account",
   viewPublicKeyCopy: "viewPublicKey: copied public key",
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
+
+  viewLeaveFeedback: "loaded screen: leave feedback",
 };

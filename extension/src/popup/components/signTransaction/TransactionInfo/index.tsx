@@ -21,7 +21,7 @@ const MemoDisplay = ({
         label={t("Not defined")}
         altText="Error"
         icon={<Icon.Info />}
-        variant={IconButton.variant.error}
+        variant="error"
       />
     );
   }
@@ -33,8 +33,8 @@ const MemoDisplay = ({
 };
 
 interface TransactionInfoProps {
-  _fee: number;
-  _sequence: string;
+  _fee: string;
+  _sequence?: string;
   isFeeBump?: boolean;
   isMemoRequired: boolean;
   memo?: string;

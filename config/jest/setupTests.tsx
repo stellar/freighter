@@ -15,6 +15,7 @@ const { window } = jsdom;
 global.fetch = fetch;
 window.fetch = fetch;
 global.DEV_SERVER = true;
+global.DEV_EXTENSION = true;
 global.PRODUCTION = false;
 global.EXPERIMENTAL = false;
 

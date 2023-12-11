@@ -34,6 +34,7 @@ const initialState: Settings = {
     networkName: "",
     networkUrl: "",
     networkPassphrase: "",
+    sorobanRpcUrl: "",
   } as NetworkDetails,
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
@@ -332,6 +333,12 @@ export const settingsDataSharingSelector = createSelector(
 export const settingsExperimentalModeSelector = createSelector(
   settingsSelector,
   (settings) => settings.isExperimentalModeEnabled,
+);
+
+export const settingsSorobanSupportedSelector = createSelector(
+  settingsSelector,
+  (settings) =>
+    settings.isExperimentalModeEnabled || settings.networkDetails.sorobanRpcUrl,
 );
 
 export const settingsNetworkDetailsSelector = createSelector(

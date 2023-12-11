@@ -7,14 +7,14 @@
     margin-top: 1.5rem;
     font-size: 1rem;
     line-height: 1.5rem;
-    font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-regular);
 
     p {
       color: rgba(255, 255, 255, 0.6);
     }
 
     strong {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
     }
   }
 
@@ -53,10 +53,10 @@
 
   .IconButton {
     &__label {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
     }
     svg {
-      stroke: var(--pal-text-primary);
+      fill: var(--color-gray-90);
     }
   }
 }

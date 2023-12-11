@@ -12,8 +12,8 @@
     margin: 1.5rem 0;
     font-size: 1rem;
     line-height: 1.5rem;
-    font-weight: var(--font-weight-normal);
-    color: var(--pal-text-tertiary);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-gray-60);
     text-align: center;
 
     p {
@@ -38,7 +38,7 @@
     font-weight: var(--font-weight-medium);
     font-size: 1rem;
     line-height: 1.5rem;
-    color: var(--pal-text-primary);
+    color: var(--color-gray-90);
     list-style-type: none;
     padding: 0;
   }

@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
-import { Icon, Loader } from "@stellar/design-system";
-import StellarSdk from "stellar-sdk";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
+import { Asset } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
@@ -12,8 +12,6 @@ import {
   AssetSelect,
   PathPayAssetSelect,
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
-import { InfoBlock } from "popup/basics/InfoBlock";
-import { Button } from "popup/basics/buttons/Button";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
@@ -299,18 +297,17 @@ export const SendAmount = ({
       let defaultDestAsset;
 
       // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
-      if (formik.values.asset !== StellarSdk.Asset.native().toString()) {
-        defaultDestAsset = StellarSdk.Asset.native().toString();
+      if (formik.values.asset !== Asset.native().toString()) {
+        defaultDestAsset = Asset.native().toString();
       } else {
         // otherwise default to first non-native asset if exists
         const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
           (b) =>
-            b !== StellarSdk.Asset.native().toString() &&
-            b.indexOf(LP_IDENTIFIER) === -1,
+            b !== Asset.native().toString() && b.indexOf(LP_IDENTIFIER) === -1,
         );
         defaultDestAsset = nonXlmAssets[0]
           ? nonXlmAssets[0]
-          : StellarSdk.Asset.native().toString();
+          : Asset.native().toString();
       }
 
       dispatch(saveDestinationAsset(defaultDestAsset));
@@ -348,29 +345,34 @@ export const SendAmount = ({
     }
     if (formik.errors.amount === AMOUNT_ERROR.TOO_HIGH) {
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          {t("Entered amount is higher than your balance")}
-        </InfoBlock>
+        <Notification
+          variant="error"
+          title={t("Entered amount is higher than your balance")}
+        />
       );
     }
     if (formik.errors.amount === AMOUNT_ERROR.DEC_MAX) {
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          7 {t("digits after the decimal allowed")}
-        </InfoBlock>
+        <Notification
+          variant="error"
+          title={`7 ${t("digits after the decimal allowed")}`}
+        />
       );
     }
     if (formik.errors.amount === AMOUNT_ERROR.SEND_MAX) {
       return (
-        <InfoBlock variant={InfoBlock.variant.error}>
-          {t("Entered amount is higher than the maximum send amount")} (
-          {formatAmountPreserveCursor(
+        <Notification
+          variant="error"
+          title={`${t(
+            "Entered amount is higher than the maximum send amount",
+          )} (
+          ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
             getAssetDecimals(asset, tokenBalances, isToken),
           )}
-          )
-        </InfoBlock>
+          )`}
+        />
       );
     }
     return null;
@@ -403,7 +405,7 @@ export const SendAmount = ({
                 onClick={() => navigateTo(ROUTES.sendPaymentType)}
                 className="SendAmount__icon-slider"
               >
-                <Icon.Sliders />
+                <Icon.MoreHoriz />
               </button>
             )
           }
@@ -522,6 +524,7 @@ export const SendAmount = ({
             </SimpleBarWrapper>
             <div className="SendAmount__btn-continue">
               <Button
+                size="md"
                 disabled={
                   loadingRate ||
                   formik.values.amount === "0" ||
@@ -530,8 +533,8 @@ export const SendAmount = ({
                   (showSourceAndDestAsset && !destinationAmount)
                 }
                 data-testid="send-amount-btn-continue"
-                fullWidth
-                variant={Button.variant.tertiary}
+                isFullWidth
+                variant="secondary"
                 type="submit"
               >
                 {t("Continue")}

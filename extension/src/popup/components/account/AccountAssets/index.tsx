@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import isEmpty from "lodash/isEmpty";
-import StellarSdk, { Horizon } from "stellar-sdk";
+import { Asset, Horizon } from "stellar-sdk";
 
 import { AssetIcons } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
@@ -167,7 +167,7 @@ export const AccountAssets = ({
     }
   };
 
-  const getLPShareCode = (reserves: Horizon.Reserve[]) => {
+  const getLPShareCode = (reserves: Horizon.HorizonApi.Reserve[]) => {
     if (!reserves[0] || !reserves[1]) {
       return "";
     }
@@ -175,11 +175,11 @@ export const AccountAssets = ({
     let assetA = reserves[0].asset.split(":")[0];
     let assetB = reserves[1].asset.split(":")[0];
 
-    if (assetA === StellarSdk.Asset.native().toString()) {
-      assetA = StellarSdk.Asset.native().code;
+    if (assetA === Asset.native().toString()) {
+      assetA = Asset.native().code;
     }
-    if (assetB === StellarSdk.Asset.native().toString()) {
-      assetB = StellarSdk.Asset.native().code;
+    if (assetB === Asset.native().toString()) {
+      assetB = Asset.native().code;
     }
 
     return `${assetA} / ${assetB} `;
@@ -241,7 +241,7 @@ export const AccountAssets = ({
               <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
-              <div className="asset-amount">
+              <div className="asset-amount" data-testid="asset-amount">
                 {formatAmount(amountVal)} <span>{amountUnit}</span>
               </div>
             </div>

@@ -1,10 +1,9 @@
 import React from "react";
-import { Card } from "@stellar/design-system";
+import { Button, Card } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
-import { Button } from "popup/basics/buttons/Button";
 import { FullscreenStyle } from "popup/components/FullscreenStyle";
 import { Header } from "popup/components/Header";
 
@@ -25,17 +24,19 @@ export const Welcome = () => {
         </div>
         <div className="Welcome__row-screen">
           <div className="Welcome__half-screen">
-            <Card variant={Card.variant.highlight}>
+            <Card variant="secondary">
               <div className="Welcome__heading--small">{t("I’m new!")}</div>
               <div className="Welcome__text">
                 {t("I’m going to need a seed phrase")}
               </div>
               <div className="Welcome__button-container">
                 <Button
-                  fullWidth
+                  size="md"
+                  isFullWidth
+                  variant="primary"
                   onClick={() => navigateTo(ROUTES.accountCreator)}
                 >
-                  {t("CREATE WALLET")}
+                  {t("Create Wallet")}
                 </Button>
               </div>
             </Card>
@@ -50,11 +51,12 @@ export const Welcome = () => {
               </div>
               <div className="Welcome__button-container">
                 <Button
-                  fullWidth
-                  variant={Button.variant.tertiary}
+                  size="md"
+                  isFullWidth
+                  variant="secondary"
                   onClick={() => navigateTo(ROUTES.recoverAccount)}
                 >
-                  {t("IMPORT WALLET")}
+                  {t("Import Wallet")}
                 </Button>
               </div>
             </Card>

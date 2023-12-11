@@ -1,12 +1,12 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Input } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
+import { Networks } from "stellar-sdk";
 
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { Button } from "popup/basics/buttons/Button";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
@@ -17,6 +17,7 @@ import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { addTokenId, authErrorSelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 interface FormValues {
   tokenId: string;
@@ -30,10 +31,13 @@ export const AddToken = () => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const handleSubmit = async (values: FormValues) => {
     const { tokenId } = values;
-    const res = await dispatch(addTokenId(tokenId));
+    const res = await dispatch(
+      addTokenId({ tokenId, network: networkDetails.network as Networks }),
+    );
 
     if (addTokenId.fulfilled.match(res)) {
       emitMetric(METRIC_NAMES.manageAssetAddToken);
@@ -52,6 +56,7 @@ export const AddToken = () => {
                 <Field name="tokenId">
                   {({ field }: FieldProps) => (
                     <Input
+                      fieldSize="md"
                       autoComplete="off"
                       id="tokenId-input"
                       placeholder={t("Enter Token ID")}
@@ -67,7 +72,9 @@ export const AddToken = () => {
                 </Field>
                 <SubmitButtonWrapper>
                   <Button
-                    fullWidth
+                    size="md"
+                    variant="primary"
+                    isFullWidth
                     disabled={!(dirty && isValid)}
                     isLoading={isSubmitting}
                     type="submit"

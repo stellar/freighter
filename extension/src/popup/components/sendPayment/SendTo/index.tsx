@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
-import { Asset, StrKey, MuxedAccount, FederationServer } from "stellar-sdk";
+import { Asset, StrKey, MuxedAccount, Federation } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
-import { Input, Loader, TextLink } from "@stellar/design-system";
+import {
+  Button,
+  Input,
+  Loader,
+  Link,
+  Notification,
+  Icon,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -16,7 +23,6 @@ import {
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import { InfoBlock } from "popup/basics/InfoBlock";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
@@ -24,7 +30,6 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
-import { Button } from "popup/basics/buttons/Button";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveDestination,
@@ -53,21 +58,24 @@ export const AccountDoesntExistWarning = () => {
 
   return (
     <div className="SendTo__info-block">
-      <InfoBlock className="SendTo__info-block">
+      <Notification
+        variant="primary"
+        title={t("The destination account doesn’t exist")}
+      >
         <div>
           {t(
             "The destination account doesn’t exist. Send at least 1 XLM to create account.",
           )}{" "}
-          <TextLink
-            variant={TextLink.variant.secondary}
+          <Link
+            variant="secondary"
             href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
             rel="noreferrer"
             target="_blank"
           >
             {t("Learn more about account creation")}
-          </TextLink>
+          </Link>
         </div>
-      </InfoBlock>
+      </Notification>
     </div>
   );
 };
@@ -77,14 +85,13 @@ const InvalidAddressWarning = () => {
 
   return (
     <div className="SendTo__info-block">
-      <InfoBlock variant={InfoBlock.variant.warning}>
-        <div>
-          <strong>{t("INVALID STELLAR ADDRESS")}</strong>
-          <p>
-            {t("Addresses are uppercase and begin with letters “G“ or “M“.")}
-          </p>
-        </div>
-      </InfoBlock>
+      <Notification
+        variant="warning"
+        icon={<Icon.Warning />}
+        title={t("INVALID STELLAR ADDRESS")}
+      >
+        {t("Addresses are uppercase and begin with letters “G“ or “M“.")}
+      </Notification>
     </div>
   );
 };
@@ -154,7 +161,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       // federation address
       else if (isFederationAddress(inputDest)) {
         try {
-          const fedResp = await FederationServer.resolve(inputDest);
+          const fedResp = await Federation.Server.resolve(inputDest);
           setValidatedPubKey(fedResp.account_id);
           setFedAddress(inputDest);
         } catch (e) {
@@ -217,6 +224,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       />
       <FormRows>
         <Input
+          fieldSize="md"
           autoComplete="off"
           id="destination-input"
           name="destination"
@@ -248,7 +256,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                             setIsLoading(true);
                             // recentAddresses already validated so safe to dispatch
                             if (isFederationAddress(address)) {
-                              const fedResp = await FederationServer.resolve(
+                              const fedResp = await Federation.Server.resolve(
                                 address,
                               );
                               const publicKey = fedResp.account_id;
@@ -298,8 +306,9 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
                     <div className="SendPayment__btn-continue">
                       <Button
-                        fullWidth
-                        variant={Button.variant.tertiary}
+                        size="md"
+                        isFullWidth
+                        variant="secondary"
                         onClick={() => formik.submitForm()}
                         data-testid="send-to-btn-continue"
                       >

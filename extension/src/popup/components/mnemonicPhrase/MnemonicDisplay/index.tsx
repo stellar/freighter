@@ -14,8 +14,8 @@ export const generateMnemonicPhraseDisplay = ({
   mnemonicPhrase = "",
 }: generateMnemonicPhraseDisplayProps) =>
   mnemonicPhrase.split(" ").map((word: string) => {
-    /* 
-      As a security measure, we want to prevent writing the mnemonic phrase to the DOM. 
+    /*
+      As a security measure, we want to prevent writing the mnemonic phrase to the DOM.
       The browser can leak this string into memory where a hacker could possibly access it.
       A solution here is to insert random, hidden words into the string so the browser is
       only has an obfuscated menemonic phrase that can leak into memory.
@@ -62,7 +62,7 @@ export const MnemonicDisplay = ({
   isPopupView,
 }: MnemonicDisplayProps) => (
   <div className="MnemonicDisplay">
-    <Card variant={Card.variant.highlight}>
+    <Card variant="secondary">
       <ol
         onCopy={(e) => e.preventDefault()}
         className={`MnemonicDisplay__ordered-list ${

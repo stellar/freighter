@@ -11,7 +11,7 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 You will need
 
-- Node (>=16.14.0 <17.0.0): https://nodejs.org/en/download/
+- Node (>=18): https://nodejs.org/en/download/
 - Yarn (v1.22.5 or newer): https://classic.yarnpkg.com/en/docs/install
 
 ## Build the extension
@@ -19,7 +19,7 @@ You will need
 To simply build a production version of the extension, install the prerequisites then navigate to this root folder in your command line and run these 2 steps:
 
 ```
-yarn
+yarn setup
 ```
 
 followed by
@@ -33,7 +33,7 @@ This will generate the files that make up the extension in `extension/build`
 ## Starting a dev environment
 
 ```
-yarn
+yarn setup
 yarn start
 ```
 

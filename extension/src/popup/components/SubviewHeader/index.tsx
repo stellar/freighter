@@ -27,6 +27,7 @@ export const SubviewHeader = ({
       />
     ) : null}
     <div className="SubviewHeader--title">{title}</div>
-    {rightButton || <div className="SubviewHeader--spacer"></div>}
+    {rightButton ||
+      (hasBackButton ? <div className="SubviewHeader--spacer"></div> : null)}
   </header>
 );

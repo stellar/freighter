@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
-import FreighterLogoLockup from "popup/assets/logo-lockup-freighter.svg";
+import FreighterLogo from "popup/assets/logo-freighter.svg";
 
 import "./styles.scss";
 
@@ -15,7 +15,7 @@ interface AboutLinkProps {
 
 const AboutLink = ({ children, url }: AboutLinkProps) => (
   <div className="About__link">
-    <Icon.Link2 />
+    <Icon.Link />
     <a target="_blank" rel="noreferrer" href={`https://${url}`}>
       {children || url}
     </a>
@@ -24,12 +24,13 @@ const AboutLink = ({ children, url }: AboutLinkProps) => (
 
 export const About = () => {
   const { t } = useTranslation();
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="About">
       <SubviewHeader title="About" />
       <div>
-        <img alt="Freighter logo" src={FreighterLogoLockup} />
+        <img alt="Freighter logo" src={FreighterLogo} />
       </div>
       <div className="About__body">
         <div className="About__info">
@@ -49,7 +50,7 @@ export const About = () => {
       </div>
 
       <div className="About__copyright">
-        &copy; 2022 Stellar Development Foundation
+        {`© ${currentYear} Stellar Development Foundation`}
       </div>
     </div>
   );

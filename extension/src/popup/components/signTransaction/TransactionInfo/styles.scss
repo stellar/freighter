@@ -4,11 +4,11 @@
   gap: 1rem;
 
   & > div {
-    color: var(--pal-text-tertiary);
+    color: var(--color-gray-60);
     line-height: 1.5rem;
 
     & > :nth-child(2) {
-      color: var(--pal-text-primary);
+      color: var(--color-gray-90);
       margin-top: 0.25rem;
     }
   }
