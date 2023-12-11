@@ -14,6 +14,7 @@ import { emitMetric } from "helpers/metrics";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { View } from "popup/basics/layout/View";
 
 import { Balances } from "@shared/api/types";
 
@@ -143,15 +144,19 @@ export const TrustlineError = ({
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return (
-    <div className="TrustlineError">
-      <div className="TrustlineError__body">
-        <RenderedError
-          errorState={errorState}
-          assetBalance={assetBalance}
-          resultCodes={JSON.stringify(getResultCodes(error))}
-        />
-      </div>
-      <div className="TrustlineError__button">
+    <View>
+      <View.Content>
+        <div className="TrustlineError">
+          <div className="TrustlineError__body">
+            <RenderedError
+              errorState={errorState}
+              assetBalance={assetBalance}
+              resultCodes={JSON.stringify(getResultCodes(error))}
+            />
+          </div>
+        </div>
+      </View.Content>
+      <View.Footer>
         <Button
           size="md"
           isFullWidth
@@ -163,7 +168,7 @@ export const TrustlineError = ({
         >
           {t("Got it")}
         </Button>
-      </div>
-    </div>
+      </View.Footer>
+    </View>
   );
 };
