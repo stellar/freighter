@@ -8,7 +8,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveDestinationAsset,
@@ -92,7 +92,7 @@ export const SendType = () => {
   };
 
   return (
-    <PopupWrapper>
+    <View>
       <SubviewHeader
         title={t("Send Type")}
         customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
@@ -108,44 +108,48 @@ export const SendType = () => {
         onSubmit={() => {}}
       >
         {({ values }) => (
-          <Form>
-            <RadioCheck
-              name="paymentType"
-              title={t("Same source and destination asset")}
-              value={PAYMENT_TYPES.REGULAR}
-              subtext="Most common"
-              tooltipDetails={
-                <span>
-                  {t(
-                    "The destination account receives the same asset and amount sent",
-                  )}
-                </span>
-              }
-              selected={values.paymentType === PAYMENT_TYPES.REGULAR}
-            />
-            <RadioCheck
-              name="paymentType"
-              title={t("Different source and destination assets")}
-              value={PAYMENT_TYPES.PATH_PAYMENT}
-              subtext={t("Less common")}
-              tooltipDetails={
-                <span>
-                  {t(
-                    "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
-                  )}{" "}
-                  <Link
-                    variant="secondary"
-                    href="https://www.ledger.com/stellar-wallet"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    {t("Learn more")}
-                  </Link>
-                </span>
-              }
-              selected={values.paymentType === PAYMENT_TYPES.PATH_PAYMENT}
-            />
-            <div className="SendPayment__btn-continue">
+          <>
+            <View.Content>
+              <Form>
+                <RadioCheck
+                  name="paymentType"
+                  title={t("Same source and destination asset")}
+                  value={PAYMENT_TYPES.REGULAR}
+                  subtext="Most common"
+                  tooltipDetails={
+                    <span>
+                      {t(
+                        "The destination account receives the same asset and amount sent",
+                      )}
+                    </span>
+                  }
+                  selected={values.paymentType === PAYMENT_TYPES.REGULAR}
+                />
+                <RadioCheck
+                  name="paymentType"
+                  title={t("Different source and destination assets")}
+                  value={PAYMENT_TYPES.PATH_PAYMENT}
+                  subtext={t("Less common")}
+                  tooltipDetails={
+                    <span>
+                      {t(
+                        "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
+                      )}{" "}
+                      <Link
+                        variant="secondary"
+                        href="https://www.ledger.com/stellar-wallet"
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {t("Learn more")}
+                      </Link>
+                    </span>
+                  }
+                  selected={values.paymentType === PAYMENT_TYPES.PATH_PAYMENT}
+                />
+              </Form>
+            </View.Content>
+            <View.Footer>
               <Button
                 size="md"
                 isFullWidth
@@ -154,10 +158,10 @@ export const SendType = () => {
               >
                 {t("Done")}
               </Button>
-            </div>
-          </Form>
+            </View.Footer>
+          </>
         )}
       </Formik>
-    </PopupWrapper>
+    </View>
   );
 };

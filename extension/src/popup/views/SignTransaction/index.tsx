@@ -32,12 +32,6 @@ import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { TransactionHeading } from "popup/basics/TransactionHeading";
 
-import {
-  ButtonsContainer,
-  ModalHeader,
-  ModalWrapper,
-} from "popup/basics/Modal";
-
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
@@ -52,6 +46,7 @@ import {
 import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { View } from "popup/basics/layout/View";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
@@ -84,10 +79,10 @@ export const SignTransaction = () => {
     flaggedKeys,
   } = tx;
 
-  /* 
-  Reconstruct the tx from xdr as passing a tx through extension contexts 
-  loses custom prototypes associated with some values. This is fine for most cases 
-  where we just need a high level overview of the tx, like just a list of operations.  
+  /*
+  Reconstruct the tx from xdr as passing a tx through extension contexts
+  loses custom prototypes associated with some values. This is fine for most cases
+  where we just need a high level overview of the tx, like just a list of operations.
   But in this case, we will need the hostFn prototype associated with Soroban tx operations.
   */
 
@@ -187,41 +182,37 @@ export const SignTransaction = () => {
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
-      <ModalWrapper>
-        <WarningMessage
-          variant={WarningMessageVariant.warning}
-          handleCloseClick={() => window.close()}
-          isActive
-          header={`${t("Freighter is set to")} ${networkName}`}
-        >
-          <p>
-            {t("The transaction you’re trying to sign is on")}{" "}
-            {_networkPassphrase}.
-          </p>
-          <p>{t("Signing this transaction is not possible at the moment.")}</p>
-        </WarningMessage>
-      </ModalWrapper>
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={`${t("Freighter is set to")} ${networkName}`}
+      >
+        <p>
+          {t("The transaction you’re trying to sign is on")}{" "}
+          {_networkPassphrase}.
+        </p>
+        <p>{t("Signing this transaction is not possible at the moment.")}</p>
+      </WarningMessage>
     );
   }
 
   if (!isHttpsDomain && !isExperimentalModeEnabled) {
     return (
-      <ModalWrapper>
-        <WarningMessage
-          handleCloseClick={() => window.close()}
-          isActive
-          variant={WarningMessageVariant.warning}
-          header={t("WEBSITE CONNECTION IS NOT SECURE")}
-        >
-          <p>
-            <Trans domain={domain}>
-              The website <strong>{{ domain }}</strong> does not use an SSL
-              certificate. For additional safety Freighter only works with
-              websites that provide an SSL certificate.
-            </Trans>
-          </p>
-        </WarningMessage>
-      </ModalWrapper>
+      <WarningMessage
+        handleCloseClick={() => window.close()}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("WEBSITE CONNECTION IS NOT SECURE")}
+      >
+        <p>
+          <Trans domain={domain}>
+            The website <strong>{{ domain }}</strong> does not use an SSL
+            certificate. For additional safety Freighter only works with
+            websites that provide an SSL certificate.
+          </Trans>
+        </p>
+      </WarningMessage>
     );
   }
 
@@ -234,11 +225,9 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="SignTransaction" data-testid="SignTransaction">
-        <ModalWrapper>
-          <ModalHeader>
-            <strong>{t("Confirm Transaction")}</strong>
-          </ModalHeader>
+      <View data-testid="SignTransaction">
+        <View.AppHeader pageTitle={t("Confirm Transaction")} />
+        <View.Content>
           {isExperimentalModeEnabled ? (
             <WarningMessage
               header="Experimental Mode"
@@ -333,8 +322,8 @@ export const SignTransaction = () => {
             isFeeBump={isFeeBump}
             isMemoRequired={isMemoRequired}
           />
-        </ModalWrapper>
-        <ButtonsContainer>
+        </View.Content>
+        <View.Footer isInline>
           <Button
             isFullWidth
             size="md"
@@ -353,7 +342,7 @@ export const SignTransaction = () => {
           >
             {t("Approve")}
           </Button>
-        </ButtonsContainer>
+        </View.Footer>
         <SlideupModal
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
@@ -366,7 +355,7 @@ export const SignTransaction = () => {
             />
           </div>
         </SlideupModal>
-      </div>
+      </View>
     </>
   );
 };

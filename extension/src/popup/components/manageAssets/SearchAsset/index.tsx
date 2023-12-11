@@ -15,6 +15,7 @@ import { isCustomNetwork } from "helpers/stellar";
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 
@@ -69,7 +70,6 @@ export const SearchAsset = () => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
-  const [maxHeight, setMaxHeight] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
@@ -124,7 +124,6 @@ export const SearchAsset = () => {
   );
 
   useEffect(() => {
-    setMaxHeight(ResultsRef?.current?.clientHeight || 600);
     setHasNoResults(!assetRows.length);
   }, [assetRows]);
 
@@ -141,70 +140,71 @@ export const SearchAsset = () => {
             setHasNoResults(false);
           }}
         >
-          <div className="SearchAsset">
+          <View>
             <SubviewHeader title={t("Choose Asset")} />
-            <FormRows>
-              <div>
-                <Field name="asset">
-                  {({ field }: FieldProps) => (
-                    <Input
-                      fieldSize="md"
-                      autoFocus
-                      autoComplete="off"
-                      id="asset"
-                      placeholder={t("Search for an asset")}
-                      {...field}
-                    />
-                  )}
-                </Field>
-                <div className="SearchAsset__search-copy">
-                  {t("powered by")}{" "}
-                  <a
-                    className="SearchAsset__search-copy"
-                    href="https://stellar.expert"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    stellar.expert
-                  </a>
+            <View.Content>
+              <FormRows>
+                <div>
+                  <Field name="asset">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        fieldSize="md"
+                        autoFocus
+                        autoComplete="off"
+                        id="asset"
+                        placeholder={t("Search for an asset")}
+                        {...field}
+                      />
+                    )}
+                  </Field>
+                  <div className="SearchAsset__search-copy">
+                    {t("powered by")}{" "}
+                    <a
+                      className="SearchAsset__search-copy"
+                      href="https://stellar.expert"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      stellar.expert
+                    </a>
+                  </div>
                 </div>
-              </div>
-              <div
-                className={`SearchAsset__results ${
-                  dirty ? "SearchAsset__results--active" : ""
-                }`}
-                ref={ResultsRef}
-              >
-                {isSearching ? (
-                  <div className="SearchAsset__loader">
-                    <Loader />
+                <div
+                  className={`SearchAsset__results ${
+                    dirty ? "SearchAsset__results--active" : ""
+                  }`}
+                  ref={ResultsRef}
+                >
+                  {isSearching ? (
+                    <div className="SearchAsset__loader">
+                      <Loader />
+                    </div>
+                  ) : null}
+
+                  {assetRows.length ? (
+                    <ManageAssetRows
+                      header={assetRows.length > 1 ? <ResultsHeader /> : null}
+                      assetRows={assetRows}
+                    >
+                      <AddManualAssetLink />
+                    </ManageAssetRows>
+                  ) : null}
+                  {hasNoResults && dirty && !isSearching ? (
+                    <AddManualAssetLink />
+                  ) : null}
+                </div>
+                {!dirty && hasNoResults ? (
+                  <div>
+                    <Link to={ROUTES.addAsset}>
+                      <Button size="md" isFullWidth variant="secondary">
+                        {t("Add asset manually")}
+                      </Button>
+                    </Link>
                   </div>
                 ) : null}
-
-                {assetRows.length ? (
-                  <ManageAssetRows
-                    header={assetRows.length > 1 ? <ResultsHeader /> : null}
-                    assetRows={assetRows}
-                    maxHeight={maxHeight}
-                  >
-                    <AddManualAssetLink />
-                  </ManageAssetRows>
-                ) : null}
-                {hasNoResults && dirty && !isSearching ? (
-                  <AddManualAssetLink />
-                ) : null}
-              </div>
-              {!dirty && hasNoResults ? (
-                <div>
-                  <Link to={ROUTES.addAsset}>
-                    <Button size="md" isFullWidth variant="secondary">
-                      {t("Add asset manually")}
-                    </Button>
-                  </Link>
-                </div>
-              ) : null}
-            </FormRows>
-          </div>
+              </FormRows>
+            </View.Content>
+          </View>
         </Form>
       )}
     </Formik>

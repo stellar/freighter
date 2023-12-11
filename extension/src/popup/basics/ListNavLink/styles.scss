@@ -1,9 +1,11 @@
 .ListNavLink {
   line-height: 1.5rem;
 
-  a {
+  a,
+  span {
     align-items: center;
     color: var(--color-gray-90);
+    cursor: pointer;
     display: flex;
     justify-content: space-between;
   }

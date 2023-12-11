@@ -4,7 +4,6 @@ import { useHistory } from "react-router-dom";
 import { Types } from "@stellar/wallet-sdk";
 
 import { AppDispatch } from "popup/App";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import {
   transactionSubmissionSelector,
   saveAsset,
@@ -25,13 +24,9 @@ import { formatAmount } from "popup/helpers/formatters";
 
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
-  maxHeight: number;
 }
 
-export const SelectAssetRows = ({
-  assetRows,
-  maxHeight,
-}: SelectAssetRowsProps) => {
+export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
   const {
     accountBalances: { balances = {} },
     assetSelect,
@@ -61,12 +56,7 @@ export const SelectAssetRows = ({
     assetSelect.isSource === false;
 
   return (
-    <SimpleBarWrapper
-      className="SelectAssetRows__scrollbar"
-      style={{
-        maxHeight: `${maxHeight}px`,
-      }}
-    >
+    <div className="SelectAssetRows__scrollbar">
       <div className="SelectAssetRows__content">
         {assetRows.map(
           ({
@@ -127,6 +117,6 @@ export const SelectAssetRows = ({
           },
         )}
       </div>
-    </SimpleBarWrapper>
+    </div>
   );
 };

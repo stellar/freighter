@@ -17,6 +17,7 @@ import {
 } from "popup/ducks/settings";
 import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
@@ -133,41 +134,35 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   ]);
 
   return (
-    <div className="ChooseAsset" data-testid="choose-asset">
-      {isLoading && (
-        <div className="ChooseAsset__loader">
-          <Loader size="2rem" />
-        </div>
-      )}
+    <View data-testid="choose-asset">
       <SubviewHeader
         title="Choose Asset"
         customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
       />
-      <div className="ChooseAsset__wrapper">
-        <div
-          className={`ChooseAsset__assets${
-            managingAssets && isSorobanSuported ? "--short" : ""
-          }`}
-          ref={ManageAssetRowsWrapperRef}
-        >
-          {managingAssets ? (
-            <ManageAssetRows
-              assetRows={assetRows}
-              maxHeight={
-                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
-              }
-            />
-          ) : (
-            <SelectAssetRows
-              assetRows={assetRows}
-              maxHeight={
-                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
-              }
-            />
-          )}
+      <View.Content>
+        {isLoading && (
+          <div className="ChooseAsset__loader">
+            <Loader size="2rem" />
+          </div>
+        )}
+        <div className="ChooseAsset__wrapper">
+          <div
+            className={`ChooseAsset__assets${
+              managingAssets && isSorobanSuported ? "--short" : ""
+            }`}
+            ref={ManageAssetRowsWrapperRef}
+          >
+            {managingAssets ? (
+              <ManageAssetRows assetRows={assetRows} />
+            ) : (
+              <SelectAssetRows assetRows={assetRows} />
+            )}
+          </div>
         </div>
+      </View.Content>
+      <View.Footer isInline allowWrap>
         {managingAssets && (
-          <div className="ChooseAsset__button-container">
+          <>
             <div className="ChooseAsset__button">
               <Link to={ROUTES.searchAsset}>
                 <Button size="md" isFullWidth variant="secondary">
@@ -184,9 +179,9 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                 </Link>
               </div>
             ) : null}
-          </div>
+          </>
         )}
-      </div>
-    </div>
+      </View.Footer>
+    </View>
   );
 };

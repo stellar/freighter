@@ -1,12 +1,13 @@
 import React from "react";
 import { Loader } from "@stellar/design-system";
+import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
 
 export const Loading = () => (
-  <div className="Loading">
-    <div className="Loading__wrapper">
+  <View.Content>
+    <div className="Loading">
       <Loader size="5rem" />
     </div>
-  </div>
+  </View.Content>
 );
