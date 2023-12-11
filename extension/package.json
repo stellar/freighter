@@ -44,6 +44,7 @@
     "concurrently": "^5.1.0",
     "copy-webpack-plugin": "^5.1.1",
     "css-loader": "^5.0.0",
+    "dotenv-webpack": "^8.0.1",
     "fetch": "^1.1.0",
     "formik": "^2.1.4",
     "history": "^4",

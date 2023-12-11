@@ -1,1 +1,1 @@
-export const INDEXER_URL = "http://localhost:3002/api/v1";
+export const INDEXER_URL = process.env.INDEXER_URL;
