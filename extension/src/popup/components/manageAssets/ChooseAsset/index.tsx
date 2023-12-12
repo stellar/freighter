@@ -19,7 +19,7 @@ import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { getCanonicalFromAsset } from "helpers/stellar";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { getAssetDomain } from "popup/helpers/getAssetDomain";
 
 import { Balances } from "@shared/api/types";
 
@@ -67,15 +67,12 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         } = sortedBalances[i];
 
         if (code !== "XLM") {
-          const server = stellarSdkServer(networkUrl);
-
           let domain = "";
 
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              const acct = await server.loadAccount(issuer.key);
-              domain = acct.home_domain || "";
+              domain = await getAssetDomain(issuer.key, networkUrl);
             } catch (e) {
               console.error(e);
             }
@@ -165,7 +162,12 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           <>
             <div className="ChooseAsset__button">
               <Link to={ROUTES.searchAsset}>
-                <Button size="md" isFullWidth variant="secondary">
+                <Button
+                  size="md"
+                  isFullWidth
+                  variant="secondary"
+                  data-testid="ChooseAssetAddAssetButton"
+                >
                   {t("Add another asset")}
                 </Button>
               </Link>
@@ -173,7 +175,12 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             {isSorobanSuported ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
-                  <Button size="md" isFullWidth variant="secondary">
+                  <Button
+                    size="md"
+                    isFullWidth
+                    variant="secondary"
+                    data-testid="ChooseAssetAddSorobanTokenButton"
+                  >
                     {t("Add Soroban token")}
                   </Button>
                 </Link>

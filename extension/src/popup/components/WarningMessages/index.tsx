@@ -38,6 +38,7 @@ import {
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
@@ -297,7 +298,10 @@ export const ScamAssetWarning = ({
   useEffect(() => {
     if (warningRef.current) {
       setTimeout(() => {
-        warningRef.current!.style.bottom = "0";
+        // Adding extra check to fix flaky tests
+        if (warningRef.current) {
+          warningRef.current.style.bottom = "0";
+        }
       }, 10);
     }
   }, [warningRef]);
@@ -483,7 +487,10 @@ export const NewAssetWarning = ({
   useEffect(() => {
     if (warningRef.current) {
       setTimeout(() => {
-        warningRef.current!.style.bottom = "0";
+        // Adding extra check to fix flaky tests
+        if (warningRef.current) {
+          warningRef.current.style.bottom = "0";
+        }
       }, 10);
     }
   }, [warningRef]);
@@ -501,19 +508,15 @@ export const NewAssetWarning = ({
     setIsSubmitting(true);
 
     const server = new Horizon.Server(networkDetails.networkUrl);
-    const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new TransactionBuilder(sourceAccount, {
-      fee: xlmToStroop(recommendedFee).toFixed(),
-      networkPassphrase: networkDetails.networkPassphrase,
-    })
-      .addOperation(
-        Operation.changeTrust({
-          asset: new Asset(code, issuer),
-        }),
-      )
-      .setTimeout(180)
-      .build()
-      .toXDR();
+    const transactionXDR = await getManageAssetXDR({
+      publicKey,
+      assetCode: code,
+      assetIssuer: issuer,
+      addTrustline: true,
+      server,
+      recommendedFee,
+      networkDetails,
+    });
 
     if (isHardwareWallet) {
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
@@ -546,10 +549,13 @@ export const NewAssetWarning = ({
   };
 
   return (
-    <div className="NewAssetWarning">
+    <div className="NewAssetWarning" data-testid="NewAssetWarning">
       <View.Content>
         <div className="NewAssetWarning__wrapper" ref={warningRef}>
-          <div className="NewAssetWarning__header">
+          <div
+            className="NewAssetWarning__header"
+            data-testid="NewAssetWarningTitle"
+          >
             {t("Before You Add This Asset")}
           </div>
           <div className="NewAssetWarning__description">
@@ -637,6 +643,7 @@ export const NewAssetWarning = ({
                 onClick={handleSubmit}
                 type="button"
                 isLoading={isSubmitting}
+                data-testid="NewAssetWarningAddButton"
               >
                 {t("Add asset")}
               </Button>
