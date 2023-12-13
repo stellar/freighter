@@ -15,29 +15,43 @@ import "./styles.scss";
 export const DisplayMnemonicPhrase = ({
   mnemonicPhrase,
   setIsConfirmed,
+  isMigration,
 }: {
   mnemonicPhrase: string;
   setIsConfirmed: (confirmed: boolean) => void;
+  isMigration?: boolean;
 }) => {
   const { t } = useTranslation();
 
   return (
     <OnboardingTwoCol data-testid="display-mnemonic-phrase">
       <OnboardingOneCol>
-        <OnboardingHeader>{t("Secret Recovery phrase")}</OnboardingHeader>
+        <OnboardingHeader>
+          {isMigration
+            ? t("Now, let’s create a new mnemonic phrase")
+            : t("Secret Recovery phrase")}
+        </OnboardingHeader>
         <div className="DisplayMnemonicPhrase__content">
-          <p>
-            {t(
-              "Your recovery phrase gives you access to your account and is the",
-            )}{" "}
-            <strong>{t("only way to access it in a new browser")}</strong>.{" "}
-            {t("Keep it in a safe place.")}
-          </p>
-          <p>
-            {t(
-              "For your security, we'll check if you got it right in the next step.",
-            )}
-          </p>
+          {isMigration ? (
+            <p>
+              {t("This new backup phrase will be used for your new accounts.")}
+            </p>
+          ) : (
+            <>
+              <p>
+                {t(
+                  "Your recovery phrase gives you access to your account and is the",
+                )}{" "}
+                <strong>{t("only way to access it in a new browser")}</strong>.{" "}
+                {t("Keep it in a safe place.")}
+              </p>
+              <p>
+                {t(
+                  "For your security, we'll check if you got it right in the next step.",
+                )}
+              </p>
+            </>
+          )}
         </div>
       </OnboardingOneCol>
 

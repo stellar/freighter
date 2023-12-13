@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import { Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { changeNetwork } from "popup/ducks/settings";
+import { NETWORK_NAMES } from "@shared/constants/stellar";
 
 import {
   MigrationHeader,
@@ -16,9 +19,11 @@ import "./styles.scss";
 
 export const MigrationStart = () => {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    await dispatch(changeNetwork({ networkName: NETWORK_NAMES.PUBNET }));
     navigateTo(ROUTES.accountMigrationReviewMigration);
   };
 
