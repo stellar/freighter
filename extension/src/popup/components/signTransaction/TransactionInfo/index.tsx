@@ -3,9 +3,9 @@ import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { stroopToXlm } from "helpers/stellar";
-import { MEMO_TYPES } from "popup/constants/memoTypes";
 
 import "./styles.scss";
+import { MEMO_TYPES } from "popup/constants/memoTypes";
 
 const MemoDisplay = ({
   memo,
@@ -16,11 +16,12 @@ const MemoDisplay = ({
 }) => {
   const { t } = useTranslation();
 
-  const mapMemoLabel = {
+  const mapMemoLabel: any = {
     memoId: "MEMO_ID",
     memoHash: "MEMO_HASH",
     memoText: "MEMO_TEXT",
     memoReturn: "MEMO_RETURN",
+    none: "MEMO_NONE",
   };
 
   if (isMemoRequired) {
