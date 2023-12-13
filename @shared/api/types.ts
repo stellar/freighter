@@ -177,6 +177,7 @@ export type HorizonOperation = any;
 
 export interface AccountBalancesInterface {
   balances: Balances;
+  tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
 }

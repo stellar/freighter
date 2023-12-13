@@ -465,11 +465,13 @@ export const initialState: InitialState = {
     shouldSubmit: true,
   },
   accountBalances: {
+    tokensWithNoBalance: [],
     balances: null,
     isFunded: false,
     subentryCount: 0,
   },
   destinationBalances: {
+    tokensWithNoBalance: [],
     balances: null,
     isFunded: false,
     subentryCount: 0,
@@ -609,7 +611,7 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
-      state.tokensWithNoBalance = []; // TODO
+      state.tokensWithNoBalance = action.payload.tokensWithNoBalance;
       state.accountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {

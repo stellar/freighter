@@ -330,6 +330,7 @@ export const getAccountIndexerBalances = async (
     const formattedBalances = {} as NonNullable<
       AccountBalancesInterface["balances"]
     >;
+    const balanceIds = [] as string[];
     for (const balanceKey of Object.keys(data.balances || {})) {
       const balance = data.balances![balanceKey];
       formattedBalances[balanceKey] = {
@@ -337,15 +338,23 @@ export const getAccountIndexerBalances = async (
         available: new BigNumber(balance.available),
         total: new BigNumber(balance.total),
       };
+      // track token IDs that come back from the server in order to get
+      // the difference between contractIds set in the client and balances returned from server.
+      const [_, assetId] = balanceKey.split(":");
+      if (contractIds.includes(assetId)) {
+        balanceIds.push(assetId);
+      }
     }
     return {
       ...data,
       balances: formattedBalances,
+      tokensWithNoBalance: contractIds.filter((id) => !balanceIds.includes(id)),
     };
   } catch (error) {
     console.error(error);
     return {
       balances: {} as AccountBalancesInterface["balances"],
+      tokensWithNoBalance: [],
       isFunded: false,
       subentryCount: 0,
     };
