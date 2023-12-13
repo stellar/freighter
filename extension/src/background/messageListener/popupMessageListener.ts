@@ -16,7 +16,10 @@ import { BigNumber } from "bignumber.js";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import {
+  stellarSdkServer,
+  submitTx,
+} from "@shared/api/helpers/stellarSdkServer";
 import { calculateSenderMinBalance } from "@shared/helpers/migration";
 
 import {
@@ -105,6 +108,8 @@ import {
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
 
+// number of public keys to auto-import
+const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<(message?: any) => void> = [];
@@ -644,11 +649,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const loadAccount = async () => {
-    /* 
-    The 3.0.0 migration mistakenly sets keyId as a number in older versions. 
+    /*
+    The 3.0.0 migration mistakenly sets keyId as a number in older versions.
     For some users, Chrome went right from version ~2.9.x to 3.0.0, which caused them to miss the below fix to the migration.
     This will fix this issue at load.
-    
+
     keyId being of type number causes issues downstream:
     - we need to be able to use String.indexOf to determine if the keyId belongs to a hardware wallet
     - @stellar/walet-sdk expects a string when dealing unlocking a keystore by keyId
@@ -754,7 +759,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
 
       // lets check first couple of accounts and pre-load them if funded on mainnet
-      const numOfPublicKeysToCheck = 5;
       // eslint-disable-next-line no-restricted-syntax
       for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
         try {
@@ -1165,7 +1169,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
-      /* Disable Mainnet access and automatically switch the user to Futurenet 
+      /* Disable Mainnet access and automatically switch the user to Futurenet
       if user is enabling experimental mode and vice-versa */
       const currentNetworksList = await getNetworksList();
 
@@ -1371,7 +1375,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const mnemonicPublicKeyArr: string[] = [];
 
-    for (let i = 0; i < keyIdList.length; i += 1) {
+    // a bit of brute force; we'll check the number of keyIds the user has plus the number of keyIds we auto-import.
+    const numberOfKeyIdsToCheck = keyIdList.length + numOfPublicKeysToCheck;
+
+    for (let i = 0; i < numberOfKeyIdsToCheck; i += 1) {
       mnemonicPublicKeyArr.push(wallet.getPublicKey(i));
     }
 
@@ -1414,17 +1421,20 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const newWallet = fromMnemonic(migratedMnemonicPhrase);
     const keyIdList: string = await getKeyIdList();
     const fee = xlmToStroop(recommendedFee).toFixed();
-    const server = stellarSdkServer(NETWORK_URLS.TESTNET);
+
+    // we expect all migrations to be done on MAINNET
+    const server = stellarSdkServer(NETWORK_URLS.PUBLIC);
+    const networkPassphrase = Networks.PUBLIC;
 
     /*
       For each migratable balance, we'll go through the following steps:
       1. We create a new keypair that will be the destination account
       2. We send the minimum amount of XLM needed to create the destination acct and also provide
         enough funds to create necessary trustlines
-      3. Replace the old source account with the destination account in redux and in local storage. 
+      3. Replace the old source account with the destination account in redux and in local storage.
         When the user refreshes the app, they will already be logged into their new accounts.
       4. Migrate the trustlines from the source account to destination
-      5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account 
+      5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account
     */
 
     for (let i = 0; i < balancesToMigrate.length; i += 1) {
@@ -1458,14 +1468,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // eslint-disable-next-line no-await-in-loop
       const transaction = await new TransactionBuilder(sourceAccount, {
         fee,
-        networkPassphrase: Networks.TESTNET,
+        networkPassphrase,
       });
 
       // the amount the sender needs to hold to complete the migration
       const senderAccountMinBal = calculateSenderMinBalance({
         minBalance,
         recommendedFee,
-        hasTrustlineBalances: true,
+        trustlineBalancesLength: trustlineBalances.length,
         isMergeSelected,
       });
 
@@ -1491,20 +1501,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       try {
         // eslint-disable-next-line no-await-in-loop
-        await server.submitTransaction(builtTransaction);
+        await submitTx({ server, tx: builtTransaction });
       } catch (e) {
         console.error(e);
         migratedAccount.isMigrated = false;
       }
-
-      // replace the source account with the new one in `allAccounts` and store the keys
-      // eslint-disable-next-line no-await-in-loop
-      await _replaceAccount({
-        mnemonicPhrase: migratedMnemonicPhrase,
-        password,
-        keyPair: newKeyPair,
-        indexToReplace: keyIdIndex,
-      });
 
       // if the preceding step has failed, this will fail as well. Don't bother making the API call
       if (migratedAccount.isMigrated) {
@@ -1519,6 +1520,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             sourceAccount,
             sourceKeys,
             isMergeSelected,
+            networkPassphrase,
           });
         } catch (e) {
           console.error(e);
@@ -1532,7 +1534,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         // eslint-disable-next-line no-await-in-loop
         const mergeTransaction = await new TransactionBuilder(sourceAccount, {
           fee,
-          networkPassphrase: Networks.TESTNET,
+          networkPassphrase,
         });
         mergeTransaction.addOperation(
           Operation.accountMerge({
@@ -1550,11 +1552,22 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
         try {
           // eslint-disable-next-line no-await-in-loop
-          await server.submitTransaction(builtMergeTransaction);
+          await submitTx({ server, tx: builtMergeTransaction });
         } catch (e) {
           console.error(e);
           migratedAccount.isMigrated = false;
         }
+      }
+
+      if (migratedAccount.isMigrated) {
+        // replace the source account with the new one in `allAccounts` and store the keys
+        // eslint-disable-next-line no-await-in-loop
+        await _replaceAccount({
+          mnemonicPhrase: migratedMnemonicPhrase,
+          password,
+          keyPair: newKeyPair,
+          indexToReplace: keyIdIndex,
+        });
       }
 
       migratedAccount.newPublicKey = newKeyPair.publicKey;
