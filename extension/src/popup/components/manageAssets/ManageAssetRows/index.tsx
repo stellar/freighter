@@ -183,6 +183,13 @@ export const ManageAssetRows = ({
     }
   };
 
+  useEffect(
+    () => () => {
+      setAssetSubmitting("");
+    },
+    [],
+  );
+
   // watch submitStatus if used ledger to send transaction
   useEffect(() => {
     if (submitStatus === ActionStatus.ERROR) {

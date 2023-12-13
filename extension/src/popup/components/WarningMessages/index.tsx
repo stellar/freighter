@@ -289,19 +289,21 @@ export const ScamAssetWarning = ({
     if (warningRef.current) {
       warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
     }
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       onClose();
+      clearTimeout(timeout);
     }, 300);
   };
 
   // animate entry
   useEffect(() => {
     if (warningRef.current) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         // Adding extra check to fix flaky tests
         if (warningRef.current) {
           warningRef.current.style.bottom = "0";
         }
+        clearTimeout(timeout);
       }, 10);
     }
   }, [warningRef]);
@@ -483,14 +485,22 @@ export const NewAssetWarning = ({
 
   const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
 
+  useEffect(
+    () => () => {
+      setIsSubmitting(false);
+    },
+    [],
+  );
+
   // animate entry
   useEffect(() => {
     if (warningRef.current) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         // Adding extra check to fix flaky tests
         if (warningRef.current) {
           warningRef.current.style.bottom = "0";
         }
+        clearTimeout(timeout);
       }, 10);
     }
   }, [warningRef]);
@@ -499,8 +509,9 @@ export const NewAssetWarning = ({
     if (warningRef.current) {
       warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
     }
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       onClose();
+      clearTimeout(timeout);
     }, 300);
   };
 
