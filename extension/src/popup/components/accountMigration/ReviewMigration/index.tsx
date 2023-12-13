@@ -81,7 +81,7 @@ const isReadyToMigrate = ({
       calculateSenderMinBalance({
         minBalance,
         recommendedFee,
-        hasTrustlineBalances: Boolean(trustlineBalancesLength),
+        trustlineBalancesLength,
         isMergeSelected,
       }) < new BigNumber(xlmBalance).minus(minBalance),
   );
@@ -181,15 +181,22 @@ const AccountListItems = ({
                 />
                 <MigrationReviewDescription
                   description="Minimum XLM needed"
-                  highlight={acct.minBalance}
+                  highlight={new BigNumber(acct.minBalance)
+                    .times(2)
+                    .plus(
+                      getMigrationFeeAmount({
+                        recommendedFee,
+                        trustlineBalancesLength: acct.trustlineBalances.length,
+                        isMergeSelected,
+                      }).toString(),
+                    )
+                    .toString()}
                 />
                 <MigrationReviewDescription
                   description="Cost to migrate"
                   highlight={getMigrationFeeAmount({
                     recommendedFee,
-                    hasTrustlineBalances: Boolean(
-                      acct.trustlineBalances.length,
-                    ),
+                    trustlineBalancesLength: acct.trustlineBalances.length,
                     isMergeSelected,
                   }).toString()}
                 />

@@ -16,6 +16,7 @@ import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { View } from "popup/basics/layout/View";
 
 import { Balances } from "@shared/api/types";
 

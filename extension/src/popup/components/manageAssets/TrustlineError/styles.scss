@@ -1,8 +1,6 @@
 .TrustlineError {
   display: flex;
   flex-direction: column;
-  height: var(--popup--height);
-  padding: var(--popup-vertical-padding) var(--popup--side-padding);
 
   &__inset {
     display: flex;
@@ -12,11 +10,6 @@
 
   &__body {
     flex-grow: 1;
-  }
-
-  &__button {
-    margin-top: 1rem;
-    flex-shrink: 0;
   }
 
   &__title {

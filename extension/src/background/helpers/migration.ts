@@ -5,6 +5,8 @@ import {
   Operation,
   TransactionBuilder,
 } from "stellar-sdk";
+import { submitTx } from "@shared/api/helpers/stellarSdkServer";
+import BigNumber from "bignumber.js";
 
 interface MigrateTrustLinesParams {
   trustlineBalances: Horizon.HorizonApi.BalanceLine[];
@@ -22,7 +24,7 @@ interface MigrateTrustLinesParams {
   1. Add the trustline to the destination account
   2. Send the entire trustline balance from the source account to the destination account
   3. (Optional) If we want to later merge the source account, we need to remove the trustline after sending the balance
-  
+
   We repeat for every trustline
 */
 
@@ -41,22 +43,23 @@ export const migrateTrustlines = async ({
   const trustlineRecipientAccount = await server.loadAccount(
     newKeyPair.publicKey,
   );
+  const txFee = new BigNumber(fee).times(trustlineBalances.length).toString();
 
   const changeTrustTx = await new TransactionBuilder(
     trustlineRecipientAccount,
     {
-      fee,
+      fee: txFee,
       networkPassphrase,
     },
   );
 
   const removeTrustTx = await new TransactionBuilder(sourceAccount, {
-    fee,
+    fee: txFee,
     networkPassphrase,
   });
 
   const sendTrustlineBalanceTx = await new TransactionBuilder(sourceAccount, {
-    fee,
+    fee: txFee,
     networkPassphrase,
   });
 
@@ -74,13 +77,15 @@ export const migrateTrustlines = async ({
         }),
       );
 
-      sendTrustlineBalanceTx.addOperation(
-        Operation.payment({
-          destination: newKeyPair.publicKey,
-          asset,
-          amount: bal.balance,
-        }),
-      );
+      if (new BigNumber(bal.balance).gt("0")) {
+        sendTrustlineBalanceTx.addOperation(
+          Operation.payment({
+            destination: newKeyPair.publicKey,
+            asset,
+            amount: bal.balance,
+          }),
+        );
+      }
 
       if (isMergeSelected) {
         // remove the trustline from the source account
@@ -105,7 +110,7 @@ export const migrateTrustlines = async ({
     console.error(e);
   }
 
-  await server.submitTransaction(builtChangeTrustTx);
+  await submitTx({ server, tx: builtChangeTrustTx });
 
   try {
     builtSendTrustlineBalanceTx.sign(sourceKeys);
@@ -113,12 +118,12 @@ export const migrateTrustlines = async ({
     console.error(e);
   }
 
-  await server.submitTransaction(builtSendTrustlineBalanceTx);
+  await submitTx({ server, tx: builtSendTrustlineBalanceTx });
 
   if (isMergeSelected) {
     const builtRemoveTrustTx = removeTrustTx.setTimeout(180).build();
     builtRemoveTrustTx.sign(sourceKeys);
 
-    await server.submitTransaction(builtRemoveTrustTx);
+    await submitTx({ server, tx: builtRemoveTrustTx });
   }
 };
