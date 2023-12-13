@@ -1,24 +1,14 @@
-import { Memo } from "stellar-sdk";
+import { Memo, MemoType } from "stellar-sdk";
 import buffer from "buffer";
 import get from "lodash/get";
 
-import { MEMO_TYPES } from "popup/constants/memoTypes";
-
 import { ErrorMessage } from "@shared/api/types";
 
-const mappedMemoType = {
-  text: MEMO_TYPES.MEMO_TEXT,
-  id: MEMO_TYPES.MEMO_ID,
-  hash: MEMO_TYPES.MEMO_HASH,
-  return: MEMO_TYPES.MEMO_RETURN,
-  none: MEMO_TYPES.MEMO_NONE,
-};
-
-export const decodeMemo = (memo: any): { value: string; type: MEMO_TYPES } => {
+export const decodeMemo = (memo: any): { value: string; type: MemoType } => {
   const _memo = memo as Memo;
 
   if (_memo.type === "id") {
-    return { value: _memo.value as string, type: mappedMemoType[_memo.type] };
+    return { value: _memo.value as string, type: _memo.type };
   }
 
   const decodeMethod = ["hash", "return"].includes(_memo.type)
@@ -29,7 +19,7 @@ export const decodeMemo = (memo: any): { value: string; type: MEMO_TYPES } => {
     value: _memo.value
       ? buffer.Buffer.from(_memo.value).toString(decodeMethod)
       : "",
-    type: mappedMemoType[_memo.type],
+    type: _memo.type,
   };
 };
 

@@ -1,26 +1,26 @@
 import React from "react";
+import { MemoType } from "stellar-sdk";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { stroopToXlm } from "helpers/stellar";
 
 import "./styles.scss";
-import { MEMO_TYPES } from "popup/constants/memoTypes";
 
 const MemoDisplay = ({
   memo,
   isMemoRequired,
 }: {
-  memo: { value: string; type: MEMO_TYPES };
+  memo: { value: string; type: MemoType };
   isMemoRequired: boolean;
 }) => {
   const { t } = useTranslation();
 
   const mapMemoLabel: any = {
-    memoId: "MEMO_ID",
-    memoHash: "MEMO_HASH",
-    memoText: "MEMO_TEXT",
-    memoReturn: "MEMO_RETURN",
+    id: "MEMO_ID",
+    hash: "MEMO_HASH",
+    text: "MEMO_TEXT",
+    return: "MEMO_RETURN",
     none: "MEMO_NONE",
   };
 
@@ -51,7 +51,7 @@ interface TransactionInfoProps {
   _sequence?: string;
   isFeeBump?: boolean;
   isMemoRequired: boolean;
-  memo?: { value: string; type: MEMO_TYPES };
+  memo?: { value: string; type: MemoType };
 }
 
 export const TransactionInfo = ({
