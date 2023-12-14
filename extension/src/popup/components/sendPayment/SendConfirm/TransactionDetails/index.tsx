@@ -107,7 +107,10 @@ const TwoAssetCard = ({
           {sourceAsset.code}
           <ScamAssetIcon isScamAsset={isSourceAssetScam} />
         </div>
-        <div className="TwoAssetCard__row__right">
+        <div
+          className="TwoAssetCard__row__right"
+          data-testid="TransactionDetailsAssetSource"
+        >
           {formatAmount(sourceAmount)} {sourceAsset.code}
         </div>
       </div>
@@ -124,7 +127,10 @@ const TwoAssetCard = ({
           {destAsset.code}
           <ScamAssetIcon isScamAsset={isDestAssetScam} />
         </div>
-        <div className="TwoAssetCard__row__right">
+        <div
+          className="TwoAssetCard__row__right"
+          data-testid="TransactionDetailsAssetDestination"
+        >
           {formatAmount(new BigNumber(destAmount).toFixed())} {destAsset.code}
         </div>
       </div>
@@ -426,7 +432,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <View>
+      <View data-testid="transaction-details-view">
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -515,7 +521,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           {(isPathPayment || isSwap) && (
             <div className="TransactionDetails__row">
               <div>{t("Conversion rate")} </div>
-              <div className="TransactionDetails__row__right">
+              <div
+                className="TransactionDetails__row__right"
+                data-testid="TransactionDetailsConversionRate"
+              >
                 1 {sourceAsset.code} /{" "}
                 {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
                 {destAsset.code}
@@ -524,7 +533,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           )}
           <div className="TransactionDetails__row">
             <div>{t("Transaction fee")} </div>
-            <div className="TransactionDetails__row__right">
+            <div
+              className="TransactionDetails__row__right"
+              data-testid="TransactionDetailsTransactionFee"
+            >
               {transactionFee} XLM
             </div>
           </div>
@@ -552,7 +564,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           {isSwap && (
             <div className="TransactionDetails__row">
               <div>{t("Minimum Received")} </div>
-              <div className="TransactionDetails__row__right">
+              <div
+                className="TransactionDetails__row__right"
+                data-testid="TransactionDetailsMinimumReceived"
+              >
                 {computeDestMinWithSlippage(
                   allowedSlippage,
                   destinationAmount,

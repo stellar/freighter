@@ -1,5 +1,4 @@
 import {
-  Asset,
   Horizon,
   Keypair,
   Memo,
@@ -44,10 +43,11 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { SorobanContextInterface } from "popup/SorobanContext";
 import { getTokenBalances, resetSorobanTokensStatus } from "./soroban";
 
@@ -332,15 +332,12 @@ export const getBestPath = createAsyncThunk<
   "getBestPath",
   async ({ amount, sourceAsset, destAsset, networkDetails }, thunkApi) => {
     try {
-      const server = new Horizon.Server(networkDetails.networkUrl);
-      const builder = server.strictSendPaths(
-        getAssetFromCanonical(sourceAsset) as Asset,
+      return await horizonGetBestPath({
         amount,
-        [getAssetFromCanonical(destAsset)] as Asset[],
-      );
-
-      const paths = await builder.call();
-      return paths.records[0];
+        sourceAsset,
+        destAsset,
+        networkDetails,
+      });
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
