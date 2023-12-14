@@ -649,11 +649,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const loadAccount = async () => {
-    /* 
-    The 3.0.0 migration mistakenly sets keyId as a number in older versions. 
+    /*
+    The 3.0.0 migration mistakenly sets keyId as a number in older versions.
     For some users, Chrome went right from version ~2.9.x to 3.0.0, which caused them to miss the below fix to the migration.
     This will fix this issue at load.
-    
+
     keyId being of type number causes issues downstream:
     - we need to be able to use String.indexOf to determine if the keyId belongs to a hardware wallet
     - @stellar/walet-sdk expects a string when dealing unlocking a keystore by keyId
@@ -1169,7 +1169,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
-      /* Disable Mainnet access and automatically switch the user to Futurenet 
+      /* Disable Mainnet access and automatically switch the user to Futurenet
       if user is enabling experimental mode and vice-versa */
       const currentNetworksList = await getNetworksList();
 
@@ -1431,10 +1431,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       1. We create a new keypair that will be the destination account
       2. We send the minimum amount of XLM needed to create the destination acct and also provide
         enough funds to create necessary trustlines
-      3. Replace the old source account with the destination account in redux and in local storage. 
+      3. Replace the old source account with the destination account in redux and in local storage.
         When the user refreshes the app, they will already be logged into their new accounts.
       4. Migrate the trustlines from the source account to destination
-      5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account 
+      5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account
     */
 
     for (let i = 0; i < balancesToMigrate.length; i += 1) {

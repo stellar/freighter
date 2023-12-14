@@ -91,12 +91,22 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
       ) : (
         <div>
           <div className="View__header__box View__header__box--center">
-            <Title size="md" role="heading" aria-level={2}>
+            <Title
+              size="md"
+              role="heading"
+              aria-level={2}
+              data-testid="AppHeaderPageTitle"
+            >
               {pageTitle}
             </Title>
           </div>
           {pageSubtitle ? (
-            <div className="View__header__subtitle">{pageSubtitle}</div>
+            <div
+              className="View__header__subtitle"
+              data-testid="AppHeaderPageSubtitle"
+            >
+              {pageSubtitle}
+            </div>
           ) : null}
         </div>
       )}
