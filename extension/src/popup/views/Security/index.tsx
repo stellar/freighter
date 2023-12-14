@@ -3,15 +3,15 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 
-import { newTabHref } from "helpers/urls";
-import { openTab } from "popup/helpers/navigate";
+// import { newTabHref } from "helpers/urls";
+// import { openTab } from "popup/helpers/navigate";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
 import {
   ListNavLink,
-  ListNavButtonLink,
+  // ListNavButtonLink,
   ListNavLinkWrapper,
 } from "popup/basics/ListNavLink";
 
@@ -35,13 +35,13 @@ export const Security = () => {
           <ListNavLink href={ROUTES.manageConnectedApps}>
             {t("Manage connected apps")}
           </ListNavLink>
-          <ListNavButtonLink
+          {/* <ListNavButtonLink
             handleClick={() => {
               openTab(newTabHref(ROUTES.accountMigration));
             }}
           >
             {t("Account migration")}
-          </ListNavButtonLink>
+          </ListNavButtonLink> */}
         </ListNavLinkWrapper>
       </View.Content>
     </View>
