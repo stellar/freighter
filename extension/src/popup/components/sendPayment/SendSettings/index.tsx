@@ -134,6 +134,7 @@ export const SendSettings = ({
         initialValues={{ memo }}
         onSubmit={(values) => {
           dispatch(saveMemo(values.memo));
+          goToReview();
         }}
       >
         {({ submitForm }) => (
@@ -177,7 +178,9 @@ export const SendSettings = ({
                         handleTxFeeNav();
                       }}
                     >
-                      <span>{transactionFee} XLM</span>
+                      <span data-testid="SendSettingsTransactionFee">
+                        {transactionFee} XLM
+                      </span>
                       <div>
                         <Icon.ChevronRight />
                       </div>
@@ -224,7 +227,9 @@ export const SendSettings = ({
                         handleSlippageNav();
                       }}
                     >
-                      <span>{allowedSlippage}%</span>
+                      <span data-testid="SendSettingsAllowedSlippage">
+                        {allowedSlippage}%
+                      </span>
                       <div>
                         <Icon.ChevronRight />
                       </div>
@@ -280,7 +285,6 @@ export const SendSettings = ({
                 isFullWidth
                 type="submit"
                 variant="secondary"
-                onClick={goToReview}
                 data-testid="send-settings-btn-continue"
               >
                 {t("Review")} {isSwap ? t("Swap") : t("Send")}

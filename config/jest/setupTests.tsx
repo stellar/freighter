@@ -21,6 +21,7 @@ global.EXPERIMENTAL = false;
 
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
+  emitMetric: () => {},
 }));
 
 /* eslint-disable react/no-array-index-key */

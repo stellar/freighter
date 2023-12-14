@@ -54,14 +54,14 @@ const SwapAssetsIcon = ({
         code={source.code}
         issuerKey={source.issuer}
       />
-      {source.code}
+      <span data-testid="SubmitResultSource">{source.code}</span>
       <Icon.ArrowRight />
       <AssetIcon
         assetIcons={assetIcons}
         code={dest.code}
         issuerKey={dest.issuer}
       />
-      {dest.code}
+      <span data-testid="SubmitResultDestination">{dest.code}</span>
     </div>
   );
 };
@@ -189,7 +189,10 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         }
       >
         <div className="SubmitResult__content">
-          <div className="SubmitResult__amount">
+          <div
+            className="SubmitResult__amount"
+            data-testid="SubmitResultAmount"
+          >
             {formatAmount(amount)} {sourceAsset.code}
           </div>
           <div className="SubmitResult__icon SubmitResult__success">
@@ -212,7 +215,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         </div>
       </View.Content>
       <View.Footer isInline>
-        <Button size="md" variant="secondary" onClick={() => viewDetails()}>
+        <Button
+          size="md"
+          variant="secondary"
+          onClick={() => viewDetails()}
+          data-testid="SubmitResultDetailsButton"
+        >
           {t("Details")}
         </Button>
         <Button

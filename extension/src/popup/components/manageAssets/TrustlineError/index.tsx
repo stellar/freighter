@@ -12,10 +12,10 @@ import {
 
 import { emitMetric } from "helpers/metrics";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
+import { View } from "popup/basics/layout/View";
+import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { View } from "popup/basics/layout/View";
-
 import { Balances } from "@shared/api/types";
 
 import "./styles.scss";
@@ -83,7 +83,10 @@ const RenderedError = ({
             title={t("This asset has a balance")}
             icon={<Icon.Warning />}
           />
-          <p className="TrustlineError__subtitle">
+          <p
+            className="TrustlineError__subtitle"
+            data-testid="TrustlineErrorMessage"
+          >
             {t("This asset has a balance of")} <strong>{assetBalance}</strong>.{" "}
             {t("You must have a balance of")} <strong>0</strong>{" "}
             {t("in order to remove an asset.")}
@@ -144,16 +147,15 @@ export const TrustlineError = ({
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return (
-    <View>
+    <View data-testid="trustline-error-view">
+      <SubviewHeader title={t("Trustline Error")} hasBackButton={false} />
       <View.Content>
-        <div className="TrustlineError">
-          <div className="TrustlineError__body">
-            <RenderedError
-              errorState={errorState}
-              assetBalance={assetBalance}
-              resultCodes={JSON.stringify(getResultCodes(error))}
-            />
-          </div>
+        <div className="TrustlineError__inset">
+          <RenderedError
+            errorState={errorState}
+            assetBalance={assetBalance}
+            resultCodes={JSON.stringify(getResultCodes(error))}
+          />
         </div>
       </View.Content>
       <View.Footer>

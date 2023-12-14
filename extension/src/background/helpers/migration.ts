@@ -24,7 +24,7 @@ interface MigrateTrustLinesParams {
   1. Add the trustline to the destination account
   2. Send the entire trustline balance from the source account to the destination account
   3. (Optional) If we want to later merge the source account, we need to remove the trustline after sending the balance
-  
+
   We repeat for every trustline
 */
 

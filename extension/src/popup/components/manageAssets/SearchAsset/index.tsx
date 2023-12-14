@@ -12,7 +12,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isCustomNetwork } from "helpers/stellar";
-import { getApiStellarExpertUrl } from "popup/helpers/account";
+import { searchAsset } from "popup/helpers/searchAsset";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -82,24 +82,21 @@ export const SearchAsset = () => {
 
   const handleSearch = useCallback(
     debounce(async ({ target: { value: asset } }) => {
-      let res;
       if (!asset) {
         setAssetRows([]);
         return;
       }
       setIsSearching(true);
 
-      try {
-        res = await fetch(
-          `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
-        );
-      } catch (e) {
-        console.error(e);
-        setIsSearching(false);
-        throw new Error(t("Unable to search for assets"));
-      }
-
-      const resJson = await res.json();
+      const resJson = await searchAsset({
+        asset,
+        networkDetails,
+        onError: (e) => {
+          console.error(e);
+          setIsSearching(false);
+          throw new Error(t("Unable to search for assets"));
+        },
+      });
 
       setIsSearching(false);
 
@@ -140,7 +137,7 @@ export const SearchAsset = () => {
             setHasNoResults(false);
           }}
         >
-          <View>
+          <View data-testid="search-asset">
             <SubviewHeader title={t("Choose Asset")} />
             <View.Content>
               <FormRows>
@@ -154,6 +151,7 @@ export const SearchAsset = () => {
                         id="asset"
                         placeholder={t("Search for an asset")}
                         {...field}
+                        data-testid="search-asset-input"
                       />
                     )}
                   </Field>
