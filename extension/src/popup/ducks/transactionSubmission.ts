@@ -113,7 +113,6 @@ export const submitFreighterTransaction = createAsyncThunk<
           errorMessage: response,
         });
       }
-      console.log(response);
       return response;
     } catch (e) {
       return thunkApi.rejectWithValue({
