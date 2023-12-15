@@ -15,8 +15,6 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
   signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
-  submitFreighterTransaction as internalSubmitFreighterTransaction,
-  submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountIndexerBalances as internalgetAccountIndexerBalances,
@@ -48,6 +46,7 @@ import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanContextInterface } from "popup/SorobanContext";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -95,12 +94,27 @@ export const submitFreighterTransaction = createAsyncThunk<
   "submitFreighterTransaction",
   async ({ signedXDR, networkDetails }, thunkApi) => {
     try {
-      const txRes = await internalSubmitFreighterTransaction({
-        signedXDR,
-        networkDetails,
-      });
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          signed_xdr: signedXDR,
+          network_url: networkDetails.networkUrl,
+          network_passphrase: networkDetails.networkPassphrase,
+        }),
+      };
+      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+      const response = await res.json();
 
-      return txRes;
+      if (res.status !== 200) {
+        return thunkApi.rejectWithValue({
+          errorMessage: response,
+        });
+      }
+      console.log(response);
+      return response;
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
@@ -123,12 +137,26 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   "submitFreighterSorobanTransaction",
   async ({ signedXDR, networkDetails }, thunkApi) => {
     try {
-      const txRes = await internalSubmitFreighterSorobanTransaction({
-        signedXDR,
-        networkDetails,
-      });
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          signed_xdr: signedXDR,
+          network_url: networkDetails.networkUrl,
+          network_passphrase: networkDetails.networkPassphrase,
+        }),
+      };
+      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+      const response = await res.json();
 
-      return txRes;
+      if (res.status !== 200) {
+        return thunkApi.rejectWithValue({
+          errorMessage: response,
+        });
+      }
+      return response;
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
