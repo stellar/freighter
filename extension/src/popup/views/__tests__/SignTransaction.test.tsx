@@ -16,7 +16,7 @@ import {
   Transaction,
   TransactionBuilder,
 } from "stellar-sdk";
-import { act } from "react-dom/test-utils";
+// import { act } from "react-dom/test-utils";
 
 jest.mock("stellar-identicon-js");
 
