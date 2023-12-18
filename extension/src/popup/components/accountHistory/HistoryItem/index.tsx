@@ -7,11 +7,11 @@ import { useTranslation } from "react-i18next";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { getDecimals, getName, getSymbol } from "@shared/helpers/soroban/token";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
-import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
+import { SorobanContext } from "popup/SorobanContext";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
@@ -241,39 +241,19 @@ export const HistoryItem = ({
           // If user has minted to self, add token to their token list.
           if (!token) {
             setIsLoading(true);
-            // TODO: When fetching contract details, we could encounter an expired state entry
-            // and fail to fetch values through the RPC.
-            // We can address this in several ways -
-            // 1. If token is a SAC, fetch details from Horizon.
-            // 2. If not SAC or unknown, look up ledger entry directly.
 
             try {
-              if (!hasSorobanClient(sorobanClient)) {
-                throw new Error("Soroban RPC not supported for this network");
-              }
-
-              const tokenDecimals = await getDecimals(
-                attrs.contractId,
-                sorobanClient.server,
-                await sorobanClient.newTxBuilder(),
+              const response = await fetch(
+                `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_rpc_url=${networkDetails.sorobanRpcUrl}`,
               );
-              const tokenName = await getName(
-                attrs.contractId,
-                sorobanClient.server,
-                await sorobanClient.newTxBuilder(),
-              );
-              const tokenSymbol = await getSymbol(
-                attrs.contractId,
-                sorobanClient.server,
-                await sorobanClient.newTxBuilder(),
-              );
+              const tokenDetails = await response.json();
 
               const _token = {
                 contractId: attrs.contractId,
                 total: isRecieving ? attrs.amount : 0,
-                decimals: tokenDecimals,
-                name: tokenName,
-                symbol: tokenSymbol,
+                decimals: tokenDetails.decimnals,
+                name: tokenDetails.name,
+                symbol: tokenDetails.symbol,
               };
 
               const formattedTokenAmount = formatTokenAmount(
@@ -299,10 +279,12 @@ export const HistoryItem = ({
                   from: attrs.from,
                   to: attrs.to,
                 },
-                headerTitle: `${t(capitalize(attrs.fnName))} ${tokenSymbol}`,
+                headerTitle: `${t(capitalize(attrs.fnName))} ${
+                  tokenDetails.symbol
+                }`,
                 isPayment: false,
                 isRecipient: isRecieving,
-                operationText: `${formattedTokenAmount} ${tokenSymbol}`,
+                operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
               }));
               setIsLoading(false);
             } catch (error) {
