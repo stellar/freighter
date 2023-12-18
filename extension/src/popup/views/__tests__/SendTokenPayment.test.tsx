@@ -98,6 +98,13 @@ jest.mock("react-router-dom", () => {
     Redirect: ({ to }: any) => <div>redirect {to}</div>,
   };
 });
+jest.mock("helpers/metrics", () => {
+  return {
+    registerHandler: () => ({}),
+    uploadMetrics: () => ({}),
+    emitMetric: (_name: string, _body?: any) => ({}),
+  };
+});
 const mockHistoryGetter = jest.fn();
 jest.mock("popup/constants/history", () => ({
   get history() {
@@ -109,7 +116,7 @@ jest.spyOn(global, "fetch").mockImplementation(() =>
   Promise.resolve({
     json: async () => ({
       id: "tx ID",
-      transactionData: {},
+      transactionData: {}, // TODO: need real tx data for this work
       cost: {
         cpuInsns: 12389,
         memBytes: 32478,

@@ -108,7 +108,7 @@ export const submitFreighterTransaction = createAsyncThunk<
       const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
       const response = await res.json();
 
-      if (res.status !== 200) {
+      if (!res.ok) {
         return thunkApi.rejectWithValue({
           errorMessage: response,
         });
@@ -150,7 +150,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
       const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
       const response = await res.json();
 
-      if (res.status !== 200) {
+      if (!res.ok) {
         return thunkApi.rejectWithValue({
           errorMessage: response,
         });

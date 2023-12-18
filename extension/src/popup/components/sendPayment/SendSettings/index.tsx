@@ -122,7 +122,6 @@ export const SendSettings = ({
         };
         const response = await fetch(`${INDEXER_URL}/simulate-tx`, options);
         const preflightSim = await response.json();
-        console.log(preflightSim);
 
         if ("transactionData" in preflightSim) {
           dispatch(
@@ -138,7 +137,6 @@ export const SendSettings = ({
           `Failed to simluate transaction, ID: ${preflightSim.id}`,
         );
       } catch (error) {
-        console.log(error);
         throw new Error(
           `Failed to simluate transaction: ${JSON.stringify(error)}`,
         );

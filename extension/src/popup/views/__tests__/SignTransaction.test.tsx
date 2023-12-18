@@ -16,6 +16,7 @@ import {
   Transaction,
   TransactionBuilder,
 } from "stellar-sdk";
+import { act } from "react-dom/test-utils";
 
 jest.mock("stellar-identicon-js");
 
@@ -64,9 +65,18 @@ const transactions = {
 };
 
 describe.skip("SignTransactions", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     const mockCanvas = document.createElement("canvas");
     jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
+    // jest.spyOn(global, "fetch").mockImplementation(await act(
+    //   async () => {
+    //     return {
+    //       json: async () => ({
+    //         decimals: 7,
+    //       })
+    //     } as any
+    //   }
+    // ));
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         json: async () => ({
