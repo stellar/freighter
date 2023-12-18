@@ -51,9 +51,17 @@
 
   &__account-dropdown {
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 1.5rem);
+    overflow: hidden;
 
     li::before {
       content: none !important;
+    }
+
+    .View__inset--scroll-shadows {
+      --bgRGB: 22, 22, 24;
     }
   }
 
@@ -92,6 +100,7 @@
     height: 1px;
     background: var(--color-gray-30);
     border-radius: 1rem;
-    margin: 1.2rem 0;
+    margin-top: 0;
+    margin-bottom: 1.2rem;
   }
 }
