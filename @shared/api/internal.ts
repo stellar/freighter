@@ -1,19 +1,5 @@
-import {
-  TransactionBuilder,
-  SorobanRpc,
-  Transaction,
-  FeeBumpTransaction,
-  xdr,
-  Networks,
-} from "stellar-sdk";
+import { SorobanRpc, Networks } from "stellar-sdk";
 import BigNumber from "bignumber.js";
-
-import {
-  getBalance,
-  getDecimals,
-  getName,
-  getSymbol,
-} from "@shared/helpers/soroban/token";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import {
   Account,
@@ -28,7 +14,6 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
-  SOROBAN_RPC_URLS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -809,39 +794,6 @@ export const getBlockedAccounts = async () => {
     type: SERVICE_TYPES.GET_BLOCKED_ACCOUNTS,
   });
   return resp;
-};
-
-export const getSorobanTokenBalance = async (
-  server: SorobanRpc.Server,
-  contractId: string,
-  txBuilders: {
-    // need a builder per operation, Soroban currently has single op transactions
-    balance: TransactionBuilder;
-    name: TransactionBuilder;
-    decimals: TransactionBuilder;
-    symbol: TransactionBuilder;
-  },
-  balanceParams: xdr.ScVal[],
-) => {
-  // Right now we can only have 1 operation per TX in Soroban
-  // for now we need to do 4 tx simulations to show 1 user balance. :(
-  // TODO: figure out how to fetch ledger keys to do this more efficiently
-  const decimals = await getDecimals(contractId, server, txBuilders.decimals);
-  const name = await getName(contractId, server, txBuilders.name);
-  const symbol = await getSymbol(contractId, server, txBuilders.symbol);
-  const balance = await getBalance(
-    contractId,
-    balanceParams,
-    server,
-    txBuilders.balance,
-  );
-
-  return {
-    balance,
-    decimals,
-    name,
-    symbol,
-  };
 };
 
 export const addTokenId = async (

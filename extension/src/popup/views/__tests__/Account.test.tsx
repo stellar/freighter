@@ -9,12 +9,7 @@ import {
 import * as ApiInternal from "@shared/api/internal";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 
-import {
-  Wrapper,
-  mockBalances,
-  mockTokenBalance,
-  mockAccounts,
-} from "../../__testHelpers__";
+import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { Account } from "../Account";
 
 const mockHistoryOperations = {
@@ -48,10 +43,6 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
 jest
   .spyOn(ApiInternal, "getTokenIds")
   .mockImplementation(() => Promise.resolve(["C1"]));
-
-jest
-  .spyOn(ApiInternal, "getSorobanTokenBalance")
-  .mockImplementation(() => Promise.resolve(mockTokenBalance));
 
 jest
   .spyOn(ApiInternal, "makeAccountActive")
