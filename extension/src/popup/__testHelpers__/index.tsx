@@ -19,7 +19,6 @@ import {
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
 import { SorobanContext } from "../SorobanContext";
-import { act } from "react-dom/test-utils";
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
