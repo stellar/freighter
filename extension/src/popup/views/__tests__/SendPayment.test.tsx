@@ -73,6 +73,10 @@ jest.mock("popup/constants/history", () => ({
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
 describe.skip("SendPayment", () => {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders", async () => {
     const history = createMemoryHistory();
     history.push(ROUTES.sendPaymentTo);

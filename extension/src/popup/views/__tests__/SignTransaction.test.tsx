@@ -340,7 +340,7 @@ describe("SignTransactions", () => {
     );
   });
 
-  xit("memo: render memo hash", async () => {
+  it("memo: render memo hash", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_HASH,
       Networks.TESTNET,
@@ -363,7 +363,7 @@ describe("SignTransactions", () => {
     );
   });
 
-  xit("memo: render memo return", async () => {
+  it("memo: render memo return", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_RETURN,
       Networks.TESTNET,

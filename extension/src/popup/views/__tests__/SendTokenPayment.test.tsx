@@ -134,6 +134,10 @@ jest.mock("popup/constants/history", () => ({
 }));
 
 describe("SendTokenPayment", () => {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
   const history = createMemoryHistory();
   history.push(ROUTES.sendPaymentTo);
   mockHistoryGetter.mockReturnValue(history);
