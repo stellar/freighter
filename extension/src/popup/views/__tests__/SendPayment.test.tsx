@@ -40,16 +40,19 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
   return {
-    ...original,
-    Server: class {
-      loadAccount() {
-        return {
-          sequenceNumber: () => 1,
-          accountId: () => publicKey,
-          incrementSequenceNumber: () => {},
-        };
-      }
+    Networks: original.Networks,
+    Horizon: {
+      Server: class {
+        loadAccount() {
+          return {
+            sequenceNumber: () => 1,
+            accountId: () => publicKey,
+            incrementSequenceNumber: () => {},
+          };
+        }
+      },
     },
+    SorobanRpc: original.SorobanRpc,
   };
 });
 
