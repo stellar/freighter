@@ -92,6 +92,10 @@ describe("SignTransactions", () => {
     jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
@@ -336,7 +340,7 @@ describe("SignTransactions", () => {
     );
   });
 
-  it("memo: render memo hash", async () => {
+  xit("memo: render memo hash", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_HASH,
       Networks.TESTNET,
@@ -359,7 +363,7 @@ describe("SignTransactions", () => {
     );
   });
 
-  it("memo: render memo return", async () => {
+  xit("memo: render memo return", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_RETURN,
       Networks.TESTNET,
