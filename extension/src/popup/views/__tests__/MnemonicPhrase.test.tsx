@@ -48,6 +48,10 @@ jest.mock("@shared/api/internal", () => {
 });
 
 describe.skip("MnemonicPhrase", () => {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders", async () => {
     const history = createMemoryHistory();
     history.push(ROUTES.mnemonicPhrase);

@@ -9,6 +9,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { BottomNav } from "popup/components/BottomNav";
 
 import "./styles.scss";
+import { View } from "popup/basics/layout/View";
 
 export const defaultStellarBipPath = "44'/148'/0'";
 
@@ -17,13 +18,13 @@ export const PluginWallet = () => {
   const [useDefault, setUseDefault] = useState(true);
 
   return (
-    <>
-      <div className="PluginWallet">
-        <SubviewHeader
-          title={`Connect with ${WalletType.LEDGER}`}
-          hasBackButton={true}
-          customBackAction={() => navigateTo(ROUTES.connectWallet)}
-        />
+    <View>
+      <SubviewHeader
+        title={`Connect with ${WalletType.LEDGER}`}
+        hasBackButton={true}
+        customBackAction={() => navigateTo(ROUTES.connectWallet)}
+      />
+      <View.Content>
         <p>
           Make sure your Ledger wallet is connected to your computer and the
           Stellar app is open on the Ledger wallet.
@@ -72,8 +73,8 @@ export const PluginWallet = () => {
             Connect
           </Button>
         </div>
-      </div>
+      </View.Content>
       <BottomNav />
-    </>
+    </View>
   );
 };

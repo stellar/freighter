@@ -86,52 +86,6 @@
       padding-top: var(--View-inset-padding-top);
       padding-bottom: 1.5rem;
 
-      // TODO: update styling
-      &--scroll-shadows {
-        // https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
-        --bgRGB: 0, 0, 0;
-        --bg: rgb(var(--bgRGB));
-        --bgTrans: rgba(var(--bgRGB), 0);
-        --shadow: rgba(255, 255, 255, 0.2);
-
-        background:
-            /* Shadow Cover TOP */ linear-gradient(
-              var(--bg) 30%,
-              var(--bgTrans)
-            )
-            center top,
-          /* Shadow Cover BOTTOM */
-            linear-gradient(var(--bgTrans), var(--bg) 70%) center bottom,
-          /* Shadow TOP */
-            radial-gradient(
-              farthest-side at 50% 0,
-              var(--shadow),
-              rgba(0, 0, 0, 0.1)
-            )
-            center top,
-          /* Shadow BOTTOM */
-            radial-gradient(
-              farthest-side at 50% 100%,
-              var(--shadow),
-              rgba(0, 0, 0, 0.1)
-            )
-            center bottom;
-
-        background-repeat: no-repeat;
-        background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
-        background-attachment: local, local, scroll, scroll;
-
-        // Hide scrollbar
-        &::-webkit-scrollbar {
-          // Chrome, Edge, Brave, etc
-          display: none;
-          // Firefox
-          scrollbar-width: none;
-          // Old Microsoft browsers
-          -ms-overflow-style: none;
-        }
-      }
-
       &__footer {
         flex: none;
         padding-bottom: var(--View-footer-padding-bottom);
@@ -211,6 +165,52 @@
 
     &--top-border {
       border-top: 1px solid var(--color-gray-40);
+    }
+  }
+
+  &__inset--scroll-shadows {
+    // https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
+    --bgRGB: 0, 0, 0;
+    --bg: rgb(var(--bgRGB));
+    --bgTrans: rgba(var(--bgRGB), 0);
+    --shadow: rgba(255, 255, 255, 0.2);
+
+    overflow: auto;
+    background:
+        /* Shadow Cover TOP */ linear-gradient(
+          var(--bg) 30%,
+          var(--bgTrans)
+        )
+        center top,
+      /* Shadow Cover BOTTOM */ linear-gradient(var(--bgTrans), var(--bg) 70%)
+        center bottom,
+      /* Shadow TOP */
+        radial-gradient(
+          farthest-side at 50% 0,
+          var(--shadow),
+          rgba(0, 0, 0, 0.1)
+        )
+        center top,
+      /* Shadow BOTTOM */
+        radial-gradient(
+          farthest-side at 50% 100%,
+          var(--shadow),
+          rgba(0, 0, 0, 0.1)
+        )
+        center bottom;
+
+    background-repeat: no-repeat;
+    background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+    background-attachment: local, local, scroll, scroll;
+
+    // Hide scrollbar
+    &::-webkit-scrollbar {
+      // Chrome, Edge, Brave, etc
+      display: none;
+      // Firefox
+      scrollbar-width: none;
+      // Old Microsoft browsers
+      -ms-overflow-style: none;
     }
   }
 }
