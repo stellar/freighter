@@ -108,6 +108,28 @@ jest.mock("popup/helpers/horizonGetBestPath", () => ({
 
 jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
 
+jest.mock("stellar-sdk", () => {
+  const original = jest.requireActual("stellar-sdk");
+  return {
+    Asset: original.Asset,
+    Operation: original.Operation,
+    TransactionBuilder: original.TransactionBuilder,
+    Networks: original.Networks,
+    Horizon: {
+      Server: class {
+        loadAccount() {
+          return {
+            sequenceNumber: () => 1,
+            accountId: () => publicKey,
+            incrementSequenceNumber: () => {},
+          };
+        }
+      },
+    },
+    SorobanRpc: original.SorobanRpc,
+  };
+});
+
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 
 describe("Swap", () => {
