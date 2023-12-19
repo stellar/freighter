@@ -16,9 +16,12 @@ import { PopupWrapper } from "popup/basics/PopupWrapper";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
-import { addTokenId, authErrorSelector } from "popup/ducks/accountServices";
+import {
+  addTokenId,
+  authErrorSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { publicKeySelector } from "background/ducks/session";
 
 interface FormValues {
   tokenId: string;
