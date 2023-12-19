@@ -154,6 +154,7 @@ export const subscribeAccount = async (publicKey: string) => {
     };
     await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
+      ...hasAccountSubByKeyId,
       [keyId]: true,
     };
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
