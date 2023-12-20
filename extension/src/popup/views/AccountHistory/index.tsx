@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
-import { getAccountHistory } from "@shared/api/internal";
+import { getIndexerAccountHistory } from "@shared/api/internal";
 import { ActionStatus, HorizonOperation } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
@@ -143,9 +143,11 @@ export const AccountHistory = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        const res = await getAccountHistory({ publicKey, networkDetails });
+        const operations = await getIndexerAccountHistory({
+          publicKey,
+        });
         setHistorySegments(
-          createSegments(res.operations, isSorobanSuported as boolean),
+          createSegments(operations, isSorobanSuported as boolean),
         );
       } catch (e) {
         console.error(e);

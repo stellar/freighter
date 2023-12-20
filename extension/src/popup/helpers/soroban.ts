@@ -185,6 +185,11 @@ export const getAttrsFromSorobanHorizonOp = (
     return null;
   }
 
+  // operation record from Mercury
+  if (operation.contractId) {
+    return operation;
+  }
+
   const txEnvelope = TransactionBuilder.fromXDR(
     operation.transaction_attr.envelope_xdr,
     networkDetails.networkPassphrase,

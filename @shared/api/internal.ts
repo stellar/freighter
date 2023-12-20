@@ -378,6 +378,22 @@ export const getAccountHistory = async ({
   };
 };
 
+export const getIndexerAccountHistory = async ({
+  publicKey,
+}: {
+  publicKey: string;
+}) => {
+  try {
+    const url = new URL(`${INDEXER_URL}/account-history/${publicKey}`);
+    const response = await fetch(url.href);
+    const { data } = (await response.json()) as HorizonOperation;
+
+    return data;
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const getAssetIcons = async ({
   balances,
   networkDetails,

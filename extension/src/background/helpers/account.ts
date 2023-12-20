@@ -189,3 +189,22 @@ export const subscribeTokenBalance = async (
     throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
+
+export const subscribeTokenHistory = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  try {
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
+    };
+    await fetch(`${INDEXER_URL}/subscription/token`, options);
+  } catch (e) {
+    console.error(e);
+    throw new Error(`Error subscribing to token: ${contractId}`);
+  }
+};
