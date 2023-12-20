@@ -380,11 +380,15 @@ export const getAccountHistory = async ({
 
 export const getIndexerAccountHistory = async ({
   publicKey,
+  networkDetails,
 }: {
   publicKey: string;
+  networkDetails: NetworkDetails;
 }) => {
   try {
-    const url = new URL(`${INDEXER_URL}/account-history/${publicKey}`);
+    const url = new URL(
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&soroban_rpc_url=${networkDetails.sorobanRpcUrl}`,
+    );
     const response = await fetch(url.href);
     const { data } = (await response.json()) as HorizonOperation;
 

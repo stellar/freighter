@@ -145,6 +145,7 @@ export const AccountHistory = () => {
       try {
         const operations = await getIndexerAccountHistory({
           publicKey,
+          networkDetails,
         });
         setHistorySegments(
           createSegments(operations, isSorobanSuported as boolean),

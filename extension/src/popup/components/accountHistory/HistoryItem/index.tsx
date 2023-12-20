@@ -252,7 +252,7 @@ export const HistoryItem = ({
               const _token = {
                 contractId: attrs.contractId,
                 total: isRecieving ? attrs.amount : 0,
-                decimals: tokenDetails.decimnals,
+                decimals: tokenDetails.decimals,
                 name: tokenDetails.name,
                 symbol: tokenDetails.symbol,
               };

@@ -33,10 +33,6 @@ import { WalletType } from "@shared/constants/hardwareWallet";
 import { AppState } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData } from "helpers/metrics";
-import {
-  subscribeTokenBalance,
-  subscribeTokenHistory,
-} from "background/helpers/account";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Array<Account>; publicKey: string },

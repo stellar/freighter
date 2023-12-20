@@ -358,9 +358,7 @@ export const Operations = ({
       const response = await fetch(
         `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_rpc_url=${networkDetails.sorobanRpcUrl}`,
       );
-      console.log(response);
       const tokenDetails = await response.json();
-      console.log(tokenDetails);
       setDecimals(tokenDetails.decimals);
     };
 

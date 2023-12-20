@@ -116,6 +116,7 @@ export const Account = () => {
       try {
         const operations = await getIndexerAccountHistory({
           publicKey,
+          networkDetails,
         });
         setAssetOperations(
           sortOperationsByAsset({
