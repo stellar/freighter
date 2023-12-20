@@ -62,7 +62,7 @@ import {
   getBipPath,
   subscribeTokenBalance,
   subscribeAccount,
-  // subscribeAccount,
+  subscribeTokenHistory,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -1229,6 +1229,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     try {
       await subscribeTokenBalance(publicKey, tokenId);
+      await subscribeTokenHistory(publicKey, tokenId);
     } catch (error) {
       console.error(error);
     }
