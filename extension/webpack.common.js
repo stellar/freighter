@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
 const webpack = require("webpack");
+const Dotenv = require("dotenv-webpack");
 
 const { DEFAULT_STATS } = require("../config/webpack");
 
@@ -142,6 +143,7 @@ const commonConfig = (
     new webpack.ProvidePlugin({
       process: "process/browser",
     }),
+    new Dotenv(),
   ],
   stats: DEFAULT_STATS,
 });

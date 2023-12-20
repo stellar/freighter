@@ -133,21 +133,31 @@ export const getIsSorobanSupported = async () => {
 
 export const subscribeAccount = async (publicKey: string) => {
   // if pub key already has a subscription setup, skip this
-  const hasAccountSub = await localStore.getItem(KEY_ID);
-  if (hasAccountSub) {
+  const keyId = await localStore.getItem(KEY_ID);
+  const hasAccountSubByKeyId =
+    (await localStore.getItem(HAS_ACCOUNT_SUBSCRIPTION)) || {};
+  if (!keyId || hasAccountSubByKeyId[keyId]) {
     return { publicKey };
   }
 
   try {
+    const networkDetails = await getNetworkDetails();
     const options = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ pub_key: publicKey }),
+      body: JSON.stringify({
+        pub_key: publicKey,
+        network: networkDetails.network,
+      }),
     };
     await fetch(`${INDEXER_URL}/subscription/account`, options);
-    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, true);
+    const subsByKeyId = {
+      ...hasAccountSubByKeyId,
+      [keyId]: true,
+    };
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
   } catch (e) {
     console.error(e);
     throw new Error("Error subscribing account");
@@ -161,12 +171,17 @@ export const subscribeTokenBalance = async (
   contractId: string,
 ) => {
   try {
+    const networkDetails = await getNetworkDetails();
     const options = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
+      body: JSON.stringify({
+        pub_key: publicKey,
+        contract_id: contractId,
+        network: networkDetails.network,
+      }),
     };
     await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
   } catch (e) {

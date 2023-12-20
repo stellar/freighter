@@ -29,6 +29,8 @@ import { parseTokenAmount } from "popup/helpers/soroban";
 import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import "../styles.scss";
 import { Balances, TokenBalance } from "@shared/api/types";
+import { getNetworkDetails } from "background/helpers/account";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 export const SendSettings = ({
   previous,
@@ -105,22 +107,40 @@ export const SendSettings = ({
       ];
 
       const transaction = transfer(assetAddress, params, memo, builder);
-      const preflightSim = await sorobanClient.server.simulateTransaction(
-        transaction,
-      );
-
-      if ("transactionData" in preflightSim) {
-        dispatch(
-          saveSimulation({
-            response: preflightSim,
-            raw: transaction,
+      try {
+        const networkDetails = await getNetworkDetails();
+        const options = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            signex_xdr: transaction.toXDR(),
+            network_url: networkDetails.networkUrl,
+            network_passphrase: networkDetails.networkPassphrase,
           }),
-        );
-        navigateTo(next);
-        return;
-      }
+        };
+        const response = await fetch(`${INDEXER_URL}/simulate-tx`, options);
+        const preflightSim = await response.json();
 
-      throw new Error(`Failed to simluate transaction, ID: ${preflightSim.id}`);
+        if ("transactionData" in preflightSim) {
+          dispatch(
+            saveSimulation({
+              response: preflightSim,
+              raw: transaction,
+            }),
+          );
+          navigateTo(next);
+          return;
+        }
+        throw new Error(
+          `Failed to simluate transaction, ID: ${preflightSim.id}`,
+        );
+      } catch (error) {
+        throw new Error(
+          `Failed to simluate transaction: ${JSON.stringify(error)}`,
+        );
+      }
     }
     navigateTo(next);
   }

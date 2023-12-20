@@ -26,10 +26,6 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() => {
   });
 });
 
-jest.spyOn(ApiInternal, "submitFreighterTransaction").mockImplementation(() => {
-  return Promise.resolve({});
-});
-
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   return {
     recommendedFee: ".00001",
