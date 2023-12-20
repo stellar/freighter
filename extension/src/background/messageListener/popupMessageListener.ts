@@ -1227,25 +1227,26 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const accountTokenIdList = tokenIdList[keyId] || [];
 
-    try {
-      await subscribeTokenBalance(publicKey, tokenId);
-      await subscribeTokenHistory(publicKey, tokenId);
-    } catch (error) {
-      console.error(error);
-    }
-
     if (accountTokenIdList.includes(tokenId)) {
       return { error: "Token ID already exists" };
     }
 
-    accountTokenIdList.push(tokenId);
-    await localStore.setItem(TOKEN_ID_LIST, {
-      ...tokenIdsByNetwork,
-      [network]: {
-        ...tokenIdList,
-        [keyId]: accountTokenIdList,
-      },
-    });
+    try {
+      await subscribeTokenBalance(publicKey, tokenId);
+      await subscribeTokenHistory(publicKey, tokenId);
+
+      accountTokenIdList.push(tokenId);
+      await localStore.setItem(TOKEN_ID_LIST, {
+        ...tokenIdsByNetwork,
+        [network]: {
+          ...tokenIdList,
+          [keyId]: accountTokenIdList,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      return { error: "Failed to subscribe to token details" };
+    }
 
     return { accountTokenIdList };
   };

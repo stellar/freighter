@@ -140,8 +140,7 @@ export const TransactionDetail = ({
           </div>
           <div className="TransactionDetail__info__row">
             <div>{t("Transaction fee")}</div>
-            {/* TODO: Mercury is working on adding tx fee to ops records */}
-            <div>{stroopToXlm(feeCharged || 0).toString()} XLM</div>
+            <div>{stroopToXlm(feeCharged).toString()} XLM</div>
           </div>
         </div>
       </div>
