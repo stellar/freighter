@@ -309,9 +309,7 @@ export const getAccountIndexerBalances = async (
       url.searchParams.append("contract_ids", id);
     }
     const response = await fetch(url.href);
-    const { data } = (await response.json()) as {
-      data: AccountBalancesInterface;
-    };
+    const data = (await response.json()) as AccountBalancesInterface;
     const formattedBalances = {} as NonNullable<
       AccountBalancesInterface["balances"]
     >;
@@ -390,7 +388,7 @@ export const getIndexerAccountHistory = async ({
       `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&soroban_rpc_url=${networkDetails.sorobanRpcUrl}`,
     );
     const response = await fetch(url.href);
-    const { data } = (await response.json()) as HorizonOperation;
+    const data = (await response.json()) as HorizonOperation;
 
     return data;
   } catch (e) {
