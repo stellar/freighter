@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Account,
   Asset,
@@ -54,7 +54,6 @@ import {
   NewAssetWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 import { NETWORKS } from "@shared/constants/stellar";
@@ -100,7 +99,6 @@ export const ManageAssetRows = ({
   const { accountBalanceStatus, tokensWithNoBalance } = useSelector(
     tokensSelector,
   );
-  const sorobanClient = useContext(SorobanContext);
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
     false,
@@ -309,7 +307,6 @@ export const ManageAssetRows = ({
       removeTokenId({
         contractId,
         network: networkDetails.network as NETWORKS,
-        sorobanClient,
       }),
     );
     navigateTo(ROUTES.account);

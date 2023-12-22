@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
@@ -33,7 +33,6 @@ import {
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { BottomNav } from "popup/components/BottomNav";
-import { SorobanContext } from "../../SorobanContext";
 
 import "./styles.scss";
 
@@ -54,8 +53,6 @@ export const AccountHistory = () => {
         [key in SELECTOR_OPTIONS]: HistoryItemOperation[] | [];
       }
     | null;
-
-  const sorobanClient = useContext(SorobanContext);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -162,7 +159,7 @@ export const AccountHistory = () => {
     };
 
     getData();
-  }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);
+  }, [publicKey, networkDetails, isSorobanSuported, dispatch]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />

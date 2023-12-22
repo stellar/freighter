@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -43,7 +43,6 @@ import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
-import { SorobanContext } from "../../SorobanContext";
 
 import "popup/metrics/authServices";
 
@@ -76,7 +75,6 @@ export const Account = () => {
   const accountDropDownRef = useRef<HTMLDivElement>(null);
 
   const { balances, isFunded } = accountBalances;
-  const sorobanClient = useContext(SorobanContext);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -93,13 +91,7 @@ export const Account = () => {
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [
-    sorobanClient,
-    publicKey,
-    networkDetails,
-    isAccountFriendbotFunded,
-    dispatch,
-  ]);
+  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
     if (!balances) return;

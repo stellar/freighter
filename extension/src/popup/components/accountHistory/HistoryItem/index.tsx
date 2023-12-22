@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
 import { Icon, Loader } from "@stellar/design-system";
@@ -11,7 +11,6 @@ import { INDEXER_URL } from "@shared/constants/mercury";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
-import { SorobanContext } from "popup/SorobanContext";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
@@ -71,7 +70,6 @@ export const HistoryItem = ({
   setIsDetailViewShowing,
 }: HistoryItemProps) => {
   const { t } = useTranslation();
-  const sorobanClient = useContext(SorobanContext);
   const {
     account,
     amount,
@@ -418,7 +416,6 @@ export const HistoryItem = ({
     operation,
     operationString,
     publicKey,
-    sorobanClient,
     srcAssetCode,
     startingBalance,
     t,

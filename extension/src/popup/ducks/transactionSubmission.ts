@@ -45,7 +45,6 @@ import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { SorobanContextInterface } from "popup/SorobanContext";
 import { INDEXER_URL } from "@shared/constants/mercury";
 
 export const signFreighterTransaction = createAsyncThunk<
@@ -268,11 +267,10 @@ export const removeTokenId = createAsyncThunk<
   {
     contractId: string;
     network: NETWORKS;
-    sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
   // @ts-ignore
->("removeTokenId", async ({ contractId, network, sorobanClient }, thunkApi) => {
+>("removeTokenId", async ({ contractId, network }, thunkApi) => {
   try {
     await internalRemoveTokenId({ contractId, network });
   } catch (e) {
