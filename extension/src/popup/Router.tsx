@@ -69,8 +69,6 @@ import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 import { SignBlob } from "./views/SignBlob";
 
-import { SorobanProvider } from "./SorobanContext";
-
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
@@ -105,11 +103,7 @@ export const PublicKeyRoute = (props: RouteProps) => {
       />
     );
   }
-  return (
-    <SorobanProvider pubKey={publicKey}>
-      <Route {...props} />
-    </SorobanProvider>
-  );
+  return <Route {...props} />;
 };
 
 export const PrivateKeyRoute = (props: RouteProps) => {

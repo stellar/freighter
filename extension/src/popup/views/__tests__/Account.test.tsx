@@ -24,6 +24,14 @@ const mockHistoryOperations = {
   ],
 };
 
+jest.spyOn(global, "fetch").mockImplementation(() =>
+  Promise.resolve({
+    json: async () => {
+      return [];
+    },
+  } as any),
+);
+
 jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));

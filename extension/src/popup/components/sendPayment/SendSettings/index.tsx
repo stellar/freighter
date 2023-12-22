@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Address, XdrLargeInt } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { isMuxedAccount, xlmToStroop } from "helpers/stellar";
+import { isMuxedAccount } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -23,10 +23,8 @@ import {
 } from "popup/ducks/transactionSubmission";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
-import { transfer } from "@shared/helpers/soroban/token";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { parseTokenAmount } from "popup/helpers/soroban";
-import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import "../styles.scss";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { getNetworkDetails } from "background/helpers/account";
@@ -39,7 +37,6 @@ export const SendSettings = ({
   previous: ROUTES;
   next: ROUTES;
 }) => {
-  const sorobanClient = useContext(SorobanContext);
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const {
@@ -87,14 +84,6 @@ export const SendSettings = ({
         throw new Error("Asset Balance not available");
       }
 
-      if (!hasSorobanClient(sorobanClient)) {
-        throw new Error("Soroban RPC not supported for this network");
-      }
-
-      const builder = await sorobanClient.newTxBuilder(
-        xlmToStroop(transactionFee).toFixed(),
-      );
-
       const parsedAmount = parseTokenAmount(
         amount,
         Number(assetBalance.decimals),
@@ -106,7 +95,6 @@ export const SendSettings = ({
         new XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
       ];
 
-      const transaction = transfer(assetAddress, params, memo, builder);
       try {
         const networkDetails = await getNetworkDetails();
         const options = {
@@ -115,26 +103,32 @@ export const SendSettings = ({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            signex_xdr: transaction.toXDR(),
+            address: assetAddress,
+            pub_key: publicKey,
+            memo,
+            params,
             network_url: networkDetails.networkUrl,
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
-        const response = await fetch(`${INDEXER_URL}/simulate-tx`, options);
-        const preflightSim = await response.json();
+        const response = await fetch(
+          `${INDEXER_URL}/simulate-token-transfer`,
+          options,
+        );
+        const { simulationResponse, raw } = await response.json();
 
-        if ("transactionData" in preflightSim) {
+        if ("transactionData" in simulationResponse) {
           dispatch(
             saveSimulation({
-              response: preflightSim,
-              raw: transaction,
+              response: simulationResponse,
+              raw,
             }),
           );
           navigateTo(next);
           return;
         }
         throw new Error(
-          `Failed to simluate transaction, ID: ${preflightSim.id}`,
+          `Failed to simluate transaction, ID: ${simulationResponse.id}`,
         );
       } catch (error) {
         throw new Error(
