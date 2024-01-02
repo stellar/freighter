@@ -421,6 +421,9 @@
   "The website <1>{{domain}}</1> does not use an SSL certificate": {
     " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{{domain}}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
   },
+  "The website <1>{{url}}</1> does not use an SSL certificate": {
+    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{{url}}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
+  },
   "them noted to confirm you got them right": "them noted to confirm you got them right",
   "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
