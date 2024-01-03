@@ -38,7 +38,7 @@ export const SignBlob = () => {
   );
 
   const blob = parsedSearchParam(location.search) as BlobToSign;
-  const { accountToSign, domain, isDomainListedAllowed } = blob;
+  const { accountToSign, domain, isDomainListedAllowed, url } = blob;
 
   const {
     allAccounts,
@@ -72,7 +72,7 @@ export const SignBlob = () => {
     );
   }
 
-  if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
+  if (!url.startsWith("https") && !isExperimentalModeEnabled) {
     return (
       <WarningMessage
         handleCloseClick={() => window.close()}
@@ -81,8 +81,8 @@ export const SignBlob = () => {
         header={t("WEBSITE CONNECTION IS NOT SECURE")}
       >
         <p>
-          <Trans domain={domain}>
-            The website <strong>{{ domain }}</strong> does not use an SSL
+          <Trans domain={url}>
+            The website <strong>{{ url }}</strong> does not use an SSL
             certificate. For additional safety Freighter only works with
             websites that provide an SSL certificate.
           </Trans>
