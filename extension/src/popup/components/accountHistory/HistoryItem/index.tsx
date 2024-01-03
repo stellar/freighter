@@ -211,10 +211,6 @@ export const HistoryItem = ({
         const tokenKey = Object.keys(balances).find(
           (balanceKey) => attrs?.contractId === balanceKey.split(":")[1],
         );
-        if (!tokenKey) {
-          return;
-        }
-        const { token, decimals } = balances[tokenKey] as TokenBalance;
 
         if (!attrs) {
           setRowText(operationString);
@@ -237,7 +233,7 @@ export const HistoryItem = ({
           // Minter does not need to have tokens to mint, and
           // they are not neccessarily minted to themselves.
           // If user has minted to self, add token to their token list.
-          if (!token) {
+          if (!tokenKey) {
             setIsLoading(true);
 
             try {
@@ -315,6 +311,7 @@ export const HistoryItem = ({
               setIsLoading(false);
             }
           } else {
+            const { token, decimals } = balances[tokenKey] as TokenBalance;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
               decimals,
@@ -349,7 +346,7 @@ export const HistoryItem = ({
             <Icon.ArrowUp className="HistoryItem__icon--sent" />,
           );
 
-          if (!token) {
+          if (!tokenKey) {
             // this should never happen, transfers cant succeed if you have no balance.
             setRowText(operationString);
             setTxDetails((_state) => ({
@@ -358,6 +355,7 @@ export const HistoryItem = ({
               operationText: operationString,
             }));
           } else {
+            const { token, decimals } = balances[tokenKey] as TokenBalance;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
               decimals,
