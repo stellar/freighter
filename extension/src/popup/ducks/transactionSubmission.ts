@@ -290,7 +290,7 @@ export const getAccountBalances = createAsyncThunk<
   try {
     const balances = await internalgetAccountIndexerBalances(
       publicKey,
-      networkDetails.network as NETWORKS,
+      networkDetails,
     );
     storeBalanceMetricData(publicKey, balances.isFunded || false);
     return balances;
@@ -305,10 +305,7 @@ export const getDestinationBalances = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
-    return await internalgetAccountIndexerBalances(
-      publicKey,
-      networkDetails.network as NETWORKS,
-    );
+    return await internalgetAccountIndexerBalances(publicKey, networkDetails);
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e });
   }

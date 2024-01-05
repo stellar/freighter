@@ -238,7 +238,7 @@ export const HistoryItem = ({
 
             try {
               const response = await fetch(
-                `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_rpc_url=${networkDetails.sorobanRpcUrl}`,
+                `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&horizon_url=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
               );
               const tokenDetails = await response.json();
 
