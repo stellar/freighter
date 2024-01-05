@@ -202,7 +202,7 @@ export const IntegrationTest = () => {
 
       res = await getAccountIndexerBalances(
         testPublicKey,
-        TESTNET_NETWORK_DETAILS.network as NETWORKS,
+        TESTNET_NETWORK_DETAILS,
       );
       runAsserts("getAccountBalances", () => {
         assertEq(Object.keys(res.balances).length > 0, true);

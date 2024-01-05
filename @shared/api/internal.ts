@@ -299,12 +299,14 @@ export const confirmPassword = async (
 
 export const getAccountIndexerBalances = async (
   publicKey: string,
-  network: NETWORKS,
+  networkDetails: NetworkDetails,
 ): Promise<AccountBalancesInterface> => {
   try {
-    const contractIds = await getTokenIds(network);
+    const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
     const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
-    url.searchParams.append("network", network);
+    url.searchParams.append("network", networkDetails.network);
+    url.searchParams.append("horizon_url", networkDetails.networkUrl);
+    url.searchParams.append("soroban_url", networkDetails.sorobanRpcUrl!);
     for (const id of contractIds) {
       url.searchParams.append("contract_ids", id);
     }
@@ -385,7 +387,7 @@ export const getIndexerAccountHistory = async ({
 }) => {
   try {
     const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&soroban_rpc_url=${networkDetails.sorobanRpcUrl}`,
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}&horizon_url=${networkDetails.networkUrl}`,
     );
     const response = await fetch(url.href);
     const data = (await response.json()) as HorizonOperation;
