@@ -115,6 +115,9 @@ export const SendSettings = ({
           `${INDEXER_URL}/simulate-token-transfer`,
           options,
         );
+        if (!response.ok) {
+          throw new Error("failed to simluate token transfer");
+        }
         const { simulationResponse, raw } = await response.json();
 
         if ("transactionData" in simulationResponse) {

@@ -358,6 +358,9 @@ export const Operations = ({
       const response = await fetch(
         `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&horizon_url=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
       );
+      if (!response.ok) {
+        throw new Error("failed to fetch token details");
+      }
       const tokenDetails = await response.json();
       setDecimals(tokenDetails.decimals);
     };

@@ -390,11 +390,16 @@ export const getIndexerAccountHistory = async ({
       `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}&horizon_url=${networkDetails.networkUrl}`,
     );
     const response = await fetch(url.href);
+
     const data = (await response.json()) as HorizonOperation;
+    if (!response.ok) {
+      throw new Error(data);
+    }
 
     return data;
   } catch (e) {
     console.error(e);
+    return [];
   }
 };
 
