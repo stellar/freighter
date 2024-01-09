@@ -6,6 +6,7 @@ import { Button } from "@stellar/design-system";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
+import { View } from "popup/basics/layout/View";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
@@ -75,88 +76,92 @@ export const TransactionDetail = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return assetIssuer && !assetDomain ? null : (
-    <div className="TransactionDetail">
-      <div className="TransactionDetail__content">
-        <SubviewHeader
-          customBackAction={() => setIsDetailViewShowing(false)}
-          title={headerTitle}
-        />
-        {isPayment ? (
-          <div className="TransactionDetail__header">
-            {operationText}
-            <AssetNetworkInfo
-              assetCode={assetCode || ""}
-              assetType={assetType}
-              assetIssuer={assetIssuer || ""}
-              assetDomain={assetDomain}
-            />
-          </div>
-        ) : null}
+    <View>
+      <SubviewHeader
+        customBackAction={() => setIsDetailViewShowing(false)}
+        title={headerTitle}
+      />
+      <View.Content>
+        <div className="TransactionDetail__content">
+          {isPayment ? (
+            <div className="TransactionDetail__header">
+              {operationText}
+              <AssetNetworkInfo
+                assetCode={assetCode || ""}
+                assetType={assetType}
+                assetIssuer={assetIssuer || ""}
+                assetDomain={assetDomain}
+              />
+            </div>
+          ) : null}
 
-        <div className="TransactionDetail__info">
-          <div className="TransactionDetail__info__row">
-            {isPayment && !isSwap ? (
-              <>
-                {isRecipient ? (
-                  <>
-                    <div>{t("From")}</div>
-                    <div>
-                      <KeyIdenticon
-                        publicKey={from}
-                        customSize={identiconDimensions}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>{t("To")}</div>
-                    <div>
-                      <KeyIdenticon
-                        publicKey={to}
-                        customSize={identiconDimensions}
-                      />
-                    </div>
-                  </>
-                )}
-              </>
-            ) : (
-              !isSwap && (
+          <div className="TransactionDetail__info">
+            <div className="TransactionDetail__info__row">
+              {isPayment && !isSwap ? (
                 <>
-                  <div>{t("Action")}</div>
-                  <div>{operationText}</div>
+                  {isRecipient ? (
+                    <>
+                      <div>{t("From")}</div>
+                      <div>
+                        <KeyIdenticon
+                          publicKey={from}
+                          customSize={identiconDimensions}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>{t("To")}</div>
+                      <div>
+                        <KeyIdenticon
+                          publicKey={to}
+                          customSize={identiconDimensions}
+                        />
+                      </div>
+                    </>
+                  )}
                 </>
-              )
-            )}
-          </div>
-          <div className="TransactionDetail__info__row">
-            <div>{t("Date")}</div>
-            <div>
-              {createdAtTime} &bull; {createdAtDateStr}
+              ) : (
+                !isSwap && (
+                  <>
+                    <div>{t("Action")}</div>
+                    <div>{operationText}</div>
+                  </>
+                )
+              )}
+            </div>
+            <div className="TransactionDetail__info__row">
+              <div>{t("Date")}</div>
+              <div>
+                {createdAtTime} &bull; {createdAtDateStr}
+              </div>
+            </div>
+            <div className="TransactionDetail__info__row">
+              <div>{t("Memo")}</div>
+              <div>{memo || `None`}</div>
+            </div>
+            <div className="TransactionDetail__info__row">
+              <div>{t("Transaction fee")}</div>
+              <div>{stroopToXlm(feeCharged).toString()} XLM</div>
             </div>
           </div>
-          <div className="TransactionDetail__info__row">
-            <div>{t("Memo")}</div>
-            <div>{memo || `None`}</div>
-          </div>
-          <div className="TransactionDetail__info__row">
-            <div>{t("Transaction fee")}</div>
-            <div>{stroopToXlm(feeCharged).toString()} XLM</div>
-          </div>
         </div>
-      </div>
-      {!isCustomNetwork(networkDetails) ? (
-        <Button
-          size="md"
-          variant="secondary"
-          isFullWidth
-          onClick={() => {
-            emitMetric(METRIC_NAMES.historyOpenItem);
-            openTab(externalUrl);
-          }}
-        >
-          {t("View on")} stellar.expert
-        </Button>
-      ) : null}
-    </div>
+      </View.Content>
+      <View.Footer>
+        {!isCustomNetwork(networkDetails) ? (
+          <Button
+            size="md"
+            variant="secondary"
+            isFullWidth
+            onClick={() => {
+              emitMetric(METRIC_NAMES.historyOpenItem);
+              openTab(externalUrl);
+            }}
+          >
+            {t("View on")} stellar.expert
+          </Button>
+        ) : null}
+      </View.Footer>
+    </View>
   );
 };

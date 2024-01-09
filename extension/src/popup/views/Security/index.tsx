@@ -3,9 +3,17 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 
-import { SubviewHeader } from "popup/components/SubviewHeader";
+// import { newTabHref } from "helpers/urls";
+// import { openTab } from "popup/helpers/navigate";
 
-import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
+import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
+
+import {
+  ListNavLink,
+  // ListNavButtonLink,
+  ListNavLinkWrapper,
+} from "popup/basics/ListNavLink";
 
 import "./styles.scss";
 
@@ -13,20 +21,29 @@ export const Security = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="Security">
+    <View>
       <SubviewHeader title="Security" />
-      <ListNavLinkWrapper>
-        {/* 
+      <View.Content hasNoTopPadding>
+        <ListNavLinkWrapper>
+          {/*
       TODO: Add Change Password
-      <ListNavLink href="/">Change Password</ListNavLink> 
+      <ListNavLink href="/">Change Password</ListNavLink>
       */}
-        <ListNavLink href={ROUTES.displayBackupPhrase}>
-          {t("Show recovery phrase")}
-        </ListNavLink>
-        <ListNavLink href={ROUTES.manageConnectedApps}>
-          {t("Manage connected apps")}
-        </ListNavLink>
-      </ListNavLinkWrapper>
-    </div>
+          <ListNavLink href={ROUTES.displayBackupPhrase}>
+            {t("Show recovery phrase")}
+          </ListNavLink>
+          <ListNavLink href={ROUTES.manageConnectedApps}>
+            {t("Manage connected apps")}
+          </ListNavLink>
+          {/* <ListNavButtonLink
+            handleClick={() => {
+              openTab(newTabHref(ROUTES.accountMigration));
+            }}
+          >
+            {t("Account migration")}
+          </ListNavButtonLink> */}
+        </ListNavLinkWrapper>
+      </View.Content>
+    </View>
   );
 };

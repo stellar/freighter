@@ -1,12 +1,15 @@
-import { SorobanRpc, Networks } from "stellar-sdk";
+import { SorobanRpc, Networks, Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import {
   Account,
   AccountBalancesInterface,
   AccountHistoryInterface,
+  BalanceToMigrate,
   Balances,
   HorizonOperation,
+  MigratableAccount,
+  MigratedAccount,
   Settings,
 } from "./types";
 import {
@@ -215,6 +218,21 @@ export const getMnemonicPhrase = async (): Promise<{
   return response;
 };
 
+export const getMigratedMnemonicPhrase = async (): Promise<{
+  mnemonicPhrase: string;
+}> => {
+  let response = { mnemonicPhrase: "" };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
 export const confirmMnemonicPhrase = async (
   mnemonicPhraseToConfirm: string,
 ): Promise<{
@@ -230,6 +248,26 @@ export const confirmMnemonicPhrase = async (
     response = await sendMessageToBackground({
       mnemonicPhraseToConfirm,
       type: SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
+export const confirmMigratedMnemonicPhrase = async (
+  mnemonicPhraseToConfirm: string,
+): Promise<{
+  isCorrectPhrase: boolean;
+}> => {
+  let response = {
+    isCorrectPhrase: false,
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      mnemonicPhraseToConfirm,
+      type: SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE,
     });
   } catch (e) {
     console.error(e);
@@ -295,6 +333,88 @@ export const confirmPassword = async (
   }
 
   return response;
+};
+
+export const getAccountInfo = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const { networkUrl } = networkDetails;
+
+  const server = new Horizon.Server(networkUrl);
+
+  let account;
+  let signerArr = { records: [] as Horizon.ServerApi.AccountRecord[] };
+
+  try {
+    account = await server.loadAccount(publicKey);
+    signerArr = await server.accounts().forSigner(publicKey).call();
+  } catch (e) {
+    console.error(e);
+  }
+
+  return {
+    account,
+    isSigner: signerArr.records.length > 1,
+  };
+};
+
+export const getMigratableAccounts = async () => {
+  let migratableAccounts: MigratableAccount[] = [];
+
+  try {
+    ({ migratableAccounts } = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { migratableAccounts };
+};
+
+export const migrateAccounts = async ({
+  balancesToMigrate,
+  isMergeSelected,
+  recommendedFee,
+}: {
+  balancesToMigrate: BalanceToMigrate[];
+  isMergeSelected: boolean;
+  recommendedFee: string;
+}): Promise<{
+  publicKey: string;
+  migratedAccounts: Array<MigratedAccount>;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+  error: string;
+}> => {
+  let publicKey = "";
+  let migratedAccounts = [] as Array<MigratedAccount>;
+  let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
+  let error = "";
+
+  try {
+    ({
+      migratedAccounts,
+      allAccounts,
+      publicKey,
+      hasPrivateKey,
+      error,
+    } = await sendMessageToBackground({
+      balancesToMigrate,
+      isMergeSelected,
+      recommendedFee,
+      type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { migratedAccounts, allAccounts, publicKey, hasPrivateKey, error };
 };
 
 export const getAccountIndexerBalances = async (

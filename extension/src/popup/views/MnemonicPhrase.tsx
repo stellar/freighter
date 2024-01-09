@@ -6,12 +6,11 @@ import { Redirect } from "react-router-dom";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 import { ROUTES } from "popup/constants/routes";
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { Header } from "popup/components/Header";
 import { Onboarding } from "popup/components/Onboarding";
 import { ConfirmMnemonicPhrase } from "popup/components/mnemonicPhrase/ConfirmMnemonicPhrase";
 import { DisplayMnemonicPhrase } from "popup/components/mnemonicPhrase/DisplayMnemonicPhrase";
 import { applicationStateSelector } from "popup/ducks/accountServices";
+import { View } from "popup/basics/layout/View";
 
 interface MnemonicPhraseProps {
   mnemonicPhrase: string;
@@ -29,24 +28,30 @@ export const MnemonicPhrase = ({
 
   if (mnemonicPhrase) {
     return isConfirmed ? (
-      <>
-        <Header />
-        <FullscreenStyle />
-        <Onboarding customBackAction={() => setIsConfirmed(false)} hasGoBackBtn>
-          <ConfirmMnemonicPhrase words={shuffle(mnemonicPhrase.split(" "))} />
-        </Onboarding>
-      </>
+      <View isAppLayout={false}>
+        <View.Header />
+        <View.Content alignment="center">
+          <Onboarding layout="full" customWidth="31rem">
+            <ConfirmMnemonicPhrase
+              words={shuffle(mnemonicPhrase.split(" "))}
+              customBackAction={() => setIsConfirmed(false)}
+              hasGoBackBtn
+            />
+          </Onboarding>
+        </View.Content>
+      </View>
     ) : (
-      <>
-        <Header />
-        <FullscreenStyle />
-        <Onboarding>
-          <DisplayMnemonicPhrase
-            mnemonicPhrase={mnemonicPhrase}
-            setIsConfirmed={setIsConfirmed}
-          />
-        </Onboarding>
-      </>
+      <View isAppLayout={false}>
+        <View.Header />
+        <View.Content alignment="center">
+          <Onboarding layout="full">
+            <DisplayMnemonicPhrase
+              mnemonicPhrase={mnemonicPhrase}
+              setIsConfirmed={setIsConfirmed}
+            />
+          </Onboarding>
+        </View.Content>
+      </View>
     );
   }
 

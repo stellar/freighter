@@ -173,7 +173,7 @@ const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
 
     const currentNetwork = await localStore.getItem(NETWORK_ID);
 
-    if (currentNetwork.network === NETWORKS.TESTNET) {
+    if (currentNetwork && currentNetwork.network === NETWORKS.TESTNET) {
       await localStore.setItem(NETWORK_ID, TESTNET_NETWORK_DETAILS);
     }
 

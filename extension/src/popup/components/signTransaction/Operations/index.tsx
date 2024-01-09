@@ -23,7 +23,6 @@ import {
   formatTokenAmount,
 } from "popup/helpers/soroban";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import "./styles.scss";
@@ -159,11 +158,11 @@ const KeyValueWithScValue = ({
       {operationKey}
       {operationKey ? ":" : null}
     </div>
-    <SimpleBarWrapper className="Operations__scValue">
+    <div className="Operations__scValue">
       <div>
         <pre>{JSON.stringify(operationValue, null, 2)}</pre>
       </div>
-    </SimpleBarWrapper>
+    </div>
   </div>
 );
 
@@ -182,7 +181,7 @@ const KeyValueWithScAuth = ({
         {operationKey}
         {operationKey ? ":" : null}
       </div>
-      <SimpleBarWrapper className="Operations__scValue">
+      <div className="Operations__scValue">
         <div>
           <pre>
             {JSON.stringify(
@@ -192,7 +191,7 @@ const KeyValueWithScAuth = ({
             )}
           </pre>
         </div>
-      </SimpleBarWrapper>
+      </div>
     </div>
   );
 };
@@ -339,7 +338,7 @@ export const Operations = ({
 
   /*
     Needed to translate enum strings:
-    
+
     t("Authorization Required")
     t("Authorization Revocable")
     t("Authorization Required; Authorization Required")

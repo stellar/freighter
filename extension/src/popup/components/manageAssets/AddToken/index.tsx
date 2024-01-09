@@ -11,8 +11,8 @@ import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 
-import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { FormRows } from "popup/basics/Forms";
+import { View } from "popup/basics/layout/View";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
@@ -55,12 +55,12 @@ export const AddToken = () => {
   };
 
   return (
-    <>
-      <PopupWrapper>
-        <SubviewHeader title={t("Add a Soroban token by ID")} />
-        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-          {({ dirty, isSubmitting, isValid, errors, touched }) => (
-            <Form>
+    <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+      {({ dirty, isSubmitting, isValid, errors, touched }) => (
+        <View>
+          <SubviewHeader title={t("Add a Soroban token by ID")} />
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
               <FormRows>
                 <Field name="tokenId">
                   {({ field }: FieldProps) => (
@@ -79,23 +79,23 @@ export const AddToken = () => {
                     />
                   )}
                 </Field>
-                <SubmitButtonWrapper>
-                  <Button
-                    size="md"
-                    variant="primary"
-                    isFullWidth
-                    disabled={!(dirty && isValid)}
-                    isLoading={isSubmitting}
-                    type="submit"
-                  >
-                    {t("Add New Token")}
-                  </Button>
-                </SubmitButtonWrapper>
               </FormRows>
-            </Form>
-          )}
-        </Formik>
-      </PopupWrapper>
-    </>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                variant="primary"
+                isFullWidth
+                disabled={!(dirty && isValid)}
+                isLoading={isSubmitting}
+                type="submit"
+              >
+                {t("Add New Token")}
+              </Button>
+            </View.Footer>
+          </Form>
+        </View>
+      )}
+    </Formik>
   );
 };

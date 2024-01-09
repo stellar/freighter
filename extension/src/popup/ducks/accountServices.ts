@@ -14,6 +14,7 @@ import {
   makeAccountActive as makeAccountActiveService,
   updateAccountName as updateAccountNameService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
+  confirmMigratedMnemonicPhrase as confirmMigratedMnemonicPhraseService,
   createAccount as createAccountService,
   fundAccount as fundAccountService,
   recoverAccount as recoverAccountService,
@@ -21,12 +22,15 @@ import {
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
   addTokenId as addTokenIdService,
+  migrateAccounts as migrateAccountsService,
 } from "@shared/api/internal";
 import {
   Account,
   AccountType,
   ActionStatus,
+  BalanceToMigrate,
   ErrorMessage,
+  MigratedAccount,
 } from "@shared/api/types";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
@@ -235,6 +239,40 @@ export const confirmMnemonicPhrase = createAsyncThunk<
   },
 );
 
+export const confirmMigratedMnemonicPhrase = createAsyncThunk<
+  { isCorrectPhrase: boolean },
+  string,
+  { rejectValue: ErrorMessage }
+>(
+  "auth/confirmMigratedMnemonicPhrase",
+
+  async (phrase: string, thunkApi) => {
+    let res = {
+      isCorrectPhrase: false,
+    };
+    try {
+      res = await confirmMigratedMnemonicPhraseService(phrase);
+    } catch (e) {
+      console.error("Failed when confirming Mnemonic Phrase: ", e.message);
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message,
+      });
+    }
+
+    if (res.isCorrectPhrase) {
+      res = {
+        isCorrectPhrase: true,
+      };
+    } else {
+      return thunkApi.rejectWithValue({
+        errorMessage: "The secret phrase you entered is incorrect.",
+      });
+    }
+
+    return res;
+  },
+);
+
 export const confirmPassword = createAsyncThunk<
   {
     publicKey: string;
@@ -367,8 +405,51 @@ export const addTokenId = createAsyncThunk<
   return res;
 });
 
+export const migrateAccounts = createAsyncThunk<
+  {
+    allAccounts: Array<Account>;
+    migratedAccounts: Array<MigratedAccount>;
+    hasPrivateKey: boolean;
+    publicKey: string;
+    error: string;
+  },
+  {
+    balancesToMigrate: BalanceToMigrate[];
+    isMergeSelected: boolean;
+    recommendedFee: string;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "auth/migrateAccounts",
+  async ({ balancesToMigrate, isMergeSelected, recommendedFee }, thunkApi) => {
+    let res = {
+      migratedAccounts: [] as Array<MigratedAccount>,
+      allAccounts: [] as Array<Account>,
+      publicKey: "",
+      hasPrivateKey: false,
+      error: "",
+    };
+
+    try {
+      res = await migrateAccountsService({
+        balancesToMigrate,
+        isMergeSelected,
+        recommendedFee,
+      });
+    } catch (e) {
+      console.error("Failed when migrating an account: ", e.message);
+      return thunkApi.rejectWithValue({
+        errorMessage: e.message,
+      });
+    }
+
+    return res;
+  },
+);
+
 interface InitialState {
   allAccounts: Array<Account>;
+  migratedAccounts: Array<MigratedAccount>;
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
@@ -381,6 +462,7 @@ interface InitialState {
 
 const initialState: InitialState = {
   allAccounts: [],
+  migratedAccounts: [],
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   hasPrivateKey: false,
   publicKey: "",
@@ -583,6 +665,16 @@ const authSlice = createSlice({
       ...state,
       applicationState: action.payload.applicationState,
     }));
+    builder.addCase(confirmMigratedMnemonicPhrase.rejected, (state, action) => {
+      const { errorMessage } = action.payload || {
+        errorMessage: "",
+      };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
     builder.addCase(loadAccount.fulfilled, (state, action) => {
       const {
         hasPrivateKey,
@@ -682,6 +774,36 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(migrateAccounts.fulfilled, (state, action) => {
+      const {
+        publicKey,
+        allAccounts,
+        migratedAccounts,
+        hasPrivateKey,
+      } = action.payload || {
+        publicKey: "",
+        allAccounts: [],
+        migratedAccounts: [],
+        hasPrivateKey: false,
+      };
+
+      return {
+        ...state,
+        error: "",
+        allAccounts,
+        migratedAccounts,
+        hasPrivateKey,
+        publicKey,
+      };
+    });
+    builder.addCase(migrateAccounts.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
   },
 });
 
@@ -710,6 +832,10 @@ export const publicKeySelector = createSelector(
 export const bipPathSelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.bipPath,
+);
+export const migratedAccountsSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.migratedAccounts,
 );
 
 export const accountNameSelector = createSelector(

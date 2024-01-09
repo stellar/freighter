@@ -33,6 +33,7 @@ import {
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { BottomNav } from "popup/components/BottomNav";
+import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
 
@@ -164,60 +165,66 @@ export const AccountHistory = () => {
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
-    <div className="AccountHistory">
-      {isLoading ? (
-        <div className="AccountHistory__loader">
-          <Loader size="2rem" />
-        </div>
-      ) : (
-        <div className="AccountHistory__wrapper">
-          <header className="AccountHistory__header">
-            {t("Transactions")}
-          </header>
-          <div className="AccountHistory__selector">
-            {Object.values(SELECTOR_OPTIONS).map((option) => (
-              <div
-                key={option}
-                className={`AccountHistory__selector__item ${
-                  option === selectedSegment
-                    ? "AccountHistory__selector__item--active"
-                    : ""
-                }`}
-                onClick={() => setSelectedSegment(option)}
-              >
-                {t(option)}
+    <View>
+      <View.Content>
+        <div className="AccountHistory">
+          {isLoading ? (
+            <div className="AccountHistory__loader">
+              <Loader size="2rem" />
+            </div>
+          ) : (
+            <>
+              <header className="AccountHistory__header">
+                {t("Transactions")}
+              </header>
+              <div className="AccountHistory__selector">
+                {Object.values(SELECTOR_OPTIONS).map((option) => (
+                  <div
+                    key={option}
+                    className={`AccountHistory__selector__item ${
+                      option === selectedSegment
+                        ? "AccountHistory__selector__item--active"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedSegment(option)}
+                  >
+                    {t(option)}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="AccountHistory__list">
-            {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
-              <HistoryList>
-                <>
-                  {historySegments![SELECTOR_OPTIONS[selectedSegment]].map(
-                    (operation: HistoryItemOperation) => (
-                      <HistoryItem
-                        key={operation.id}
-                        accountBalances={accountBalances}
-                        operation={operation}
-                        publicKey={publicKey}
-                        url={stellarExpertUrl}
-                        networkDetails={networkDetails}
-                        setDetailViewProps={setDetailViewProps}
-                        setIsDetailViewShowing={setIsDetailViewShowing}
-                      />
-                    ),
-                  )}
-                </>
-              </HistoryList>
-            ) : (
-              <div>
-                {isAccountHistoryLoading ? null : t("No transactions to show")}
+              <div className="AccountHistory__list">
+                {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
+                  <HistoryList>
+                    <>
+                      {historySegments![SELECTOR_OPTIONS[selectedSegment]].map(
+                        (operation: HistoryItemOperation) => (
+                          <HistoryItem
+                            key={operation.id}
+                            accountBalances={accountBalances}
+                            operation={operation}
+                            publicKey={publicKey}
+                            url={stellarExpertUrl}
+                            networkDetails={networkDetails}
+                            setDetailViewProps={setDetailViewProps}
+                            setIsDetailViewShowing={setIsDetailViewShowing}
+                          />
+                        ),
+                      )}
+                    </>
+                  </HistoryList>
+                ) : (
+                  <div>
+                    {isAccountHistoryLoading
+                      ? null
+                      : t("No transactions to show")}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
-      )}
+      </View.Content>
       <BottomNav />
-    </div>
+    </View>
   );
 };

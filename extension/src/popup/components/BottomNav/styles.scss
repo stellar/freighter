@@ -1,18 +1,17 @@
 .BottomNav {
-  border-top: solid 1px var(--color-gray-40);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--bottom-nav--height);
-  top: calc(var(--popup--height) - var(--bottom-nav--height));
-  position: absolute;
   width: 100%;
-
-  img {
-    margin: 1rem 2rem;
-  }
+  height: 100%;
+  padding-top: 1rem;
 
   &--link {
+    display: block;
+    width: 4.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     filter: brightness(0) saturate(100%) invert(31%) sepia(6%) saturate(476%)
       hue-rotate(195deg) brightness(100%) contrast(89%);
 

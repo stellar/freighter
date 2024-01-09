@@ -6,6 +6,11 @@
 
 .SubmitButtonWrapper {
   margin-top: 1.5rem;
+
+  &--center {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .FormError {

@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import {
@@ -24,14 +25,14 @@ import IconCube from "popup/assets/icon-cube.svg";
 import "./styles.scss";
 
 interface AccountHeaderProps {
-  accountDropDownRef: React.RefObject<HTMLDivElement>;
+  // accountDropDownRef: React.RefObject<HTMLDivElement>;
   allAccounts: Array<Account>;
   currentAccountName: string;
   publicKey: string;
 }
 
 export const AccountHeader = ({
-  accountDropDownRef,
+  // accountDropDownRef,
   allAccounts,
   currentAccountName,
   publicKey,
@@ -43,15 +44,10 @@ export const AccountHeader = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
 
-  const accountsModalHeight = useRef(0);
   const networksModalHeight = useRef(0);
   const activeNetworkIndex = useRef<number | null>(null);
 
   const calculateModalHeight = (listLength: number) => (listLength + 2) * 6;
-
-  useEffect(() => {
-    accountsModalHeight.current = calculateModalHeight(allAccounts.length);
-  }, [allAccounts]);
 
   useEffect(() => {
     networksModalHeight.current = calculateModalHeight(networksList.length);
@@ -64,96 +60,95 @@ export const AccountHeader = ({
   activeNetworkIndex.current = index;
 
   return (
-    <div
-      className="AccountHeader"
-      ref={accountDropDownRef}
+    <View.AppHeader
+      // ref={accountDropDownRef}
       data-testid="account-header"
-    >
-      <div
-        className="AccountHeader__icon-btn"
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-      >
-        <AccountListIdenticon
-          active
-          accountName={currentAccountName}
-          publicKey={publicKey}
-        />
-      </div>
-      <div
-        className="AccountHeader__network-wrapper"
-        onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
-      >
-        <NetworkIcon index={activeNetworkIndex.current} />
-        <div className="AccountHeader__network-copy">
-          {networkDetails.networkName}
+      leftContent={
+        <div
+          className="AccountHeader__icon-btn"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        >
+          <AccountListIdenticon
+            active
+            accountName={currentAccountName}
+            publicKey={publicKey}
+          />
         </div>
-      </div>
-      <AccountHeaderModal
-        isDropdownOpen={isDropdownOpen}
-        maxHeight={accountsModalHeight.current}
-      >
+      }
+      rightContent={
+        <div
+          className="AccountHeader__network-wrapper"
+          onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
+        >
+          <NetworkIcon index={activeNetworkIndex.current} />
+          <div className="AccountHeader__network-copy">
+            {networkDetails.networkName}
+          </div>
+        </div>
+      }
+    >
+      <AccountHeaderModal isDropdownOpen={isDropdownOpen}>
         <ul className="AccountHeader__account-dropdown">
           <AccountList
             allAccounts={allAccounts}
             publicKey={publicKey}
             setIsDropdownOpen={setIsDropdownOpen}
           />
-          <hr className="AccountHeader__list-divider" />
-          <li className="AccountHeader__account-list-item">
-            <Link
-              className="AccountHeader__account-list-item__link"
-              to={{
-                pathname: ROUTES.addAccount,
-                state: {
-                  header: t("Create a new Stellar address"),
-                  cta: t("Add address"),
-                },
-              }}
-            >
-              <div className="AccountHeader__account-list-item__icon">
-                <Icon.AddCircle />
-              </div>
-              <span className="AccountHeader__account-list-item__link-copy">
-                {t("Create a new Stellar address")}
-              </span>
-            </Link>
-          </li>
-          <li className="AccountHeader__account-list-item">
-            <Link
-              className="AccountHeader__account-list-item__link"
-              to={ROUTES.importAccount}
-            >
-              <div className="AccountHeader__account-list-item__icon">
-                <Icon.Download />
-              </div>
-              <span className="AccountHeader__account-list-item__link-copy">
-                {t("Import a Stellar secret key")}
-              </span>
-            </Link>
-          </li>
-          <li className="AccountHeader__account-list-item">
-            <Link
-              className="AccountHeader__account-list-item__link"
-              to={ROUTES.connectWallet}
-            >
-              <div className="AccountHeader__account-list-item__icon">
-                <img
-                  className="AccountHeader__img-cube-icon"
-                  src={IconCube}
-                  alt=""
-                />
-              </div>
-              <span className="AccountHeader__account-list-item__link-copy">
-                Connect a hardware wallet
-              </span>
-            </Link>
-          </li>
+          <div className="AccountList__footer">
+            <hr className="AccountHeader__list-divider" />
+            <li className="AccountHeader__account-list-item">
+              <Link
+                className="AccountHeader__account-list-item__link"
+                to={{
+                  pathname: ROUTES.addAccount,
+                  state: {
+                    header: t("Create a new Stellar address"),
+                    cta: t("Add address"),
+                  },
+                }}
+              >
+                <div className="AccountHeader__account-list-item__icon">
+                  <Icon.AddCircle />
+                </div>
+                <span className="AccountHeader__account-list-item__link-copy">
+                  {t("Create a new Stellar address")}
+                </span>
+              </Link>
+            </li>
+            <li className="AccountHeader__account-list-item">
+              <Link
+                className="AccountHeader__account-list-item__link"
+                to={ROUTES.importAccount}
+              >
+                <div className="AccountHeader__account-list-item__icon">
+                  <Icon.Download />
+                </div>
+                <span className="AccountHeader__account-list-item__link-copy">
+                  {t("Import a Stellar secret key")}
+                </span>
+              </Link>
+            </li>
+            <li className="AccountHeader__account-list-item">
+              <Link
+                className="AccountHeader__account-list-item__link"
+                to={ROUTES.connectWallet}
+              >
+                <div className="AccountHeader__account-list-item__icon">
+                  <img
+                    className="AccountHeader__img-cube-icon"
+                    src={IconCube}
+                    alt=""
+                  />
+                </div>
+                <span className="AccountHeader__account-list-item__link-copy">
+                  Connect a hardware wallet
+                </span>
+              </Link>
+            </li>
+          </div>
         </ul>
       </AccountHeaderModal>
-      <AccountHeaderModal
-        isDropdownOpen={isNetworkSelectorOpen}
-        maxHeight={networksModalHeight.current}
-      >
+      <AccountHeaderModal isDropdownOpen={isNetworkSelectorOpen}>
         <>
           <div className="AccountHeader__network-selector">
             {networksList.map((n, i) => (
@@ -213,6 +208,6 @@ export const AccountHeader = ({
         }}
         isActive={isDropdownOpen || isNetworkSelectorOpen}
       />
-    </div>
+    </View.AppHeader>
   );
 };

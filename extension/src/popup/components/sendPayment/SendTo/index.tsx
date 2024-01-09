@@ -28,8 +28,7 @@ import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
+import { View } from "popup/basics/layout/View";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveDestination,
@@ -217,113 +216,116 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   }, [dispatch, validatedPubKey, networkDetails]);
 
   return (
-    <PopupWrapper>
+    <View>
       <SubviewHeader
         title="Send To"
         customBackAction={() => navigateTo(previous)}
       />
-      <FormRows>
-        <Input
-          fieldSize="md"
-          autoComplete="off"
-          id="destination-input"
-          name="destination"
-          placeholder={t("Recipient Stellar address")}
-          onChange={formik.handleChange}
-          value={formik.values.destination}
-          data-testid="send-to-input"
-        />
-      </FormRows>
-      <div className="SendTo__address-wrapper" data-testid="send-to-view">
-        {isLoading ? (
-          <div className="SendTo__loader">
-            <Loader />
-          </div>
-        ) : (
-          <div>
-            {formik.values.destination === "" ? (
-              <>
-                {recentAddresses.length > 0 && (
-                  <div className="SendTo__subheading">{t("RECENT")}</div>
-                )}
-                <SimpleBarWrapper className="SendTo__simplebar">
-                  <ul className="SendTo__recent-accts-ul">
-                    {recentAddresses.map((address) => (
-                      <li key={address}>
-                        <button
-                          onClick={async () => {
-                            emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
-                            setIsLoading(true);
-                            // recentAddresses already validated so safe to dispatch
-                            if (isFederationAddress(address)) {
-                              const fedResp = await Federation.Server.resolve(
-                                address,
-                              );
-                              const publicKey = fedResp.account_id;
-                              setValidatedPubKey(publicKey);
-                              handleContinue(publicKey, address);
-                            } else {
-                              setValidatedPubKey(address);
-                              handleContinue(address);
-                            }
-                          }}
-                          className="SendTo__subheading-identicon"
-                        >
-                          <IdenticonImg publicKey={address} />
-                          <span>
-                            {isFederationAddress(address)
-                              ? address
-                              : truncatedPublicKey(address)}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </SimpleBarWrapper>
-              </>
-            ) : (
-              <div>
-                {formik.isValid ? (
-                  <>
-                    {!destinationBalances.isFunded && (
-                      <AccountDoesntExistWarning />
-                    )}
-                    {isFederationAddress(formik.values.destination) && (
-                      <>
-                        <div className="SendTo__subheading">
-                          {t("FEDERATION ADDRESS")}
-                        </div>
-                        <div className="SendTo__subsection-copy">
-                          {formik.values.destination}
-                        </div>
-                      </>
-                    )}
-                    <div className="SendTo__subheading">Address</div>
-                    <div className="SendTo__subheading-identicon">
-                      <IdenticonImg publicKey={validatedPubKey} />
-                      <span>{truncatedPublicKey(validatedPubKey)}</span>
-                    </div>
-
-                    <div className="SendPayment__btn-continue">
-                      <Button
-                        size="md"
-                        isFullWidth
-                        variant="secondary"
-                        onClick={() => formik.submitForm()}
-                        data-testid="send-to-btn-continue"
-                      >
-                        {t("Continue")}
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <InvalidAddressWarning />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </PopupWrapper>
+      <View.Content>
+        <FormRows>
+          <Input
+            fieldSize="md"
+            autoComplete="off"
+            id="destination-input"
+            name="destination"
+            placeholder={t("Recipient Stellar address")}
+            onChange={formik.handleChange}
+            value={formik.values.destination}
+            data-testid="send-to-input"
+          />
+        </FormRows>
+        <div className="SendTo__address-wrapper" data-testid="send-to-view">
+          {isLoading ? (
+            <div className="SendTo__loader">
+              <Loader />
+            </div>
+          ) : (
+            <div>
+              {formik.values.destination === "" ? (
+                <>
+                  {recentAddresses.length > 0 && (
+                    <div className="SendTo__subheading">{t("RECENT")}</div>
+                  )}
+                  <div className="SendTo__simplebar">
+                    <ul className="SendTo__recent-accts-ul">
+                      {recentAddresses.map((address) => (
+                        <li key={address}>
+                          <button
+                            onClick={async () => {
+                              emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
+                              setIsLoading(true);
+                              // recentAddresses already validated so safe to dispatch
+                              if (isFederationAddress(address)) {
+                                const fedResp = await Federation.Server.resolve(
+                                  address,
+                                );
+                                const publicKey = fedResp.account_id;
+                                setValidatedPubKey(publicKey);
+                                handleContinue(publicKey, address);
+                              } else {
+                                setValidatedPubKey(address);
+                                handleContinue(address);
+                              }
+                            }}
+                            className="SendTo__subheading-identicon"
+                          >
+                            <IdenticonImg publicKey={address} />
+                            <span>
+                              {isFederationAddress(address)
+                                ? address
+                                : truncatedPublicKey(address)}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  {formik.isValid ? (
+                    <>
+                      {!destinationBalances.isFunded && (
+                        <AccountDoesntExistWarning />
+                      )}
+                      {isFederationAddress(formik.values.destination) && (
+                        <>
+                          <div className="SendTo__subheading">
+                            {t("FEDERATION ADDRESS")}
+                          </div>
+                          <div className="SendTo__subsection-copy">
+                            {formik.values.destination}
+                          </div>
+                        </>
+                      )}
+                      <div className="SendTo__subheading">Address</div>
+                      <div className="SendTo__subheading-identicon">
+                        <IdenticonImg publicKey={validatedPubKey} />
+                        <span>{truncatedPublicKey(validatedPubKey)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <InvalidAddressWarning />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </View.Content>
+      <View.Footer>
+        {!isLoading && formik.values.destination && formik.isValid ? (
+          <Button
+            size="md"
+            isFullWidth
+            variant="secondary"
+            onClick={() => formik.submitForm()}
+            data-testid="send-to-btn-continue"
+          >
+            {t("Continue")}
+          </Button>
+        ) : null}
+      </View.Footer>
+    </View>
   );
 };

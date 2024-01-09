@@ -1,20 +1,15 @@
 .DisplayMnemonicPhrase {
-  &__header {
-    text-align: left;
-  }
-
   &__content {
-    margin-top: 1.5rem;
     font-size: 1rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-regular);
 
     p {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--color-gray-70);
     }
 
     strong {
-      color: var(--color-gray-90);
+      color: var(--color-gray-80);
     }
   }
 

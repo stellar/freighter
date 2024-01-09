@@ -1,13 +1,6 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
 import * as createStellarIdenticon from "stellar-identicon-js";
-
-import * as Stellar from "helpers/stellar";
-import { getAttrsFromSorobanTxOp } from "popup/helpers/soroban";
-
-import { SignTransaction } from "../SignTransaction";
-
-import { Wrapper } from "../../__testHelpers__";
 import {
   Memo,
   MemoType,
@@ -17,6 +10,12 @@ import {
   TransactionBuilder,
 } from "stellar-sdk";
 // import { act } from "react-dom/test-utils";
+
+import * as Stellar from "helpers/stellar";
+import { getAttrsFromSorobanTxOp } from "popup/helpers/soroban";
+
+import { SignTransaction } from "../SignTransaction";
+import { Wrapper } from "../../__testHelpers__";
 
 jest.mock("stellar-identicon-js");
 
@@ -65,7 +64,31 @@ const transactions = {
 };
 
 describe.skip("SignTransactions", () => {
-  beforeEach(async () => {
+  const getMemoMockTransactionInfo = (xdr: string, op: Operation) => ({
+    transaction: {
+      networkPassphrase: Networks.TESTNET,
+      _operations: [op],
+    },
+    transactionXdr: xdr,
+    accountToSign: "",
+    domain: "laboratory.stellar.org",
+    flaggedKeys: {},
+    isDomainListedAllowed: true,
+    isHttpsDomain: true,
+  });
+
+  const MEMO_TXN_NO_MEMO =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABVvU5/EF8mFV8VbCrtaboJUyso8pHnPX6HerHf4QV1EwAAAAAAAAAASVBPgAAAAAAAAAAA";
+  const MEMO_TXN_TEXT =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAl0ZXh0IG1lbW8AAAAAAAABAAAAAAAAAAEAAAAAVb1OfxBfJhVfFWwq7Wm6CVMrKPKR5z1+h3qx3+EFdRMAAAAAAAAAAElQT4AAAAAAAAAAAA==";
+  const MEMO_TXN_ID =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAeJAAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
+  const MEMO_TXN_HASH =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAA+mIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
+  const MEMO_TXN_RETURN =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAABOmIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
+
+  beforeEach(() => {
     const mockCanvas = document.createElement("canvas");
     jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
     // jest.spyOn(global, "fetch").mockImplementation(await act(
@@ -85,6 +108,11 @@ describe.skip("SignTransactions", () => {
       } as any),
     );
   });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
@@ -118,6 +146,7 @@ describe.skip("SignTransactions", () => {
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("SignTransaction")).toBeDefined();
   });
+
   it("shows non-https domain error", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
@@ -154,6 +183,7 @@ describe.skip("SignTransactions", () => {
       "WEBSITE CONNECTION IS NOT SECURE",
     );
   });
+
   it("displays token payment parameters for Soroban token payment operations", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
@@ -206,6 +236,7 @@ describe.skip("SignTransactions", () => {
     );
     expect(opDetails.includes(`Function Name:${args?.fnName}`));
   });
+
   it("displays mint parameters for Soroban mint operations", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanMint,
@@ -257,5 +288,118 @@ describe.skip("SignTransactions", () => {
       opDetails.includes(`Source:${Stellar.truncatedPublicKey(args?.from!)}`),
     );
     expect(opDetails.includes(`Function Name:${args?.fnName}`));
+  });
+
+  it("memo: doesn't render memo if there is no memo", async () => {
+    const transaction = TransactionBuilder.fromXDR(
+      MEMO_TXN_NO_MEMO,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      ...getMemoMockTransactionInfo(MEMO_TXN_NO_MEMO, op),
+    }));
+
+    render(
+      <Wrapper state={{}}>
+        <SignTransaction />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
+    expect(screen.queryByTestId("SignTransactionMemo")).toBeNull();
+  });
+
+  it("memo: render memo text", async () => {
+    const transaction = TransactionBuilder.fromXDR(
+      MEMO_TXN_TEXT,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      ...getMemoMockTransactionInfo(MEMO_TXN_TEXT, op),
+    }));
+
+    render(
+      <Wrapper state={{}}>
+        <SignTransaction />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
+    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+      "text memo (MEMO_TEXT)",
+    );
+  });
+
+  it("memo: render memo id", async () => {
+    const transaction = TransactionBuilder.fromXDR(
+      MEMO_TXN_ID,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      ...getMemoMockTransactionInfo(MEMO_TXN_ID, op),
+    }));
+
+    render(
+      <Wrapper state={{}}>
+        <SignTransaction />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
+    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+      "123456 (MEMO_ID)",
+    );
+  });
+
+  xit("memo: render memo hash", async () => {
+    const transaction = TransactionBuilder.fromXDR(
+      MEMO_TXN_HASH,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      ...getMemoMockTransactionInfo(MEMO_TXN_HASH, op),
+    }));
+
+    render(
+      <Wrapper state={{}}>
+        <SignTransaction />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
+    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+      "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_HASH)",
+    );
+  });
+
+  xit("memo: render memo return", async () => {
+    const transaction = TransactionBuilder.fromXDR(
+      MEMO_TXN_RETURN,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      ...getMemoMockTransactionInfo(MEMO_TXN_RETURN, op),
+    }));
+
+    render(
+      <Wrapper state={{}}>
+        <SignTransaction />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
+    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+      "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_RETURN)",
+    );
   });
 });

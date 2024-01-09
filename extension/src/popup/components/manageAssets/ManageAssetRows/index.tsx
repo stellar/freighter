@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Account,
-  Asset,
-  Operation,
-  StellarToml,
-  TransactionBuilder,
-} from "stellar-sdk";
+import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ActionStatus } from "@shared/api/types";
@@ -17,15 +11,12 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { getApiStellarExpertUrl } from "popup/helpers/account";
 import {
   formatDomain,
   getCanonicalFromAsset,
-  xlmToStroop,
   truncateString,
 } from "helpers/stellar";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
@@ -57,6 +48,8 @@ import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import "./styles.scss";
 import { NETWORKS } from "@shared/constants/stellar";
+import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
+import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -74,14 +67,12 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
-  maxHeight: number;
 }
 
 export const ManageAssetRows = ({
   children,
   header,
   assetRows,
-  maxHeight,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -123,25 +114,18 @@ export const ManageAssetRows = ({
     assetIssuer: string,
     addTrustline: boolean,
   ) => {
-    const changeParams = addTrustline ? {} : { limit: "0" };
-    const sourceAccount: Account = await server.loadAccount(publicKey);
     const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
-
     setAssetSubmitting(canonicalAsset);
 
-    const transactionXDR = new TransactionBuilder(sourceAccount, {
-      fee: xlmToStroop(recommendedFee).toFixed(),
-      networkPassphrase: networkDetails.networkPassphrase,
-    })
-      .addOperation(
-        Operation.changeTrust({
-          asset: new Asset(assetCode, assetIssuer),
-          ...changeParams,
-        }),
-      )
-      .setTimeout(180)
-      .build()
-      .toXDR();
+    const transactionXDR = await getManageAssetXDR({
+      publicKey,
+      assetCode,
+      assetIssuer,
+      addTrustline,
+      server,
+      recommendedFee,
+      networkDetails,
+    });
 
     const trackChangeTrustline = () => {
       emitMetric(
@@ -198,6 +182,13 @@ export const ManageAssetRows = ({
     }
   };
 
+  useEffect(
+    () => () => {
+      setAssetSubmitting("");
+    },
+    [],
+  );
+
   // watch submitStatus if used ledger to send transaction
   useEffect(() => {
     if (submitStatus === ActionStatus.ERROR) {
@@ -206,63 +197,9 @@ export const ManageAssetRows = ({
       dispatch(resetSubmission());
       navigateTo(ROUTES.account);
     }
-  }, [submitStatus, assetSubmitting, dispatch]);
+  }, [submitStatus, dispatch]);
 
   const isBlockedDomain = (domain: string) => blockedDomains.domains[domain];
-
-  const checkForSuspiciousAsset = async (
-    code: string,
-    issuer: string,
-    domain: string,
-  ): Promise<NewAssetFlags> => {
-    // check revocable
-    let isRevocable = false;
-    try {
-      const resp = await server.assets().forCode(code).forIssuer(issuer).call();
-      isRevocable = resp.records[0]
-        ? resp.records[0]?.flags?.auth_revocable
-        : false;
-    } catch (e) {
-      console.error(e);
-    }
-
-    // check if new asset
-    let isNewAsset = false;
-    try {
-      const resp = await fetch(
-        `${getApiStellarExpertUrl(
-          networkDetails,
-        )}/asset/${code}-${issuer}/rating`,
-      );
-      const json = await resp.json();
-      const age = json.rating?.age;
-      if (!age || age <= 3) {
-        isNewAsset = true;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    // check domain
-    let isInvalidDomain = false;
-    try {
-      const resp = await StellarToml.Resolver.resolve(domain);
-      let found = false;
-      (resp?.CURRENCIES || []).forEach(
-        (c: { code?: string; issuer?: string }) => {
-          if (c.code === code && c.issuer === issuer) {
-            found = true;
-          }
-        },
-      );
-      isInvalidDomain = !found;
-    } catch (e) {
-      console.error(e);
-      isInvalidDomain = true;
-    }
-
-    return { isRevocable, isNewAsset, isInvalidDomain };
-  };
 
   const handleRowClick = async (
     assetRowData = {
@@ -273,11 +210,13 @@ export const ManageAssetRows = ({
     },
     isTrustlineActive: boolean,
   ) => {
-    const resp = await checkForSuspiciousAsset(
-      assetRowData.code,
-      assetRowData.issuer,
-      assetRowData.domain,
-    );
+    const resp = await checkForSuspiciousAsset({
+      code: assetRowData.code,
+      issuer: assetRowData.issuer,
+      domain: assetRowData.domain,
+      server,
+      networkDetails,
+    });
 
     if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
       setShowBlockedDomainWarning(true);
@@ -338,12 +277,7 @@ export const ManageAssetRows = ({
           }}
         />
       )}
-      <SimpleBarWrapper
-        className="ManageAssetRows__scrollbar"
-        style={{
-          maxHeight: `${maxHeight}px`,
-        }}
-      >
+      <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
           {assetRows.map(
@@ -364,7 +298,11 @@ export const ManageAssetRows = ({
                 accountBalanceStatus === ActionStatus.PENDING;
 
               return (
-                <div className="ManageAssetRows__row" key={canonicalAsset}>
+                <div
+                  className="ManageAssetRows__row"
+                  key={canonicalAsset}
+                  data-testid="ManageAssetRow"
+                >
                   <ManageAssetRow
                     code={code}
                     issuer={issuer}
@@ -388,6 +326,7 @@ export const ManageAssetRows = ({
                         }
                       }}
                       type="button"
+                      data-testid="ManageAssetRowButton"
                     >
                       {isTrustlineActive || contractId ? t("Remove") : t("Add")}
                     </PillButton>
@@ -419,7 +358,7 @@ export const ManageAssetRows = ({
           })}
         </div>
         {children}
-      </SimpleBarWrapper>
+      </div>
       <LoadingBackground
         onClick={() => {}}
         isActive={showNewAssetWarning || showBlockedDomainWarning}
@@ -454,10 +393,15 @@ export const ManageAssetRow = ({
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
-          {code}
+          <span data-testid="ManageAssetCode">{code}</span>
           <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
-        <div className="ManageAssetRows__domain">{formatDomain(domain)}</div>
+        <div
+          className="ManageAssetRows__domain"
+          data-testid="ManageAssetDomain"
+        >
+          {formatDomain(domain)}
+        </div>
       </div>
     </>
   );

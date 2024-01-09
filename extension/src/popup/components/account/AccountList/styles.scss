@@ -3,7 +3,7 @@
     display: flex;
     justify-content: space-between;
     width: 100%;
-    height: var(--acount-row-height);
+    height: 5rem;
     align-items: center;
 
     > div {
@@ -33,5 +33,13 @@
     font-size: 0.875rem;
     line-height: 1.375rem;
     padding-top: 1.1875rem;
+  }
+
+  &__accountsWrapper {
+    flex: 1;
+  }
+
+  &__footer {
+    flex-shrink: 0;
   }
 }

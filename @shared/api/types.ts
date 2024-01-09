@@ -19,6 +19,8 @@ export interface UserInfo {
   publicKey: string;
 }
 
+export type MigratableAccount = Account & { keyIdIndex: number };
+
 export interface Response {
   error: string;
   messagedId: number;
@@ -52,6 +54,7 @@ export interface Response {
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
+  migratedAccounts: MigratedAccount[];
   accountName: string;
   assetCode: string;
   assetCanonical: string;
@@ -72,6 +75,10 @@ export interface Response {
   isAllowed: boolean;
   userInfo: UserInfo;
   allowList: string[];
+  migratableAccounts: MigratableAccount[];
+  balancesToMigrate: BalanceToMigrate[];
+  isMergeSelected: boolean;
+  recommendedFee: string;
 }
 
 export interface BlockedDomains {
@@ -190,6 +197,20 @@ export interface ErrorMessage {
   errorMessage: string;
   response?: Horizon.HorizonApi.ErrorResponseData.TransactionFailed;
 }
+
+export interface BalanceToMigrate {
+  publicKey: string;
+  name: string;
+  minBalance: string;
+  xlmBalance: string;
+  trustlineBalances: Horizon.HorizonApi.BalanceLine[];
+  keyIdIndex: number;
+}
+
+export type MigratedAccount = BalanceToMigrate & {
+  newPublicKey: string;
+  isMigrated: boolean;
+};
 
 declare global {
   interface Window {
