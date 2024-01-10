@@ -355,7 +355,7 @@ export const Operations = ({
     if (!contractId) return;
     const fetchContractDecimals = async () => {
       const response = await fetch(
-        `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&horizon_url=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
+        `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
       );
       if (!response.ok) {
         throw new Error("failed to fetch token details");
