@@ -11,9 +11,11 @@ test("Welcome page loads", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("I’m going to need a seed phrase")).toBeVisible();
   await expect(page.getByText("I’ve done this before")).toBeVisible();
+  await expect(page).toHaveScreenshot("welcome-page.png");
 });
 
-test.only("Create new wallet", async ({ page }) => {
+test("Create new wallet", async ({ page }) => {
+  await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Create Wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -23,6 +25,9 @@ test.only("Create new wallet", async ({ page }) => {
   await page.getByText("Confirm").click();
 
   await expect(page.getByText("Secret Recovery phrase")).toBeVisible();
+  await expect(page).toHaveScreenshot("recovery-page.png", {
+    mask: [page.locator(".MnemonicDisplay__list-item")],
+  });
 
   const domWords = page.getByTestId("word");
   const wordCount = await domWords.count();
@@ -35,16 +40,22 @@ test.only("Create new wallet", async ({ page }) => {
   await page.getByTestId("display-mnemonic-phrase-next-btn").click();
   await expect(page.getByText("Confirm your recovery phrase")).toBeVisible();
 
+  await expect(page).toHaveScreenshot("confirm-recovery-page.png", {
+    mask: [page.locator(".ConfirmMnemonicPhrase__word-bubble-wrapper")],
+  });
+
   for (let i = 0; i < words.length; i++) {
-    await page.getByText(words[i], { exact: true }).check();
+    await page.getByTestId(words[i]).check();
   }
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
   await expect(
     page.getByText("Your Freighter install is complete"),
   ).toBeVisible();
+  await expect(page).toHaveScreenshot("wallet-create-complete-page.png");
 });
 
 test("Import wallet", async ({ page }) => {
+  await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Import Wallet").click();
   await expect(
     page.getByText("Import wallet from recovery phrase"),
@@ -75,9 +86,11 @@ test("Import wallet", async ({ page }) => {
   await page.getByRole("button", { name: "Import" }).click();
 
   await expect(page.getByText("Wallet created successfully!")).toBeVisible();
+  await expect(page).toHaveScreenshot("wallet-import-complete-page.png");
 });
 
 test("Import wallet with wrong password", async ({ page }) => {
+  await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Import Wallet").click();
   await expect(
     page.getByText("Import wallet from recovery phrase"),
@@ -107,9 +120,17 @@ test("Import wallet with wrong password", async ({ page }) => {
   await page.locator("#termsOfUse-input").focus();
 
   await expect(page.getByText("Passwords must match")).toBeVisible();
+  await expect(page).toHaveScreenshot("recovery-bad-password.png", {
+    mask: [
+      page.locator(".RecoverAccount__mnemonic-input"),
+      page.locator("#password-input"),
+      page.locator("#confirm-password-input"),
+    ],
+  });
 });
 
 test("Incorrect mnemonic phrase", async ({ page }) => {
+  await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Create Wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -119,6 +140,9 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   await page.getByText("Confirm").click();
 
   await expect(page.getByText("Secret Recovery phrase")).toBeVisible();
+  await expect(page).toHaveScreenshot("recovery-page.png", {
+    mask: [page.locator(".MnemonicDisplay__list-item")],
+  });
 
   const domWords = page.getByTestId("word");
   const wordCount = await domWords.count();
@@ -134,11 +158,14 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   const shuffledWords = shuffle(words);
 
   for (let i = 0; i < shuffledWords.length; i++) {
-    await page.getByText(shuffledWords[i], { exact: true }).check();
+    await page.getByTestId(shuffledWords[i]).check();
   }
 
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
   await expect(
     page.getByText("The secret phrase you entered is incorrect."),
   ).toBeVisible();
+  await expect(page).toHaveScreenshot("incorrect-recovery-phrase-page.png", {
+    mask: [page.locator(".ConfirmMnemonicPhrase__word-bubble-wrapper")],
+  });
 });
