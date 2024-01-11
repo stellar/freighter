@@ -35,13 +35,13 @@ export const generateMnemonicPhraseDisplay = ({
             </span>
 
             <span>
-              <strong>{word}</strong>
+              <strong data-testid="word">{word}</strong>
             </span>
           </>
         ) : (
           <>
             <span>
-              <strong>{word}</strong>
+              <strong data-testid="word">{word}</strong>
             </span>
             <span className="MnemonicDisplay__random-word">
               <strong>{randomWord}</strong>
