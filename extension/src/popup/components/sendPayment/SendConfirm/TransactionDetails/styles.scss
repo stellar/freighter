@@ -34,7 +34,6 @@
     &__right {
       color: var(--color-gray-90);
       overflow-y: hidden;
-      max-width: 10rem;
 
       &__item {
         margin-bottom: 0.25rem;
@@ -44,8 +43,8 @@
 
   &__processing {
     position: absolute;
-    height: var(--popup--height);
-    width: var(--popup--width);
+    height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     background: black;
@@ -112,7 +111,6 @@
       font-size: 0.8125rem;
       line-height: 1.375rem;
       min-height: 1.375rem;
-      margin-bottom: 1rem;
       align-items: center;
       text-align: center;
       justify-content: center;

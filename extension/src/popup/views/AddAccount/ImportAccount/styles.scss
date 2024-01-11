@@ -1,9 +1,4 @@
 .ImportAccount {
-  padding: var(--popup-vertical-padding) var(--popup--side-padding);
-  height: var(--popup--height);
-  display: flex;
-  flex-direction: column;
-
   &__warning-block {
     margin-bottom: 1rem;
   }

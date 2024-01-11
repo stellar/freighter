@@ -1,0 +1,30 @@
+@use "../../../styles/utils.scss" as *;
+
+.Box {
+  --Box-grid-cell-width: auto;
+  --Box-gap-horizontal: 0;
+  --Box-gap-vertical: 0;
+
+  gap: var(--Box-gap-vertical) var(--Box-gap-horizontal);
+
+  &--grid {
+    display: grid;
+  }
+
+  &--flex {
+    display: flex;
+    flex-direction: column;
+    width: var(--Box-grid-cell-width);
+
+    &--row {
+      flex-direction: row;
+      // TODO: make this configurable
+      justify-content: space-between;
+      gap: var(--Box-gap-horizontal);
+
+      & > * {
+        flex: 1;
+      }
+    }
+  }
+}

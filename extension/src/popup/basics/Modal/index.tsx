@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 
 import "./styles.scss";
 
@@ -25,9 +24,9 @@ export const ModalWrapper = ({ children }: ModalWrapperProps) => {
   }, []);
 
   return (
-    <SimpleBarWrapper className="ModalWrapper__scrollbar">
+    <div className="ModalWrapper__scrollbar">
       <section className="ModalWrapper">{children} </section>
-    </SimpleBarWrapper>
+    </div>
   );
 };
 

@@ -67,6 +67,10 @@ jest.spyOn(UseAssetDomain, "useAssetDomain").mockImplementation(() => {
 });
 
 describe("Account view", () => {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders", async () => {
     render(
       <Wrapper

@@ -1,11 +1,7 @@
 .AccountHistory {
-  &__wrapper {
-    padding: var(--popup-vertical-padding) var(--popup--side-padding);
-  }
-
   &__loader {
-    height: calc(var(--popup--height) - var(--bottom-nav--height));
-    width: var(--popup--width);
+    height: 100%;
+    width: 100%;
     z-index: calc(var(--back--button-z-index) + 1);
     position: absolute;
     display: flex;

@@ -1,14 +1,13 @@
 .Loading {
-  height: 100%;
-  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: absolute;
-  width: 100%;
-  z-index: var(--z-index--loader);
-
-  &__wrapper {
-    display: flex;
-    height: calc(100vh - var(--header--height));
-    justify-content: center;
-    align-items: center;
-  }
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: 6rem;
+  min-width: 6rem;
+  overflow: hidden;
 }

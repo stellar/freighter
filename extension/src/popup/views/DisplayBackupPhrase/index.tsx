@@ -13,6 +13,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { MnemonicDisplay } from "popup/components/mnemonicPhrase/MnemonicDisplay";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 
 import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
 
@@ -57,19 +58,21 @@ export const DisplayBackupPhrase = () => {
   };
 
   return (
-    <div className="DisplayBackupPhrase">
+    <View>
       <SubviewHeader title={t("Show recovery phrase")} />
       {isPhraseUnlocked ? (
         <>
-          <div>
-            <p>
-              {t(
-                "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
-              )}
-            </p>
-            <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
-          </div>
-          <div className="DisplayBackupPhrase__button">
+          <View.Content>
+            <div>
+              <p>
+                {t(
+                  "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+                )}
+              </p>
+              <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
+            </div>
+          </View.Content>
+          <View.Footer>
             <Button
               size="md"
               isFullWidth
@@ -78,40 +81,43 @@ export const DisplayBackupPhrase = () => {
             >
               {t("Done")}
             </Button>
-          </div>
+          </View.Footer>
         </>
       ) : (
         <>
-          <BackupPhraseWarningMessage />
           <Formik onSubmit={handleSubmit} initialValues={initialValues}>
             {({ dirty, isSubmitting, isValid }) => (
               <Form className="DisplayBackupPhrase__form">
-                <Input
-                  fieldSize="md"
-                  id="password"
-                  autoComplete="off"
-                  error={errorMessage}
-                  customInput={<Field />}
-                  type="password"
-                  name="password"
-                  placeholder={t("Enter your password")}
-                />
-
-                <Button
-                  size="md"
-                  disabled={!(isValid && dirty)}
-                  isFullWidth
-                  isLoading={isSubmitting}
-                  type="submit"
-                  variant="secondary"
-                >
-                  {t("Show recovery phrase")}
-                </Button>
+                <View.Content>
+                  <BackupPhraseWarningMessage />
+                  <Input
+                    fieldSize="md"
+                    id="password"
+                    autoComplete="off"
+                    error={errorMessage}
+                    customInput={<Field />}
+                    type="password"
+                    name="password"
+                    placeholder={t("Enter your password")}
+                  />
+                </View.Content>
+                <View.Footer>
+                  <Button
+                    size="md"
+                    disabled={!(isValid && dirty)}
+                    isFullWidth
+                    isLoading={isSubmitting}
+                    type="submit"
+                    variant="secondary"
+                  >
+                    {t("Show recovery phrase")}
+                  </Button>
+                </View.Footer>
               </Form>
             )}
           </Formik>
         </>
       )}
-    </div>
+    </View>
   );
 };

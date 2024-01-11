@@ -1,0 +1,9 @@
+.MigrationStart {
+  display: flex;
+  flex-direction: column;
+
+  &__button {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

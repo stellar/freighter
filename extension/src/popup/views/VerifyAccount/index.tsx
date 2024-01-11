@@ -13,8 +13,8 @@ import {
   confirmPassword,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
 
@@ -45,38 +45,43 @@ export const VerifyAccount = ({
   };
 
   return (
-    <PopupWrapper>
+    <View>
       <SubviewHeader
         title={t("Verification")}
         customBackAction={customBackAction}
       />
-      <div className="VerifyAccount__copy">
-        {isApproval
-          ? t("Enter your account password to verify your account.")
-          : t(
-              "Enter your account password to authorize this transaction.",
-            )}{" "}
-        You won’t be asked to do this for the next 24 hours.
-      </div>
       <Formik initialValues={{ password: "" }} onSubmit={handleSubmit}>
         {({ dirty, isValid, isSubmitting, errors, touched }) => (
-          <Form>
-            <Field name="password">
-              {({ field }: FieldProps) => (
-                <Input
-                  fieldSize="md"
-                  id="password-input"
-                  type="password"
-                  placeholder={t("Enter password")}
-                  error={
-                    authError ||
-                    (errors.password && touched.password ? errors.password : "")
-                  }
-                  {...field}
-                />
-              )}
-            </Field>
-            <div className="VerifyAccount__btn-continue">
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
+              <div className="VerifyAccount__copy">
+                {isApproval
+                  ? t("Enter your account password to verify your account.")
+                  : t(
+                      "Enter your account password to authorize this transaction.",
+                    )}{" "}
+                You won’t be asked to do this for the next 24 hours.
+              </div>
+
+              <Field name="password">
+                {({ field }: FieldProps) => (
+                  <Input
+                    fieldSize="md"
+                    id="password-input"
+                    type="password"
+                    placeholder={t("Enter password")}
+                    error={
+                      authError ||
+                      (errors.password && touched.password
+                        ? errors.password
+                        : "")
+                    }
+                    {...field}
+                  />
+                )}
+              </Field>
+            </View.Content>
+            <View.Footer>
               <Button
                 size="md"
                 isFullWidth
@@ -86,10 +91,10 @@ export const VerifyAccount = ({
               >
                 {isApproval ? t("Approve") : t("Submit")}
               </Button>
-            </div>
+            </View.Footer>
           </Form>
         )}
       </Formik>
-    </PopupWrapper>
+    </View>
   );
 };

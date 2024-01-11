@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { xdr, buildInvocationTree } from "stellar-sdk";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import "./styles.scss";
 
 interface TransactionProps {
@@ -22,13 +21,13 @@ export const AuthEntry = ({ preimageXdr }: TransactionProps) => {
       <div className="AuthEntryHeader">{t("Authorization Entry")}</div>
       <div className="AuthEntryAttributes">
         <pre>
-          <SimpleBarWrapper>
+          <div>
             {JSON.stringify(
               rootJson,
               (_, val) => (typeof val === "bigint" ? val.toString() : val),
               2,
             )}
-          </SimpleBarWrapper>
+          </div>
         </pre>
       </div>
     </div>

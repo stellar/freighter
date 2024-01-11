@@ -7,13 +7,13 @@ import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { Asset } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import {
   AssetSelect,
   PathPayAssetSelect,
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
@@ -48,10 +48,9 @@ import {
 import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
+import { BASE_RESERVE } from "@shared/constants/stellar";
 
 import "../styles.scss";
-
-const BASE_RESERVE = 0.5 as const;
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -75,13 +74,15 @@ const ConversionRate = ({
   const { t } = useTranslation();
 
   return (
-    <div className="SendAmount__row__rate">
+    <div className="SendAmount__row__rate" data-testid="SendAmountRate">
       {loading ? (
-        <Loader />
+        <div data-testid="SendAmountRateLoader">
+          <Loader />
+        </div>
       ) : (
         <>
           {destAmount ? (
-            <span>
+            <span data-testid="SendAmountRateAmount">
               1 {source} ≈{" "}
               {new BigNumber(destAmount)
                 .div(new BigNumber(sourceAmount))
@@ -161,7 +162,6 @@ export const SendAmount = ({
           const currentBal = new BigNumber(
             accountBalances.balances[selectedAsset].total.toFixed(),
           );
-
           availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
@@ -292,8 +292,13 @@ export const SendAmount = ({
   ]);
 
   // for swaps we're loading and choosing the default destinationAsset here
+  // also, need to check if both source and destination are native
   useEffect(() => {
-    if (isSwap && !destinationAsset) {
+    if (
+      isSwap &&
+      (!destinationAsset ||
+        (destinationAsset === "native" && asset === "native"))
+    ) {
       let defaultDestAsset;
 
       // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
@@ -318,6 +323,7 @@ export const SendAmount = ({
     destinationAsset,
     accountBalances,
     formik.values.asset,
+    asset,
   ]);
 
   const getAmountFontSize = () => {
@@ -391,12 +397,15 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <div
-        className={`SendAmount ${isSwap ? "SendAmount__full-height" : ""}`}
-        data-testid="send-amount-view"
-      >
+      <View data-testid="send-amount-view">
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
+          subtitle={
+            <>
+              <span>{formatAmount(availBalance)}</span>{" "}
+              <span>{parsedSourceAsset.code}</span> {t("available")}
+            </>
+          }
           hasBackButton={!isSwap}
           customBackAction={() => navigateTo(previous)}
           rightButton={
@@ -410,118 +419,8 @@ export const SendAmount = ({
             )
           }
         />
-        <div className="SendAmount__content">
-          <div className="SendAmount__asset-copy">
-            <span>{formatAmount(availBalance)}</span>{" "}
-            <span>{parsedSourceAsset.code}</span> {t("available")}
-          </div>
-          <div className="SendAmount__btn-set-max">
-            <PillButton
-              onClick={() => {
-                emitMetric(METRIC_NAMES.sendPaymentSetMax);
-                formik.setFieldValue(
-                  "amount",
-                  calculateAvailBalance(formik.values.asset),
-                );
-              }}
-            >
-              {t("SET MAX")}
-            </PillButton>
-          </div>
-
-          <form
-            className="SendAmount__form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              formik.submitForm();
-            }}
-          >
-            <SimpleBarWrapper
-              className={`${
-                isSwap
-                  ? "SendAmount__simplebar"
-                  : "SendAmount__simplebar__full-height"
-              }`}
-            >
-              <div className="SendAmount__simplebar__content">
-                <input
-                  className={`SendAmount__input-amount ${
-                    isSwap ? "SendAmount__input-amount__full-height" : ""
-                  } SendAmount__${getAmountFontSize()}`}
-                  data-testid="send-amount-amount-input"
-                  name="amount"
-                  type="text"
-                  placeholder="0"
-                  value={formik.values.amount}
-                  onChange={(e) => {
-                    const input = e.target;
-                    const {
-                      amount: newAmount,
-                      newCursor,
-                    } = formatAmountPreserveCursor(
-                      e.target.value,
-                      formik.values.amount,
-                      getAssetDecimals(asset, tokenBalances, isToken),
-                      e.target.selectionStart || 1,
-                    );
-                    formik.setFieldValue("amount", newAmount);
-                    runAfterUpdate(() => {
-                      input.selectionStart = newCursor;
-                      input.selectionEnd = newCursor;
-                    });
-                  }}
-                  autoFocus
-                  autoComplete="off"
-                />
-                <div className="SendAmount__input-amount__asset-copy">
-                  {parsedSourceAsset.code}
-                </div>
-                {showSourceAndDestAsset && formik.values.amount !== "0" && (
-                  <ConversionRate
-                    loading={loadingRate}
-                    source={parsedSourceAsset.code}
-                    sourceAmount={formik.values.amount || defaultSourceAmount}
-                    dest={parsedDestAsset.code}
-                    destAmount={destinationAmount}
-                  />
-                )}
-                <div
-                  className={`SendAmount__amount-warning${
-                    destinationAsset ? "__path-payment" : ""
-                  }`}
-                >
-                  <DecideWarning />
-                </div>
-                <div className="SendAmount__asset-select-container">
-                  {!showSourceAndDestAsset && (
-                    <AssetSelect
-                      assetCode={parsedSourceAsset.code}
-                      issuerKey={parsedSourceAsset.issuer}
-                    />
-                  )}
-                  {showSourceAndDestAsset && (
-                    <>
-                      <PathPayAssetSelect
-                        source={true}
-                        assetCode={parsedSourceAsset.code}
-                        issuerKey={parsedSourceAsset.issuer}
-                        balance={formik.values.amount}
-                      />
-                      <PathPayAssetSelect
-                        source={false}
-                        assetCode={parsedDestAsset.code}
-                        issuerKey={parsedDestAsset.issuer}
-                        balance={
-                          destinationAmount
-                            ? new BigNumber(destinationAmount).toFixed()
-                            : "0"
-                        }
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-            </SimpleBarWrapper>
+        <View.Content
+          contentFooter={
             <div className="SendAmount__btn-continue">
               <Button
                 size="md"
@@ -535,15 +434,118 @@ export const SendAmount = ({
                 data-testid="send-amount-btn-continue"
                 isFullWidth
                 variant="secondary"
-                type="submit"
+                onClick={(e) => {
+                  e.preventDefault();
+                  formik.submitForm();
+                }}
               >
                 {t("Continue")}
               </Button>
             </div>
-          </form>
-        </div>
-      </div>
-      {isSwap && <BottomNav />}
+          }
+        >
+          <div className="SendAmount">
+            <div className="SendAmount__content">
+              <div className="SendAmount__btn-set-max">
+                <PillButton
+                  onClick={() => {
+                    emitMetric(METRIC_NAMES.sendPaymentSetMax);
+                    formik.setFieldValue(
+                      "amount",
+                      calculateAvailBalance(formik.values.asset),
+                    );
+                  }}
+                  data-testid="SendAmountSetMax"
+                >
+                  {t("SET MAX")}
+                </PillButton>
+              </div>
+
+              <form>
+                <div className="SendAmount__simplebar__content">
+                  <input
+                    className={`SendAmount__input-amount ${
+                      isSwap ? "SendAmount__input-amount__full-height" : ""
+                    } SendAmount__${getAmountFontSize()}`}
+                    data-testid="send-amount-amount-input"
+                    name="amount"
+                    type="text"
+                    placeholder="0"
+                    value={formik.values.amount}
+                    onChange={(e) => {
+                      const input = e.target;
+                      const {
+                        amount: newAmount,
+                        newCursor,
+                      } = formatAmountPreserveCursor(
+                        e.target.value,
+                        formik.values.amount,
+                        getAssetDecimals(asset, tokenBalances, isToken),
+                        e.target.selectionStart || 1,
+                      );
+                      formik.setFieldValue("amount", newAmount);
+                      runAfterUpdate(() => {
+                        input.selectionStart = newCursor;
+                        input.selectionEnd = newCursor;
+                      });
+                    }}
+                    autoFocus
+                    autoComplete="off"
+                  />
+                  <div className="SendAmount__input-amount__asset-copy">
+                    {parsedSourceAsset.code}
+                  </div>
+                  {showSourceAndDestAsset && formik.values.amount !== "0" && (
+                    <ConversionRate
+                      loading={loadingRate}
+                      source={parsedSourceAsset.code}
+                      sourceAmount={formik.values.amount || defaultSourceAmount}
+                      dest={parsedDestAsset.code}
+                      destAmount={destinationAmount}
+                    />
+                  )}
+                  <div
+                    className={`SendAmount__amount-warning${
+                      destinationAsset ? "__path-payment" : ""
+                    }`}
+                  >
+                    <DecideWarning />
+                  </div>
+                  <div className="SendAmount__asset-select-container">
+                    {!showSourceAndDestAsset && (
+                      <AssetSelect
+                        assetCode={parsedSourceAsset.code}
+                        issuerKey={parsedSourceAsset.issuer}
+                      />
+                    )}
+                    {showSourceAndDestAsset && (
+                      <>
+                        <PathPayAssetSelect
+                          source={true}
+                          assetCode={parsedSourceAsset.code}
+                          issuerKey={parsedSourceAsset.issuer}
+                          balance={formik.values.amount}
+                        />
+                        <PathPayAssetSelect
+                          source={false}
+                          assetCode={parsedDestAsset.code}
+                          issuerKey={parsedDestAsset.issuer}
+                          balance={
+                            destinationAmount
+                              ? new BigNumber(destinationAmount).toFixed()
+                              : "0"
+                          }
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </View.Content>
+        {isSwap && <BottomNav />}
+      </View>
       <LoadingBackground
         onClick={() => {}}
         isActive={showBlockedDomainWarning}

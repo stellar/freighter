@@ -1,10 +1,4 @@
 .ViewPublicKey {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--popup-vertical-padding) var(--popup--side-padding);
-  height: var(--popup--height);
-
   &__content {
     display: flex;
     flex-direction: column;
@@ -13,29 +7,13 @@
     width: 100%;
   }
 
-  &__header {
-    height: 2rem;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    color: var(--color-gray-90);
-    font-weight: var(--font-weight-medium);
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    &--is-editing {
-      gap: 1rem;
-      justify-content: initial;
-    }
-  }
-
   &__form {
     display: flex;
     flex-flow: row wrap;
     flex-grow: 1;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
 
     * {
       text-align: center;

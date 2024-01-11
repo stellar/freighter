@@ -15,5 +15,6 @@
 
   &__content {
     padding: 0.25rem 1rem;
+    max-height: calc(100vh - 1rem);
   }
 }
