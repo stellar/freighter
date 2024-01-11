@@ -95,10 +95,14 @@ export function PathPayAssetSelect({
     <div
       onClick={handleSelectAsset}
       className="AssetSelect__wrapper AssetSelect__wrapper--path-pay"
+      data-testid="AssetSelect"
     >
       <div className="AssetSelect__content">
         <div className="AssetSelect__content__left">
-          <span className="AssetSelect__light-copy AssetSelect__light-copy__label">
+          <span
+            className="AssetSelect__light-copy AssetSelect__light-copy__label"
+            data-testid="AssetSelectSourceLabel"
+          >
             {source ? "From" : "To"}
           </span>
           <AssetIcon
@@ -106,14 +110,20 @@ export function PathPayAssetSelect({
             code={assetCode}
             issuerKey={issuerKey}
           />
-          <span className="AssetSelect__medium-copy">
+          <span
+            className="AssetSelect__medium-copy"
+            data-testid="AssetSelectSourceCode"
+          >
             {truncateLongAssetCode(assetCode)}
           </span>{" "}
           <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
           <Icon.ChevronDown />
         </div>
         <div className="AssetSelect__content__right">
-          <span className="AssetSelect__light-copy">
+          <span
+            className="AssetSelect__light-copy"
+            data-testid="AssetSelectSourceAmount"
+          >
             {balance && balance !== "0" ? balance : ""}{" "}
             {truncateLongAssetCode(assetCode)}
           </span>

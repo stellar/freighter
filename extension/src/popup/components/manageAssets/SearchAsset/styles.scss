@@ -3,8 +3,6 @@
 }
 
 .SearchAsset {
-  padding: var(--popup-vertical-padding) var(--popup--side-padding);
-
   &__search-copy {
     font-size: 0.8125rem;
     line-height: 1.5rem;
@@ -32,10 +30,8 @@
 
   &__results {
     flex-grow: 1;
-    height: 22.4rem;
 
     &--active {
-      height: 26.1rem;
     }
   }
 

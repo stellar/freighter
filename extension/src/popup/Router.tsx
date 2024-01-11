@@ -64,6 +64,7 @@ import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
 import { PinExtension } from "popup/views/PinExtension";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
+import { AccountMigration } from "popup/views/AccountMigration";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -344,6 +345,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.manageConnectedApps}>
           <ManageConnectedApps />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.accountMigration}>
+          <AccountMigration />
         </PublicKeyRoute>
 
         {DEV_SERVER && (

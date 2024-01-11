@@ -1,4 +1,5 @@
 import {
+  Horizon,
   TransactionBuilder,
   SorobanRpc,
   Transaction,
@@ -18,8 +19,11 @@ import {
   AccountBalancesInterface,
   AccountHistoryInterface,
   Balances,
+  BalanceToMigrate,
   HorizonOperation,
+  MigratableAccount,
   Settings,
+  MigratedAccount,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -34,7 +38,7 @@ import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
-import { stellarSdkServer } from "./helpers/stellarSdkServer";
+import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -228,6 +232,21 @@ export const getMnemonicPhrase = async (): Promise<{
   return response;
 };
 
+export const getMigratedMnemonicPhrase = async (): Promise<{
+  mnemonicPhrase: string;
+}> => {
+  let response = { mnemonicPhrase: "" };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
 export const confirmMnemonicPhrase = async (
   mnemonicPhraseToConfirm: string,
 ): Promise<{
@@ -243,6 +262,26 @@ export const confirmMnemonicPhrase = async (
     response = await sendMessageToBackground({
       mnemonicPhraseToConfirm,
       type: SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+  return response;
+};
+
+export const confirmMigratedMnemonicPhrase = async (
+  mnemonicPhraseToConfirm: string,
+): Promise<{
+  isCorrectPhrase: boolean;
+}> => {
+  let response = {
+    isCorrectPhrase: false,
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      mnemonicPhraseToConfirm,
+      type: SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE,
     });
   } catch (e) {
     console.error(e);
@@ -310,6 +349,88 @@ export const confirmPassword = async (
   return response;
 };
 
+export const getAccountInfo = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const { networkUrl } = networkDetails;
+
+  const server = new Horizon.Server(networkUrl);
+
+  let account;
+  let signerArr = { records: [] as Horizon.ServerApi.AccountRecord[] };
+
+  try {
+    account = await server.loadAccount(publicKey);
+    signerArr = await server.accounts().forSigner(publicKey).call();
+  } catch (e) {
+    console.error(e);
+  }
+
+  return {
+    account,
+    isSigner: signerArr.records.length > 1,
+  };
+};
+
+export const getMigratableAccounts = async () => {
+  let migratableAccounts: MigratableAccount[] = [];
+
+  try {
+    ({ migratableAccounts } = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { migratableAccounts };
+};
+
+export const migrateAccounts = async ({
+  balancesToMigrate,
+  isMergeSelected,
+  recommendedFee,
+}: {
+  balancesToMigrate: BalanceToMigrate[];
+  isMergeSelected: boolean;
+  recommendedFee: string;
+}): Promise<{
+  publicKey: string;
+  migratedAccounts: Array<MigratedAccount>;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+  error: string;
+}> => {
+  let publicKey = "";
+  let migratedAccounts = [] as Array<MigratedAccount>;
+  let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
+  let error = "";
+
+  try {
+    ({
+      migratedAccounts,
+      allAccounts,
+      publicKey,
+      hasPrivateKey,
+      error,
+    } = await sendMessageToBackground({
+      balancesToMigrate,
+      isMergeSelected,
+      recommendedFee,
+      type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { migratedAccounts, allAccounts, publicKey, hasPrivateKey, error };
+};
+
 export const getAccountBalances = async ({
   publicKey,
   networkDetails,
@@ -337,11 +458,13 @@ export const getAccountBalances = async ({
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 
+    // eslint-disable-next-line no-plusplus
     for (let i = 0; i < Object.keys(resp.balances).length; i++) {
       const k = Object.keys(resp.balances)[i];
       const v: any = resp.balances[k];
       if (v.liquidity_pool_id) {
         const server = stellarSdkServer(networkUrl);
+        // eslint-disable-next-line no-await-in-loop
         const lp = await server
           .liquidityPools()
           .liquidityPoolId(v.liquidity_pool_id)
@@ -604,25 +727,8 @@ export const submitFreighterTransaction = ({
     networkDetails.networkPassphrase,
   );
   const server = stellarSdkServer(networkDetails.networkUrl);
-  const submitTx = async (): Promise<any> => {
-    let submittedTx;
 
-    try {
-      submittedTx = await server.submitTransaction(tx);
-    } catch (e) {
-      if (e.response.status === 504) {
-        // in case of 504, keep retrying this tx until submission succeeds or we get a different error
-        // https://developers.stellar.org/api/errors/http-status-codes/horizon-specific/timeout
-        // https://developers.stellar.org/docs/encyclopedia/error-handling
-        return submitTx();
-      }
-      throw e;
-    }
-
-    return submittedTx;
-  };
-
-  return submitTx();
+  return submitTx({ server, tx });
 };
 
 export const submitFreighterSorobanTransaction = async ({

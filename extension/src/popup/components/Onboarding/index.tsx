@@ -1,75 +1,113 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Button, Heading } from "@stellar/design-system";
 
 import { BackButton } from "popup/basics/buttons/BackButton";
+import { Box } from "popup/basics/layout/Box";
 
 import "./styles.scss";
 
-export const Onboarding = ({
-  customBackAction,
-  hasGoBackBtn,
-  children,
-}: {
-  customBackAction?: () => void;
-  hasGoBackBtn?: boolean;
+interface OnboardingProps {
   children: React.ReactNode;
-}) => {
-  const history = useHistory();
-  const isNewTabSession = history.length === 1;
+  layout: "half" | "full";
+  customWidth?: string;
+}
+
+export const Onboarding = ({
+  children,
+  layout,
+  customWidth,
+}: OnboardingProps) => {
+  const customStyle = {
+    ...(!customWidth && layout === "full"
+      ? { "--Onboarding-layout-width": "100%" }
+      : {}),
+    ...(customWidth ? { "--Onboarding-layout-width": customWidth } : {}),
+  } as React.CSSProperties;
 
   return (
-    <div className="Onboarding">
-      {hasGoBackBtn && !isNewTabSession ? (
-        <div className="Onboarding--back">
-          <BackButton customBackAction={customBackAction} hasBackCopy />
-        </div>
-      ) : null}
-      {children}
+    <div className="Onboarding" style={customStyle}>
+      <>{children}</>
     </div>
   );
 };
 
 interface OnboardingHeaderProps {
-  className?: string;
   children: React.ReactNode;
 }
 
-export const OnboardingHeader = ({
-  className,
-  children,
-  ...props
-}: OnboardingHeaderProps) => (
-  <header className={`OnboardingHeader ${className}`} {...props}>
+export const OnboardingHeader = ({ children }: OnboardingHeaderProps) => (
+  <Heading as="h1" size="lg">
     {children}
-  </header>
+  </Heading>
 );
 
-interface OnboardingScreenProps {
-  className?: string;
-  children: React.ReactNode;
+export const OnboardingOneCol = ({
+  children,
+  ...props
+}: {
+  children: React.ReactElement | React.ReactElement[];
+}) => (
+  <Box display="flex" gridCellWidth="24rem" gapVertical="1.5rem" {...props}>
+    {children}
+  </Box>
+);
+
+export const OnboardingTwoCol = ({
+  children,
+  ...props
+}: {
+  children: React.ReactElement | React.ReactElement[];
+}) => (
+  <Box
+    display="grid"
+    gridCellWidth="24rem"
+    gapVertical="1.5rem"
+    gapHorizontal="2rem"
+    {...props}
+  >
+    {children}
+  </Box>
+);
+
+interface OnboardingButtonsProps {
+  hasGoBackBtn?: boolean;
+  customBackAction?: () => void;
+  children?: React.ReactElement;
 }
 
-export const OnboardingScreen = ({
-  className,
+export const OnboardingButtons = ({
+  hasGoBackBtn,
+  customBackAction,
   children,
-  ...props
-}: OnboardingScreenProps) => (
-  <div className={`OnboardingScreen ${className}`} {...props}>
-    {children}
-  </div>
-);
+}: OnboardingButtonsProps) => {
+  const history = useHistory();
+  const { t } = useTranslation();
 
-interface OnboardingHalfScreenProps {
-  className?: string;
-  children: React.ReactNode;
-}
+  const isNewTabSession = history.length === 1;
+  const showBackButton = hasGoBackBtn && !isNewTabSession;
 
-export const OnboardingHalfScreen = ({
-  className,
-  children,
-  ...props
-}: OnboardingHalfScreenProps) => (
-  <div className={`OnboardingHalfScreen ${className}`} {...props}>
-    {children}
-  </div>
-);
+  if (children || showBackButton) {
+    return (
+      <Box display="flex" isFlexRow gapHorizontal="1rem">
+        <>
+          {showBackButton ? (
+            <BackButton
+              customButtonComponent={
+                <Button variant="secondary" size="md">
+                  {t("Back")}
+                </Button>
+              }
+              customBackAction={customBackAction}
+            />
+          ) : null}
+
+          {children}
+        </>
+      </Box>
+    );
+  }
+
+  return null;
+};

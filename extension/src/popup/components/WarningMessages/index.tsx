@@ -30,6 +30,7 @@ import {
   ManageAssetRow,
   NewAssetFlags,
 } from "popup/components/manageAssets/ManageAssetRows";
+import { View } from "popup/basics/layout/View";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   publicKeySelector,
@@ -37,6 +38,7 @@ import {
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
@@ -287,16 +289,21 @@ export const ScamAssetWarning = ({
     if (warningRef.current) {
       warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
     }
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       onClose();
+      clearTimeout(timeout);
     }, 300);
   };
 
   // animate entry
   useEffect(() => {
     if (warningRef.current) {
-      setTimeout(() => {
-        warningRef.current!.style.bottom = "0";
+      const timeout = setTimeout(() => {
+        // Adding extra check to fix flaky tests
+        if (warningRef.current) {
+          warningRef.current.style.bottom = "0";
+        }
+        clearTimeout(timeout);
       }, 10);
     }
   }, [warningRef]);
@@ -351,96 +358,103 @@ export const ScamAssetWarning = ({
 
   return (
     <div className="ScamAssetWarning">
-      <div className="ScamAssetWarning__wrapper" ref={warningRef}>
-        <div className="ScamAssetWarning__header">Warning</div>
-        <div className="ScamAssetWarning__description">
-          {t(
-            "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
-          )}
-        </div>
-        <div className="ScamAssetWarning__row">
-          <ManageAssetRow
-            code={code}
-            issuer={issuer}
-            image={image}
-            domain={domain}
-          />
-        </div>
-        <div className="ScamAssetWarning__bottom-content">
-          <div>
-            {isSendWarning ? (
-              <Notification variant="error" title={t("Not recommended asset")}>
-                <p>
-                  {t(
-                    "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                  )}
-                </p>
-              </Notification>
-            ) : (
-              <Notification variant="error" title={t("Blocked asset")}>
-                <div>
-                  <p>
-                    {isValidatingSafeAssetsEnabled
-                      ? t(
-                          "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                        )
-                      : t(
-                          "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
-                        )}
-                  </p>
-                  <p>
-                    {t("You can")}{" "}
-                    {`${
-                      isValidatingSafeAssetsEnabled ? t("disable") : t("enable")
-                    }`}{" "}
-                    {t("this alert by going to")}{" "}
-                    <strong>{t("Settings > Preferences")}</strong>
-                  </p>
-                </div>
-              </Notification>
+      <View.Content>
+        <div className="ScamAssetWarning__wrapper" ref={warningRef}>
+          <div className="ScamAssetWarning__header">Warning</div>
+          <div className="ScamAssetWarning__description">
+            {t(
+              "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
             )}
           </div>
-          <div className="ScamAssetWarning__btns">
-            <Button
-              size="md"
-              isFullWidth
-              variant="secondary"
-              type="button"
-              onClick={closeOverlay}
-            >
-              {isValidatingSafeAssetsEnabled ? t("Got it") : t("Cancel")}
-            </Button>
-            {isSendWarning && (
+          <div className="ScamAssetWarning__row">
+            <ManageAssetRow
+              code={code}
+              issuer={issuer}
+              image={image}
+              domain={domain}
+            />
+          </div>
+          <div className="ScamAssetWarning__bottom-content">
+            <div>
+              {isSendWarning ? (
+                <Notification
+                  variant="error"
+                  title={t("Not recommended asset")}
+                >
+                  <p>
+                    {t(
+                      "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                    )}
+                  </p>
+                </Notification>
+              ) : (
+                <Notification variant="error" title={t("Blocked asset")}>
+                  <div>
+                    <p>
+                      {isValidatingSafeAssetsEnabled
+                        ? t(
+                            "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
+                          )
+                        : t(
+                            "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
+                          )}
+                    </p>
+                    <p>
+                      {t("You can")}{" "}
+                      {`${
+                        isValidatingSafeAssetsEnabled
+                          ? t("disable")
+                          : t("enable")
+                      }`}{" "}
+                      {t("this alert by going to")}{" "}
+                      <strong>{t("Settings > Preferences")}</strong>
+                    </p>
+                  </div>
+                </Notification>
+              )}
+            </div>
+            <div className="ScamAssetWarning__btns">
               <Button
                 size="md"
                 isFullWidth
-                onClick={onContinue}
+                variant="secondary"
                 type="button"
-                variant="primary"
-                isLoading={
-                  isSubmitting || submitStatus === ActionStatus.PENDING
-                }
+                onClick={closeOverlay}
               >
-                {t("Continue")}
+                {isValidatingSafeAssetsEnabled ? t("Got it") : t("Cancel")}
               </Button>
-            )}
-            {!isValidatingSafeAssetsEnabled && !isSendWarning && (
-              <Button
-                size="md"
-                isFullWidth
-                onClick={handleSubmit}
-                type="button"
-                variant="primary"
-                isLoading={
-                  isSubmitting || submitStatus === ActionStatus.PENDING
-                }
-              >
-                {t("Add anyway")}
-              </Button>
-            )}
-          </div>{" "}
+              {isSendWarning && (
+                <Button
+                  size="md"
+                  isFullWidth
+                  onClick={onContinue}
+                  type="button"
+                  variant="primary"
+                  isLoading={
+                    isSubmitting || submitStatus === ActionStatus.PENDING
+                  }
+                >
+                  {t("Continue")}
+                </Button>
+              )}
+              {!isValidatingSafeAssetsEnabled && !isSendWarning && (
+                <Button
+                  size="md"
+                  isFullWidth
+                  onClick={handleSubmit}
+                  type="button"
+                  variant="primary"
+                  isLoading={
+                    isSubmitting || submitStatus === ActionStatus.PENDING
+                  }
+                >
+                  {t("Add anyway")}
+                </Button>
+              )}
+            </div>{" "}
+          </div>
         </div>
-      </div>
+      </View.Content>
     </div>
   );
 };
@@ -471,11 +485,22 @@ export const NewAssetWarning = ({
 
   const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
 
+  useEffect(
+    () => () => {
+      setIsSubmitting(false);
+    },
+    [],
+  );
+
   // animate entry
   useEffect(() => {
     if (warningRef.current) {
-      setTimeout(() => {
-        warningRef.current!.style.bottom = "0";
+      const timeout = setTimeout(() => {
+        // Adding extra check to fix flaky tests
+        if (warningRef.current) {
+          warningRef.current.style.bottom = "0";
+        }
+        clearTimeout(timeout);
       }, 10);
     }
   }, [warningRef]);
@@ -484,8 +509,9 @@ export const NewAssetWarning = ({
     if (warningRef.current) {
       warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
     }
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       onClose();
+      clearTimeout(timeout);
     }, 300);
   };
 
@@ -493,19 +519,15 @@ export const NewAssetWarning = ({
     setIsSubmitting(true);
 
     const server = new Horizon.Server(networkDetails.networkUrl);
-    const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new TransactionBuilder(sourceAccount, {
-      fee: xlmToStroop(recommendedFee).toFixed(),
-      networkPassphrase: networkDetails.networkPassphrase,
-    })
-      .addOperation(
-        Operation.changeTrust({
-          asset: new Asset(code, issuer),
-        }),
-      )
-      .setTimeout(180)
-      .build()
-      .toXDR();
+    const transactionXDR = await getManageAssetXDR({
+      publicKey,
+      assetCode: code,
+      assetIssuer: issuer,
+      addTrustline: true,
+      server,
+      recommendedFee,
+      networkDetails,
+    });
 
     if (isHardwareWallet) {
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
@@ -538,102 +560,108 @@ export const NewAssetWarning = ({
   };
 
   return (
-    <div className="NewAssetWarning">
-      <div className="NewAssetWarning__wrapper" ref={warningRef}>
-        <div className="NewAssetWarning__header">
-          {t("Before You Add This Asset")}
-        </div>
-        <div className="NewAssetWarning__description">
-          {t(
-            "Please double-check its information and characteristics. This can help you identify fraudulent assets.",
-          )}
-        </div>
-        <div className="NewAssetWarning__row">
-          <ManageAssetRow
-            code={code}
-            issuer={issuer}
-            image={image}
-            domain={domain}
-          />
-        </div>
-        <hr className="NewAssetWarning__list-divider" />
-        <div className="NewAssetWarning__flags">
-          {isRevocable && (
-            <div className="NewAssetWarning__flag">
-              <div className="NewAssetWarning__flag__icon">
-                <img src={IconShieldCross} alt="revocable" />
-              </div>
-              <div className="NewAssetWarning__flag__content">
-                <div className="NewAssetWarning__flag__header">
-                  {t("Revocable Asset")}
-                </div>
-                <div className="NewAssetWarning__flag__description">
-                  {t(
-                    "The asset creator can revoke your access to this asset at anytime",
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          <div>
-            {isNewAsset && (
-              <div className="NewAssetWarning__flag">
-                <div className="NewAssetWarning__flag__icon">
-                  <img src={IconInvalid} alt="new asset" />
-                </div>
-                <div className="NewAssetWarning__flag__content">
-                  <div className="NewAssetWarning__flag__header">
-                    {t("New Asset")}
-                  </div>
-                  <div className="NewAssetWarning__flag__description">
-                    {t("This is a relatively new asset.")}
-                  </div>
-                </div>
-              </div>
+    <div className="NewAssetWarning" data-testid="NewAssetWarning">
+      <View.Content>
+        <div className="NewAssetWarning__wrapper" ref={warningRef}>
+          <div
+            className="NewAssetWarning__header"
+            data-testid="NewAssetWarningTitle"
+          >
+            {t("Before You Add This Asset")}
+          </div>
+          <div className="NewAssetWarning__description">
+            {t(
+              "Please double-check its information and characteristics. This can help you identify fraudulent assets.",
             )}
           </div>
-          <div>
-            {isInvalidDomain && (
+          <div className="NewAssetWarning__row">
+            <ManageAssetRow
+              code={code}
+              issuer={issuer}
+              image={image}
+              domain={domain}
+            />
+          </div>
+          <hr className="NewAssetWarning__list-divider" />
+          <div className="NewAssetWarning__flags">
+            {isRevocable && (
               <div className="NewAssetWarning__flag">
                 <div className="NewAssetWarning__flag__icon">
-                  <img src={IconWarning} alt="invalid domain" />
+                  <img src={IconShieldCross} alt="revocable" />
                 </div>
                 <div className="NewAssetWarning__flag__content">
                   <div className="NewAssetWarning__flag__header">
-                    {t("Invalid Format Asset")}
+                    {t("Revocable Asset")}
                   </div>
                   <div className="NewAssetWarning__flag__description">
                     {t(
-                      "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
+                      "The asset creator can revoke your access to this asset at anytime",
                     )}
                   </div>
                 </div>
               </div>
             )}
-          </div>
-          <div className="NewAssetWarning__btns">
-            <Button
-              size="md"
-              isFullWidth
-              variant="secondary"
-              type="button"
-              onClick={closeOverlay}
-            >
-              {t("Cancel")}
-            </Button>
-            <Button
-              size="md"
-              isFullWidth
-              variant="primary"
-              onClick={handleSubmit}
-              type="button"
-              isLoading={isSubmitting}
-            >
-              {t("Add asset")}
-            </Button>
+            <div>
+              {isNewAsset && (
+                <div className="NewAssetWarning__flag">
+                  <div className="NewAssetWarning__flag__icon">
+                    <img src={IconInvalid} alt="new asset" />
+                  </div>
+                  <div className="NewAssetWarning__flag__content">
+                    <div className="NewAssetWarning__flag__header">
+                      {t("New Asset")}
+                    </div>
+                    <div className="NewAssetWarning__flag__description">
+                      {t("This is a relatively new asset.")}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div>
+              {isInvalidDomain && (
+                <div className="NewAssetWarning__flag">
+                  <div className="NewAssetWarning__flag__icon">
+                    <img src={IconWarning} alt="invalid domain" />
+                  </div>
+                  <div className="NewAssetWarning__flag__content">
+                    <div className="NewAssetWarning__flag__header">
+                      {t("Invalid Format Asset")}
+                    </div>
+                    <div className="NewAssetWarning__flag__description">
+                      {t(
+                        "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="NewAssetWarning__btns">
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                type="button"
+                onClick={closeOverlay}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                size="md"
+                isFullWidth
+                variant="primary"
+                onClick={handleSubmit}
+                type="button"
+                isLoading={isSubmitting}
+                data-testid="NewAssetWarningAddButton"
+              >
+                {t("Add asset")}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      </View.Content>
     </div>
   );
 };

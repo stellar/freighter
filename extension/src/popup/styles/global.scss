@@ -16,7 +16,7 @@
 
   --fullscreen--max-width: 1100px;
 
-  --back--button-dimension: 1rem;
+  --back--button-dimension: 1.25rem;
   --back--button-z-index: 2;
 
   --dropdown-animation: 0.3s ease-out;
@@ -29,12 +29,6 @@ body {
   overscroll-behavior: none;
   margin: 0;
   padding: 0;
-}
-
-body,
-html {
-  height: var(--popup--height);
-  width: var(--popup--width);
 }
 
 a {
@@ -65,17 +59,13 @@ a {
   }
 }
 
-.simplebar-content {
-  height: 100%;
-}
-
-.simplebar-scrollbar::before {
-  background: var(--color-gray-40);
-}
-
 // Form layout
 .FormLayoutView {
   height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
 
   .FormRows {
     height: 100%;
@@ -105,15 +95,12 @@ a {
   }
 }
 
-* {
-  scrollbar-color: rgba(var(--color-shadow-rgb), 0.25) var(--color-gray-00);
-
-  &::-webkit-scrollbar {
-    background-color: var(--color-gray-00);
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(var(--color-shadow-rgb), 0.25);
-    border-radius: 0.5rem;
-  }
+// TODO: fix in SDS
+.sds-theme-light p,
+.sds-theme-light ul,
+.sds-theme-light ol,
+.sds-theme-dark p,
+.sds-theme-dark ul,
+.sds-theme-dark ol {
+  color: inherit !important;
 }

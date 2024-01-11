@@ -1,3 +1,39 @@
+# Release notes - Wallets - Freighter-5.11.0
+
+### Bug
+
+Fix memo display in SignTransaction
+
+### Story
+
+\[Automated Tests\] Add tests for a Swap payment
+
+\[Automated Tests\] Managing a trustline
+
+\[TEST\] Add tests for different memos in SignTransaction
+
+Disable account migration
+
+# Release notes - Wallets - Freighter-5.10.0
+
+### Bug
+
+Freighter's testnet Soroban migration hit runtime error on new installs
+
+\[Layout\] UI fixes
+
+### Story
+
+Add full screen support
+
+Key migration
+
+# Release notes - Wallets - Freighter-5.9.0
+
+### Story
+
+Upgrade stellar-sdk for Protocol 20
+
 # Release notes - Wallets - Freighter-5.8.0
 
 ### Bug

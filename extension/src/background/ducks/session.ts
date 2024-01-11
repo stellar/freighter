@@ -8,16 +8,19 @@ const initialState = {
   privateKey: "",
   mnemonicPhrase: "",
   allAccounts: [] as Array<Account>,
+  migratedMnemonicPhrase: "",
 };
 
 interface UiData {
   publicKey: string;
   mnemonicPhrase?: string;
   allAccounts?: Array<Account>;
+  migratedMnemonicPhrase?: string;
 }
 
 interface AppData {
-  privateKey: string;
+  privateKey?: string;
+  password?: string;
 }
 
 export const sessionSlice = createSlice({
@@ -41,7 +44,7 @@ export const sessionSlice = createSlice({
     },
     logOut: () => initialState,
     setActivePrivateKey: (state, action: { payload: AppData }) => {
-      const { privateKey } = action.payload;
+      const { privateKey = "" } = action.payload;
 
       return {
         ...state,
@@ -55,6 +58,25 @@ export const sessionSlice = createSlice({
         ...state,
         publicKey,
         privateKey: "",
+      };
+    },
+    setPassword: (state, action: { payload: AppData }) => {
+      const { password } = action.payload;
+
+      return {
+        ...state,
+        password,
+      };
+    },
+    setMigratedMnemonicPhrase: (
+      state,
+      action: { payload: { migratedMnemonicPhrase: string } },
+    ) => {
+      const { migratedMnemonicPhrase = "" } = action.payload;
+
+      return {
+        ...state,
+        migratedMnemonicPhrase,
       };
     },
     timeoutAccountAccess: (state) => ({ ...state, privateKey: "" }),
@@ -96,6 +118,8 @@ export const {
     setActivePublicKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
+    setPassword,
+    setMigratedMnemonicPhrase,
   },
 } = sessionSlice;
 
@@ -107,6 +131,10 @@ export const mnemonicPhraseSelector = createSelector(
   sessionSelector,
   (session) => session.mnemonicPhrase,
 );
+export const migratedMnemonicPhraseSelector = createSelector(
+  sessionSelector,
+  (session) => session.migratedMnemonicPhrase,
+);
 export const allAccountsSelector = createSelector(
   sessionSelector,
   (session) => session.allAccounts || [],
@@ -115,10 +143,14 @@ export const hasPrivateKeySelector = createSelector(
   sessionSelector,
   async (session) => {
     const isHardwareWalletActive = await getIsHardwareWalletActive();
-    return isHardwareWalletActive || !!session.privateKey.length;
+    return isHardwareWalletActive || !!session?.privateKey?.length;
   },
 );
 export const privateKeySelector = createSelector(
   sessionSelector,
-  (session) => session.privateKey,
+  (session) => session.privateKey || "",
+);
+export const passwordSelector = createSelector(
+  sessionSelector,
+  (session) => session.password,
 );

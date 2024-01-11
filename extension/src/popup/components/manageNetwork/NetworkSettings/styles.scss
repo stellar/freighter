@@ -3,20 +3,12 @@ $activeColor: rgba(61, 204, 152, 1);
 .NetworkSettings {
   display: flex;
   flex-direction: column;
-  height: var(--popup--height);
-  padding: 2rem var(--popup--side-padding) var(--popup-vertical-padding);
 
   &__header {
     color: rgba(255, 255, 255, 0.4);
     font-size: 0.875rem;
     font-weight: var(--font-weight-medium);
     margin-bottom: 1rem;
-  }
-
-  &__scrollbar {
-    height: 23.85rem;
-    margin-left: -0.25rem;
-    padding-left: 0.25rem;
   }
 
   &__name {

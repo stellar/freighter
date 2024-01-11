@@ -34,6 +34,27 @@ export const ListNavLink = ({
   );
 };
 
+interface ListNavButtonLinkProps {
+  children: string | React.ReactNode;
+  handleClick: () => void;
+}
+
+export const ListNavButtonLink = ({
+  children,
+  handleClick,
+}: ListNavButtonLinkProps) => (
+  <div className="ListNavLink">
+    <span
+      onClick={(e) => {
+        e.preventDefault();
+        handleClick();
+      }}
+    >
+      {children} <Icon.ChevronRight className="ListNavLink__icon" />
+    </span>
+  </div>
+);
+
 export const ListNavLinkWrapper = ({
   children,
 }: {
