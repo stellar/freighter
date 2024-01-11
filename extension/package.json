@@ -85,7 +85,6 @@
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.3.1",
-    "@playwright/experimental-ct-react17": "^1.40.1",
     "@playwright/test": "^1.40.1",
     "@types/semver": "^7.5.2",
     "https-browserify": "^1.0.0",

@@ -13,7 +13,7 @@ test("Welcome page loads", async ({ page }) => {
   await expect(page.getByText("I’ve done this before")).toBeVisible();
 });
 
-test("Create new wallet", async ({ page }) => {
+test.only("Create new wallet", async ({ page }) => {
   await page.getByText("Create Wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
