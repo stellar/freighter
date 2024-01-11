@@ -1,10 +1,6 @@
 .AssetDetail {
-  height: var(--popup--height);
-  overflow: hidden;
-  position: relative;
-
   &__wrapper {
-    padding: var(--popup-vertical-padding) var(--popup--side-padding);
+    position: relative;
   }
 
   .SubviewHeader {

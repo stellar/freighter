@@ -1,4 +1,5 @@
 import React from "react";
+import { MemoType } from "stellar-sdk";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -10,10 +11,18 @@ const MemoDisplay = ({
   memo,
   isMemoRequired,
 }: {
-  memo: string;
+  memo: { value: string; type: MemoType };
   isMemoRequired: boolean;
 }) => {
   const { t } = useTranslation();
+
+  const mapMemoLabel: any = {
+    id: "MEMO_ID",
+    hash: "MEMO_HASH",
+    text: "MEMO_TEXT",
+    return: "MEMO_RETURN",
+    none: "MEMO_NONE",
+  };
 
   if (isMemoRequired) {
     return (
@@ -25,8 +34,13 @@ const MemoDisplay = ({
       />
     );
   }
+
   if (memo) {
-    return <span>{`${memo} (MEMO_TEXT)`}</span>;
+    return (
+      <span data-testid="SignTransactionMemo">{`${memo.value} (${
+        mapMemoLabel[memo.type]
+      })`}</span>
+    );
   }
 
   return null;
@@ -37,7 +51,7 @@ interface TransactionInfoProps {
   _sequence?: string;
   isFeeBump?: boolean;
   isMemoRequired: boolean;
-  memo?: string;
+  memo?: { value: string; type: MemoType };
 }
 
 export const TransactionInfo = ({
@@ -50,7 +64,7 @@ export const TransactionInfo = ({
   const { t } = useTranslation();
 
   return (
-    <div className="TransactionInfo">
+    <div className="TransactionInfo" data-testid="TransactionInfoWrapper">
       {_fee ? (
         <div>
           <div>

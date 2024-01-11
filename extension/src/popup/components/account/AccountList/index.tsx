@@ -70,7 +70,7 @@ export const AccountList = ({
   publicKey,
   setIsDropdownOpen,
 }: AccounsListProps) => (
-  <>
+  <div className="AccountList__accountsWrapper View__inset--scroll-shadows">
     {allAccounts.map(
       ({
         publicKey: accountPublicKey,
@@ -93,5 +93,5 @@ export const AccountList = ({
         );
       },
     )}
-  </>
+  </div>
 );

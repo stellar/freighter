@@ -3,11 +3,6 @@ import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
-import {
-  ButtonsContainer,
-  ModalHeader,
-  ModalWrapper,
-} from "popup/basics/Modal";
 
 import { truncatedPublicKey } from "helpers/stellar";
 import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
@@ -20,16 +15,17 @@ import {
   WarningMessageVariant,
   WarningMessage,
 } from "popup/components/WarningMessages";
+import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
+import { View } from "popup/basics/layout/View";
 import { signEntry, rejectAuthEntry } from "popup/ducks/access";
 import { settingsExperimentalModeSelector } from "popup/ducks/settings";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
 import { EntryToSign, parsedSearchParam } from "helpers/urls";
-import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
 import "./styles.scss";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
 export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -65,41 +61,37 @@ export const SignAuthEntry = () => {
 
   if (isHardwareWallet) {
     return (
-      <ModalWrapper>
-        <WarningMessage
-          variant={WarningMessageVariant.warning}
-          handleCloseClick={() => window.close()}
-          isActive
-          header={t("Unsupported signing method")}
-        >
-          <p>
-            {t(
-              "Signing arbitrary data with a hardware wallet is currently not supported.",
-            )}
-          </p>
-        </WarningMessage>
-      </ModalWrapper>
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={t("Unsupported signing method")}
+      >
+        <p>
+          {t(
+            "Signing arbitrary data with a hardware wallet is currently not supported.",
+          )}
+        </p>
+      </WarningMessage>
     );
   }
 
   if (!params.url.startsWith("https") && !isExperimentalModeEnabled) {
     return (
-      <ModalWrapper>
-        <WarningMessage
-          handleCloseClick={() => window.close()}
-          isActive
-          variant={WarningMessageVariant.warning}
-          header={t("WEBSITE CONNECTION IS NOT SECURE")}
-        >
-          <p>
-            <Trans domain={params.url}>
-              The website <strong>{{ domain: params.url }}</strong> does not use
-              an SSL certificate. For additional safety Freighter only works
-              with websites that provide an SSL certificate.
-            </Trans>
-          </p>
-        </WarningMessage>
-      </ModalWrapper>
+      <WarningMessage
+        handleCloseClick={() => window.close()}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("WEBSITE CONNECTION IS NOT SECURE")}
+      >
+        <p>
+          <Trans domain={params.url}>
+            The website <strong>{{ domain: params.url }}</strong> does not use
+            an SSL certificate. For additional safety Freighter only works with
+            websites that provide an SSL certificate.
+          </Trans>
+        </p>
+      </WarningMessage>
     );
   }
 
@@ -112,11 +104,9 @@ export const SignAuthEntry = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="SignAuthEntry" data-testid="SignAuthEntry">
-        <ModalWrapper>
-          <ModalHeader>
-            <strong>{t("Confirm Data")}</strong>
-          </ModalHeader>
+      <View data-testid="SignAuthEntry">
+        <View.AppHeader pageTitle={t("Confirm Data")} />
+        <View.Content>
           {isExperimentalModeEnabled ? (
             <WarningMessage
               header="Experimental Mode"
@@ -185,8 +175,8 @@ export const SignAuthEntry = () => {
             transaction={{ _operations: [{ auth: params.entry }] }}
           /> */}
           <AuthEntry preimageXdr={params.entry} />
-        </ModalWrapper>
-        <ButtonsContainer>
+        </View.Content>
+        <View.Footer isInline>
           <Button
             isFullWidth
             size="md"
@@ -204,7 +194,7 @@ export const SignAuthEntry = () => {
           >
             {t("Approve")}
           </Button>
-        </ButtonsContainer>
+        </View.Footer>
         <SlideupModal
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
@@ -217,7 +207,7 @@ export const SignAuthEntry = () => {
             />
           </div>
         </SlideupModal>
-      </div>
+      </View>
     </>
   );
 };

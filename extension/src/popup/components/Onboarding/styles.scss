@@ -1,18 +1,31 @@
 .Onboarding {
-  margin: 4.5rem auto 0;
-  max-width: var(--fullscreen--max-width);
-  width: 100%;
+  --Onboarding-layout-width: auto;
 
-  &--back {
-    margin-bottom: -1.3rem;
+  margin-top: 4.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: var(--Onboarding-layout-width);
+  color: var(--color-gray-70);
+
+  @media (max-width: 832px) {
+    // Center content when going from two cols to one
+    width: auto !important;
   }
-}
 
-.OnboardingHeader {
-  font-size: 2.5rem;
-  line-height: 120%;
-  color: var(--color-gray-90);
-  font-weight: var(--font-weight-medium);
+  .Heading {
+    color: var(--color-gray-80);
+  }
+
+  .Checkbox label {
+    color: var(--color-gray-70);
+  }
+
+  .Link--secondary {
+    --Link-color-default: var(--color-gray-80);
+    --Link-color-hover: var(--color-gray-90);
+    --Link-color-disabled: var(--color-gray-70);
+  }
 }
 
 .OnboardingScreen {
@@ -22,10 +35,4 @@
   max-width: 57rem;
   width: 100%;
   margin: auto;
-}
-
-.OnboardingHalfScreen {
-  display: flex;
-  padding: 2rem 0 2rem 1.55rem;
-  width: 27rem;
 }

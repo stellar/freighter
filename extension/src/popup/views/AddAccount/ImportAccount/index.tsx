@@ -22,6 +22,7 @@ import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import "./styles.scss";
+import { View } from "popup/basics/layout/View";
 
 export const ImportAccount = () => {
   interface FormValues {
@@ -64,68 +65,72 @@ export const ImportAccount = () => {
   };
 
   return (
-    <div className="ImportAccount">
+    <View>
       <SubviewHeader title={t("Import Stellar Secret Key")} />
-      <div className="ImportAccount__warning-block">
-        <Notification
-          variant="warning"
-          icon={<Icon.Warning />}
-          title={t("Read before importing your key")}
-        >
-          {t(
-            "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension.",
-          )}
-        </Notification>
-      </div>
+
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
         validationSchema={ImportAccountSchema}
       >
         {({ dirty, isSubmitting, isValid }) => (
-          <Form>
-            <FormRows>
-              <Field name="privateKey">
-                {({ field }: FieldProps) => (
-                  <Input
-                    fieldSize="md"
-                    autoComplete="off"
-                    id="privateKey-input"
-                    type="password"
-                    placeholder={t("Your Stellar secret key")}
-                    error={authError}
-                    {...field}
-                  />
-                )}
-              </Field>
-              <Field name="password">
-                {({ field }: FieldProps) => (
-                  <Input
-                    fieldSize="md"
-                    autoComplete="off"
-                    id="password-input"
-                    type="password"
-                    placeholder={t("Enter password")}
-                    error={authError}
-                    {...field}
-                  />
-                )}
-              </Field>
-              <Field name="authorization">
-                {({ field }: FieldProps) => (
-                  <Checkbox
-                    fieldSize="md"
-                    autoComplete="off"
-                    id="authorization-input"
-                    label={t(
-                      "I’m aware Freighter can’t recover the imported  secret key",
-                    )}
-                    {...field}
-                  />
-                )}
-              </Field>
-            </FormRows>
-            <div className="ImportAccount__btn-row">
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
+              <div className="ImportAccount__warning-block">
+                <Notification
+                  variant="warning"
+                  icon={<Icon.Warning />}
+                  title={t("Read before importing your key")}
+                >
+                  {t(
+                    "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension.",
+                  )}
+                </Notification>
+              </div>
+
+              <FormRows>
+                <Field name="privateKey">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      fieldSize="md"
+                      autoComplete="off"
+                      id="privateKey-input"
+                      type="password"
+                      placeholder={t("Your Stellar secret key")}
+                      error={authError}
+                      {...field}
+                    />
+                  )}
+                </Field>
+                <Field name="password">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      fieldSize="md"
+                      autoComplete="off"
+                      id="password-input"
+                      type="password"
+                      placeholder={t("Enter password")}
+                      error={authError}
+                      {...field}
+                    />
+                  )}
+                </Field>
+                <Field name="authorization">
+                  {({ field }: FieldProps) => (
+                    <Checkbox
+                      fieldSize="md"
+                      autoComplete="off"
+                      id="authorization-input"
+                      label={t(
+                        "I’m aware Freighter can’t recover the imported  secret key",
+                      )}
+                      {...field}
+                    />
+                  )}
+                </Field>
+              </FormRows>
+            </View.Content>
+            <View.Footer isInline>
               <Button
                 size="md"
                 isFullWidth
@@ -144,10 +149,10 @@ export const ImportAccount = () => {
               >
                 {t("Import")}
               </Button>
-            </div>
+            </View.Footer>
           </Form>
         )}
       </Formik>
-    </div>
+    </View>
   );
 };

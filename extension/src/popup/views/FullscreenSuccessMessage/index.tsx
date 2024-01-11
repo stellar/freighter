@@ -9,9 +9,8 @@ import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo } from "popup/helpers/navigate";
 import { SubmitButtonWrapper } from "popup/basics/Forms";
-import { FullscreenStyle } from "popup/components/FullscreenStyle";
-import { Header } from "popup/components/Header";
-import { OnboardingHeader } from "popup/components/Onboarding";
+import { Onboarding, OnboardingHeader } from "popup/components/Onboarding";
+import { View } from "popup/basics/layout/View";
 import ExtensionIllo from "popup/assets/illo-extension.png";
 
 import "./styles.scss";
@@ -64,11 +63,10 @@ const MnemonicPhraseConfirmedMessage = () => {
         </p>
       </div>
       <AvoidScamsWarningBlock />
-      <SubmitButtonWrapper>
+      <SubmitButtonWrapper isCenterAligned>
         <Button
           size="md"
-          variant="primary"
-          isFullWidth
+          variant="secondary"
           onClick={() => {
             emitMetric(METRIC_NAMES.accountCreatorFinished);
             if (isChrome()) {
@@ -118,11 +116,10 @@ const RecoverAccountSuccessMessage = () => {
           />
         </div>
       )}
-      <SubmitButtonWrapper>
+      <SubmitButtonWrapper isCenterAligned>
         <Button
           size="md"
-          variant="primary"
-          isFullWidth
+          variant="secondary"
           onClick={() => {
             emitMetric(METRIC_NAMES.recoverAccountFinished);
             if (isChrome()) {
@@ -147,21 +144,22 @@ export const FullscreenSuccessMessage = () => {
     location.pathname === ROUTES.mnemonicPhraseConfirmed;
 
   return (
-    <>
-      <Header />
-      <FullscreenStyle />
-      <div className="FullscreenSuccessMessage__wrapper">
-        <OnboardingHeader className="FullscreenSuccessMessage__header">
-          {t("Wallet created successfully!")}
-        </OnboardingHeader>
-        <div className="FullscreenSuccessMessage__content-wrapper">
-          {IS_MNEMONIC_PHRASE_STATE ? (
-            <MnemonicPhraseConfirmedMessage />
-          ) : (
-            <RecoverAccountSuccessMessage />
-          )}
-        </div>
-      </div>
-    </>
+    <View isAppLayout={false}>
+      <View.Header />
+      <View.Content alignment="center">
+        <Onboarding layout="full" customWidth="31rem">
+          <OnboardingHeader>
+            {t("Wallet created successfully!")}
+          </OnboardingHeader>
+          <div className="FullscreenSuccessMessage__content-wrapper">
+            {IS_MNEMONIC_PHRASE_STATE ? (
+              <MnemonicPhraseConfirmedMessage />
+            ) : (
+              <RecoverAccountSuccessMessage />
+            )}
+          </div>
+        </Onboarding>
+      </View.Content>
+    </View>
   );
 };

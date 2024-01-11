@@ -1,7 +1,8 @@
 .ConfirmMnemonicPhrase {
   &__screen {
-    flex-flow: column wrap;
-    justify-content: start;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   &__header {
@@ -9,22 +10,15 @@
   }
 
   &__content {
-    margin: 1.5rem 0;
     font-size: 1rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-regular);
     color: var(--color-gray-60);
-    text-align: center;
 
     p {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--color-gray-60);
       margin-bottom: 0 !important;
     }
-  }
-
-  &--form-wrapper {
-    width: 24rem;
-    margin: 0 auto;
   }
 
   &__selected-words-wrapper {
@@ -48,6 +42,6 @@
     flex-flow: row wrap;
     justify-content: center;
     align-content: start;
-    padding: 1rem 0;
+    padding: 1rem 0 1.5rem;
   }
 }

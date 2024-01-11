@@ -1,5 +1,4 @@
 .PinExtension {
-  margin-top: 4.5rem;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -7,15 +6,6 @@
 
   &__wrapper {
     max-width: 31rem;
-  }
-
-  &__title {
-    font-size: 1.5rem;
-    line-height: 2.25rem;
-    text-align: center;
-    color: var(--color-gray-90);
-    margin-bottom: 1rem;
-    font-weight: var(--font-weight-medium);
   }
 
   &__caption {

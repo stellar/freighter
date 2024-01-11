@@ -10,9 +10,9 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { isMuxedAccount, xlmToStroop } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
-import { PopupWrapper } from "popup/basics/PopupWrapper";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
+import { View } from "popup/basics/layout/View";
 import {
   saveMemo,
   transactionDataSelector,
@@ -125,20 +125,21 @@ export const SendSettings = ({
   }
 
   return (
-    <PopupWrapper>
-      <div className="SendSettings" data-testid="send-settings-view">
-        <SubviewHeader
-          title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
-          customBackAction={() => navigateTo(previous)}
-        />
-        <Formik
-          initialValues={{ memo }}
-          onSubmit={(values) => {
-            dispatch(saveMemo(values.memo));
-          }}
-        >
-          {({ submitForm }) => (
-            <Form>
+    <View data-testid="send-settings-view">
+      <SubviewHeader
+        title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
+        customBackAction={() => navigateTo(previous)}
+      />
+      <Formik
+        initialValues={{ memo }}
+        onSubmit={(values) => {
+          dispatch(saveMemo(values.memo));
+          goToReview();
+        }}
+      >
+        {({ submitForm }) => (
+          <Form className="View__contentAndFooterWrapper">
+            <View.Content>
               <FormRows>
                 {!isToken ? (
                   <div className="SendSettings__row">
@@ -177,7 +178,9 @@ export const SendSettings = ({
                         handleTxFeeNav();
                       }}
                     >
-                      <span>{transactionFee} XLM</span>
+                      <span data-testid="SendSettingsTransactionFee">
+                        {transactionFee} XLM
+                      </span>
                       <div>
                         <Icon.ChevronRight />
                       </div>
@@ -224,7 +227,9 @@ export const SendSettings = ({
                         handleSlippageNav();
                       }}
                     >
-                      <span>{allowedSlippage}%</span>
+                      <span data-testid="SendSettingsAllowedSlippage">
+                        {allowedSlippage}%
+                      </span>
                       <div>
                         <Icon.ChevronRight />
                       </div>
@@ -272,24 +277,22 @@ export const SendSettings = ({
                     </Field>
                   </>
                 )}
-
-                <div className="SendPayment__btn-continue">
-                  <Button
-                    size="md"
-                    isFullWidth
-                    type="submit"
-                    variant="secondary"
-                    onClick={goToReview}
-                    data-testid="send-settings-btn-continue"
-                  >
-                    {t("Review")} {isSwap ? t("Swap") : t("Send")}
-                  </Button>
-                </div>
               </FormRows>
-            </Form>
-          )}
-        </Formik>
-      </div>
-    </PopupWrapper>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                isFullWidth
+                type="submit"
+                variant="secondary"
+                data-testid="send-settings-btn-continue"
+              >
+                {t("Review")} {isSwap ? t("Swap") : t("Send")}
+              </Button>
+            </View.Footer>
+          </Form>
+        )}
+      </Formik>
+    </View>
   );
 };
