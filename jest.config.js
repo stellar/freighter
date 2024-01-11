@@ -27,7 +27,7 @@ const jsdomTests = {
   moduleFileExtensions: ["js", "jsx", "json", "node", "mjs", "ts", "tsx"],
   moduleDirectories: ["node_modules", "<rootDir>/extension/src", "<rootDir>/."],
   testEnvironment: "jsdom",
-  modulePathIgnorePatterns: ["extension/tests"],
+  modulePathIgnorePatterns: ["extension/e2e-tests"],
 };
 
 module.exports = {
