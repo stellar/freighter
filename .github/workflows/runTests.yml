@@ -1,8 +1,23 @@
 name: Run Tests
 on: [pull_request]
 jobs:
+  test-e2e:
+    name: e2e-tests
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm install -g yarn && yarn
+      - run: yarn playwright install --with-deps
+      - run: yarn setup
+      - run: yarn build:extension
+      - run: yarn test:e2e
   test-ci:
     name: test
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
