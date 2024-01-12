@@ -12,7 +12,7 @@
     "start": "webpack-dev-server --config webpack.dev.js",
     "start:experimental": "yarn start --env EXPERIMENTAL=true",
     "start:unpacked-extension": "yarn build --watch",
-    "test:e2e": "playwright test"
+    "test": "playwright test"
   },
   "dependencies": {
     "@ledgerhq/hw-app-str": "^6.27.1",
