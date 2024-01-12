@@ -3787,14 +3787,13 @@
     p-map "^4.0.0"
     webpack-sources "^3.2.2"
 
-"@stellar/design-system@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@stellar/design-system/-/design-system-1.0.1.tgz#180173fd040a54e86bd9d991aafec225b01c912b"
-  integrity sha512-RwL6NjVrWStLNT+9Ujc06zMYBSPlOx1x+x4GjINgnEqNeCXKOw5oRerPcNVWtn90aMd0+ZXQwyXdXbK2xzDx2w==
+"@stellar/design-system@^1.1.1":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@stellar/design-system/-/design-system-1.1.2.tgz#09f27c13fef69975c6d9a214e770e419985c0b8e"
+  integrity sha512-Vge1vYGE2QrGO9ASVyW/o68bK7/e7+TthS4MjaQ6KZB8F2VNEhgTsyOPfCIKs2iewim0jYetHA5PIBs//tapZQ==
   dependencies:
     "@floating-ui/dom" "^1.5.3"
     bignumber.js "^9.1.1"
-    configurable-date-input-polyfill "^3.1.5"
     lodash "^4.17.21"
     react-copy-to-clipboard "^5.1.0"
     tslib "^2.5.0"
@@ -6564,11 +6563,6 @@ configstore@^5.0.1:
     unique-string "^2.0.0"
     write-file-atomic "^3.0.0"
     xdg-basedir "^4.0.0"
-
-configurable-date-input-polyfill@^3.1.5:
-  version "3.1.5"
-  resolved "https://registry.yarnpkg.com/configurable-date-input-polyfill/-/configurable-date-input-polyfill-3.1.5.tgz#97b03a20862e8222272c1572df9593748b3bb288"
-  integrity sha512-N077aVhmGm6naVPdSyOes+YrFds4CBrCBcWN4zq52Fz7vzQB62iGdkHRNSQE3KFjtMbSMoUrWzbh2oWHXf39og==
 
 confusing-browser-globals@^1.0.9:
   version "1.0.10"
