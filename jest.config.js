@@ -28,6 +28,7 @@ const jsdomTests = {
   moduleDirectories: ["node_modules", "<rootDir>/extension/src", "<rootDir>/."],
   testEnvironment: "jsdom",
   resolver: "<rootDir>/config/jest/resolver.js",
+  modulePathIgnorePatterns: ["extension/e2e-tests"],
 };
 
 module.exports = {
