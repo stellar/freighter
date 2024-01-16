@@ -96,6 +96,8 @@ test("Import 24 word wallet", async ({ page }) => {
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
   await page.locator(".RecoverAccount__phrase-toggle > label").click();
+
+  // time out to accomodate animation
   await page.waitForTimeout(150);
 
   const TEST_WORDS = [
