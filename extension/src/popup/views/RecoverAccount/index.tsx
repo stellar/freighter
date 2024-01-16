@@ -144,7 +144,11 @@ export const RecoverAccount = () => {
         phraseInputsArr.push(`MnemonicPhrase-${i}`);
       }
       setPhraseInputs(phraseInputsArr);
-      setMnemonicPhraseArr([]);
+
+      if (PHRASE_LENGTH === SHORT_PHRASE) {
+        // when going back to 12 words, clear all the fields
+        setMnemonicPhraseArr([]);
+      }
     }, 150);
   }, [isLongPhrase]);
 
