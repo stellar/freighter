@@ -54,7 +54,7 @@ test("Create new wallet", async ({ page }) => {
   await expect(page).toHaveScreenshot("wallet-create-complete-page.png");
 });
 
-test("Import wallet", async ({ page }) => {
+test("Import 12 word wallet", async ({ page }) => {
   await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Import Wallet").click();
   await expect(
@@ -74,6 +74,54 @@ test("Import wallet", async ({ page }) => {
     "police",
     "seminar",
     "face",
+  ];
+
+  for (let i = 1; i <= TEST_WORDS.length; i++) {
+    await page.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
+  }
+
+  await page.locator("#password-input").fill("My-password123");
+  await page.locator("#confirm-password-input").fill("My-password123");
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByRole("button", { name: "Import" }).click();
+
+  await expect(page.getByText("Wallet created successfully!")).toBeVisible();
+  await expect(page).toHaveScreenshot("wallet-import-complete-page.png");
+});
+
+test("Import 24 word wallet", async ({ page }) => {
+  await expect(page).toHaveScreenshot("welcome-page.png");
+  await page.getByText("Import Wallet").click();
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+  await page.locator(".RecoverAccount__phrase-toggle > label").click();
+
+  const TEST_WORDS = [
+    "shrug",
+    "absent",
+    "sausage",
+    "later",
+    "salute",
+    "mesh",
+    "increase",
+    "flavor",
+    "pilot",
+    "patch",
+    "pole",
+    "twenty",
+    "chef",
+    "coffee",
+    "faint",
+    "apology",
+    "crucial",
+    "scene",
+    "attend",
+    "replace",
+    "wolf",
+    "error",
+    "swift",
+    "device",
   ];
 
   for (let i = 1; i <= TEST_WORDS.length; i++) {
