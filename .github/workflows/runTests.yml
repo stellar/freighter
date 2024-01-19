@@ -5,6 +5,8 @@ jobs:
     name: test
     timeout-minutes: 20
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.41.0-jammy
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -14,6 +16,5 @@ jobs:
       - run: yarn setup
       - run: yarn build:freighter-api
       - run: yarn build:extension
-      - run: npx playwright install --with-deps
       - run: yarn test:ci
       - run: yarn test:e2e
