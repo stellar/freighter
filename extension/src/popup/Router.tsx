@@ -38,9 +38,9 @@ import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ManageConnectedApps } from "popup/views/ManageConnectedApps";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
-import { ConnectWallet } from "popup/views/AddAccount/connect/ConnectWallet";
+import { SelectHardwareWallet } from "popup/views/AddAccount/connect/SelectHardwareWallet";
 import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
-import { LedgerConnect } from "popup/views/AddAccount/connect/LedgerConnect";
+import { DeviceConnect } from "popup/views/AddAccount/connect/DeviceConnect";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
@@ -266,13 +266,13 @@ export const Router = () => {
           <ImportAccount />
         </PublicKeyRoute>
         <PublicKeyRoute exact path={ROUTES.connectWallet}>
-          <ConnectWallet />
+          <SelectHardwareWallet />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.connectWalletPlugin}>
           <PluginWallet />
         </PublicKeyRoute>
-        <PublicKeyRoute path={ROUTES.connectLedger}>
-          <LedgerConnect />
+        <PublicKeyRoute path={ROUTES.connectDevice}>
+          <DeviceConnect />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />

@@ -7,7 +7,7 @@ export enum ROUTES {
   importAccount = "/account/import",
   connectWallet = "/account/connect",
   connectWalletPlugin = "/account/connect/plugin",
-  connectLedger = "/account/connect/ledger",
+  connectDevice = "/account/connect/device",
   accountHistory = "/account-history",
   sendPayment = "/account/sendPayment",
   sendPaymentTo = "/account/sendPayment/to",

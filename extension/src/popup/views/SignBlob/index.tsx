@@ -18,7 +18,7 @@ import { View } from "popup/basics/layout/View";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
@@ -53,6 +53,7 @@ export const SignBlob = () => {
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   } = useSetupSigningFlow(rejectBlob, signBlob, blob.blob, accountToSign);
 
   if (isHardwareWallet) {
@@ -99,7 +100,9 @@ export const SignBlob = () => {
     />
   ) : (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
       <View data-testid="SignBlob">
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
