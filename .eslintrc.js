@@ -7,7 +7,13 @@ module.exports = {
     chrome: "readonly",
     DEV_SERVER: "readonly",
   },
-  ignorePatterns: ["dist/", "node_modules/", "build/", "__mocks__/"],
+  ignorePatterns: [
+    "dist/",
+    "node_modules/",
+    "build/",
+    "__mocks__/",
+    "e2e-tests/",
+  ],
   overrides: [
     {
       files: ["webpack.*.js"],

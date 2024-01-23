@@ -20,7 +20,7 @@ export const CheckButton = ({ onChange, wordKey, word }: CheckButtonProps) => (
       key={wordKey}
       text={word}
     />
-    <label className="ButtonLabel" htmlFor={wordKey}>
+    <label className="ButtonLabel" htmlFor={wordKey} data-testid={word}>
       {word}
     </label>
   </>
