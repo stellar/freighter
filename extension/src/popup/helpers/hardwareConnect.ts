@@ -15,9 +15,6 @@ import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
 import LedgerLogo from "popup/assets/ledger-logo.png";
-import Ledger from "popup/assets/ledger.png";
-import LedgerConnected from "popup/assets/ledger-connected.png";
-import LedgerSigning from "popup/assets/ledger-signing.png";
 /* end Ledger imports */
 
 /*
@@ -97,31 +94,22 @@ type WalletAssets = {
   [key in ConfigurableWalletType]: {
     // hardware wallet's logo. Recommended size: 223 x 60
     logo: string;
-    // image showing the wallet has successfully connected. Recommended size: 540 x 80
-    connected: string;
-    // image showing the wallet is in a netural state. Recommended size: 540 x 80
-    idle: string;
-    // image showing the wallet is in process of signing. Recommended size: 540 x 80
-    signing: string;
   };
 };
 
 /*
-  Hardware wallet images for UI 
+  Hardware wallet image for UI 
 */
 export const walletAssets: WalletAssets = {
   [WalletType.LEDGER]: {
     logo: LedgerLogo,
-    connected: LedgerConnected,
-    idle: Ledger,
-    signing: LedgerSigning,
   },
 };
 
 type PluginWalletInfo = {
   [key in ConfigurableWalletType]: {
     // brieflly describe how a user should connec their wallet
-    description: string;
+    instruction: string;
     link: {
       // a link to the wallet's website for more info
       href: string;
@@ -136,7 +124,7 @@ type PluginWalletInfo = {
 */
 export const pluginWalletInfo: PluginWalletInfo = {
   [WalletType.LEDGER]: {
-    description:
+    instruction:
       "Make sure your Ledger wallet is connected to your computer and the Stellar app is open on the Ledger wallet.",
     link: {
       href: "https://www.ledger.com/stellar-wallet",

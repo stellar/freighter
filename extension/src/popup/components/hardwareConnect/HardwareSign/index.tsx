@@ -25,8 +25,9 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import {
   getWalletPublicKey,
   parseWalletError,
-  walletAssets,
 } from "popup/helpers/hardwareConnect";
+import LedgerSigning from "popup/assets/ledger-signing.png";
+import Ledger from "popup/assets/ledger.png";
 
 import "./styles.scss";
 
@@ -138,11 +139,7 @@ export const HardwareSign = ({
           <div className="HardwareSign__content__center">
             <img
               className="HardwareSign__img"
-              src={
-                hardwareConnectSuccessful
-                  ? walletAssets[walletType].signing
-                  : walletAssets[walletType].idle
-              }
+              src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
               alt={walletType}
             />
             <span>

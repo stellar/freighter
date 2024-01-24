@@ -33,7 +33,7 @@ export const PluginWallet = () => {
         customBackAction={() => navigateTo(ROUTES.connectWallet)}
       />
       <View.Content>
-        <p>{pluginWalletInfoSection.description}</p>
+        <p>{pluginWalletInfoSection.instruction}</p>
         <p>
           <Link
             variant="secondary"

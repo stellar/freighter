@@ -13,8 +13,9 @@ import { defaultStellarBipPath } from "popup/views/AddAccount/connect/PluginWall
 import {
   createWalletConnection,
   parseWalletError,
-  walletAssets,
 } from "popup/helpers/hardwareConnect";
+import Ledger from "popup/assets/ledger.png";
+import LedgerConnected from "popup/assets/ledger-connected.png";
 
 import "./styles.scss";
 
@@ -104,11 +105,7 @@ export const DeviceConnect = () => {
         <div className="DeviceConnect__content__center">
           <img
             className="DeviceConnect__img"
-            src={
-              walletConnectSuccessful
-                ? walletAssets[walletType].connected
-                : walletAssets[walletType].idle
-            }
+            src={walletConnectSuccessful ? LedgerConnected : Ledger}
             alt={walletType}
           />
         </div>
