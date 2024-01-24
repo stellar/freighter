@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 
 import { truncatedPublicKey } from "helpers/stellar";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -52,6 +52,7 @@ export const SignAuthEntry = () => {
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   } = useSetupSigningFlow(
     rejectAuthEntry,
     signEntry,
@@ -103,7 +104,9 @@ export const SignAuthEntry = () => {
     />
   ) : (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
       <View data-testid="SignAuthEntry">
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>

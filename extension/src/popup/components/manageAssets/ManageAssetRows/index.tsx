@@ -39,7 +39,7 @@ import {
   tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   ScamAssetWarning,
   NewAssetWarning,
@@ -86,10 +86,11 @@ export const ManageAssetRows = ({
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
-  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
   const { accountBalanceStatus, tokensWithNoBalance } = useSelector(
     tokensSelector,
   );
+  const walletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!walletType;
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
     false,
@@ -253,7 +254,9 @@ export const ManageAssetRows = ({
 
   return (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && walletType && (
+        <HardwareSign walletType={walletType} />
+      )}
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           domain={suspiciousAssetData.domain}

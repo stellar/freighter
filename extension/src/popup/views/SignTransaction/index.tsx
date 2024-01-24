@@ -44,7 +44,7 @@ import {
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
 import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { View } from "popup/basics/layout/View";
 
@@ -123,6 +123,7 @@ export const SignTransaction = () => {
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   } = useSetupSigningFlow(
     rejectTransaction,
     signTransaction,
@@ -226,7 +227,9 @@ export const SignTransaction = () => {
     />
   ) : (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
       <View data-testid="SignTransaction">
         <View.AppHeader pageTitle={t("Confirm Transaction")} />
         <View.Content>

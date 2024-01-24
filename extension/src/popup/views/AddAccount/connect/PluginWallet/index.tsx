@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Button, Checkbox, Input, Link } from "@stellar/design-system";
-import { WalletType } from "@shared/constants/hardwareWallet";
+import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
 import { newTabHref } from "helpers/urls";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { pluginWalletInfo } from "popup/helpers/hardwareConnect";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { BottomNav } from "popup/components/BottomNav";
@@ -14,29 +16,32 @@ import { View } from "popup/basics/layout/View";
 export const defaultStellarBipPath = "44'/148'/0'";
 
 export const PluginWallet = () => {
+  const location = useLocation();
+  const walletType = new URLSearchParams(location.search).get(
+    "walletType",
+  ) as ConfigurableWalletType;
   const [bipPath, setBipPath] = useState(defaultStellarBipPath);
   const [useDefault, setUseDefault] = useState(true);
+
+  const pluginWalletInfoSection = pluginWalletInfo[walletType];
 
   return (
     <View>
       <SubviewHeader
-        title={`Connect with ${WalletType.LEDGER}`}
+        title={`Connect with ${walletType}`}
         hasBackButton={true}
         customBackAction={() => navigateTo(ROUTES.connectWallet)}
       />
       <View.Content>
-        <p>
-          Make sure your Ledger wallet is connected to your computer and the
-          Stellar app is open on the Ledger wallet.
-        </p>
+        <p>{pluginWalletInfoSection.instruction}</p>
         <p>
           <Link
             variant="secondary"
-            href="https://www.ledger.com/stellar-wallet"
+            href={pluginWalletInfoSection.link.href}
             rel="noreferrer"
             target="_blank"
           >
-            Learn more about using Ledger
+            {pluginWalletInfoSection.link.text}
           </Link>
         </p>
         <div className="PluginWallet__bottom">
@@ -67,7 +72,12 @@ export const PluginWallet = () => {
             isFullWidth
             variant="primary"
             onClick={() => {
-              openTab(newTabHref(ROUTES.connectLedger, `bipPath=${bipPath}`));
+              openTab(
+                newTabHref(
+                  ROUTES.connectDevice,
+                  `bipPath=${bipPath}&walletType=${walletType}`,
+                ),
+              );
             }}
           >
             Connect

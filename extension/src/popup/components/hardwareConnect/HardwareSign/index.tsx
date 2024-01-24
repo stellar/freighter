@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import LedgerApi from "@ledgerhq/hw-app-str";
 import { Button, Icon } from "@stellar/design-system";
 import { handleSignedHwTransaction } from "@shared/api/internal";
+import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
 import { POPUP_HEIGHT } from "constants/dimensions";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import Ledger from "popup/assets/ledger.png";
-import LedgerSigning from "popup/assets/ledger-signing.png";
 import { bipPathSelector } from "popup/ducks/accountServices";
 import {
-  signWithLedger,
+  signWithHardwareWallet,
   submitFreighterTransaction,
   transactionSubmissionSelector,
   closeHwOverlay,
@@ -22,16 +19,23 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
-import {
-  LEDGER_ERROR,
-  parseLedgerError,
-  LedgerErrorBlock,
-} from "popup/views/AddAccount/connect/LedgerConnect";
+import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
+
 import { useIsSwap } from "popup/helpers/useIsSwap";
+import {
+  getWalletPublicKey,
+  parseWalletError,
+} from "popup/helpers/hardwareConnect";
+import LedgerSigning from "popup/assets/ledger-signing.png";
+import Ledger from "popup/assets/ledger.png";
 
 import "./styles.scss";
 
-export const LedgerSign = () => {
+export const HardwareSign = ({
+  walletType,
+}: {
+  walletType: ConfigurableWalletType;
+}) => {
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
   const [isDetecting, setIsDetecting] = useState(false);
@@ -41,16 +45,16 @@ export const LedgerSign = () => {
     transactionData: { destination },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
-  const [ledgerConnectSuccessful, setLedgerConnectSuccessful] = useState(false);
-  const [connectError, setConnectError] = useState<LEDGER_ERROR>(
-    LEDGER_ERROR.NONE,
+  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] = useState(
+    false,
   );
+  const [connectError, setConnectError] = useState("");
   const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
 
   const closeOverlay = () => {
-    if (ledgerConnectRef.current) {
-      ledgerConnectRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
+    if (hardwareConnectRef.current) {
+      hardwareConnectRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
     }
     setTimeout(() => {
       dispatch(closeHwOverlay());
@@ -58,31 +62,30 @@ export const LedgerSign = () => {
   };
 
   // animate entry
-  const ledgerConnectRef = useRef<HTMLDivElement>(null);
+  const hardwareConnectRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (ledgerConnectRef.current) {
-      ledgerConnectRef.current.style.bottom = "0";
+    if (hardwareConnectRef.current) {
+      hardwareConnectRef.current.style.bottom = "0";
     }
-  }, [ledgerConnectRef]);
+  }, [hardwareConnectRef]);
 
   const handleSign = async () => {
     setIsDetecting(true);
-    setConnectError(LEDGER_ERROR.NONE);
+    setConnectError("");
     try {
-      const transport = await TransportWebUSB.create();
-      const ledgerApi = new LedgerApi(transport);
-      const response = await ledgerApi.getPublicKey(bipPath);
-      setLedgerConnectSuccessful(true);
+      const publicKey = await getWalletPublicKey[walletType](bipPath);
+      setHardwareConnectSuccessful(true);
 
       const res = await dispatch(
-        signWithLedger({
+        signWithHardwareWallet({
           transactionXDR: transactionXDR as string,
           networkPassphrase: networkDetails.networkPassphrase,
-          publicKey: response.publicKey,
+          publicKey,
           bipPath,
+          walletType,
         }),
       );
-      if (signWithLedger.fulfilled.match(res)) {
+      if (signWithHardwareWallet.fulfilled.match(res)) {
         if (shouldSubmit) {
           const submitResp = await dispatch(
             submitFreighterTransaction({
@@ -103,11 +106,13 @@ export const LedgerSign = () => {
         }
         closeOverlay();
       } else {
-        setLedgerConnectSuccessful(false);
-        setConnectError(parseLedgerError(res.payload?.errorMessage || ""));
+        setHardwareConnectSuccessful(false);
+        setConnectError(
+          parseWalletError[walletType](res.payload?.errorMessage || ""),
+        );
       }
     } catch (e) {
-      setConnectError(parseLedgerError(e));
+      setConnectError(parseWalletError[walletType](e));
     }
     setIsDetecting(false);
   };
@@ -119,33 +124,33 @@ export const LedgerSign = () => {
   }, []);
 
   return (
-    <div className="LedgerSign">
-      <div className="LedgerSign__wrapper" ref={ledgerConnectRef}>
+    <div className="HardwareSign">
+      <div className="HardwareSign__wrapper" ref={hardwareConnectRef}>
         <SubviewHeader
           customBackAction={closeOverlay}
           customBackIcon={<Icon.Close />}
-          title="Connect Ledger"
+          title={`Connect ${walletType}`}
         />
-        <div className="LedgerSign__content">
-          <div className="LedgerSign__success">
-            {ledgerConnectSuccessful ? "Connected" : ""}
+        <div className="HardwareSign__content">
+          <div className="HardwareSign__success">
+            {hardwareConnectSuccessful ? "Connected" : ""}
           </div>
-          <div className="LedgerSign__content__center">
+          <div className="HardwareSign__content__center">
             <img
-              className="LedgerSign__img"
-              src={ledgerConnectSuccessful ? LedgerSigning : Ledger}
-              alt="ledger"
+              className="HardwareSign__img"
+              src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
+              alt={walletType}
             />
             <span>
-              {ledgerConnectSuccessful
+              {hardwareConnectSuccessful
                 ? t("Review transaction on device")
                 : t("Connect device to computer")}
             </span>
           </div>
         </div>
-        <div className="LedgerSign__bottom">
-          {isDetectBtnDirty && <LedgerErrorBlock error={connectError} />}
-          {!ledgerConnectSuccessful && (
+        <div className="HardwareSign__bottom">
+          {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
+          {!hardwareConnectSuccessful && (
             <Button
               size="md"
               variant="secondary"
