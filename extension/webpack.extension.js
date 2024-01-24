@@ -2,6 +2,7 @@ const { merge } = require("webpack-merge");
 const webpack = require("webpack");
 const I18nextWebpackPlugin = require("i18next-scanner-webpack");
 const { commonConfig } = require("./webpack.common.js");
+const Dotenv = require("dotenv-webpack");
 
 const LOCALES = ["en", "pt"];
 
@@ -47,6 +48,7 @@ const prodConfig = (
           }),
         ]
       : []),
+    new Dotenv({ systemvars: true }),
   ],
   // This if to fine tune logged output. Since this is an extension, not a
   // webapp, we don't face the same bundle size constraints of the web.
