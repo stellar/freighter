@@ -184,7 +184,6 @@ export const signWithHardwareWallet = createAsyncThunk<
       const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
       const signature = await hardwareSign[walletType]({ bipPath, tx });
-      console.log(signature);
 
       const keypair = Keypair.fromPublicKey(publicKey);
       const decoratedSignature = new xdr.DecoratedSignature({
