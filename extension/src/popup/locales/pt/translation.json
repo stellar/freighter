@@ -103,7 +103,6 @@
   "Confirm your recovery phrase": "Confirm your recovery phrase",
   "congestion": "congestion",
   "Connect device to computer": "Connect device to computer",
-  "Connect device to computer and open the Stellar app on it": "Connect device to computer and open the Stellar app on it.",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Continue": "Continue",
   "Contract ID": "Contract ID",
@@ -150,9 +149,6 @@
   "Entered amount is higher than your balance": "Entered amount is higher than your balance",
   "Error": "Error",
   "Error code": "Error code",
-  "Error connecting": {
-    " Please try again": "Error connecting. Please try again."
-  },
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fees can vary depending on the network congestion": {
     " Please try using the suggested fee and try again": "Fees can vary depending on the network congestion. Please try using the suggested fee and try again."
@@ -294,9 +290,6 @@
   "New Asset": "New Asset",
   "New password": "New password",
   "Next": "Next",
-  "No device detected": {
-    " Please make sure your device is connected and the Stellar app is open on it": "No device detected. Please make sure your device is connected and the Stellar app is open on it."
-  },
   "no path found": "no path found",
   "No transactions to show": "No transactions to show",
   "None": "None",
@@ -448,7 +441,6 @@
   "Transaction failed": "Transaction failed",
   "Transaction fee": "Transaction fee",
   "Transaction Info": "Transaction Info",
-  "Transaction Rejected": "Transaction Rejected.",
   "Transaction sequence number": "Transaction sequence number",
   "Transactions": "Transactions",
   "Trustline Error": "Trustline Error",

@@ -134,5 +134,6 @@ export function useSetupSigningFlow(
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   };
 }

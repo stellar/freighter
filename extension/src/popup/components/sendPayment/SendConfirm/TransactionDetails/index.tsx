@@ -60,7 +60,7 @@ import {
   AccountAssets,
   AssetIcon,
 } from "popup/components/account/AccountAssets";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
@@ -431,7 +431,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
       <View data-testid="transaction-details-view">
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">

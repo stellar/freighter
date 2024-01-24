@@ -183,7 +183,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const keyId = `${HW_PREFIX}${publicKey}`;
     const keyIdListArr = await getKeyIdList();
     const accountName = `${hardwareWalletType} ${
-      keyIdListArr.filter((k: string) => k.indexOf(HW_PREFIX) !== -1).length + 1
+      allAccounts.filter(
+        ({ hardwareWalletType: hwType }) => hwType !== hardwareWalletType,
+      ).length + 1
     }`;
 
     if (keyIdListArr.indexOf(keyId) === -1) {

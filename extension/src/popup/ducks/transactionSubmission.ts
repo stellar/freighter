@@ -40,14 +40,14 @@ import {
 } from "@shared/api/types";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import LedgerApi from "@ledgerhq/hw-app-str";
+import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { hardwareSign } from "popup/helpers/hardwareConnect";
 import { SorobanContextInterface } from "popup/SorobanContext";
 import { getTokenBalances, resetSorobanTokensStatus } from "./soroban";
 
@@ -164,35 +164,31 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   },
 );
 
-export const signWithLedger = createAsyncThunk<
+export const signWithHardwareWallet = createAsyncThunk<
   string,
   {
     transactionXDR: string;
     networkPassphrase: string;
     publicKey: string;
     bipPath: string;
+    walletType: ConfigurableWalletType;
   },
   { rejectValue: ErrorMessage }
 >(
-  "signWithLedger",
+  "signWithHardwareWallet",
   async (
-    { transactionXDR, networkPassphrase, publicKey, bipPath },
+    { transactionXDR, networkPassphrase, publicKey, bipPath, walletType },
     thunkApi,
   ) => {
     try {
       const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
-      const transport = await TransportWebUSB.create();
-      const ledgerApi = new LedgerApi(transport);
-      const result = await ledgerApi.signTransaction(
-        bipPath,
-        tx.signatureBase(),
-      );
+      const signature = await hardwareSign[walletType]({ bipPath, tx });
 
       const keypair = Keypair.fromPublicKey(publicKey);
       const decoratedSignature = new xdr.DecoratedSignature({
         hint: keypair.signatureHint(),
-        signature: result.signature,
+        signature,
       });
 
       tx.signatures.push(decoratedSignature);
