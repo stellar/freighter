@@ -75,6 +75,9 @@ import {
   getNetworksList,
   HW_PREFIX,
   getBipPath,
+  subscribeTokenBalance,
+  subscribeAccount,
+  subscribeTokenHistory,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -96,12 +99,11 @@ import {
   publicKeySelector,
   setActivePublicKey,
   setActivePrivateKey,
-  setPassword,
-  setMigratedMnemonicPhrase,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
   reset,
   passwordSelector,
+  setMigratedMnemonicPhrase,
 } from "background/ducks/session";
 import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
@@ -213,12 +215,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(KEY_ID, keyId);
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
         allAccounts,
-      }),
+      }) as any,
     );
 
     // an active hw account should not have an active private key
@@ -241,7 +243,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const allAccounts = allAccountsSelector(sessionStore.getState());
     const accountName = `Account ${allAccounts.length + 1}`;
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
@@ -253,7 +255,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             imported,
           },
         ],
-      }),
+      }) as any,
     );
 
     const keyMetadata = {
@@ -316,12 +318,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       imported: false,
     };
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
         allAccounts: newAllAccounts,
-      }),
+      }) as any,
     );
 
     const keyMetadata = {
@@ -368,7 +370,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(KEY_ID, activeKeyId);
 
-    sessionStore.dispatch(setActivePublicKey({ publicKey }));
+    await sessionStore.dispatch(setActivePublicKey({ publicKey }) as any);
   };
 
   const fundAccount = async () => {
@@ -638,14 +640,17 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const changeNetwork = async () => {
     const { networkName } = request;
+    const currentState = sessionStore.getState();
 
     const savedNetworks = await getSavedNetworks();
+    const pubKey = publicKeySelector(currentState);
     const networkDetails =
       savedNetworks.find(
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
     await localStore.setItem(NETWORK_ID, networkDetails);
+    await subscribeAccount(pubKey);
 
     return { networkDetails };
   };
@@ -745,7 +750,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       localStore.clear();
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
-      _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
+      await _storeAccount({
+        mnemonicPhrase: recoverMnemonic,
+        password,
+        keyPair,
+      });
 
       // if we don't have an application state, assign them one
       applicationState =
@@ -930,12 +939,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
 
-      sessionStore.dispatch(
+      await sessionStore.dispatch(
         logIn({
           publicKey: hwPublicKey || activePublicKey,
           mnemonicPhrase: activeMnemonicPhrase,
           allAccounts: await _getLocalStorageAccounts(password),
-        }),
+        }) as any,
       );
     }
 
@@ -946,8 +955,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         setActivePrivateKey({ privateKey: activePrivateKey }),
       );
     }
-
-    sessionStore.dispatch(setPassword({ password }));
 
     return {
       publicKey: publicKeySelector(sessionStore.getState()),
@@ -1314,7 +1321,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addTokenId = async () => {
-    const { tokenId, network } = request;
+    const { tokenId, network, publicKey } = request;
     const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
     const tokenIdList = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
@@ -1325,14 +1332,22 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       return { error: "Token ID already exists" };
     }
 
-    accountTokenIdList.push(tokenId);
-    await localStore.setItem(TOKEN_ID_LIST, {
-      ...tokenIdsByNetwork,
-      [network]: {
-        ...tokenIdList,
-        [keyId]: accountTokenIdList,
-      },
-    });
+    try {
+      await subscribeTokenBalance(publicKey, tokenId);
+      await subscribeTokenHistory(publicKey, tokenId);
+
+      accountTokenIdList.push(tokenId);
+      await localStore.setItem(TOKEN_ID_LIST, {
+        ...tokenIdsByNetwork,
+        [network]: {
+          ...tokenIdList,
+          [keyId]: accountTokenIdList,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      return { error: "Failed to subscribe to token details" };
+    }
 
     return { accountTokenIdList };
   };

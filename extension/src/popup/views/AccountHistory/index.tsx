@@ -1,23 +1,19 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
-import { Horizon, Networks } from "stellar-sdk";
+import { Horizon } from "stellar-sdk";
 
-import { getAccountHistory } from "@shared/api/internal";
-import { HorizonOperation, ActionStatus } from "@shared/api/types";
+import { getIndexerAccountHistory } from "@shared/api/internal";
+import { ActionStatus, HorizonOperation } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
-  sorobanSelector,
-  getTokenBalances,
-  resetSorobanTokensStatus,
-} from "popup/ducks/soroban";
-import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
   getIsSupportedSorobanOp,
@@ -38,7 +34,6 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { BottomNav } from "popup/components/BottomNav";
 import { View } from "popup/basics/layout/View";
-import { SorobanContext } from "../../SorobanContext";
 
 import "./styles.scss";
 
@@ -60,14 +55,12 @@ export const AccountHistory = () => {
       }
     | null;
 
-  const sorobanClient = useContext(SorobanContext);
-
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances, getTokenBalancesStatus } = useSelector(
-    sorobanSelector,
+  const { accountBalances, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
@@ -88,13 +81,10 @@ export const AccountHistory = () => {
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const isTokenBalanceLoading =
-    (getTokenBalancesStatus === ActionStatus.IDLE ||
-      getTokenBalancesStatus === ActionStatus.PENDING) &&
-    isSorobanSuported;
-  const isAccountHistoryLoading = isSorobanSuported
-    ? historySegments === null || isTokenBalanceLoading
-    : historySegments === null;
+  const isAccountHistoryLoading =
+    historySegments === null ||
+    accountBalanceStatus === ActionStatus.IDLE ||
+    accountBalanceStatus === ActionStatus.PENDING;
 
   useEffect(() => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
@@ -151,19 +141,13 @@ export const AccountHistory = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        const res = await getAccountHistory({ publicKey, networkDetails });
+        const operations = await getIndexerAccountHistory({
+          publicKey,
+          networkDetails,
+        });
         setHistorySegments(
-          createSegments(res.operations, isSorobanSuported as boolean),
+          createSegments(operations, isSorobanSuported as boolean),
         );
-
-        if (isSorobanSuported) {
-          dispatch(
-            getTokenBalances({
-              sorobanClient,
-              network: networkDetails.network as Networks,
-            }),
-          );
-        }
       } catch (e) {
         console.error(e);
       }
@@ -176,13 +160,7 @@ export const AccountHistory = () => {
     };
 
     getData();
-
-    return () => {
-      if (isSorobanSuported) {
-        dispatch(resetSorobanTokensStatus());
-      }
-    };
-  }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);
+  }, [publicKey, networkDetails, isSorobanSuported, dispatch]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
@@ -190,7 +168,7 @@ export const AccountHistory = () => {
     <View>
       <View.Content>
         <div className="AccountHistory">
-          {isLoading || isTokenBalanceLoading ? (
+          {isLoading ? (
             <div className="AccountHistory__loader">
               <Loader size="2rem" />
             </div>
@@ -222,7 +200,7 @@ export const AccountHistory = () => {
                         (operation: HistoryItemOperation) => (
                           <HistoryItem
                             key={operation.id}
-                            tokenBalances={tokenBalances}
+                            accountBalances={accountBalances}
                             operation={operation}
                             publicKey={publicKey}
                             url={stellarExpertUrl}

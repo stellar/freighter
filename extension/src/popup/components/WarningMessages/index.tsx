@@ -340,7 +340,6 @@ export const ScamAssetWarning = ({
       if (signFreighterTransaction.fulfilled.match(res)) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
-            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
           }),
@@ -543,7 +542,6 @@ export const NewAssetWarning = ({
       if (signFreighterTransaction.fulfilled.match(res)) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
-            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
           }),

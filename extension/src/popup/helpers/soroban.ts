@@ -10,7 +10,11 @@ import {
   xdr,
 } from "stellar-sdk";
 
-import { HorizonOperation, TokenBalances } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  Balances,
+  HorizonOperation,
+} from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
@@ -25,35 +29,19 @@ export const CLASSIC_ASSET_DECIMALS = 7;
 
 export const getAssetDecimals = (
   asset: string,
-  balances: TokenBalances,
+  balances: AccountBalancesInterface,
   isToken: boolean,
 ) => {
   if (isToken) {
-    const contractId = asset.split(":")[1];
-    const balance = balances.find(({ contractId: id }) => id === contractId);
+    const _balances = balances.balances || ({} as NonNullable<Balances>);
+    const balance = _balances[asset];
 
-    if (balance) {
+    if (balance && "decimals" in balance) {
       return Number(balance.decimals);
     }
   }
 
   return CLASSIC_ASSET_DECIMALS;
-};
-
-export const getTokenBalance = (
-  tokenBalances: TokenBalances,
-  contractId: string,
-) => {
-  const balance = tokenBalances.find(({ contractId: id }) => id === contractId);
-
-  if (!balance) {
-    throw new Error("Balance not found");
-  }
-
-  return formatTokenAmount(
-    new BigNumber(balance.total),
-    Number(balance.decimals),
-  );
 };
 
 // Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
@@ -195,6 +183,15 @@ export const getAttrsFromSorobanHorizonOp = (
 ) => {
   if (!isSorobanOp(operation)) {
     return null;
+  }
+
+  // operation record from Mercury
+  if (operation.transaction_attr.contractId) {
+    return {
+      contractId: operation.transaction_attr.contractId,
+      fnName: operation.transaction_attr.fnName,
+      ...operation.transaction_attr.args,
+    };
   }
 
   const txEnvelope = TransactionBuilder.fromXDR(

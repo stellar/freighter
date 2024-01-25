@@ -19,3 +19,4 @@ export const NETWORKS_LIST_ID = "networksList";
 export const METRICS_DATA = "metricsData";
 export const TOKEN_ID_LIST = "tokenIdList";
 export const STORAGE_VERSION = "storageVersion";
+export const HAS_ACCOUNT_SUBSCRIPTION = "hasAccountSubscription";

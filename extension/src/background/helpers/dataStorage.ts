@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 import semver from "semver";
 
 import {
+  HAS_ACCOUNT_SUBSCRIPTION,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
@@ -181,11 +182,23 @@ const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   }
 };
 
+export const migrateToAccountSubscriptions = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  // we only want to run this once per user
+  if (!storageVersion || semver.eq(storageVersion, "3.0.0")) {
+    // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
   await migrateTokenIdList();
   await migrateTestnetSorobanRpcUrlNetworkDetails();
+  await migrateToAccountSubscriptions();
 };
 
 // Updates storage version

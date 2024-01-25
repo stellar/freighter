@@ -89,7 +89,6 @@ export const HardwareSign = ({
         if (shouldSubmit) {
           const submitResp = await dispatch(
             submitFreighterTransaction({
-              publicKey,
               signedXDR: res.payload,
               networkDetails,
             }),

@@ -64,10 +64,11 @@ const manageAssetsMockBalances = {
   } as any) as Balances,
   isFunded: true,
   subentryCount: 1,
+  tokensWithNoBalance: [],
 };
 
 jest
-  .spyOn(ApiInternal, "getAccountBalances")
+  .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(manageAssetsMockBalances));
 
 jest
@@ -114,16 +115,6 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
     signedTransaction: mockXDR,
   }),
 );
-
-jest
-  .spyOn(ApiInternal, "submitFreighterTransaction")
-  .mockImplementation(({ networkDetails }) => {
-    if (networkDetails.networkName === "Test Net Reject") {
-      return Promise.reject(Error("Request failed"));
-    }
-
-    return Promise.resolve({});
-  });
 
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
@@ -239,6 +230,15 @@ describe("Manage assets", () => {
     jest.clearAllMocks();
   });
 
+  beforeEach(() => {
+    jest.spyOn(global, "fetch").mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({}),
+      } as any),
+    );
+  });
+
   it("renders manage assets view initial state", async () => {
     await initView();
 
@@ -338,6 +338,13 @@ describe("Manage assets", () => {
   });
 
   it("show error view when removing asset with balance", async () => {
+    jest.spyOn(global, "fetch").mockImplementation(() =>
+      Promise.resolve({
+        ok: false,
+        json: async () => ({}),
+      } as any),
+    );
+
     await initView(true);
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(

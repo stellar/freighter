@@ -27,6 +27,7 @@ import {
 import {
   Account,
   AccountType,
+  ActionStatus,
   BalanceToMigrate,
   ErrorMessage,
   MigratedAccount,
@@ -386,15 +387,15 @@ export const signOut = createAsyncThunk<
 
 export const addTokenId = createAsyncThunk<
   { tokenIdList: string[] },
-  { tokenId: string; network: Networks },
+  { publicKey: string; tokenId: string; network: Networks },
   { rejectValue: ErrorMessage }
->("auth/addToken", async ({ tokenId, network }, thunkApi) => {
+>("auth/addToken", async ({ publicKey, tokenId, network }, thunkApi) => {
   let res = {
     tokenIdList: [] as string[],
   };
 
   try {
-    res = await addTokenIdService(tokenId, network);
+    res = await addTokenIdService(publicKey, tokenId, network);
   } catch (e) {
     console.error("Failed when adding a token: ", e.message);
     return thunkApi.rejectWithValue({
@@ -456,6 +457,7 @@ interface InitialState {
   bipPath: string;
   tokenIdList: string[];
   error: string;
+  accountStatus: ActionStatus;
 }
 
 const initialState: InitialState = {
@@ -468,6 +470,7 @@ const initialState: InitialState = {
   bipPath: "",
   tokenIdList: [],
   error: "",
+  accountStatus: ActionStatus.IDLE,
 };
 
 const authSlice = createSlice({
@@ -572,6 +575,10 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(makeAccountActive.pending, (state) => ({
+      ...state,
+      accountStatus: ActionStatus.PENDING,
+    }));
     builder.addCase(makeAccountActive.fulfilled, (state, action) => {
       const { publicKey, hasPrivateKey, bipPath } = action.payload || {
         publicKey: "",
@@ -584,6 +591,7 @@ const authSlice = createSlice({
         publicKey,
         hasPrivateKey,
         bipPath,
+        accountStatus: ActionStatus.SUCCESS,
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
@@ -594,6 +602,7 @@ const authSlice = createSlice({
       return {
         ...state,
         error: message,
+        accountStatus: ActionStatus.ERROR,
       };
     });
     builder.addCase(updateAccountName.fulfilled, (state, action) => {
@@ -850,6 +859,11 @@ export const hardwareWalletTypeSelector = createSelector(
     ) || { hardwareWalletType: WalletType.NONE };
     return account.hardwareWalletType;
   },
+);
+
+export const accountStatusSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.accountStatus,
 );
 
 export const { clearApiError, setConnectingWalletType } = authSlice.actions;

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -12,7 +12,6 @@ import {
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -191,7 +190,6 @@ const getOperation = (
 };
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
-  const sorobanClient = useContext(SorobanContext);
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -273,10 +271,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
     try {
-      if (!hasSorobanClient(sorobanClient)) {
-        throw new Error("Soroban RPC not supported for this network");
-      }
-
       const preparedTransaction = SorobanRpc.assembleTransaction(
         transactionSimulation.raw!,
         transactionSimulation.response!,
@@ -297,8 +291,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           submitFreighterSorobanTransaction({
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
-            refreshBalances: true,
           }),
         );
 
@@ -365,10 +357,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
-            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            refreshBalances: true,
           }),
         );
 
