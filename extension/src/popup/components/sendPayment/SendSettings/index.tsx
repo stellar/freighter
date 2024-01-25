@@ -152,7 +152,6 @@ export const SendSettings = ({
         initialValues={{ memo }}
         onSubmit={(values) => {
           dispatch(saveMemo(values.memo));
-          goToReview();
         }}
       >
         {({ submitForm }) => (
@@ -301,6 +300,7 @@ export const SendSettings = ({
               <Button
                 size="md"
                 isFullWidth
+                onClick={goToReview}
                 type="submit"
                 variant="secondary"
                 data-testid="send-settings-btn-continue"
