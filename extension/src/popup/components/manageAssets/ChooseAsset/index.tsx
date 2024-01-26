@@ -11,10 +11,7 @@ import {
   transactionSubmissionSelector,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { getCanonicalFromAsset } from "helpers/stellar";
@@ -36,7 +33,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { assetIcons, assetSelect } = useSelector(
     transactionSubmissionSelector,
   );
-  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -103,14 +99,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     };
 
     fetchDomains();
-  }, [
-    assetIcons,
-    balances,
-    networkUrl,
-    managingAssets,
-    isSorobanSuported,
-    isSwap,
-  ]);
+  }, [assetIcons, balances, networkUrl, managingAssets, isSwap]);
 
   return (
     <View data-testid="choose-asset">
@@ -126,9 +115,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         )}
         <div className="ChooseAsset__wrapper">
           <div
-            className={`ChooseAsset__assets${
-              managingAssets && isSorobanSuported ? "--short" : ""
-            }`}
+            className={`ChooseAsset__assets${managingAssets ? "--short" : ""}`}
             ref={ManageAssetRowsWrapperRef}
           >
             {managingAssets ? (
@@ -154,20 +141,18 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                 </Button>
               </Link>
             </div>
-            {isSorobanSuported ? (
-              <div className="ChooseAsset__button">
-                <Link to={ROUTES.addToken}>
-                  <Button
-                    size="md"
-                    isFullWidth
-                    variant="secondary"
-                    data-testid="ChooseAssetAddSorobanTokenButton"
-                  >
-                    {t("Add Soroban token")}
-                  </Button>
-                </Link>
-              </div>
-            ) : null}
+            <div className="ChooseAsset__button">
+              <Link to={ROUTES.addToken}>
+                <Button
+                  size="md"
+                  isFullWidth
+                  variant="secondary"
+                  data-testid="ChooseAssetAddSorobanTokenButton"
+                >
+                  {t("Add Soroban token")}
+                </Button>
+              </Link>
+            </div>
           </>
         )}
       </View.Footer>
