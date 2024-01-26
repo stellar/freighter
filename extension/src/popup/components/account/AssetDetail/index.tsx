@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Notification } from "@stellar/design-system";
 
-import { HorizonOperation, AssetType } from "@shared/api/types";
+import { HorizonOperation, AssetType, TokenBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
-  getIsSupportedSorobanOp,
   getIsSwap,
   getStellarExpertUrl,
   getRawBalance,
@@ -40,6 +39,7 @@ import { View } from "popup/basics/layout/View";
 import {
   saveAsset,
   saveDestinationAsset,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
@@ -77,10 +77,15 @@ export const AssetDetail = ({
     canonical.issuer,
   );
 
-  const balance = getRawBalance(accountBalances, selectedAsset) || null;
+  const { accountBalances: balances } = useSelector(
+    transactionSubmissionSelector,
+  );
+
+  const balance = getRawBalance(accountBalances, selectedAsset)!;
+
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
-    balance && "contractId" in balance
+    balance && "decimals" in balance
       ? formatTokenAmount(
           new BigNumber(balance.total || "0"),
           Number(balance.decimals),
@@ -168,8 +173,8 @@ export const AssetDetail = ({
                 }
                 assetDomain={assetDomain}
                 contractId={
-                  balance && "contractId" in balance
-                    ? balance.contractId
+                  balance && "decimals" in balance
+                    ? (balance as TokenBalance).token.issuer.key
                     : undefined
                 }
               />
@@ -238,17 +243,10 @@ export const AssetDetail = ({
                     isPayment: getIsPayment(operation.type),
                     isSwap: getIsSwap(operation),
                   };
-
-                  const tokenBalances =
-                    balance &&
-                    "contractId" in balance &&
-                    getIsSupportedSorobanOp(operation, networkDetails)
-                      ? [balance]
-                      : [];
                   return (
                     <HistoryItem
                       key={operation.id}
-                      tokenBalances={tokenBalances}
+                      accountBalances={balances}
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       url={stellarExpertUrl}

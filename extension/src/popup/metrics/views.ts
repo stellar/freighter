@@ -16,7 +16,7 @@ const routeToEventName = {
   [ROUTES.importAccount]: METRIC_NAMES.viewImportAccount,
   [ROUTES.connectWallet]: METRIC_NAMES.viewConnectWallet,
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
-  [ROUTES.connectLedger]: METRIC_NAMES.viewConnectLedger,
+  [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
   [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,

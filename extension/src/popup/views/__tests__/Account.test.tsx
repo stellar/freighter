@@ -9,12 +9,7 @@ import {
 import * as ApiInternal from "@shared/api/internal";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 
-import {
-  Wrapper,
-  mockBalances,
-  mockTokenBalance,
-  mockAccounts,
-} from "../../__testHelpers__";
+import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { Account } from "../Account";
 
 const mockHistoryOperations = {
@@ -29,9 +24,18 @@ const mockHistoryOperations = {
   ],
 };
 
+jest.spyOn(global, "fetch").mockImplementation(() =>
+  Promise.resolve({
+    json: async () => {
+      return [];
+    },
+  } as any),
+);
+
 jest
-  .spyOn(ApiInternal, "getAccountBalances")
+  .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
+
 // @ts-ignore
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
@@ -47,10 +51,6 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
 jest
   .spyOn(ApiInternal, "getTokenIds")
   .mockImplementation(() => Promise.resolve(["C1"]));
-
-jest
-  .spyOn(ApiInternal, "getSorobanTokenBalance")
-  .mockImplementation(() => Promise.resolve(mockTokenBalance));
 
 jest
   .spyOn(ApiInternal, "makeAccountActive")
@@ -143,7 +143,7 @@ describe("Account view", () => {
     );
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets");
-      expect(assetNodes.length).toEqual(2);
+      expect(assetNodes.length).toEqual(3);
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
   });

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Address, XdrLargeInt } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { isMuxedAccount, xlmToStroop } from "helpers/stellar";
+import { isMuxedAccount } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
@@ -19,15 +19,16 @@ import {
   isPathPaymentSelector,
   saveTransactionFee,
   saveSimulation,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
-import { transfer } from "@shared/helpers/soroban/token";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { parseTokenAmount } from "popup/helpers/soroban";
-import { sorobanSelector } from "popup/ducks/soroban";
-import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import "../styles.scss";
+import { Balances, TokenBalance } from "@shared/api/types";
+import { getNetworkDetails } from "background/helpers/account";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 export const SendSettings = ({
   previous,
@@ -36,7 +37,6 @@ export const SendSettings = ({
   previous: ROUTES;
   next: ROUTES;
 }) => {
-  const sorobanClient = useContext(SorobanContext);
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const {
@@ -50,7 +50,7 @@ export const SendSettings = ({
   } = useSelector(transactionDataSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { tokenBalances } = useSelector(sorobanSelector);
+  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
 
@@ -76,21 +76,13 @@ export const SendSettings = ({
   async function goToReview() {
     if (isToken) {
       const assetAddress = asset.split(":")[1];
-      const assetBalance = tokenBalances.find(
-        (b) => b.contractId === assetAddress,
-      );
+      const balances =
+        accountBalances.balances || ({} as NonNullable<Balances>);
+      const assetBalance = balances[asset] as TokenBalance;
 
       if (!assetBalance) {
         throw new Error("Asset Balance not available");
       }
-
-      if (!hasSorobanClient(sorobanClient)) {
-        throw new Error("Soroban RPC not supported for this network");
-      }
-
-      const builder = await sorobanClient.newTxBuilder(
-        xlmToStroop(transactionFee).toFixed(),
-      );
 
       const parsedAmount = parseTokenAmount(
         amount,
@@ -103,23 +95,49 @@ export const SendSettings = ({
         new XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
       ];
 
-      const transaction = transfer(assetAddress, params, memo, builder);
-      const preflightSim = await sorobanClient.server.simulateTransaction(
-        transaction,
-      );
-
-      if ("transactionData" in preflightSim) {
-        dispatch(
-          saveSimulation({
-            response: preflightSim,
-            raw: transaction,
+      try {
+        const networkDetails = await getNetworkDetails();
+        const options = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            address: assetAddress,
+            pub_key: publicKey,
+            memo,
+            params,
+            network_url: networkDetails.networkUrl,
+            network_passphrase: networkDetails.networkPassphrase,
           }),
+        };
+        const response = await fetch(
+          `${INDEXER_URL}/simulate-token-transfer`,
+          options,
         );
-        navigateTo(next);
-        return;
-      }
+        if (!response.ok) {
+          throw new Error("failed to simluate token transfer");
+        }
+        const { simulationResponse, raw } = await response.json();
 
-      throw new Error(`Failed to simluate transaction, ID: ${preflightSim.id}`);
+        if ("transactionData" in simulationResponse) {
+          dispatch(
+            saveSimulation({
+              response: simulationResponse,
+              raw,
+            }),
+          );
+          navigateTo(next);
+          return;
+        }
+        throw new Error(
+          `Failed to simluate transaction, ID: ${simulationResponse.id}`,
+        );
+      } catch (error) {
+        throw new Error(
+          `Failed to simluate transaction: ${JSON.stringify(error)}`,
+        );
+      }
     }
     navigateTo(next);
   }
@@ -134,7 +152,6 @@ export const SendSettings = ({
         initialValues={{ memo }}
         onSubmit={(values) => {
           dispatch(saveMemo(values.memo));
-          goToReview();
         }}
       >
         {({ submitForm }) => (
@@ -283,6 +300,7 @@ export const SendSettings = ({
               <Button
                 size="md"
                 isFullWidth
+                onClick={goToReview}
                 type="submit"
                 variant="secondary"
                 data-testid="send-settings-btn-continue"

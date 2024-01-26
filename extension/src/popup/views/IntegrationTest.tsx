@@ -15,7 +15,7 @@ import {
   confirmMnemonicPhrase,
   recoverAccount,
   confirmPassword,
-  getAccountBalances,
+  getAccountIndexerBalances,
   getAccountHistory,
   getAssetIcons,
   retryAssetIcon,
@@ -200,10 +200,10 @@ export const IntegrationTest = () => {
         assertString(res.applicationState);
       });
 
-      res = await getAccountBalances({
-        publicKey: testPublicKey,
-        networkDetails: TESTNET_NETWORK_DETAILS,
-      });
+      res = await getAccountIndexerBalances(
+        testPublicKey,
+        TESTNET_NETWORK_DETAILS,
+      );
       runAsserts("getAccountBalances", () => {
         assertEq(Object.keys(res.balances).length > 0, true);
         assertBoolean(res.isFunded);

@@ -9,6 +9,7 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
+  HAS_ACCOUNT_SUBSCRIPTION,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
@@ -17,6 +18,7 @@ import {
   dataStorageAccess,
   browserLocalStorage,
 } from "background/helpers/dataStorage";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -127,4 +129,82 @@ export const getNetworksList = async () => {
 export const getIsSorobanSupported = async () => {
   const networkDetails = await getNetworkDetails();
   return !!networkDetails.sorobanRpcUrl;
+};
+
+export const subscribeAccount = async (publicKey: string) => {
+  // if pub key already has a subscription setup, skip this
+  const keyId = await localStore.getItem(KEY_ID);
+  const hasAccountSubByKeyId =
+    (await localStore.getItem(HAS_ACCOUNT_SUBSCRIPTION)) || {};
+  if (!keyId || hasAccountSubByKeyId[keyId]) {
+    return { publicKey };
+  }
+
+  try {
+    const networkDetails = await getNetworkDetails();
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pub_key: publicKey,
+        network: networkDetails.network,
+      }),
+    };
+    await fetch(`${INDEXER_URL}/subscription/account`, options);
+    const subsByKeyId = {
+      ...hasAccountSubByKeyId,
+      [keyId]: true,
+    };
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+  } catch (e) {
+    console.error(e);
+    throw new Error("Error subscribing account");
+  }
+
+  return { publicKey };
+};
+
+export const subscribeTokenBalance = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  try {
+    const networkDetails = await getNetworkDetails();
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pub_key: publicKey,
+        contract_id: contractId,
+        network: networkDetails.network,
+      }),
+    };
+    await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
+  } catch (e) {
+    console.error(e);
+    throw new Error(`Error subscribing to token: ${contractId}`);
+  }
+};
+
+export const subscribeTokenHistory = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  try {
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
+    };
+    await fetch(`${INDEXER_URL}/subscription/token`, options);
+  } catch (e) {
+    console.error(e);
+    throw new Error(`Error subscribing to token: ${contractId}`);
+  }
 };

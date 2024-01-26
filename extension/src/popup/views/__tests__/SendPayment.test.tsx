@@ -15,7 +15,7 @@ import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 
-jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
+jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
 });
 
@@ -24,10 +24,6 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() => {
     signedTransaction:
       "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A",
   });
-});
-
-jest.spyOn(ApiInternal, "submitFreighterTransaction").mockImplementation(() => {
-  return Promise.resolve({});
 });
 
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {

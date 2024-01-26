@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
@@ -10,8 +10,6 @@ import {
   OPERATION_TYPES,
   TRANSACTION_WARNING,
 } from "constants/transaction";
-
-import { getDecimals } from "@shared/helpers/soroban/token";
 
 import { FlaggedKeys } from "types/transactions";
 
@@ -27,9 +25,11 @@ import {
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
-import { hasSorobanClient, SorobanContext } from "popup/SorobanContext";
-
 import "./styles.scss";
+import { INDEXER_URL } from "@shared/constants/mercury";
+import { useSelector } from "react-redux";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 interface Path {
   code: string;
@@ -323,7 +323,8 @@ export const Operations = ({
   operations: Array<TransactionInfoResponse>;
 }) => {
   const { t } = useTranslation();
-  const sorobanClient = useContext(SorobanContext);
+  const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   enum AuthorizationMap {
     "Authorization Required" = 1,
@@ -351,18 +352,25 @@ export const Operations = ({
   const [decimals, setDecimals] = useState(0);
 
   useEffect(() => {
-    if (!contractId || !hasSorobanClient(sorobanClient)) return;
+    if (!contractId) return;
     const fetchContractDecimals = async () => {
-      const contractDecimals = await getDecimals(
-        contractId,
-        sorobanClient.server,
-        await sorobanClient.newTxBuilder(),
+      const response = await fetch(
+        `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
       );
-      setDecimals(contractDecimals);
+      if (!response.ok) {
+        throw new Error("failed to fetch token details");
+      }
+      const tokenDetails = await response.json();
+      setDecimals(tokenDetails.decimals);
     };
 
     fetchContractDecimals();
-  }, [sorobanClient, contractId]);
+  }, [
+    contractId,
+    networkDetails.network,
+    networkDetails.sorobanRpcUrl,
+    publicKey,
+  ]);
 
   return (
     <div className="Operations">

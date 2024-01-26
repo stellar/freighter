@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
 import { Icon, Loader } from "@stellar/design-system";
@@ -7,18 +7,22 @@ import { useTranslation } from "react-i18next";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { getDecimals, getName, getSymbol } from "@shared/helpers/soroban/token";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
-import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
 
-import { HorizonOperation, TokenBalances } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  Balances,
+  HorizonOperation,
+  TokenBalance,
+} from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 import { TransactionDetailProps } from "../TransactionDetail";
@@ -47,7 +51,7 @@ export type HistoryItemOperation = HorizonOperation & {
 };
 
 interface HistoryItemProps {
-  tokenBalances: TokenBalances;
+  accountBalances: AccountBalancesInterface;
   operation: HistoryItemOperation;
   publicKey: string;
   url: string;
@@ -57,8 +61,8 @@ interface HistoryItemProps {
 }
 
 export const HistoryItem = ({
+  accountBalances,
   operation,
-  tokenBalances,
   publicKey,
   url,
   networkDetails,
@@ -66,7 +70,6 @@ export const HistoryItem = ({
   setIsDetailViewShowing,
 }: HistoryItemProps) => {
   const { t } = useTranslation();
-  const sorobanClient = useContext(SorobanContext);
   const {
     account,
     amount,
@@ -203,8 +206,10 @@ export const HistoryItem = ({
         }));
       } else if (isInvokeHostFn) {
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-        const token = tokenBalances.find(
-          (balance) => attrs && balance.contractId === attrs.contractId,
+        const balances =
+          accountBalances.balances || ({} as NonNullable<Balances>);
+        const tokenKey = Object.keys(balances).find(
+          (balanceKey) => attrs?.contractId === balanceKey.split(":")[1],
         );
 
         if (!attrs) {
@@ -228,41 +233,25 @@ export const HistoryItem = ({
           // Minter does not need to have tokens to mint, and
           // they are not neccessarily minted to themselves.
           // If user has minted to self, add token to their token list.
-          if (!token) {
+          if (!tokenKey) {
             setIsLoading(true);
-            // TODO: When fetching contract details, we could encounter an expired state entry
-            // and fail to fetch values through the RPC.
-            // We can address this in several ways -
-            // 1. If token is a SAC, fetch details from Horizon.
-            // 2. If not SAC or unknown, look up ledger entry directly.
 
             try {
-              if (!hasSorobanClient(sorobanClient)) {
-                throw new Error("Soroban RPC not supported for this network");
-              }
+              const response = await fetch(
+                `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
+              );
 
-              const tokenDecimals = await getDecimals(
-                attrs.contractId,
-                sorobanClient.server,
-                await sorobanClient.newTxBuilder(),
-              );
-              const tokenName = await getName(
-                attrs.contractId,
-                sorobanClient.server,
-                await sorobanClient.newTxBuilder(),
-              );
-              const tokenSymbol = await getSymbol(
-                attrs.contractId,
-                sorobanClient.server,
-                await sorobanClient.newTxBuilder(),
-              );
+              if (!response.ok) {
+                throw new Error("failed to fetch token details");
+              }
+              const tokenDetails = await response.json();
 
               const _token = {
                 contractId: attrs.contractId,
                 total: isRecieving ? attrs.amount : 0,
-                decimals: tokenDecimals,
-                name: tokenName,
-                symbol: tokenSymbol,
+                decimals: tokenDetails.decimals,
+                name: tokenDetails.name,
+                symbol: tokenDetails.symbol,
               };
 
               const formattedTokenAmount = formatTokenAmount(
@@ -288,10 +277,12 @@ export const HistoryItem = ({
                   from: attrs.from,
                   to: attrs.to,
                 },
-                headerTitle: `${t(capitalize(attrs.fnName))} ${tokenSymbol}`,
+                headerTitle: `${t(capitalize(attrs.fnName))} ${
+                  tokenDetails.symbol
+                }`,
                 isPayment: false,
                 isRecipient: isRecieving,
-                operationText: `${formattedTokenAmount} ${tokenSymbol}`,
+                operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
               }));
               setIsLoading(false);
             } catch (error) {
@@ -324,14 +315,15 @@ export const HistoryItem = ({
               setIsLoading(false);
             }
           } else {
+            const { token, decimals } = balances[tokenKey] as TokenBalance;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
-              token.decimals,
+              decimals,
             );
             setBodyComponent(
               <>
                 {isRecieving && "+"}
-                {formattedTokenAmount} {token.symbol}
+                {formattedTokenAmount} {token.code}
               </>,
             );
 
@@ -347,10 +339,10 @@ export const HistoryItem = ({
                 from: attrs.from,
                 to: attrs.to,
               },
-              headerTitle: `${t(capitalize(attrs.fnName))} ${token.symbol}`,
+              headerTitle: `${t(capitalize(attrs.fnName))} ${token.code}`,
               isPayment: false,
               isRecipient: isRecieving,
-              operationText: `${formattedTokenAmount} ${token.symbol}`,
+              operationText: `${formattedTokenAmount} ${token.code}`,
             }));
           }
         } else if (attrs.fnName === SorobanTokenInterface.transfer) {
@@ -358,7 +350,7 @@ export const HistoryItem = ({
             <Icon.ArrowUp className="HistoryItem__icon--sent" />,
           );
 
-          if (!token) {
+          if (!tokenKey) {
             // this should never happen, transfers cant succeed if you have no balance.
             setRowText(operationString);
             setTxDetails((_state) => ({
@@ -367,13 +359,14 @@ export const HistoryItem = ({
               operationText: operationString,
             }));
           } else {
+            const { token, decimals } = balances[tokenKey] as TokenBalance;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
-              token.decimals,
+              decimals,
             );
             setBodyComponent(
               <>
-                - {formattedTokenAmount} {token.symbol}
+                - {formattedTokenAmount} {token.code}
               </>,
             );
 
@@ -386,10 +379,10 @@ export const HistoryItem = ({
                 from: attrs.from,
                 to: attrs.to,
               },
-              headerTitle: `${t(capitalize(attrs.fnName))} ${token.symbol}`,
+              headerTitle: `${t(capitalize(attrs.fnName))} ${token.code}`,
               isPayment: false,
               isRecipient: false,
-              operationText: `${formattedTokenAmount} ${token.symbol}`,
+              operationText: `${formattedTokenAmount} ${token.code}`,
             }));
           }
         } else {
@@ -425,12 +418,11 @@ export const HistoryItem = ({
     operation,
     operationString,
     publicKey,
-    sorobanClient,
     srcAssetCode,
     startingBalance,
     t,
     to,
-    tokenBalances,
+    accountBalances.balances,
   ]);
 
   return (

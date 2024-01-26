@@ -37,7 +37,10 @@ export const Swap = () => {
 
         if (getAccountBalances.fulfilled.match(res)) {
           dispatch(
-            getAssetIcons({ balances: res.payload.balances, networkDetails }),
+            getAssetIcons({
+              balances: res.payload.balances,
+              networkDetails,
+            }),
           );
         }
       }

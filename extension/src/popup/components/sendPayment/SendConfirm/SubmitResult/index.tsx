@@ -138,7 +138,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
-          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
         }),

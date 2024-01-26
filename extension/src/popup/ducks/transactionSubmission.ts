@@ -3,7 +3,6 @@ import {
   Keypair,
   Memo,
   MemoType,
-  Networks,
   Operation,
   SorobanRpc,
   Transaction,
@@ -15,15 +14,14 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
   signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
-  submitFreighterTransaction as internalSubmitFreighterTransaction,
-  submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
-  getAccountBalances as internalGetAccountBalances,
+  getAccountIndexerBalances as internalgetAccountIndexerBalances,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
   getBlockedAccounts as internalGetBlockedAccounts,
+  removeTokenId as internalRemoveTokenId,
 } from "@shared/api/internal";
 
 import {
@@ -39,17 +37,16 @@ import {
   BalanceToMigrate,
 } from "@shared/api/types";
 
-import { NetworkDetails } from "@shared/constants/stellar";
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
-import LedgerApi from "@ledgerhq/hw-app-str";
+import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
+import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
-import { SorobanContextInterface } from "popup/SorobanContext";
-import { getTokenBalances, resetSorobanTokensStatus } from "./soroban";
+import { hardwareSign } from "popup/helpers/hardwareConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -87,31 +84,36 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.HorizonApi.TransactionResponse,
   {
-    publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
-    refreshBalances?: boolean;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterTransaction",
-  async (
-    { publicKey, signedXDR, networkDetails, refreshBalances = false },
-    thunkApi,
-  ) => {
+  async ({ signedXDR, networkDetails }, thunkApi) => {
     try {
-      const txRes = await internalSubmitFreighterTransaction({
-        signedXDR,
-        networkDetails,
-      });
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          signed_xdr: signedXDR,
+          network_url: networkDetails.networkUrl,
+          network_passphrase: networkDetails.networkPassphrase,
+        }),
+      };
+      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+      const response = await res.json();
 
-      if (refreshBalances) {
-        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
+      if (!res.ok) {
+        return thunkApi.rejectWithValue({
+          errorMessage: response,
+        });
       }
-
-      return txRes;
+      return response;
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
@@ -126,35 +128,34 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   {
     signedXDR: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
-    refreshBalances?: boolean;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterSorobanTransaction",
-  async (
-    { signedXDR, networkDetails, sorobanClient, refreshBalances = false },
-    thunkApi,
-  ) => {
+  async ({ signedXDR, networkDetails }, thunkApi) => {
     try {
-      const txRes = await internalSubmitFreighterSorobanTransaction({
-        signedXDR,
-        networkDetails,
-      });
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          signed_xdr: signedXDR,
+          network_url: networkDetails.networkUrl,
+          network_passphrase: networkDetails.networkPassphrase,
+        }),
+      };
+      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+      const response = await res.json();
 
-      if (refreshBalances) {
-        thunkApi.dispatch(resetSorobanTokensStatus());
-        await thunkApi.dispatch(
-          getTokenBalances({
-            sorobanClient,
-            network: networkDetails.network as Networks,
-          }),
-        );
+      if (!res.ok) {
+        return thunkApi.rejectWithValue({
+          errorMessage: response,
+        });
       }
-
-      return txRes;
+      return response;
     } catch (e) {
       return thunkApi.rejectWithValue({
         errorMessage: e.message || e,
@@ -164,35 +165,31 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   },
 );
 
-export const signWithLedger = createAsyncThunk<
+export const signWithHardwareWallet = createAsyncThunk<
   string,
   {
     transactionXDR: string;
     networkPassphrase: string;
     publicKey: string;
     bipPath: string;
+    walletType: ConfigurableWalletType;
   },
   { rejectValue: ErrorMessage }
 >(
-  "signWithLedger",
+  "signWithHardwareWallet",
   async (
-    { transactionXDR, networkPassphrase, publicKey, bipPath },
+    { transactionXDR, networkPassphrase, publicKey, bipPath, walletType },
     thunkApi,
   ) => {
     try {
       const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
-      const transport = await TransportWebUSB.create();
-      const ledgerApi = new LedgerApi(transport);
-      const result = await ledgerApi.signTransaction(
-        bipPath,
-        tx.signatureBase(),
-      );
+      const signature = await hardwareSign[walletType]({ bipPath, tx });
 
       const keypair = Keypair.fromPublicKey(publicKey);
       const decoratedSignature = new xdr.DecoratedSignature({
         hint: keypair.signatureHint(),
-        signature: result.signature,
+        signature,
       });
 
       tx.signatures.push(decoratedSignature);
@@ -262,15 +259,38 @@ const storeBalanceMetricData = (publicKey: string, accountFunded: boolean) => {
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 };
 
+export const removeTokenId = createAsyncThunk<
+  void,
+  {
+    contractId: string;
+    network: NETWORKS;
+  },
+  { rejectValue: ErrorMessage }
+  // @ts-ignore
+>("removeTokenId", async ({ contractId, network }, thunkApi) => {
+  try {
+    await internalRemoveTokenId({ contractId, network });
+  } catch (e) {
+    console.error(e);
+    thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
+
 export const getAccountBalances = createAsyncThunk<
   AccountBalancesInterface,
-  { publicKey: string; networkDetails: NetworkDetails },
+  {
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  },
   { rejectValue: ErrorMessage }
 >("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
-    const res = await internalGetAccountBalances({ publicKey, networkDetails });
-    storeBalanceMetricData(publicKey, res.isFunded || false);
-    return res;
+    const balances = await internalgetAccountIndexerBalances(
+      publicKey,
+      networkDetails,
+    );
+    storeBalanceMetricData(publicKey, balances.isFunded || false);
+    return balances;
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e });
   }
@@ -282,7 +302,7 @@ export const getDestinationBalances = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
-    return await internalGetAccountBalances({ publicKey, networkDetails });
+    return await internalgetAccountIndexerBalances(publicKey, networkDetails);
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e });
   }
@@ -432,6 +452,7 @@ interface InitialState {
     domains: BlockedDomains;
   };
   blockedAccounts: BlockedAccount[];
+  tokensWithNoBalance: string[];
 }
 
 export const initialState: InitialState = {
@@ -464,11 +485,13 @@ export const initialState: InitialState = {
     shouldSubmit: true,
   },
   accountBalances: {
+    tokensWithNoBalance: [],
     balances: null,
     isFunded: false,
     subentryCount: 0,
   },
   destinationBalances: {
+    tokensWithNoBalance: [],
     balances: null,
     isFunded: false,
     subentryCount: 0,
@@ -483,6 +506,7 @@ export const initialState: InitialState = {
     domains: {},
   },
   blockedAccounts: [],
+  tokensWithNoBalance: [] as string[],
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -613,6 +637,7 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
+      state.tokensWithNoBalance = action.payload.tokensWithNoBalance;
       state.accountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
@@ -699,3 +724,11 @@ export const transactionDataSelector = (state: {
 export const isPathPaymentSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData.destinationAsset !== "";
+
+export const tokensSelector = (state: {
+  accountBalanceStatus: ActionStatus;
+  tokensWithNoBalance: string[];
+}) => ({
+  accountBalanceStatus: state.accountBalanceStatus,
+  tokensWithNoBalance: state.tokensWithNoBalance || [],
+});

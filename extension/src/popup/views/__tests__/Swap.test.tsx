@@ -53,10 +53,11 @@ export const swapMockBalances = {
   } as any) as Balances,
   isFunded: true,
   subentryCount: 1,
+  tokensWithNoBalance: [],
 };
 
 jest
-  .spyOn(ApiInternal, "getAccountBalances")
+  .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(swapMockBalances));
 
 jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
@@ -65,10 +66,6 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
       "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A",
   }),
 );
-
-jest
-  .spyOn(ApiInternal, "submitFreighterTransaction")
-  .mockImplementation(() => Promise.resolve({}));
 
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
@@ -133,6 +130,14 @@ jest.mock("stellar-sdk", () => {
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 
 describe("Swap", () => {
+  beforeEach(() => {
+    jest.spyOn(global, "fetch").mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({}),
+      } as any),
+    );
+  });
   beforeEach(async () => {
     const history = createMemoryHistory();
     history.push(ROUTES.swap);

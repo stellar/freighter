@@ -1,6 +1,7 @@
 const { merge } = require("webpack-merge");
 const webpack = require("webpack");
 const path = require("path");
+const Dotenv = require("dotenv-webpack");
 
 const { BUILD_PATH, commonConfig } = require("./webpack.common.js");
 
@@ -20,6 +21,7 @@ const devConfig = {
       /webextension-polyfill/,
       path.resolve(__dirname, "../config/shims/webextension-polyfill.ts"),
     ),
+    new Dotenv(),
   ],
 };
 

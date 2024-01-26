@@ -1,5 +1,5 @@
-import React, { useContext, useState, useEffect } from "react";
-import { StellarToml, Networks } from "stellar-sdk";
+import React, { useState, useEffect } from "react";
+import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ActionStatus } from "@shared/api/types";
@@ -27,7 +27,6 @@ import {
   hardwareWalletTypeSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { removeTokenId, sorobanSelector } from "popup/ducks/soroban";
 import {
   getAccountBalances,
   resetSubmission,
@@ -36,19 +35,21 @@ import {
   transactionSubmissionSelector,
   startHwSign,
   ShowOverlayStatus,
+  removeTokenId,
+  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   ScamAssetWarning,
   NewAssetWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import { SorobanContext } from "popup/SorobanContext";
-import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
-import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 
 import "./styles.scss";
+import { NETWORKS } from "@shared/constants/stellar";
+import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
+import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -85,11 +86,11 @@ export const ManageAssetRows = ({
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
-  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const { getTokenBalancesStatus, tokensWithNoBalance } = useSelector(
-    sorobanSelector,
+  const { accountBalanceStatus, tokensWithNoBalance } = useSelector(
+    tokensSelector,
   );
-  const sorobanClient = useContext(SorobanContext);
+  const walletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!walletType;
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
     false,
@@ -158,7 +159,6 @@ export const ManageAssetRows = ({
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
-          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
         }),
@@ -246,8 +246,7 @@ export const ManageAssetRows = ({
     await dispatch(
       removeTokenId({
         contractId,
-        network: networkDetails.network as Networks,
-        sorobanClient,
+        network: networkDetails.network as NETWORKS,
       }),
     );
     navigateTo(ROUTES.account);
@@ -255,7 +254,9 @@ export const ManageAssetRows = ({
 
   return (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && walletType && (
+        <HardwareSign walletType={walletType} />
+      )}
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           domain={suspiciousAssetData.domain}
@@ -297,7 +298,7 @@ export const ManageAssetRows = ({
               );
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
-                getTokenBalancesStatus === ActionStatus.PENDING;
+                accountBalanceStatus === ActionStatus.PENDING;
 
               return (
                 <div
@@ -340,7 +341,7 @@ export const ManageAssetRows = ({
 
           {tokensWithNoBalance.map((tokenId) => {
             const isActionPending =
-              getTokenBalancesStatus === ActionStatus.PENDING;
+              accountBalanceStatus === ActionStatus.PENDING;
 
             return (
               <div className="ManageAssetRows__row" key={tokenId}>
