@@ -12,7 +12,7 @@
     "start": "webpack-dev-server --config webpack.dev.js",
     "start:experimental": "yarn start --env EXPERIMENTAL=true",
     "start:unpacked-extension": "yarn build --watch",
-    "test": "playwright test"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ledgerhq/hw-app-str": "^6.27.1",
@@ -85,7 +85,7 @@
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.3.1",
-    "@playwright/test": "^1.40.1",
+    "@playwright/test": "1.41.0",
     "@types/semver": "^7.5.2",
     "https-browserify": "^1.0.0",
     "os-browserify": "^0.3.0",
