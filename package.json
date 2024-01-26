@@ -12,9 +12,6 @@
     "extension",
     "@stellar/freighter-api"
   ],
-  "resolutions": {
-    "**/terser-webpack-plugin": "^1.4.3"
-  },
   "scripts": {
     "setup": "yarn install && yarn allow-scripts",
     "build": "run-p --print-label build:freighter-api build:docs build:extension",
