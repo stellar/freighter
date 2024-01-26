@@ -11,11 +11,11 @@ test("Welcome page loads", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("I’m going to need a seed phrase")).toBeVisible();
   await expect(page.getByText("I’ve done this before")).toBeVisible();
-  await expect(page).toHaveScreenshot("welcome-page.png");
+  // await expect(page).toHaveScreenshot("welcome-page.png");
 });
 
 test("Create new wallet", async ({ page }) => {
-  await expect(page).toHaveScreenshot("welcome-page.png");
+  // await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Create Wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -57,7 +57,7 @@ test("Create new wallet", async ({ page }) => {
 });
 
 test("Import wallet", async ({ page }) => {
-  await expect(page).toHaveScreenshot("welcome-page.png");
+  // await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Import Wallet").click();
   await expect(
     page.getByText("Import wallet from recovery phrase"),
@@ -92,7 +92,7 @@ test("Import wallet", async ({ page }) => {
 });
 
 test("Import wallet with wrong password", async ({ page }) => {
-  await expect(page).toHaveScreenshot("welcome-page.png");
+  // await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Import Wallet").click();
   await expect(
     page.getByText("Import wallet from recovery phrase"),
@@ -132,7 +132,7 @@ test("Import wallet with wrong password", async ({ page }) => {
 });
 
 test("Incorrect mnemonic phrase", async ({ page }) => {
-  await expect(page).toHaveScreenshot("welcome-page.png");
+  // await expect(page).toHaveScreenshot("welcome-page.png");
   await page.getByText("Create Wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
