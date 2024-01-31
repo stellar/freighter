@@ -6,7 +6,6 @@ import {
   Asset,
   Memo,
   Operation,
-  SorobanRpc,
   TransactionBuilder,
 } from "stellar-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
@@ -271,14 +270,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
     try {
-      const preparedTransaction = SorobanRpc.assembleTransaction(
-        transactionSimulation.raw!,
-        transactionSimulation.response!,
-      );
-
       const res = await dispatch(
         signFreighterSorobanTransaction({
-          transactionXDR: preparedTransaction.build().toXDR(),
+          transactionXDR: transactionSimulation.preparedTransaction!,
           network: networkDetails.networkPassphrase,
         }),
       );

@@ -203,3 +203,12 @@ export const getAttrsFromSorobanHorizonOp = (
 
   return getRootInvocationArgs(invokeHostFn);
 };
+
+export const isContractId = (contractId: string) => {
+  try {
+    StrKey.decodeContract(contractId);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
