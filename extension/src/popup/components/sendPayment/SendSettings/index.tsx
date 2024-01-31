@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Address, XdrLargeInt } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -89,11 +88,11 @@ export const SendSettings = ({
         Number(assetBalance.decimals),
       );
 
-      const params = [
-        new Address(publicKey).toScVal(), // from
-        new Address(destination).toScVal(), // to
-        new XdrLargeInt("i128", parsedAmount.toNumber()).toI128(), // amount
-      ];
+      const params = {
+        publicKey,
+        destination,
+        amount: parsedAmount.toNumber(),
+      };
 
       try {
         const networkDetails = await getNetworkDetails();
@@ -107,7 +106,7 @@ export const SendSettings = ({
             pub_key: publicKey,
             memo,
             params,
-            network_url: networkDetails.networkUrl,
+            network_url: networkDetails.sorobanRpcUrl,
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
@@ -118,21 +117,22 @@ export const SendSettings = ({
         if (!response.ok) {
           throw new Error("failed to simluate token transfer");
         }
-        const { simulationResponse, raw } = await response.json();
+        const {
+          preparedTransaction,
+          simulationResponse,
+        } = await response.json();
 
-        if ("transactionData" in simulationResponse) {
+        if (preparedTransaction) {
           dispatch(
             saveSimulation({
               response: simulationResponse,
-              raw,
+              preparedTransaction,
             }),
           );
           navigateTo(next);
           return;
         }
-        throw new Error(
-          `Failed to simluate transaction, ID: ${simulationResponse.id}`,
-        );
+        throw new Error(`Failed to simluate transaction`);
       } catch (error) {
         throw new Error(
           `Failed to simluate transaction: ${JSON.stringify(error)}`,

@@ -1,11 +1,7 @@
 import {
   Horizon,
   Keypair,
-  Memo,
-  MemoType,
-  Operation,
   SorobanRpc,
-  Transaction,
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
@@ -438,7 +434,7 @@ interface InitialState {
   transactionData: TransactionData;
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
-    raw: Transaction<Memo<MemoType>, Operation[]> | null;
+    preparedTransaction: string | null;
   };
   accountBalances: AccountBalancesInterface;
   destinationBalances: AccountBalancesInterface;
@@ -477,7 +473,7 @@ export const initialState: InitialState = {
   },
   transactionSimulation: {
     response: null,
-    raw: null,
+    preparedTransaction: null,
   },
   hardwareWalletData: {
     status: ShowOverlayStatus.IDLE,

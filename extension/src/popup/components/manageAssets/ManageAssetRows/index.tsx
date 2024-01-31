@@ -53,8 +53,6 @@ import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
-  contractId?: string;
-  name?: string;
 };
 
 export interface NewAssetFlags {
@@ -310,7 +308,7 @@ export const ManageAssetRows = ({
                     code={code}
                     issuer={issuer}
                     image={image}
-                    domain={contractId ? truncateString(contractId) : domain}
+                    domain={domain}
                   />
                   <div className="ManageAssetRows__button">
                     <PillButton
@@ -320,7 +318,7 @@ export const ManageAssetRows = ({
                       }
                       onClick={() => {
                         if (contractId) {
-                          handleTokenRowClick(contractId, canonicalAsset);
+                          handleTokenRowClick(issuer, canonicalAsset);
                         } else {
                           handleRowClick(
                             { code, issuer, image, domain },
