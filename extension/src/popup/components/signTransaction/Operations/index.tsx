@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
-import { xdr, buildInvocationTree } from "stellar-sdk";
+import { xdr, buildInvocationTree, Operation, Asset } from "stellar-sdk";
 
 import {
   CLAIM_PREDICATES,
@@ -51,71 +51,7 @@ interface Predicate {
   _value?: PredicateValue;
 }
 
-interface Claimant {
-  _destination: string;
-  _predicate: Predicate;
-}
-
 type FLAGS = { [key in FLAG_TYPES]: boolean };
-
-interface TransactionInfoResponse {
-  account: string;
-  amount: string;
-  asset: { code: string; issuer: string };
-  auth: any; // TODO: finalize schema
-  balanceId: string;
-  bumpTo: string;
-  buyAmount: string;
-  buying: { code: string };
-  claimants: Array<Claimant>;
-  clearFlags: number;
-  destination: string;
-  destAsset: { code: string };
-  flags: FLAGS;
-  footprint: any; // TODO: finalize schema
-  func: any; // TODO: finalize schema
-  from: string;
-  highThreshold: number;
-  inflationDest: string;
-  limit: string;
-  line: {
-    code: string;
-    issuer: string;
-  };
-  liquidityPoolId: string;
-  lowThreshold: number;
-  name: string;
-  masterWeight: number;
-  medThreshold: number;
-  maxAmountA: number;
-  maxAmountB: number;
-  maxPrice: number;
-  minAmountA: number;
-  minAmountB: number;
-  minPrice: number;
-  offerId: number;
-  parameters: any; // TODO: finalize schema
-  path: [Path];
-  price: string;
-  seller: string;
-  selling: { code: string };
-  sendAsset: { code: string };
-  setFlags: number;
-  signer: {
-    ed25519PublicKey?: string;
-    sha256Hash?: { data: Buffer };
-    preAuthTx?: { data: Buffer };
-    weight: number;
-  };
-  source: string;
-  sponsoredId: string;
-  trustor: string;
-  type: keyof typeof OPERATION_TYPES;
-  value: {
-    type: string;
-    data: Buffer;
-  };
-}
 
 const KeyValueList = ({
   operationKey,
@@ -196,7 +132,7 @@ const KeyValueWithScAuth = ({
   );
 };
 
-const PathList = ({ paths }: { paths: [Path] }) => {
+const PathList = ({ paths }: { paths: Asset[] }) => {
   const { t } = useTranslation();
 
   return (
@@ -316,11 +252,11 @@ const formattedBuffer = (data: Buffer) =>
 export const Operations = ({
   flaggedKeys,
   isMemoRequired,
-  operations = [] as Array<TransactionInfoResponse>,
+  operations = [] as Operation[],
 }: {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
-  operations: Array<TransactionInfoResponse>;
+  operations: Operation[];
 }) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -372,466 +308,608 @@ export const Operations = ({
     publicKey,
   ]);
 
+  function renderOpByType(op: Operation) {
+    // TODO: fetch token decimals in invokeHostFn case
+    // TODO: when should we use <DestinationWarning />
+    // TODO: add invokeHostFn
+    switch (op.type) {
+      case "createAccount": {
+        const account = op.destination;
+        const startingBalance = op.startingBalance;
+        return (
+          <>
+            <KeyValueWithPublicKey
+              operationKey={t("Account")}
+              operationValue={account}
+            />
+            <KeyValueWithPublicKey
+              operationKey={t("Starting Balance")}
+              operationValue={startingBalance}
+            />
+          </>
+        );
+      }
+
+      case "payment": {
+        const account = op.destination;
+        const amount = op.amount;
+        const asset = op.asset;
+        return (
+          <>
+            <KeyValueWithPublicKey
+              operationKey={t("Account")}
+              operationValue={account}
+            />
+            <KeyValueList
+              operationKey={t("Asset Code")}
+              operationValue={asset.code}
+            />
+            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+          </>
+        );
+      }
+
+      case "pathPaymentStrictReceive": {
+        const {
+          sendAsset,
+          sendMax,
+          destination,
+          destAsset,
+          destAmount,
+          path,
+        } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Asset Code")}
+              operationValue={sendAsset.code}
+            />
+            <KeyValueList
+              operationKey={t("Send Max")}
+              operationValue={sendMax}
+            />
+            <KeyValueWithPublicKey
+              operationKey={t("Destination Address")}
+              operationValue={destination}
+            />
+            <KeyValueWithPublicKey
+              operationKey={t("Destination Asset")}
+              operationValue={destAsset.code}
+            />
+            <KeyValueList
+              operationKey={t("Destination Amount")}
+              operationValue={destAmount}
+            />
+            <PathList paths={path} />
+          </>
+        );
+      }
+
+      case "pathPaymentStrictSend": {
+        const {
+          sendAsset,
+          sendAmount,
+          destination,
+          destAsset,
+          destMin,
+          path,
+        } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Asset Code")}
+              operationValue={sendAsset.code}
+            />
+            <KeyValueList
+              operationKey={t("Send Amount")}
+              operationValue={sendAmount}
+            />
+            <KeyValueWithPublicKey
+              operationKey={t("Destination Address")}
+              operationValue={destination}
+            />
+            <KeyValueWithPublicKey
+              operationKey={t("Destination Asset")}
+              operationValue={destAsset.code}
+            />
+            <KeyValueList
+              operationKey={t("Destination Minimum")}
+              operationValue={destMin}
+            />
+            <PathList paths={path} />
+          </>
+        );
+      }
+
+      case "createPassiveSellOffer": {
+        const { selling, buying, amount, price } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Buying")}
+              operationValue={buying.code}
+            />
+            <KeyValueList
+              operationKey={t("Amount")}
+              operationValue={`${formatTokenAmount(
+                BigNumber(amount),
+                decimals,
+              )}`}
+            />
+            <KeyValueList
+              operationKey={t("Selling")}
+              operationValue={selling.code}
+            />
+            <KeyValueList operationKey={t("Price")} operationValue={price} />
+          </>
+        );
+      }
+
+      case "manageSellOffer": {
+        const { offerId } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Offer ID")}
+              operationValue={offerId}
+            />
+          </>
+        );
+      }
+
+      case "manageBuyOffer": {
+        const { selling, buying, buyAmount, price, offerId } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Offer ID")}
+              operationValue={offerId}
+            />
+            <KeyValueList
+              operationKey={t("Buying")}
+              operationValue={buying.code}
+            />
+            <KeyValueList
+              operationKey={t("Buy Amount")}
+              operationValue={buyAmount}
+            />
+            <KeyValueList
+              operationKey={t("Selling")}
+              operationValue={selling.code}
+            />
+            <KeyValueList operationKey={t("Price")} operationValue={price} />
+          </>
+        );
+      }
+
+      case "setOptions": {
+        // TODO: make KeyVal for signer by type
+        const {
+          inflationDest,
+          clearFlags,
+          setFlags,
+          masterWeight,
+          lowThreshold,
+          medThreshold,
+          highThreshold,
+          homeDomain,
+        } = op;
+        return (
+          <>
+            {/* <KeyValueWithPublicKey
+              operationKey={t("Signer")}
+              operationValue={signer}
+            /> */}
+            <KeyValueList
+              operationKey={t("Inflation Destination")}
+              operationValue={inflationDest || ""}
+            />
+            <KeyValueList
+              operationKey={t("Home Domain")}
+              operationValue={homeDomain || ""}
+            />
+            <KeyValueList
+              operationKey={t("Inflation Destination")}
+              operationValue={inflationDest || ""}
+            />
+            <KeyValueList
+              operationKey={t("High Threshold")}
+              operationValue={highThreshold?.toString() || ""}
+            />
+            <KeyValueList
+              operationKey={t("Medium Threshold")}
+              operationValue={medThreshold?.toString() || ""}
+            />
+            <KeyValueList
+              operationKey={t("Low Threshold")}
+              operationValue={lowThreshold?.toString() || ""}
+            />
+            <KeyValueList
+              operationKey={t("Master Weight")}
+              operationValue={masterWeight?.toString() || ""}
+            />
+            <KeyValueList
+              operationKey={t("Set Flags")}
+              operationValue={setFlags?.toString() || ""}
+            />
+            <KeyValueList
+              operationKey={t("Clear Flags")}
+              operationValue={clearFlags?.toString() || ""}
+            />
+          </>
+        );
+      }
+
+      case "changeTrust": {
+        // TODO: make key val for line by type
+        const { source, type, limit } = op;
+        return (
+          <>
+            <KeyValueList operationKey={t("Source")} operationValue={source} />
+            {/* <KeyValueList
+              operationKey={t("Line")}
+              operationValue={line}
+            /> */}
+            <KeyValueList operationKey={t("Type")} operationValue={type} />
+            <KeyValueList operationKey={t("Limit")} operationValue={limit} />
+          </>
+        );
+      }
+
+      case "allowTrust": {
+        // TODO: make key val for authorize by type
+        const { trustor, assetCode } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Trustor")}
+              operationValue={trustor}
+            />
+            <KeyValueList
+              operationKey={t("Asset Code")}
+              operationValue={assetCode}
+            />
+          </>
+        );
+      }
+
+      case "accountMerge": {
+        const { destination } = op;
+        return (
+          <KeyValueList
+            operationKey={t("Destination")}
+            operationValue={destination}
+          />
+        );
+      }
+
+      case "manageData": {
+        const { name, value } = op;
+        return (
+          <>
+            <KeyValueList operationKey={t("Name")} operationValue={name} />
+            <KeyValueList
+              operationKey={t("Value")}
+              operationValue={value?.toString()}
+            />
+          </>
+        );
+      }
+
+      case "bumpSequence": {
+        const { bumpTo } = op;
+        return (
+          <KeyValueList operationKey={t("Bump To")} operationValue={bumpTo} />
+        );
+      }
+
+      case "createClaimableBalance": {
+        // TODO: make key val for claimants
+        const { asset, amount } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Asset Code")}
+              operationValue={asset.code}
+            />
+            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+          </>
+        );
+      }
+
+      case "claimClaimableBalance": {
+        const { balanceId } = op;
+        return (
+          <KeyValueList
+            operationKey={t("Balance ID")}
+            operationValue={balanceId}
+          />
+        );
+      }
+
+      case "beginSponsoringFutureReserves": {
+        const { sponsoredId } = op;
+        return (
+          <KeyValueList
+            operationKey={t("Sponsored ID")}
+            operationValue={sponsoredId}
+          />
+        );
+      }
+
+      case "beginSponsoringFutureReserves": {
+        const { sponsoredId } = op;
+        return (
+          <KeyValueList
+            operationKey={t("Sponsored ID")}
+            operationValue={sponsoredId}
+          />
+        );
+      }
+
+      case "endSponsoringFutureReserves": {
+        const { source, type } = op;
+        return (
+          <>
+            <KeyValueList operationKey={t("Source")} operationValue={source} />
+            <KeyValueList operationKey={t("Type")} operationValue={type} />
+          </>
+        );
+      }
+
+      case "revokeSponsorship": {
+        const t = op;
+        // revoke trustline sponsorhip
+        if ("account" in op && "asset" in op) {
+          const { account, asset } = op;
+          return (
+            <>
+              <KeyValueList
+                operationKey={t("Account")}
+                operationValue={account}
+              />
+              {"liquidityPoolId" in asset && (
+                <KeyValueList
+                  operationKey={t("Liquidity Pool ID")}
+                  operationValue={asset.liquidityPoolId}
+                />
+              )}
+              {"code" in asset && (
+                <KeyValueList
+                  operationKey={t("Liquidity Pool ID")}
+                  operationValue={asset.code}
+                />
+              )}
+            </>
+          );
+        }
+        // revoke offer sponsorship
+        if ("seller" in op && "offerId" in op) {
+          const { seller, offerId } = op;
+          return (
+            <>
+              <KeyValueList
+                operationKey={t("Seller")}
+                operationValue={seller}
+              />
+              <KeyValueList
+                operationKey={t("Offer ID")}
+                operationValue={offerId}
+              />
+            </>
+          );
+        }
+        // revoke data sponsorship
+        if ("account" in op && "name" in op) {
+          const { account, name } = op;
+          return (
+            <>
+              <KeyValueList
+                operationKey={t("Account")}
+                operationValue={account}
+              />
+              <KeyValueList operationKey={t("Name")} operationValue={name} />
+            </>
+          );
+        }
+        //  revoke claimable sponsorship
+        if ("balanceId" in op) {
+          const { balanceId } = op;
+          return (
+            <KeyValueList
+              operationKey={t("Balance ID")}
+              operationValue={balanceId}
+            />
+          );
+        }
+        // revoke liquidity pool sponsorship
+        if ("liquidityPoolId" in op) {
+          const { liquidityPoolId } = op;
+          return (
+            <KeyValueList
+              operationKey={t("Liquidity Pool ID")}
+              operationValue={liquidityPoolId}
+            />
+          );
+        }
+        // revoke signer sponsorship
+        if ("signer" in op && "account" in op) {
+          // TODO: make key val for SignerKeyOptions by type
+          const { account } = op;
+          return (
+            <>
+              {/* <KeyValueList
+                operationKey={t("Signer")}
+                operationValue={signer}
+              /> */}
+              <KeyValueList
+                operationKey={t("Account")}
+                operationValue={account}
+              />
+            </>
+          );
+        }
+
+        return (
+          <KeyValueList
+            operationKey={t("Account")}
+            operationValue={op.account}
+          />
+        );
+      }
+
+      case "clawback": {
+        const { asset, amount, from } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Asset Code")}
+              operationValue={asset.code}
+            />
+            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+            <KeyValueWithPublicKey
+              operationKey={t("From")}
+              operationValue={from}
+            />
+          </>
+        );
+      }
+
+      case "clawbackClaimableBalance": {
+        const { balanceId } = op;
+        return (
+          <KeyValueList
+            operationKey={t("Balance ID")}
+            operationValue={balanceId}
+          />
+        );
+      }
+
+      case "setTrustLineFlags": {
+        const { trustor, asset, flags } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Trustor")}
+              operationValue={trustor}
+            />
+            <KeyValueList
+              operationKey={t("Asset Code")}
+              operationValue={asset.code}
+            />
+            <KeyValueList
+              operationKey={t("Authorized")}
+              operationValue={flags.authorized}
+            />
+            <KeyValueList
+              operationKey={t("Authorized To Maintain Liabilities")}
+              operationValue={flags.authorizedToMaintainLiabilities}
+            />
+            <KeyValueList
+              operationKey={t("Clawback Enabled")}
+              operationValue={flags.clawbackEnabled}
+            />
+          </>
+        );
+      }
+
+      case "liquidityPoolDeposit": {
+        const {
+          liquidityPoolId,
+          maxAmountA,
+          maxAmountB,
+          maxPrice,
+          minPrice,
+        } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Liquidity Pool ID")}
+              operationValue={liquidityPoolId}
+            />
+            <KeyValueList
+              operationKey={t("Max Amount A")}
+              operationValue={maxAmountA}
+            />
+            <KeyValueList
+              operationKey={t("Max Amount B")}
+              operationValue={maxAmountB}
+            />
+            <KeyValueList
+              operationKey={t("Max Price")}
+              operationValue={maxPrice}
+            />
+            <KeyValueList
+              operationKey={t("Min Price")}
+              operationValue={minPrice}
+            />
+          </>
+        );
+      }
+
+      case "liquidityPoolWithdraw": {
+        const { liquidityPoolId, amount, minAmountA, minAmountB } = op;
+        return (
+          <>
+            <KeyValueList
+              operationKey={t("Liquidity Pool ID")}
+              operationValue={liquidityPoolId}
+            />
+            <KeyValueList
+              operationKey={t("Min Amount A")}
+              operationValue={minAmountA}
+            />
+            <KeyValueList
+              operationKey={t("Min Amount B")}
+              operationValue={minAmountB}
+            />
+            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+          </>
+        );
+      }
+
+      case "extendFootprintTtl": {
+        const { extendTo } = op;
+        return (
+          <KeyValueList
+            operationKey={t("Extend TO")}
+            operationValue={extendTo}
+          />
+        );
+      }
+
+      case "restoreFootprint":
+      case "inflation":
+      default: {
+        return <></>;
+      }
+    }
+  }
+
   return (
     <div className="Operations">
-      {operations.map(
-        (
-          {
-            account,
-            amount,
-            asset,
-            auth: scAuth,
-            balanceId,
-            bumpTo,
-            buyAmount,
-            buying,
-            claimants,
-            clearFlags,
-            destination,
-            destAsset,
-            flags,
-            footprint,
-            func: scFunc,
-            from,
-            highThreshold,
-            inflationDest,
-            limit,
-            line,
-            liquidityPoolId,
-            lowThreshold,
-            masterWeight,
-            maxAmountA,
-            maxAmountB,
-            maxPrice,
-            minAmountA,
-            minAmountB,
-            minPrice,
-            medThreshold,
-            name,
-            offerId,
-            parameters,
-            path,
-            price,
-            seller,
-            selling,
-            sendAsset,
-            setFlags,
-            signer,
-            source,
-            sponsoredId,
-            trustor,
-            type,
-            value,
-            ...rest
-          },
-          i: number,
-        ) => {
-          const operationIndex = i + 1;
-          let amountVal = amount;
-          let destinationVal = destination;
-          let sourceVal = source;
-          let fnName;
+      {operations.map((op, i: number) => {
+        const operationIndex = i + 1;
+        const sourceVal = op.source;
+        const type = op.type;
 
-          const sorobanAttrs = getAttrsFromSorobanTxOp(operations[i]);
-
-          if (sorobanAttrs) {
-            amountVal = sorobanAttrs?.amount.toString();
-            destinationVal = sorobanAttrs?.to || "";
-            sourceVal = sorobanAttrs?.from || "";
-            fnName = sorobanAttrs?.fnName;
-
-            if (!contractId && sorobanAttrs.contractId) {
-              setContractId(sorobanAttrs?.contractId);
-            }
-          }
-
-          return (
-            <div className="Operations--wrapper" key={operationIndex}>
-              <div className="Operations--header">
-                <strong>
-                  {operationIndex}. {OPERATION_TYPES[type] || type}
-                </strong>
-              </div>
-              <div className="Operations--item">
-                {account ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Account")}
-                    operationValue={account}
-                  />
-                ) : null}
-
-                {amountVal ? (
-                  <KeyValueList
-                    operationKey={t("Amount")}
-                    operationValue={`${formatTokenAmount(
-                      BigNumber(amountVal),
-                      decimals,
-                    )}`}
-                  />
-                ) : null}
-
-                {asset ? (
-                  <KeyValueList
-                    operationKey={t("Asset Code")}
-                    operationValue={`${asset.code}`}
-                  />
-                ) : null}
-
-                {asset?.issuer ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Asset Issuer")}
-                    operationValue={`${asset.issuer}`}
-                  />
-                ) : null}
-
-                {balanceId ? (
-                  <KeyValueList
-                    operationKey={t("Balance Id")}
-                    operationValue={balanceId}
-                  />
-                ) : null}
-
-                {bumpTo ? (
-                  <KeyValueList
-                    operationKey={t("Bump To")}
-                    operationValue={bumpTo}
-                  />
-                ) : null}
-
-                {buyAmount ? (
-                  <KeyValueList
-                    operationKey={t("Amount")}
-                    operationValue={buyAmount}
-                  />
-                ) : null}
-
-                {buying ? (
-                  <KeyValueList
-                    operationKey={t("Buying")}
-                    operationValue={buying.code}
-                  />
-                ) : null}
-
-                {claimants && claimants.length
-                  ? claimants.map(({ _destination }, index) => (
-                      /* eslint-disable react/no-array-index-key */
-                      <div
-                        className="Operations--list--item"
-                        key={`${_destination}${index}`}
-                      >
-                        {/* eslint-enable */}
-                        <div>
-                          {t("Claimant")} {index + 1}
-                        </div>
-                        <KeyValueWithPublicKey
-                          operationKey={t("Destination")}
-                          operationValue={_destination}
-                        />
-                        {/* TODO: Add appicable predicate UI */}
-                      </div>
-                    ))
-                  : null}
-
-                {clearFlags ? (
-                  <KeyValueList
-                    operationKey={t("Clear Flags")}
-                    operationValue={AuthorizationMap[clearFlags]}
-                  />
-                ) : null}
-
-                {contractId ? (
-                  <KeyValueList
-                    operationKey={t("Contract ID")}
-                    operationValue={truncateString(contractId)}
-                  />
-                ) : null}
-
-                {destAsset ? (
-                  <KeyValueList
-                    operationKey={t("Destination Asset")}
-                    operationValue={`${destAsset.code}`}
-                  />
-                ) : null}
-
-                {destinationVal ? (
-                  <>
-                    <KeyValueWithPublicKey
-                      operationKey={t("Destination")}
-                      operationValue={destinationVal}
-                    />
-                    <DestinationWarning
-                      destination={destinationVal}
-                      flaggedKeys={flaggedKeys}
-                      isMemoRequired={isMemoRequired}
-                    />
-                  </>
-                ) : null}
-
-                {flags && Object.keys(flags).length ? (
-                  <FlagList flags={flags} />
-                ) : null}
-
-                {footprint ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Footprint")}
-                    operationValue={footprint}
-                  />
-                ) : null}
-
-                {fnName ? (
-                  <KeyValueList
-                    operationKey={t("Function Name")}
-                    operationValue={fnName}
-                  />
-                ) : null}
-
-                {from ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("From")}
-                    operationValue={from}
-                  />
-                ) : null}
-
-                {highThreshold ? (
-                  <KeyValueList
-                    operationKey={t("High Threshold")}
-                    operationValue={highThreshold}
-                  />
-                ) : null}
-
-                {inflationDest ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Inflation Destination")}
-                    operationValue={inflationDest}
-                  />
-                ) : null}
-
-                {lowThreshold ? (
-                  <KeyValueList
-                    operationKey={t("Low Threshold")}
-                    operationValue={lowThreshold}
-                  />
-                ) : null}
-
-                {masterWeight ? (
-                  <KeyValueList
-                    operationKey={t("Master Weight")}
-                    operationValue={masterWeight}
-                  />
-                ) : null}
-
-                {limit ? (
-                  <KeyValueList
-                    operationKey={t("Limit")}
-                    operationValue={limit}
-                  />
-                ) : null}
-
-                {line ? (
-                  <>
-                    <KeyValueList
-                      operationKey={t("Code")}
-                      operationValue={line.code}
-                    />
-                    <KeyValueWithPublicKey
-                      operationKey={t("Issuer")}
-                      operationValue={line.issuer}
-                    />
-                  </>
-                ) : null}
-
-                {liquidityPoolId ? (
-                  <KeyValueList
-                    operationKey={t("Liquidity Pool ID")}
-                    operationValue={truncatedPoolId(liquidityPoolId)}
-                  />
-                ) : null}
-
-                {maxAmountA ? (
-                  <KeyValueList
-                    operationKey={t("Max Amount A")}
-                    operationValue={maxAmountA}
-                  />
-                ) : null}
-
-                {maxAmountB ? (
-                  <KeyValueList
-                    operationKey={t("Max Amount B")}
-                    operationValue={maxAmountB}
-                  />
-                ) : null}
-                {maxPrice ? (
-                  <KeyValueList
-                    operationKey={t("Max Price")}
-                    operationValue={maxPrice}
-                  />
-                ) : null}
-                {minAmountA ? (
-                  <KeyValueList
-                    operationKey={t("Min Amount A")}
-                    operationValue={minAmountA}
-                  />
-                ) : null}
-
-                {minAmountB ? (
-                  <KeyValueList
-                    operationKey={t("Min Amount B")}
-                    operationValue={minAmountB}
-                  />
-                ) : null}
-                {minPrice ? (
-                  <KeyValueList
-                    operationKey={t("Min Price")}
-                    operationValue={minPrice}
-                  />
-                ) : null}
-
-                {medThreshold ? (
-                  <KeyValueList
-                    operationKey={t("Medium Threshold")}
-                    operationValue={medThreshold}
-                  />
-                ) : null}
-
-                {name ? (
-                  <KeyValueList
-                    operationKey={t("Name")}
-                    operationValue={name}
-                  />
-                ) : null}
-
-                {offerId ? (
-                  <KeyValueList
-                    operationKey={t("Offer Id")}
-                    operationValue={offerId}
-                  />
-                ) : null}
-
-                {parameters ? (
-                  <KeyValueWithScValue
-                    operationKey={t("Parameters")}
-                    operationValue={parameters}
-                  />
-                ) : null}
-
-                {path?.length ? <PathList paths={path} /> : null}
-
-                {price ? (
-                  <KeyValueList
-                    operationKey={t("Price")}
-                    operationValue={price}
-                  />
-                ) : null}
-
-                {sendAsset ? (
-                  <KeyValueList
-                    operationKey={t("Sending Asset")}
-                    operationValue={`${sendAsset.code}`}
-                  />
-                ) : null}
-
-                {seller ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Seller")}
-                    operationValue={seller}
-                  />
-                ) : null}
-
-                {selling ? (
-                  <KeyValueList
-                    operationKey={t("Selling")}
-                    operationValue={selling.code}
-                  />
-                ) : null}
-
-                {setFlags ? (
-                  <KeyValueList
-                    operationKey={t("Set Flags")}
-                    operationValue={AuthorizationMap[setFlags]}
-                  />
-                ) : null}
-
-                {signer?.ed25519PublicKey ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Signer")}
-                    operationValue={signer.ed25519PublicKey}
-                  />
-                ) : null}
-                {signer?.sha256Hash ? (
-                  <KeyValueList
-                    operationKey={t("Signer")}
-                    operationValue={formattedBuffer(signer?.sha256Hash?.data)}
-                  />
-                ) : null}
-                {signer?.preAuthTx ? (
-                  <KeyValueList
-                    operationKey={t("Signer")}
-                    operationValue={formattedBuffer(signer.preAuthTx.data)}
-                  />
-                ) : null}
-                {signer?.weight ? (
-                  <KeyValueList
-                    operationKey={t("Weight")}
-                    operationValue={signer.weight}
-                  />
-                ) : null}
-
-                {sourceVal ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Source")}
-                    operationValue={sourceVal}
-                  />
-                ) : null}
-
-                {sponsoredId ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Sponsored Id")}
-                    operationValue={sponsoredId}
-                  />
-                ) : null}
-
-                {trustor ? (
-                  <KeyValueWithPublicKey
-                    operationKey={t("Trustor")}
-                    operationValue={trustor}
-                  />
-                ) : null}
-
-                {value?.type ? (
-                  <KeyValueList
-                    operationKey={t("Value Type")}
-                    operationValue={value.type}
-                  />
-                ) : null}
-
-                {value?.data ? (
-                  <KeyValueList
-                    operationKey={t("Value Data")}
-                    operationValue={formattedBuffer(value.data)}
-                  />
-                ) : null}
-
-                {Object.entries(rest).map(([k, v]) => (
-                  <KeyValueList
-                    key={k}
-                    operationKey={k}
-                    operationValue={
-                      typeof v === "string" ? v : JSON.stringify(v)
-                    }
-                  />
-                ))}
-
-                {scAuth && scAuth.length ? (
-                  <KeyValueWithScAuth
-                    operationKey={t("Invocation")}
-                    operationValue={scAuth}
-                  />
-                ) : null}
-              </div>
+        return (
+          <div className="Operations--wrapper" key={operationIndex}>
+            <div className="Operations--header">
+              <strong>
+                {operationIndex}. {OPERATION_TYPES[type] || type}
+              </strong>
             </div>
-          );
-        },
-      )}
+            <div className="Operations--item">
+              <KeyValueWithPublicKey
+                operationKey={t("Source")}
+                operationValue={sourceVal || ""}
+              />
+              {renderOpByType(op)}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
