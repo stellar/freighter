@@ -1,3 +1,13 @@
+# Release notes - Wallets - Freighter-5.14.0
+
+### Bug
+
+Editing transaction fee and slippage percentage takes user to Review screen
+
+### Story
+
+Create interface to allow Hardware Wallets to easily add themselves to repo
+
 # Release notes - Wallets - Freighter-5.11.0
 
 ### Bug
