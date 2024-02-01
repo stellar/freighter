@@ -2,7 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
-import { xdr, buildInvocationTree, Operation, Asset } from "stellar-sdk";
+import {
+  xdr,
+  buildInvocationTree,
+  Operation,
+  Asset,
+  Signer,
+} from "stellar-sdk";
 
 import {
   CLAIM_PREDICATES,
@@ -30,11 +36,6 @@ import { INDEXER_URL } from "@shared/constants/mercury";
 import { useSelector } from "react-redux";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-
-interface Path {
-  code: string;
-  issuer?: string;
-}
 
 interface PredicateSwitch {
   name: keyof typeof CLAIM_PREDICATES;
@@ -129,6 +130,58 @@ const KeyValueWithScAuth = ({
         </div>
       </div>
     </div>
+  );
+};
+
+const KeyValueSigner = ({ signer }: { signer: Signer }) => {
+  const { t } = useTranslation();
+
+  function renderSignerType() {
+    if ("ed25519PublicKey" in signer) {
+      return (
+        <KeyValueList
+          operationKey={t("Signer Key")}
+          operationValue={signer.ed25519PublicKey}
+        />
+      );
+    }
+    if ("sha256Hash" in signer) {
+      return (
+        <KeyValueList
+          operationKey={t("Signer Sha256 Hash")}
+          operationValue={signer.sha256Hash}
+        />
+      );
+    }
+
+    if ("preAuthTx" in signer) {
+      return (
+        <KeyValueList
+          operationKey={t("Pre Auth Transaction")}
+          operationValue={signer.preAuthTx}
+        />
+      );
+    }
+
+    if ("ed25519SignedPayload" in signer) {
+      return (
+        <KeyValueList
+          operationKey={t("Signed Payload")}
+          operationValue={signer.ed25519SignedPayload}
+        />
+      );
+    }
+    return <></>;
+  }
+
+  return (
+    <>
+      {renderSignerType()}
+      <KeyValueList
+        operationKey={t("Signer Weight")}
+        operationValue={signer.weight}
+      />
+    </>
   );
 };
 
@@ -483,7 +536,6 @@ export const Operations = ({
       }
 
       case "setOptions": {
-        // TODO: make KeyVal for signer by type
         const {
           inflationDest,
           clearFlags,
@@ -493,13 +545,11 @@ export const Operations = ({
           medThreshold,
           highThreshold,
           homeDomain,
+          signer,
         } = op;
         return (
           <>
-            {/* <KeyValueWithPublicKey
-              operationKey={t("Signer")}
-              operationValue={signer}
-            /> */}
+            <KeyValueSigner signer={signer} />
             <KeyValueList
               operationKey={t("Inflation Destination")}
               operationValue={inflationDest || ""}
