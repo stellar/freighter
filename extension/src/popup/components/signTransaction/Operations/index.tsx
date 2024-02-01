@@ -8,6 +8,7 @@ import {
   Operation,
   Asset,
   Signer,
+  LiquidityPoolAsset,
 } from "stellar-sdk";
 
 import {
@@ -182,6 +183,27 @@ const KeyValueSigner = ({ signer }: { signer: Signer }) => {
         operationValue={signer.weight}
       />
     </>
+  );
+};
+
+const KeyValueLine = ({ line }: { line: Asset | LiquidityPoolAsset }) => {
+  if ("assetA" in line) {
+    return (
+      <>
+        <KeyValueList
+          operationKey={t("Asset A")}
+          operationValue={line.assetA}
+        />
+        <KeyValueList
+          operationKey={t("Asset B")}
+          operationValue={line.assetB}
+        />
+        <KeyValueList operationKey={t("Fee")} operationValue={line.fee} />
+      </>
+    );
+  }
+  return (
+    <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
   );
 };
 
@@ -591,15 +613,11 @@ export const Operations = ({
       }
 
       case "changeTrust": {
-        // TODO: make key val for line by type
-        const { source, type, limit } = op;
+        const { source, type, limit, line } = op;
         return (
           <>
             <KeyValueList operationKey={t("Source")} operationValue={source} />
-            {/* <KeyValueList
-              operationKey={t("Line")}
-              operationValue={line}
-            /> */}
+            <KeyValueLine line={line} />
             <KeyValueList operationKey={t("Type")} operationValue={type} />
             <KeyValueList operationKey={t("Limit")} operationValue={limit} />
           </>
