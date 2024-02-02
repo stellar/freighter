@@ -3,12 +3,14 @@ import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import {
-  xdr,
-  buildInvocationTree,
-  Operation,
   Asset,
-  Signer,
+  buildInvocationTree,
+  Claimant,
   LiquidityPoolAsset,
+  Operation,
+  Signer,
+  SignerKeyOptions,
+  xdr,
 } from "stellar-sdk";
 
 import {
@@ -205,6 +207,67 @@ const KeyValueLine = ({ line }: { line: Asset | LiquidityPoolAsset }) => {
   return (
     <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
   );
+};
+
+const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="Operations--list--item" data-testid="OperationKeyVal">
+      <div>Claimants:</div>
+      {claimants.map((claimant) => (
+        <div key={claimant.destination + claimant.predicate}>
+          <KeyValueWithPublicKey
+            operationKey={t("Destination")}
+            operationValue={claimant.destination}
+          />
+          <KeyValueList
+            operationKey={t("Predicate")}
+            operationValue={claimant.predicate}
+          />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const KeyValueSignerKeyOptions = ({ signer }: { signer: SignerKeyOptions }) => {
+  const { t } = useTranslation();
+
+  if ("ed25519PublicKey" in signer) {
+    return (
+      <KeyValueList
+        operationKey={t("Signer Key")}
+        operationValue={signer.ed25519PublicKey}
+      />
+    );
+  }
+  if ("sha256Hash" in signer) {
+    return (
+      <KeyValueList
+        operationKey={t("Signer Sha256 Hash")}
+        operationValue={signer.sha256Hash}
+      />
+    );
+  }
+
+  if ("preAuthTx" in signer) {
+    return (
+      <KeyValueList
+        operationKey={t("Pre Auth Transaction")}
+        operationValue={signer.preAuthTx}
+      />
+    );
+  }
+
+  if ("ed25519SignedPayload" in signer) {
+    return (
+      <KeyValueList
+        operationKey={t("Signed Payload")}
+        operationValue={signer.ed25519SignedPayload}
+      />
+    );
+  }
+  return <></>;
 };
 
 const PathList = ({ paths }: { paths: Asset[] }) => {
@@ -625,8 +688,7 @@ export const Operations = ({
       }
 
       case "allowTrust": {
-        // TODO: make key val for authorize by type
-        const { trustor, assetCode } = op;
+        const { trustor, assetCode, authorize } = op;
         return (
           <>
             <KeyValueList
@@ -636,6 +698,10 @@ export const Operations = ({
             <KeyValueList
               operationKey={t("Asset Code")}
               operationValue={assetCode}
+            />
+            <KeyValueList
+              operationKey={t("Authorize")}
+              operationValue={authorize}
             />
           </>
         );
@@ -672,8 +738,7 @@ export const Operations = ({
       }
 
       case "createClaimableBalance": {
-        // TODO: make key val for claimants
-        const { asset, amount } = op;
+        const { asset, amount, claimants } = op;
         return (
           <>
             <KeyValueList
@@ -681,6 +746,7 @@ export const Operations = ({
               operationValue={asset.code}
             />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+            <KeyValueClaimants claimants={claimants} />
           </>
         );
       }
@@ -726,7 +792,6 @@ export const Operations = ({
       }
 
       case "revokeSponsorship": {
-        const t = op;
         // revoke trustline sponsorhip
         if ("account" in op && "asset" in op) {
           const { account, asset } = op;
@@ -802,14 +867,10 @@ export const Operations = ({
         }
         // revoke signer sponsorship
         if ("signer" in op && "account" in op) {
-          // TODO: make key val for SignerKeyOptions by type
-          const { account } = op;
+          const { account, signer } = op;
           return (
             <>
-              {/* <KeyValueList
-                operationKey={t("Signer")}
-                operationValue={signer}
-              /> */}
+              <KeyValueSignerKeyOptions signer={signer} />
               <KeyValueList
                 operationKey={t("Account")}
                 operationValue={account}
