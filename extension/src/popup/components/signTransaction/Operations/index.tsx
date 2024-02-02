@@ -448,17 +448,21 @@ export const Operations = ({
 
   function renderOpByType(op: Operation) {
     // TODO: fetch token decimals in invokeHostFn case
-    // TODO: when should we use <DestinationWarning />
     // TODO: add invokeHostFn
     switch (op.type) {
       case "createAccount": {
-        const account = op.destination;
+        const destination = op.destination;
         const startingBalance = op.startingBalance;
         return (
           <>
             <KeyValueWithPublicKey
-              operationKey={t("Account")}
-              operationValue={account}
+              operationKey={t("Destination")}
+              operationValue={destination}
+            />
+            <DestinationWarning
+              destination={destination}
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
             />
             <KeyValueWithPublicKey
               operationKey={t("Starting Balance")}
@@ -469,14 +473,19 @@ export const Operations = ({
       }
 
       case "payment": {
-        const account = op.destination;
+        const destination = op.destination;
         const amount = op.amount;
         const asset = op.asset;
         return (
           <>
             <KeyValueWithPublicKey
-              operationKey={t("Account")}
-              operationValue={account}
+              operationKey={t("Destination")}
+              operationValue={destination}
+            />
+            <DestinationWarning
+              destination={destination}
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
             />
             <KeyValueList
               operationKey={t("Asset Code")}
@@ -507,8 +516,13 @@ export const Operations = ({
               operationValue={sendMax}
             />
             <KeyValueWithPublicKey
-              operationKey={t("Destination Address")}
+              operationKey={t("Destination")}
               operationValue={destination}
+            />
+            <DestinationWarning
+              destination={destination}
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
             />
             <KeyValueWithPublicKey
               operationKey={t("Destination Asset")}
@@ -543,8 +557,13 @@ export const Operations = ({
               operationValue={sendAmount}
             />
             <KeyValueWithPublicKey
-              operationKey={t("Destination Address")}
+              operationKey={t("Destination")}
               operationValue={destination}
+            />
+            <DestinationWarning
+              destination={destination}
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
             />
             <KeyValueWithPublicKey
               operationKey={t("Destination Asset")}
@@ -710,10 +729,17 @@ export const Operations = ({
       case "accountMerge": {
         const { destination } = op;
         return (
-          <KeyValueList
-            operationKey={t("Destination")}
-            operationValue={destination}
-          />
+          <>
+            <KeyValueWithPublicKey
+              operationKey={t("Destination")}
+              operationValue={destination}
+            />
+            <DestinationWarning
+              destination={destination}
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
+            />
+          </>
         );
       }
 
