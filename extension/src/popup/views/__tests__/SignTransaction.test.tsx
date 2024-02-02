@@ -12,7 +12,7 @@ import {
 // import { act } from "react-dom/test-utils";
 
 import * as Stellar from "helpers/stellar";
-import { getAttrsFromSorobanTxOp } from "popup/helpers/soroban";
+import { getTokenInvocationArgs } from "popup/helpers/soroban";
 
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper } from "../../__testHelpers__";
@@ -215,7 +215,7 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
-    const args = getAttrsFromSorobanTxOp(op);
+    const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);
@@ -268,7 +268,7 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
-    const args = getAttrsFromSorobanTxOp(op);
+    const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);

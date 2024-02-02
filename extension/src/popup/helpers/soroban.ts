@@ -131,7 +131,9 @@ export const getArgsForTokenInvocation = (
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-const getTokenInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
+export const getTokenInvocationArgs = (
+  hostFn: Operation.InvokeHostFunction,
+) => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }

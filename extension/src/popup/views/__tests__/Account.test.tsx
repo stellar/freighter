@@ -59,8 +59,8 @@ jest
   );
 
 jest
-  .spyOn(ApiInternal, "getAccountHistory")
-  .mockImplementation(() => Promise.resolve(mockHistoryOperations));
+  .spyOn(ApiInternal, "getIndexerAccountHistory")
+  .mockImplementation(() => Promise.resolve(mockHistoryOperations.operations));
 
 jest.spyOn(UseAssetDomain, "useAssetDomain").mockImplementation(() => {
   return { assetDomain: "centre.io" };

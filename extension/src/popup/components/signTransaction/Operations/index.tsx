@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import BigNumber from "bignumber.js";
 import {
   Asset,
   buildInvocationTree,
@@ -29,36 +28,11 @@ import {
   truncatedPublicKey,
   truncateString,
 } from "helpers/stellar";
-import {
-  formatTokenAmount,
-  getArgsForTokenInvocation,
-} from "popup/helpers/soroban";
+import { getArgsForTokenInvocation } from "popup/helpers/soroban";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-
-import "./styles.scss";
-import { INDEXER_URL } from "@shared/constants/mercury";
-import { useSelector } from "react-redux";
-import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-
-interface PredicateSwitch {
-  name: keyof typeof CLAIM_PREDICATES;
-  value: number;
-}
-
-type PredicateValue =
-  | Array<Predicate>
-  | { high: number; low: number; unsigned: boolean; _switch?: PredicateSwitch }
-  | { _value: PredicateValue; _switch: PredicateSwitch };
-
-interface Predicate {
-  _switch: PredicateSwitch;
-  _value?: PredicateValue;
-}
-
-type FLAGS = { [key in FLAG_TYPES]: boolean };
+import "./styles.scss";
 
 const KeyValueList = ({
   operationKey,
@@ -87,26 +61,6 @@ const KeyValueWithPublicKey = ({
     operationKey={operationKey}
     operationValue={<KeyIdenticon publicKey={operationValue} isSmall />}
   />
-);
-
-const KeyValueWithScValue = ({
-  operationKey,
-  operationValue,
-}: {
-  operationKey: string;
-  operationValue: string | number | React.ReactNode;
-}) => (
-  <div className="Operations__pair--smart-contract">
-    <div>
-      {operationKey}
-      {operationKey ? ":" : null}
-    </div>
-    <div className="Operations__scValue">
-      <div>
-        <pre>{JSON.stringify(operationValue, null, 2)}</pre>
-      </div>
-    </div>
-  </div>
 );
 
 const KeyValueRootInvocation = ({
@@ -186,6 +140,7 @@ const KeyValueSigner = ({ signer }: { signer: Signer }) => {
 };
 
 const KeyValueLine = ({ line }: { line: Asset | LiquidityPoolAsset }) => {
+  const { t } = useTranslation();
   if ("assetA" in line) {
     return (
       <>
@@ -212,14 +167,14 @@ const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
     <div className="Operations--list--item" data-testid="OperationKeyVal">
       <div>Claimants:</div>
       {claimants.map((claimant) => (
-        <div key={claimant.destination + claimant.predicate}>
+        <div key={claimant.destination + claimant.predicate.switch().name}>
           <KeyValueWithPublicKey
             operationKey={t("Destination")}
             operationValue={claimant.destination}
           />
           <KeyValueList
             operationKey={t("Predicate")}
-            operationValue={claimant.predicate}
+            operationValue={CLAIM_PREDICATES[claimant.predicate.switch().name]}
           />
         </div>
       ))}
@@ -267,18 +222,16 @@ const KeyValueSignerKeyOptions = ({ signer }: { signer: SignerKeyOptions }) => {
   return <></>;
 };
 
-const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => {
-  return (
-    <div className="Operations__pair" data-testid="OperationKeyVal">
-      <div>Parameters</div>
-      {args.map((arg) => (
-        <div>
-          <ScValByType scVal={arg} />
-        </div>
-      ))}
-    </div>
-  );
-};
+const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
+  <div className="Operations__pair" data-testid="OperationKeyVal">
+    <div>Parameters</div>
+    {args.map((arg) => (
+      <div>
+        <ScValByType scVal={arg} />
+      </div>
+    ))}
+  </div>
+);
 
 const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
   switch (scVal.switch()) {
@@ -287,9 +240,8 @@ const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
       const addressType = address.switch();
       if (addressType.name === "scAddressTypeAccount") {
         return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
-      } else {
-        return StrKey.encodeContract(address.contractId());
       }
+      return StrKey.encodeContract(address.contractId());
     }
 
     case xdr.ScValType.scvBool(): {
@@ -382,7 +334,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
               <>
                 <KeyValueList
                   operationKey={t("Invocation Type")}
-                  operationValue={"Create Contract"}
+                  operationValue="Create Contract"
                 />
                 <KeyValueWithPublicKey
                   operationKey={t("Account ID")}
@@ -402,57 +354,21 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
                 />
               </>
             );
-          } else {
-            const contractId = StrKey.encodeContract(address.contractId());
-            return (
-              <>
-                <KeyValueList
-                  operationKey={t("Invocation Type")}
-                  operationValue={"Create Contract"}
-                />
-                <KeyValueWithPublicKey
-                  operationKey={t("Contract ID")}
-                  operationValue={contractId}
-                />
-                <KeyValueWithPublicKey
-                  operationKey={t("Salt")}
-                  operationValue={salt}
-                />
-                <KeyValueWithPublicKey
-                  operationKey={t("Executable Type")}
-                  operationValue={executableType}
-                />
-                <KeyValueWithPublicKey
-                  operationKey={t("Executable Wasm Hash")}
-                  operationValue={executable.wasmHash().toString()}
-                />
-              </>
-            );
           }
-        }
-
-        // contractIdPreimageFromAsset
-        const preimageFromAsset = preimage.fromAsset();
-        const preimageValue = preimageFromAsset.value()!;
-        if ("assetCode" in preimageValue && "issuer" in preimageValue) {
-          const assetCode = preimageValue.assetCode().toString();
-          const issuer = StrKey.encodeEd25519PublicKey(
-            preimageValue.issuer().ed25519(),
-          );
-
+          const contractId = StrKey.encodeContract(address.contractId());
           return (
             <>
               <KeyValueList
                 operationKey={t("Invocation Type")}
-                operationValue={"Create Contract"}
+                operationValue="Create Contract"
               />
-              <KeyValueList
-                operationKey={t("Asset Code")}
-                operationValue={assetCode}
+              <KeyValueWithPublicKey
+                operationKey={t("Contract ID")}
+                operationValue={contractId}
               />
-              <KeyValueList
-                operationKey={t("Issuer")}
-                operationValue={issuer}
+              <KeyValueWithPublicKey
+                operationKey={t("Salt")}
+                operationValue={salt}
               />
               <KeyValueWithPublicKey
                 operationKey={t("Executable Type")}
@@ -466,12 +382,35 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
           );
         }
 
+        // contractIdPreimageFromAsset
+        const preimageFromAsset = preimage.fromAsset();
+        const preimageValue = preimageFromAsset.value()!;
+
         return (
           <>
             <KeyValueList
               operationKey={t("Invocation Type")}
-              operationValue={"Create Contract"}
+              operationValue="Create Contract"
             />
+            {preimageFromAsset.switch().name === "assetTypeCreditAlphanum4" ||
+              (preimageFromAsset.switch().name ===
+                "assetTypeCreditAlphanum12" && (
+                <>
+                  <KeyValueList
+                    operationKey={t("Asset Code")}
+                    operationValue={(preimageValue as xdr.AlphaNum12)
+                      .assetCode()
+                      .toString()}
+                  />
+                  <KeyValueList
+                    operationKey={t("Issuer")}
+                    operationValue={StrKey.encodeEd25519PublicKey(
+                      (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                    )}
+                  />
+                </>
+              ))}
+
             <KeyValueWithPublicKey
               operationKey={t("Executable Type")}
               operationValue={executableType}
@@ -502,7 +441,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
             <>
               <KeyValueList
                 operationKey={t("Inovation Type")}
-                operationValue={"Invoke Contract"}
+                operationValue="Invoke Contract"
               />
               <KeyValueList
                 operationKey={t("Contract ID")}
@@ -536,7 +475,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
           <>
             <KeyValueList
               operationKey={t("Inovation Type")}
-              operationValue={"Invoke Contract"}
+              operationValue="Invoke Contract"
             />
             <KeyValueList
               operationKey={t("Contract ID")}
@@ -557,7 +496,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
           <>
             <KeyValueList
               operationKey={t("Inovation Type")}
-              operationValue={"Upload Contract Wasm"}
+              operationValue="Upload Contract Wasm"
             />
             <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
           </>
@@ -597,21 +536,6 @@ const PathList = ({ paths }: { paths: Asset[] }) => {
     </>
   );
 };
-
-const FlagList = ({ flags }: { flags: FLAGS }) => (
-  <>
-    {Object.entries(flags).map(([flag, value]) => (
-      <KeyValueList
-        key={flag}
-        operationKey={FLAG_TYPES[flag as keyof typeof FLAG_TYPES]}
-        operationValue={
-          // clawbackEnabled will be undefined if not being cleared
-          typeof value === "undefined" ? "undefined" : value.toString()
-        }
-      />
-    ))}
-  </>
-);
 
 const UnsafeMaliciousWarning = ({
   isDestUnsafe,
@@ -703,57 +627,15 @@ export const Operations = ({
   operations: Operation[];
 }) => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  enum AuthorizationMap {
-    "Authorization Required" = 1,
-    "Authorization Revocable",
-    "Authorization Required; Authorization Required",
-    "Authorization Immutable",
-    "Authorization Required; Authorization Immutable",
-    "Authorization Revocable; Authorization Immutable",
-    "Authorization Required; Authorization Required; Authorization Immutable",
-  }
-
-  /*
-    Needed to translate enum strings:
-
-    t("Authorization Required")
-    t("Authorization Revocable")
-    t("Authorization Required; Authorization Required")
-    t("Authorization Immutable")
-    t("Authorization Required; Authorization Immutable")
-    t("Authorization Revocable; Authorization Immutable")
-    t("Authorization Required; Authorization Required; Authorization Immutable")
-  */
-
-  const [contractId, setContractId] = useState("");
-  const [decimals, setDecimals] = useState(0);
-
-  useEffect(() => {
-    if (!contractId) return;
-    const fetchContractDecimals = async () => {
-      const response = await fetch(
-        `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
-      );
-      if (!response.ok) {
-        throw new Error("failed to fetch token details");
-      }
-      const tokenDetails = await response.json();
-      setDecimals(tokenDetails.decimals);
-    };
-
-    fetchContractDecimals();
-  }, [
-    contractId,
-    networkDetails.network,
-    networkDetails.sorobanRpcUrl,
-    publicKey,
-  ]);
+  const AuthorizationMapToDisplay: { [index: string]: string } = {
+    "1": "Authorization Required",
+    "2": "Authorization Revocable",
+    "4": "Authorization Immutable",
+    "8": "Authorization Clawback Enabled",
+  };
 
   function renderOpByType(op: Operation) {
-    // TODO: check all cases using decimals, should we display raw value for token args?
     switch (op.type) {
       case "createAccount": {
         const destination = op.destination;
@@ -891,13 +773,7 @@ export const Operations = ({
               operationKey={t("Buying")}
               operationValue={buying.code}
             />
-            <KeyValueList
-              operationKey={t("Amount")}
-              operationValue={`${formatTokenAmount(
-                BigNumber(amount),
-                decimals,
-              )}`}
-            />
+            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueList
               operationKey={t("Selling")}
               operationValue={selling.code}
@@ -989,11 +865,17 @@ export const Operations = ({
             />
             <KeyValueList
               operationKey={t("Set Flags")}
-              operationValue={setFlags?.toString() || ""}
+              operationValue={
+                setFlags ? AuthorizationMapToDisplay[setFlags?.toString()] : ""
+              }
             />
             <KeyValueList
               operationKey={t("Clear Flags")}
-              operationValue={clearFlags?.toString() || ""}
+              operationValue={
+                clearFlags
+                  ? AuthorizationMapToDisplay[clearFlags.toString()]
+                  : ""
+              }
             />
           </>
         );
@@ -1102,16 +984,6 @@ export const Operations = ({
         );
       }
 
-      case "beginSponsoringFutureReserves": {
-        const { sponsoredId } = op;
-        return (
-          <KeyValueList
-            operationKey={t("Sponsored ID")}
-            operationValue={sponsoredId}
-          />
-        );
-      }
-
       case "endSponsoringFutureReserves": {
         const { source, type } = op;
         return (
@@ -1135,7 +1007,7 @@ export const Operations = ({
               {"liquidityPoolId" in asset && (
                 <KeyValueList
                   operationKey={t("Liquidity Pool ID")}
-                  operationValue={asset.liquidityPoolId}
+                  operationValue={truncatedPoolId(asset.liquidityPoolId)}
                 />
               )}
               {"code" in asset && (
@@ -1192,7 +1064,7 @@ export const Operations = ({
           return (
             <KeyValueList
               operationKey={t("Liquidity Pool ID")}
-              operationValue={liquidityPoolId}
+              operationValue={truncatedPoolId(liquidityPoolId)}
             />
           );
         }
@@ -1257,18 +1129,24 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
-            <KeyValueList
-              operationKey={t("Authorized")}
-              operationValue={flags.authorized}
-            />
-            <KeyValueList
-              operationKey={t("Authorized To Maintain Liabilities")}
-              operationValue={flags.authorizedToMaintainLiabilities}
-            />
-            <KeyValueList
-              operationKey={t("Clawback Enabled")}
-              operationValue={flags.clawbackEnabled}
-            />
+            {flags.authorized && (
+              <KeyValueList
+                operationKey={t(FLAG_TYPES.authorized)}
+                operationValue={flags.authorized}
+              />
+            )}
+            {flags.authorizedToMaintainLiabilities && (
+              <KeyValueList
+                operationKey={t(FLAG_TYPES.authorizedToMaintainLiabilities)}
+                operationValue={flags.authorizedToMaintainLiabilities}
+              />
+            )}
+            {flags.clawbackEnabled && (
+              <KeyValueList
+                operationKey={t(FLAG_TYPES.clawbackEnabled)}
+                operationValue={flags.clawbackEnabled}
+              />
+            )}
           </>
         );
       }
@@ -1285,7 +1163,7 @@ export const Operations = ({
           <>
             <KeyValueList
               operationKey={t("Liquidity Pool ID")}
-              operationValue={liquidityPoolId}
+              operationValue={truncatedPoolId(liquidityPoolId)}
             />
             <KeyValueList
               operationKey={t("Max Amount A")}
@@ -1313,7 +1191,7 @@ export const Operations = ({
           <>
             <KeyValueList
               operationKey={t("Liquidity Pool ID")}
-              operationValue={liquidityPoolId}
+              operationValue={truncatedPoolId(liquidityPoolId)}
             />
             <KeyValueList
               operationKey={t("Min Amount A")}
