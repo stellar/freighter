@@ -440,7 +440,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
           return (
             <>
               <KeyValueList
-                operationKey={t("Inovation Type")}
+                operationKey={t("Invocation Type")}
                 operationValue="Invoke Contract"
               />
               <KeyValueList
@@ -453,7 +453,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
               />
               <KeyValueList
                 operationKey={t("Amount")}
-                operationValue={invokeParams.amount}
+                operationValue={invokeParams.amount.toString()}
               />
               <KeyValueWithPublicKey
                 operationKey={t("To")}
@@ -474,7 +474,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
         return (
           <>
             <KeyValueList
-              operationKey={t("Inovation Type")}
+              operationKey={t("Invocation Type")}
               operationValue="Invoke Contract"
             />
             <KeyValueList
@@ -495,7 +495,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
         return (
           <>
             <KeyValueList
-              operationKey={t("Inovation Type")}
+              operationKey={t("Invocation Type")}
               operationValue="Upload Contract Wasm"
             />
             <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
@@ -507,12 +507,7 @@ const KeyValueInvokeHostFn = ({ op }: { op: Operation.InvokeHostFunction }) => {
         return <></>;
     }
   }
-  return (
-    <div className="Operations__pair" data-testid="OperationKeyVal">
-      <div>Invoke Host Function</div>
-      <div>{renderDetails()}</div>
-    </div>
-  );
+  return renderDetails();
 };
 
 const PathList = ({ paths }: { paths: Asset[] }) => {
@@ -1243,10 +1238,12 @@ export const Operations = ({
               </strong>
             </div>
             <div className="Operations--item">
-              <KeyValueWithPublicKey
-                operationKey={t("Source")}
-                operationValue={sourceVal || ""}
-              />
+              {sourceVal && (
+                <KeyValueWithPublicKey
+                  operationKey={t("Source")}
+                  operationValue={sourceVal || ""}
+                />
+              )}
               {renderOpByType(op)}
             </div>
           </div>
