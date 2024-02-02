@@ -97,10 +97,13 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   return wholeValue.shiftedBy(decimals).plus(fractionValue);
 };
 
-export const getOpArgs = (fnName: string, args: xdr.ScVal[]) => {
+export const getArgsForTokenInvocation = (
+  fnName: string,
+  args: xdr.ScVal[],
+) => {
   let amount: BigNumber;
-  let from;
-  let to;
+  let from = "";
+  let to = "";
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
@@ -128,7 +131,7 @@ export const getOpArgs = (fnName: string, args: xdr.ScVal[]) => {
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
+const getTokenInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
@@ -147,7 +150,6 @@ const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
   const fnName = invokedContract.functionName().toString();
   const args = invokedContract.args();
 
-  // TODO: figure out how to make this extensible to all contract functions
   if (
     fnName !== SorobanTokenInterface.transfer &&
     fnName !== SorobanTokenInterface.mint
@@ -158,7 +160,7 @@ const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
   let opArgs;
 
   try {
-    opArgs = getOpArgs(fnName, args);
+    opArgs = getArgsForTokenInvocation(fnName, args);
   } catch (e) {
     return null;
   }
@@ -168,13 +170,6 @@ const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
     contractId,
     ...opArgs,
   };
-};
-
-export const getAttrsFromSorobanTxOp = (operation: HorizonOperation) => {
-  if (!isSorobanOp(operation)) {
-    return null;
-  }
-  return getRootInvocationArgs(operation);
 };
 
 export const getAttrsFromSorobanHorizonOp = (
@@ -201,7 +196,7 @@ export const getAttrsFromSorobanHorizonOp = (
 
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
-  return getRootInvocationArgs(invokeHostFn);
+  return getTokenInvocationArgs(invokeHostFn);
 };
 
 export const isContractId = (contractId: string) => {
