@@ -103,10 +103,7 @@ export const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
-    <div>
-      {operationKey}
-      {operationKey ? ":" : null}
-    </div>
+    <div>{operationKey}:</div>
     <div>{operationValue}</div>
   </div>
 );
@@ -160,6 +157,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
         />
       );
     }
+
     if ("sha256Hash" in signer) {
       return (
         <KeyValueList
@@ -263,6 +261,7 @@ export const KeyValueSignerKeyOptions = ({
       />
     );
   }
+
   if ("sha256Hash" in signer) {
     return (
       <KeyValueList

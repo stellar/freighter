@@ -78,7 +78,6 @@ export const SignTransaction = () => {
     isHttpsDomain,
     flaggedKeys,
   } = tx;
-  console.log(Trans, isHttpsDomain);
 
   /*
   Reconstruct the tx from xdr as passing a tx through extension contexts
@@ -201,24 +200,24 @@ export const SignTransaction = () => {
     );
   }
 
-  // if (!isHttpsDomain && !isExperimentalModeEnabled) {
-  //   return (
-  //     <WarningMessage
-  //       handleCloseClick={() => window.close()}
-  //       isActive
-  //       variant={WarningMessageVariant.warning}
-  //       header={t("WEBSITE CONNECTION IS NOT SECURE")}
-  //     >
-  //       <p>
-  //         <Trans domain={domain}>
-  //           The website <strong>{{ domain }}</strong> does not use an SSL
-  //           certificate. For additional safety Freighter only works with
-  //           websites that provide an SSL certificate.
-  //         </Trans>
-  //       </p>
-  //     </WarningMessage>
-  //   );
-  // }
+  if (!isHttpsDomain && !isExperimentalModeEnabled) {
+    return (
+      <WarningMessage
+        handleCloseClick={() => window.close()}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("WEBSITE CONNECTION IS NOT SECURE")}
+      >
+        <p>
+          <Trans domain={domain}>
+            The website <strong>{{ domain }}</strong> does not use an SSL
+            certificate. For additional safety Freighter only works with
+            websites that provide an SSL certificate.
+          </Trans>
+        </p>
+      </WarningMessage>
+    );
+  }
 
   return isPasswordRequired ? (
     <VerifyAccount
