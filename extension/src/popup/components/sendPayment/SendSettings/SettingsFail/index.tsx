@@ -8,13 +8,13 @@ import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
 import IconFail from "popup/assets/icon-fail.svg";
 
-import "./styles.scss";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   resetSimulation,
   tokenSimulationSelector,
 } from "popup/ducks/token-payment";
+import "./styles.scss";
 
 export const SettingsFail = () => {
   const dispatch = useDispatch();
