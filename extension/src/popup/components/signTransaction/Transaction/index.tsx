@@ -21,20 +21,20 @@ export const Transaction = ({
   transaction,
 }: TransactionProps) => {
   const { t } = useTranslation();
-  const { _operations } = transaction;
+  const { operations } = transaction;
 
   const operationText =
-    _operations && _operations.length > 1 ? t("Operations") : t("Operation");
+    operations && operations.length > 1 ? t("Operations") : t("Operation");
 
   return (
     <div className="Transaction">
-      {_operations ? (
+      {operations ? (
         <>
           <TransactionHeading>{operationText}</TransactionHeading>
           <Operations
             flaggedKeys={flaggedKeys}
             isMemoRequired={isMemoRequired}
-            operations={_operations}
+            operations={operations}
           />
         </>
       ) : null}
