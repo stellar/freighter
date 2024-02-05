@@ -642,7 +642,7 @@ export const Operations = ({
       case "inflation":
       default: {
         // OperationType is missing some types
-        // Issue:
+        // Issue: https://github.com/stellar/js-stellar-base/issues/728
         const type = op.type as string;
         if (type === "revokeTrustlineSponsorship") {
           const _op = (op as unknown) as Operation.RevokeTrustlineSponsorship;
