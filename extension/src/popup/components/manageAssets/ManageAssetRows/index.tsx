@@ -50,6 +50,7 @@ import "./styles.scss";
 import { NETWORKS } from "@shared/constants/stellar";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
+import { isContractId } from "popup/helpers/soroban";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -281,61 +282,54 @@ export const ManageAssetRows = ({
       <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
-          {assetRows.map(
-            ({
-              code = "",
-              domain,
-              image = "",
-              issuer = "",
-              contractId = "",
-            }) => {
-              if (!balances) return null;
-              const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = Object.keys(balances).some(
-                (balance) => balance === canonicalAsset,
-              );
-              const isActionPending =
-                submitStatus === ActionStatus.PENDING ||
-                accountBalanceStatus === ActionStatus.PENDING;
+          {assetRows.map(({ code = "", domain, image = "", issuer = "" }) => {
+            if (!balances) return null;
+            const isContract = isContractId(issuer);
+            const canonicalAsset = getCanonicalFromAsset(code, issuer);
+            const isTrustlineActive = Object.keys(balances).some(
+              (balance) => balance === canonicalAsset,
+            );
+            const isActionPending =
+              submitStatus === ActionStatus.PENDING ||
+              accountBalanceStatus === ActionStatus.PENDING;
 
-              return (
-                <div
-                  className="ManageAssetRows__row"
-                  key={canonicalAsset}
-                  data-testid="ManageAssetRow"
-                >
-                  <ManageAssetRow
-                    code={code}
-                    issuer={issuer}
-                    image={image}
-                    domain={domain}
-                  />
-                  <div className="ManageAssetRows__button">
-                    <PillButton
-                      disabled={isActionPending}
-                      isLoading={
-                        isActionPending && assetSubmitting === canonicalAsset
+            return (
+              <div
+                className="ManageAssetRows__row"
+                key={canonicalAsset}
+                data-testid="ManageAssetRow"
+              >
+                <ManageAssetRow
+                  code={code}
+                  issuer={issuer}
+                  image={image}
+                  domain={domain}
+                />
+                <div className="ManageAssetRows__button">
+                  <PillButton
+                    disabled={isActionPending}
+                    isLoading={
+                      isActionPending && assetSubmitting === canonicalAsset
+                    }
+                    onClick={() => {
+                      if (isContract) {
+                        handleTokenRowClick(issuer, canonicalAsset);
+                      } else {
+                        handleRowClick(
+                          { code, issuer, image, domain },
+                          isTrustlineActive,
+                        );
                       }
-                      onClick={() => {
-                        if (contractId) {
-                          handleTokenRowClick(issuer, canonicalAsset);
-                        } else {
-                          handleRowClick(
-                            { code, issuer, image, domain },
-                            isTrustlineActive,
-                          );
-                        }
-                      }}
-                      type="button"
-                      data-testid="ManageAssetRowButton"
-                    >
-                      {isTrustlineActive || contractId ? t("Remove") : t("Add")}
-                    </PillButton>
-                  </div>
+                    }}
+                    type="button"
+                    data-testid="ManageAssetRowButton"
+                  >
+                    {isTrustlineActive || isContract ? t("Remove") : t("Add")}
+                  </PillButton>
                 </div>
-              );
-            },
-          )}
+              </div>
+            );
+          })}
 
           {tokensWithNoBalance.map((tokenId) => {
             const isActionPending =
