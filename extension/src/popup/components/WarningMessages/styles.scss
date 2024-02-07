@@ -264,6 +264,12 @@
   .TokenDetails {
     margin-bottom: 2rem;
 
+    &__loader {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
     .FnName,
     .InlineLabel {
       font-weight: 600;

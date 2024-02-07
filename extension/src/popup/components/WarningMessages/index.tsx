@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import { Button, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import {
@@ -47,6 +47,7 @@ import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 
 import "./styles.scss";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -665,12 +666,12 @@ export const NewAssetWarning = ({
   );
 };
 
-export const TransferWarning = ({ operation }: { operation: Operation }) => {
+export const TransferWarning = ({
+  operation,
+}: {
+  operation: Operation.InvokeHostFunction;
+}) => {
   const { t } = useTranslation();
-
-  if (operation.type !== "invokeHostFunction") {
-    return null;
-  }
 
   const authEntries = operation.auth || [];
   const transfers = authEntries
@@ -697,25 +698,92 @@ export const TransferWarning = ({ operation }: { operation: Operation }) => {
             "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
           )}
         </p>
-        {transfers.map((transfer) => (
-          <div
-            className="TokenDetails"
+        {transfers.map((transfer, i) => (
+          <WarningMessageTokenDetails
+            index={i}
+            transfer={transfer}
             key={`${transfer.contractId}-${transfer.amount}-${transfer.to}`}
-          >
-            <p className="FnName">TRANSFER:</p>
-            <p>
-              <span className="InlineLabel">Contract ID:</span>{" "}
-              {transfer.contractId}
-            </p>
-            <p>
-              <span className="InlineLabel">Amount:</span> {transfer.amount}
-            </p>
-            <p>
-              <span className="InlineLabel">To:</span> {transfer.to}
-            </p>
-          </div>
+          />
         ))}
       </div>
     </WarningMessage>
+  );
+};
+
+const WarningMessageTokenDetails = ({
+  transfer,
+  index,
+}: {
+  transfer: { contractId: string; amount: string; to: string };
+  index: number;
+}) => {
+  const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  const [isLoadingTokenDetails, setLoadingTokenDetails] = React.useState(false);
+  const [tokenDetails, setTokenDetails] = React.useState(
+    {} as Record<string, { name: string; symbol: string }>,
+  );
+
+  const tokenDetailsUrl = React.useCallback(
+    (contractId: string) =>
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
+    [publicKey, networkDetails.network, networkDetails.sorobanRpcUrl],
+  );
+  React.useEffect(() => {
+    async function getTokenDetails() {
+      setLoadingTokenDetails(true);
+      const _tokenDetails = {} as Record<
+        string,
+        { name: string; symbol: string }
+      >;
+      try {
+        const response = await fetch(tokenDetailsUrl(transfer.contractId));
+
+        if (!response.ok) {
+          throw new Error("failed to fetch token details");
+        }
+        const details = await response.json();
+        _tokenDetails[transfer.contractId] = details;
+      } catch (error) {
+        // falls back to only showing contract ID
+        console.error(error);
+      }
+      setTokenDetails(_tokenDetails);
+      setLoadingTokenDetails(false);
+    }
+    getTokenDetails();
+  }, [transfer.contractId, tokenDetailsUrl]);
+
+  return (
+    <div className="TokenDetails">
+      <p className="FnName">TRANSFER #{index + 1}:</p>
+      {/* eslint-disable-next-line */}
+      {isLoadingTokenDetails ? (
+        <div className="TokenDetails__loader">
+          <Loader size="1rem" />
+        </div>
+      ) : tokenDetails[transfer.contractId] ? (
+        <p>
+          <span className="InlineLabel">Token:</span>{" "}
+          {`(${tokenDetails[transfer.contractId].symbol}) ${
+            tokenDetails[transfer.contractId].name
+          }`}
+        </p>
+      ) : (
+        <p>
+          <span className="InlineLabel">Token: Unknown</span>
+        </p>
+      )}
+      <p>
+        <span className="InlineLabel">Contract ID:</span> {transfer.contractId}
+      </p>
+      <p>
+        <span className="InlineLabel">Amount:</span> {transfer.amount}
+      </p>
+      <p>
+        <span className="InlineLabel">To:</span> {transfer.to}
+      </p>
+    </div>
   );
 };

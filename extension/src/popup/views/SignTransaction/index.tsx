@@ -241,7 +241,7 @@ export const SignTransaction = () => {
             <TransferWarning
               operation={
                 (transaction as Transaction<Memo<MemoType>, Operation[]>)
-                  .operations[0]
+                  .operations[0] as Operation.InvokeHostFunction
               }
             />
           ) : null}
