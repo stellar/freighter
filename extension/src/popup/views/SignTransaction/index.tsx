@@ -9,6 +9,9 @@ import {
   Transaction,
   TransactionBuilder,
   Federation,
+  Memo,
+  MemoType,
+  Operation,
 } from "stellar-sdk";
 
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
@@ -42,6 +45,7 @@ import {
   WarningMessage,
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
+  TransferWarning,
 } from "popup/components/WarningMessages";
 import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -233,6 +237,14 @@ export const SignTransaction = () => {
       <View data-testid="SignTransaction">
         <View.AppHeader pageTitle={t("Confirm Transaction")} />
         <View.Content>
+          {!isFeeBump ? (
+            <TransferWarning
+              operation={
+                (transaction as Transaction<Memo<MemoType>, Operation[]>)
+                  .operations[0]
+              }
+            />
+          ) : null}
           {isExperimentalModeEnabled ? (
             <WarningMessage
               header="Experimental Mode"

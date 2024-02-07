@@ -257,3 +257,22 @@
     margin-top: auto;
   }
 }
+
+.TokenTransferWarning {
+  overflow-wrap: break-word;
+
+  .TokenDetails {
+    margin-bottom: 2rem;
+
+    .FnName,
+    .InlineLabel {
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+      margin: 0;
+    }
+  }
+}

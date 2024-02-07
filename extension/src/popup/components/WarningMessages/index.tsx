@@ -39,6 +39,7 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
+import { pickTransfers, buildInvocationTree } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
@@ -661,5 +662,60 @@ export const NewAssetWarning = ({
         </div>
       </View.Content>
     </div>
+  );
+};
+
+export const TransferWarning = ({ operation }: { operation: Operation }) => {
+  const { t } = useTranslation();
+
+  if (operation.type !== "invokeHostFunction") {
+    return null;
+  }
+
+  const authEntries = operation.auth || [];
+  const transfers = authEntries
+    .map((entry) => {
+      const rootInvocation = entry.rootInvocation();
+      const rootJson = buildInvocationTree(rootInvocation);
+      const isInvokeContract = rootInvocation.function().switch().value === 0;
+      return isInvokeContract ? pickTransfers(rootJson) : [];
+    })
+    .flat();
+
+  if (!transfers.length) {
+    return null;
+  }
+
+  return (
+    <WarningMessage
+      header="Authorizes Token Transfer"
+      variant={WarningMessageVariant.highAlert}
+    >
+      <div className="TokenTransferWarning">
+        <p>
+          {t(
+            "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
+          )}
+        </p>
+        {transfers.map((transfer) => (
+          <div
+            className="TokenDetails"
+            key={`${transfer.contractId}-${transfer.amount}-${transfer.to}`}
+          >
+            <p className="FnName">TRANSFER:</p>
+            <p>
+              <span className="InlineLabel">Contract ID:</span>{" "}
+              {transfer.contractId}
+            </p>
+            <p>
+              <span className="InlineLabel">Amount:</span> {transfer.amount}
+            </p>
+            <p>
+              <span className="InlineLabel">To:</span> {transfer.to}
+            </p>
+          </div>
+        ))}
+      </div>
+    </WarningMessage>
   );
 };

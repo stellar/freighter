@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Asset,
-  buildInvocationTree,
   Claimant,
   LiquidityPoolAsset,
   Operation,
@@ -17,7 +16,10 @@ import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { truncatedPublicKey, truncateString } from "helpers/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { getArgsForTokenInvocation } from "popup/helpers/soroban";
+import {
+  getArgsForTokenInvocation,
+  buildInvocationTree,
+} from "popup/helpers/soroban";
 
 const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
   switch (scVal.switch()) {
@@ -122,14 +124,15 @@ export const KeyValueWithPublicKey = ({
 );
 
 export const KeyValueRootInvocation = ({
-  invocation,
+  entry,
 }: {
-  invocation: xdr.SorobanAuthorizedInvocation;
+  entry: xdr.SorobanAuthorizationEntry;
 }) => {
-  const rootJson = buildInvocationTree(invocation);
+  const rootJson = buildInvocationTree(entry.rootInvocation());
+
   return (
     <div className="Operations__pair--smart-contract">
-      <div>Invocation:</div>
+      <div>Invocation Tree:</div>
       <div className="Operations__scValue">
         <div>
           <pre>
@@ -466,7 +469,7 @@ export const KeyValueInvokeHostFn = ({
                 />
               )}
               {authEntries.map((entry) => (
-                <KeyValueRootInvocation invocation={entry.rootInvocation()} />
+                <KeyValueRootInvocation entry={entry} />
               ))}
             </>
           );
