@@ -143,4 +143,6 @@ export const METRIC_NAMES = {
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 
   viewLeaveFeedback: "loaded screen: leave feedback",
+
+  invalidAuthEntry: "invalid authorization entry",
 };
