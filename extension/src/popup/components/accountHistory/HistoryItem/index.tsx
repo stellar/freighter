@@ -351,7 +351,7 @@ export const HistoryItem = ({
           );
 
           if (!tokenKey) {
-            // this should never happen, transfers cant succeed if you have no balance.
+            // TODO: attempt to fetch token details, not stored
             setRowText(operationString);
             setTxDetails((_state) => ({
               ..._state,
