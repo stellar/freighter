@@ -46,16 +46,13 @@ const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
       return instance.executable().wasmHash().toString();
     }
 
-    case xdr.ScValType.scvTimepoint():
-    case xdr.ScValType.scvDuration(): {
-      return scValToNative(scVal).toString();
-    }
-
     case xdr.ScValType.scvError(): {
       const error = scVal.error();
       return `${error.contractCode()} - ${error.code().name}`;
     }
 
+    case xdr.ScValType.scvTimepoint():
+    case xdr.ScValType.scvDuration():
     case xdr.ScValType.scvI128():
     case xdr.ScValType.scvI256():
     case xdr.ScValType.scvI32():
