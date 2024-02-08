@@ -1,3 +1,11 @@
+# Release notes - Wallets - Freighter-5.15.0
+
+### Story
+
+Improve types for SignTransaction
+
+Add stop gap for token payment sub invocations
+
 # Release notes - Wallets - Freighter-5.14.0
 
 ### Bug
