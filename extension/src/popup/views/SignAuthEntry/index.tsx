@@ -177,7 +177,10 @@ export const SignAuthEntry = () => {
             isMemoRequired={false}
             transaction={{ _operations: [{ auth: params.entry }] }}
           /> */}
-          <AuthEntry preimageXdr={params.entry} />
+          <AuthEntry
+            preimageXdr={params.entry}
+            rejectAndClose={rejectAndClose}
+          />
         </View.Content>
         <View.Footer isInline>
           <Button

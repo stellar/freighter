@@ -433,6 +433,7 @@
   "This asset was tagged as fraudulent by stellar": {
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
+  "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
   "This transaction could not be completed": "This transaction could not be completed.",
