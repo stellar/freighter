@@ -388,7 +388,7 @@ export const Operations = ({
         return (
           <>
             {source && (
-              <KeyValueList
+              <KeyValueWithPublicKey
                 operationKey={t("Source")}
                 operationValue={source}
               />

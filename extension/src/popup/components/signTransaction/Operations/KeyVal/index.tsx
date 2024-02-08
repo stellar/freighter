@@ -20,6 +20,7 @@ import {
   getArgsForTokenInvocation,
   buildInvocationTree,
 } from "popup/helpers/soroban";
+import "./styles.scss";
 
 const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
   switch (scVal.switch()) {
@@ -45,16 +46,13 @@ const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
       return instance.executable().wasmHash().toString();
     }
 
-    case xdr.ScValType.scvTimepoint():
-    case xdr.ScValType.scvDuration(): {
-      return scValToNative(scVal).toString();
-    }
-
     case xdr.ScValType.scvError(): {
       const error = scVal.error();
       return `${error.contractCode()} - ${error.code().name}`;
     }
 
+    case xdr.ScValType.scvTimepoint():
+    case xdr.ScValType.scvDuration():
     case xdr.ScValType.scvI128():
     case xdr.ScValType.scvI256():
     case xdr.ScValType.scvI32():
@@ -73,7 +71,11 @@ const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
 
     case xdr.ScValType.scvVec():
     case xdr.ScValType.scvMap(): {
-      return JSON.stringify(scValToNative(scVal));
+      return JSON.stringify(
+        scValToNative(scVal),
+        (_, val) => (typeof val === "bigint" ? val.toString() : val),
+        2,
+      );
     }
 
     case xdr.ScValType.scvString():
@@ -295,13 +297,15 @@ export const KeyValueSignerKeyOptions = ({
 };
 
 export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
-  <div className="Operations__pair" data-testid="OperationKeyVal">
+  <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
     <div>Parameters</div>
-    {args.map((arg) => (
-      <div>
-        <ScValByType scVal={arg} />
-      </div>
-    ))}
+    <div className="OperationParameters">
+      {args.map((arg) => (
+        <div className="Parameter">
+          <ScValByType scVal={arg} />
+        </div>
+      ))}
+    </div>
   </div>
 );
 
