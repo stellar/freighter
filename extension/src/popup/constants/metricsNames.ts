@@ -58,6 +58,7 @@ export const METRIC_NAMES = {
   sendPaymentSuccess: "send payment: payment success",
   sendPaymentPathPaymentSuccess: "send payment: path payment success",
   sendPaymentError: "send payment: error",
+  simuilateTokenPaymentError: "failed to simulate token payment",
 
   viewSwap: "loaded screen: swap",
   swapAmount: "loaded screen: swap amount",
@@ -142,4 +143,6 @@ export const METRIC_NAMES = {
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 
   viewLeaveFeedback: "loaded screen: leave feedback",
+
+  invalidAuthEntry: "invalid authorization entry",
 };

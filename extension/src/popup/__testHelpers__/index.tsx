@@ -16,11 +16,13 @@ import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
+import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 
 const rootReducer = combineReducers({
   auth,
   settings,
   transactionSubmission,
+  tokenPaymentSimulation,
 });
 
 const { Router } = jest.requireActual("react-router-dom");

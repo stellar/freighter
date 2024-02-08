@@ -1,5 +1,7 @@
 import BigNumber from "bignumber.js";
 import {
+  Address,
+  Asset,
   Memo,
   MemoType,
   Operation,
@@ -97,10 +99,13 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   return wholeValue.shiftedBy(decimals).plus(fractionValue);
 };
 
-export const getOpArgs = (fnName: string, args: xdr.ScVal[]) => {
+export const getArgsForTokenInvocation = (
+  fnName: string,
+  args: xdr.ScVal[],
+) => {
   let amount: BigNumber;
-  let from;
-  let to;
+  let from = "";
+  let to = "";
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
@@ -128,7 +133,9 @@ export const getOpArgs = (fnName: string, args: xdr.ScVal[]) => {
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
+export const getTokenInvocationArgs = (
+  hostFn: Operation.InvokeHostFunction,
+) => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
@@ -147,7 +154,6 @@ const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
   const fnName = invokedContract.functionName().toString();
   const args = invokedContract.args();
 
-  // TODO: figure out how to make this extensible to all contract functions
   if (
     fnName !== SorobanTokenInterface.transfer &&
     fnName !== SorobanTokenInterface.mint
@@ -158,7 +164,7 @@ const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
   let opArgs;
 
   try {
-    opArgs = getOpArgs(fnName, args);
+    opArgs = getArgsForTokenInvocation(fnName, args);
   } catch (e) {
     return null;
   }
@@ -168,13 +174,6 @@ const getRootInvocationArgs = (hostFn: Operation.InvokeHostFunction) => {
     contractId,
     ...opArgs,
   };
-};
-
-export const getAttrsFromSorobanTxOp = (operation: HorizonOperation) => {
-  if (!isSorobanOp(operation)) {
-    return null;
-  }
-  return getRootInvocationArgs(operation);
 };
 
 export const getAttrsFromSorobanHorizonOp = (
@@ -201,7 +200,7 @@ export const getAttrsFromSorobanHorizonOp = (
 
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
-  return getRootInvocationArgs(invokeHostFn);
+  return getTokenInvocationArgs(invokeHostFn);
 };
 
 export const isContractId = (contractId: string) => {
@@ -212,3 +211,115 @@ export const isContractId = (contractId: string) => {
     return false;
   }
 };
+
+interface InvocationTree {
+  type: string;
+  args: any;
+  invocations: InvocationTree[];
+}
+
+export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
+  const fn = root.function();
+  const output = {} as InvocationTree;
+  const inner = fn.value();
+
+  switch (fn.switch().value) {
+    // sorobanAuthorizedFunctionTypeContractFn
+    case 0: {
+      const _inner = inner as xdr.InvokeContractArgs;
+      output.type = "execute";
+      output.args = {
+        source: Address.fromScAddress(_inner.contractAddress()).toString(),
+        function: _inner.functionName().toString(),
+        args: _inner.args().map((arg) => scValToNative(arg)),
+      };
+      break;
+    }
+
+    // sorobanAuthorizedFunctionTypeCreateContractHostFn
+    case 1: {
+      const _inner = inner as xdr.CreateContractArgs;
+      output.type = "create";
+      output.args = {} as {
+        type: string;
+        wasm: any;
+      };
+
+      // If the executable is a WASM, the preimage MUST be an address. If it's a
+      // token, the preimage MUST be an asset. This is a cheeky way to check
+      // that, because wasm=0, token=1 and address=0, asset=1 in the XDR switch
+      // values.
+      //
+      // The first part may not be true in V2, but we'd need to update this code
+      // anyway so it can still be an error.
+      const [exec, preimage] = [
+        _inner.executable(),
+        _inner.contractIdPreimage(),
+      ];
+      if (!!exec.switch().value !== !!preimage.switch().value) {
+        throw new Error(
+          `creation function appears invalid: ${JSON.stringify(
+            inner,
+          )} (should be wasm+address or token+asset)`,
+        );
+      }
+
+      switch (exec.switch().value) {
+        // contractExecutableWasm
+        case 0: {
+          /** @type {xdr.ContractIdPreimageFromAddress} */
+          const details = preimage.fromAddress();
+
+          output.args.type = "wasm";
+          output.args.wasm = {
+            salt: details.salt().toString("hex"),
+            hash: exec.wasmHash().toString("hex"),
+            address: Address.fromScAddress(details.address()).toString(),
+          };
+          break;
+        }
+
+        // contractExecutableStellarAsset
+        case 1:
+          output.args.type = "sac";
+          output.args.asset = Asset.fromOperation(
+            preimage.fromAsset(),
+          ).toString();
+          break;
+
+        default:
+          throw new Error(`unknown creation type: ${JSON.stringify(exec)}`);
+      }
+
+      break;
+    }
+
+    default:
+      throw new Error(
+        `unknown invocation type (${fn.switch()}): ${JSON.stringify(fn)}`,
+      );
+  }
+
+  output.invocations = root.subInvocations().map((i) => buildInvocationTree(i));
+  return output;
+}
+
+export function pickTransfers(invocationTree: InvocationTree) {
+  const transfers = [];
+  // the transfer sig is (from, to, amount)
+  if (invocationTree.args.function === "transfer") {
+    transfers.push({
+      contractId: invocationTree.args.source,
+      amount: invocationTree.args.args[2].toString(),
+      to: invocationTree.args.args[1],
+    });
+  }
+  const subTransfers = invocationTree.invocations
+    .filter((i) => i.args.function === "transfer")
+    .map((i) => ({
+      contractId: i.args.source,
+      amount: i.args.args[2].toString(),
+      to: i.args.args[1],
+    }));
+  return [...transfers, ...subTransfers];
+}
