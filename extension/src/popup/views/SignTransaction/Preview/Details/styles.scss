@@ -1,0 +1,10 @@
+.DetailsBody {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  background-color: var(--color-gray-40);
+  padding: 1rem;
+  overflow-y: scroll;
+  font-size: 0.75rem;
+}
