@@ -94,9 +94,9 @@
   "Confirm removing Network": "Confirm removing Network",
   "Confirm Send": "Confirm Send",
   "Confirm Swap": "Confirm Swap",
-  "Confirm Transaction": "Confirm Transaction",
   "Confirm your recovery phrase": "Confirm your recovery phrase",
   "congestion": "congestion",
+  "Connect": "Connect",
   "Connect device to computer": "Connect device to computer",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Continue": "Continue",
@@ -215,7 +215,6 @@
   "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Invocation Type": "Invocation Type",
-  "is requesting approval to a": "is requesting approval to a",
   "is requesting approval to sign a blob of data": "is requesting approval to sign a blob of data",
   "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
@@ -380,9 +379,8 @@
   "Set recommended": "Set recommended",
   "Settings": "Settings",
   "Settings > Preferences": "Settings > Preferences",
-  "Share": "Share",
-  "Share Public Key": "Share Public Key",
   "Show recovery phrase": "Show recovery phrase",
+  "Sign": "Sign",
   "Signed Payload": "Signed Payload",
   "Signer": "Signer",
   "Signer Key": "Signer Key",
@@ -437,7 +435,6 @@
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
   "This transaction could not be completed": "This transaction could not be completed.",
-  "This website wants to know data about your account": "This website wants to know data about your account",
   "To": "To",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
@@ -450,7 +447,6 @@
   "Transaction": "Transaction",
   "Transaction failed": "Transaction failed",
   "Transaction fee": "Transaction fee",
-  "Transaction Info": "Transaction Info",
   "Transaction sequence number": "Transaction sequence number",
   "Transactions": "Transactions",
   "Trustline Error": "Trustline Error",
@@ -480,9 +476,6 @@
   "XLM": "XLM",
   "You are attempting to sign arbitrary data": {
     " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data."
-  },
-  "You are interacting with a transaction that may be using untested and changing schemas": {
-    " Proceed at your own risk": "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk."
   },
   "You are interacting with data that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."
