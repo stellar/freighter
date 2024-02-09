@@ -42,6 +42,7 @@
     "@types/yup": "^0.29.2",
     "bignumber.js": "^9.1.1",
     "buffer": "^6.0.3",
+    "classnames": "^2.5.1",
     "concurrently": "^5.1.0",
     "copy-webpack-plugin": "^5.1.1",
     "css-loader": "^5.0.0",

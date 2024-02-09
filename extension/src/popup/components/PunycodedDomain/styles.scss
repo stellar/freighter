@@ -3,7 +3,6 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-bottom: 0.5rem;
 
   &--row {
     flex-direction: row;
@@ -26,6 +25,6 @@
   }
 
   div {
-    margin-bottom: 1rem;
+    margin-bottom: 0.25rem;
   }
 }
