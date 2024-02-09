@@ -61,6 +61,7 @@ import { FlaggedKeys } from "types/transactions";
 import { Tabs } from "popup/components/Tabs";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
+import { Data } from "./Preview/Data";
 // import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
 export const SignTransaction = () => {
@@ -255,7 +256,7 @@ export const SignTransaction = () => {
       }
 
       case "Data": {
-        return <div>Data</div>;
+        return <Data xdr={_tx.toXDR()} />;
       }
 
       default:
