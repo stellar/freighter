@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
-import { Button, Card, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import {
   FeeBumpTransaction,
   MuxedAccount,
@@ -22,48 +22,51 @@ import {
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
-import { TRANSACTION_WARNING } from "constants/transaction";
+import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
   isFederationAddress,
   isMuxedAccount,
-  truncatedPublicKey,
+  // truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { TransactionHeading } from "popup/basics/TransactionHeading";
+// import { TransactionHeading } from "popup/basics/TransactionHeading";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-import { AccountList, OptionTag } from "popup/components/account/AccountList";
+// import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
+// import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessageVariant,
   WarningMessage,
-  FirstTimeWarningMessage,
-  FlaggedWarningMessage,
-  TransferWarning,
+  // FirstTimeWarningMessage,
+  // FlaggedWarningMessage,
+  // TransferWarning,
 } from "popup/components/WarningMessages";
-import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
+// import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { SlideupModal } from "popup/components/SlideupModal";
-import { View } from "popup/basics/layout/View";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+// import { SlideupModal } from "popup/components/SlideupModal";
+// import { View } from "popup/basics/layout/View";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
 import "./styles.scss";
 
 import { FlaggedKeys } from "types/transactions";
-import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
+import { Tabs } from "popup/components/Tabs";
+import { Summary } from "./Preview/Summary";
+// import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
@@ -78,7 +81,7 @@ export const SignTransaction = () => {
     accountToSign: _accountToSign,
     transactionXdr,
     domain,
-    isDomainListedAllowed,
+    // isDomainListedAllowed,
     isHttpsDomain,
     flaggedKeys,
   } = tx;
@@ -98,13 +101,14 @@ export const SignTransaction = () => {
   const { fee: _fee, networkPassphrase: _networkPassphrase } = transaction;
 
   let isFeeBump = false;
-  let _innerTransaction;
+  let _innerTransaction = {};
   let _memo = {};
-  let _sequence;
+  let _sequence = "";
 
   if ("innerTransaction" in transaction) {
     _innerTransaction = transaction.innerTransaction;
     isFeeBump = true;
+    console.log(isFeeBump, _innerTransaction);
   } else {
     _sequence = transaction.sequence;
     _memo = transaction.memo;
@@ -116,12 +120,12 @@ export const SignTransaction = () => {
   let accountToSign = _accountToSign;
 
   const {
-    allAccounts,
-    accountNotFound,
+    // allAccounts,
+    // accountNotFound,
     currentAccount,
     isConfirming,
     isPasswordRequired,
-    publicKey,
+    // publicKey,
     handleApprove,
     hwStatus,
     rejectAndClose,
@@ -223,6 +227,35 @@ export const SignTransaction = () => {
     );
   }
 
+  function renderTab(tab: string) {
+    // TODO: split for FeeBumpTx
+    const _tx = transaction as Transaction<Memo<MemoType>, Operation[]>;
+    switch (tab) {
+      case "Summary": {
+        return (
+          <Summary
+            sequenceNumber={_sequence}
+            fee={_fee}
+            operationNames={_tx.operations.map(
+              (op) => OPERATION_TYPES[op.type] || op.type,
+            )}
+          />
+        );
+      }
+
+      case "Details": {
+        return <div>Details</div>;
+      }
+
+      case "Data": {
+        return <div>Data</div>;
+      }
+
+      default:
+        return <></>;
+    }
+  }
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -234,9 +267,49 @@ export const SignTransaction = () => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="SignTransaction">
-        <View.AppHeader pageTitle={t("Confirm Transaction")} />
-        <View.Content>
+      <div data-testid="SignTransaction" className="SignTransaction">
+        <div className="SignTransaction__Body">
+          <div className="SignTransaction__Title">
+            <PunycodedDomain domain={domain} domainTitle="" />
+            <div className="SignTransaction--connection-request">
+              <div className="SignTransaction--connection-request-pill">
+                <Icon.Link />
+                <p>Transaction Request</p>
+              </div>
+            </div>
+          </div>
+          <Tabs tabs={["Summary", "Details", "Data"]} renderTab={renderTab} />
+          <div className="SignTransaction__Actions">
+            <div className="SignTransaction__Actions__SigningWith">
+              <h5>Signing with</h5>
+              <div className="SignTransaction__Actions__PublicKey">
+                <KeyIdenticon publicKey={currentAccount.publicKey} />
+              </div>
+            </div>
+            <div className="SignTransaction__Actions__BtnRow">
+              <Button
+                isFullWidth
+                size="md"
+                variant="secondary"
+                onClick={() => rejectAndClose()}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                disabled={isSubmitDisabled}
+                variant="tertiary"
+                isFullWidth
+                size="md"
+                isLoading={isConfirming}
+                onClick={() => handleApprove()}
+              >
+                {t("Sign")}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* <View.Content>
           {!isFeeBump ? (
             <TransferWarning
               operation={
@@ -372,8 +445,8 @@ export const SignTransaction = () => {
               setIsDropdownOpen={setIsDropdownOpen}
             />
           </div>
-        </SlideupModal>
-      </View>
+        </SlideupModal> */}
+      </div>
     </>
   );
 };
