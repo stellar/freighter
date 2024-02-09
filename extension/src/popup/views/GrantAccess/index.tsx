@@ -9,18 +9,14 @@ import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
-import {
-  ButtonsContainer,
-  ModalHeader,
-  ModalWrapper,
-} from "popup/basics/Modal";
+import { ButtonsContainer, ModalWrapper } from "popup/basics/Modal";
 
 import { ModalInfo } from "popup/components/ModalInfo";
-import { FirstTimeWarningMessage } from "popup/components/WarningMessages";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import "popup/metrics/access";
+import "./styles.scss";
 
 export const GrantAccess = () => {
   const { t } = useTranslation();
@@ -49,39 +45,40 @@ export const GrantAccess = () => {
   return (
     <>
       <ModalWrapper>
-        <ModalHeader>
-          <strong>{t("Share Public Key")}</strong>
-        </ModalHeader>
-        <FirstTimeWarningMessage />
         <ModalInfo
           domain={domain}
           domainTitle={title}
-          subject={`${t(
-            "This website wants to know data about your account",
-          )}:`}
+          subject={t(
+            `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
+          )}
         >
-          <KeyIdenticon publicKey={publicKey} />
+          <div className="GrantAccess__SigningWith">
+            <h5>Signing with</h5>
+            <div className="GrantAccess__PublicKey">
+              <KeyIdenticon publicKey={publicKey} />
+            </div>
+          </div>
+          <ButtonsContainer>
+            <Button
+              size="md"
+              isFullWidth
+              variant="secondary"
+              onClick={rejectAndClose}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              size="md"
+              isFullWidth
+              variant="tertiary"
+              isLoading={isGranting}
+              onClick={() => grantAndClose()}
+            >
+              {t("Connect")}
+            </Button>
+          </ButtonsContainer>
         </ModalInfo>
       </ModalWrapper>
-      <ButtonsContainer>
-        <Button
-          size="md"
-          isFullWidth
-          variant="secondary"
-          onClick={rejectAndClose}
-        >
-          {t("Reject")}
-        </Button>
-        <Button
-          size="md"
-          isFullWidth
-          variant="primary"
-          isLoading={isGranting}
-          onClick={() => grantAndClose()}
-        >
-          {t("Share")}
-        </Button>
-      </ButtonsContainer>
     </>
   );
 };
