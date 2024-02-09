@@ -137,7 +137,7 @@ export const Operations = ({
             />
             <KeyValueList
               operationKey={t("Starting Balance")}
-              operationValue={startingBalance}
+              operationValue={`${startingBalance} XLM`}
             />
           </>
         );
@@ -745,8 +745,9 @@ export const Operations = ({
         return (
           <div className="Operations--wrapper" key={operationIndex}>
             <div className="Operations--header">
-              <strong>
-                {operationIndex}. {OPERATION_TYPES[type] || type}
+              <Icon.DataObject />
+              <strong className="OpType">
+                {OPERATION_TYPES[type] || type}
               </strong>
             </div>
             <div className="Operations--item">

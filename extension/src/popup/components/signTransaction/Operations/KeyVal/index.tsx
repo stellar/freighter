@@ -107,7 +107,7 @@ export const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
-    <div>{operationKey}:</div>
+    <div>{operationKey}</div>
     <div>{operationValue}</div>
   </div>
 );

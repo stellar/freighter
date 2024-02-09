@@ -60,6 +60,7 @@ import "./styles.scss";
 import { FlaggedKeys } from "types/transactions";
 import { Tabs } from "popup/components/Tabs";
 import { Summary } from "./Preview/Summary";
+import { Details } from "./Preview/Details";
 // import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
 export const SignTransaction = () => {
@@ -244,7 +245,13 @@ export const SignTransaction = () => {
       }
 
       case "Details": {
-        return <div>Details</div>;
+        return (
+          <Details
+            operations={_tx.operations}
+            flaggedKeys={flaggedKeys}
+            isMemoRequired={isMemoRequired}
+          />
+        );
       }
 
       case "Data": {
