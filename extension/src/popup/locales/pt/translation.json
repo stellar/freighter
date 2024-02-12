@@ -415,7 +415,7 @@
     " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
   },
   "The destination account doesn’t exist": {
-    " Make sure it is a funded Stellar account and try again": "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again."
+    " Send at least 1 XLM to create account": "The destination account doesn’t exist. Send at least 1 XLM to create account."
   },
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
