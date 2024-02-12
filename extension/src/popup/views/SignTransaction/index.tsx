@@ -24,6 +24,7 @@ import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
+import { encodeObject } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
@@ -34,7 +35,8 @@ import {
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 // import { TransactionHeading } from "popup/basics/TransactionHeading";
-
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 // import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
@@ -264,6 +266,12 @@ export const SignTransaction = () => {
     }
   }
 
+  const needsReviewAuth =
+    !isFeeBump &&
+    (transaction as Transaction<Memo<MemoType>, Operation[]>).operations.some(
+      (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
+    );
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -303,16 +311,38 @@ export const SignTransaction = () => {
               >
                 {t("Cancel")}
               </Button>
-              <Button
-                disabled={isSubmitDisabled}
-                variant="tertiary"
-                isFullWidth
-                size="md"
-                isLoading={isConfirming}
-                onClick={() => handleApprove()}
-              >
-                {t("Sign")}
-              </Button>
+              {needsReviewAuth ? (
+                <Button
+                  disabled={isSubmitDisabled}
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() =>
+                    navigateTo(
+                      ROUTES.reviewAuthorization,
+                      `?${encodeObject({
+                        accountToSign,
+                        transactionXdr,
+                        domain,
+                      })}`,
+                    )
+                  }
+                >
+                  {t("Review")}
+                </Button>
+              ) : (
+                <Button
+                  disabled={isSubmitDisabled}
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Sign")}
+                </Button>
+              )}
             </div>
           </div>
         </div>

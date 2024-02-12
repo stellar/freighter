@@ -745,7 +745,7 @@ export const Operations = ({
         return (
           <div className="Operations--wrapper" key={operationIndex}>
             <div className="Operations--header">
-              <Icon.DataObject />
+              <Icon.DeployedCode />
               <strong className="OpType">
                 {OPERATION_TYPES[type] || type}
               </strong>

@@ -212,7 +212,7 @@ export const isContractId = (contractId: string) => {
   }
 };
 
-interface InvocationTree {
+export interface InvocationTree {
   type: string;
   args: any;
   invocations: InvocationTree[];

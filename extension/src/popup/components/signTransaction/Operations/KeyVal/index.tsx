@@ -314,7 +314,6 @@ export const KeyValueInvokeHostFn = ({
 }: {
   op: Operation.InvokeHostFunction;
 }) => {
-  // TODO: render sub-invocation/auth
   const { t } = useTranslation();
   const authEntries = op.auth || [];
   const hostfn = op.func;
