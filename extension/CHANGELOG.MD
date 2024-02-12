@@ -1,3 +1,9 @@
+# Release notes - Wallets - Freighter-5.15.2
+
+### Bug
+
+Account for optional wasm hash when rendering contract create invocations
+
 # Release notes - Wallets - Freighter-5.15.1
 
 ### Bug
