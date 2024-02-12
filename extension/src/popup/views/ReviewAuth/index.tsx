@@ -10,25 +10,40 @@ import {
 import { useSelector } from "react-redux";
 
 import { decodeString } from "helpers/urls";
-import { Icon } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { signTransaction, rejectTransaction } from "popup/ducks/access";
 
-import "./styles.scss";
 import {
   KeyValueInvokeHostFnArgs,
   KeyValueList,
 } from "popup/components/signTransaction/Operations/KeyVal";
 import { useTranslation } from "react-i18next";
 import { truncateString } from "helpers/stellar";
+import { FlaggedKeys } from "types/transactions";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { Tabs } from "popup/components/Tabs";
+import { SlideupModal } from "popup/components/SlideupModal";
+import { AccountList } from "popup/components/account/AccountList";
+import { OPERATION_TYPES } from "constants/transaction";
+import { Summary } from "../SignTransaction/Preview/Summary";
+import { Details } from "../SignTransaction/Preview/Details";
+import { Data } from "../SignTransaction/Preview/Data";
+import "./styles.scss";
 
 export const ReviewAuth = () => {
   const location = useLocation();
+  const { t } = useTranslation();
+
   const decodedSearchParam = decodeString(location.search.replace("?", ""));
   const params = decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
-  console.log(params);
 
   const [activeAuthEntryIndex, setActiveAuthEntryIndex] = React.useState(0);
+  const [hasConfirmedAuth, setHasConfirmedAuth] = React.useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const transaction = TransactionBuilder.fromXDR(
     params.transactionXdr,
@@ -36,7 +51,26 @@ export const ReviewAuth = () => {
   ) as Transaction;
   const op = transaction.operations[0] as Operation.InvokeHostFunction;
   const authCount = op.auth ? op.auth.length : 0;
-  console.log(setActiveAuthEntryIndex);
+
+  const {
+    allAccounts,
+    // accountNotFound,
+    currentAccount,
+    isConfirming,
+    // isPasswordRequired,
+    publicKey,
+    handleApprove,
+    // hwStatus,
+    rejectAndClose,
+    // setIsPasswordRequired,
+    // verifyPasswordThenSign,
+    // hardwareWalletType,
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signTransaction,
+    params.transactionXdr,
+    params.accountToSign,
+  );
 
   return (
     <div className="ReviewAuth">
@@ -51,53 +85,80 @@ export const ReviewAuth = () => {
           </div>
         </div>
         <div className="ReviewAuth__Details">
-          <h5>
-            {activeAuthEntryIndex}/{authCount} Authorizations
-          </h5>
-          {op.auth && <AuthDetail authEntry={op.auth[activeAuthEntryIndex]} />}
+          {!hasConfirmedAuth && op.auth ? (
+            <>
+              <h5>
+                {activeAuthEntryIndex + 1}/{authCount} Authorizations
+              </h5>
+              <AuthDetail authEntry={op.auth[activeAuthEntryIndex]} />
+            </>
+          ) : (
+            <SignTransaction tx={transaction} />
+          )}
         </div>
         <div className="ReviewAuth__Actions">
-          {/* <div className="SignTransaction__Actions__SigningWith">
+          {hasConfirmedAuth && (
+            <div className="ReviewAuth__Actions__SigningWith">
               <h5>Signing with</h5>
-              <div className="SignTransaction__Actions__PublicKey">
+              <button
+                className="ReviewAuth__Actions__PublicKey"
+                onClick={() => setIsDropdownOpen(true)}
+              >
                 <KeyIdenticon publicKey={currentAccount.publicKey} />
-              </div>
+                <Icon.ChevronDown />
+              </button>
             </div>
-            <div className="SignTransaction__Actions__BtnRow">
+          )}
+          <div className="ReviewAuth__Actions__BtnRow">
+            {hasConfirmedAuth ? (
               <Button
+                variant="tertiary"
                 isFullWidth
                 size="md"
-                variant="secondary"
-                onClick={() => rejectAndClose()}
+                isLoading={isConfirming}
+                onClick={() => handleApprove()}
               >
-                {t("Cancel")}
+                {t("Sign Transaction")}
               </Button>
-              {needsReviewAuth ? (
-                <Button
-                  disabled={isSubmitDisabled}
-                  variant="tertiary"
-                  isFullWidth
-                  size="md"
-                  isLoading={isConfirming}
-                  onClick={() => navigateTo(ROUTES.reviewAuthorization)}
-                >
-                  {t("Review")}
-                </Button>
-              ) : (
-                  <Button
-                  disabled={isSubmitDisabled}
-                  variant="tertiary"
-                  isFullWidth
-                  size="md"
-                  isLoading={isConfirming}
-                  onClick={() => handleApprove()}
-                >
-                  {t("Sign")}
-                </Button>
-              )}
-            </div> */}
+            ) : (
+              <Button
+                variant="tertiary"
+                isFullWidth
+                size="md"
+                isLoading={isConfirming}
+                onClick={() =>
+                  activeAuthEntryIndex === op.auth?.length
+                    ? setActiveAuthEntryIndex(activeAuthEntryIndex + 1)
+                    : setHasConfirmedAuth(true)
+                }
+              >
+                {t("Approve and review next")}
+              </Button>
+            )}
+
+            <Button
+              isFullWidth
+              size="md"
+              variant="secondary"
+              onClick={() => rejectAndClose()}
+            >
+              {t("Reject")}
+            </Button>
+          </div>
         </div>
       </div>
+      <SlideupModal
+        isModalOpen={isDropdownOpen}
+        setIsModalOpen={setIsDropdownOpen}
+      >
+        <div className="SignTransaction__modal">
+          <AccountList
+            allAccounts={allAccounts}
+            publicKey={publicKey}
+            setIsDropdownOpen={setIsDropdownOpen}
+          />
+        </div>
+      </SlideupModal>
     </div>
   );
 };
@@ -128,25 +189,61 @@ const AuthDetail = ({
   const details = getInvocationDetails(authEntry.rootInvocation());
   return (
     <div className="AuthDetail">
-      <div className="AuthDetail__TitleRow">
-        <Icon.Aod />
-        {details.map((detail) => (
-          <React.Fragment key={detail.fnName}>
-            <p>Invocation</p>
-            <div className="AuthDetail__InfoBlock">
-              <KeyValueList
-                operationKey={t("Contract ID")}
-                operationValue={truncateString(detail.contractId)}
-              />
-              <KeyValueList
-                operationKey={t("Function Name")}
-                operationValue={detail.fnName}
-              />
-              <KeyValueInvokeHostFnArgs args={detail.args} />
-            </div>
-          </React.Fragment>
-        ))}
-      </div>
+      {details.map((detail) => (
+        <React.Fragment key={detail.fnName}>
+          <div className="AuthDetail__TitleRow">
+            <Icon.Aod />
+            <h5>Invocation</h5>
+          </div>
+          <div className="AuthDetail__InfoBlock">
+            <KeyValueList
+              operationKey={t("Contract ID")}
+              operationValue={truncateString(detail.contractId)}
+            />
+            <KeyValueList
+              operationKey={t("Function Name")}
+              operationValue={detail.fnName}
+            />
+            <KeyValueInvokeHostFnArgs args={detail.args} />
+          </div>
+        </React.Fragment>
+      ))}
     </div>
   );
+};
+
+const SignTransaction = ({ tx }: { tx: Transaction }) => {
+  function renderTab(tab: string) {
+    switch (tab) {
+      case "Summary": {
+        return (
+          <Summary
+            sequenceNumber={tx.sequence}
+            fee={tx.fee}
+            operationNames={tx.operations.map(
+              (op) => OPERATION_TYPES[op.type] || op.type,
+            )}
+          />
+        );
+      }
+
+      case "Details": {
+        return (
+          <Details
+            operations={tx.operations}
+            flaggedKeys={{} as FlaggedKeys}
+            isMemoRequired={false}
+          />
+        );
+      }
+
+      case "Data": {
+        return <Data xdr={tx.toXDR()} />;
+      }
+
+      default:
+        return <></>;
+    }
+  }
+  return <Tabs tabs={["Summary", "Details", "Data"]} renderTab={renderTab} />;
 };

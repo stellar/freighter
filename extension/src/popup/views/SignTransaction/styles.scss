@@ -106,6 +106,10 @@
 
   &__modal {
     padding: 0.5rem 0 0.5rem 1.5rem;
+
+    .View__inset--scroll-shadows {
+      --bgRGB: 22, 22, 24;
+    }
   }
 
   &__account-not-found {
@@ -125,7 +129,11 @@
     }
 
     &__PublicKey {
-      padding: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      cursor: pointer;
       padding: 0.25rem 0.5rem;
       border-radius: 7px;
       border: 1px solid;

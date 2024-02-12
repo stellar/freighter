@@ -47,6 +47,72 @@
   &__Details {
     width: 100%;
     flex-grow: 1;
+    height: 230px;
+
+    .AuthDetail {
+      height: 230px;
+      overflow-y: auto;
+      border-radius: 4px;
+      background-color: var(--color-gray-20);
+      padding: 1rem;
+      margin-top: 0.5rem;
+
+      &__TitleRow {
+        display: flex;
+        align-items: center;
+
+        h5 {
+          font-size: 0.75rem;
+          margin-left: 0.5rem;
+        }
+      }
+
+      &__InfoBlock {
+        display: flex;
+        flex-direction: column;
+        margin-top: 1rem;
+        font-size: 0.75rem;
+
+        & > .Operations__pair {
+          align-items: center;
+          color: var(--color-gray-90);
+          display: flex;
+          justify-content: space-between;
+          line-height: 1.5rem;
+
+          &--invoke {
+            flex-direction: column;
+            align-items: baseline;
+            color: var(--color-gray-90);
+            display: flex;
+            justify-content: space-between;
+            line-height: 1.5rem;
+
+            .OperationParameters {
+              .Parameter {
+                color: var(--color-gray-60);
+              }
+            }
+          }
+
+          &--smart-contract {
+            flex-direction: column;
+
+            pre {
+              margin: 0;
+            }
+          }
+
+          & > :nth-child(2) {
+            color: var(--color-gray-60);
+          }
+        }
+      }
+    }
+
+    .Tabs__Body {
+      height: 190px;
+    }
   }
 
   &__Actions {
@@ -54,7 +120,7 @@
     flex-direction: column;
     align-self: flex-end;
     width: 100%;
-    height: 130px;
+    min-height: 130px;
 
     &__SigningWith {
       display: flex;
@@ -62,7 +128,11 @@
     }
 
     &__PublicKey {
-      padding: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      cursor: pointer;
       padding: 0.25rem 0.5rem;
       border-radius: 7px;
       border: 1px solid;
@@ -72,6 +142,7 @@
 
     &__BtnRow {
       display: flex;
+      flex-direction: column;
       margin-top: 10px;
       gap: 0.5rem;
     }
