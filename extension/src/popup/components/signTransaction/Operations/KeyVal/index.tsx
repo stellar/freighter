@@ -43,7 +43,7 @@ const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
 
     case xdr.ScValType.scvContractInstance(): {
       const instance = scVal.instance();
-      return instance.executable().wasmHash().toString();
+      return instance.executable().wasmHash()?.toString();
     }
 
     case xdr.ScValType.scvError(): {
@@ -314,7 +314,6 @@ export const KeyValueInvokeHostFn = ({
 }: {
   op: Operation.InvokeHostFunction;
 }) => {
-  // TODO: render sub-invocation/auth
   const { t } = useTranslation();
   const authEntries = op.auth || [];
   const hostfn = op.func;
@@ -347,18 +346,17 @@ export const KeyValueInvokeHostFn = ({
                   operationKey={t("Account ID")}
                   operationValue={accountId}
                 />
-                <KeyValueWithPublicKey
-                  operationKey={t("Salt")}
-                  operationValue={salt}
-                />
-                <KeyValueWithPublicKey
+                <KeyValueList operationKey={t("Salt")} operationValue={salt} />
+                <KeyValueList
                   operationKey={t("Executable Type")}
                   operationValue={executableType}
                 />
-                <KeyValueWithPublicKey
-                  operationKey={t("Executable Wasm Hash")}
-                  operationValue={executable.wasmHash().toString()}
-                />
+                {executable.wasmHash() && (
+                  <KeyValueList
+                    operationKey={t("Executable Wasm Hash")}
+                    operationValue={executable.wasmHash().toString()}
+                  />
+                )}
               </>
             );
           }
@@ -373,18 +371,17 @@ export const KeyValueInvokeHostFn = ({
                 operationKey={t("Contract ID")}
                 operationValue={contractId}
               />
-              <KeyValueWithPublicKey
-                operationKey={t("Salt")}
-                operationValue={salt}
-              />
-              <KeyValueWithPublicKey
+              <KeyValueList operationKey={t("Salt")} operationValue={salt} />
+              <KeyValueList
                 operationKey={t("Executable Type")}
                 operationValue={executableType}
               />
-              <KeyValueWithPublicKey
-                operationKey={t("Executable Wasm Hash")}
-                operationValue={executable.wasmHash().toString()}
-              />
+              {executable.wasmHash() && (
+                <KeyValueList
+                  operationKey={t("Executable Wasm Hash")}
+                  operationValue={executable.wasmHash().toString()}
+                />
+              )}
             </>
           );
         }
@@ -418,14 +415,16 @@ export const KeyValueInvokeHostFn = ({
                 </>
               ))}
 
-            <KeyValueWithPublicKey
+            <KeyValueList
               operationKey={t("Executable Type")}
               operationValue={executableType}
             />
-            <KeyValueWithPublicKey
-              operationKey={t("Executable Wasm Hash")}
-              operationValue={executable.wasmHash().toString()}
-            />
+            {executable.wasmHash() && (
+              <KeyValueList
+                operationKey={t("Executable Wasm Hash")}
+                operationValue={executable.wasmHash().toString()}
+              />
+            )}
           </>
         );
       }

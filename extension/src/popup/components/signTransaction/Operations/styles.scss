@@ -1,8 +1,11 @@
 .Operations {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
   margin-bottom: 1.5rem;
+
+  &--wrapper {
+    margin-bottom: 1.5rem;
+  }
 
   &--header {
     display: flex;
