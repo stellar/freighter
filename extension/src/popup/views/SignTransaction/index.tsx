@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
@@ -40,7 +40,7 @@ import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 // import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-// import { AccountList, OptionTag } from "popup/components/account/AccountList";
+import { AccountList } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessageVariant,
@@ -52,7 +52,7 @@ import {
 // import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-// import { SlideupModal } from "popup/components/SlideupModal";
+import { SlideupModal } from "popup/components/SlideupModal";
 // import { View } from "popup/basics/layout/View";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
@@ -70,7 +70,7 @@ export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
 
-  // const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
@@ -89,13 +89,6 @@ export const SignTransaction = () => {
     isHttpsDomain,
     flaggedKeys,
   } = tx;
-
-  /*
-  Reconstruct the tx from xdr as passing a tx through extension contexts
-  loses custom prototypes associated with some values. This is fine for most cases
-  where we just need a high level overview of the tx, like just a list of operations.
-  But in this case, we will need the hostFn prototype associated with Soroban tx operations.
-  */
 
   const transaction = TransactionBuilder.fromXDR(
     transactionXdr,
@@ -124,12 +117,12 @@ export const SignTransaction = () => {
   let accountToSign = _accountToSign;
 
   const {
-    // allAccounts,
+    allAccounts,
     // accountNotFound,
     currentAccount,
     isConfirming,
     isPasswordRequired,
-    // publicKey,
+    publicKey,
     handleApprove,
     hwStatus,
     rejectAndClose,
@@ -298,9 +291,13 @@ export const SignTransaction = () => {
           <div className="SignTransaction__Actions">
             <div className="SignTransaction__Actions__SigningWith">
               <h5>Signing with</h5>
-              <div className="SignTransaction__Actions__PublicKey">
+              <button
+                className="SignTransaction__Actions__PublicKey"
+                onClick={() => setIsDropdownOpen(true)}
+              >
                 <KeyIdenticon publicKey={currentAccount.publicKey} />
-              </div>
+                <Icon.ChevronDown />
+              </button>
             </div>
             <div className="SignTransaction__Actions__BtnRow">
               <Button
@@ -379,39 +376,6 @@ export const SignTransaction = () => {
             <FirstTimeWarningMessage />
           ) : null}
           <div className="SignTransaction__info">
-            <Card variant="secondary">
-              <PunycodedDomain domain={domain} isRow />
-              <div className="SignTransaction__subject">
-                {t("is requesting approval to a")}{" "}
-                {isFeeBump ? "fee bump " : ""}
-                {t("transaction")}:
-              </div>
-              <div className="SignTransaction__approval">
-                <div className="SignTransaction__approval__title">
-                  {t("Approve using")}:
-                </div>
-                <div
-                  className="SignTransaction__current-account"
-                  onClick={() => setIsDropdownOpen(true)}
-                >
-                  <AccountListIdenticon
-                    displayKey
-                    accountName={currentAccount.name}
-                    active
-                    publicKey={currentAccount.publicKey}
-                    setIsDropdownOpen={setIsDropdownOpen}
-                  >
-                    <OptionTag
-                      hardwareWalletType={currentAccount.hardwareWalletType}
-                      imported={currentAccount.imported}
-                    />
-                  </AccountListIdenticon>
-                  <div className="SignTransaction__current-account__chevron">
-                    <Icon.ChevronDown />
-                  </div>
-                </div>
-              </div>
-            </Card>
             {accountNotFound && accountToSign ? (
               <div className="SignTransaction__account-not-found">
                 <Notification
@@ -452,26 +416,7 @@ export const SignTransaction = () => {
             memo={memo ? decodedMemo : undefined}
           />
         </View.Content>
-        <View.Footer isInline>
-          <Button
-            isFullWidth
-            size="md"
-            variant="tertiary"
-            onClick={() => rejectAndClose()}
-          >
-            {t("Reject")}
-          </Button>
-          <Button
-            disabled={isSubmitDisabled}
-            variant="primary"
-            isFullWidth
-            size="md"
-            isLoading={isConfirming}
-            onClick={() => handleApprove()}
-          >
-            {t("Approve")}
-          </Button>
-        </View.Footer>
+         */}
         <SlideupModal
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
@@ -483,7 +428,7 @@ export const SignTransaction = () => {
               setIsDropdownOpen={setIsDropdownOpen}
             />
           </div>
-        </SlideupModal> */}
+        </SlideupModal>
       </div>
     </>
   );
