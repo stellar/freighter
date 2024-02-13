@@ -59,7 +59,6 @@ import { Tabs } from "popup/components/Tabs";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
-import { FlaggedKeys } from "types/transactions";
 // import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
 import "./styles.scss";
