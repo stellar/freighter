@@ -4,6 +4,7 @@ import {
   Asset,
   Claimant,
   LiquidityPoolAsset,
+  nativeToScVal,
   Operation,
   scValToNative,
   Signer,
@@ -14,11 +15,12 @@ import {
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { truncatedPublicKey, truncateString } from "helpers/stellar";
-import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import { truncatedPublicKey } from "helpers/stellar";
+// import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import {
-  getArgsForTokenInvocation,
+  // getArgsForTokenInvocation,
   buildInvocationTree,
+  InvocationTree,
 } from "popup/helpers/soroban";
 import "./styles.scss";
 
@@ -125,28 +127,98 @@ export const KeyValueWithPublicKey = ({
   />
 );
 
-export const KeyValueRootInvocation = ({
+const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
+  const { t } = useTranslation();
+  switch (_invocation.type) {
+    case "execute": {
+      return (
+        <>
+          <KeyValueWithPublicKey
+            operationKey={t("Source")}
+            operationValue={_invocation.args.source}
+          />
+          <KeyValueList
+            operationKey={t("Function Name")}
+            operationValue={_invocation.args.function}
+          />
+          <KeyValueInvokeHostFnArgs
+            args={_invocation.args.args.map(nativeToScVal)}
+          />
+        </>
+      );
+    }
+
+    case "create": {
+      return (
+        <>
+          <KeyValueList
+            operationKey={t("Type")}
+            operationValue={_invocation.args.type}
+          />
+          {_invocation.args.wasm && (
+            <>
+              <KeyValueList
+                operationKey={t("Salt")}
+                operationValue={_invocation.args.wasm.salt}
+              />
+              <KeyValueList
+                operationKey={t("Hash")}
+                operationValue={_invocation.args.wasm.hash}
+              />
+              <KeyValueWithPublicKey
+                operationKey={t("Address")}
+                operationValue={_invocation.args.wasm.address}
+              />
+            </>
+          )}
+          {_invocation.args.asset && (
+            <KeyValueList
+              operationKey={t("Asset")}
+              operationValue={_invocation.args.asset}
+            />
+          )}
+        </>
+      );
+    }
+
+    default:
+      return <></>;
+  }
+};
+
+export const KeyValueInvocation = ({
+  invocation,
+}: {
+  invocation: InvocationTree;
+}) => (
+  <>
+    <KeyValueList operationKey="Sub Invocation" operationValue="" />
+    <InvocationByType _invocation={invocation} />
+    {invocation.invocations.map((subInvocation) => (
+      <KeyValueInvocation key={subInvocation.type} invocation={subInvocation} />
+    ))}
+  </>
+);
+
+export const KeyValueAuthEntry = ({
   entry,
 }: {
   entry: xdr.SorobanAuthorizationEntry;
 }) => {
-  const rootJson = buildInvocationTree(entry.rootInvocation());
+  const invocation = entry.rootInvocation();
+  const invocationTree = buildInvocationTree(invocation);
 
   return (
-    <div className="Operations__pair--smart-contract">
-      <div>Invocation Tree:</div>
-      <div className="Operations__scValue">
-        <div>
-          <pre>
-            {JSON.stringify(
-              rootJson,
-              (_, val) => (typeof val === "bigint" ? val.toString() : val),
-              2,
-            )}
-          </pre>
-        </div>
-      </div>
-    </div>
+    <>
+      <KeyValueList operationKey="Root Invocation" operationValue="" />
+      <InvocationByType _invocation={invocationTree} />
+      {invocationTree.invocations.map((subInvocation) => (
+        <KeyValueInvocation
+          key={subInvocation.type}
+          invocation={subInvocation}
+        />
+      ))}
+    </>
   );
 };
 
@@ -430,68 +502,15 @@ export const KeyValueInvokeHostFn = ({
       }
 
       case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
-        const invocation = hostfn.invokeContract();
-        const contractId = StrKey.encodeContract(
-          invocation.contractAddress().contractId(),
-        );
-        const fnName = invocation.functionName().toString();
-        const args = invocation.args();
-        const tokenMethods = [
-          SorobanTokenInterface.mint,
-          SorobanTokenInterface.transfer,
-        ];
-
-        if (tokenMethods.includes(fnName as SorobanTokenInterface)) {
-          const invokeParams = getArgsForTokenInvocation(fnName, args);
-          return (
-            <>
-              <KeyValueList
-                operationKey={t("Invocation Type")}
-                operationValue="Invoke Contract"
-              />
-              <KeyValueList
-                operationKey={t("Contract ID")}
-                operationValue={truncateString(contractId)}
-              />
-              <KeyValueList
-                operationKey={t("Function Name")}
-                operationValue={fnName}
-              />
-              <KeyValueList
-                operationKey={t("Amount")}
-                operationValue={invokeParams.amount.toString()}
-              />
-              <KeyValueWithPublicKey
-                operationKey={t("To")}
-                operationValue={invokeParams.to}
-              />
-              {fnName === SorobanTokenInterface.transfer && (
-                <KeyValueWithPublicKey
-                  operationKey={t("From")}
-                  operationValue={invokeParams.from}
-                />
-              )}
-              {authEntries.map((entry) => (
-                <KeyValueRootInvocation entry={entry} />
-              ))}
-            </>
-          );
-        }
         return (
           <>
             <KeyValueList
               operationKey={t("Invocation Type")}
               operationValue="Invoke Contract"
             />
-            <KeyValueList
-              operationKey={t("Contract ID")}
-              operationValue={truncateString(contractId)}
-            />
-            <KeyValueList
-              operationKey={t("Function Name")}
-              operationValue={fnName}
-            />
-            <KeyValueInvokeHostFnArgs args={args} />
+            {authEntries.map((entry) => (
+              <KeyValueAuthEntry entry={entry} />
+            ))}
           </>
         );
       }
