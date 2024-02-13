@@ -216,7 +216,6 @@ export const SignTransaction = () => {
 
   function renderTab(tab: string) {
     function renderTabBody() {
-      // TODO: split for FeeBumpTx
       const _tx = transaction as Transaction<Memo<MemoType>, Operation[]>;
       switch (tab) {
         case "Summary": {
@@ -224,6 +223,7 @@ export const SignTransaction = () => {
             <Summary
               sequenceNumber={_sequence}
               fee={_fee}
+              memo={decodedMemo}
               operationNames={_tx.operations.map(
                 (op) => OPERATION_TYPES[op.type] || op.type,
               )}
@@ -347,6 +347,7 @@ export const SignTransaction = () => {
                         domain,
                         flaggedKeys,
                         isMemoRequired,
+                        memo: decodedMemo,
                       })}`,
                     )
                   }

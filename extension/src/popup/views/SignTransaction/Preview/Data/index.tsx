@@ -1,7 +1,7 @@
 import React from "react";
+import { CopyText, Icon } from "@stellar/design-system";
 
 import "./styles.scss";
-import { CopyText, Icon } from "@stellar/design-system";
 
 interface DataProps {
   xdr: string;

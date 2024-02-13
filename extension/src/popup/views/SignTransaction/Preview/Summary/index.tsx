@@ -1,13 +1,24 @@
 import React from "react";
 
-import "./styles.scss";
 import { Icon } from "@stellar/design-system";
 import { stroopToXlm } from "helpers/stellar";
+import { MemoType } from "stellar-sdk";
+
+import "./styles.scss";
+
+const mapMemoLabel: any = {
+  id: "MEMO_ID",
+  hash: "MEMO_HASH",
+  text: "MEMO_TEXT",
+  return: "MEMO_RETURN",
+  none: "MEMO_NONE",
+};
 
 interface SummaryProps {
   operationNames: string[];
   fee: string;
   sequenceNumber: string;
+  memo?: { value: string; type: MemoType };
 }
 
 export const Summary = (props: SummaryProps) => (
@@ -46,6 +57,17 @@ export const Summary = (props: SummaryProps) => (
         </div>
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
       </div>
+      {props.memo && props.memo.value && (
+        <div className="TxInfoBlock">
+          <div className="TxInfoBlock__title">
+            <Icon.Chat />
+            <p>Memo</p>
+          </div>
+          <p className="TxInfoBlock__value">{`${props.memo.value} (${
+            mapMemoLabel[props.memo.type]
+          })`}</p>
+        </div>
+      )}
     </div>
   </>
 );
