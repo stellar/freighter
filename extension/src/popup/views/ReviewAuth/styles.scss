@@ -48,8 +48,11 @@
     width: 100%;
     flex-grow: 1;
     height: 230px;
+    display: flex;
+    flex-direction: column;
 
     .AuthDetail {
+      flex-grow: 1;
       height: 230px;
       overflow-y: auto;
       border-radius: 4px;

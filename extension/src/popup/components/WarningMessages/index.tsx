@@ -762,9 +762,11 @@ const WarningMessageTokenDetails = ({
       ) : tokenDetails[transfer.contractId] ? (
         <p>
           <span className="InlineLabel">Token:</span>{" "}
-          {`(${tokenDetails[transfer.contractId].symbol}) ${
-            tokenDetails[transfer.contractId].name
-          }`}
+          {`(${
+            tokenDetails[transfer.contractId].name === "native"
+              ? "XLM"
+              : tokenDetails[transfer.contractId].symbol
+          }) ${tokenDetails[transfer.contractId].name}`}
         </p>
       ) : (
         <p>

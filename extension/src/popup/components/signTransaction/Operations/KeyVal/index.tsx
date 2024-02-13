@@ -16,12 +16,8 @@ import {
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { truncatedPublicKey } from "helpers/stellar";
-// import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import {
-  // getArgsForTokenInvocation,
-  buildInvocationTree,
-  InvocationTree,
-} from "popup/helpers/soroban";
+
+import { buildInvocationTree, InvocationTree } from "popup/helpers/soroban";
 import "./styles.scss";
 
 const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
