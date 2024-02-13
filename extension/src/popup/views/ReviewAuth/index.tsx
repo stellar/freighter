@@ -210,36 +210,40 @@ const AuthDetail = ({
 
 const SignTransaction = ({ tx }: { tx: Transaction }) => {
   function renderTab(tab: string) {
-    switch (tab) {
-      case "Summary": {
-        return (
-          <Summary
-            sequenceNumber={tx.sequence}
-            fee={tx.fee}
-            operationNames={tx.operations.map(
-              (op) => OPERATION_TYPES[op.type] || op.type,
-            )}
-          />
-        );
-      }
+    function renderTabBody() {
+      switch (tab) {
+        case "Summary": {
+          return (
+            <Summary
+              sequenceNumber={tx.sequence}
+              fee={tx.fee}
+              operationNames={tx.operations.map(
+                (op) => OPERATION_TYPES[op.type] || op.type,
+              )}
+            />
+          );
+        }
 
-      case "Details": {
-        return (
-          <Details
-            operations={tx.operations}
-            flaggedKeys={{} as FlaggedKeys}
-            isMemoRequired={false}
-          />
-        );
-      }
+        case "Details": {
+          return (
+            <Details
+              operations={tx.operations}
+              flaggedKeys={{} as FlaggedKeys}
+              isMemoRequired={false}
+            />
+          );
+        }
 
-      case "Data": {
-        return <Data xdr={tx.toXDR()} />;
-      }
+        case "Data": {
+          return <Data xdr={tx.toXDR()} />;
+        }
 
-      default:
-        return <></>;
+        default:
+          return <></>;
+      }
     }
+
+    return <div className="BodyWrapper">{renderTabBody()}</div>;
   }
   return <Tabs tabs={["Summary", "Details", "Data"]} renderTab={renderTab} />;
 };
