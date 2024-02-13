@@ -28,6 +28,7 @@
   "Add New Address": "Add New Address",
   "Add New Token": "Add New Token",
   "Add Soroban token": "Add Soroban token",
+  "Address": "Address",
   "Addresses are uppercase and begin with letters “G“ or “M“": "Addresses are uppercase and begin with letters “G“ or “M“.",
   "ALL": "TUDO",
   "All Done": "All Done",
@@ -52,6 +53,7 @@
   "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged": {
     " For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)": "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)."
   },
+  "Asset": "Asset",
   "Asset A": "Asset A",
   "Asset B": "Asset B",
   "Asset Code": "Asset Code",
@@ -180,6 +182,7 @@
   "Function Name": "Function Name",
   "Fund with Friendbot": "Fund with Friendbot",
   "Got it": "Got it",
+  "Hash": "Hash",
   "Have a suggestion or bug report? Create an issue on Github": "Have a suggestion or bug report? Create an issue on Github",
   "Help": "Help",
   "High Threshold": "High Threshold",

@@ -201,25 +201,25 @@ export const SignTransaction = () => {
       </WarningMessage>
     );
   }
-  console.log(isHttpsDomain, isExperimentalModeEnabled, Trans);
-  // if (!isHttpsDomain && !isExperimentalModeEnabled) {
-  //   return (
-  //     <WarningMessage
-  //       handleCloseClick={() => window.close()}
-  //       isActive
-  //       variant={WarningMessageVariant.warning}
-  //       header={t("WEBSITE CONNECTION IS NOT SECURE")}
-  //     >
-  //       <p>
-  //         <Trans domain={domain}>
-  //           The website <strong>{{ domain }}</strong> does not use an SSL
-  //           certificate. For additional safety Freighter only works with
-  //           websites that provide an SSL certificate.
-  //         </Trans>
-  //       </p>
-  //     </WarningMessage>
-  //   );
-  // }
+
+  if (!isHttpsDomain && !isExperimentalModeEnabled) {
+    return (
+      <WarningMessage
+        handleCloseClick={() => window.close()}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("WEBSITE CONNECTION IS NOT SECURE")}
+      >
+        <p>
+          <Trans domain={domain}>
+            The website <strong>{{ domain }}</strong> does not use an SSL
+            certificate. For additional safety Freighter only works with
+            websites that provide an SSL certificate.
+          </Trans>
+        </p>
+      </WarningMessage>
+    );
+  }
 
   function renderTab(tab: string) {
     function renderTabBody() {
