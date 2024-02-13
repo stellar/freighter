@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import {
+  MemoType,
   Operation,
   StrKey,
   Transaction,
@@ -108,6 +109,7 @@ export const ReviewAuth = () => {
               }
               flaggedKeys={params.flaggedKeys}
               isMemoRequired={params.isMemoRequired}
+              memo={params.memo}
             />
           )}
         </div>
@@ -232,10 +234,12 @@ const SignTransaction = ({
   tx,
   flaggedKeys,
   isMemoRequired,
+  memo,
 }: {
   tx: Transaction;
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
+  memo?: { value: string; type: MemoType };
 }) => {
   function renderTab(tab: string) {
     function renderTabBody() {
@@ -245,6 +249,7 @@ const SignTransaction = ({
             <Summary
               sequenceNumber={tx.sequence}
               fee={tx.fee}
+              memo={memo}
               operationNames={tx.operations.map(
                 (op) => OPERATION_TYPES[op.type] || op.type,
               )}
