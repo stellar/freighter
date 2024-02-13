@@ -16,6 +16,16 @@
   .Tabs {
     width: 100%;
     flex-grow: 1;
+
+    .BodyWrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      border-radius: 4px;
+      background-color: var(--color-gray-20);
+      padding: 1rem;
+      overflow-y: scroll;
+    }
   }
 
   &__Body {
@@ -113,7 +123,7 @@
   }
 
   &__account-not-found {
-    margin-top: 1rem;
+    margin: 1rem 0;
   }
 
   &__Actions {
