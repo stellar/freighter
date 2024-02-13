@@ -11,7 +11,7 @@ interface SummaryProps {
 }
 
 export const Summary = (props: SummaryProps) => (
-  <div className="SummaryBody">
+  <>
     <h5>Operations</h5>
     <div className="Operations">
       {props.operationNames.map((opName) => (
@@ -47,5 +47,5 @@ export const Summary = (props: SummaryProps) => (
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
       </div>
     </div>
-  </div>
+  </>
 );

@@ -15,8 +15,8 @@
       var(--popup--side-padding);
     position: absolute;
     top: 0;
-    width: var(--popup--width);
-    height: var(--popup--height);
+    width: 100vw;
+    height: 100vh;
   }
 
   &__activate-button {

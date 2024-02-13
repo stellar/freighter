@@ -27,6 +27,7 @@ import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Tabs } from "popup/components/Tabs";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AccountList } from "popup/components/account/AccountList";
+import { TransferWarning } from "popup/components/WarningMessages";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
@@ -54,17 +55,11 @@ export const ReviewAuth = () => {
 
   const {
     allAccounts,
-    // accountNotFound,
     currentAccount,
     isConfirming,
-    // isPasswordRequired,
     publicKey,
     handleApprove,
-    // hwStatus,
     rejectAndClose,
-    // setIsPasswordRequired,
-    // verifyPasswordThenSign,
-    // hardwareWalletType,
   } = useSetupSigningFlow(
     rejectTransaction,
     signTransaction,
@@ -189,6 +184,7 @@ const AuthDetail = ({
   const details = getInvocationDetails(authEntry.rootInvocation());
   return (
     <div className="AuthDetail">
+      <TransferWarning authEntry={authEntry} />
       {details.map((detail) => (
         <React.Fragment key={detail.fnName}>
           <div className="AuthDetail__TitleRow">
