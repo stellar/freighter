@@ -68,16 +68,6 @@
     word-wrap: break-word;
   }
 
-  &__inner-transaction {
-    border: 1px solid var(--color-gray-30);
-    border-radius: 0.5rem;
-    height: 10rem;
-    opacity: 0.7;
-    overflow: auto;
-    padding: 1rem 2rem;
-    zoom: 0.7;
-  }
-
   &__info {
     margin-bottom: 2rem;
   }

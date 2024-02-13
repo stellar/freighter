@@ -32,6 +32,7 @@ import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
 import { Data } from "../SignTransaction/Preview/Data";
+import { VerifyAccount } from "../VerifyAccount";
 import "./styles.scss";
 
 export const ReviewAuth = () => {
@@ -50,6 +51,8 @@ export const ReviewAuth = () => {
     params.transactionXdr,
     networkPassphrase,
   ) as Transaction;
+
+  const isFeeBump = "innerTransaction" in transaction;
   const op = transaction.operations[0] as Operation.InvokeHostFunction;
   const authCount = op.auth ? op.auth.length : 0;
 
@@ -60,6 +63,9 @@ export const ReviewAuth = () => {
     publicKey,
     handleApprove,
     rejectAndClose,
+    isPasswordRequired,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
   } = useSetupSigningFlow(
     rejectTransaction,
     signTransaction,
@@ -67,7 +73,13 @@ export const ReviewAuth = () => {
     params.accountToSign,
   );
 
-  return (
+  return isPasswordRequired ? (
+    <VerifyAccount
+      isApproval
+      customBackAction={() => setIsPasswordRequired(false)}
+      customSubmit={verifyPasswordThenSign}
+    />
+  ) : (
     <div className="ReviewAuth">
       <div className="ReviewAuth__Body">
         <div className="ReviewAuth__Title">
@@ -88,7 +100,15 @@ export const ReviewAuth = () => {
               <AuthDetail authEntry={op.auth[activeAuthEntryIndex]} />
             </>
           ) : (
-            <SignTransaction tx={transaction} />
+            <SignTransaction
+              tx={
+                isFeeBump
+                  ? ((transaction as any).innerTransaction as Transaction)
+                  : transaction
+              }
+              flaggedKeys={params.flaggedKeys}
+              isMemoRequired={params.isMemoRequired}
+            />
           )}
         </div>
         <div className="ReviewAuth__Actions">
@@ -208,7 +228,15 @@ const AuthDetail = ({
   );
 };
 
-const SignTransaction = ({ tx }: { tx: Transaction }) => {
+const SignTransaction = ({
+  tx,
+  flaggedKeys,
+  isMemoRequired,
+}: {
+  tx: Transaction;
+  flaggedKeys: FlaggedKeys;
+  isMemoRequired: boolean;
+}) => {
   function renderTab(tab: string) {
     function renderTabBody() {
       switch (tab) {
@@ -228,8 +256,8 @@ const SignTransaction = ({ tx }: { tx: Transaction }) => {
           return (
             <Details
               operations={tx.operations}
-              flaggedKeys={{} as FlaggedKeys}
-              isMemoRequired={false}
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
             />
           );
         }

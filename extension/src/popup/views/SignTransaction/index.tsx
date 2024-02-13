@@ -95,12 +95,10 @@ export const SignTransaction = () => {
   const { fee: _fee, networkPassphrase: _networkPassphrase } = transaction;
 
   let isFeeBump = false;
-  // let _innerTransaction = {};
   let _memo = {};
   let _sequence = "";
 
   if ("innerTransaction" in transaction) {
-    // _innerTransaction = transaction.innerTransaction;
     isFeeBump = true;
   } else {
     _sequence = transaction.sequence;
@@ -351,6 +349,8 @@ export const SignTransaction = () => {
                         accountToSign,
                         transactionXdr,
                         domain,
+                        flaggedKeys,
+                        isMemoRequired,
                       })}`,
                     )
                   }
