@@ -34,7 +34,6 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-// import { TransactionHeading } from "popup/basics/TransactionHeading";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -47,11 +46,9 @@ import {
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
-// import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SlideupModal } from "popup/components/SlideupModal";
-// import { View } from "popup/basics/layout/View";
 import { FlaggedKeys } from "types/transactions";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
@@ -59,7 +56,6 @@ import { Tabs } from "popup/components/Tabs";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
-// import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
 import "./styles.scss";
 

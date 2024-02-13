@@ -208,7 +208,7 @@ const AuthDetail = ({
       {details.map((detail) => (
         <React.Fragment key={detail.fnName}>
           <div className="AuthDetail__TitleRow">
-            <Icon.Aod />
+            <Icon.Code />
             <h5>Invocation</h5>
           </div>
           <div className="AuthDetail__InfoBlock">
