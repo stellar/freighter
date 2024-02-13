@@ -1,3 +1,15 @@
+# Release notes - Wallets - Freighter-5.15.2
+
+### Bug
+
+Account for optional wasm hash when rendering contract create invocations
+
+# Release notes - Wallets - Freighter-5.15.1
+
+### Bug
+
+Fixes bug in transaction signing preview for scvMap rendering
+
 # Release notes - Wallets - Freighter-5.15.0
 
 ### Story
