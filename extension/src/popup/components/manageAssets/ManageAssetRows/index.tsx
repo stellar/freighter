@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { StellarToml } from "stellar-sdk";
+import { StellarToml, Networks } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { Button } from "@stellar/design-system";
 import { ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
@@ -17,7 +18,6 @@ import {
   truncateString,
 } from "helpers/stellar";
 
-import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -25,6 +25,7 @@ import { ROUTES } from "popup/constants/routes";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
+  addTokenId,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -43,6 +44,7 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   ScamAssetWarning,
   NewAssetWarning,
+  UnverifiedTokenWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
@@ -51,6 +53,8 @@ import { NETWORKS } from "@shared/constants/stellar";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { isContractId } from "popup/helpers/soroban";
+import IconAdd from "popup/assets/icon-add.svg";
+import IconRemove from "popup/assets/icon-remove.svg";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -66,18 +70,22 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
+  chooseAsset?: boolean;
+  isVerifiedToken?: boolean;
 }
 
 export const ManageAssetRows = ({
   children,
   header,
   assetRows,
+  chooseAsset,
+  isVerifiedToken,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
-    accountBalances: { balances = {} },
+    accountBalances,
     submitStatus,
     hardwareWalletData: { status: hwStatus },
     blockedDomains,
@@ -85,9 +93,7 @@ export const ManageAssetRows = ({
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
-  const { accountBalanceStatus, tokensWithNoBalance } = useSelector(
-    tokensSelector,
-  );
+  const { accountBalanceStatus } = useSelector(tokensSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!walletType;
 
@@ -95,6 +101,7 @@ export const ManageAssetRows = ({
     false,
   );
   const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
+  const [showUnverifiedWarning, setShowUnverifiedWarning] = useState(false);
   const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
     isNewAsset: false,
     isInvalidDomain: false,
@@ -238,17 +245,45 @@ export const ManageAssetRows = ({
   };
 
   const handleTokenRowClick = async (
-    contractId: string,
+    assetRowData = {
+      code: "",
+      issuer: "",
+      domain: "",
+      image: "",
+    },
+    isTrustlineActive: boolean,
     canonicalAsset?: string,
   ) => {
+    const contractId = assetRowData.issuer;
     setAssetSubmitting(canonicalAsset || contractId);
-    await dispatch(
-      removeTokenId({
-        contractId,
-        network: networkDetails.network as NETWORKS,
-      }),
-    );
-    navigateTo(ROUTES.account);
+    if (!isTrustlineActive) {
+      if (isVerifiedToken) {
+        await dispatch(
+          addTokenId({
+            publicKey,
+            tokenId: contractId,
+            network: networkDetails.network as Networks,
+          }),
+        );
+        navigateTo(ROUTES.account);
+      } else {
+        setSuspiciousAssetData({
+          domain: assetRowData.domain,
+          code: assetRowData.code,
+          issuer: assetRowData.issuer,
+          image: assetRowData.image,
+        });
+        setShowUnverifiedWarning(true);
+      }
+    } else {
+      await dispatch(
+        removeTokenId({
+          contractId,
+          network: networkDetails.network as NETWORKS,
+        }),
+      );
+      navigateTo(ROUTES.account);
+    }
   };
 
   return (
@@ -279,78 +314,122 @@ export const ManageAssetRows = ({
           }}
         />
       )}
+      {showUnverifiedWarning && (
+        <UnverifiedTokenWarning
+          domain={suspiciousAssetData.domain}
+          code={suspiciousAssetData.code}
+          issuer={suspiciousAssetData.issuer}
+          onClose={() => {
+            setShowUnverifiedWarning(false);
+          }}
+        />
+      )}
       <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
-          {assetRows.map(({ code = "", domain, image = "", issuer = "" }) => {
-            if (!balances) return null;
-            const isContract = isContractId(issuer);
-            const canonicalAsset = getCanonicalFromAsset(code, issuer);
-            const isTrustlineActive = Object.keys(balances).some(
-              (balance) => balance === canonicalAsset,
-            );
-            const isActionPending =
-              submitStatus === ActionStatus.PENDING ||
-              accountBalanceStatus === ActionStatus.PENDING;
-
-            return (
-              <div
-                className="ManageAssetRows__row"
-                key={canonicalAsset}
-                data-testid="ManageAssetRow"
-              >
-                <ManageAssetRow
-                  code={code}
-                  issuer={issuer}
-                  image={image}
-                  domain={domain}
-                />
-                <div className="ManageAssetRows__button">
-                  <PillButton
-                    disabled={isActionPending}
-                    isLoading={
-                      isActionPending && assetSubmitting === canonicalAsset
-                    }
-                    onClick={() => {
-                      if (isContract) {
-                        handleTokenRowClick(issuer, canonicalAsset);
-                      } else {
-                        handleRowClick(
-                          { code, issuer, image, domain },
-                          isTrustlineActive,
-                        );
+          {assetRows.map(
+            ({ code = "", domain, image = "", issuer = "", name = "" }) => {
+              if (!accountBalances.balances) return null;
+              const isContract = isContractId(issuer);
+              const canonicalAsset = getCanonicalFromAsset(code, issuer);
+              const isTrustlineActive =
+                Object.keys(accountBalances.balances).some(
+                  (balance) => balance === canonicalAsset,
+                ) || accountBalances.tokensWithNoBalance.includes(issuer);
+              const isActionPending =
+                submitStatus === ActionStatus.PENDING ||
+                accountBalanceStatus === ActionStatus.PENDING;
+              return (
+                <div
+                  className="ManageAssetRows__row"
+                  key={canonicalAsset}
+                  data-testid="ManageAssetRow"
+                >
+                  <ManageAssetRow
+                    code={code}
+                    issuer={issuer}
+                    image={image}
+                    domain={domain}
+                    name={name}
+                  />
+                  <div className="ManageAssetRows__button">
+                    <Button
+                      size="md"
+                      variant="secondary"
+                      disabled={isActionPending}
+                      isLoading={
+                        isActionPending && assetSubmitting === canonicalAsset
                       }
-                    }}
-                    type="button"
-                    data-testid="ManageAssetRowButton"
-                  >
-                    {isTrustlineActive || isContract ? t("Remove") : t("Add")}
-                  </PillButton>
+                      onClick={() => {
+                        if (isContract) {
+                          handleTokenRowClick(
+                            { code, issuer, image, domain },
+                            isTrustlineActive,
+                            canonicalAsset,
+                          );
+                        } else {
+                          handleRowClick(
+                            { code, issuer, image, domain },
+                            isTrustlineActive,
+                          );
+                        }
+                      }}
+                      type="button"
+                      data-testid="ManageAssetRowButton"
+                    >
+                      {isTrustlineActive ? (
+                        <>
+                          <div className="ManageAssetRows__button__label">
+                            {t("Remove")}
+                          </div>
+                          <img src={IconRemove} alt="icon remove" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="ManageAssetRows__button__label">
+                            {t("Add")}
+                          </div>
+                          <img src={IconAdd} alt="icon add" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            },
+          )}
 
-          {tokensWithNoBalance.map((tokenId) => {
-            const isActionPending =
-              accountBalanceStatus === ActionStatus.PENDING;
+          {chooseAsset &&
+            accountBalances.tokensWithNoBalance.map((code) => {
+              const isActionPending =
+                accountBalanceStatus === ActionStatus.PENDING;
 
-            return (
-              <div className="ManageAssetRows__row" key={tokenId}>
-                <ManageAssetRow domain={truncateString(tokenId)} />
-                <div className="ManageAssetRows__button">
-                  <PillButton
-                    disabled={isActionPending}
-                    isLoading={isActionPending && assetSubmitting === tokenId}
-                    onClick={() => handleTokenRowClick(tokenId)}
-                    type="button"
-                  >
-                    {t("Remove")}
-                  </PillButton>
+              return (
+                <div className="ManageAssetRows__row" key={code}>
+                  <ManageAssetRow domain={truncateString(code)} />
+                  <div className="ManageAssetRows__button">
+                    <Button
+                      size="md"
+                      variant="secondary"
+                      disabled={isActionPending}
+                      isLoading={isActionPending && assetSubmitting === code}
+                      onClick={() =>
+                        handleTokenRowClick(
+                          { code, issuer: "", image: "", domain: "" },
+                          true,
+                        )
+                      }
+                      type="button"
+                    >
+                      <div className="ManageAssetRows__button__label">
+                        {t("Remove")}
+                      </div>
+                      <img src={IconRemove} alt="icon remove" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
         {children}
       </div>
@@ -367,6 +446,7 @@ interface AssetRowData {
   issuer?: string;
   image?: string;
   domain: string;
+  name?: string;
 }
 
 export const ManageAssetRow = ({
@@ -374,6 +454,7 @@ export const ManageAssetRow = ({
   issuer = "",
   image = "",
   domain,
+  name,
 }: AssetRowData) => {
   const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
@@ -388,7 +469,7 @@ export const ManageAssetRow = ({
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
-          <span data-testid="ManageAssetCode">{code}</span>
+          <span data-testid="ManageAssetCode">{name || code}</span>
           <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div

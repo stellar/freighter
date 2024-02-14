@@ -132,7 +132,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             ref={ManageAssetRowsWrapperRef}
           >
             {managingAssets ? (
-              <ManageAssetRows assetRows={assetRows} />
+              <ManageAssetRows assetRows={assetRows} chooseAsset />
             ) : (
               <SelectAssetRows assetRows={assetRows} />
             )}

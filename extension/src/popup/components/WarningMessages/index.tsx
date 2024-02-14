@@ -10,6 +10,7 @@ import {
   Operation,
   Horizon,
   TransactionBuilder,
+  Networks,
   xdr,
 } from "stellar-sdk";
 
@@ -31,11 +32,13 @@ import {
   ManageAssetRow,
   NewAssetFlags,
 } from "popup/components/manageAssets/ManageAssetRows";
+import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { View } from "popup/basics/layout/View";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
+  addTokenId,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -46,6 +49,7 @@ import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
 import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
+import IconUnverifiedWarning from "popup/assets/icon-unverified-warning.svg";
 
 import "./styles.scss";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -660,6 +664,138 @@ export const NewAssetWarning = ({
                 {t("Add asset")}
               </Button>
             </div>
+          </div>
+        </div>
+      </View.Content>
+    </div>
+  );
+};
+
+export const UnverifiedTokenWarning = ({
+  domain,
+  code,
+  issuer,
+  onClose,
+}: {
+  domain: string;
+  code: string;
+  issuer: string;
+  onClose: () => void;
+}) => {
+  const { t } = useTranslation();
+  const dispatch: AppDispatch = useDispatch();
+  const warningRef = useRef<HTMLDivElement>(null);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const { submitStatus } = useSelector(transactionSubmissionSelector);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const closeOverlay = () => {
+    if (warningRef.current) {
+      warningRef.current.style.marginBottom = `-${POPUP_HEIGHT}px`;
+    }
+    const timeout = setTimeout(() => {
+      onClose();
+      clearTimeout(timeout);
+    }, 300);
+  };
+
+  // animate entry
+  useEffect(() => {
+    if (warningRef.current) {
+      const timeout = setTimeout(() => {
+        // Adding extra check to fix flaky tests
+        if (warningRef.current) {
+          warningRef.current.style.marginBottom = "0";
+        }
+        clearTimeout(timeout);
+      }, 10);
+    }
+  }, [warningRef]);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    await dispatch(
+      addTokenId({
+        publicKey,
+        tokenId: issuer,
+        network: networkDetails.network as Networks,
+      }),
+    );
+    navigateTo(ROUTES.account);
+
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="UnverifiedTokenWarning">
+      <View.Content>
+        <div className="UnverifiedTokenWarning__wrapper" ref={warningRef}>
+          <div className="UnverifiedTokenWarning__heading">
+            <div className="UnverifiedTokenWarning__icon">
+              <SorobanTokenIcon code={code} noMargin />
+            </div>
+            <div className="UnverifiedTokenWarning__code">{code}</div>
+            <div className="UnverifiedTokenWarning__domain">{domain}</div>
+            <div className="UnverifiedTokenWarning__description">
+              <div className="UnverifiedTokenWarning__description__icon">
+                <Icon.VerifiedUser />
+              </div>
+              <div className="UnverifiedTokenWarning__description__text">
+                {t("Add Asset Trustline")}
+              </div>
+            </div>
+          </div>
+
+          <Notification
+            title={t(
+              "Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets.",
+            )}
+            variant="warning"
+          ></Notification>
+          <div className="UnverifiedTokenWarning__flags">
+            <div className="UnverifiedTokenWarning__flags__info">
+              {t("Asset Info")}
+            </div>
+            <div className="UnverifiedTokenWarning__flag">
+              <div className="UnverifiedTokenWarning__flag__icon">
+                <img src={IconUnverifiedWarning} alt="unverified token" />
+              </div>
+              <div className="UnverifiedTokenWarning__flag__content">
+                <div className="UnverifiedTokenWarning__flag__header UnverifiedTokenWarning__flags__icon--unverified">
+                  {t("Unverified asset")}
+                </div>
+                <div className="UnverifiedTokenWarning__flag__description">
+                  {t("Proceed with caution")}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="UnverifiedTokenWarning__bottom-content">
+            <div className="ScamAssetWarning__btns">
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                type="button"
+                onClick={closeOverlay}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                size="md"
+                isFullWidth
+                onClick={handleSubmit}
+                type="button"
+                variant="primary"
+                isLoading={
+                  isSubmitting || submitStatus === ActionStatus.PENDING
+                }
+              >
+                {t("Add asset")}
+              </Button>
+            </div>{" "}
           </div>
         </div>
       </View.Content>
