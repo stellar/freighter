@@ -113,25 +113,32 @@ export const AddToken = () => {
       } else {
         // lookup contract
         setIsVerifiedToken(false);
-        const tokenUrl = new URL(`${INDEXER_URL}/token-details/${contractId}`);
-        tokenUrl.searchParams.append("network", networkDetails.network);
-        tokenUrl.searchParams.append("pub_key", publicKey);
-        tokenUrl.searchParams.append(
-          "soroban_url",
-          networkDetails.sorobanRpcUrl!,
-        );
+        try {
+          const tokenUrl = new URL(
+            `${INDEXER_URL}/token-details/${contractId}`,
+          );
+          tokenUrl.searchParams.append("network", networkDetails.network);
+          tokenUrl.searchParams.append("pub_key", publicKey);
+          tokenUrl.searchParams.append(
+            "soroban_url",
+            networkDetails.sorobanRpcUrl!,
+          );
 
-        const res = await fetch(tokenUrl.href);
-        const resJson = await res.json();
+          const res = await fetch(tokenUrl.href);
+          const resJson = await res.json();
 
-        setAssetRows([
-          {
-            code: resJson.symbol,
-            issuer: contractId,
-            domain: "",
-            name: resJson.name,
-          },
-        ]);
+          setAssetRows([
+            {
+              code: resJson.symbol,
+              issuer: contractId,
+              domain: "",
+              name: resJson.name,
+            },
+          ]);
+        } catch (e) {
+          setAssetRows([]);
+          console.error(e);
+        }
       }
     }, 500),
     [],
@@ -196,7 +203,7 @@ export const AddToken = () => {
                     />
                   ) : null}
                   {hasNoResults && dirty && !isSearching ? (
-                    <div className="AddToken__heading">Token not found</div>
+                    <div className="AddToken__not-found">Token not found</div>
                   ) : null}
                 </div>
               </FormRows>

@@ -10,4 +10,11 @@
       margin-left: 0.15625rem;
     }
   }
+
+  &__not-found {
+    display: flex;
+    align-items: center;
+    margin: 0.5rem 0 1rem 0;
+    justify-content: center;
+  }
 }
