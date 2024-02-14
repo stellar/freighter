@@ -15,8 +15,9 @@
       var(--popup--side-padding);
     position: absolute;
     top: 0;
-    width: var(--popup--width);
-    height: var(--popup--height);
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
   }
 
   &__activate-button {
@@ -32,12 +33,12 @@
 
   &__infoBlock {
     background: #32275f;
-    border: none;
+    border: 1px solid;
     border-radius: 0.5rem;
     color: var(--color-white) !important;
     font-size: 0.875rem;
     margin-bottom: 1rem;
-    padding: 0.875rem;
+    padding: 0.5rem;
 
     &--high-alert {
       background: rgba(241, 50, 50, 0.32);
@@ -48,7 +49,8 @@
     }
 
     &--warning {
-      background: rgba(241, 165, 50, 0.32);
+      border-color: rgba(241, 165, 50, 0.32);
+      background-color: rgba(94, 58, 4, 0.32);
 
       .WarningMessage__icon {
         color: rgba(241, 165, 50, 1);

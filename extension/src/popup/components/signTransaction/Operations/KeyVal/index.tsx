@@ -4,6 +4,7 @@ import {
   Asset,
   Claimant,
   LiquidityPoolAsset,
+  nativeToScVal,
   Operation,
   scValToNative,
   Signer,
@@ -15,11 +16,8 @@ import {
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { truncatedPublicKey, truncateString } from "helpers/stellar";
-import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import {
-  getArgsForTokenInvocation,
-  buildInvocationTree,
-} from "popup/helpers/soroban";
+
+import { buildInvocationTree, InvocationTree } from "popup/helpers/soroban";
 import "./styles.scss";
 
 const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
@@ -107,7 +105,7 @@ export const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
-    <div>{operationKey}:</div>
+    <div>{operationKey}</div>
     <div>{operationValue}</div>
   </div>
 );
@@ -125,28 +123,98 @@ export const KeyValueWithPublicKey = ({
   />
 );
 
-export const KeyValueRootInvocation = ({
+const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
+  const { t } = useTranslation();
+  switch (_invocation.type) {
+    case "execute": {
+      return (
+        <>
+          <KeyValueWithPublicKey
+            operationKey={t("Source")}
+            operationValue={_invocation.args.source}
+          />
+          <KeyValueList
+            operationKey={t("Function Name")}
+            operationValue={_invocation.args.function}
+          />
+          <KeyValueInvokeHostFnArgs
+            args={_invocation.args.args.map(nativeToScVal)}
+          />
+        </>
+      );
+    }
+
+    case "create": {
+      return (
+        <>
+          <KeyValueList
+            operationKey={t("Type")}
+            operationValue={_invocation.args.type}
+          />
+          {_invocation.args.wasm && (
+            <>
+              <KeyValueList
+                operationKey={t("Salt")}
+                operationValue={_invocation.args.wasm.salt}
+              />
+              <KeyValueList
+                operationKey={t("Hash")}
+                operationValue={_invocation.args.wasm.hash}
+              />
+              <KeyValueWithPublicKey
+                operationKey={t("Address")}
+                operationValue={_invocation.args.wasm.address}
+              />
+            </>
+          )}
+          {_invocation.args.asset && (
+            <KeyValueList
+              operationKey={t("Asset")}
+              operationValue={_invocation.args.asset}
+            />
+          )}
+        </>
+      );
+    }
+
+    default:
+      return <></>;
+  }
+};
+
+export const KeyValueInvocation = ({
+  invocation,
+}: {
+  invocation: InvocationTree;
+}) => (
+  <>
+    <KeyValueList operationKey="Sub Invocation" operationValue="" />
+    <InvocationByType _invocation={invocation} />
+    {invocation.invocations.map((subInvocation) => (
+      <KeyValueInvocation key={subInvocation.type} invocation={subInvocation} />
+    ))}
+  </>
+);
+
+export const KeyValueAuthEntry = ({
   entry,
 }: {
   entry: xdr.SorobanAuthorizationEntry;
 }) => {
-  const rootJson = buildInvocationTree(entry.rootInvocation());
+  const invocation = entry.rootInvocation();
+  const invocationTree = buildInvocationTree(invocation);
 
   return (
-    <div className="Operations__pair--smart-contract">
-      <div>Invocation Tree:</div>
-      <div className="Operations__scValue">
-        <div>
-          <pre>
-            {JSON.stringify(
-              rootJson,
-              (_, val) => (typeof val === "bigint" ? val.toString() : val),
-              2,
-            )}
-          </pre>
-        </div>
-      </div>
-    </div>
+    <>
+      <KeyValueList operationKey="Root Invocation" operationValue="" />
+      <InvocationByType _invocation={invocationTree} />
+      {invocationTree.invocations.map((subInvocation) => (
+        <KeyValueInvocation
+          key={subInvocation.type}
+          invocation={subInvocation}
+        />
+      ))}
+    </>
   );
 };
 
@@ -156,7 +224,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
   function renderSignerType() {
     if ("ed25519PublicKey" in signer) {
       return (
-        <KeyValueList
+        <KeyValueWithPublicKey
           operationKey={t("Signer")}
           operationValue={signer.ed25519PublicKey}
         />
@@ -185,7 +253,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       return (
         <KeyValueList
           operationKey={t("Signer")}
-          operationValue={signer.ed25519SignedPayload}
+          operationValue={truncateString(signer.ed25519SignedPayload)}
         />
       );
     }
@@ -231,6 +299,96 @@ export const KeyValueLine = ({
 
 export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
   const { t } = useTranslation();
+
+  function claimPredicateValue(
+    predicate: xdr.ClaimPredicate,
+    hideKey: boolean = false,
+  ): React.ReactNode {
+    switch (predicate.switch().name) {
+      case "claimPredicateUnconditional": {
+        return (
+          <KeyValueList
+            operationKey={hideKey ? "" : t("Predicate")}
+            operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+          />
+        );
+      }
+
+      case "claimPredicateAnd": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            {predicate.andPredicates().map((p) => claimPredicateValue(p, true))}
+          </>
+        );
+      }
+
+      case "claimPredicateBeforeAbsoluteTime": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            <KeyValueList
+              operationKey=""
+              operationValue={predicate.absBefore().toString()}
+            />
+          </>
+        );
+      }
+
+      case "claimPredicateBeforeRelativeTime": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            <KeyValueList
+              operationKey=""
+              operationValue={predicate.relBefore().toString()}
+            />
+          </>
+        );
+      }
+
+      case "claimPredicateNot": {
+        const not = predicate.notPredicate();
+        if (not) {
+          return (
+            <>
+              <KeyValueList
+                operationKey={hideKey ? "" : t("Predicate")}
+                operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+              />
+              {claimPredicateValue(not, true)}
+            </>
+          );
+        }
+        return <></>;
+      }
+
+      case "claimPredicateOr": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            {predicate.orPredicates().map((p) => claimPredicateValue(p, true))}
+          </>
+        );
+      }
+
+      default: {
+        return <></>;
+      }
+    }
+  }
   return (
     <>
       {claimants.map((claimant, i) => (
@@ -241,10 +399,7 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
             operationKey={t(`Destination #${i + 1}`)}
             operationValue={claimant.destination}
           />
-          <KeyValueList
-            operationKey={t("Predicate")}
-            operationValue={CLAIM_PREDICATES[claimant.predicate.switch().name]}
-          />
+          {claimPredicateValue(claimant.predicate)}
         </React.Fragment>
       ))}
     </>
@@ -314,9 +469,7 @@ export const KeyValueInvokeHostFn = ({
 }: {
   op: Operation.InvokeHostFunction;
 }) => {
-  // TODO: render sub-invocation/auth
   const { t } = useTranslation();
-  const authEntries = op.auth || [];
   const hostfn = op.func;
 
   function renderDetails() {
@@ -437,47 +590,7 @@ export const KeyValueInvokeHostFn = ({
         );
         const fnName = invocation.functionName().toString();
         const args = invocation.args();
-        const tokenMethods = [
-          SorobanTokenInterface.mint,
-          SorobanTokenInterface.transfer,
-        ];
 
-        if (tokenMethods.includes(fnName as SorobanTokenInterface)) {
-          const invokeParams = getArgsForTokenInvocation(fnName, args);
-          return (
-            <>
-              <KeyValueList
-                operationKey={t("Invocation Type")}
-                operationValue="Invoke Contract"
-              />
-              <KeyValueList
-                operationKey={t("Contract ID")}
-                operationValue={truncateString(contractId)}
-              />
-              <KeyValueList
-                operationKey={t("Function Name")}
-                operationValue={fnName}
-              />
-              <KeyValueList
-                operationKey={t("Amount")}
-                operationValue={invokeParams.amount.toString()}
-              />
-              <KeyValueWithPublicKey
-                operationKey={t("To")}
-                operationValue={invokeParams.to}
-              />
-              {fnName === SorobanTokenInterface.transfer && (
-                <KeyValueWithPublicKey
-                  operationKey={t("From")}
-                  operationValue={invokeParams.from}
-                />
-              )}
-              {authEntries.map((entry) => (
-                <KeyValueRootInvocation entry={entry} />
-              ))}
-            </>
-          );
-        }
         return (
           <>
             <KeyValueList

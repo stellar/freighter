@@ -11,6 +11,7 @@ import {
   Horizon,
   TransactionBuilder,
   Networks,
+  xdr,
 } from "stellar-sdk";
 
 import { ActionStatus } from "@shared/api/types";
@@ -803,21 +804,16 @@ export const UnverifiedTokenWarning = ({
 };
 
 export const TransferWarning = ({
-  operation,
+  authEntry,
 }: {
-  operation: Operation.InvokeHostFunction;
+  authEntry: xdr.SorobanAuthorizationEntry;
 }) => {
   const { t } = useTranslation();
 
-  const authEntries = operation.auth || [];
-  const transfers = authEntries
-    .map((entry) => {
-      const rootInvocation = entry.rootInvocation();
-      const rootJson = buildInvocationTree(rootInvocation);
-      const isInvokeContract = rootInvocation.function().switch().value === 0;
-      return isInvokeContract ? pickTransfers(rootJson) : [];
-    })
-    .flat();
+  const rootInvocation = authEntry.rootInvocation();
+  const rootJson = buildInvocationTree(rootInvocation);
+  const isInvokeContract = rootInvocation.function().switch().value === 0;
+  const transfers = isInvokeContract ? pickTransfers(rootJson) : [];
 
   if (!transfers.length) {
     return null;
@@ -826,7 +822,7 @@ export const TransferWarning = ({
   return (
     <WarningMessage
       header="Authorizes Token Transfer"
-      variant={WarningMessageVariant.highAlert}
+      variant={WarningMessageVariant.warning}
     >
       <div className="TokenTransferWarning">
         <p>
@@ -902,9 +898,11 @@ const WarningMessageTokenDetails = ({
       ) : tokenDetails[transfer.contractId] ? (
         <p>
           <span className="InlineLabel">Token:</span>{" "}
-          {`(${tokenDetails[transfer.contractId].symbol}) ${
-            tokenDetails[transfer.contractId].name
-          }`}
+          {`(${
+            tokenDetails[transfer.contractId].name === "native"
+              ? "XLM"
+              : tokenDetails[transfer.contractId].symbol
+          }) ${tokenDetails[transfer.contractId].name}`}
         </p>
       ) : (
         <p>
