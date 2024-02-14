@@ -144,9 +144,9 @@ export const ReviewAuth = () => {
                 size="md"
                 isLoading={isConfirming}
                 onClick={() =>
-                  activeAuthEntryIndex === op.auth?.length
-                    ? setActiveAuthEntryIndex(activeAuthEntryIndex + 1)
-                    : setHasConfirmedAuth(true)
+                  activeAuthEntryIndex + 1 === op.auth?.length
+                    ? setHasConfirmedAuth(true)
+                    : setActiveAuthEntryIndex(activeAuthEntryIndex + 1)
                 }
               >
                 {t("Approve and review next")}
