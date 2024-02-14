@@ -15,7 +15,7 @@ import {
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { truncatedPublicKey } from "helpers/stellar";
+import { truncatedPublicKey, truncateString } from "helpers/stellar";
 
 import { buildInvocationTree, InvocationTree } from "popup/helpers/soroban";
 import "./styles.scss";
@@ -224,7 +224,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
   function renderSignerType() {
     if ("ed25519PublicKey" in signer) {
       return (
-        <KeyValueList
+        <KeyValueWithPublicKey
           operationKey={t("Signer")}
           operationValue={signer.ed25519PublicKey}
         />
@@ -253,7 +253,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       return (
         <KeyValueList
           operationKey={t("Signer")}
-          operationValue={signer.ed25519SignedPayload}
+          operationValue={truncateString(signer.ed25519SignedPayload)}
         />
       );
     }
@@ -299,6 +299,96 @@ export const KeyValueLine = ({
 
 export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
   const { t } = useTranslation();
+
+  function claimPredicateValue(
+    predicate: xdr.ClaimPredicate,
+    hideKey: boolean = false,
+  ): React.ReactNode {
+    switch (predicate.switch().name) {
+      case "claimPredicateUnconditional": {
+        return (
+          <KeyValueList
+            operationKey={hideKey ? "" : t("Predicate")}
+            operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+          />
+        );
+      }
+
+      case "claimPredicateAnd": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            {predicate.andPredicates().map((p) => claimPredicateValue(p, true))}
+          </>
+        );
+      }
+
+      case "claimPredicateBeforeAbsoluteTime": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            <KeyValueList
+              operationKey=""
+              operationValue={predicate.absBefore().toString()}
+            />
+          </>
+        );
+      }
+
+      case "claimPredicateBeforeRelativeTime": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            <KeyValueList
+              operationKey=""
+              operationValue={predicate.relBefore().toString()}
+            />
+          </>
+        );
+      }
+
+      case "claimPredicateNot": {
+        const not = predicate.notPredicate();
+        if (not) {
+          return (
+            <>
+              <KeyValueList
+                operationKey={hideKey ? "" : t("Predicate")}
+                operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+              />
+              {claimPredicateValue(not, true)}
+            </>
+          );
+        }
+        return <></>;
+      }
+
+      case "claimPredicateOr": {
+        return (
+          <>
+            <KeyValueList
+              operationKey={hideKey ? "" : t("Predicate")}
+              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            />
+            {predicate.orPredicates().map((p) => claimPredicateValue(p, true))}
+          </>
+        );
+      }
+
+      default: {
+        return <></>;
+      }
+    }
+  }
   return (
     <>
       {claimants.map((claimant, i) => (
@@ -309,10 +399,7 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
             operationKey={t(`Destination #${i + 1}`)}
             operationValue={claimant.destination}
           />
-          <KeyValueList
-            operationKey={t("Predicate")}
-            operationValue={CLAIM_PREDICATES[claimant.predicate.switch().name]}
-          />
+          {claimPredicateValue(claimant.predicate)}
         </React.Fragment>
       ))}
     </>

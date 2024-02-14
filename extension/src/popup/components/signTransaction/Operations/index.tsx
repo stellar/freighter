@@ -384,15 +384,9 @@ export const Operations = ({
       }
 
       case "changeTrust": {
-        const { source, type, limit, line } = op;
+        const { type, limit, line } = op;
         return (
           <>
-            {source && (
-              <KeyValueWithPublicKey
-                operationKey={t("Source")}
-                operationValue={source}
-              />
-            )}
             <KeyValueLine line={line} />
             <KeyValueList operationKey={t("Type")} operationValue={type} />
             <KeyValueList operationKey={t("Limit")} operationValue={limit} />
@@ -404,7 +398,7 @@ export const Operations = ({
         const { trustor, assetCode, authorize } = op;
         return (
           <>
-            <KeyValueList
+            <KeyValueWithPublicKey
               operationKey={t("Trustor")}
               operationValue={trustor}
             />
@@ -494,15 +488,9 @@ export const Operations = ({
       }
 
       case "endSponsoringFutureReserves": {
-        const { source, type } = op;
+        const { type } = op;
         return (
           <>
-            {source && (
-              <KeyValueList
-                operationKey={t("Source")}
-                operationValue={source}
-              />
-            )}
             <KeyValueList operationKey={t("Type")} operationValue={type} />
           </>
         );
