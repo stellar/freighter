@@ -470,7 +470,6 @@ export const KeyValueInvokeHostFn = ({
   op: Operation.InvokeHostFunction;
 }) => {
   const { t } = useTranslation();
-  const authEntries = op.auth || [];
   const hostfn = op.func;
 
   function renderDetails() {
@@ -585,15 +584,28 @@ export const KeyValueInvokeHostFn = ({
       }
 
       case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
+        const invocation = hostfn.invokeContract();
+        const contractId = StrKey.encodeContract(
+          invocation.contractAddress().contractId(),
+        );
+        const fnName = invocation.functionName().toString();
+        const args = invocation.args();
+
         return (
           <>
             <KeyValueList
               operationKey={t("Invocation Type")}
               operationValue="Invoke Contract"
             />
-            {authEntries.map((entry) => (
-              <KeyValueAuthEntry entry={entry} />
-            ))}
+            <KeyValueList
+              operationKey={t("Contract ID")}
+              operationValue={truncateString(contractId)}
+            />
+            <KeyValueList
+              operationKey={t("Function Name")}
+              operationValue={fnName}
+            />
+            <KeyValueInvokeHostFnArgs args={args} />
           </>
         );
       }
