@@ -3813,6 +3813,11 @@
     p-map "^4.0.0"
     webpack-sources "^3.2.2"
 
+"@stellar-asset-lists/sdk@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@stellar-asset-lists/sdk/-/sdk-1.0.0.tgz#59a70b07c01247ffed2f8d370d624ca2650c0b50"
+  integrity sha512-2RBdkUVStRbZZG7yxL6ow3B6cCjClSHe5bHF/NGKAkKR6MDXEfIvoLndsl4uWoLJTLfe3vdL9UX/T14p4INdBA==
+
 "@stellar/design-system@^1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@stellar/design-system/-/design-system-1.1.2.tgz#09f27c13fef69975c6d9a214e770e419985c0b8e"

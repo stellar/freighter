@@ -1,100 +1,208 @@
-import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Button, Input } from "@stellar/design-system";
-import { Field, Form, Formik, FieldProps } from "formik";
+import React, { useEffect, useCallback, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { Redirect } from "react-router-dom";
+import { Formik, Form, Field, FieldProps } from "formik";
+import { Icon, Input, Loader } from "@stellar/design-system";
+import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
-import { Networks } from "stellar-sdk";
-
-import { ROUTES } from "popup/constants/routes";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { AppDispatch } from "popup/App";
-import { navigateTo } from "popup/helpers/navigate";
-import { emitMetric } from "helpers/metrics";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 import { FormRows } from "popup/basics/Forms";
-import { View } from "popup/basics/layout/View";
+
+import { ROUTES } from "popup/constants/routes";
+
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { isCustomNetwork } from "helpers/stellar";
+import { searchToken } from "popup/helpers/searchAsset";
+import { isContractId } from "popup/helpers/soroban";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
+import IconUnverified from "popup/assets/icon-unverified.svg";
 
-import {
-  addTokenId,
-  authErrorSelector,
-  publicKeySelector,
-} from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
+import "./styles.scss";
 
 interface FormValues {
-  tokenId: string;
+  asset: string;
 }
-
 const initialValues: FormValues = {
-  tokenId: "",
+  asset: "",
+};
+
+const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="AddToken__heading">
+      {isVerified ? (
+        <>
+          <Icon.Verified />
+          <span className="AddToken__heading__text">{t("Verified")}</span>
+        </>
+      ) : (
+        <>
+          <img src={IconUnverified} alt="unverified icon" />
+          <span className="AddToken__heading__text">{t("Unverified")}</span>
+        </>
+      )}
+    </div>
+  );
 };
 
 export const AddToken = () => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
-  const authError = useSelector(authErrorSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasNoResults, setHasNoResults] = useState(false);
+  const [isVerifiedToken, setIsVerifiedToken] = useState(false);
+  const ResultsRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = async (values: FormValues) => {
-    const { tokenId } = values;
-    const res = await dispatch(
-      addTokenId({
-        publicKey,
-        tokenId,
-        network: networkDetails.network as Networks,
-      }),
-    );
+  interface TokenRecord {
+    code: string;
+    issuer: string;
+    contract: string;
+    org: string;
+    domain: string;
+    icon: string;
+    decimals: number;
+  }
 
-    if (addTokenId.fulfilled.match(res)) {
-      emitMetric(METRIC_NAMES.manageAssetAddToken);
-      navigateTo(ROUTES.account);
-    }
-  };
+  const handleSearch = useCallback(
+    debounce(async ({ target: { value: contractId } }) => {
+      if (!isContractId(contractId)) {
+        setAssetRows([]);
+        return;
+      }
+      setIsSearching(true);
+
+      const verifiedTokenRes = await searchToken({
+        networkDetails,
+        onError: (e) => {
+          console.error(e);
+          setIsSearching(false);
+          throw new Error(t("Unable to search for tokens"));
+        },
+      });
+
+      const verifiedTokens = verifiedTokenRes.assets.filter(
+        (record: TokenRecord) => {
+          const regex = new RegExp(contractId, "i");
+          if (record.contract.match(regex)) {
+            return true;
+          }
+          return false;
+        },
+      );
+
+      setIsSearching(false);
+
+      if (verifiedTokens.length) {
+        setIsVerifiedToken(true);
+        setAssetRows(
+          verifiedTokens.map((record: TokenRecord) => ({
+            code: record.code,
+            issuer: record.contract,
+            image: record.icon,
+            domain: record.domain,
+          })),
+        );
+      } else {
+        // lookup contract
+        setIsVerifiedToken(false);
+        const tokenUrl = new URL(`${INDEXER_URL}/token-details/${contractId}`);
+        tokenUrl.searchParams.append("network", networkDetails.network);
+        tokenUrl.searchParams.append("pub_key", publicKey);
+        tokenUrl.searchParams.append(
+          "soroban_url",
+          networkDetails.sorobanRpcUrl!,
+        );
+
+        const res = await fetch(tokenUrl.href);
+        const resJson = await res.json();
+
+        setAssetRows([
+          {
+            code: resJson.symbol,
+            issuer: contractId,
+            domain: "",
+            name: resJson.name,
+          },
+        ]);
+      }
+    }, 500),
+    [],
+  );
+
+  useEffect(() => {
+    setHasNoResults(!assetRows.length);
+  }, [assetRows]);
+
+  if (isCustomNetwork(networkDetails)) {
+    return <Redirect to={ROUTES.addAsset} />;
+  }
 
   return (
-    <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-      {({ dirty, isSubmitting, isValid, errors, touched }) => (
-        <View>
-          <SubviewHeader title={t("Add a Soroban token by ID")} />
-          <Form className="View__contentAndFooterWrapper">
+    <Formik initialValues={initialValues} onSubmit={() => {}}>
+      {({ dirty }) => (
+        <Form
+          onChange={(e) => {
+            handleSearch(e);
+            setHasNoResults(false);
+          }}
+        >
+          <View data-testid="add-token">
+            <SubviewHeader title={t("Add a Soroban token by ID")} />
             <View.Content>
               <FormRows>
-                <Field name="tokenId">
-                  {({ field }: FieldProps) => (
-                    <Input
-                      fieldSize="md"
-                      autoComplete="off"
-                      id="tokenId-input"
-                      placeholder={t("Enter Token ID")}
-                      error={
-                        authError ||
-                        (errors.tokenId && touched.tokenId
-                          ? errors.tokenId
-                          : "")
-                      }
-                      {...field}
+                <div>
+                  <Field name="asset">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        fieldSize="md"
+                        autoFocus
+                        autoComplete="off"
+                        id="asset"
+                        placeholder={t("Token ID")}
+                        {...field}
+                        data-testid="search-asset-input"
+                      />
+                    )}
+                  </Field>
+                </div>
+                <div
+                  className={`SearchAsset__results ${
+                    dirty ? "SearchAsset__results--active" : ""
+                  }`}
+                  ref={ResultsRef}
+                >
+                  {isSearching ? (
+                    <div className="SearchAsset__loader">
+                      <Loader />
+                    </div>
+                  ) : null}
+                  {assetRows.length ? (
+                    <VerificationBadge isVerified={isVerifiedToken} />
+                  ) : null}
+
+                  {assetRows.length ? (
+                    <ManageAssetRows
+                      header={null}
+                      assetRows={assetRows}
+                      isVerifiedToken={isVerifiedToken}
                     />
-                  )}
-                </Field>
+                  ) : null}
+                  {hasNoResults && dirty && !isSearching ? (
+                    <div className="AddToken__heading">Token not found</div>
+                  ) : null}
+                </div>
               </FormRows>
             </View.Content>
-            <View.Footer>
-              <Button
-                size="md"
-                variant="primary"
-                isFullWidth
-                disabled={!(dirty && isValid)}
-                isLoading={isSubmitting}
-                type="submit"
-              >
-                {t("Add New Token")}
-              </Button>
-            </View.Footer>
-          </Form>
-        </View>
+          </View>
+        </Form>
       )}
     </Formik>
   );

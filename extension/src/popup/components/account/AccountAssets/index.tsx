@@ -21,6 +21,22 @@ import { formatAmount } from "popup/helpers/formatters";
 
 const getIsXlm = (code: string) => code === "XLM";
 
+export const SorobanTokenIcon = ({
+  code,
+  noMargin,
+}: {
+  code: string;
+  noMargin?: boolean;
+}) => (
+  <div
+    className={`AccountAssets__asset--logo AccountAssets__asset--soroban-token ${
+      noMargin ? "AccountAssets__asset--no-margin" : ""
+    }`}
+  >
+    {code.substring(0, 2)}
+  </div>
+);
+
 export const AssetIcon = ({
   assetIcons,
   code,
@@ -71,11 +87,7 @@ export const AssetIcon = ({
 
   // Placeholder for Soroban tokens
   if (_isSorobanToken) {
-    return (
-      <div className="AccountAssets__asset--logo AccountAssets__asset--soroban-token">
-        S
-      </div>
-    );
+    return <SorobanTokenIcon code={code} />;
   }
 
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.

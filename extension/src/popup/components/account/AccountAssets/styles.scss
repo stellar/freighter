@@ -26,16 +26,17 @@ $loader-light-color: #444961;
 
     &--lp-share,
     &--soroban-token {
+      border: 1px solid var(--color-gray-20);
       height: 32px;
       width: 32px;
-      background: var(--color-gray-10);
       border-radius: 2rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-semi-bold);
       line-height: 1.5rem;
-      color: var(--color-gray-90);
+      color: var(--color-gray-70);
     }
 
     &--error {
@@ -66,6 +67,10 @@ $loader-light-color: #444961;
         width: 0;
         height: 0;
       }
+    }
+
+    &--no-margin {
+      margin: 0;
     }
   }
 
