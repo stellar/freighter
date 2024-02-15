@@ -69,7 +69,7 @@ export function AssetSelect({
         <div className="AssetSelect__unverified">
           <Notification
             title="This asset is not on the asset list"
-            variant="warning"
+            variant="primary"
           />
         </div>
       ) : null}

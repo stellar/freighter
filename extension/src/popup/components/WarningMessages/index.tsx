@@ -885,7 +885,7 @@ export const UnverifiedTokenTransferWarning = ({
   return isUnverifiedToken ? (
     <WarningMessage
       header="This asset is not on the asset list"
-      variant={WarningMessageVariant.warning}
+      variant={WarningMessageVariant.default}
     >
       <div className="TokenTransferWarning">
         <p>
