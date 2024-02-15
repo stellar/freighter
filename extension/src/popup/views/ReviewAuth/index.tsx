@@ -74,6 +74,8 @@ export const ReviewAuth = () => {
     params.accountToSign,
   );
 
+  const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -144,12 +146,14 @@ export const ReviewAuth = () => {
                 size="md"
                 isLoading={isConfirming}
                 onClick={() =>
-                  activeAuthEntryIndex + 1 === op.auth?.length
+                  isLastEntry
                     ? setHasConfirmedAuth(true)
                     : setActiveAuthEntryIndex(activeAuthEntryIndex + 1)
                 }
               >
-                {t("Approve and review next")}
+                {isLastEntry
+                  ? t("Approve and continue")
+                  : t("Approve and review next")}
               </Button>
             )}
 
