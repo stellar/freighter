@@ -98,7 +98,11 @@ export const WarningMessage = ({
       data-testid="WarningMessage"
     >
       <div className="WarningMessage__header">
-        <Icon.Warning className="WarningMessage__icon" />
+        {variant ? (
+          <Icon.Warning className="WarningMessage__icon" />
+        ) : (
+          <Icon.Info className="WarningMessage__default-icon" />
+        )}
         <div>{header}</div>
         {headerChildren}
       </div>

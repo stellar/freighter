@@ -32,8 +32,8 @@
   }
 
   &__infoBlock {
-    background: #32275f;
-    border: 1px solid #32275f;
+    background: var(--color-purple-20);
+    border: 1px solid var(--color-purple-30);
     border-radius: 0.5rem;
     color: var(--color-white) !important;
     font-size: 0.875rem;
@@ -68,6 +68,10 @@
   &__icon {
     color: #6432f1;
     width: 0.875rem;
+  }
+
+  &__default-icon {
+    color: var(--color-purple-50);
   }
 
   &__link-wrapper {
