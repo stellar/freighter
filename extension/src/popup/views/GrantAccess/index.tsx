@@ -53,7 +53,7 @@ export const GrantAccess = () => {
           )}
         >
           <div className="GrantAccess__SigningWith">
-            <h5>Signing with</h5>
+            <h5>Connecting with</h5>
             <div className="GrantAccess__PublicKey">
               <KeyIdenticon publicKey={publicKey} />
             </div>
