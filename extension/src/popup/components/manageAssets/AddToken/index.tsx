@@ -13,8 +13,8 @@ import { ROUTES } from "popup/constants/routes";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { isCustomNetwork } from "helpers/stellar";
-import { searchToken } from "popup/helpers/searchAsset";
+import { isCustomNetwork, isMainnet, isTestnet } from "helpers/stellar";
+import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -39,12 +39,16 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
       {isVerified ? (
         <>
           <Icon.Verified />
-          <span className="AddToken__heading__text">{t("Verified")}</span>
+          <span className="AddToken__heading__text">
+            {t("Part of the asset list")}
+          </span>
         </>
       ) : (
         <>
           <img src={IconUnverified} alt="unverified icon" />
-          <span className="AddToken__heading__text">{t("Unverified")}</span>
+          <span className="AddToken__heading__text">
+            {t("Not part of the asset list")}
+          </span>
         </>
       )}
     </div>
@@ -79,24 +83,15 @@ export const AddToken = () => {
       }
       setIsSearching(true);
 
-      const verifiedTokenRes = await searchToken({
-        networkDetails,
-        onError: (e) => {
-          console.error(e);
-          setIsSearching(false);
-          throw new Error(t("Unable to search for tokens"));
-        },
-      });
+      let verifiedTokens = [] as TokenRecord[];
 
-      const verifiedTokens = verifiedTokenRes.assets.filter(
-        (record: TokenRecord) => {
-          const regex = new RegExp(contractId, "i");
-          if (record.contract.match(regex)) {
-            return true;
-          }
-          return false;
-        },
-      );
+      if (isMainnet(networkDetails) || isTestnet(networkDetails)) {
+        verifiedTokens = await getVerifiedTokens({
+          networkDetails,
+          contractId,
+          setIsSearching,
+        });
+      }
 
       setIsSearching(false);
 

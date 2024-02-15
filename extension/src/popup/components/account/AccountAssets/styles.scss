@@ -39,6 +39,10 @@ $loader-light-color: #444961;
       color: var(--color-gray-70);
     }
 
+    &--soroban-token {
+      border: none;
+    }
+
     &--error {
       align-items: center;
       background: rgba(100, 50, 241, 0.32);

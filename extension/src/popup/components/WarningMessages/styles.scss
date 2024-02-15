@@ -338,7 +338,7 @@
     margin-bottom: 1.5rem;
     column-gap: 0.5rem;
     &__header {
-      color: var(--color-yellow-60);
+      color: var(--color-purple-50);
       font-size: 0.875rem;
       margin-bottom: 0.25rem;
     }
@@ -346,6 +346,9 @@
       color: var(--color-gray-70);
       font-size: 0.75rem;
       line-height: 1.25rem;
+    }
+    &__icon {
+      color: var(--color-purple-50);
     }
   }
 

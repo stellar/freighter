@@ -1,4 +1,8 @@
 .AssetSelect {
+  &__unverified {
+    margin-bottom: 0.75rem;
+  }
+
   &__wrapper {
     height: 3.5rem;
     border: solid 1px var(--color-gray-10);

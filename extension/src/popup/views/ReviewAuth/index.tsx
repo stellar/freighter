@@ -28,7 +28,10 @@ import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Tabs } from "popup/components/Tabs";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AccountList } from "popup/components/account/AccountList";
-import { TransferWarning } from "popup/components/WarningMessages";
+import {
+  TransferWarning,
+  UnverifiedTokenTransferWarning,
+} from "popup/components/WarningMessages";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
@@ -211,6 +214,7 @@ const AuthDetail = ({
   return (
     <div className="AuthDetail">
       <TransferWarning authEntry={authEntry} />
+      <UnverifiedTokenTransferWarning details={details} />
       {details.map((detail) => (
         <React.Fragment key={detail.fnName}>
           <div className="AuthDetail__TitleRow">
