@@ -400,22 +400,24 @@ export const ManageAssetRows = ({
           )}
 
           {chooseAsset &&
-            accountBalances.tokensWithNoBalance.map((code) => {
+            accountBalances.tokensWithNoBalance.map((contract) => {
               const isActionPending =
                 accountBalanceStatus === ActionStatus.PENDING;
 
               return (
-                <div className="ManageAssetRows__row" key={code}>
-                  <ManageAssetRow domain={truncateString(code)} />
+                <div className="ManageAssetRows__row" key={contract}>
+                  <ManageAssetRow domain={truncateString(contract)} />
                   <div className="ManageAssetRows__button">
                     <Button
                       size="md"
                       variant="secondary"
                       disabled={isActionPending}
-                      isLoading={isActionPending && assetSubmitting === code}
+                      isLoading={
+                        isActionPending && assetSubmitting === contract
+                      }
                       onClick={() =>
                         handleTokenRowClick(
-                          { code, issuer: "", image: "", domain: "" },
+                          { code: "", issuer: contract, image: "", domain: "" },
                           true,
                         )
                       }
