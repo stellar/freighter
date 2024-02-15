@@ -16,7 +16,8 @@ import {
 
 import { ActionStatus } from "@shared/api/types";
 
-import { xlmToStroop } from "helpers/stellar";
+import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
+
 import { AppDispatch } from "popup/App";
 import {
   signFreighterTransaction,
@@ -49,10 +50,10 @@ import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
 import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
-import IconUnverifiedWarning from "popup/assets/icon-unverified-warning.svg";
 
 import "./styles.scss";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { searchToken } from "popup/helpers/searchAsset";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -97,7 +98,11 @@ export const WarningMessage = ({
       data-testid="WarningMessage"
     >
       <div className="WarningMessage__header">
-        <Icon.Warning className="WarningMessage__icon" />
+        {variant ? (
+          <Icon.Warning className="WarningMessage__icon" />
+        ) : (
+          <Icon.Info className="WarningMessage__default-icon" />
+        )}
         <div>{header}</div>
         {headerChildren}
       </div>
@@ -733,7 +738,7 @@ export const UnverifiedTokenWarning = ({
         <div className="UnverifiedTokenWarning__wrapper" ref={warningRef}>
           <div className="UnverifiedTokenWarning__heading">
             <div className="UnverifiedTokenWarning__icon">
-              <SorobanTokenIcon code={code} noMargin />
+              <SorobanTokenIcon noMargin />
             </div>
             <div className="UnverifiedTokenWarning__code">{code}</div>
             <div className="UnverifiedTokenWarning__domain">{domain}</div>
@@ -759,14 +764,16 @@ export const UnverifiedTokenWarning = ({
             </div>
             <div className="UnverifiedTokenWarning__flag">
               <div className="UnverifiedTokenWarning__flag__icon">
-                <img src={IconUnverifiedWarning} alt="unverified token" />
+                <Icon.Info />
               </div>
               <div className="UnverifiedTokenWarning__flag__content">
                 <div className="UnverifiedTokenWarning__flag__header UnverifiedTokenWarning__flags__icon--unverified">
-                  {t("Unverified asset")}
+                  {t("Asset not in the asset list")}
                 </div>
                 <div className="UnverifiedTokenWarning__flag__description">
-                  {t("Proceed with caution")}
+                  {t(
+                    `This asset is not part of the asset list by stellar.expert (${networkDetails.network})`,
+                  )}
                 </div>
               </div>
             </div>
@@ -840,6 +847,59 @@ export const TransferWarning = ({
       </div>
     </WarningMessage>
   );
+};
+
+export const UnverifiedTokenTransferWarning = ({
+  details,
+}: {
+  details: { contractId: string }[];
+}) => {
+  const { t } = useTranslation();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
+
+  useEffect(() => {
+    if (!isMainnet(networkDetails) && !isTestnet(networkDetails)) {
+      return;
+    }
+    const fetchVerifiedTokens = async () => {
+      const verifiedTokenRes = await searchToken({
+        networkDetails,
+        onError: (e) => console.error(e),
+      });
+      const verifiedTokens = [] as string[];
+
+      for (let i = 0; i < verifiedTokenRes.assets.length; i += 1) {
+        for (let j = 0; j < details.length; j += 1) {
+          if (details[j].contractId === verifiedTokenRes.assets[i].contract) {
+            verifiedTokens.push(details[j].contractId);
+            return;
+          }
+        }
+      }
+
+      if (!verifiedTokens.length) {
+        setIsUnverifiedToken(true);
+      }
+    };
+
+    fetchVerifiedTokens();
+  }, [networkDetails, details]);
+
+  return isUnverifiedToken ? (
+    <WarningMessage
+      header="This asset is not on the asset list"
+      variant={WarningMessageVariant.default}
+    >
+      <div className="TokenTransferWarning">
+        <p>
+          {t(
+            `This asset is not part of the asset list by stellar.expert (${networkDetails.network})`,
+          )}
+        </p>
+      </div>
+    </WarningMessage>
+  ) : null;
 };
 
 const WarningMessageTokenDetails = ({

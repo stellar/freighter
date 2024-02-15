@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Icon } from "@stellar/design-system";
+import { Icon, Notification } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { isMainnet, isTestnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import {
   transactionSubmissionSelector,
@@ -11,9 +12,12 @@ import {
   saveAssetSelectType,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
+import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getVerifiedTokens } from "popup/helpers/searchAsset";
 
 import "./styles.scss";
 
@@ -26,7 +30,32 @@ export function AssetSelect({
 }) {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
+  const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
+
+  useEffect(() => {
+    if (!isContractId(issuerKey)) {
+      return;
+    }
+
+    if (!isMainnet(networkDetails) && !isTestnet(networkDetails)) {
+      return;
+    }
+
+    const fetchVerifiedTokens = async () => {
+      const verifiedTokens = await getVerifiedTokens({
+        networkDetails,
+        contractId: issuerKey,
+      });
+
+      if (!verifiedTokens.length) {
+        setIsUnverifiedToken(true);
+      }
+    };
+
+    fetchVerifiedTokens();
+  }, [issuerKey, networkDetails]);
 
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
@@ -35,26 +64,36 @@ export function AssetSelect({
   };
 
   return (
-    <div
-      className="AssetSelect__wrapper"
-      onClick={handleSelectAsset}
-      data-testid="send-amount-asset-select"
-    >
-      <div className="AssetSelect__content">
-        <div className="AssetSelect__content__left">
-          <AssetIcon
-            assetIcons={assetIcons}
-            code={assetCode}
-            issuerKey={issuerKey}
+    <>
+      {isUnverifiedToken ? (
+        <div className="AssetSelect__unverified">
+          <Notification
+            title="This asset is not on the asset list"
+            variant="primary"
           />
-          <span className="AssetSelect__medium-copy">{assetCode}</span>
-          <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
         </div>
-        <div className="AssetSelect__content__right">
-          <Icon.ChevronDown />
+      ) : null}
+      <div
+        className="AssetSelect__wrapper"
+        onClick={handleSelectAsset}
+        data-testid="send-amount-asset-select"
+      >
+        <div className="AssetSelect__content">
+          <div className="AssetSelect__content__left">
+            <AssetIcon
+              assetIcons={assetIcons}
+              code={assetCode}
+              issuerKey={issuerKey}
+            />
+            <span className="AssetSelect__medium-copy">{assetCode}</span>
+            <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
+          </div>
+          <div className="AssetSelect__content__right">
+            <Icon.ChevronDown />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

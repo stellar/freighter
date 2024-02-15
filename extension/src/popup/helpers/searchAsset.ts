@@ -37,3 +37,50 @@ export const searchToken = async ({
     return onError(e);
   }
 };
+
+export interface TokenRecord {
+  code: string;
+  issuer: string;
+  contract: string;
+  org: string;
+  domain: string;
+  icon: string;
+  decimals: number;
+}
+
+export const getVerifiedTokens = async ({
+  networkDetails,
+  contractId,
+  setIsSearching,
+}: {
+  networkDetails: NetworkDetails;
+  contractId: string;
+  setIsSearching?: (isSearching: boolean) => void;
+}) => {
+  let verifiedTokens = [] as TokenRecord[];
+
+  const fetchVerifiedTokens = async () => {
+    const verifiedTokenRes = await searchToken({
+      networkDetails,
+      onError: (e) => {
+        console.error(e);
+        if (setIsSearching) {
+          setIsSearching(false);
+        }
+        throw new Error("Unable to search for tokens");
+      },
+    });
+
+    verifiedTokens = verifiedTokenRes.assets.filter((record: TokenRecord) => {
+      const regex = new RegExp(contractId, "i");
+      if (record.contract.match(regex)) {
+        return true;
+      }
+      return false;
+    });
+  };
+
+  await fetchVerifiedTokens();
+
+  return verifiedTokens;
+};
