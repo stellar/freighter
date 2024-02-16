@@ -323,3 +323,22 @@ export function pickTransfers(invocationTree: InvocationTree) {
     }));
   return [...transfers, ...subTransfers];
 }
+
+export function getInvocationDetails(
+  invocation: xdr.SorobanAuthorizedInvocation,
+) {
+  return [
+    getInvocationArgs(invocation),
+    ...invocation.subInvocations().map(getInvocationArgs),
+  ];
+}
+
+function getInvocationArgs(invocation: xdr.SorobanAuthorizedInvocation) {
+  const _invocation = invocation.function().contractFn();
+  const contractId = StrKey.encodeContract(
+    _invocation.contractAddress().contractId(),
+  );
+  const fnName = _invocation.functionName().toString();
+  const args = _invocation.args();
+  return { fnName, contractId, args };
+}

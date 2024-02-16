@@ -828,7 +828,7 @@ export const TransferWarning = ({
 
   return (
     <WarningMessage
-      header="Authorizes Token Transfer"
+      header="Authorizes a token transfer. Proceed with caution."
       variant={WarningMessageVariant.warning}
     >
       <div className="TokenTransferWarning">
@@ -844,6 +844,25 @@ export const TransferWarning = ({
             key={`${transfer.contractId}-${transfer.amount}-${transfer.to}`}
           />
         ))}
+      </div>
+    </WarningMessage>
+  );
+};
+
+export const InvokerAuthWarning = () => {
+  const { t } = useTranslation();
+
+  return (
+    <WarningMessage
+      header="Uses invoker authorization. Proceed with caution."
+      variant={WarningMessageVariant.warning}
+    >
+      <div className="InvokerAuthWarning">
+        <p>
+          {t(
+            "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
+          )}
+        </p>
       </div>
     </WarningMessage>
   );
