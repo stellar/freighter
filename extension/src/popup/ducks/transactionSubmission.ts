@@ -448,7 +448,6 @@ interface InitialState {
     domains: BlockedDomains;
   };
   blockedAccounts: BlockedAccount[];
-  tokensWithNoBalance: string[];
 }
 
 export const initialState: InitialState = {
@@ -502,7 +501,6 @@ export const initialState: InitialState = {
     domains: {},
   },
   blockedAccounts: [],
-  tokensWithNoBalance: [] as string[],
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -633,7 +631,6 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
       state.accountBalances = action.payload;
-      state.tokensWithNoBalance = action.payload.tokensWithNoBalance;
       state.accountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {

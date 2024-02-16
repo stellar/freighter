@@ -10,11 +10,14 @@ import {
   Operation,
   Horizon,
   TransactionBuilder,
+  Networks,
+  xdr,
 } from "stellar-sdk";
 
 import { ActionStatus } from "@shared/api/types";
 
-import { xlmToStroop } from "helpers/stellar";
+import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
+
 import { AppDispatch } from "popup/App";
 import {
   signFreighterTransaction,
@@ -30,11 +33,13 @@ import {
   ManageAssetRow,
   NewAssetFlags,
 } from "popup/components/manageAssets/ManageAssetRows";
+import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { View } from "popup/basics/layout/View";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
+  addTokenId,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -48,6 +53,7 @@ import IconWarning from "popup/assets/icon-warning.svg";
 
 import "./styles.scss";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { searchToken } from "popup/helpers/searchAsset";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -92,7 +98,11 @@ export const WarningMessage = ({
       data-testid="WarningMessage"
     >
       <div className="WarningMessage__header">
-        <Icon.Warning className="WarningMessage__icon" />
+        {variant ? (
+          <Icon.Warning className="WarningMessage__icon" />
+        ) : (
+          <Icon.Info className="WarningMessage__default-icon" />
+        )}
         <div>{header}</div>
         {headerChildren}
       </div>
@@ -666,22 +676,151 @@ export const NewAssetWarning = ({
   );
 };
 
-export const TransferWarning = ({
-  operation,
+export const UnverifiedTokenWarning = ({
+  domain,
+  code,
+  issuer,
+  onClose,
 }: {
-  operation: Operation.InvokeHostFunction;
+  domain: string;
+  code: string;
+  issuer: string;
+  onClose: () => void;
+}) => {
+  const { t } = useTranslation();
+  const dispatch: AppDispatch = useDispatch();
+  const warningRef = useRef<HTMLDivElement>(null);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const { submitStatus } = useSelector(transactionSubmissionSelector);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const closeOverlay = () => {
+    if (warningRef.current) {
+      warningRef.current.style.marginBottom = `-${POPUP_HEIGHT}px`;
+    }
+    const timeout = setTimeout(() => {
+      onClose();
+      clearTimeout(timeout);
+    }, 300);
+  };
+
+  // animate entry
+  useEffect(() => {
+    if (warningRef.current) {
+      const timeout = setTimeout(() => {
+        // Adding extra check to fix flaky tests
+        if (warningRef.current) {
+          warningRef.current.style.marginBottom = "0";
+        }
+        clearTimeout(timeout);
+      }, 10);
+    }
+  }, [warningRef]);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    await dispatch(
+      addTokenId({
+        publicKey,
+        tokenId: issuer,
+        network: networkDetails.network as Networks,
+      }),
+    );
+    navigateTo(ROUTES.account);
+
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="UnverifiedTokenWarning">
+      <View.Content>
+        <div className="UnverifiedTokenWarning__wrapper" ref={warningRef}>
+          <div className="UnverifiedTokenWarning__heading">
+            <div className="UnverifiedTokenWarning__icon">
+              <SorobanTokenIcon noMargin />
+            </div>
+            <div className="UnverifiedTokenWarning__code">{code}</div>
+            <div className="UnverifiedTokenWarning__domain">{domain}</div>
+            <div className="UnverifiedTokenWarning__description">
+              <div className="UnverifiedTokenWarning__description__icon">
+                <Icon.VerifiedUser />
+              </div>
+              <div className="UnverifiedTokenWarning__description__text">
+                {t("Add Asset Trustline")}
+              </div>
+            </div>
+          </div>
+
+          <Notification
+            title={t(
+              "Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets.",
+            )}
+            variant="warning"
+          ></Notification>
+          <div className="UnverifiedTokenWarning__flags">
+            <div className="UnverifiedTokenWarning__flags__info">
+              {t("Asset Info")}
+            </div>
+            <div className="UnverifiedTokenWarning__flag">
+              <div className="UnverifiedTokenWarning__flag__icon">
+                <Icon.Info />
+              </div>
+              <div className="UnverifiedTokenWarning__flag__content">
+                <div className="UnverifiedTokenWarning__flag__header UnverifiedTokenWarning__flags__icon--unverified">
+                  {t("Asset not in the asset list")}
+                </div>
+                <div className="UnverifiedTokenWarning__flag__description">
+                  {t(
+                    `This asset is not part of the asset list by stellar.expert (${networkDetails.network})`,
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="UnverifiedTokenWarning__bottom-content">
+            <div className="ScamAssetWarning__btns">
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                type="button"
+                onClick={closeOverlay}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                size="md"
+                isFullWidth
+                onClick={handleSubmit}
+                type="button"
+                variant="primary"
+                isLoading={
+                  isSubmitting || submitStatus === ActionStatus.PENDING
+                }
+              >
+                {t("Add asset")}
+              </Button>
+            </div>{" "}
+          </div>
+        </div>
+      </View.Content>
+    </div>
+  );
+};
+
+export const TransferWarning = ({
+  authEntry,
+}: {
+  authEntry: xdr.SorobanAuthorizationEntry;
 }) => {
   const { t } = useTranslation();
 
-  const authEntries = operation.auth || [];
-  const transfers = authEntries
-    .map((entry) => {
-      const rootInvocation = entry.rootInvocation();
-      const rootJson = buildInvocationTree(rootInvocation);
-      const isInvokeContract = rootInvocation.function().switch().value === 0;
-      return isInvokeContract ? pickTransfers(rootJson) : [];
-    })
-    .flat();
+  const rootInvocation = authEntry.rootInvocation();
+  const rootJson = buildInvocationTree(rootInvocation);
+  const isInvokeContract = rootInvocation.function().switch().value === 0;
+  const transfers = isInvokeContract ? pickTransfers(rootJson) : [];
 
   if (!transfers.length) {
     return null;
@@ -690,7 +829,7 @@ export const TransferWarning = ({
   return (
     <WarningMessage
       header="Authorizes Token Transfer"
-      variant={WarningMessageVariant.highAlert}
+      variant={WarningMessageVariant.warning}
     >
       <div className="TokenTransferWarning">
         <p>
@@ -708,6 +847,59 @@ export const TransferWarning = ({
       </div>
     </WarningMessage>
   );
+};
+
+export const UnverifiedTokenTransferWarning = ({
+  details,
+}: {
+  details: { contractId: string }[];
+}) => {
+  const { t } = useTranslation();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
+
+  useEffect(() => {
+    if (!isMainnet(networkDetails) && !isTestnet(networkDetails)) {
+      return;
+    }
+    const fetchVerifiedTokens = async () => {
+      const verifiedTokenRes = await searchToken({
+        networkDetails,
+        onError: (e) => console.error(e),
+      });
+      const verifiedTokens = [] as string[];
+
+      for (let i = 0; i < verifiedTokenRes.assets.length; i += 1) {
+        for (let j = 0; j < details.length; j += 1) {
+          if (details[j].contractId === verifiedTokenRes.assets[i].contract) {
+            verifiedTokens.push(details[j].contractId);
+            return;
+          }
+        }
+      }
+
+      if (!verifiedTokens.length) {
+        setIsUnverifiedToken(true);
+      }
+    };
+
+    fetchVerifiedTokens();
+  }, [networkDetails, details]);
+
+  return isUnverifiedToken ? (
+    <WarningMessage
+      header="This asset is not on the asset list"
+      variant={WarningMessageVariant.default}
+    >
+      <div className="TokenTransferWarning">
+        <p>
+          {t(
+            `This asset is not part of the asset list by stellar.expert (${networkDetails.network})`,
+          )}
+        </p>
+      </div>
+    </WarningMessage>
+  ) : null;
 };
 
 const WarningMessageTokenDetails = ({
@@ -766,9 +958,11 @@ const WarningMessageTokenDetails = ({
       ) : tokenDetails[transfer.contractId] ? (
         <p>
           <span className="InlineLabel">Token:</span>{" "}
-          {`(${tokenDetails[transfer.contractId].symbol}) ${
-            tokenDetails[transfer.contractId].name
-          }`}
+          {`(${
+            tokenDetails[transfer.contractId].name === "native"
+              ? "XLM"
+              : tokenDetails[transfer.contractId].symbol
+          }) ${tokenDetails[transfer.contractId].name}`}
         </p>
       ) : (
         <p>

@@ -137,7 +137,7 @@ export const Operations = ({
             />
             <KeyValueList
               operationKey={t("Starting Balance")}
-              operationValue={startingBalance}
+              operationValue={`${startingBalance} XLM`}
             />
           </>
         );
@@ -384,15 +384,9 @@ export const Operations = ({
       }
 
       case "changeTrust": {
-        const { source, type, limit, line } = op;
+        const { type, limit, line } = op;
         return (
           <>
-            {source && (
-              <KeyValueWithPublicKey
-                operationKey={t("Source")}
-                operationValue={source}
-              />
-            )}
             <KeyValueLine line={line} />
             <KeyValueList operationKey={t("Type")} operationValue={type} />
             <KeyValueList operationKey={t("Limit")} operationValue={limit} />
@@ -404,7 +398,7 @@ export const Operations = ({
         const { trustor, assetCode, authorize } = op;
         return (
           <>
-            <KeyValueList
+            <KeyValueWithPublicKey
               operationKey={t("Trustor")}
               operationValue={trustor}
             />
@@ -494,15 +488,9 @@ export const Operations = ({
       }
 
       case "endSponsoringFutureReserves": {
-        const { source, type } = op;
+        const { type } = op;
         return (
           <>
-            {source && (
-              <KeyValueList
-                operationKey={t("Source")}
-                operationValue={source}
-              />
-            )}
             <KeyValueList operationKey={t("Type")} operationValue={type} />
           </>
         );
@@ -745,8 +733,9 @@ export const Operations = ({
         return (
           <div className="Operations--wrapper" key={operationIndex}>
             <div className="Operations--header">
-              <strong>
-                {operationIndex}. {OPERATION_TYPES[type] || type}
+              <Icon.DeployedCode />
+              <strong className="OpType">
+                {OPERATION_TYPES[type] || type}
               </strong>
             </div>
             <div className="Operations--item">

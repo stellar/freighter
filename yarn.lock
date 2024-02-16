@@ -3813,6 +3813,11 @@
     p-map "^4.0.0"
     webpack-sources "^3.2.2"
 
+"@stellar-asset-lists/sdk@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@stellar-asset-lists/sdk/-/sdk-1.0.0.tgz#59a70b07c01247ffed2f8d370d624ca2650c0b50"
+  integrity sha512-2RBdkUVStRbZZG7yxL6ow3B6cCjClSHe5bHF/NGKAkKR6MDXEfIvoLndsl4uWoLJTLfe3vdL9UX/T14p4INdBA==
+
 "@stellar/design-system@^1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@stellar/design-system/-/design-system-1.1.2.tgz#09f27c13fef69975c6d9a214e770e419985c0b8e"
@@ -6260,6 +6265,11 @@ cjs-module-lexer@^1.0.0:
   version "1.2.2"
   resolved "https://registry.npmjs.org/cjs-module-lexer/-/cjs-module-lexer-1.2.2.tgz"
   integrity sha512-cOU9usZw8/dXIXKtwa8pM0OTJQuJkxMN6w30csNRUerHfeQ5R6U3kkU/FtJeIf3M202OHfY2U8ccInBG7/xogA==
+
+classnames@^2.5.1:
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.5.1.tgz#ba774c614be0f016da105c858e7159eae8e7687b"
+  integrity sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow==
 
 clean-css@4.2.x, clean-css@^4.2.3:
   version "4.2.3"

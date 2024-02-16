@@ -69,6 +69,7 @@ import { AccountMigration } from "popup/views/AccountMigration";
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 import { SignBlob } from "./views/SignBlob";
+import { ReviewAuth } from "./views/ReviewAuth";
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -273,6 +274,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.reviewAuthorization}>
+          <ReviewAuth />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.signAuthEntry}>
           <SignAuthEntry />

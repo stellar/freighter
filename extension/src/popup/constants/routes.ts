@@ -25,6 +25,7 @@ export enum ROUTES {
   swapConfirm = "/swap/confirm",
   addAccount = "/add-account",
   signTransaction = "/sign-transaction",
+  reviewAuthorization = "/review-auth",
   signBlob = "/sign-blob",
   signAuthEntry = "/sign-auth-entry",
   grantAccess = "/grant-access",

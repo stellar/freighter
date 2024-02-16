@@ -15,11 +15,22 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg";
+import IconSoroban from "popup/assets/icon-soroban.svg";
 
 import "./styles.scss";
 import { formatAmount } from "popup/helpers/formatters";
 
 const getIsXlm = (code: string) => code === "XLM";
+
+export const SorobanTokenIcon = ({ noMargin }: { noMargin?: boolean }) => (
+  <div
+    className={`AccountAssets__asset--logo AccountAssets__asset--soroban-token ${
+      noMargin ? "AccountAssets__asset--no-margin" : ""
+    }`}
+  >
+    <img src={IconSoroban} alt="icon soroban" />
+  </div>
+);
 
 export const AssetIcon = ({
   assetIcons,
@@ -71,11 +82,7 @@ export const AssetIcon = ({
 
   // Placeholder for Soroban tokens
   if (_isSorobanToken) {
-    return (
-      <div className="AccountAssets__asset--logo AccountAssets__asset--soroban-token">
-        S
-      </div>
-    );
+    return <SorobanTokenIcon />;
   }
 
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
