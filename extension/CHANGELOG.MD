@@ -1,3 +1,14 @@
+# Release notes - Wallets - Freighter-5.16.0
+
+### Story
+
+Update Sign TX Preview with Summary, Detail, Data tabs
+
+Check tokens against stellar.expert top 50 asset list
+
+Add notifications for assets not on stellar.expert asset list \(adding token,
+sending payment, signing tx\)
+
 # Release notes - Wallets - Freighter-5.15.2
 
 ### Bug
@@ -27,6 +38,22 @@ Editing transaction fee and slippage percentage takes user to Review screen
 ### Story
 
 Create interface to allow Hardware Wallets to easily add themselves to repo
+
+# Release notes - Wallets - Freighter-5.13.0
+
+### Story
+
+Add 24-word mnemonic phrase toggle in Recover Account onboarding screen
+
+# Release notes - Wallets - Freighter-5.12.0
+
+### Bug
+
+accounts list not scrollable
+
+### Story
+
+Upgrade stellar-sdk to v11.1.0
 
 # Release notes - Wallets - Freighter-5.11.0
 
