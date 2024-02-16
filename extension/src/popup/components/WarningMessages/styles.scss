@@ -67,7 +67,7 @@
 
   &__icon {
     color: #6432f1;
-    width: 0.875rem;
+    width: 24px;
   }
 
   &__default-icon {
@@ -385,4 +385,8 @@
       margin: 0;
     }
   }
+}
+
+.InvokerAuthWarning {
+  overflow-wrap: break-word;
 }

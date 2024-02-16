@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import {
   MemoType,
   Operation,
-  StrKey,
   Transaction,
   TransactionBuilder,
   xdr,
@@ -23,12 +22,14 @@ import {
 import { useTranslation } from "react-i18next";
 import { truncateString } from "helpers/stellar";
 import { FlaggedKeys } from "types/transactions";
+import { getInvocationDetails } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Tabs } from "popup/components/Tabs";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AccountList } from "popup/components/account/AccountList";
 import {
+  InvokerAuthWarning,
   TransferWarning,
   UnverifiedTokenTransferWarning,
 } from "popup/components/WarningMessages";
@@ -187,23 +188,6 @@ export const ReviewAuth = () => {
   );
 };
 
-function getInvocationDetails(invocation: xdr.SorobanAuthorizedInvocation) {
-  return [
-    getInvocationArgs(invocation),
-    ...invocation.subInvocations().map(getInvocationArgs),
-  ];
-}
-
-function getInvocationArgs(invocation: xdr.SorobanAuthorizedInvocation) {
-  const _invocation = invocation.function().contractFn();
-  const contractId = StrKey.encodeContract(
-    _invocation.contractAddress().contractId(),
-  );
-  const fnName = _invocation.functionName().toString();
-  const args = _invocation.args();
-  return { fnName, contractId, args };
-}
-
 const AuthDetail = ({
   authEntry,
 }: {
@@ -211,10 +195,15 @@ const AuthDetail = ({
 }) => {
   const { t } = useTranslation();
   const details = getInvocationDetails(authEntry.rootInvocation());
+
   return (
     <div className="AuthDetail">
       <TransferWarning authEntry={authEntry} />
       <UnverifiedTokenTransferWarning details={details} />
+      {authEntry.credentials().switch() ===
+        xdr.SorobanCredentialsType.sorobanCredentialsSourceAccount() && (
+        <InvokerAuthWarning />
+      )}
       {details.map((detail) => (
         <React.Fragment key={detail.fnName}>
           <div className="AuthDetail__TitleRow">
