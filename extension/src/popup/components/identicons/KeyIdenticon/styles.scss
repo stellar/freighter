@@ -1,4 +1,5 @@
 .KeyIdenticon {
+  width: 100%;
   --Icon-padding: 0.25rem;
   --Icon-dimension: 1.5rem;
 
@@ -14,5 +15,9 @@
     padding: var(--Icon-padding);
     height: var(--Icon-dimension);
     width: var(--Icon-dimension);
+  }
+
+  &--key {
+    width: 100%;
   }
 }

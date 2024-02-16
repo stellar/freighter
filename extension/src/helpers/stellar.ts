@@ -12,8 +12,8 @@ import {
 import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
-export const truncateString = (str: string) =>
-  str ? `${str.slice(0, 4)}…${str.slice(-4)}` : "";
+export const truncateString = (str: string, charCount = 4) =>
+  str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
 export const truncatedPublicKey = (publicKey: string) =>
   truncateString(publicKey);

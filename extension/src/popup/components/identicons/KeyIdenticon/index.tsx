@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useRef } from "react";
 
-import { truncatedPublicKey } from "helpers/stellar";
-
+import { TruncateMiddle } from "popup/components/TruncateMiddle";
 import { IdenticonImg } from "../IdenticonImg";
 
 import "./styles.scss";
@@ -24,7 +23,6 @@ export const KeyIdenticon = ({
   customSize,
   ...props
 }: KeyIdenticonProps) => {
-  const shortPublicKey = truncatedPublicKey(publicKey);
   const customStyle = {
     ...(isSmall
       ? {
@@ -40,12 +38,16 @@ export const KeyIdenticon = ({
       : {}),
   } as React.CSSProperties;
 
+  const pubKeyParentRef = useRef<HTMLSpanElement>(null);
+
   return (
     <div className="KeyIdenticon">
       <div className="KeyIdenticon--icon" style={customStyle}>
         <IdenticonImg publicKey={publicKey} />
       </div>
-      <span {...props}>{shortPublicKey}</span>
+      <span {...props} ref={pubKeyParentRef} className="KeyIdenticon--key">
+        <TruncateMiddle parentRef={pubKeyParentRef} value={publicKey} />
+      </span>
     </div>
   );
 };
