@@ -250,6 +250,7 @@
   "Log In": "Log In",
   "Log Out": "Log Out",
   "Low Threshold": "Low Threshold",
+  "Make sure it is a funded Stellar account and try again": "Make sure it is a funded Stellar account and try again.",
   "Make sure you have your 12 word backup phrase": "Make sure you have your 12 word backup phrase",
   "Make sure you have your current 12 words backup phrase before continuing": "Make sure you have your current 12 words backup phrase before continuing.",
   "Malicious": "Malicious",
@@ -374,6 +375,7 @@
   "Send": "Send",
   "SEND": "SEND",
   "Send Amount": "Send Amount",
+  "Send at least 1 XLM to create account": "Send at least 1 XLM to create account.",
   "Send Max": "Send Max",
   "Send Payment": "Send Payment",
   "Send Type": "Send Type",
@@ -421,9 +423,7 @@
   "The destination account does not accept the asset you’re sending": {
     " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
   },
-  "The destination account doesn’t exist": {
-    " Make sure it is a funded Stellar account and try again": "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again."
-  },
+  "The destination account doesn’t exist": "The destination account doesn’t exist.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
