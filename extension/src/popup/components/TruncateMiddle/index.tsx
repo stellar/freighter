@@ -6,41 +6,43 @@ function getStringWidth(value: string, font = "16px Inter, sans-serif") {
   const context = canvas.getContext("2d")!;
   context.font = font;
   const metrics = context.measureText(value);
-  return metrics.width;
+  return Math.ceil(metrics.width);
 }
 
 export const TruncateMiddle = ({
   parentRef,
   value,
+  font,
 }: {
   parentRef: RefObject<Element>;
   value: string;
+  font: string;
 }) => {
   //  the difference between the parent elements width, and out strings width
-  const [widthDifference, setWidthDifference] = useState(0);
+  const [widthPercentage, setWidthPercentage] = useState(0);
   useEffect(() => {
     const resizeObserver = new ResizeObserver((event) => {
       const parentWidth = event[0].contentBoxSize[0].inlineSize;
-      const valueWidth = getStringWidth(value);
-      console.log(parentWidth, valueWidth);
-      setWidthDifference(parentWidth - valueWidth);
+      const valueWidth = getStringWidth(value, font);
+      setWidthPercentage((parentWidth / valueWidth) * 100);
     });
 
     if (parentRef && parentRef.current) {
       resizeObserver.observe(parentRef.current);
     }
-  }, [parentRef, value]);
+  }, [parentRef, value, font]);
 
-  if (!widthDifference) return <></>;
+  if (!widthPercentage) return <></>;
 
   // fits in parent element
-  if (Math.sign(widthDifference) === 1) {
+  if (widthPercentage > 100) {
     return <span className="TruncatedMiddle">{value}</span>;
   }
 
+  const truncationAmount = (value.length * widthPercentage) / 100 - 5; // pad it a bit
   return (
     <span className="TruncatedMiddle">
-      {truncateString(value, widthDifference / 2)}
+      {truncateString(value, Math.abs(truncationAmount) / 2)}
     </span>
   );
 };

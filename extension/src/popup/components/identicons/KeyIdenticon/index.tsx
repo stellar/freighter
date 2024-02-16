@@ -39,6 +39,9 @@ export const KeyIdenticon = ({
   } as React.CSSProperties;
 
   const pubKeyParentRef = useRef<HTMLSpanElement>(null);
+  const fontSize = isSmall
+    ? "12px Inter, sans-serif"
+    : "16px Inter, sans-serif";
 
   return (
     <div className="KeyIdenticon">
@@ -46,7 +49,11 @@ export const KeyIdenticon = ({
         <IdenticonImg publicKey={publicKey} />
       </div>
       <span {...props} ref={pubKeyParentRef} className="KeyIdenticon--key">
-        <TruncateMiddle parentRef={pubKeyParentRef} value={publicKey} />
+        <TruncateMiddle
+          parentRef={pubKeyParentRef}
+          value={publicKey}
+          font={fontSize}
+        />
       </span>
     </div>
   );
