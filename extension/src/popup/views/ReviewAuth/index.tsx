@@ -22,7 +22,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { truncateString } from "helpers/stellar";
 import { FlaggedKeys } from "types/transactions";
-import { getInvocationDetails } from "popup/helpers/soroban";
+import {
+  FnArgsCreateSac,
+  FnArgsCreateWasm,
+  FnArgsInvoke,
+  getInvocationDetails,
+} from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Tabs } from "popup/components/Tabs";
@@ -195,16 +200,25 @@ const AuthDetail = ({
 }) => {
   const { t } = useTranslation();
   const details = getInvocationDetails(authEntry.rootInvocation());
+  const invocations = details.filter(
+    (detail) => detail.type === "invoke",
+  ) as FnArgsInvoke[];
+  const createWasms = details.filter(
+    (detail) => detail.type === "wasm",
+  ) as FnArgsCreateWasm[];
+  const createSacs = details.filter(
+    (detail) => detail.type === "sac",
+  ) as FnArgsCreateSac[];
 
   return (
     <div className="AuthDetail">
       <TransferWarning authEntry={authEntry} />
-      <UnverifiedTokenTransferWarning details={details} />
+      <UnverifiedTokenTransferWarning details={invocations} />
       {authEntry.credentials().switch() ===
         xdr.SorobanCredentialsType.sorobanCredentialsSourceAccount() && (
         <InvokerAuthWarning />
       )}
-      {details.map((detail) => (
+      {invocations.map((detail) => (
         <React.Fragment key={detail.fnName}>
           <div className="AuthDetail__TitleRow">
             <Icon.Code />
@@ -220,6 +234,42 @@ const AuthDetail = ({
               operationValue={detail.fnName}
             />
             <KeyValueInvokeHostFnArgs args={detail.args} />
+          </div>
+        </React.Fragment>
+      ))}
+      {createWasms.map((detail) => (
+        <React.Fragment key={detail.hash}>
+          <div className="AuthDetail__TitleRow">
+            <Icon.Code />
+            <h5>Contract Creation</h5>
+          </div>
+          <div className="AuthDetail__InfoBlock">
+            <KeyValueList
+              operationKey={t("Contract Address")}
+              operationValue={truncateString(detail.address)}
+            />
+            <KeyValueList
+              operationKey={t("Hash")}
+              operationValue={truncateString(detail.hash)}
+            />
+            <KeyValueList
+              operationKey={t("Salt")}
+              operationValue={detail.salt}
+            />
+          </div>
+        </React.Fragment>
+      ))}
+      {createSacs.map((detail) => (
+        <React.Fragment key={detail.asset}>
+          <div className="AuthDetail__TitleRow">
+            <Icon.Code />
+            <h5>Contract Creation</h5>
+          </div>
+          <div className="AuthDetail__InfoBlock">
+            <KeyValueList
+              operationKey={t("Asset")}
+              operationValue={truncateString(detail.asset)}
+            />
           </div>
         </React.Fragment>
       ))}
