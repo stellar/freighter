@@ -54,6 +54,7 @@ import IconWarning from "popup/assets/icon-warning.svg";
 import "./styles.scss";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { searchToken } from "popup/helpers/searchAsset";
+import { captureException } from "@sentry/browser";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -958,6 +959,9 @@ const WarningMessageTokenDetails = ({
         _tokenDetails[transfer.contractId] = details;
       } catch (error) {
         // falls back to only showing contract ID
+        captureException(
+          `Failed to fetch token details - ${JSON.stringify(error)}`,
+        );
         console.error(error);
       }
       setTokenDetails(_tokenDetails);

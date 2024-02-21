@@ -242,48 +242,61 @@ export const HistoryItem = ({
               );
 
               if (!response.ok) {
-                throw new Error("failed to fetch token details");
+                const _err = await response.json();
+                captureException(
+                  `Failed to fetch token details - ${JSON.stringify(_err)}`,
+                );
+
+                setRowText(operationString);
+                setTxDetails((_state) => ({
+                  ..._state,
+                  headerTitle: t("Transaction"),
+                  operationText: operationString,
+                }));
+              } else {
+                const tokenDetails = await response.json();
+
+                const _token = {
+                  contractId: attrs.contractId,
+                  total: isRecieving ? attrs.amount : 0,
+                  decimals: tokenDetails.decimals,
+                  name: tokenDetails.name,
+                  symbol: tokenDetails.symbol,
+                };
+
+                const formattedTokenAmount = formatTokenAmount(
+                  new BigNumber(attrs.amount),
+                  _token.decimals,
+                );
+                setBodyComponent(
+                  <>
+                    {isRecieving && "+"}
+                    {formattedTokenAmount} {_token.symbol}
+                  </>,
+                );
+
+                setDateText(
+                  (_dateText) =>
+                    `${
+                      isRecieving ? t("Received") : t("Minted")
+                    } \u2022 ${date}`,
+                );
+                setRowText(t(capitalize(attrs.fnName)));
+                setTxDetails((_state) => ({
+                  ..._state,
+                  operation: {
+                    ..._state.operation,
+                    from: attrs.from,
+                    to: attrs.to,
+                  },
+                  headerTitle: `${t(capitalize(attrs.fnName))} ${
+                    tokenDetails.symbol
+                  }`,
+                  isPayment: false,
+                  isRecipient: isRecieving,
+                  operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
+                }));
               }
-              const tokenDetails = await response.json();
-
-              const _token = {
-                contractId: attrs.contractId,
-                total: isRecieving ? attrs.amount : 0,
-                decimals: tokenDetails.decimals,
-                name: tokenDetails.name,
-                symbol: tokenDetails.symbol,
-              };
-
-              const formattedTokenAmount = formatTokenAmount(
-                new BigNumber(attrs.amount),
-                _token.decimals,
-              );
-              setBodyComponent(
-                <>
-                  {isRecieving && "+"}
-                  {formattedTokenAmount} {_token.symbol}
-                </>,
-              );
-
-              setDateText(
-                (_dateText) =>
-                  `${isRecieving ? t("Received") : t("Minted")} \u2022 ${date}`,
-              );
-              setRowText(t(capitalize(attrs.fnName)));
-              setTxDetails((_state) => ({
-                ..._state,
-                operation: {
-                  ..._state.operation,
-                  from: attrs.from,
-                  to: attrs.to,
-                },
-                headerTitle: `${t(capitalize(attrs.fnName))} ${
-                  tokenDetails.symbol
-                }`,
-                isPayment: false,
-                isRecipient: isRecieving,
-                operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
-              }));
               setIsLoading(false);
             } catch (error) {
               console.error(error);

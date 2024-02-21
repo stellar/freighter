@@ -23,6 +23,7 @@ import IconUnverified from "popup/assets/icon-unverified.svg";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import "./styles.scss";
+import { captureException } from "@sentry/browser";
 
 interface FormValues {
   asset: string;
@@ -121,17 +122,26 @@ export const AddToken = () => {
 
           const res = await fetch(tokenUrl.href);
           const resJson = await res.json();
-
-          setAssetRows([
-            {
-              code: resJson.symbol,
-              issuer: contractId,
-              domain: "",
-              name: resJson.name,
-            },
-          ]);
+          if (!res.ok) {
+            captureException(
+              `Failed to fetch token details - ${JSON.stringify(resJson)}`,
+            );
+            setAssetRows([]);
+          } else {
+            setAssetRows([
+              {
+                code: resJson.symbol,
+                issuer: contractId,
+                domain: "",
+                name: resJson.name,
+              },
+            ]);
+          }
         } catch (e) {
           setAssetRows([]);
+          captureException(
+            `Failed to fetch token details - ${JSON.stringify(e)}`,
+          );
           console.error(e);
         }
       }
