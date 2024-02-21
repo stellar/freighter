@@ -75,7 +75,6 @@ export function AssetSelect({
           >
             {t("This asset is not part of")}{" "}
             <Link
-              isUnderline
               variant="secondary"
               href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
               target="_blank"
@@ -83,12 +82,8 @@ export function AssetSelect({
             >
               Stellar Expert's top 50 assets list
             </Link>
-            <br />
-            <Link
-              isUnderline
-              variant="secondary"
-              href="https://www.freighter.app/faq"
-            >
+            .{" "}
+            <Link variant="secondary" href="https://www.freighter.app/faq">
               {t("Learn more")}
             </Link>
           </Notification>
