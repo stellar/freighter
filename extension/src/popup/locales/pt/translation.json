@@ -108,6 +108,7 @@
   "Connect device to computer": "Connect device to computer",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Continue": "Continue",
+  "Contract Address": "Contract Address",
   "Contract ID": "Contract ID",
   "Conversion rate": "Conversion rate",
   "Conversion rate changed": "Conversion rate changed",
@@ -156,6 +157,7 @@
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
   "Extend TO": "Extend TO",
+  "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fee": "Fee",
   "Fees can vary depending on the network congestion": {
