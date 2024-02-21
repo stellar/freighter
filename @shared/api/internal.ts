@@ -1,4 +1,5 @@
 import { SorobanRpc, Networks, Horizon } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import {
@@ -422,49 +423,45 @@ export const getAccountIndexerBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
 ): Promise<AccountBalancesInterface> => {
-  try {
-    const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
-    const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
-    url.searchParams.append("network", networkDetails.network);
-    url.searchParams.append("horizon_url", networkDetails.networkUrl);
-    url.searchParams.append("soroban_url", networkDetails.sorobanRpcUrl!);
-    for (const id of contractIds) {
-      url.searchParams.append("contract_ids", id);
-    }
-    const response = await fetch(url.href);
-    const data = (await response.json()) as AccountBalancesInterface;
-    const formattedBalances = {} as NonNullable<
-      AccountBalancesInterface["balances"]
-    >;
-    const balanceIds = [] as string[];
-    for (const balanceKey of Object.keys(data.balances || {})) {
-      const balance = data.balances![balanceKey];
-      formattedBalances[balanceKey] = {
-        ...balance,
-        available: new BigNumber(balance.available),
-        total: new BigNumber(balance.total),
-      };
-      // track token IDs that come back from the server in order to get
-      // the difference between contractIds set in the client and balances returned from server.
-      const [_, assetId] = balanceKey.split(":");
-      if (contractIds.includes(assetId)) {
-        balanceIds.push(assetId);
-      }
-    }
-    return {
-      ...data,
-      balances: formattedBalances,
-      tokensWithNoBalance: contractIds.filter((id) => !balanceIds.includes(id)),
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      balances: {} as AccountBalancesInterface["balances"],
-      tokensWithNoBalance: [],
-      isFunded: false,
-      subentryCount: 0,
-    };
+  const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
+  const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
+  url.searchParams.append("network", networkDetails.network);
+  url.searchParams.append("horizon_url", networkDetails.networkUrl);
+  url.searchParams.append("soroban_url", networkDetails.sorobanRpcUrl!);
+  for (const id of contractIds) {
+    url.searchParams.append("contract_ids", id);
   }
+  const response = await fetch(url.href);
+  const data = (await response.json()) as AccountBalancesInterface;
+  if (!response.ok) {
+    const _err = JSON.stringify(data);
+    captureException(`Failed to fetch account balances - ${_err}`);
+    throw new Error(_err);
+  }
+
+  const formattedBalances = {} as NonNullable<
+    AccountBalancesInterface["balances"]
+  >;
+  const balanceIds = [] as string[];
+  for (const balanceKey of Object.keys(data.balances || {})) {
+    const balance = data.balances![balanceKey];
+    formattedBalances[balanceKey] = {
+      ...balance,
+      available: new BigNumber(balance.available),
+      total: new BigNumber(balance.total),
+    };
+    // track token IDs that come back from the server in order to get
+    // the difference between contractIds set in the client and balances returned from server.
+    const [_, assetId] = balanceKey.split(":");
+    if (contractIds.includes(assetId)) {
+      balanceIds.push(assetId);
+    }
+  }
+  return {
+    ...data,
+    balances: formattedBalances,
+    tokensWithNoBalance: contractIds.filter((id) => !balanceIds.includes(id)),
+  };
 };
 
 export const getAccountHistory = async ({
