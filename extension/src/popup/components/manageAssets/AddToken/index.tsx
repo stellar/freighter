@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Redirect } from "react-router-dom";
+import { captureException } from "@sentry/browser";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Input, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
@@ -23,7 +24,6 @@ import IconUnverified from "popup/assets/icon-unverified.svg";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import "./styles.scss";
-import { captureException } from "@sentry/browser";
 
 interface FormValues {
   asset: string;
