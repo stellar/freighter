@@ -62,7 +62,7 @@ export const AccountDoesntExistWarning = () => {
         title={t("The destination account doesn’t exist")}
       >
         <div>
-          {t("Send at least 1 XLM to create account.")}
+          {t("Send at least 1 XLM to create account.")}{" "}
           <Link
             variant="secondary"
             href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
