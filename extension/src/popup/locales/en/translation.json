@@ -62,7 +62,6 @@
   "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
   "Asset Info": "Asset Info",
   "Asset not found": "Asset not found",
-  "Asset not in the asset list": "Asset not in the asset list",
   "Assets found in this domain": "Assets found in this domain",
   "At least one uppercase letter": "At least one uppercase letter",
   "At the end of this process, Freighter will only display accounts related to the new backup phrase": {
@@ -108,6 +107,7 @@
   "Connect device to computer": "Connect device to computer",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Continue": "Continue",
+  "Contract Address": "Contract Address",
   "Contract ID": "Contract ID",
   "Conversion rate": "Conversion rate",
   "Conversion rate changed": "Conversion rate changed",
@@ -304,7 +304,6 @@
   "Not enough lumens": "Not enough lumens",
   "Not funded": "Not funded",
   "Not migrated": "Not migrated",
-  "Not part of the asset list": "Not part of the asset list",
   "Not recommended asset": "Not recommended asset",
   "Now, let’s create a new mnemonic phrase": "Now, let’s create a new mnemonic phrase",
   "Offer ID": "Offer ID",
@@ -319,7 +318,6 @@
   "Operation": "Operation",
   "Operations": "Operations",
   "Optional": "Optional",
-  "Part of the asset list": "Part of the asset list",
   "Passphrase": "Passphrase",
   "Paths": "Paths",
   "Please check if the network information is correct and try again": {
@@ -419,6 +417,7 @@
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
+  "The asset is not part of Stellar Expert's top 50 assets list": "The asset is not part of Stellar Expert's top 50 assets list",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
   "The destination account does not accept the asset you’re sending": {
     " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
@@ -437,6 +436,8 @@
   "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
   "This asset has a balance of": "This asset has a balance of",
+  "This asset is not part of": "This asset is not part of",
+  "This asset is part of": "This asset is part of",
   "This asset was tagged as fraudulent by stellar": {
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
