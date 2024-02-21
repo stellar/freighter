@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Icon, Notification } from "@stellar/design-system";
+import { Icon, Link, Notification } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -28,6 +29,7 @@ export function AssetSelect({
   assetCode: string;
   issuerKey: string;
 }) {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -68,9 +70,28 @@ export function AssetSelect({
       {isUnverifiedToken ? (
         <div className="AssetSelect__unverified">
           <Notification
-            title="This asset is not on the asset list"
+            title="The asset is not part of Stellar Expert's top 50 assets list"
             variant="primary"
-          />
+          >
+            {t("This asset is not part of")}{" "}
+            <Link
+              isUnderline
+              variant="secondary"
+              href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Stellar Expert's top 50 assets list
+            </Link>
+            <br />
+            <Link
+              isUnderline
+              variant="secondary"
+              href="https://www.freighter.app/faq"
+            >
+              {t("Learn more")}
+            </Link>
+          </Notification>
         </div>
       ) : null}
       <div
