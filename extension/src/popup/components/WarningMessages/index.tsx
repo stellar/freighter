@@ -763,7 +763,7 @@ export const UnverifiedTokenWarning = ({
               "Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets.",
             )}
             variant="warning"
-          ></Notification>
+          />
           <div className="UnverifiedTokenWarning__flags">
             <div className="UnverifiedTokenWarning__flags__info">
               {t("Asset Info")}
