@@ -58,7 +58,7 @@ export const Summary = (props: SummaryProps) => (
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
       </div>
       {props.memo && props.memo.value && (
-        <div className="TxInfoBlock">
+        <div className="TxInfoBlock" data-testid="MemoBlock">
           <div className="TxInfoBlock__title">
             <Icon.Chat />
             <p>Memo</p>

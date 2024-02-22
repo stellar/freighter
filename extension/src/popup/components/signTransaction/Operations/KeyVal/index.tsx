@@ -14,7 +14,8 @@ import {
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { truncatedPublicKey, truncateString } from "helpers/stellar";
+import { truncateString } from "helpers/stellar";
+import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
   buildInvocationTree,
@@ -22,9 +23,6 @@ import {
   scValByType,
 } from "popup/helpers/soroban";
 import "./styles.scss";
-
-const formattedBuffer = (data: Buffer) =>
-  truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
 
 export const KeyValueList = ({
   operationKey,
@@ -385,7 +383,9 @@ export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
     <div>Parameters</div>
     <div className="OperationParameters">
       {args.map((arg) => (
-        <div className="Parameter">{scValByType(arg)}</div>
+        <div className="Parameter" key={arg.toXDR().toString()}>
+          {scValByType(arg)}
+        </div>
       ))}
     </div>
   </div>

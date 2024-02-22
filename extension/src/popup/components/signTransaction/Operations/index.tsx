@@ -616,7 +616,7 @@ export const Operations = ({
         const { extendTo } = op;
         return (
           <KeyValueList
-            operationKey={t("Extend TO")}
+            operationKey={t("Extend To")}
             operationValue={extendTo}
           />
         );

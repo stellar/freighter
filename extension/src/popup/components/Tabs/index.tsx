@@ -17,6 +17,7 @@ export const Tabs = (props: TabsProps) => {
           const classes = classnames("Tab", { Active: activeTab === tab });
           return (
             <div
+              data-testid={`Tab-${tab}`}
               className={classes}
               key={tab}
               onClick={() => setActiveTab(tab)}

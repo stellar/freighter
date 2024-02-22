@@ -1,3 +1,4 @@
+import { truncatedPublicKey } from "helpers/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "./soroban";
 
 // remove non digits and decimal
@@ -94,3 +95,6 @@ export const formatAmount = (val: string) => {
 
   return formattedWholeVal;
 };
+
+export const formattedBuffer = (data: Buffer) =>
+  truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
