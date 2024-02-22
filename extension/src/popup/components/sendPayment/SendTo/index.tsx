@@ -60,9 +60,7 @@ export const AccountDoesntExistWarning = () => {
     <div className="SendTo__info-block">
       <Notification variant="primary" title={notificationTitle}>
         <div>
-          {`${notificationTitle} ${t(
-            "Send at least 1 XLM to create account.",
-          )} `}
+          {t("Send at least 1 XLM to create account.")}{" "}
           <Link
             variant="secondary"
             href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
