@@ -42,7 +42,6 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
           <span className="AddToken__heading__text">
             {t("This asset is part of")}{" "}
             <Link
-              isUnderline
               variant="secondary"
               href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
               target="_blank"
@@ -51,11 +50,7 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
               Stellar Expert's top 50 assets list
             </Link>
             .{" "}
-            <Link
-              isUnderline
-              variant="secondary"
-              href="https://www.freighter.app/faq"
-            >
+            <Link variant="secondary" href="https://www.freighter.app/faq">
               {t("Learn more")}
             </Link>
           </span>
@@ -66,7 +61,6 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
           <span className="AddToken__heading__text">
             {t("This asset is not part of")}{" "}
             <Link
-              isUnderline
               variant="secondary"
               href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
               target="_blank"
@@ -75,11 +69,7 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
               Stellar Expert's top 50 assets list
             </Link>
             .{" "}
-            <Link
-              isUnderline
-              variant="secondary"
-              href="https://www.freighter.app/faq"
-            >
+            <Link variant="secondary" href="https://www.freighter.app/faq">
               {t("Learn more")}
             </Link>
           </span>
