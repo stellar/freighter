@@ -350,7 +350,7 @@ export const scValByType = (scVal: xdr.ScVal) => {
 
     case xdr.ScValType.scvError(): {
       const error = scVal.error();
-      return `${error.contractCode()} - ${error.code().name}`;
+      return error.value();
     }
 
     case xdr.ScValType.scvTimepoint():
@@ -368,7 +368,11 @@ export const scValByType = (scVal: xdr.ScVal) => {
 
     case xdr.ScValType.scvLedgerKeyNonce():
     case xdr.ScValType.scvLedgerKeyContractInstance(): {
-      return scValToNative(scVal);
+      if (scVal.switch().name === "scvLedgerKeyNonce") {
+        const val = scVal.nonceKey().nonce();
+        return val.toString();
+      }
+      return scVal.value();
     }
 
     case xdr.ScValType.scvVec():
