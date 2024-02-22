@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Redirect } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Icon, Input, Loader } from "@stellar/design-system";
+import { Icon, Input, Link, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -40,14 +40,38 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
         <>
           <Icon.Verified />
           <span className="AddToken__heading__text">
-            {t("Part of the asset list")}
+            {t("This asset is part of")}{" "}
+            <Link
+              variant="secondary"
+              href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Stellar Expert's top 50 assets list
+            </Link>
+            .{" "}
+            <Link variant="secondary" href="https://www.freighter.app/faq">
+              {t("Learn more")}
+            </Link>
           </span>
         </>
       ) : (
         <>
           <img src={IconUnverified} alt="unverified icon" />
           <span className="AddToken__heading__text">
-            {t("Not part of the asset list")}
+            {t("This asset is not part of")}{" "}
+            <Link
+              variant="secondary"
+              href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Stellar Expert's top 50 assets list
+            </Link>
+            .{" "}
+            <Link variant="secondary" href="https://www.freighter.app/faq">
+              {t("Learn more")}
+            </Link>
           </span>
         </>
       )}

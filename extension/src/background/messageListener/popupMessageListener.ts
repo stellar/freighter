@@ -13,6 +13,7 @@ import browser from "webextension-polyfill";
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 import { BigNumber } from "bignumber.js";
 
+import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
@@ -1213,6 +1214,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
 
+    let resJson = { useSorobanPublic: false };
+
+    try {
+      const res = await fetch(`${INDEXER_URL}/feature-flags`);
+      resJson = await res.json();
+    } catch (e) {
+      console.error(e);
+    }
+
     return {
       allowList: await getAllowList(),
       isDataSharingAllowed,
@@ -1222,6 +1232,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
+      isSorobanPublicEnabled: resJson.useSorobanPublic,
     };
   };
 

@@ -310,9 +310,7 @@ export const SubmitFail = () => {
             title={t("The destination account doesn’t exist")}
           >
             <div>
-              {t(
-                "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again.",
-              )}
+              {t("Make sure it is a funded Stellar account and try again.")},
               <Link
                 isUnderline
                 variant="secondary"

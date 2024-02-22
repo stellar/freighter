@@ -12,6 +12,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
@@ -193,12 +194,43 @@ export const migrateToAccountSubscriptions = async () => {
   }
 };
 
+const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.0.0")) {
+    const networksList: NetworkDetails[] =
+      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+    const migratedNetworkList = networksList.map((network) => {
+      if (network.network === NETWORKS.PUBLIC) {
+        return {
+          ...MAINNET_NETWORK_DETAILS,
+          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+        };
+      }
+
+      return network;
+    });
+
+    const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+    if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+      await localStore.setItem(NETWORK_ID, MAINNET_NETWORK_DETAILS);
+    }
+
+    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    await migrateDataStorageVersion("4.0.0");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
   await migrateTokenIdList();
   await migrateTestnetSorobanRpcUrlNetworkDetails();
   await migrateToAccountSubscriptions();
+  await migrateMainnetSorobanRpcUrlNetworkDetails();
 };
 
 // Updates storage version

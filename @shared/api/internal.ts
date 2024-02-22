@@ -11,6 +11,7 @@ import {
   MigratableAccount,
   MigratedAccount,
   Settings,
+  IndexerSettings,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -922,7 +923,7 @@ export const editCustomNetwork = async ({
   return response;
 };
 
-export const loadSettings = (): Promise<Settings> =>
+export const loadSettings = (): Promise<Settings & IndexerSettings> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
