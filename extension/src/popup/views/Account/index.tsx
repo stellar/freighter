@@ -3,7 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { getIndexerAccountHistory } from "@shared/api/internal";
+import {
+  getAccountHistoryStandalone,
+  getIndexerAccountHistory,
+} from "@shared/api/internal";
 import {
   AccountBalancesInterface,
   ActionStatus,
@@ -35,7 +38,7 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { truncatedPublicKey } from "helpers/stellar";
+import { isCustomNetwork, truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -114,10 +117,18 @@ export const Account = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        const operations = await getIndexerAccountHistory({
-          publicKey,
-          networkDetails,
-        });
+        let operations = [];
+        if (isCustomNetwork(networkDetails)) {
+          operations = await getAccountHistoryStandalone({
+            publicKey,
+            networkDetails,
+          });
+        } else {
+          operations = await getIndexerAccountHistory({
+            publicKey,
+            networkDetails,
+          });
+        }
         setAssetOperations(
           sortOperationsByAsset({
             operations,
