@@ -44,6 +44,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { hardwareSign } from "popup/helpers/hardwareConnect";
+import { SorobanContextInterface } from "popup/SorobanContext";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -278,30 +279,36 @@ export const getAccountBalances = createAsyncThunk<
   {
     publicKey: string;
     networkDetails: NetworkDetails;
+    sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
->("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    let balances;
+>(
+  "getAccountBalances",
+  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
+    try {
+      let balances;
 
-    if (isCustomNetwork(networkDetails)) {
-      balances = await internalGetAccountBalancesStandalone({
-        publicKey,
-        networkDetails,
-      });
-    } else {
-      balances = await internalgetAccountIndexerBalances(
-        publicKey,
-        networkDetails,
-      );
+      if (isCustomNetwork(networkDetails)) {
+        balances = await internalGetAccountBalancesStandalone({
+          publicKey,
+          networkDetails,
+          sorobanClientServer: sorobanClient.server,
+          sorobanClientTxBuilder: sorobanClient.newTxBuilder,
+        });
+      } else {
+        balances = await internalgetAccountIndexerBalances(
+          publicKey,
+          networkDetails,
+        );
+      }
+
+      storeBalanceMetricData(publicKey, balances.isFunded || false);
+      return balances;
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e });
     }
-
-    storeBalanceMetricData(publicKey, balances.isFunded || false);
-    return balances;
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
-  }
-});
+  },
+);
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,

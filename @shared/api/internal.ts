@@ -1,6 +1,5 @@
 import {
   Address,
-  BASE_FEE,
   SorobanRpc,
   Networks,
   Horizon,
@@ -27,7 +26,6 @@ import {
   MigratedAccount,
   Settings,
   IndexerSettings,
-  TokenBalances,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -483,7 +481,7 @@ export const getAccountIndexerBalances = async (
   }
 };
 
-export const getSorobanTokenBalance = async (
+const getSorobanTokenBalance = async (
   server: SorobanRpc.Server,
   contractId: string,
   txBuilders: {
@@ -519,16 +517,15 @@ export const getSorobanTokenBalance = async (
 export const getAccountBalancesStandalone = async ({
   publicKey,
   networkDetails,
+  sorobanClientServer,
+  sorobanClientTxBuilder,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
+  sorobanClientServer: SorobanRpc.Server;
+  sorobanClientTxBuilder: () => Promise<TransactionBuilder>;
 }): Promise<AccountBalancesInterface> => {
-  const {
-    network,
-    networkUrl,
-    networkPassphrase,
-    sorobanRpcUrl = "",
-  } = networkDetails;
+  const { network, networkUrl, networkPassphrase } = networkDetails;
 
   let balances: any = null;
   let isFunded = null;
@@ -581,21 +578,11 @@ export const getAccountBalancesStandalone = async ({
   // Get token balances to combine with classic balances
   const tokenIdList = await getTokenIds(network as NETWORKS);
 
-  const tokenBalances = [] as TokenBalances;
+  const tokenBalances = {} as any;
   const tokensWithNoBalance = [];
 
   if (tokenIdList.length) {
     const params = [new Address(publicKey).toScVal()];
-    const sorobanServer = new SorobanRpc.Server(sorobanRpcUrl, {
-      allowHttp: sorobanRpcUrl.startsWith("http://"),
-    });
-    const sorobanTxBuilder = async (fee = BASE_FEE) => {
-      const sourceAccount = await sorobanServer!.getAccount(publicKey);
-      return new TransactionBuilder(sourceAccount, {
-        fee,
-        networkPassphrase: networkDetails.networkPassphrase,
-      });
-    };
 
     for (let i = 0; i < tokenIdList.length; i += 1) {
       const tokenId = tokenIdList[i];
@@ -607,14 +594,14 @@ export const getAccountBalancesStandalone = async ({
       */
       try {
         /* eslint-disable no-await-in-loop */
-        const { balance, ...rest } = await getSorobanTokenBalance(
-          sorobanServer,
+        const { balance, symbol, ...rest } = await getSorobanTokenBalance(
+          sorobanClientServer,
           tokenId,
           {
-            balance: await sorobanTxBuilder(),
-            name: await sorobanTxBuilder(),
-            decimals: await sorobanTxBuilder(),
-            symbol: await sorobanTxBuilder(),
+            balance: await sorobanClientTxBuilder(),
+            name: await sorobanClientTxBuilder(),
+            decimals: await sorobanClientTxBuilder(),
+            symbol: await sorobanClientTxBuilder(),
           },
           params,
         );
@@ -622,11 +609,13 @@ export const getAccountBalancesStandalone = async ({
 
         const total = new BigNumber(balance);
 
-        tokenBalances.push({
+        tokenBalances[`${symbol}:${tokenId}`] = {
+          token: { issuer: { key: tokenId }, code: symbol },
           contractId: tokenId,
           total,
+          symbol,
           ...rest,
-        });
+        };
       } catch (e) {
         console.error(`Token "${tokenId}" missing data on RPC server`);
         tokensWithNoBalance.push(tokenId);
