@@ -1,7 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import { Button, Icon, Loader, Notification } from "@stellar/design-system";
+import {
+  Button,
+  Icon,
+  Loader,
+  Link,
+  Notification,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import {
@@ -757,7 +763,7 @@ export const UnverifiedTokenWarning = ({
               "Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets.",
             )}
             variant="warning"
-          ></Notification>
+          />
           <div className="UnverifiedTokenWarning__flags">
             <div className="UnverifiedTokenWarning__flags__info">
               {t("Asset Info")}
@@ -768,12 +774,29 @@ export const UnverifiedTokenWarning = ({
               </div>
               <div className="UnverifiedTokenWarning__flag__content">
                 <div className="UnverifiedTokenWarning__flag__header UnverifiedTokenWarning__flags__icon--unverified">
-                  {t("Asset not in the asset list")}
+                  {t(
+                    "The asset is not part of Stellar Expert's top 50 assets list",
+                  )}
                 </div>
                 <div className="UnverifiedTokenWarning__flag__description">
-                  {t(
-                    `This asset is not part of the asset list by stellar.expert (${networkDetails.network})`,
-                  )}
+                  {t("This asset is not part of")}{" "}
+                  <Link
+                    isUnderline
+                    variant="secondary"
+                    href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Stellar Expert's top 50 assets list
+                  </Link>
+                  <br />
+                  <Link
+                    isUnderline
+                    variant="secondary"
+                    href="https://www.freighter.app/faq"
+                  >
+                    {t("Learn more")}
+                  </Link>
                 </div>
               </div>
             </div>
@@ -828,7 +851,7 @@ export const TransferWarning = ({
 
   return (
     <WarningMessage
-      header="Authorizes Token Transfer"
+      header="Authorizes a token transfer. Proceed with caution."
       variant={WarningMessageVariant.warning}
     >
       <div className="TokenTransferWarning">
@@ -844,6 +867,25 @@ export const TransferWarning = ({
             key={`${transfer.contractId}-${transfer.amount}-${transfer.to}`}
           />
         ))}
+      </div>
+    </WarningMessage>
+  );
+};
+
+export const InvokerAuthWarning = () => {
+  const { t } = useTranslation();
+
+  return (
+    <WarningMessage
+      header="Your account is signing this authorization. Proceed with caution."
+      variant={WarningMessageVariant.default}
+    >
+      <div className="InvokerAuthWarning">
+        <p>
+          {t(
+            "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
+          )}
+        </p>
       </div>
     </WarningMessage>
   );

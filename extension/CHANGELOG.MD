@@ -1,3 +1,21 @@
+# Release notes - Wallets - Freighter-5.17.0
+
+### Bug
+
+Create account error string
+
+Account for contract creation when rendering auth entry invocation tree
+
+Display scvBytes as array of numbers
+
+### Story
+
+Enable Soroban on Mainnet ahead of vote
+
+Add invoker auth warning to auth entry in tx sign flow
+
+Copy updates for token allowlist warnings
+
 # Release notes - Wallets - Freighter-5.16.0
 
 ### Story

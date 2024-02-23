@@ -9,10 +9,7 @@ import { ActionStatus, HorizonOperation } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
@@ -62,7 +59,6 @@ export const AccountHistory = () => {
   const { accountBalances, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
@@ -90,15 +86,10 @@ export const AccountHistory = () => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
       getIsSupportedSorobanOp(operation, networkDetails);
 
-    const createSegments = (
-      operations: HorizonOperation[],
-      showSorobanTxs = false,
-    ) => {
-      const _operations = showSorobanTxs
-        ? operations.filter(
-            (op) => op.type_i !== 24 || isSupportedSorobanAccountItem(op),
-          )
-        : operations.filter((op) => op.type_i !== 24);
+    const createSegments = (operations: HorizonOperation[]) => {
+      const _operations = operations.filter(
+        (op) => op.type_i !== 24 || isSupportedSorobanAccountItem(op),
+      );
       const segments = {
         [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
         [SELECTOR_OPTIONS.SENT]: [] as HistoryItemOperation[],
@@ -145,9 +136,7 @@ export const AccountHistory = () => {
           publicKey,
           networkDetails,
         });
-        setHistorySegments(
-          createSegments(operations, isSorobanSuported as boolean),
-        );
+        setHistorySegments(createSegments(operations));
       } catch (e) {
         console.error(e);
       }
@@ -160,7 +149,7 @@ export const AccountHistory = () => {
     };
 
     getData();
-  }, [publicKey, networkDetails, isSorobanSuported, dispatch]);
+  }, [publicKey, networkDetails, dispatch]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />

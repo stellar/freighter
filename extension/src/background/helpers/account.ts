@@ -126,11 +126,6 @@ export const getNetworksList = async () => {
   return networksList;
 };
 
-export const getIsSorobanSupported = async () => {
-  const networkDetails = await getNetworkDetails();
-  return !!networkDetails.sorobanRpcUrl;
-};
-
 export const subscribeAccount = async (publicKey: string) => {
   // if pub key already has a subscription setup, skip this
   const keyId = await localStore.getItem(KEY_ID);
