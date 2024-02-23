@@ -49,7 +49,6 @@ export const simulateTokenPayment = createAsyncThunk<
     }
     return response;
   } catch (e) {
-    console.log(e);
     return thunkApi.rejectWithValue({
       errorMessage: e.message || e,
       response: e.response?.data,
@@ -86,7 +85,6 @@ const tokenPaymentsSimulationSlice = createSlice({
       state.simStatus = ActionStatus.PENDING;
     });
     builder.addCase(simulateTokenPayment.rejected, (state, action) => {
-      // console.log(action)
       state.simStatus = ActionStatus.ERROR;
       state.error = action.payload;
     });
