@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
@@ -52,6 +52,8 @@ import { BottomNav } from "popup/components/BottomNav";
 
 import "popup/metrics/authServices";
 
+import { SorobanContext } from "../../SorobanContext";
+
 import "./styles.scss";
 
 export const defaultAccountBalances = {
@@ -78,8 +80,9 @@ export const Account = () => {
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 
-  const { balances, isFunded } = accountBalances;
+  const sorobanClient = useContext(SorobanContext);
 
+  const { balances, isFunded } = accountBalances;
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
@@ -88,6 +91,7 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
+        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());
@@ -95,7 +99,13 @@ export const Account = () => {
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+  }, [
+    publicKey,
+    networkDetails,
+    isAccountFriendbotFunded,
+    sorobanClient,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!balances) return;

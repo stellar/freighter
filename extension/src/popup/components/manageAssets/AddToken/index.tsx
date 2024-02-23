@@ -1,16 +1,20 @@
-import React, { useEffect, useCallback, useRef, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
 import { useSelector } from "react-redux";
-import { Redirect } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Input, Link, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { getName, getSymbol } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
-
-import { ROUTES } from "popup/constants/routes";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -21,6 +25,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import IconUnverified from "popup/assets/icon-unverified.svg";
+import { SorobanContext } from "popup/SorobanContext";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import "./styles.scss";
@@ -89,6 +94,7 @@ export const AddToken = () => {
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
+  const sorobanClient = useContext(SorobanContext);
 
   interface TokenRecord {
     code: string;
@@ -130,6 +136,26 @@ export const AddToken = () => {
             domain: record.domain,
           })),
         );
+      } else if (isCustomNetwork(networkDetails)) {
+        const name = await getName(
+          contractId,
+          sorobanClient.server,
+          await sorobanClient.newTxBuilder(),
+        );
+        const symbol = await getSymbol(
+          contractId,
+          sorobanClient.server,
+          await sorobanClient.newTxBuilder(),
+        );
+
+        setAssetRows([
+          {
+            code: symbol,
+            issuer: contractId,
+            domain: "",
+            name,
+          },
+        ]);
       } else {
         // lookup contract
         setIsVerifiedToken(false);
@@ -176,10 +202,6 @@ export const AddToken = () => {
   useEffect(() => {
     setHasNoResults(!assetRows.length);
   }, [assetRows]);
-
-  if (isCustomNetwork(networkDetails)) {
-    return <Redirect to={ROUTES.addAsset} />;
-  }
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>

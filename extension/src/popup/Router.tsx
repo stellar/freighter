@@ -71,6 +71,8 @@ import { DEV_SERVER } from "@shared/constants/services";
 import { SignBlob } from "./views/SignBlob";
 import { ReviewAuth } from "./views/ReviewAuth";
 
+import { SorobanProvider } from "./SorobanContext";
+
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
@@ -105,7 +107,11 @@ export const PublicKeyRoute = (props: RouteProps) => {
       />
     );
   }
-  return <Route {...props} />;
+  return (
+    <SorobanProvider pubKey={publicKey}>
+      <Route {...props} />
+    </SorobanProvider>
+  );
 };
 
 export const PrivateKeyRoute = (props: RouteProps) => {
