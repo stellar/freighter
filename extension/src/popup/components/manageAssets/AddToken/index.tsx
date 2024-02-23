@@ -131,40 +131,40 @@ export const AddToken = () => {
 
       setIsSearching(false);
 
-      if (verifiedTokens.length) {
-        setIsVerifiedToken(true);
-        setAssetRows(
-          verifiedTokens.map((record: TokenRecord) => ({
-            code: record.code,
-            issuer: record.contract,
-            image: record.icon,
-            domain: record.domain,
-          })),
-        );
-      } else if (isCustomNetwork(networkDetails)) {
-        const name = await getName(
-          contractId,
-          sorobanClient.server,
-          await sorobanClient.newTxBuilder(),
-        );
-        const symbol = await getSymbol(
-          contractId,
-          sorobanClient.server,
-          await sorobanClient.newTxBuilder(),
-        );
+      try {
+        if (verifiedTokens.length) {
+          setIsVerifiedToken(true);
+          setAssetRows(
+            verifiedTokens.map((record: TokenRecord) => ({
+              code: record.code,
+              issuer: record.contract,
+              image: record.icon,
+              domain: record.domain,
+            })),
+          );
+        } else if (isCustomNetwork(networkDetails)) {
+          const name = await getName(
+            contractId,
+            sorobanClient.server,
+            await sorobanClient.newTxBuilder(),
+          );
+          const symbol = await getSymbol(
+            contractId,
+            sorobanClient.server,
+            await sorobanClient.newTxBuilder(),
+          );
 
-        setAssetRows([
-          {
-            code: symbol,
-            issuer: contractId,
-            domain: "",
-            name,
-          },
-        ]);
-      } else {
-        // lookup contract
-        setIsVerifiedToken(false);
-        try {
+          setAssetRows([
+            {
+              code: symbol,
+              issuer: contractId,
+              domain: "",
+              name,
+            },
+          ]);
+        } else {
+          // lookup contract
+          setIsVerifiedToken(false);
           const tokenUrl = new URL(
             `${INDEXER_URL}/token-details/${contractId}`,
           );
@@ -178,10 +178,7 @@ export const AddToken = () => {
           const res = await fetch(tokenUrl.href);
           const resJson = await res.json();
           if (!res.ok) {
-            captureException(
-              `Failed to fetch token details - ${JSON.stringify(resJson)}`,
-            );
-            setAssetRows([]);
+            throw new Error(JSON.stringify(resJson));
           } else {
             setAssetRows([
               {
@@ -192,13 +189,13 @@ export const AddToken = () => {
               },
             ]);
           }
-        } catch (e) {
-          setAssetRows([]);
-          captureException(
-            `Failed to fetch token details - ${JSON.stringify(e)}`,
-          );
-          console.error(e);
         }
+      } catch (e) {
+        setAssetRows([]);
+        captureException(
+          `Failed to fetch token details - ${JSON.stringify(e)}`,
+        );
+        console.error(e);
       }
     }, 500),
     [],
