@@ -54,11 +54,13 @@ export const shouldAccountDoesntExistWarning = (
 
 export const AccountDoesntExistWarning = () => {
   const { t } = useTranslation();
-  const notificationTitle = t("The destination account doesn’t exist");
 
   return (
     <div className="SendTo__info-block">
-      <Notification variant="primary" title={notificationTitle}>
+      <Notification
+        variant="primary"
+        title={t("The destination account doesn’t exist")}
+      >
         <div>
           {t("Send at least 1 XLM to create account.")}{" "}
           <Link
