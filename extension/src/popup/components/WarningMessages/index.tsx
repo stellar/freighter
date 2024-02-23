@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useContext, useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import {
@@ -60,6 +60,7 @@ import IconWarning from "popup/assets/icon-warning.svg";
 import "./styles.scss";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { searchToken } from "popup/helpers/searchAsset";
+import { SorobanContext } from "popup/SorobanContext";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -302,6 +303,7 @@ export const ScamAssetWarning = ({
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const sorobanClient = useContext(SorobanContext);
 
   const closeOverlay = () => {
     if (warningRef.current) {
@@ -358,8 +360,10 @@ export const ScamAssetWarning = ({
       if (signFreighterTransaction.fulfilled.match(res)) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
+            sorobanClient,
           }),
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
@@ -493,6 +497,7 @@ export const NewAssetWarning = ({
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
+  const sorobanClient = useContext(SorobanContext);
   const warningRef = useRef<HTMLDivElement>(null);
   const { recommendedFee } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -560,8 +565,10 @@ export const NewAssetWarning = ({
       if (signFreighterTransaction.fulfilled.match(res)) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
+            sorobanClient,
           }),
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {

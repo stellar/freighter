@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
@@ -24,11 +24,12 @@ import { simulateTokenPayment } from "popup/ducks/token-payment";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { parseTokenAmount } from "popup/helpers/soroban";
 import "../../styles.scss";
 import { Balances, TokenBalance } from "@shared/api/types";
-import { getNetworkDetails } from "background/helpers/account";
 import { AppDispatch } from "popup/App";
+import { SorobanContext } from "popup/SorobanContext";
 
 export const Settings = ({
   previous,
@@ -39,6 +40,7 @@ export const Settings = ({
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
+  const sorobanClient = useContext(SorobanContext);
   const {
     asset,
     amount,
@@ -48,6 +50,7 @@ export const Settings = ({
     allowedSlippage,
     isToken,
   } = useSelector(transactionDataSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const { accountBalances } = useSelector(transactionSubmissionSelector);
@@ -95,15 +98,15 @@ export const Settings = ({
         amount: parsedAmount.toNumber(),
       };
 
-      const networkDetails = await getNetworkDetails();
       const simulation = await dispatch(
         simulateTokenPayment({
           address: assetAddress,
           publicKey,
           memo,
           params,
-          networkUrl: networkDetails.sorobanRpcUrl!,
-          networkPassphrase: networkDetails.networkPassphrase,
+          networkDetails,
+          sorobanClient,
+          transactionFee,
         }),
       );
 
