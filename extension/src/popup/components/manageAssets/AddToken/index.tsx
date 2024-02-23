@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Redirect } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Input, Link, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
@@ -8,8 +7,6 @@ import { useTranslation } from "react-i18next";
 import { INDEXER_URL } from "@shared/constants/mercury";
 
 import { FormRows } from "popup/basics/Forms";
-
-import { ROUTES } from "popup/constants/routes";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -129,6 +126,15 @@ export const AddToken = () => {
             domain: record.domain,
           })),
         );
+      } else if (isCustomNetwork(networkDetails)) {
+        setAssetRows([
+          {
+            code: "",
+            issuer: contractId,
+            domain: "",
+            name: "",
+          },
+        ]);
       } else {
         // lookup contract
         setIsVerifiedToken(false);
@@ -166,10 +172,6 @@ export const AddToken = () => {
   useEffect(() => {
     setHasNoResults(!assetRows.length);
   }, [assetRows]);
-
-  if (isCustomNetwork(networkDetails)) {
-    return <Redirect to={ROUTES.addAsset} />;
-  }
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>

@@ -1,6 +1,21 @@
-import { SorobanRpc, Networks, Horizon } from "stellar-sdk";
+import {
+  Address,
+  BASE_FEE,
+  SorobanRpc,
+  Networks,
+  Horizon,
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
+import { DataProvider } from "@stellar/wallet-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import {
+  getBalance,
+  getDecimals,
+  getName,
+  getSymbol,
+} from "@shared/helpers/soroban/token";
 import {
   Account,
   AccountBalancesInterface,
@@ -12,6 +27,7 @@ import {
   MigratedAccount,
   Settings,
   IndexerSettings,
+  TokenBalances,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -465,6 +481,165 @@ export const getAccountIndexerBalances = async (
       subentryCount: 0,
     };
   }
+};
+
+export const getSorobanTokenBalance = async (
+  server: SorobanRpc.Server,
+  contractId: string,
+  txBuilders: {
+    // need a builder per operation, Soroban currently has single op transactions
+    balance: TransactionBuilder;
+    name: TransactionBuilder;
+    decimals: TransactionBuilder;
+    symbol: TransactionBuilder;
+  },
+  balanceParams: xdr.ScVal[],
+) => {
+  // Right now we can only have 1 operation per TX in Soroban
+  // for now we need to do 4 tx simulations to show 1 user balance. :(
+  // TODO: figure out how to fetch ledger keys to do this more efficiently
+  const decimals = await getDecimals(contractId, server, txBuilders.decimals);
+  const name = await getName(contractId, server, txBuilders.name);
+  const symbol = await getSymbol(contractId, server, txBuilders.symbol);
+  const balance = await getBalance(
+    contractId,
+    balanceParams,
+    server,
+    txBuilders.balance,
+  );
+
+  return {
+    balance,
+    decimals,
+    name,
+    symbol,
+  };
+};
+
+export const getAccountBalancesStandalone = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountBalancesInterface> => {
+  const {
+    network,
+    networkUrl,
+    networkPassphrase,
+    sorobanRpcUrl = "",
+  } = networkDetails;
+
+  let balances: any = null;
+  let isFunded = null;
+  let subentryCount = 0;
+
+  try {
+    const dataProvider = new DataProvider({
+      serverUrl: networkUrl,
+      accountOrKey: publicKey,
+      networkPassphrase,
+      metadata: {
+        allowHttp: networkUrl.startsWith("http://"),
+      },
+    });
+
+    const resp = await dataProvider.fetchAccountDetails();
+    balances = resp.balances;
+    subentryCount = resp.subentryCount;
+
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < Object.keys(resp.balances).length; i++) {
+      const k = Object.keys(resp.balances)[i];
+      const v: any = resp.balances[k];
+      if (v.liquidity_pool_id) {
+        const server = stellarSdkServer(networkUrl);
+        // eslint-disable-next-line no-await-in-loop
+        const lp = await server
+          .liquidityPools()
+          .liquidityPoolId(v.liquidity_pool_id)
+          .call();
+        balances[k] = {
+          ...balances[k],
+          liquidityPoolId: v.liquidity_pool_id,
+          reserves: lp.reserves,
+        };
+        delete balances[k].liquidity_pool_id;
+      }
+    }
+    isFunded = true;
+  } catch (e) {
+    console.error(e);
+    return {
+      balances,
+      isFunded: false,
+      subentryCount,
+      tokensWithNoBalance: [],
+    };
+  }
+
+  // Get token balances to combine with classic balances
+  const tokenIdList = await getTokenIds(network as NETWORKS);
+
+  const tokenBalances = [] as TokenBalances;
+  const tokensWithNoBalance = [];
+
+  if (tokenIdList.length) {
+    const params = [new Address(publicKey).toScVal()];
+    const sorobanServer = new SorobanRpc.Server(sorobanRpcUrl, {
+      allowHttp: sorobanRpcUrl.startsWith("http://"),
+    });
+    const sorobanTxBuilder = async (fee = BASE_FEE) => {
+      const sourceAccount = await sorobanServer!.getAccount(publicKey);
+      return new TransactionBuilder(sourceAccount, {
+        fee,
+        networkPassphrase: networkDetails.networkPassphrase,
+      });
+    };
+
+    for (let i = 0; i < tokenIdList.length; i += 1) {
+      const tokenId = tokenIdList[i];
+      /*
+        Right now, Soroban transactions only support 1 operation per tx
+        so we need a builder per value from the contract,
+        once/if multi-op transactions are supported this can send
+        1 tx with an operation for each value.
+      */
+      try {
+        /* eslint-disable no-await-in-loop */
+        const { balance, ...rest } = await getSorobanTokenBalance(
+          sorobanServer,
+          tokenId,
+          {
+            balance: await sorobanTxBuilder(),
+            name: await sorobanTxBuilder(),
+            decimals: await sorobanTxBuilder(),
+            symbol: await sorobanTxBuilder(),
+          },
+          params,
+        );
+        /* eslint-enable no-await-in-loop */
+
+        const total = new BigNumber(balance);
+
+        tokenBalances.push({
+          contractId: tokenId,
+          total,
+          ...rest,
+        });
+      } catch (e) {
+        console.error(`Token "${tokenId}" missing data on RPC server`);
+        tokensWithNoBalance.push(tokenId);
+      }
+    }
+  }
+
+  return {
+    balances: { ...balances, ...tokenBalances },
+    isFunded,
+    subentryCount,
+    tokensWithNoBalance: [],
+  };
 };
 
 export const getAccountHistory = async ({

@@ -13,6 +13,7 @@ import {
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountIndexerBalances as internalgetAccountIndexerBalances,
+  getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
@@ -36,7 +37,7 @@ import {
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, isCustomNetwork } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -281,10 +282,20 @@ export const getAccountBalances = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
-    const balances = await internalgetAccountIndexerBalances(
-      publicKey,
-      networkDetails,
-    );
+    let balances;
+
+    if (isCustomNetwork(networkDetails)) {
+      balances = await internalGetAccountBalancesStandalone({
+        publicKey,
+        networkDetails,
+      });
+    } else {
+      balances = await internalgetAccountIndexerBalances(
+        publicKey,
+        networkDetails,
+      );
+    }
+
     storeBalanceMetricData(publicKey, balances.isFunded || false);
     return balances;
   } catch (e) {
