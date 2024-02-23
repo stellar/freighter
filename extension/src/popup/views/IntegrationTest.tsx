@@ -16,7 +16,7 @@ import {
   recoverAccount,
   confirmPassword,
   getAccountIndexerBalances,
-  getAccountHistory,
+  getAccountHistoryStandalone,
   getAssetIcons,
   retryAssetIcon,
   getAssetDomains,
@@ -210,7 +210,7 @@ export const IntegrationTest = () => {
         assertNumber(res.subentryCount);
       });
 
-      res = await getAccountHistory({
+      res = await getAccountHistoryStandalone({
         publicKey: testPublicKey,
         networkDetails: TESTNET_NETWORK_DETAILS,
       });

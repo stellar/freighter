@@ -18,7 +18,6 @@ import {
 import {
   Account,
   AccountBalancesInterface,
-  AccountHistoryInterface,
   BalanceToMigrate,
   Balances,
   HorizonOperation,
@@ -631,16 +630,16 @@ export const getAccountBalancesStandalone = async ({
   };
 };
 
-export const getAccountHistory = async ({
+export const getAccountHistoryStandalone = async ({
   publicKey,
   networkDetails,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<AccountHistoryInterface> => {
+}): Promise<Horizon.ServerApi.OperationRecord[]> => {
   const { networkUrl } = networkDetails;
 
-  let operations = [] as Array<HorizonOperation>;
+  let operations = [] as Horizon.ServerApi.OperationRecord[];
 
   try {
     const server = stellarSdkServer(networkUrl);
@@ -658,9 +657,7 @@ export const getAccountHistory = async ({
     console.error(e);
   }
 
-  return {
-    operations,
-  };
+  return operations;
 };
 
 export const getIndexerAccountHistory = async ({
