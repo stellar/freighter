@@ -177,6 +177,7 @@ export interface SorobanBalance {
   name: string;
   symbol: string;
   decimals: number;
+  token?: { code: string; issuer: { key: string } };
 }
 
 export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
