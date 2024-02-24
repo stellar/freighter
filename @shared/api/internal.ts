@@ -912,10 +912,7 @@ export const submitFreighterSorobanTransaction = async ({
     console.error(e);
   }
 
-  if (
-    !networkDetails.sorobanRpcUrl &&
-    networkDetails.network !== NETWORKS.FUTURENET
-  ) {
+  if (!networkDetails.sorobanRpcUrl) {
     throw new Error("soroban rpc not supported");
   }
 
