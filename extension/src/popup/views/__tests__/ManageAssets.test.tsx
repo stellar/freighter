@@ -13,6 +13,7 @@ import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
+  MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types";
 import { createMemoryHistory } from "history";
@@ -23,6 +24,7 @@ import * as AssetDomain from "popup/helpers/getAssetDomain";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as ManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as SearchAsset from "popup/helpers/searchAsset";
+import * as SorobanHelpers from "popup/helpers/soroban";
 import {
   AssetSelectType,
   initialState as transactionSubmissionInitialState,
@@ -33,6 +35,8 @@ import { ManageAssets } from "../ManageAssets";
 
 const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
+const verifiedToken =
+  "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
 const manageAssetsMockBalances = {
   balances: ({
@@ -154,6 +158,29 @@ jest.spyOn(SearchAsset, "searchAsset").mockImplementation(({ asset }) => {
     },
   });
 });
+jest
+  .spyOn(SearchAsset, "getVerifiedTokens")
+  .mockImplementation(({ contractId }) => {
+    if (contractId === verifiedToken) {
+      return Promise.resolve([
+        {
+          code: "USDC",
+          contract: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+          decimals: 7,
+          domain: "centre.io",
+          icon: "",
+          issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          org: "unknown",
+        },
+      ]);
+    }
+
+    return Promise.resolve([]);
+  });
+
+jest
+  .spyOn(SorobanHelpers, "isContractId")
+  .mockImplementation((contractId) => contractId === verifiedToken);
 
 const mockHistoryGetter = jest.fn();
 jest.mock("popup/constants/history", () => ({
@@ -184,9 +211,15 @@ jest.mock("stellar-sdk", () => {
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 const history = createMemoryHistory();
 
-const initView = async (rejectTxn: boolean = false) => {
+const initView = async (
+  rejectTxn: boolean = false,
+  isMainnet: boolean = false,
+) => {
   history.push(ROUTES.manageAssets);
   mockHistoryGetter.mockReturnValue(history);
+  const configuredNetworkDetails = isMainnet
+    ? MAINNET_NETWORK_DETAILS
+    : TESTNET_NETWORK_DETAILS;
 
   render(
     <Wrapper
@@ -201,10 +234,11 @@ const initView = async (rejectTxn: boolean = false) => {
         },
         settings: {
           networkDetails: {
-            ...TESTNET_NETWORK_DETAILS,
+            ...configuredNetworkDetails,
             networkName: rejectTxn ? "Test Net Reject" : "Test Net",
           },
           networksList: DEFAULT_NETWORKS,
+          isSorobanPublicEnabled: true,
         },
         transactionSubmission: {
           ...transactionSubmissionInitialState,
@@ -426,5 +460,58 @@ describe("Manage assets", () => {
 
     const lastRoute = history.entries.pop();
     expect(lastRoute?.pathname).toBe("/account");
+  });
+  it("add soroban token", async () => {
+    // init Mainnet view
+    await initView(false, true);
+
+    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+      "Choose Asset",
+    );
+
+    const addTokenButton = screen.getByTestId(
+      "ChooseAssetAddSorobanTokenButton",
+    );
+    expect(addTokenButton).toBeEnabled();
+    await fireEvent.click(addTokenButton);
+
+    await waitFor(() => {
+      screen.getByTestId("add-token");
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Add a Soroban token by ID",
+      );
+
+      const searchInput = screen.getByTestId("search-token-input");
+      fireEvent.change(searchInput, { target: { value: verifiedToken } });
+      expect(searchInput).toHaveValue(verifiedToken);
+    });
+    await waitFor(async () => {
+      const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
+      const verificationBadge = screen.getByTestId("add-token-verification");
+
+      expect(verificationBadge).toHaveTextContent(
+        "This asset is part of Stellar Expert's top 50 assets list. Learn more",
+      );
+      expect(screen.getByTestId("add-token-verification-url")).toHaveAttribute(
+        "href",
+        "https://api.stellar.expert/explorer/public/asset-list/top50",
+      );
+
+      expect(addedTrustlines.length).toBe(1);
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+      ).toHaveTextContent("USDC");
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+      ).toHaveTextContent("centre.io");
+
+      const addAssetButton = within(addedTrustlines[0]).getByTestId(
+        "ManageAssetRowButton",
+      );
+
+      expect(addAssetButton).toHaveTextContent("Add");
+      expect(addAssetButton).toBeEnabled();
+      await fireEvent.click(addAssetButton);
+    });
   });
 });
