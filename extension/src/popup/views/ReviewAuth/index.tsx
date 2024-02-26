@@ -44,6 +44,8 @@ import { Details } from "../SignTransaction/Preview/Details";
 import { Data } from "../SignTransaction/Preview/Data";
 import { VerifyAccount } from "../VerifyAccount";
 import "./styles.scss";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 export const ReviewAuth = () => {
   const location = useLocation();
@@ -84,6 +86,14 @@ export const ReviewAuth = () => {
   );
 
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
+  const reviewAuthEntry = () => {
+    emitMetric(METRIC_NAMES.reviewedAuthEntry);
+    if (isLastEntry) {
+      setHasConfirmedAuth(true);
+    } else {
+      setActiveAuthEntryIndex(activeAuthEntryIndex + 1);
+    }
+  };
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -154,11 +164,7 @@ export const ReviewAuth = () => {
                 isFullWidth
                 size="md"
                 isLoading={isConfirming}
-                onClick={() =>
-                  isLastEntry
-                    ? setHasConfirmedAuth(true)
-                    : setActiveAuthEntryIndex(activeAuthEntryIndex + 1)
-                }
+                onClick={reviewAuthEntry}
               >
                 {isLastEntry
                   ? t("Approve and continue")
