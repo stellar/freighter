@@ -16,6 +16,7 @@ import {
   AccountBalancesInterface,
   Balances,
   HorizonOperation,
+  SorobanBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -45,6 +46,12 @@ export const getAssetDecimals = (
 
   return CLASSIC_ASSET_DECIMALS;
 };
+
+export const getTokenBalance = (tokenBalance: SorobanBalance) =>
+  formatTokenAmount(
+    new BigNumber(tokenBalance.total),
+    Number(tokenBalance.decimals),
+  );
 
 // Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
 export const formatTokenAmount = (amount: BigNumber, decimals: number) => {

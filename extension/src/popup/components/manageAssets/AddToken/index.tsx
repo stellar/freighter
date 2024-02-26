@@ -12,13 +12,18 @@ import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { getName, getSymbol } from "@shared/helpers/soroban/token";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 import { FormRows } from "popup/basics/Forms";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isCustomNetwork, isMainnet, isTestnet } from "helpers/stellar";
-import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import {
+  getVerifiedTokens,
+  TokenRecord,
+  searchTokenUrl,
+} from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -36,19 +41,27 @@ const initialValues: FormValues = {
   asset: "",
 };
 
-const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
+const VerificationBadge = ({
+  isVerified,
+  networkDetails,
+}: {
+  isVerified: boolean;
+  networkDetails: NetworkDetails;
+}) => {
   const { t } = useTranslation();
+  const linkUrl = searchTokenUrl(networkDetails);
 
   return (
-    <div className="AddToken__heading">
+    <div className="AddToken__heading" data-testid="add-token-verification">
       {isVerified ? (
         <>
           <Icon.Verified />
           <span className="AddToken__heading__text">
             {t("This asset is part of")}{" "}
             <Link
+              data-testid="add-token-verification-url"
               variant="secondary"
-              href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
+              href={linkUrl}
               target="_blank"
               rel="noreferrer"
             >
@@ -67,7 +80,7 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
             {t("This asset is not part of")}{" "}
             <Link
               variant="secondary"
-              href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
+              href={linkUrl}
               target="_blank"
               rel="noreferrer"
             >
@@ -94,16 +107,8 @@ export const AddToken = () => {
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
   const sorobanClient = useContext(SorobanContext);
-
-  interface TokenRecord {
-    code: string;
-    issuer: string;
-    contract: string;
-    org: string;
-    domain: string;
-    icon: string;
-    decimals: number;
-  }
+  const isAllowListVerificationEnabled =
+    isMainnet(networkDetails) || isTestnet(networkDetails);
 
   const handleSearch = useCallback(
     debounce(async ({ target: { value: contractId } }) => {
@@ -115,7 +120,7 @@ export const AddToken = () => {
 
       let verifiedTokens = [] as TokenRecord[];
 
-      if (isMainnet(networkDetails) || isTestnet(networkDetails)) {
+      if (isAllowListVerificationEnabled) {
         verifiedTokens = await getVerifiedTokens({
           networkDetails,
           contractId,
@@ -216,7 +221,7 @@ export const AddToken = () => {
                         id="asset"
                         placeholder={t("Token ID")}
                         {...field}
-                        data-testid="search-asset-input"
+                        data-testid="search-token-input"
                       />
                     )}
                   </Field>
@@ -232,8 +237,11 @@ export const AddToken = () => {
                       <Loader />
                     </div>
                   ) : null}
-                  {assetRows.length ? (
-                    <VerificationBadge isVerified={isVerifiedToken} />
+                  {assetRows.length && isAllowListVerificationEnabled ? (
+                    <VerificationBadge
+                      isVerified={isVerifiedToken}
+                      networkDetails={networkDetails}
+                    />
                   ) : null}
 
                   {assetRows.length ? (

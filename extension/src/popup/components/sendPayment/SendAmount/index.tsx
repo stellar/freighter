@@ -24,7 +24,7 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals } from "popup/helpers/soroban";
+import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -49,8 +49,8 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 
-import "../styles.scss";
 import { BalanceMap } from "@shared/api/types";
+import "../styles.scss";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -146,6 +146,10 @@ export const SendAmount = ({
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
       let availBalance = new BigNumber("0");
+      if (isToken) {
+        const tokenBalance = accountBalances?.balances?.[selectedAsset] as any;
+        return getTokenBalance(tokenBalance);
+      }
       if (accountBalances.balances) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
@@ -174,7 +178,12 @@ export const SendAmount = ({
 
       return availBalance.toFixed().toString();
     },
-    [accountBalances.balances, accountBalances.subentryCount, recommendedFee],
+    [
+      accountBalances.balances,
+      accountBalances.subentryCount,
+      recommendedFee,
+      isToken,
+    ],
   );
 
   const [availBalance, setAvailBalance] = useState(
