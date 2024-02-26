@@ -16,7 +16,7 @@ const GUIDE_BASE_PATH = "guide";
 const guidePaths = [
   "introduction",
   "gettingStarted",
-  "usingFreighterNode",
+  "usingFreighterWebApp",
   "usingFreighterBrowser",
 ];
 
