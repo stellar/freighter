@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
 import { Icon, Loader } from "@stellar/design-system";
@@ -16,6 +16,7 @@ import {
   getAttrsFromSorobanHorizonOp,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
+import { isCustomNetwork } from "helpers/stellar";
 
 import {
   AccountBalancesInterface,
@@ -24,7 +25,9 @@ import {
   TokenBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getDecimals, getName, getSymbol } from "@shared/helpers/soroban/token";
 
+import { SorobanContext } from "popup/SorobanContext";
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
 
@@ -128,6 +131,7 @@ export const HistoryItem = ({
   const [BodyComponent, setBodyComponent] = useState(
     null as React.ReactElement | null,
   );
+  const sorobanClient = useContext(SorobanContext);
 
   const renderBodyComponent = () => BodyComponent;
   const renderIcon = () => IconComponent;
@@ -237,9 +241,36 @@ export const HistoryItem = ({
             setIsLoading(true);
 
             try {
-              const response = await fetch(
-                `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
-              );
+              let tokenDetails = {} as {
+                name?: string;
+                decimals?: number;
+                symbol?: string;
+              };
+              if (isCustomNetwork(networkDetails)) {
+                const name = await getName(
+                  attrs.contractId,
+                  sorobanClient.server,
+                  await sorobanClient.newTxBuilder(),
+                );
+                const symbol = await getSymbol(
+                  attrs.contractId,
+                  sorobanClient.server,
+                  await sorobanClient.newTxBuilder(),
+                );
+                const decimals = await getDecimals(
+                  attrs.contractId,
+                  sorobanClient.server,
+                  await sorobanClient.newTxBuilder(),
+                );
+                tokenDetails = {
+                  name,
+                  symbol,
+                  decimals,
+                };
+              } else {
+                const response = await fetch(
+                  `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
+                );
 
               if (!response.ok) {
                 const _err = await response.json();
@@ -263,6 +294,18 @@ export const HistoryItem = ({
                   name: tokenDetails.name,
                   symbol: tokenDetails.symbol,
                 };
+                
+                const formattedTokenAmount = formatTokenAmount(
+                  new BigNumber(attrs.amount),
+                  _token.decimals!,
+                );
+                
+                setBodyComponent(
+                  <>
+                    {isRecieving && "+"}
+                    {formattedTokenAmount} {_token.symbol}
+                  </>,
+                );
 
                 const formattedTokenAmount = formatTokenAmount(
                   new BigNumber(attrs.amount),
@@ -436,6 +479,7 @@ export const HistoryItem = ({
     t,
     to,
     accountBalances.balances,
+    sorobanClient,
   ]);
 
   return (

@@ -1,5 +1,6 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as createStellarIdenticon from "stellar-identicon-js";
 import {
   Memo,
@@ -9,7 +10,6 @@ import {
   Transaction,
   TransactionBuilder,
 } from "stellar-sdk";
-// import { act } from "react-dom/test-utils";
 
 import * as Stellar from "helpers/stellar";
 import { getTokenInvocationArgs } from "popup/helpers/soroban";
@@ -63,7 +63,7 @@ const transactions = {
     "AAAAAgAAAACM6IR9GHiRoVVAO78JJNksy2fKDQNs2jBn8bacsRLcrDucQIQAAAWIAAAAMQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABHkEVdJ+UfDnWpBr/qF582IEoDQ0iW0WPzO9CEUdvvh8AAAAEbWludAAAAAIAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAoAAAAAAAAAAAAAAAAAAAAFAAAAAQAAAAAAAAAAAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAABG1pbnQAAAACAAAAEgAAAAAAAAAA6BZdgAk/R2ZGwnrmk/TACHUraXX+fMDNz9uJ5e9/AJ0AAAAKAAAAAAAAAAAAAAAAAAAABQAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAAFAAAAAEAAAAHa35L+/RxV6EuJOVk78H5rCN+eubXBWtsKrRxeLnnpRAAAAABAAAABgAAAAEeQRV0n5R8OdakGv+oXnzYgSgNDSJbRY/M70IRR2++HwAAABAAAAABAAAAAgAAAA8AAAAHQmFsYW5jZQAAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAEAYpBIAAAfrAAAAJQAAAAAAAAdYwAAAAA=",
 };
 
-describe.skip("SignTransactions", () => {
+describe("SignTransactions", () => {
   const getMemoMockTransactionInfo = (xdr: string, op: Operation) => ({
     transaction: {
       networkPassphrase: Networks.TESTNET,
@@ -91,15 +91,6 @@ describe.skip("SignTransactions", () => {
   beforeEach(() => {
     const mockCanvas = document.createElement("canvas");
     jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
-    // jest.spyOn(global, "fetch").mockImplementation(await act(
-    //   async () => {
-    //     return {
-    //       json: async () => ({
-    //         decimals: 7,
-    //       })
-    //     } as any
-    //   }
-    // ));
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         json: async () => ({
@@ -215,6 +206,8 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
+    userEvent.click(screen.getByTestId("Tab-Details"));
+
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
@@ -268,6 +261,7 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
+    userEvent.click(screen.getByTestId("Tab-Details"));
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
@@ -307,8 +301,7 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.queryByTestId("SignTransactionMemo")).toBeNull();
+    expect(screen.queryByTestId("MemoBlock")).toBeNull();
   });
 
   it("memo: render memo text", async () => {
@@ -328,8 +321,7 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "text memo (MEMO_TEXT)",
     );
   });
@@ -351,13 +343,12 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "123456 (MEMO_ID)",
     );
   });
 
-  xit("memo: render memo hash", async () => {
+  it("memo: render memo hash", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_HASH,
       Networks.TESTNET,
@@ -374,13 +365,12 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_HASH)",
     );
   });
 
-  xit("memo: render memo return", async () => {
+  it("memo: render memo return", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_RETURN,
       Networks.TESTNET,
@@ -397,8 +387,7 @@ describe.skip("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_RETURN)",
     );
   });

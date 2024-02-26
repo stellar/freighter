@@ -146,4 +146,8 @@ export const METRIC_NAMES = {
   viewLeaveFeedback: "loaded screen: leave feedback",
 
   invalidAuthEntry: "invalid authorization entry",
+
+  rejectSigning: "user cancelled signing flow",
+  approveSign: "user signed transaction",
+  reviewedAuthEntry: "reviewed authorization entry",
 };

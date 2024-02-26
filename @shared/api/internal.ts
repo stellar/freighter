@@ -5,6 +5,8 @@ import {
   SorobanRpc,
   Networks,
   Horizon,
+  FeeBumpTransaction,
+  Transaction,
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
@@ -20,7 +22,6 @@ import {
 import {
   Account,
   AccountBalancesInterface,
-  AccountHistoryInterface,
   BalanceToMigrate,
   Balances,
   HorizonOperation,
@@ -41,7 +42,7 @@ import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
-import { stellarSdkServer } from "./helpers/stellarSdkServer";
+import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -629,16 +630,16 @@ export const getAccountBalancesStandalone = async ({
   };
 };
 
-export const getAccountHistory = async ({
+export const getAccountHistoryStandalone = async ({
   publicKey,
   networkDetails,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<AccountHistoryInterface> => {
+}): Promise<Horizon.ServerApi.OperationRecord[]> => {
   const { networkUrl } = networkDetails;
 
-  let operations = [] as Array<HorizonOperation>;
+  let operations = [] as Horizon.ServerApi.OperationRecord[];
 
   try {
     const server = stellarSdkServer(networkUrl);
@@ -656,9 +657,7 @@ export const getAccountHistory = async ({
     console.error(e);
   }
 
-  return {
-    operations,
-  };
+  return operations;
 };
 
 export const getIndexerAccountHistory = async ({
@@ -873,6 +872,77 @@ export const signFreighterSorobanTransaction = async ({
   }
 
   return { signedTransaction };
+};
+
+export const submitFreighterTransaction = ({
+  signedXDR,
+  networkDetails,
+}: {
+  signedXDR: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const tx = TransactionBuilder.fromXDR(
+    signedXDR,
+    networkDetails.networkPassphrase,
+  );
+  const server = stellarSdkServer(networkDetails.networkUrl);
+
+  return submitTx({ server, tx });
+};
+
+export const submitFreighterSorobanTransaction = async ({
+  signedXDR,
+  networkDetails,
+}: {
+  signedXDR: string;
+  networkDetails: NetworkDetails;
+}) => {
+  let tx = {} as Transaction | FeeBumpTransaction;
+  try {
+    tx = TransactionBuilder.fromXDR(
+      signedXDR,
+      networkDetails.networkPassphrase,
+    );
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (!networkDetails.sorobanRpcUrl) {
+    throw new Error("soroban rpc not supported");
+  }
+
+  const serverUrl = networkDetails.sorobanRpcUrl || "";
+
+  const server = new SorobanRpc.Server(serverUrl, {
+    allowHttp: !serverUrl.startsWith("https"),
+  });
+
+  const response = await server.sendTransaction(tx);
+
+  if (response.errorResult) {
+    throw new Error(response.errorResult.result().toString());
+  }
+
+  if (response.status === SendTxStatus.Pending) {
+    let txResponse = await server.getTransaction(response.hash);
+
+    // Poll this until the status is not "NOT_FOUND"
+    while (txResponse.status === GetTxStatus.NotFound) {
+      // See if the transaction is complete
+      // eslint-disable-next-line no-await-in-loop
+      txResponse = await server.getTransaction(response.hash);
+      // Wait a second
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    return response;
+    // eslint-disable-next-line no-else-return
+  } else {
+    throw new Error(
+      `Unabled to submit transaction, status: ${response.status}`,
+    );
+  }
 };
 
 export const addRecentAddress = async ({

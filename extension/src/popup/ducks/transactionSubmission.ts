@@ -19,6 +19,8 @@ import {
   getBlockedDomains as internalGetBlockedDomains,
   getBlockedAccounts as internalGetBlockedAccounts,
   removeTokenId as internalRemoveTokenId,
+  submitFreighterTransaction as internalSubmitFreighterTransaction,
+  submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
 } from "@shared/api/internal";
 
 import {
@@ -82,41 +84,63 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.HorizonApi.TransactionResponse,
   {
+    publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
+    sorobanClient: SorobanContextInterface;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterTransaction",
-  async ({ signedXDR, networkDetails }, thunkApi) => {
-    try {
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          signed_xdr: signedXDR,
-          network_url: networkDetails.networkUrl,
-          network_passphrase: networkDetails.networkPassphrase,
-        }),
-      };
-      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
-      const response = await res.json();
+  async ({ publicKey, signedXDR, networkDetails, sorobanClient }, thunkApi) => {
+    if (isCustomNetwork(networkDetails)) {
+      try {
+        const txRes = await internalSubmitFreighterTransaction({
+          signedXDR,
+          networkDetails,
+        });
 
-      if (!res.ok) {
+        thunkApi.dispatch(
+          getAccountBalances({ publicKey, networkDetails, sorobanClient }),
+        );
+
+        return txRes;
+      } catch (e) {
         return thunkApi.rejectWithValue({
-          errorMessage: response,
+          errorMessage: e.message || e,
+          response: e.response?.data,
         });
       }
-      return response;
-    } catch (e) {
-      return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
-      });
+    } else {
+      try {
+        const options = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            signed_xdr: signedXDR,
+            network_url: networkDetails.networkUrl,
+            network_passphrase: networkDetails.networkPassphrase,
+          }),
+        };
+        const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+        const response = await res.json();
+
+        if (!res.ok) {
+          return thunkApi.rejectWithValue({
+            errorMessage: response,
+          });
+        }
+        return response;
+      } catch (e) {
+        return thunkApi.rejectWithValue({
+          errorMessage: e.message || e,
+          response: e.response?.data,
+        });
+      }
     }
   },
 );
@@ -124,41 +148,63 @@ export const submitFreighterTransaction = createAsyncThunk<
 export const submitFreighterSorobanTransaction = createAsyncThunk<
   SorobanRpc.Api.SendTransactionResponse,
   {
+    publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
+    sorobanClient: SorobanContextInterface;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterSorobanTransaction",
-  async ({ signedXDR, networkDetails }, thunkApi) => {
-    try {
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          signed_xdr: signedXDR,
-          network_url: networkDetails.networkUrl,
-          network_passphrase: networkDetails.networkPassphrase,
-        }),
-      };
-      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
-      const response = await res.json();
+  async ({ publicKey, signedXDR, networkDetails, sorobanClient }, thunkApi) => {
+    if (isCustomNetwork(networkDetails)) {
+      try {
+        const txRes = await internalSubmitFreighterSorobanTransaction({
+          signedXDR,
+          networkDetails,
+        });
 
-      if (!res.ok) {
+        thunkApi.dispatch(
+          getAccountBalances({ publicKey, networkDetails, sorobanClient }),
+        );
+
+        return txRes;
+      } catch (e) {
         return thunkApi.rejectWithValue({
-          errorMessage: response,
+          errorMessage: e.message || e,
+          response: e.response?.data,
         });
       }
-      return response;
-    } catch (e) {
-      return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
-      });
+    } else {
+      try {
+        const options = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            signed_xdr: signedXDR,
+            network_url: networkDetails.networkUrl,
+            network_passphrase: networkDetails.networkPassphrase,
+          }),
+        };
+        const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+        const response = await res.json();
+
+        if (!res.ok) {
+          return thunkApi.rejectWithValue({
+            errorMessage: response,
+          });
+        }
+        return response;
+      } catch (e) {
+        return thunkApi.rejectWithValue({
+          errorMessage: e.message || e,
+          response: e.response?.data,
+        });
+      }
     }
   },
 );
@@ -312,15 +358,30 @@ export const getAccountBalances = createAsyncThunk<
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
-  { publicKey: string; networkDetails: NetworkDetails },
+  {
+    publicKey: string;
+    networkDetails: NetworkDetails;
+    sorobanClient: SorobanContextInterface;
+  },
   { rejectValue: ErrorMessage }
->("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    return await internalgetAccountIndexerBalances(publicKey, networkDetails);
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
-  }
-});
+>(
+  "getDestinationBalances",
+  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
+    try {
+      if (isCustomNetwork(networkDetails)) {
+        return await internalGetAccountBalancesStandalone({
+          publicKey,
+          networkDetails,
+          sorobanClientServer: sorobanClient.server,
+          sorobanClientTxBuilder: sorobanClient.newTxBuilder,
+        });
+      }
+      return await internalgetAccountIndexerBalances(publicKey, networkDetails);
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e });
+    }
+  },
+);
 
 export const getAssetIcons = createAsyncThunk<
   AssetIcons,

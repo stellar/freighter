@@ -21,6 +21,9 @@ export const searchAsset = async ({
   }
 };
 
+export const searchTokenUrl = (networkDetails: NetworkDetails) =>
+  `${getApiStellarExpertUrl(networkDetails)}/asset-list/top50`;
+
 export const searchToken = async ({
   networkDetails,
   onError,
@@ -29,9 +32,7 @@ export const searchToken = async ({
   onError: (e: any) => void;
 }) => {
   try {
-    const res = await fetchAssetList(
-      `${getApiStellarExpertUrl(networkDetails)}/asset-list/top50`,
-    );
+    const res = await fetchAssetList(searchTokenUrl(networkDetails));
     return res;
   } catch (e) {
     return onError(e);
