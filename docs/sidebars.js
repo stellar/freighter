@@ -3,6 +3,7 @@ const playgroundPaths = [
   "isConnected",
   "isAllowed",
   "setAllowed",
+  "requestAccess",
   "getPublicKey",
   "getUserInfo",
   "getNetwork",
