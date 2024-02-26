@@ -21,6 +21,7 @@ import {
 } from "popup/components/signTransaction/Operations/KeyVal";
 import { useTranslation } from "react-i18next";
 import { truncateString } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
 import { FlaggedKeys } from "types/transactions";
 import {
   FnArgsCreateSac,
@@ -38,14 +39,13 @@ import {
   TransferWarning,
   UnverifiedTokenTransferWarning,
 } from "popup/components/WarningMessages";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
 import { Data } from "../SignTransaction/Preview/Data";
 import { VerifyAccount } from "../VerifyAccount";
 import "./styles.scss";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 export const ReviewAuth = () => {
   const location = useLocation();
