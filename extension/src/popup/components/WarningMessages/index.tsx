@@ -56,11 +56,12 @@ import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
 import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
-
-import "./styles.scss";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { searchToken } from "popup/helpers/searchAsset";
+import { captureException } from "@sentry/browser";
 import { SorobanContext } from "popup/SorobanContext";
+
+import "./styles.scss";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -988,6 +989,9 @@ const WarningMessageTokenDetails = ({
         _tokenDetails[transfer.contractId] = details;
       } catch (error) {
         // falls back to only showing contract ID
+        captureException(
+          `Failed to fetch token details - ${JSON.stringify(error)}`,
+        );
         console.error(error);
       }
       setTokenDetails(_tokenDetails);

@@ -19,6 +19,7 @@ import {
   browserLocalStorage,
 } from "background/helpers/dataStorage";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { captureException } from "@sentry/browser";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -155,6 +156,9 @@ export const subscribeAccount = async (publicKey: string) => {
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
   } catch (e) {
     console.error(e);
+    captureException(
+      `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
+    );
     throw new Error("Error subscribing account");
   }
 
@@ -181,6 +185,9 @@ export const subscribeTokenBalance = async (
     await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
   } catch (e) {
     console.error(e);
+    captureException(
+      `Failed to subscribe token balance - ${JSON.stringify(e)}`,
+    );
     throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
@@ -200,6 +207,9 @@ export const subscribeTokenHistory = async (
     await fetch(`${INDEXER_URL}/subscription/token`, options);
   } catch (e) {
     console.error(e);
+    captureException(
+      `Failed to subscribe token history - ${JSON.stringify(e)}`,
+    );
     throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };

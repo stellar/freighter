@@ -95,6 +95,7 @@
   "Clear Flags": "Clear Flags",
   "Click on Freighter’s pin button to have it always visible": "Click on Freighter’s pin button to have it always visible",
   "Click on the extensions button at the top of your browser’s bar": "Click on the extensions button at the top of your browser’s bar",
+  "Close": "Close",
   "Confirm": "Confirm",
   "Confirm Data": "Confirm Data",
   "Confirm password": "Confirm password",
@@ -156,6 +157,7 @@
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
   "Extend To": "Extend To",
+  "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fee": "Fee",
   "Fees can vary depending on the network congestion": {

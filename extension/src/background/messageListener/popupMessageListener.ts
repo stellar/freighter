@@ -110,6 +110,7 @@ import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
+import { captureException } from "@sentry/browser";
 
 // number of public keys to auto-import
 const numOfPublicKeysToCheck = 5;
@@ -1220,6 +1221,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const res = await fetch(`${INDEXER_URL}/feature-flags`);
       resJson = await res.json();
     } catch (e) {
+      captureException(
+        `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(
+          e,
+        )}`,
+      );
       console.error(e);
     }
 

@@ -1,6 +1,12 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
+import {
+  Button,
+  CopyText,
+  Icon,
+  NavButton,
+  Notification,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -144,6 +150,7 @@ export const Account = () => {
     fetchAccountHistory();
   }, [publicKey, networkDetails, balances, sortedBalances]);
 
+  const hasError = accountBalanceStatus === ActionStatus.ERROR;
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
     accountBalanceStatus === ActionStatus.IDLE ||
@@ -227,7 +234,17 @@ export const Account = () => {
                   </div>
                 </div>
               </div>
-              {isFunded ? (
+              {hasError && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    variant="error"
+                    title={t("Failed to fetch your account balances.")}
+                  >
+                    Your account balances could not be fetched at this time.
+                  </Notification>
+                </div>
+              )}
+              {isFunded && !hasError && (
                 <div className="AccountView__assets-wrapper">
                   <AccountAssets
                     sortedBalances={sortedBalances}
@@ -235,7 +252,8 @@ export const Account = () => {
                     setSelectedAsset={setSelectedAsset}
                   />
                 </div>
-              ) : (
+              )}
+              {!isFunded && !hasError && (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}
                   setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
