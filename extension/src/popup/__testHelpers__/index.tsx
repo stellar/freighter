@@ -81,8 +81,8 @@ export const mockBalances = {
         },
       },
       decimals: 7,
-      total: new BigNumber("10"),
-      available: new BigNumber("10"),
+      total: new BigNumber("1000000000"),
+      available: new BigNumber("1000000000"),
     },
     ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
       token: {
