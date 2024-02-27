@@ -1,4 +1,3 @@
-
 import { captureException } from "@sentry/browser";
 import {
   Address,
@@ -1063,11 +1062,12 @@ export const saveSettings = async ({
 
 export const changeNetwork = async (
   networkName: string,
-): Promise<NetworkDetails> => {
+): Promise<{ networkDetails: NetworkDetails; isRpcHealthy: boolean }> => {
   let networkDetails = MAINNET_NETWORK_DETAILS;
+  let isRpcHealthy = false;
 
   try {
-    ({ networkDetails } = await sendMessageToBackground({
+    ({ networkDetails, isRpcHealthy } = await sendMessageToBackground({
       networkName,
       type: SERVICE_TYPES.CHANGE_NETWORK,
     }));
@@ -1075,7 +1075,7 @@ export const changeNetwork = async (
     console.error(e);
   }
 
-  return networkDetails;
+  return { networkDetails, isRpcHealthy };
 };
 
 export const addCustomNetwork = async (

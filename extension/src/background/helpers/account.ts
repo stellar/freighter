@@ -13,7 +13,12 @@ import {
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
-import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
+import {
+  isMainnet,
+  isTestnet,
+  isFuturenet,
+  isCustomNetwork,
+} from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
@@ -125,6 +130,28 @@ export const getNetworksList = async () => {
     (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
   return networksList;
+};
+
+export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
+  let rpcHealth = { status: "" };
+  if (isCustomNetwork(networkDetails)) {
+    // TODO: use server.getHealth method to get accurate result for standalone network
+    rpcHealth = { status: "healthy" };
+  } else {
+    try {
+      const res = await fetch(
+        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
+      );
+      rpcHealth = await res.json();
+    } catch (e) {
+      captureException(
+        `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
+      );
+      console.error(e);
+    }
+  }
+
+  return rpcHealth.status === "healthy";
 };
 
 export const subscribeAccount = async (publicKey: string) => {

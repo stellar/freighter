@@ -19,7 +19,10 @@ import {
   AssetType,
 } from "@shared/api/types";
 
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSorobanSupportedSelector,
+} from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
   accountStatusSelector,
@@ -77,6 +80,7 @@ export const Account = () => {
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
   const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
@@ -240,10 +244,23 @@ export const Account = () => {
                     variant="error"
                     title={t("Failed to fetch your account balances.")}
                   >
-                    Your account balances could not be fetched at this time.
+                    {t(
+                      "Your account balances could not be fetched at this time.",
+                    )}
                   </Notification>
                 </div>
               )}
+              {!isSorobanSuported && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Soroban RPC is temporarily experiencing issues")}
+                    variant="primary"
+                  >
+                    {t("Some features may be disabled at this time.")}
+                  </Notification>
+                </div>
+              )}
+
               {isFunded && !hasError && (
                 <div className="AccountView__assets-wrapper">
                   <AccountAssets

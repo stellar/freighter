@@ -46,6 +46,7 @@ const settingsInitialState: Settings = {
 
 const indexerInitialState: IndexerSettings = {
   isSorobanPublicEnabled: false,
+  isRpcHealthy: false,
 };
 
 const initialState = {
@@ -124,7 +125,7 @@ export const saveSettings = createAsyncThunk<
 );
 
 export const changeNetwork = createAsyncThunk<
-  NetworkDetails,
+  { networkDetails: NetworkDetails; isRpcHealthy: boolean },
   { networkName: string },
   { rejectValue: ErrorMessage }
 >("settings/changeNetwork", ({ networkName }) =>
@@ -232,6 +233,7 @@ const settingsSlice = createSlice({
           isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
+          isRpcHealthy,
         } = action?.payload || {
           ...initialState,
         };
@@ -247,17 +249,28 @@ const settingsSlice = createSlice({
           isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
+          isRpcHealthy,
         };
       },
     );
     builder.addCase(
       changeNetwork.fulfilled,
-      (state, action: PayloadAction<NetworkDetails>) => {
-        const networkDetails = action?.payload || MAINNET_NETWORK_DETAILS;
+      (
+        state,
+        action: PayloadAction<{
+          networkDetails: NetworkDetails;
+          isRpcHealthy: boolean;
+        }>,
+      ) => {
+        const { networkDetails, isRpcHealthy } = action?.payload || {
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          isRpcHealthy: false,
+        };
 
         return {
           ...state,
           networkDetails,
+          isRpcHealthy,
         };
       },
     );
@@ -350,9 +363,9 @@ export const settingsExperimentalModeSelector = createSelector(
 export const settingsSorobanSupportedSelector = createSelector(
   settingsSelector,
   (settings) =>
-    settings.networkDetails.network !== MAINNET_NETWORK_DETAILS.network
-      ? true
-      : settings.isSorobanPublicEnabled,
+    settings.networkDetails.network === MAINNET_NETWORK_DETAILS.network
+      ? settings.isSorobanPublicEnabled && settings.isRpcHealthy
+      : settings.isRpcHealthy,
 );
 
 export const settingsNetworkDetailsSelector = createSelector(

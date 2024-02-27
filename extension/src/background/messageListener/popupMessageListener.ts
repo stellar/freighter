@@ -71,6 +71,7 @@ import {
   getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
   getIsHardwareWalletActive,
+  getIsRpcHealthy,
   getSavedNetworks,
   getNetworkDetails,
   getNetworksList,
@@ -654,7 +655,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(NETWORK_ID, networkDetails);
     await subscribeAccount(pubKey);
 
-    return { networkDetails };
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+
+    return { networkDetails, isRpcHealthy };
   };
 
   const loadAccount = async () => {
@@ -1214,12 +1217,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const loadSettings = async () => {
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
+    const networkDetails = await getNetworkDetails();
 
-    let resJson = { useSorobanPublic: false };
+    let featureFlag = { useSorobanPublic: false };
 
     try {
       const res = await fetch(`${INDEXER_URL}/feature-flags`);
-      resJson = await res.json();
+      featureFlag = await res.json();
     } catch (e) {
       captureException(
         `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(
@@ -1228,6 +1232,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
       console.error(e);
     }
+
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
 
     return {
       allowList: await getAllowList(),
@@ -1238,7 +1244,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
-      isSorobanPublicEnabled: resJson.useSorobanPublic,
+      isSorobanPublicEnabled: featureFlag.useSorobanPublic,
+      isRpcHealthy,
     };
   };
 

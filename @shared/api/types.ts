@@ -51,6 +51,7 @@ export interface Response {
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
   isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
@@ -142,6 +143,7 @@ export interface Preferences {
 
 export interface IndexerSettings {
   isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
 }
 
 export type Settings = {
