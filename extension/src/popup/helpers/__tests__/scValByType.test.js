@@ -33,7 +33,7 @@ describe("scValByType", () => {
     const bytesBuffer = Buffer.from([0x00, 0x01]);
     const bytes = xdr.ScVal.scvBytes(bytesBuffer);
     const parsedBytes = scValByType(bytes);
-    expect(parsedBytes).toEqual(bytesBuffer.toString());
+    expect(parsedBytes).toEqual("[0,1]");
   });
   it("should render an error as a string, including the contract code and name", () => {
     const contractErrorCode = 1;
