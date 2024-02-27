@@ -33,7 +33,7 @@ const defaultSettingsState = {
 const mockTransactionInfo = {
   accountToSign: "",
   transaction: {
-    networkPassphrase: "foo",
+    _networkPassphrase: Networks.TESTNET,
     _operations: [
       {
         flags: {
@@ -66,7 +66,7 @@ const transactions = {
 describe("SignTransactions", () => {
   const getMemoMockTransactionInfo = (xdr: string, op: Operation) => ({
     transaction: {
-      networkPassphrase: Networks.TESTNET,
+      _networkPassphrase: Networks.FUTURENET,
       _operations: [op],
     },
     transactionXdr: xdr,
@@ -114,7 +114,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
-        networkPassphrase: Networks.FUTURENET,
+        _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -148,7 +148,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.classic,
       transaction: {
-        networkPassphrase: Networks.TESTNET,
+        _networkPassphrase: Networks.TESTNET,
         _operations: [op],
       },
       isHttpsDomain: false,
@@ -160,7 +160,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: false,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: "Test SDF Network ; September 2015",
             },
           },
         }}
@@ -185,7 +185,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
-        networkPassphrase: Networks.FUTURENET,
+        _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -240,7 +240,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanMint,
       transaction: {
-        networkPassphrase: Networks.FUTURENET,
+        _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -316,7 +316,17 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
@@ -338,7 +348,17 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
@@ -360,7 +380,17 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
@@ -382,7 +412,17 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
