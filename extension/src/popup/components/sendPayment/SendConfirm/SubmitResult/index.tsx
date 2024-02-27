@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
 import { Button, Icon, Link, Notification } from "@stellar/design-system";
@@ -35,6 +35,7 @@ import "./styles.scss";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { formatAmount } from "popup/helpers/formatters";
+import { SorobanContext } from "popup/SorobanContext";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -82,6 +83,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { t } = useTranslation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
+  const sorobanClient = useContext(SorobanContext);
 
   const sourceAsset = getAssetFromCanonical(asset);
   const { recommendedFee } = useNetworkFees();
@@ -138,8 +140,10 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
+          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
+          sorobanClient,
         }),
       );
 
@@ -154,10 +158,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     }
   };
 
+  // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
+
   const suggestRemoveTrustline =
     accountBalances.balances &&
     accountBalances.balances[asset] &&
-    accountBalances.balances[asset].available.isZero();
+    accountBalances.balances[asset].available?.isZero();
 
   return (
     <View data-testid="submit-success-view">

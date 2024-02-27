@@ -8,6 +8,7 @@ import { getNetworkDetails } from "./getNetworkDetails";
 import { isAllowed } from "./isAllowed";
 import { setAllowed } from "./setAllowed";
 import { getUserInfo } from "./getUserInfo";
+import { requestAccess } from "./requestAccess";
 
 export const isBrowser = typeof window !== "undefined";
 
@@ -22,6 +23,7 @@ export {
   isAllowed,
   setAllowed,
   getUserInfo,
+  requestAccess,
 };
 export default {
   getPublicKey,
@@ -34,4 +36,5 @@ export default {
   isAllowed,
   setAllowed,
   getUserInfo,
+  requestAccess,
 };

@@ -13,7 +13,6 @@ import browser from "webextension-polyfill";
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 import { BigNumber } from "bignumber.js";
 
-import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
@@ -71,6 +70,7 @@ import {
   getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
   getIsHardwareWalletActive,
+  getIsRpcHealthy,
   getSavedNetworks,
   getNetworkDetails,
   getNetworksList,
@@ -79,6 +79,7 @@ import {
   subscribeTokenBalance,
   subscribeAccount,
   subscribeTokenHistory,
+  getFeatureFlags,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -653,7 +654,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(NETWORK_ID, networkDetails);
     await subscribeAccount(pubKey);
 
-    return { networkDetails };
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+
+    return { networkDetails, isRpcHealthy };
   };
 
   const loadAccount = async () => {
@@ -1198,6 +1201,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     );
 
+    const networkDetails = await getNetworkDetails();
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const featureFlags = await getFeatureFlags();
+
     return {
       allowList: await getAllowList(),
       isDataSharingAllowed,
@@ -1205,23 +1212,19 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
       isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
-      networkDetails: await getNetworkDetails(),
+      networkDetails,
       networksList: await getNetworksList(),
+      isRpcHealthy,
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
     };
   };
 
   const loadSettings = async () => {
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
-
-    let resJson = { useSorobanPublic: false };
-
-    try {
-      const res = await fetch(`${INDEXER_URL}/feature-flags`);
-      resJson = await res.json();
-    } catch (e) {
-      console.error(e);
-    }
+    const networkDetails = await getNetworkDetails();
+    const featureFlags = await getFeatureFlags();
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
 
     return {
       allowList: await getAllowList(),
@@ -1232,7 +1235,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
-      isSorobanPublicEnabled: resJson.useSorobanPublic,
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
+      isRpcHealthy,
     };
   };
 

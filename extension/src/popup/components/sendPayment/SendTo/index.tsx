@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useContext, useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
 import { Asset, StrKey, MuxedAccount, Federation } from "stellar-sdk";
@@ -38,6 +38,7 @@ import {
   transactionSubmissionSelector,
   getDestinationBalances,
 } from "popup/ducks/transactionSubmission";
+import { SorobanContext } from "popup/SorobanContext";
 
 import "../styles.scss";
 
@@ -96,6 +97,7 @@ const InvalidAddressWarning = () => {
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
+  const sorobanClient = useContext(SorobanContext);
   const { destination, federationAddress } = useSelector(
     transactionDataSelector,
   );
@@ -209,9 +211,10 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       getDestinationBalances({
         publicKey,
         networkDetails,
+        sorobanClient,
       }),
     );
-  }, [dispatch, validatedPubKey, networkDetails]);
+  }, [dispatch, validatedPubKey, networkDetails, sorobanClient]);
 
   return (
     <View>

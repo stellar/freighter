@@ -95,6 +95,7 @@
   "Clear Flags": "Clear Flags",
   "Click on Freighter’s pin button to have it always visible": "Click on Freighter’s pin button to have it always visible",
   "Click on the extensions button at the top of your browser’s bar": "Click on the extensions button at the top of your browser’s bar",
+  "Close": "Close",
   "Confirm": "Confirm",
   "Confirm Data": "Confirm Data",
   "Confirm password": "Confirm password",
@@ -155,7 +156,8 @@
   "Error code": "Error code",
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
-  "Extend TO": "Extend TO",
+  "Extend To": "Extend To",
+  "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fee": "Fee",
   "Fees can vary depending on the network congestion": {
@@ -398,6 +400,8 @@
   "Signing arbitrary data with a hardware wallet is currently not supported": "Signing arbitrary data with a hardware wallet is currently not supported.",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
   "Signs for external accounts": "Signs for external accounts",
+  "Some features may be disabled at this time": "Some features may be disabled at this time.",
+  "Soroban RPC is temporarily experiencing issues": "Soroban RPC is temporarily experiencing issues",
   "SOROBAN RPC URL": "SOROBAN RPC URL",
   "Source": "Source",
   "Sponsored ID": "Sponsored ID",
@@ -503,6 +507,7 @@
   "Your account balance is not sufficient for this transaction": {
     " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
   },
+  "Your account balances could not be fetched at this time": "Your account balances could not be fetched at this time.",
   "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"

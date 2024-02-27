@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, CopyText, Icon, NavButton } from "@stellar/design-system";
+import {
+  Button,
+  CopyText,
+  Icon,
+  NavButton,
+  Notification,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { getIndexerAccountHistory } from "@shared/api/internal";
+import {
+  getAccountHistoryStandalone,
+  getIndexerAccountHistory,
+} from "@shared/api/internal";
 import {
   AccountBalancesInterface,
   ActionStatus,
   AssetType,
 } from "@shared/api/types";
 
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSorobanSupportedSelector,
+} from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
   accountStatusSelector,
@@ -35,7 +47,7 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { truncatedPublicKey } from "helpers/stellar";
+import { isCustomNetwork, truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -45,6 +57,8 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { BottomNav } from "popup/components/BottomNav";
 
 import "popup/metrics/authServices";
+
+import { SorobanContext } from "../../SorobanContext";
 
 import "./styles.scss";
 
@@ -66,14 +80,16 @@ export const Account = () => {
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
   const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 
-  const { balances, isFunded } = accountBalances;
+  const sorobanClient = useContext(SorobanContext);
 
+  const { balances, isFunded } = accountBalances;
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
@@ -82,6 +98,7 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
+        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());
@@ -89,7 +106,13 @@ export const Account = () => {
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+  }, [
+    publicKey,
+    networkDetails,
+    isAccountFriendbotFunded,
+    sorobanClient,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (!balances) return;
@@ -104,10 +127,18 @@ export const Account = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        const operations = await getIndexerAccountHistory({
-          publicKey,
-          networkDetails,
-        });
+        let operations = [];
+        if (isCustomNetwork(networkDetails)) {
+          operations = await getAccountHistoryStandalone({
+            publicKey,
+            networkDetails,
+          });
+        } else {
+          operations = await getIndexerAccountHistory({
+            publicKey,
+            networkDetails,
+          });
+        }
         setAssetOperations(
           sortOperationsByAsset({
             operations,
@@ -123,6 +154,7 @@ export const Account = () => {
     fetchAccountHistory();
   }, [publicKey, networkDetails, balances, sortedBalances]);
 
+  const hasError = accountBalanceStatus === ActionStatus.ERROR;
   const isLoading =
     accountBalanceStatus === ActionStatus.PENDING ||
     accountBalanceStatus === ActionStatus.IDLE ||
@@ -206,7 +238,30 @@ export const Account = () => {
                   </div>
                 </div>
               </div>
-              {isFunded ? (
+              {hasError && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    variant="error"
+                    title={t("Failed to fetch your account balances.")}
+                  >
+                    {t(
+                      "Your account balances could not be fetched at this time.",
+                    )}
+                  </Notification>
+                </div>
+              )}
+              {!isSorobanSuported && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Soroban RPC is temporarily experiencing issues")}
+                    variant="primary"
+                  >
+                    {t("Some features may be disabled at this time.")}
+                  </Notification>
+                </div>
+              )}
+
+              {isFunded && !hasError && (
                 <div className="AccountView__assets-wrapper">
                   <AccountAssets
                     sortedBalances={sortedBalances}
@@ -214,7 +269,8 @@ export const Account = () => {
                     setSelectedAsset={setSelectedAsset}
                   />
                 </div>
-              ) : (
+              )}
+              {!isFunded && !hasError && (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}
                   setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}

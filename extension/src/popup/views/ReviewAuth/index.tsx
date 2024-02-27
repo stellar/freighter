@@ -21,6 +21,7 @@ import {
 } from "popup/components/signTransaction/Operations/KeyVal";
 import { useTranslation } from "react-i18next";
 import { truncateString } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
 import { FlaggedKeys } from "types/transactions";
 import {
   FnArgsCreateSac,
@@ -38,6 +39,7 @@ import {
   TransferWarning,
   UnverifiedTokenTransferWarning,
 } from "popup/components/WarningMessages";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
@@ -84,6 +86,14 @@ export const ReviewAuth = () => {
   );
 
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
+  const reviewAuthEntry = () => {
+    emitMetric(METRIC_NAMES.reviewedAuthEntry);
+    if (isLastEntry) {
+      setHasConfirmedAuth(true);
+    } else {
+      setActiveAuthEntryIndex(activeAuthEntryIndex + 1);
+    }
+  };
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -154,11 +164,7 @@ export const ReviewAuth = () => {
                 isFullWidth
                 size="md"
                 isLoading={isConfirming}
-                onClick={() =>
-                  isLastEntry
-                    ? setHasConfirmedAuth(true)
-                    : setActiveAuthEntryIndex(activeAuthEntryIndex + 1)
-                }
+                onClick={reviewAuthEntry}
               >
                 {isLastEntry
                   ? t("Approve and continue")
@@ -254,7 +260,7 @@ const AuthDetail = ({
             />
             <KeyValueList
               operationKey={t("Salt")}
-              operationValue={detail.salt}
+              operationValue={truncateString(detail.salt)}
             />
           </div>
         </React.Fragment>

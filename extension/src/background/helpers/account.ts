@@ -13,12 +13,18 @@ import {
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
-import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
+import {
+  isMainnet,
+  isTestnet,
+  isFuturenet,
+  isCustomNetwork,
+} from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
 } from "background/helpers/dataStorage";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { captureException } from "@sentry/browser";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -126,6 +132,44 @@ export const getNetworksList = async () => {
   return networksList;
 };
 
+export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
+  let rpcHealth = { status: "" };
+  if (isCustomNetwork(networkDetails)) {
+    // TODO: use server.getHealth method to get accurate result for standalone network
+    rpcHealth = { status: "healthy" };
+  } else {
+    try {
+      const res = await fetch(
+        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
+      );
+      rpcHealth = await res.json();
+    } catch (e) {
+      captureException(
+        `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
+      );
+      console.error(e);
+    }
+  }
+
+  return rpcHealth.status === "healthy";
+};
+
+export const getFeatureFlags = async () => {
+  let featureFlags = { useSorobanPublic: false };
+
+  try {
+    const res = await fetch(`${INDEXER_URL}/feature-flags`);
+    featureFlags = await res.json();
+  } catch (e) {
+    captureException(
+      `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(e)}`,
+    );
+    console.error(e);
+  }
+
+  return featureFlags;
+};
+
 export const subscribeAccount = async (publicKey: string) => {
   // if pub key already has a subscription setup, skip this
   const keyId = await localStore.getItem(KEY_ID);
@@ -155,6 +199,9 @@ export const subscribeAccount = async (publicKey: string) => {
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
   } catch (e) {
     console.error(e);
+    captureException(
+      `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
+    );
     throw new Error("Error subscribing account");
   }
 
@@ -181,6 +228,9 @@ export const subscribeTokenBalance = async (
     await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
   } catch (e) {
     console.error(e);
+    captureException(
+      `Failed to subscribe token balance - ${JSON.stringify(e)}`,
+    );
     throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
@@ -200,6 +250,9 @@ export const subscribeTokenHistory = async (
     await fetch(`${INDEXER_URL}/subscription/token`, options);
   } catch (e) {
     console.error(e);
+    captureException(
+      `Failed to subscribe token history - ${JSON.stringify(e)}`,
+    );
     throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
