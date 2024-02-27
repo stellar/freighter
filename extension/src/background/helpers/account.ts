@@ -154,6 +154,22 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
   return rpcHealth.status === "healthy";
 };
 
+export const getFeatureFlags = async () => {
+  let featureFlags = { useSorobanPublic: false };
+
+  try {
+    const res = await fetch(`${INDEXER_URL}/feature-flags`);
+    featureFlags = await res.json();
+  } catch (e) {
+    captureException(
+      `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(e)}`,
+    );
+    console.error(e);
+  }
+
+  return featureFlags;
+};
+
 export const subscribeAccount = async (publicKey: string) => {
   // if pub key already has a subscription setup, skip this
   const keyId = await localStore.getItem(KEY_ID);

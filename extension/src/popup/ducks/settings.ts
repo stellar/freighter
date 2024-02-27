@@ -82,7 +82,7 @@ export const saveAllowList = createAsyncThunk<
 });
 
 export const saveSettings = createAsyncThunk<
-  Settings,
+  Settings & IndexerSettings,
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
@@ -103,7 +103,11 @@ export const saveSettings = createAsyncThunk<
     },
     thunkApi,
   ) => {
-    let res = { ...settingsInitialState };
+    let res = {
+      ...settingsInitialState,
+      isSorobanPublicEnabled: false,
+      isRpcHealthy: false,
+    };
 
     try {
       res = await saveSettingsService({
@@ -193,33 +197,34 @@ const settingsSlice = createSlice({
         };
       },
     );
-    builder.addCase(
-      saveSettings.fulfilled,
-      (state, action: PayloadAction<Settings>) => {
-        const {
-          isDataSharingAllowed,
-          networkDetails,
-          isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          networksList,
-          isValidatingSafeAssetsEnabled,
-          isExperimentalModeEnabled,
-        } = action?.payload || {
-          ...initialState,
-        };
+    builder.addCase(saveSettings.fulfilled, (state, action) => {
+      const {
+        isDataSharingAllowed,
+        networkDetails,
+        isMemoValidationEnabled,
+        isSafetyValidationEnabled,
+        networksList,
+        isValidatingSafeAssetsEnabled,
+        isExperimentalModeEnabled,
+        isRpcHealthy,
+        isSorobanPublicEnabled,
+      } = action?.payload || {
+        ...initialState,
+      };
 
-        return {
-          ...state,
-          isDataSharingAllowed,
-          isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled,
-          isExperimentalModeEnabled,
-          networkDetails,
-          networksList,
-        };
-      },
-    );
+      return {
+        ...state,
+        isDataSharingAllowed,
+        isMemoValidationEnabled,
+        isSafetyValidationEnabled,
+        isValidatingSafeAssetsEnabled,
+        isExperimentalModeEnabled,
+        networkDetails,
+        networksList,
+        isRpcHealthy,
+        isSorobanPublicEnabled,
+      };
+    });
     builder.addCase(
       loadSettings.fulfilled,
       (state, action: PayloadAction<Settings & IndexerSettings>) => {

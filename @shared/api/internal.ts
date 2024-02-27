@@ -1031,7 +1031,7 @@ export const saveSettings = async ({
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
-}): Promise<Settings> => {
+}): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
     isDataSharingAllowed: false,
@@ -1041,6 +1041,8 @@ export const saveSettings = async ({
     isSafetyValidationEnabled: true,
     isValidatingSafeAssetsEnabled: true,
     isExperimentalModeEnabled: false,
+    isRpcHealthy: false,
+    isSorobanPublicEnabled: false,
     error: "",
   };
 

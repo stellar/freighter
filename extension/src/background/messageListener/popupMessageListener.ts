@@ -13,7 +13,6 @@ import browser from "webextension-polyfill";
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 import { BigNumber } from "bignumber.js";
 
-import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { WalletType } from "@shared/constants/hardwareWallet";
@@ -80,6 +79,7 @@ import {
   subscribeTokenBalance,
   subscribeAccount,
   subscribeTokenHistory,
+  getFeatureFlags,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -111,7 +111,6 @@ import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
-import { captureException } from "@sentry/browser";
 
 // number of public keys to auto-import
 const numOfPublicKeysToCheck = 5;
@@ -1202,6 +1201,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     );
 
+    const networkDetails = await getNetworkDetails();
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const featureFlags = await getFeatureFlags();
+
     return {
       allowList: await getAllowList(),
       isDataSharingAllowed,
@@ -1209,8 +1212,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
       isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
-      networkDetails: await getNetworkDetails(),
+      networkDetails,
       networksList: await getNetworksList(),
+      isRpcHealthy,
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
     };
   };
 
@@ -1218,21 +1223,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
     const networkDetails = await getNetworkDetails();
-
-    let featureFlag = { useSorobanPublic: false };
-
-    try {
-      const res = await fetch(`${INDEXER_URL}/feature-flags`);
-      featureFlag = await res.json();
-    } catch (e) {
-      captureException(
-        `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(
-          e,
-        )}`,
-      );
-      console.error(e);
-    }
-
+    const featureFlags = await getFeatureFlags();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
 
     return {
@@ -1244,7 +1235,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
-      isSorobanPublicEnabled: featureFlag.useSorobanPublic,
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
       isRpcHealthy,
     };
   };
