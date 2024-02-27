@@ -1,3 +1,37 @@
+# Release notes - Wallets - Freighter-5.17.1
+
+### Bug
+
+Account for contract creation when rendering auth entry invocation tree
+
+Freighter backend has downtime between deploys
+
+Token balances not being formatted for decimals
+
+Fix displaying balances for Standalone networks
+
+Fix SendPayment flow for Standalone networks
+
+### Story
+
+Global error handler and better error states
+
+Add amplitude events to new screens/actions in sign tx flow
+
+\[TESTS\] Allow list warnings
+
+\[TESTS\] Auth signing flow in Sign TX
+
+Add invoker auth warning to auth entry in tx sign flow
+
+Adds rpc health route to backend
+
+Restore client only mode for custom networks
+
+Check rpc health and disable Soroban functionality if needed
+
+Add GetPublicKey method that doesn't prompt users for access
+
 # Release notes - Wallets - Freighter-5.17.0
 
 ### Bug
