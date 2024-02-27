@@ -1,4 +1,3 @@
-
 import { captureException } from "@sentry/browser";
 import {
   Address,
@@ -1032,7 +1031,7 @@ export const saveSettings = async ({
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
-}): Promise<Settings> => {
+}): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
     isDataSharingAllowed: false,
@@ -1042,6 +1041,8 @@ export const saveSettings = async ({
     isSafetyValidationEnabled: true,
     isValidatingSafeAssetsEnabled: true,
     isExperimentalModeEnabled: false,
+    isRpcHealthy: false,
+    isSorobanPublicEnabled: false,
     error: "",
   };
 
@@ -1063,11 +1064,12 @@ export const saveSettings = async ({
 
 export const changeNetwork = async (
   networkName: string,
-): Promise<NetworkDetails> => {
+): Promise<{ networkDetails: NetworkDetails; isRpcHealthy: boolean }> => {
   let networkDetails = MAINNET_NETWORK_DETAILS;
+  let isRpcHealthy = false;
 
   try {
-    ({ networkDetails } = await sendMessageToBackground({
+    ({ networkDetails, isRpcHealthy } = await sendMessageToBackground({
       networkName,
       type: SERVICE_TYPES.CHANGE_NETWORK,
     }));
@@ -1075,7 +1077,7 @@ export const changeNetwork = async (
     console.error(e);
   }
 
-  return networkDetails;
+  return { networkDetails, isRpcHealthy };
 };
 
 export const addCustomNetwork = async (

@@ -14,12 +14,12 @@ import {
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
+import { getTokenBalance, isContractId } from "popup/helpers/soroban";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import { Balances } from "@shared/api/types";
+import { Balances, SorobanBalance } from "@shared/api/types";
 
 import "./styles.scss";
 import { formatAmount } from "popup/helpers/formatters";
-import { isContractId } from "popup/helpers/soroban";
 
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
@@ -41,6 +41,17 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     const bal: Types.Balance = balances[canonical as keyof Balances];
     if (bal) {
       return bal.total.toString();
+    }
+    return "";
+  };
+
+  const getTokenBalanceFromCanonical = (canonical: string) => {
+    if (!balances) {
+      return "";
+    }
+    const bal: SorobanBalance = balances[canonical as keyof Balances];
+    if (bal) {
+      return getTokenBalance(bal);
     }
     return "";
   };
@@ -93,7 +104,10 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
               </div>
               {!hideBalances && (
                 <div>
-                  {formatAmount(getAccountBalance(canonical))} {code}
+                  {isContract
+                    ? getTokenBalanceFromCanonical(canonical)
+                    : formatAmount(getAccountBalance(canonical))}{" "}
+                  {code}
                 </div>
               )}
             </div>
