@@ -76,6 +76,7 @@ export const SignTransaction = () => {
 
   const {
     accountToSign: _accountToSign,
+    transaction: { _fee, _networkPassphrase },
     transactionXdr,
     domain,
     isDomainListedAllowed,
@@ -83,12 +84,11 @@ export const SignTransaction = () => {
     flaggedKeys,
   } = tx;
 
+  // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
     transactionXdr,
-    networkPassphrase,
+    _networkPassphrase,
   ) as Transaction | FeeBumpTransaction;
-
-  const { fee: _fee, networkPassphrase: _networkPassphrase } = transaction;
 
   let isFeeBump = false;
   let _memo = {};
