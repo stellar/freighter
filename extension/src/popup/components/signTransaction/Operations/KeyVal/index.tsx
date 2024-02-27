@@ -82,7 +82,7 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
             <>
               <KeyValueList
                 operationKey={t("Salt")}
-                operationValue={_invocation.args.wasm.salt}
+                operationValue={truncateString(_invocation.args.wasm.salt)}
               />
               <KeyValueList
                 operationKey={t("Hash")}
@@ -427,7 +427,10 @@ export const KeyValueInvokeHostFn = ({
                   operationKey={t("Account ID")}
                   operationValue={accountId}
                 />
-                <KeyValueList operationKey={t("Salt")} operationValue={salt} />
+                <KeyValueList
+                  operationKey={t("Salt")}
+                  operationValue={truncateString(salt)}
+                />
                 <KeyValueList
                   operationKey={t("Executable Type")}
                   operationValue={executableType}
@@ -452,7 +455,10 @@ export const KeyValueInvokeHostFn = ({
                 operationKey={t("Contract ID")}
                 operationValue={contractId}
               />
-              <KeyValueList operationKey={t("Salt")} operationValue={salt} />
+              <KeyValueList
+                operationKey={t("Salt")}
+                operationValue={truncateString(salt)}
+              />
               <KeyValueList
                 operationKey={t("Executable Type")}
                 operationValue={executableType}

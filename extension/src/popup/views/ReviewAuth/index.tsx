@@ -260,7 +260,7 @@ const AuthDetail = ({
             />
             <KeyValueList
               operationKey={t("Salt")}
-              operationValue={detail.salt}
+              operationValue={truncateString(detail.salt)}
             />
           </div>
         </React.Fragment>

@@ -301,6 +301,7 @@ export const HistoryItem = ({
                   isRecipient: isRecieving,
                   operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
                 }));
+                setIsLoading(false);
               } else {
                 const response = await fetch(
                   `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
