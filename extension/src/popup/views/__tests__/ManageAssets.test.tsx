@@ -239,6 +239,7 @@ const initView = async (
           },
           networksList: DEFAULT_NETWORKS,
           isSorobanPublicEnabled: true,
+          isRpcHealthy: true,
         },
         transactionSubmission: {
           ...transactionSubmissionInitialState,
