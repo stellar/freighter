@@ -95,6 +95,12 @@ a {
   }
 }
 
+.RouterLoading {
+  .View__content {
+    height: 100vh;
+  }
+}
+
 // TODO: fix in SDS
 .sds-theme-light p,
 .sds-theme-light ul,

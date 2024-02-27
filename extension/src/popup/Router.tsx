@@ -247,7 +247,11 @@ export const Router = () => {
     applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
     !networkDetails.network
   ) {
-    return <Loading />;
+    return (
+      <div className="RouterLoading">
+        <Loading />
+      </div>
+    );
   }
 
   return (
