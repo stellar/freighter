@@ -1,13 +1,13 @@
 ---
-id: usingFreighterNode
-title: Using Freighter in node.js
+id: usingFreighterWebApp
+title: Using Freighter in a web app
 ---
 
 We now have an extension installed on our machine and a library to interact with it. This library will provide you methods to send and receive data from a user's extension in your website or application.
 
 ### Importing
 
-First import the whole library in a Node.js application
+First import the whole library in an ES2023 application
 
 ```javascript
 import freighterApi from "@stellar/freighter-api";
@@ -71,9 +71,9 @@ if (isAllowed) {
 }
 ```
 
-### getPublicKey
+### requestAccess
 
-#### `getPublicKey() -> <Promise<string>>`
+#### `requestAccess() -> <Promise<string>>`
 
 If a user has never interacted with your app before, this function will prompt the user to provide your app privileges to receive the user's public key. If and when the user accepts, this function will resolve with an object containing the public key. Otherwise, it will provide an error.
 
@@ -82,7 +82,7 @@ If the user has authorized your application previously, it will be on the extens
 ```javascript
 import {
   isConnected,
-  getPublicKey,
+  requestAccess,
   signAuthEntry,
   signTransaction,
   signBlob,
@@ -91,6 +91,37 @@ import {
 if (await isConnected()) {
   alert("User has Freighter!");
 }
+
+const retrievePublicKey = async () => {
+  let publicKey = "";
+  let error = "";
+
+  try {
+    publicKey = await requestAccess();
+  } catch (e) {
+    error = e;
+  }
+
+  if (error) {
+    return error;
+  }
+
+  return publicKey;
+};
+
+const result = retrievePublicKey();
+```
+
+### getPublicKey
+
+#### `getPublicKey() -> <Promise<string>>`
+
+This is a more lightweight version of `requestAccess` above.
+
+If the user has authorized your application previously and Freighter is connected, Freighter will simply return the public key. If either one of the above is not true, it will return an empty string.
+
+```javascript
+import { getPublicKey } from "@stellar/freighter-api";
 
 const retrievePublicKey = async () => {
   let publicKey = "";

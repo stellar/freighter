@@ -36,9 +36,15 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
       To prevent this, we add a timeout to automatically resolve in the event 
       Freighter doesn't respond in a timely fashion to this method.
     */
-    if (msg.type === EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS) {
+    if (
+      msg.type === EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS ||
+      msg.type === EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY
+    ) {
       requestTimeout = setTimeout(() => {
-        resolve({ isConnected: false } as Response);
+        resolve({
+          isConnected: false,
+          publicKey: "",
+        } as Response);
         window.removeEventListener("message", messageListener);
       }, 2000);
     }
