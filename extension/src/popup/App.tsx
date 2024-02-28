@@ -42,7 +42,13 @@ export function App() {
     <ErrorBoundary>
       <Provider store={store}>
         <ErrorTracking />
-        <Suspense fallback={<Loading />}>
+        <Suspense
+          fallback={
+            <div className="RouterLoading">
+              <Loading />
+            </div>
+          }
+        >
           <Router />
         </Suspense>
       </Provider>
