@@ -69,7 +69,7 @@ import { AccountMigration } from "popup/views/AccountMigration";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
-import { IndexerDataState } from "@shared/api/types";
+import { SettingsState } from "@shared/api/types";
 
 import { SignBlob } from "./views/SignBlob";
 import { ReviewAuth } from "./views/ReviewAuth";
@@ -250,8 +250,8 @@ export const Router = () => {
 
   if (
     applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
-    settingsState === IndexerDataState.LOADING ||
-    settingsState === IndexerDataState.IDLE ||
+    settingsState === SettingsState.LOADING ||
+    settingsState === SettingsState.IDLE ||
     !networkDetails.network
   ) {
     return (

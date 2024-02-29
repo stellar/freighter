@@ -20,7 +20,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
-import { Settings, IndexerSettings, IndexerDataState } from "@shared/api/types";
+import { Settings, IndexerSettings, SettingsState } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
@@ -45,7 +45,7 @@ const settingsInitialState: Settings = {
 };
 
 const indexerInitialState: IndexerSettings = {
-  settingsState: IndexerDataState.IDLE,
+  settingsState: SettingsState.IDLE,
   isSorobanPublicEnabled: false,
   isRpcHealthy: false,
 };
@@ -108,7 +108,7 @@ export const saveSettings = createAsyncThunk<
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
-      settingsState: IndexerDataState.IDLE,
+      settingsState: SettingsState.IDLE,
     };
 
     try {
@@ -257,17 +257,17 @@ const settingsSlice = createSlice({
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
-          settingsState: IndexerDataState.SUCCESS,
+          settingsState: SettingsState.SUCCESS,
         };
       },
     );
     builder.addCase(loadSettings.pending, (state) => ({
       ...state,
-      indexerState: IndexerDataState.LOADING,
+      indexerState: SettingsState.LOADING,
     }));
     builder.addCase(loadSettings.rejected, (state) => ({
       ...state,
-      indexerState: IndexerDataState.ERROR,
+      indexerState: SettingsState.ERROR,
       isRpcHealthy: false,
     }));
     builder.addCase(
@@ -288,9 +288,18 @@ const settingsSlice = createSlice({
           ...state,
           networkDetails,
           isRpcHealthy,
+          settingsState: SettingsState.SUCCESS,
         };
       },
     );
+    builder.addCase(changeNetwork.pending, (state) => ({
+      ...state,
+      settingsState: SettingsState.LOADING,
+    }));
+    builder.addCase(changeNetwork.rejected, (state) => ({
+      ...state,
+      settingsState: SettingsState.ERROR,
+    }));
     builder.addCase(
       addCustomNetwork.fulfilled,
       (
