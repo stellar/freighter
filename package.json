@@ -25,7 +25,6 @@
     "build:extension": "yarn workspace extension build",
     "build:upload-action": "npx ncc build ./.github/actions/chrome-extension-upload/index.js -o ./.github/actions/chrome-extension-upload/dist",
     "start": "run-p --print-label start:freighter-api start:docs start:extension start:unpacked",
-    "start:dev": "run-p --print-label start:freighter-api start:extension start:unpacked",
     "start:freighter-api": "yarn workspace @stellar/freighter-api start",
     "start:docs": "yarn workspace docs start",
     "start:extension": "yarn workspace extension start",

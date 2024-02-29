@@ -13,9 +13,6 @@ const BUILD_PATH = path.resolve(__dirname, "./build");
 const commonConfig = (
   env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
 ) => ({
-  cache: {
-    type: "filesystem",
-  },
   entry: {
     background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
@@ -114,7 +111,6 @@ const commonConfig = (
     new ESLintPlugin({
       extensions: [".ts", ".tsx"],
       failOnWarning: true,
-      cache: true,
     }),
     new CopyWebpackPlugin([
       {
