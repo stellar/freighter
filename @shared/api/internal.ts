@@ -28,6 +28,7 @@ import {
   MigratedAccount,
   Settings,
   IndexerSettings,
+  IndexerDataState,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -1042,6 +1043,7 @@ export const saveSettings = async ({
     isValidatingSafeAssetsEnabled: true,
     isExperimentalModeEnabled: false,
     isRpcHealthy: false,
+    settingsState: IndexerDataState.IDLE,
     isSorobanPublicEnabled: false,
     error: "",
   };

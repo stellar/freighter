@@ -20,7 +20,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
-import { Settings, IndexerSettings } from "@shared/api/types";
+import { Settings, IndexerSettings, IndexerDataState } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
@@ -45,6 +45,7 @@ const settingsInitialState: Settings = {
 };
 
 const indexerInitialState: IndexerSettings = {
+  settingsState: IndexerDataState.IDLE,
   isSorobanPublicEnabled: false,
   isRpcHealthy: false,
 };
@@ -107,6 +108,7 @@ export const saveSettings = createAsyncThunk<
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
+      settingsState: IndexerDataState.IDLE,
     };
 
     try {
@@ -255,9 +257,19 @@ const settingsSlice = createSlice({
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          settingsState: IndexerDataState.SUCCESS,
         };
       },
     );
+    builder.addCase(loadSettings.pending, (state) => ({
+      ...state,
+      indexerState: IndexerDataState.LOADING,
+    }));
+    builder.addCase(loadSettings.rejected, (state) => ({
+      ...state,
+      indexerState: IndexerDataState.ERROR,
+      isRpcHealthy: false,
+    }));
     builder.addCase(
       changeNetwork.fulfilled,
       (
@@ -401,4 +413,9 @@ export const settingsPreferencesSelector = createSelector(
 export const settingsErrorSelector = createSelector(
   settingsSelector,
   (settings) => settings.error,
+);
+
+export const settingsStateSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.settingsState,
 );
