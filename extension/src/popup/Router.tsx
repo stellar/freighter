@@ -26,6 +26,7 @@ import {
 import {
   loadSettings,
   settingsNetworkDetailsSelector,
+  settingsStateSelector,
 } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
@@ -68,10 +69,13 @@ import { AccountMigration } from "popup/views/AccountMigration";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
+import { SettingsState } from "@shared/api/types";
+
 import { SignBlob } from "./views/SignBlob";
 import { ReviewAuth } from "./views/ReviewAuth";
 
 import { SorobanProvider } from "./SorobanContext";
+import { View } from "./basics/layout/View";
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -237,6 +241,7 @@ export const Router = () => {
   const dispatch = useDispatch();
   const applicationState = useSelector(applicationStateSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const settingsState = useSelector(settingsStateSelector);
 
   useEffect(() => {
     dispatch(loadAccount());
@@ -245,12 +250,16 @@ export const Router = () => {
 
   if (
     applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
+    settingsState === SettingsState.LOADING ||
+    settingsState === SettingsState.IDLE ||
     !networkDetails.network
   ) {
     return (
-      <div className="RouterLoading">
-        <Loading />
-      </div>
+      <View>
+        <div className="RouterLoading">
+          <Loading />
+        </div>
+      </View>
     );
   }
 
