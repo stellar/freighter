@@ -156,11 +156,11 @@ export const SendAmount = ({
           (2 + accountBalances.subentryCount) * BASE_RESERVE,
         );
 
+        const balance =
+          accountBalances.balances[selectedAsset]?.total || new BigNumber("0");
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
-          const currentBal = new BigNumber(
-            accountBalances.balances[selectedAsset].total.toFixed(),
-          );
+          const currentBal = new BigNumber(balance.toFixed());
           availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
@@ -170,9 +170,7 @@ export const SendAmount = ({
           }
         } else {
           // needed for different wallet-sdk bignumber.js version
-          availBalance = new BigNumber(
-            accountBalances.balances[selectedAsset].total,
-          );
+          availBalance = new BigNumber(balance);
         }
       }
 
