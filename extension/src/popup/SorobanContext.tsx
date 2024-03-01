@@ -46,7 +46,7 @@ export const SorobanProvider = ({
         serverUrl = SOROBAN_RPC_URLS[NETWORKS.PUBLIC];
         break;
       default:
-        serverUrl = SOROBAN_RPC_URLS[NETWORKS.PUBLIC];
+        serverUrl = "";
     }
 
     server = new SorobanRpc.Server(serverUrl, {
