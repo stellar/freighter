@@ -14,7 +14,7 @@ interface ErrorBoundaryProps {}
 
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
-  { hasError: boolean }
+  { hasError: boolean; errorString: string }
 > {
   static getDerivedStateFromError() {
     return { hasError: true };
@@ -22,22 +22,34 @@ export class ErrorBoundary extends Component<
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, errorString: "" };
   }
 
-  componentDidCatch(_error: unknown, info: { componentStack: string }) {
+  componentDidCatch(error: Error, info: { componentStack: string }) {
+    this.setState({ errorString: error.toString() });
     captureException(info.componentStack);
   }
 
   render() {
     if (this.state.hasError) {
-      return <UnhandledError errorMessage="An unexpected error has occurred" />;
+      return (
+        <UnhandledError
+          errorMessage="An unexpected error has occurred"
+          errorString={this.state.errorString}
+        />
+      );
     }
     return this.props.children;
   }
 }
 
-export const UnhandledError = ({ errorMessage }: { errorMessage: string }) => {
+export const UnhandledError = ({
+  errorMessage,
+  errorString,
+}: {
+  errorMessage: string;
+  errorString: string;
+}) => {
   const { t } = useTranslation();
   // expected to work outside of <Router />
   const isOnAccount = window.location.hash === "#/account";
@@ -52,6 +64,7 @@ export const UnhandledError = ({ errorMessage }: { errorMessage: string }) => {
           </div>
         </div>
         <div className="UnexpectedError__error-block">{errorMessage}</div>
+        <div className="UnexpectedError__error-string">{errorString}</div>
       </View.Content>
       <View.Footer>
         {isOnAccount ? (
