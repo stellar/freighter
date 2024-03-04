@@ -110,4 +110,11 @@
     font-size: 0.875rem;
     text-align: center;
   }
+
+  &__error-string {
+    font-size: 0.5rem;
+    color: var(--color-gray-60);
+    margin-top: 0.5rem;
+    text-align: center;
+  }
 }

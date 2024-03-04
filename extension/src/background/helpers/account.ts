@@ -12,6 +12,7 @@ import {
   HAS_ACCOUNT_SUBSCRIPTION,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
+import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
 import { decodeString, encodeObject } from "helpers/urls";
 import {
   isMainnet,
@@ -255,4 +256,25 @@ export const subscribeTokenHistory = async (
     );
     throw new Error(`Error subscribing to token: ${contractId}`);
   }
+};
+
+export const verifySorobanRpcUrls = async () => {
+  const networkDetails = await getNetworkDetails();
+
+  if (!networkDetails.sorobanRpcUrl) {
+    networkDetails.sorobanRpcUrl = getSorobanRpcUrl(networkDetails);
+
+    await localStore.setItem(NETWORK_ID, networkDetails);
+  }
+
+  const networksList: NetworkDetails[] = await getNetworksList();
+
+  for (let i = 0; i < networksList.length; i += 1) {
+    const networksListDetails = networksList[i];
+
+    if (!networksListDetails.sorobanRpcUrl) {
+      networksListDetails.sorobanRpcUrl = getSorobanRpcUrl(networkDetails);
+    }
+  }
+  await localStore.setItem(NETWORKS_LIST_ID, networksList);
 };
