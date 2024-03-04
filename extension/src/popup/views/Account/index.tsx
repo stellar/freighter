@@ -54,7 +54,6 @@ import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { BottomNav } from "popup/components/BottomNav";
 
 import "popup/metrics/authServices";
 
@@ -171,7 +170,7 @@ export const Account = () => {
       subentryCount={accountBalances.subentryCount}
     />
   ) : (
-    <View>
+    <>
       {isLoading ? (
         <Loading />
       ) : (
@@ -281,7 +280,6 @@ export const Account = () => {
           </View.Content>
         </>
       )}
-      <BottomNav />
-    </View>
+    </>
   );
 };
