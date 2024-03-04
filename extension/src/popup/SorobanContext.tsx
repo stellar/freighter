@@ -50,13 +50,13 @@ export const SorobanProvider = ({
         serverUrl = SOROBAN_RPC_URLS[NETWORKS.TESTNET];
     }
 
-    try {
-      server = new SorobanRpc.Server(serverUrl, {
-        allowHttp: serverUrl.startsWith("http://"),
-      });
-    } catch (e) {
+    server = new SorobanRpc.Server(serverUrl, {
+      allowHttp: serverUrl.startsWith("http://"),
+    });
+
+    if (!server) {
       captureException(
-        `Failed to instantiate SorobanContext on ${networkDetails.networkName} with ${networkDetails.sorobanRpcUrl} - ${e}`,
+        `Failed to instantiate SorobanContext on ${networkDetails.networkName} with ${networkDetails.sorobanRpcUrl}`,
       );
     }
 
