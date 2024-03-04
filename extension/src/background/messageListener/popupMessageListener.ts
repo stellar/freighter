@@ -80,6 +80,7 @@ import {
   subscribeAccount,
   subscribeTokenHistory,
   getFeatureFlags,
+  verifySorobanRpcUrls,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -1220,6 +1221,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const loadSettings = async () => {
+    await verifySorobanRpcUrls();
+
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
     const networkDetails = await getNetworkDetails();
