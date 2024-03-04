@@ -77,6 +77,7 @@ import { ReviewAuth } from "./views/ReviewAuth";
 import { SorobanProvider } from "./SorobanContext";
 import { View } from "./basics/layout/View";
 import { BottomNav } from "./components/BottomNav";
+import { useIsSwap } from "./helpers/useIsSwap";
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -239,8 +240,21 @@ const RouteListener = () => {
 };
 
 const Outlet = () => {
-  const showNav = true;
   const dispatch = useDispatch();
+  const location = useLocation();
+  const isSwap = useIsSwap();
+  const showNav =
+    location.pathname &&
+    (location.pathname === "/" ||
+      location.pathname === ROUTES.account ||
+      location.pathname === ROUTES.accountHistory ||
+      location.pathname === ROUTES.settings ||
+      location.pathname === ROUTES.connectWallet ||
+      location.pathname === ROUTES.connectWalletPlugin ||
+      location.pathname === ROUTES.swapSettings ||
+      location.pathname === ROUTES.sendPaymentAmount ||
+      isSwap);
+
   const applicationState = useSelector(applicationStateSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const settingsState = useSelector(settingsStateSelector);
@@ -262,7 +276,7 @@ const Outlet = () => {
         <Loading />
       ) : (
         <Switch>
-          <PublicKeyRoute path={ROUTES.account}>
+          <PublicKeyRoute exact path={ROUTES.account}>
             <Account />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.accountHistory}>
