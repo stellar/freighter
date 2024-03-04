@@ -103,7 +103,7 @@ export const SignBlob = () => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="SignBlob">
+      <React.Fragment data-testid="SignBlob">
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
           {isExperimentalModeEnabled ? (
@@ -210,7 +210,7 @@ export const SignBlob = () => {
             />
           </div>
         </SlideupModal>
-      </View>
+      </React.Fragment>
     </>
   );
 };

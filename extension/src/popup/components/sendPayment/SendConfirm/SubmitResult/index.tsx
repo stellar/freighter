@@ -166,7 +166,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     accountBalances.balances[asset].available?.isZero();
 
   return (
-    <View data-testid="submit-success-view">
+    <React.Fragment data-testid="submit-success-view">
       <View.AppHeader
         pageTitle={`${t("Successfully")} ${isSwap ? t("swapped") : t("sent")}`}
       />
@@ -238,7 +238,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           {t("Done")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };
 
@@ -415,7 +415,7 @@ export const SubmitFail = () => {
   const errorDetails = getErrorDetails(error);
 
   return (
-    <View>
+    <React.Fragment>
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="SubmitResult__content">
@@ -444,6 +444,6 @@ export const SubmitFail = () => {
           {t("Got it")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

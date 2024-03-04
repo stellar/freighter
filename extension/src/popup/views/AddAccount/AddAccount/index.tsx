@@ -54,7 +54,7 @@ export const AddAccount = () => {
   ]);
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title="Add a new Stellar address" />
       <Formik initialValues={initialValues} onSubmit={handleSubmit}>
         {({ dirty, isSubmitting, isValid, errors, touched }) => (
@@ -96,6 +96,6 @@ export const AddAccount = () => {
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

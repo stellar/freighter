@@ -44,7 +44,7 @@ export const UnlockAccount = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <div className="UnlockAccount">
@@ -108,6 +108,6 @@ export const UnlockAccount = () => {
           </Link>
         </div>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

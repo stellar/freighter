@@ -26,7 +26,7 @@ export const ManageConnectedApps = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title="Manage Connected Apps" />
       <View.Content>
         <div className="ManageConnectedApps">
@@ -56,6 +56,6 @@ export const ManageConnectedApps = () => {
           )}
         </div>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

@@ -107,7 +107,7 @@ export const SignAuthEntry = () => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="SignAuthEntry">
+      <React.Fragment data-testid="SignAuthEntry">
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
           {isExperimentalModeEnabled ? (
@@ -213,7 +213,7 @@ export const SignAuthEntry = () => {
             />
           </div>
         </SlideupModal>
-      </View>
+      </React.Fragment>
     </>
   );
 };

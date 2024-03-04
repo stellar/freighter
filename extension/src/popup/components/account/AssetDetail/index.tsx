@@ -132,7 +132,7 @@ export const AssetDetail = ({
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title={canonical.code}
         subtitle={
@@ -317,6 +317,6 @@ export const AssetDetail = ({
           </div>
         </SlideupModal>
       )}
-    </View>
+    </React.Fragment>
   );
 };

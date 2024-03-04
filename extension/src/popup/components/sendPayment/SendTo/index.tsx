@@ -217,7 +217,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   }, [dispatch, validatedPubKey, networkDetails, sorobanClient]);
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title="Send To"
         customBackAction={() => navigateTo(previous)}
@@ -327,6 +327,6 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
           </Button>
         ) : null}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

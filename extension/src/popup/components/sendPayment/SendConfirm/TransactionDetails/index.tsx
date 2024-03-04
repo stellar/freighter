@@ -424,7 +424,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="transaction-details-view">
+      <React.Fragment data-testid="transaction-details-view">
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -603,7 +603,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </>
           )}
         </View.Footer>
-      </View>
+      </React.Fragment>
     </>
   );
 };

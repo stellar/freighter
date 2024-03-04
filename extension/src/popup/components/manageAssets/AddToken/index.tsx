@@ -214,7 +214,7 @@ export const AddToken = () => {
             setHasNoResults(false);
           }}
         >
-          <View data-testid="add-token">
+          <React.Fragment data-testid="add-token">
             <SubviewHeader title={t("Add a Soroban token by ID")} />
             <View.Content>
               <FormRows>
@@ -264,7 +264,7 @@ export const AddToken = () => {
                 </div>
               </FormRows>
             </View.Content>
-          </View>
+          </React.Fragment>
         </Form>
       )}
     </Formik>

@@ -243,17 +243,6 @@ const Outlet = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const isSwap = useIsSwap();
-  const showNav =
-    location.pathname &&
-    (location.pathname === "/" ||
-      location.pathname === ROUTES.account ||
-      location.pathname === ROUTES.accountHistory ||
-      location.pathname === ROUTES.settings ||
-      location.pathname === ROUTES.connectWallet ||
-      location.pathname === ROUTES.connectWalletPlugin ||
-      location.pathname === ROUTES.swapSettings ||
-      location.pathname === ROUTES.sendPaymentAmount ||
-      isSwap);
 
   const applicationState = useSelector(applicationStateSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -264,6 +253,29 @@ const Outlet = () => {
     dispatch(loadSettings());
   }, [dispatch]);
 
+  const showNav =
+    location.pathname &&
+    ((location.pathname === "/" &&
+      applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) ||
+      location.pathname === ROUTES.account ||
+      location.pathname === ROUTES.accountHistory ||
+      location.pathname === ROUTES.settings ||
+      location.pathname === ROUTES.connectWallet ||
+      location.pathname === ROUTES.connectWalletPlugin ||
+      location.pathname === ROUTES.swapSettings ||
+      location.pathname === ROUTES.sendPaymentAmount ||
+      isSwap);
+
+  const isAppLayout =
+    location.pathname !== "/" &&
+    location.pathname !== ROUTES.mnemonicPhrase &&
+    location.pathname !== ROUTES.mnemonicPhraseConfirmed &&
+    location.pathname !== ROUTES.accountCreator &&
+    location.pathname !== ROUTES.accountMigration &&
+    location.pathname !== ROUTES.recoverAccount &&
+    location.pathname !== ROUTES.recoverAccountSuccess &&
+    location.pathname !== ROUTES.pinExtension;
+
   const isLoadingSettings =
     applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
     settingsState === SettingsState.LOADING ||
@@ -271,7 +283,7 @@ const Outlet = () => {
     !networkDetails.network;
 
   return (
-    <View>
+    <View isAppLayout={isAppLayout}>
       {isLoadingSettings ? (
         <Loading />
       ) : (

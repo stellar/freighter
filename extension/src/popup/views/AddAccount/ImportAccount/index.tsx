@@ -65,7 +65,7 @@ export const ImportAccount = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title={t("Import Stellar Secret Key")} />
 
       <Formik
@@ -153,6 +153,6 @@ export const ImportAccount = () => {
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

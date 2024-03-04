@@ -60,7 +60,7 @@ export const Preferences = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title={t("Preferences")} />
       <Formik
         initialValues={initialValues}
@@ -163,6 +163,6 @@ export const Preferences = () => {
           </div>
         </View.Content>
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };
