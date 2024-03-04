@@ -1,3 +1,13 @@
+# Release notes - Wallets - Freighter-5.17.2
+
+### Bug
+
+Missing loading state in loadSettings
+
+unfunded accounts hit runtime error on swap
+
+Fix sorobanRpcUrl missing error
+
 # Release notes - Wallets - Freighter-5.17.1
 
 ### Bug
