@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { BASE_FEE, SorobanRpc, TransactionBuilder } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
 
 import { SOROBAN_RPC_URLS, NETWORKS } from "@shared/constants/stellar";
 
@@ -49,9 +50,15 @@ export const SorobanProvider = ({
         serverUrl = SOROBAN_RPC_URLS[NETWORKS.TESTNET];
     }
 
-    server = new SorobanRpc.Server(serverUrl, {
-      allowHttp: serverUrl.startsWith("http://"),
-    });
+    try {
+      server = new SorobanRpc.Server(serverUrl, {
+        allowHttp: serverUrl.startsWith("http://"),
+      });
+    } catch (e) {
+      captureException(
+        `Failed to instantiate SorobanContext on ${networkDetails.networkName} with ${networkDetails.sorobanRpcUrl} - ${e}`,
+      );
+    }
 
     newTxBuilder = async (fee = BASE_FEE) => {
       const sourceAccount = await server!.getAccount(pubKey);
