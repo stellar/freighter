@@ -52,6 +52,7 @@ export interface Response {
   isExperimentalModeEnabled: boolean;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
+  settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
@@ -141,7 +142,15 @@ export interface Preferences {
   isExperimentalModeEnabled: boolean;
 }
 
+export enum SettingsState {
+  IDLE = "IDLE",
+  LOADING = "LOADING",
+  ERROR = "ERROR",
+  SUCCESS = "SUCCESS",
+}
+
 export interface IndexerSettings {
+  settingsState: SettingsState;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
 }

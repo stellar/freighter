@@ -224,6 +224,28 @@ const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   }
 };
 
+const migrateSorobanRpcUrlNetwork = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.0.1")) {
+    // an edge case exists in `migrateSorobanRpcUrlNetworkDetails` where we may have updated the `networksList` in storage,
+    // but not the `network`, which is the current active network,
+    // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
+
+    const migratedNetwork: NetworkDetails = await localStore.getItem(
+      NETWORK_ID,
+    );
+    if (
+      migratedNetwork.network === NETWORKS.FUTURENET &&
+      !migratedNetwork.sorobanRpcUrl
+    ) {
+      await localStore.setItem(NETWORK_ID, FUTURENET_NETWORK_DETAILS);
+    }
+    await migrateDataStorageVersion("4.0.1");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -231,6 +253,7 @@ export const versionedMigration = async () => {
   await migrateTestnetSorobanRpcUrlNetworkDetails();
   await migrateToAccountSubscriptions();
   await migrateMainnetSorobanRpcUrlNetworkDetails();
+  await migrateSorobanRpcUrlNetwork();
 };
 
 // Updates storage version

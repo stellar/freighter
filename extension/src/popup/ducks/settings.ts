@@ -20,7 +20,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
-import { Settings, IndexerSettings } from "@shared/api/types";
+import { Settings, IndexerSettings, SettingsState } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
@@ -45,6 +45,7 @@ const settingsInitialState: Settings = {
 };
 
 const indexerInitialState: IndexerSettings = {
+  settingsState: SettingsState.IDLE,
   isSorobanPublicEnabled: false,
   isRpcHealthy: false,
 };
@@ -107,6 +108,7 @@ export const saveSettings = createAsyncThunk<
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
+      settingsState: SettingsState.IDLE,
     };
 
     try {
@@ -255,9 +257,19 @@ const settingsSlice = createSlice({
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          settingsState: SettingsState.SUCCESS,
         };
       },
     );
+    builder.addCase(loadSettings.pending, (state) => ({
+      ...state,
+      indexerState: SettingsState.LOADING,
+    }));
+    builder.addCase(loadSettings.rejected, (state) => ({
+      ...state,
+      indexerState: SettingsState.ERROR,
+      isRpcHealthy: false,
+    }));
     builder.addCase(
       changeNetwork.fulfilled,
       (
@@ -276,9 +288,18 @@ const settingsSlice = createSlice({
           ...state,
           networkDetails,
           isRpcHealthy,
+          settingsState: SettingsState.SUCCESS,
         };
       },
     );
+    builder.addCase(changeNetwork.pending, (state) => ({
+      ...state,
+      settingsState: SettingsState.LOADING,
+    }));
+    builder.addCase(changeNetwork.rejected, (state) => ({
+      ...state,
+      settingsState: SettingsState.ERROR,
+    }));
     builder.addCase(
       addCustomNetwork.fulfilled,
       (
@@ -401,4 +422,9 @@ export const settingsPreferencesSelector = createSelector(
 export const settingsErrorSelector = createSelector(
   settingsSelector,
   (settings) => settings.error,
+);
+
+export const settingsStateSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.settingsState,
 );
