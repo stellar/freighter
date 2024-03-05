@@ -45,7 +45,7 @@ export const VerifyAccount = ({
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title={t("Verification")}
         customBackAction={customBackAction}
@@ -95,6 +95,6 @@ export const VerifyAccount = ({
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

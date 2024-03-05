@@ -9,8 +9,6 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
 
-import { BottomNav } from "popup/components/BottomNav";
-
 import { signOut } from "popup/ducks/accountServices";
 
 import packageJson from "../../../../package.json";
@@ -28,7 +26,7 @@ export const Settings = () => {
   };
 
   return (
-    <View>
+    <>
       <View.Content
         contentFooter={
           <div className="Settings__logout">
@@ -69,7 +67,6 @@ export const Settings = () => {
           </div>
         </nav>
       </View.Content>
-      <BottomNav />
-    </View>
+    </>
   );
 };

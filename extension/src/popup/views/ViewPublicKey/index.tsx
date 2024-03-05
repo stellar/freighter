@@ -64,7 +64,7 @@ export const ViewPublicKey = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
@@ -150,6 +150,6 @@ export const ViewPublicKey = () => {
           ) : null}
         </div>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };
