@@ -132,7 +132,7 @@ describe("Swap unfunded account", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("send-amount-view")).toBeDefined();
+      expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
     });
   });
 

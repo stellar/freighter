@@ -107,7 +107,7 @@ export const SignAuthEntry = () => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <React.Fragment data-testid="SignAuthEntry">
+      <React.Fragment>
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
           {isExperimentalModeEnabled ? (

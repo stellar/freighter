@@ -120,7 +120,7 @@ export const Settings = ({
   }
 
   return (
-    <React.Fragment data-testid="send-settings-view">
+    <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
         customBackAction={() => navigateTo(previous)}

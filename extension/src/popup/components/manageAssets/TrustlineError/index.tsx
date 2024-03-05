@@ -147,7 +147,7 @@ export const TrustlineError = ({
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return (
-    <React.Fragment data-testid="trustline-error-view">
+    <React.Fragment>
       <SubviewHeader title={t("Trustline Error")} hasBackButton={false} />
       <View.Content>
         <div className="TrustlineError__inset">

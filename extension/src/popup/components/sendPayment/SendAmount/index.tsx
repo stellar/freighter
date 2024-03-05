@@ -397,7 +397,7 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <React.Fragment data-testid="send-amount-view">
+      <React.Fragment>
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
           subtitle={

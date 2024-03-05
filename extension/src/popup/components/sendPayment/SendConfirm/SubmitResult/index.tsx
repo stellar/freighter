@@ -166,7 +166,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     accountBalances.balances[asset].available?.isZero();
 
   return (
-    <React.Fragment data-testid="submit-success-view">
+    <React.Fragment>
       <View.AppHeader
         pageTitle={`${t("Successfully")} ${isSwap ? t("swapped") : t("sent")}`}
       />

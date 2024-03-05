@@ -214,7 +214,7 @@ export const AddToken = () => {
             setHasNoResults(false);
           }}
         >
-          <React.Fragment data-testid="add-token">
+          <React.Fragment>
             <SubviewHeader title={t("Add a Soroban token by ID")} />
             <View.Content>
               <FormRows>

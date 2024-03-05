@@ -137,7 +137,7 @@ export const SearchAsset = () => {
             setHasNoResults(false);
           }}
         >
-          <React.Fragment data-testid="search-asset">
+          <React.Fragment>
             <SubviewHeader title={t("Choose Asset")} />
             <View.Content>
               <FormRows>

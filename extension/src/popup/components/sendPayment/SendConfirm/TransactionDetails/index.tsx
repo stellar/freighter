@@ -424,7 +424,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <React.Fragment data-testid="transaction-details-view">
+      <React.Fragment>
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">

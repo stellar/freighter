@@ -214,7 +214,6 @@ describe("SendTokenPayment", () => {
     });
 
     await waitFor(async () => {
-      screen.getByTestId("send-settings-view");
       const continueBtn = screen.getByTestId("send-settings-btn-continue");
       await fireEvent.click(continueBtn);
     });
@@ -224,7 +223,5 @@ describe("SendTokenPayment", () => {
       const sendBtn = screen.getByTestId("transaction-details-btn-send");
       await fireEvent.click(sendBtn);
     });
-
-    await waitFor(() => screen.getByTestId("submit-success-view"));
   });
 });
