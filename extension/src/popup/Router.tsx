@@ -239,6 +239,27 @@ const RouteListener = () => {
   return null;
 };
 
+const SHOW_NAV_ROUTES = [
+  ROUTES.account,
+  ROUTES.accountHistory,
+  ROUTES.settings,
+  ROUTES.connectWallet,
+  ROUTES.connectWalletPlugin,
+  ROUTES.swapSettings,
+  ROUTES.sendPaymentAmount,
+];
+
+const NO_APP_LAYOUT_ROUTES = [
+  ROUTES.mnemonicPhrase,
+  ROUTES.mnemonicPhraseConfirmed,
+  ROUTES.accountCreator,
+  ROUTES.accountMigration,
+  ROUTES.recoverAccount,
+  ROUTES.recoverAccountSuccess,
+  ROUTES.pinExtension,
+  ROUTES.welcome,
+];
+
 const Outlet = () => {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -255,26 +276,14 @@ const Outlet = () => {
 
   const showNav =
     location.pathname &&
-    ((location.pathname === "/" &&
+    ((location.pathname === ROUTES.welcome &&
       applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) ||
-      location.pathname === ROUTES.account ||
-      location.pathname === ROUTES.accountHistory ||
-      location.pathname === ROUTES.settings ||
-      location.pathname === ROUTES.connectWallet ||
-      location.pathname === ROUTES.connectWalletPlugin ||
-      location.pathname === ROUTES.swapSettings ||
-      location.pathname === ROUTES.sendPaymentAmount ||
+      SHOW_NAV_ROUTES.some((route) => location.pathname === route) ||
       isSwap);
 
-  const isAppLayout =
-    location.pathname !== "/" &&
-    location.pathname !== ROUTES.mnemonicPhrase &&
-    location.pathname !== ROUTES.mnemonicPhraseConfirmed &&
-    location.pathname !== ROUTES.accountCreator &&
-    location.pathname !== ROUTES.accountMigration &&
-    location.pathname !== ROUTES.recoverAccount &&
-    location.pathname !== ROUTES.recoverAccountSuccess &&
-    location.pathname !== ROUTES.pinExtension;
+  const isAppLayout = NO_APP_LAYOUT_ROUTES.every(
+    (route) => route !== location.pathname,
+  );
 
   const isLoadingSettings =
     applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
