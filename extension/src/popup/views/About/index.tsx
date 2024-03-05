@@ -28,7 +28,7 @@ export const About = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title="About" />
       <View.Content hasNoTopPadding>
         <div className="About">
@@ -58,6 +58,6 @@ export const About = () => {
           {`© ${currentYear} Stellar Development Foundation`}
         </div>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

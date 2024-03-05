@@ -160,7 +160,7 @@ export const RecoverAccount = () => {
   };
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Formik
@@ -312,6 +312,6 @@ export const RecoverAccount = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

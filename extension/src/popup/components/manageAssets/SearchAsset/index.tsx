@@ -137,7 +137,7 @@ export const SearchAsset = () => {
             setHasNoResults(false);
           }}
         >
-          <View data-testid="search-asset">
+          <React.Fragment>
             <SubviewHeader title={t("Choose Asset")} />
             <View.Content>
               <FormRows>
@@ -202,7 +202,7 @@ export const SearchAsset = () => {
                 ) : null}
               </FormRows>
             </View.Content>
-          </View>
+          </React.Fragment>
         </Form>
       )}
     </Formik>

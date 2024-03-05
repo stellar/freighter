@@ -92,7 +92,7 @@ export const SendType = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title={t("Send Type")}
         customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
@@ -162,6 +162,6 @@ export const SendType = () => {
           </>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

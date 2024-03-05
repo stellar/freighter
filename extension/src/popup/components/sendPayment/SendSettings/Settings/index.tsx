@@ -120,7 +120,7 @@ export const Settings = ({
   }
 
   return (
-    <View data-testid="send-settings-view">
+    <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
         customBackAction={() => navigateTo(previous)}
@@ -288,6 +288,6 @@ export const Settings = ({
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

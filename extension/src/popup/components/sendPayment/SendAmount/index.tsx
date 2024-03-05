@@ -44,7 +44,6 @@ import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
-import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
@@ -398,7 +397,7 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <View data-testid="send-amount-view">
+      <React.Fragment>
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
           subtitle={
@@ -545,8 +544,7 @@ export const SendAmount = ({
             </div>
           </div>
         </View.Content>
-        {isSwap && <BottomNav />}
-      </View>
+      </React.Fragment>
       <LoadingBackground
         onClick={() => {}}
         isActive={showBlockedDomainWarning}

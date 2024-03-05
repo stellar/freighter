@@ -256,7 +256,7 @@ const initView = async (
   );
 
   await waitFor(() => {
-    expect(screen.getByTestId("choose-asset")).toBeDefined();
+    expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
   });
 };
 
@@ -316,7 +316,7 @@ describe("Manage assets", () => {
     await fireEvent.click(addButton);
 
     await waitFor(() => {
-      screen.getByTestId("search-asset");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Choose Asset",
       );
@@ -397,7 +397,7 @@ describe("Manage assets", () => {
     });
 
     await waitFor(() => {
-      screen.getByTestId("trustline-error-view");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Trustline Error",
       );
@@ -416,7 +416,7 @@ describe("Manage assets", () => {
     await fireEvent.click(addButton);
 
     await waitFor(() => {
-      screen.getByTestId("search-asset");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Choose Asset",
       );
@@ -477,7 +477,7 @@ describe("Manage assets", () => {
     await fireEvent.click(addTokenButton);
 
     await waitFor(() => {
-      screen.getByTestId("add-token");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Add a Soroban token by ID",
       );

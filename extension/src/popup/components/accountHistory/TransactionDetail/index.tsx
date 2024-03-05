@@ -76,7 +76,7 @@ export const TransactionDetail = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return assetIssuer && !assetDomain ? null : (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         customBackAction={() => setIsDetailViewShowing(false)}
         title={headerTitle}
@@ -162,6 +162,6 @@ export const TransactionDetail = ({
           </Button>
         ) : null}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

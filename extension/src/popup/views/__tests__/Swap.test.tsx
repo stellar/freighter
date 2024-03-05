@@ -165,7 +165,7 @@ describe("Swap", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("send-amount-view")).toBeDefined();
+      expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
     });
   });
 
@@ -245,7 +245,7 @@ describe("Swap", () => {
 
     // Swap Settings view
     await waitFor(() => {
-      screen.getByTestId("send-settings-view");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Swap Settings",
       );
@@ -265,7 +265,7 @@ describe("Swap", () => {
 
     // Confirm Swap view
     await waitFor(() => {
-      screen.getByTestId("transaction-details-view");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Confirm Swap",
       );
@@ -294,7 +294,7 @@ describe("Swap", () => {
 
     // Swap success view
     await waitFor(() => {
-      screen.getByTestId("submit-success-view");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Successfully swapped",
       );
@@ -315,7 +315,7 @@ describe("Swap", () => {
 
     // Swap details view
     await waitFor(() => {
-      screen.getByTestId("transaction-details-view");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Swapped",
       );

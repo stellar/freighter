@@ -113,7 +113,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   ]);
 
   return (
-    <View data-testid="choose-asset">
+    <React.Fragment>
       <SubviewHeader
         title="Choose Asset"
         customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
@@ -171,6 +171,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           </>
         )}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };
