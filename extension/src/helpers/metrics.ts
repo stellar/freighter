@@ -7,6 +7,7 @@ import { METRICS_DATA } from "constants/localStorageTypes";
 import { AMPLITUDE_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { AccountType } from "@shared/api/types";
+import { captureException } from "@sentry/browser";
 
 type metricHandler<AppState> = (state: AppState, action: AnyAction) => void;
 const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
@@ -84,7 +85,7 @@ export interface MetricsData {
 const METRICS_ENDPOINT = "https://api.amplitude.com/2/httpapi";
 let cache: event[] = [];
 
-const uploadMetrics = throttle(() => {
+const uploadMetrics = throttle(async () => {
   const toUpload = cache;
   cache = [];
   if (!AMPLITUDE_KEY) {
@@ -92,7 +93,8 @@ const uploadMetrics = throttle(() => {
     console.log("Not uploading metrics", toUpload);
     return;
   }
-  fetch(METRICS_ENDPOINT, {
+
+  const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -102,6 +104,17 @@ const uploadMetrics = throttle(() => {
       events: toUpload,
     }),
   });
+
+  if (!amplitudeFetchRes.ok) {
+    const amplitudeFetchResJson = await amplitudeFetchRes.json();
+    captureException(
+      `Error uploading to Amplitude with error: ${JSON.stringify(
+        amplitudeFetchResJson,
+      )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
+        toUpload,
+      )}`,
+    );
+  }
 }, 500);
 
 const getUserId = () => {
