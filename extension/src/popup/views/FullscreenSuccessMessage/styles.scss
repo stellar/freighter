@@ -36,16 +36,12 @@
     width: 100%;
   }
 
-  &__header {
-    margin: 1.5rem 0 2rem;
-  }
-
   &__content-wrapper {
     display: flex;
     flex-direction: column;
     justify-content: start;
     padding: 0 0 2rem 0;
-    color: var(--color-gray-90);
+    color: var(--color-gray-70);
     max-width: 31rem;
   }
 

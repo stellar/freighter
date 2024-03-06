@@ -9,7 +9,7 @@ export const METRIC_NAMES = {
   viewImportAccount: "loaded screen: import account",
   viewConnectWallet: "loaded screen: connect wallet",
   viewConnectWalletPlugin: "loaded screen: connect wallet plugin",
-  viewConnectLedger: "loaded screen: connect ledger",
+  viewConnectDevice: "loaded screen: connect device",
   viewGrantAccess: "loaded screen: grant access",
   viewLoading: "loaded screen: loading",
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
@@ -19,6 +19,7 @@ export const METRIC_NAMES = {
   viewRecoverAccount: "loaded screen: recover account",
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
+  viewReviewAuthorization: "loaded screen: review authorization",
   viewSignBlob: "loaded screen: sign blob",
   viewSignAuthEntry: "loaded screen: sign auth entry",
   viewUnlockAccount: "loaded screen: unlock account",
@@ -41,6 +42,16 @@ export const METRIC_NAMES = {
   sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
   sendPaymentConfirm: "loaded screen: send payment confirm",
 
+  viewAccountMigration: "loaded screen: account migration",
+  viewAccountMigrationReviewMigration:
+    "loaded screen: account migration review migration",
+  viewAccountMigrationMnemonicPhrase:
+    "loaded screen: account migration mnemonic phrase",
+  viewAccountMigrationConfirmMigration:
+    "loaded screen: account migration confirm migration",
+  viewAccountMigrationMigrationComplete:
+    "loaded screen: account migration migration complete",
+
   sendPaymentRecentAddress: "send payment: recent address",
   sendPaymentSetMax: "send payment: set max",
   sendPaymentTypePayment: "send payment: selected type payment",
@@ -48,6 +59,7 @@ export const METRIC_NAMES = {
   sendPaymentSuccess: "send payment: payment success",
   sendPaymentPathPaymentSuccess: "send payment: path payment success",
   sendPaymentError: "send payment: error",
+  simuilateTokenPaymentError: "failed to simulate token payment",
 
   viewSwap: "loaded screen: swap",
   swapAmount: "loaded screen: swap amount",
@@ -132,4 +144,10 @@ export const METRIC_NAMES = {
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 
   viewLeaveFeedback: "loaded screen: leave feedback",
+
+  invalidAuthEntry: "invalid authorization entry",
+
+  rejectSigning: "user cancelled signing flow",
+  approveSign: "user signed transaction",
+  reviewedAuthEntry: "reviewed authorization entry",
 };

@@ -15,8 +15,9 @@
       var(--popup--side-padding);
     position: absolute;
     top: 0;
-    width: var(--popup--width);
-    height: var(--popup--height);
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
   }
 
   &__activate-button {
@@ -31,13 +32,13 @@
   }
 
   &__infoBlock {
-    background: #32275f;
-    border: none;
+    background: var(--color-purple-20);
+    border: 1px solid var(--color-purple-30);
     border-radius: 0.5rem;
     color: var(--color-white) !important;
     font-size: 0.875rem;
     margin-bottom: 1rem;
-    padding: 0.875rem;
+    padding: 0.5rem;
 
     &--high-alert {
       background: rgba(241, 50, 50, 0.32);
@@ -48,7 +49,8 @@
     }
 
     &--warning {
-      background: rgba(241, 165, 50, 0.32);
+      border-color: rgba(241, 165, 50, 0.32);
+      background-color: rgba(94, 58, 4, 0.32);
 
       .WarningMessage__icon {
         color: rgba(241, 165, 50, 1);
@@ -65,7 +67,12 @@
 
   &__icon {
     color: #6432f1;
-    width: 0.875rem;
+    width: 24px;
+  }
+
+  &__default-icon {
+    color: var(--color-purple-50);
+    width: 24px;
   }
 
   &__link-wrapper {
@@ -95,26 +102,27 @@
 
 .ScamAssetWarning {
   z-index: var(--z-index--scam-warning);
+  display: flex;
   position: fixed;
-  height: calc(var(--popup--height));
-  width: var(--popup--width);
-  top: 0;
+  height: fit-content;
+  width: 100%;
+  bottom: 0;
   left: 0;
+
+  .View__inset {
+    padding-bottom: 1rem;
+  }
 
   &__wrapper {
     z-index: calc(var(--z-index--scam-warning) + 1);
-    position: absolute;
-    bottom: calc(-1 * var(--popup--height));
-    height: calc(var(--popup--height) - 2rem);
+    height: 100%;
+    bottom: 0;
     display: flex;
     flex-direction: column;
     background: var(--color-gray-00);
-    margin-top: 2rem;
     transition: bottom var(--dropdown-animation);
     border-top-right-radius: 1rem;
     border-top-left-radius: 1rem;
-    padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
-      var(--account-view-padding-side);
   }
 
   &__header {
@@ -139,6 +147,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 2rem;
 
     &__code {
       color: var(--color-gray-90);
@@ -176,23 +185,24 @@
 .NewAssetWarning {
   z-index: var(--z-index--scam-warning);
   position: fixed;
-  height: calc(var(--popup--height));
-  width: var(--popup--width);
-  top: 0;
+  height: fit-content;
+  width: 100%;
+  bottom: 0;
   left: 0;
+  display: flex;
+
+  .View__inset {
+    padding-bottom: 1rem;
+  }
 
   &__wrapper {
     z-index: calc(var(--z-index--scam-warning) + 1);
-    position: absolute;
-    bottom: calc(-1 * var(--popup--height));
     display: flex;
     flex-direction: column;
     background: var(--color-gray-00);
-    margin-top: 2rem;
     transition: bottom var(--dropdown-animation);
     border-top-right-radius: 1rem;
     border-top-left-radius: 1rem;
-    padding: var(--popup-vertical-padding) var(--account-view-padding-side);
   }
 
   &__header {
@@ -253,4 +263,131 @@
     column-gap: 1rem;
     margin-top: auto;
   }
+}
+
+.UnverifiedTokenWarning {
+  z-index: var(--z-index--scam-warning);
+  display: flex;
+  position: fixed;
+  height: fit-content;
+  width: 100%;
+  bottom: -1.5rem;
+  left: 0;
+
+  &__wrapper {
+    align-items: center;
+    z-index: calc(var(--z-index--scam-warning) + 1);
+    height: 100%;
+    margin-bottom: -600px;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-gray-10);
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    transition: margin var(--dropdown-animation);
+    border-top-right-radius: 1rem;
+    border-top-left-radius: 1rem;
+  }
+
+  &__icon {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  &__code {
+    display: flex;
+    justify-content: center;
+  }
+
+  &__description {
+    align-items: center;
+    background: var(--color-gray-40);
+    border-radius: 0.375rem;
+    display: flex;
+    gap: 0.25rem;
+    margin: 1rem 0 1.5rem 0;
+    padding: 0.125rem 0.375rem;
+
+    &__icon {
+      svg {
+        color: var(--color-gray-70);
+        height: 0.75rem;
+        width: 0.75rem;
+      }
+    }
+
+    &__text {
+      color: var(--color-gray-70);
+      font-size: 0.75rem;
+      line-height: 1.125rem;
+    }
+  }
+
+  &__flags {
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    background: var(--color-gray-20);
+    padding: 0.75rem 1rem;
+    width: 100%;
+
+    &__info {
+      font-size: 0.875rem;
+      color: var(--color-gray-70);
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__flag {
+    display: flex;
+    margin-bottom: 1.5rem;
+    column-gap: 0.5rem;
+    &__header {
+      color: var(--color-white);
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+    &__description {
+      color: var(--color-gray-70);
+      font-size: 0.75rem;
+      line-height: 1.25rem;
+    }
+    &__icon {
+      color: var(--color-purple-50);
+    }
+  }
+
+  &__bottom-content {
+    margin-top: 1rem;
+    width: 100%;
+  }
+}
+
+.TokenTransferWarning {
+  overflow-wrap: break-word;
+
+  .TokenDetails {
+    margin-bottom: 2rem;
+
+    &__loader {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .FnName,
+    .InlineLabel {
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+      margin: 0;
+    }
+  }
+}
+
+.InvokerAuthWarning {
+  overflow-wrap: break-word;
 }

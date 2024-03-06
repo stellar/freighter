@@ -19,8 +19,11 @@ global.DEV_EXTENSION = true;
 global.PRODUCTION = false;
 global.EXPERIMENTAL = false;
 
+process.env.INDEXER_URL = "http://localhost:3002/api/v1";
+
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
+  emitMetric: () => {},
 }));
 
 /* eslint-disable react/no-array-index-key */

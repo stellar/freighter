@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Notification } from "@stellar/design-system";
 
-import { HorizonOperation, AssetType } from "@shared/api/types";
+import { HorizonOperation, AssetType, TokenBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
-  getIsSupportedSorobanOp,
   getIsSwap,
   getStellarExpertUrl,
   getRawBalance,
@@ -20,7 +19,6 @@ import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
 import { ROUTES } from "popup/constants/routes";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -37,9 +35,11 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 import {
   saveAsset,
   saveDestinationAsset,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
@@ -77,10 +77,15 @@ export const AssetDetail = ({
     canonical.issuer,
   );
 
-  const balance = getRawBalance(accountBalances, selectedAsset) || null;
+  const { accountBalances: balances } = useSelector(
+    transactionSubmissionSelector,
+  );
+
+  const balance = getRawBalance(accountBalances, selectedAsset)!;
+
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
-    balance && "contractId" in balance
+    balance && "decimals" in balance
       ? formatTokenAmount(
           new BigNumber(balance.total || "0"),
           Number(balance.decimals),
@@ -127,88 +132,90 @@ export const AssetDetail = ({
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
-    <div className="AssetDetail">
-      <div className="AssetDetail__wrapper">
-        <SubviewHeader
-          title={canonical.code}
-          customBackAction={() => setSelectedAsset("")}
-        />
-        {balance && "name" in balance && (
-          <span className="AssetDetail__token-name">{balance.name}</span>
-        )}
-        {isNative ? (
-          <div className="AssetDetail__available">
-            <span className="AssetDetail__available__copy">
-              {availableTotal} {t("available")}
-            </span>
-            <span
-              className="AssetDetail__available__icon"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <IconButton altText="Available Info" icon={<Icon.Info />} />{" "}
-            </span>
-          </div>
-        ) : null}
-        <div className="AssetDetail__total">
-          <div
-            className="AssetDetail__total__copy"
-            data-testid="asset-detail-available-copy"
-          >
-            {displayTotal}
-          </div>
-          <div className="AssetDetail__total__network">
-            <AssetNetworkInfo
-              assetCode={canonical.code}
-              assetIssuer={assetIssuer}
-              assetType={
-                (balance && "token" in balance && balance?.token.type) || ""
-              }
-              assetDomain={assetDomain}
-              contractId={
-                balance && "contractId" in balance
-                  ? balance.contractId
-                  : undefined
-              }
-            />
-          </div>
-        </div>
-        <div className="AssetDetail__actions">
-          {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
-            <>
-              {/* Hide send for Soroban until send work is ready for Soroban tokens */}
-              {!isSorobanAsset && (
-                <PillButton
-                  onClick={() => {
-                    dispatch(saveAsset(selectedAsset));
-                    navigateTo(ROUTES.sendPayment);
-                  }}
-                >
-                  {t("SEND")}
-                </PillButton>
-              )}
-              {!isSorobanAsset && (
-                <PillButton
-                  onClick={() => {
-                    dispatch(saveAsset(selectedAsset));
-                    navigateTo(ROUTES.swap);
-                  }}
-                >
-                  {t("SWAP")}
-                </PillButton>
-              )}
-            </>
-          ) : (
-            <PillButton
-              onClick={() => {
-                dispatch(saveDestinationAsset(selectedAsset));
-                navigateTo(ROUTES.swap);
-              }}
-            >
-              {t("SWAP")}
-            </PillButton>
+    <View>
+      <SubviewHeader
+        title={canonical.code}
+        subtitle={
+          isNative ? (
+            <div className="AssetDetail__available">
+              <span className="AssetDetail__available__copy">
+                {availableTotal} {t("available")}
+              </span>
+              <span
+                className="AssetDetail__available__icon"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <IconButton altText="Available Info" icon={<Icon.Info />} />{" "}
+              </span>
+            </div>
+          ) : null
+        }
+        customBackAction={() => setSelectedAsset("")}
+      />
+      <View.Content>
+        <div className="AssetDetail__wrapper">
+          {balance && "name" in balance && (
+            <span className="AssetDetail__token-name">{balance.name}</span>
           )}
-        </div>
-        <SimpleBarWrapper>
+          <div className="AssetDetail__total">
+            <div
+              className="AssetDetail__total__copy"
+              data-testid="asset-detail-available-copy"
+            >
+              {displayTotal}
+            </div>
+            <div className="AssetDetail__total__network">
+              <AssetNetworkInfo
+                assetCode={canonical.code}
+                assetIssuer={assetIssuer}
+                assetType={
+                  (balance && "token" in balance && balance?.token.type) || ""
+                }
+                assetDomain={assetDomain}
+                contractId={
+                  balance && "decimals" in balance
+                    ? (balance as TokenBalance).token.issuer.key
+                    : undefined
+                }
+              />
+            </div>
+          </div>
+          <div className="AssetDetail__actions">
+            {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
+              <>
+                {/* Hide send for Soroban until send work is ready for Soroban tokens */}
+                {!isSorobanAsset && (
+                  <PillButton
+                    onClick={() => {
+                      dispatch(saveAsset(selectedAsset));
+                      navigateTo(ROUTES.sendPayment);
+                    }}
+                  >
+                    {t("SEND")}
+                  </PillButton>
+                )}
+                {!isSorobanAsset && (
+                  <PillButton
+                    onClick={() => {
+                      dispatch(saveAsset(selectedAsset));
+                      navigateTo(ROUTES.swap);
+                    }}
+                  >
+                    {t("SWAP")}
+                  </PillButton>
+                )}
+              </>
+            ) : (
+              <PillButton
+                onClick={() => {
+                  dispatch(saveDestinationAsset(selectedAsset));
+                  navigateTo(ROUTES.swap);
+                }}
+              >
+                {t("SWAP")}
+              </PillButton>
+            )}
+          </div>
           <div className="AssetDetail__scam-warning">
             {isOwnedScamAsset && (
               <Notification variant="error" title={t("Error")}>
@@ -236,17 +243,10 @@ export const AssetDetail = ({
                     isPayment: getIsPayment(operation.type),
                     isSwap: getIsSwap(operation),
                   };
-
-                  const tokenBalances =
-                    balance &&
-                    "contractId" in balance &&
-                    getIsSupportedSorobanOp(operation, networkDetails)
-                      ? [balance]
-                      : [];
                   return (
                     <HistoryItem
                       key={operation.id}
-                      tokenBalances={tokenBalances}
+                      accountBalances={balances}
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       url={stellarExpertUrl}
@@ -263,8 +263,9 @@ export const AssetDetail = ({
               {t("No transactions to show")}
             </div>
           )}
-        </SimpleBarWrapper>
-      </div>
+        </div>
+      </View.Content>
+      {/* TODO: fix the slideup modal */}
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <div className="AssetDetail__info-modal">
@@ -316,6 +317,6 @@ export const AssetDetail = ({
           </div>
         </SlideupModal>
       )}
-    </div>
+    </View>
   );
 };

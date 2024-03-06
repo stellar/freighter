@@ -1,11 +1,4 @@
 .ManageAssetRows {
-  &__scrollbar {
-    width: calc(
-      var(--popup--width) - var(--popup--side-padding) -
-        var(--popup--side-padding)
-    );
-  }
-
   &__content {
     display: flex;
     flex-direction: column;
@@ -29,6 +22,19 @@
       &__header {
         display: flex;
       }
+    }
+  }
+
+  &__button {
+    .Button {
+      display: flex;
+      gap: 0.25rem;
+      align-items: center;
+    }
+
+    &__label {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-semi-bold);
     }
   }
 

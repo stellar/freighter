@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
 import { Button, Icon, Link, Notification } from "@stellar/design-system";
@@ -27,6 +27,7 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
+import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import IconFail from "popup/assets/icon-fail.svg";
 
@@ -34,6 +35,7 @@ import "./styles.scss";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { formatAmount } from "popup/helpers/formatters";
+import { SorobanContext } from "popup/SorobanContext";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -53,14 +55,14 @@ const SwapAssetsIcon = ({
         code={source.code}
         issuerKey={source.issuer}
       />
-      {source.code}
+      <span data-testid="SubmitResultSource">{source.code}</span>
       <Icon.ArrowRight />
       <AssetIcon
         assetIcons={assetIcons}
         code={dest.code}
         issuerKey={dest.issuer}
       />
-      {dest.code}
+      <span data-testid="SubmitResultDestination">{dest.code}</span>
     </div>
   );
 };
@@ -81,6 +83,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { t } = useTranslation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
+  const sorobanClient = useContext(SorobanContext);
 
   const sourceAsset = getAssetFromCanonical(asset);
   const { recommendedFee } = useNetworkFees();
@@ -140,6 +143,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
+          sorobanClient,
         }),
       );
 
@@ -154,57 +158,74 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     }
   };
 
+  // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
+
   const suggestRemoveTrustline =
     accountBalances.balances &&
     accountBalances.balances[asset] &&
-    accountBalances.balances[asset].available.isZero();
+    accountBalances.balances[asset].available?.isZero();
 
   return (
-    <div className="SubmitResult" data-testid="submit-success-view">
-      <div className="SubmitResult__header">
-        {t("Successfully")} {isSwap ? t("swapped") : t("sent")}
-      </div>
-      <div className="SubmitResult__amount">
-        {formatAmount(amount)} {sourceAsset.code}
-      </div>
-      <div className="SubmitResult__icon SubmitResult__success">
-        <Icon.ArrowCircleDown />
-      </div>
-      <div className="SubmitResult__identicon">
-        {isSwap ? (
-          <SwapAssetsIcon
-            sourceCanon={asset}
-            destCanon={destinationAsset}
-            assetIcons={assetIcons}
-          />
-        ) : (
-          <FedOrGAddress
-            fedAddress={federationAddress}
-            gAddress={destination}
-          />
-        )}
-      </div>
-      <div className="SubmitResult__suggest-remove-tl">
-        {suggestRemoveTrustline && (
-          <Notification variant="primary" title={t("Remove trustline")}>
-            <span className="remove-tl-contents">
-              <p>
-                Your {sourceAsset.code} balance is now empty. Would you like to
-                remove the {sourceAsset.code} trustline?
-              </p>
-              <button
-                onClick={() =>
-                  removeTrustline(sourceAsset.code, sourceAsset.issuer)
-                }
-              >
-                Remove Trustline
-              </button>
-            </span>
-          </Notification>
-        )}
-      </div>
-      <div className="SubmitResult__button-rows__success">
-        <Button size="md" variant="secondary" onClick={() => viewDetails()}>
+    <View data-testid="submit-success-view">
+      <View.AppHeader
+        pageTitle={`${t("Successfully")} ${isSwap ? t("swapped") : t("sent")}`}
+      />
+      <View.Content
+        contentFooter={
+          <div className="SubmitResult__suggest-remove-tl">
+            {suggestRemoveTrustline && (
+              <Notification variant="primary" title={t("Remove trustline")}>
+                <span className="remove-tl-contents">
+                  <p>
+                    Your {sourceAsset.code} balance is now empty. Would you like
+                    to remove the {sourceAsset.code} trustline?
+                  </p>
+                  <button
+                    onClick={() =>
+                      removeTrustline(sourceAsset.code, sourceAsset.issuer)
+                    }
+                  >
+                    Remove Trustline
+                  </button>
+                </span>
+              </Notification>
+            )}
+          </div>
+        }
+      >
+        <div className="SubmitResult__content">
+          <div
+            className="SubmitResult__amount"
+            data-testid="SubmitResultAmount"
+          >
+            {formatAmount(amount)} {sourceAsset.code}
+          </div>
+          <div className="SubmitResult__icon SubmitResult__success">
+            <Icon.ArrowCircleDown />
+          </div>
+          <div className="SubmitResult__identicon">
+            {isSwap ? (
+              <SwapAssetsIcon
+                sourceCanon={asset}
+                destCanon={destinationAsset}
+                assetIcons={assetIcons}
+              />
+            ) : (
+              <FedOrGAddress
+                fedAddress={federationAddress}
+                gAddress={destination}
+              />
+            )}
+          </div>
+        </div>
+      </View.Content>
+      <View.Footer isInline>
+        <Button
+          size="md"
+          variant="secondary"
+          onClick={() => viewDetails()}
+          data-testid="SubmitResultDetailsButton"
+        >
           {t("Details")}
         </Button>
         <Button
@@ -216,8 +237,8 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         >
           {t("Done")}
         </Button>
-      </div>
-    </div>
+      </View.Footer>
+    </View>
   );
 };
 
@@ -295,9 +316,7 @@ export const SubmitFail = () => {
             title={t("The destination account doesn’t exist")}
           >
             <div>
-              {t(
-                "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again.",
-              )}
+              {t("Make sure it is a funded Stellar account and try again.")},
               <Link
                 isUnderline
                 variant="secondary"
@@ -396,20 +415,24 @@ export const SubmitFail = () => {
   const errorDetails = getErrorDetails(error);
 
   return (
-    <div className="SubmitResult">
-      <div className="SubmitResult__content">
-        <div className="SubmitResult__header">{t("Error")}</div>
-        <div className="SubmitResult__amount">{errorDetails.title}</div>
-        <div className="SubmitResult__icon SubmitResult__fail">
-          <img src={IconFail} alt="Icon Fail" />
+    <View>
+      <View.AppHeader pageTitle={t("Error")} />
+      <View.Content>
+        <div className="SubmitResult__content">
+          <div className="SubmitResult__amount">{errorDetails.title}</div>
+          <div className="SubmitResult__icon SubmitResult__fail">
+            <img src={IconFail} alt="Icon Fail" />
+          </div>
+          <div className="SubmitResult__error-code">
+            {errorDetails.status ? `${errorDetails.status}:` : ""}{" "}
+            {errorDetails.opError}
+          </div>
         </div>
-        <div className="SubmitResult__error-code">
-          {errorDetails.status ? `${errorDetails.status}:` : ""}{" "}
-          {errorDetails.opError}
+        <div className="SubmitResult__error-block">
+          {errorDetails.errorBlock}
         </div>
-      </div>
-      <div className="SubmitResult__error-block">{errorDetails.errorBlock}</div>
-      <div className="SubmitResult__button-rows__fail">
+      </View.Content>
+      <View.Footer>
         <Button
           isFullWidth
           variant="secondary"
@@ -420,7 +443,7 @@ export const SubmitFail = () => {
         >
           {t("Got it")}
         </Button>
-      </div>
-    </div>
+      </View.Footer>
+    </View>
   );
 };

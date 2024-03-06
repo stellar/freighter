@@ -4,6 +4,6 @@
   box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
   position: absolute;
   transition: all var(--dropdown-animation);
-  width: var(--popup--width);
+  width: 100%;
   z-index: var(--z-index-modal);
 }

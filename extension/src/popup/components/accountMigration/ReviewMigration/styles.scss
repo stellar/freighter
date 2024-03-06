@@ -1,0 +1,19 @@
+.ReviewMigration {
+  &__loader {
+    display: flex;
+    justify-content: space-evenly;
+    margin-bottom: 1.75rem;
+  }
+
+  &__option {
+    color: var(--color-gray-60);
+    display: flex;
+    line-height: 1.375rem;
+    margin-bottom: 1rem;
+  }
+
+  &__button {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

@@ -26,6 +26,7 @@ import {
 import {
   loadSettings,
   settingsNetworkDetailsSelector,
+  settingsStateSelector,
 } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
@@ -38,9 +39,9 @@ import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ManageConnectedApps } from "popup/views/ManageConnectedApps";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
-import { ConnectWallet } from "popup/views/AddAccount/connect/ConnectWallet";
+import { SelectHardwareWallet } from "popup/views/AddAccount/connect/SelectHardwareWallet";
 import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
-import { LedgerConnect } from "popup/views/AddAccount/connect/LedgerConnect";
+import { DeviceConnect } from "popup/views/AddAccount/connect/DeviceConnect";
 import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
@@ -64,12 +65,17 @@ import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
 import { PinExtension } from "popup/views/PinExtension";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
+import { AccountMigration } from "popup/views/AccountMigration";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
+import { SettingsState } from "@shared/api/types";
+
 import { SignBlob } from "./views/SignBlob";
+import { ReviewAuth } from "./views/ReviewAuth";
 
 import { SorobanProvider } from "./SorobanContext";
+import { View } from "./basics/layout/View";
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -235,6 +241,7 @@ export const Router = () => {
   const dispatch = useDispatch();
   const applicationState = useSelector(applicationStateSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const settingsState = useSelector(settingsStateSelector);
 
   useEffect(() => {
     dispatch(loadAccount());
@@ -243,9 +250,17 @@ export const Router = () => {
 
   if (
     applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
+    settingsState === SettingsState.LOADING ||
+    settingsState === SettingsState.IDLE ||
     !networkDetails.network
   ) {
-    return <Loading />;
+    return (
+      <View>
+        <div className="RouterLoading">
+          <Loading />
+        </div>
+      </View>
+    );
   }
 
   return (
@@ -265,19 +280,22 @@ export const Router = () => {
           <ImportAccount />
         </PublicKeyRoute>
         <PublicKeyRoute exact path={ROUTES.connectWallet}>
-          <ConnectWallet />
+          <SelectHardwareWallet />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.connectWalletPlugin}>
           <PluginWallet />
         </PublicKeyRoute>
-        <PublicKeyRoute path={ROUTES.connectLedger}>
-          <LedgerConnect />
+        <PublicKeyRoute path={ROUTES.connectDevice}>
+          <DeviceConnect />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.viewPublicKey}>
           <ViewPublicKey />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.signTransaction}>
           <SignTransaction />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.reviewAuthorization}>
+          <ReviewAuth />
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.signAuthEntry}>
           <SignAuthEntry />
@@ -344,6 +362,9 @@ export const Router = () => {
         </PublicKeyRoute>
         <PublicKeyRoute path={ROUTES.manageConnectedApps}>
           <ManageConnectedApps />
+        </PublicKeyRoute>
+        <PublicKeyRoute path={ROUTES.accountMigration}>
+          <AccountMigration />
         </PublicKeyRoute>
 
         {DEV_SERVER && (

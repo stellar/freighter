@@ -15,7 +15,7 @@ import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 
-jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
+jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
 });
 
@@ -24,10 +24,6 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() => {
     signedTransaction:
       "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A",
   });
-});
-
-jest.spyOn(ApiInternal, "submitFreighterTransaction").mockImplementation(() => {
-  return Promise.resolve({});
 });
 
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
@@ -40,16 +36,19 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
   return {
-    ...original,
-    Server: class {
-      loadAccount() {
-        return {
-          sequenceNumber: () => 1,
-          accountId: () => publicKey,
-          incrementSequenceNumber: () => {},
-        };
-      }
+    Networks: original.Networks,
+    Horizon: {
+      Server: class {
+        loadAccount() {
+          return {
+            sequenceNumber: () => 1,
+            accountId: () => publicKey,
+            incrementSequenceNumber: () => {},
+          };
+        }
+      },
     },
+    SorobanRpc: original.SorobanRpc,
   };
 });
 
@@ -70,6 +69,10 @@ jest.mock("popup/constants/history", () => ({
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
 describe.skip("SendPayment", () => {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders", async () => {
     const history = createMemoryHistory();
     history.push(ROUTES.sendPaymentTo);

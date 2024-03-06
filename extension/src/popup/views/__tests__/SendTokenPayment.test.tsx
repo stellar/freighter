@@ -7,43 +7,21 @@ import {
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 
-import {
-  Wrapper,
-  mockBalances,
-  mockAccounts,
-  mockTokenBalance,
-  mockTokenBalances,
-} from "../../__testHelpers__";
+import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
-import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
-import { initialState as sorobanInitialState } from "popup/ducks/soroban";
+import * as transactionSubmission from "popup/ducks/transactionSubmission";
+import * as tokenPaymentActions from "popup/ducks/token-payment";
+import * as accountHelpers from "background/helpers/account";
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
-jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
+jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
-});
-
-jest.spyOn(ApiInternal, "getSorobanTokenBalance").mockImplementation(() => {
-  return Promise.resolve(mockTokenBalance);
-});
-
-jest.mock("popup/ducks/soroban", () => {
-  const original = jest.requireActual("popup/ducks/soroban");
-  return {
-    ...original,
-    getTokenBalances: () => {
-      return {
-        type: "test-action",
-        payload: mockTokenBalances,
-      };
-    },
-  };
 });
 
 jest
@@ -55,16 +33,12 @@ jest
     });
   });
 
-jest
-  .spyOn(ApiInternal, "submitFreighterSorobanTransaction")
-  .mockImplementation(() => {
-    return Promise.resolve({
-      status: "PENDING",
-      hash: "some-hash",
-      latestLedger: 32131,
-      latestLedgerCloseTime: 62131,
-    });
-  });
+jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
+  return {
+    recommendedFee: ".00001",
+    networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
+  };
+});
 
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   return {
@@ -73,41 +47,57 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   };
 });
 
+jest.spyOn(accountHelpers, "getNetworkDetails").mockImplementation(() => {
+  return {
+    networkUrl: "testnet",
+    networkPassphrase: "passphrase",
+  } as any;
+});
+
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
   return {
-    ...original,
+    Address: original.Address,
+    Asset: original.Asset,
+    Contract: original.Contract,
+    Networks: original.Networks,
+    StrKey: original.StrKey,
+    Horizon: original.Horizon,
     SorobanRpc: {
       ...original.SorobanRpc,
       assembleTransaction: (tx: any, _sim: any) => {
         return new original.TransactionBuilder.cloneFrom(tx);
       },
-      Server: class {
-        getAccount(address: string) {
-          return Promise.resolve(new original.Account(address, "0"));
-        }
-        simulateTransaction = async (_tx: any) => {
-          return Promise.resolve({
-            transactionData: {},
-            cost: {
-              cpuInsns: 12389,
-              memBytes: 32478,
-            },
-            minResourceFee: 43289,
-          });
-        };
-        prepareTransaction(tx: any, _passphrase: string) {
-          return Promise.resolve(tx as any);
-        }
-        loadAccount() {
-          return {
-            sequenceNumber: () => 1,
-            accountId: () => publicKey,
-            incrementSequenceNumber: () => {},
+      Horizon: {
+        Server: class {
+          getAccount(address: string) {
+            return Promise.resolve(new original.Account(address, "0"));
+          }
+          simulateTransaction = async (_tx: any) => {
+            return Promise.resolve({
+              transactionData: {},
+              cost: {
+                cpuInsns: 12389,
+                memBytes: 32478,
+              },
+              minResourceFee: 43289,
+            });
           };
-        }
+          prepareTransaction(tx: any, _passphrase: string) {
+            return Promise.resolve(tx as any);
+          }
+          loadAccount() {
+            return {
+              sequenceNumber: () => 1,
+              accountId: () => publicKey,
+              incrementSequenceNumber: () => {},
+            };
+          }
+        },
       },
     },
+    TransactionBuilder: original.TransactionBuilder,
+    XdrLargeInt: original.XdrLargeInt,
   };
 });
 
@@ -118,6 +108,13 @@ jest.mock("react-router-dom", () => {
     Redirect: ({ to }: any) => <div>redirect {to}</div>,
   };
 });
+jest.mock("helpers/metrics", () => {
+  return {
+    registerHandler: () => ({}),
+    uploadMetrics: () => ({}),
+    emitMetric: (_name: string, _body?: any) => ({}),
+  };
+});
 const mockHistoryGetter = jest.fn();
 jest.mock("popup/constants/history", () => ({
   get history() {
@@ -125,7 +122,32 @@ jest.mock("popup/constants/history", () => ({
   },
 }));
 
+jest.spyOn(global, "fetch").mockImplementation(() =>
+  Promise.resolve({
+    ok: true,
+    json: async () => ({
+      id: "tx ID",
+      transactionData: {},
+      cost: {
+        cpuInsns: 12389,
+        memBytes: 32478,
+      },
+      minResourceFee: 43289,
+    }),
+  } as any),
+);
+
+jest.mock("popup/helpers/searchAsset", () => {
+  return {
+    getVerifiedTokens: async () => Promise.resolve([]),
+  };
+});
+
 describe("SendTokenPayment", () => {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
   const history = createMemoryHistory();
   history.push(ROUTES.sendPaymentTo);
   mockHistoryGetter.mockReturnValue(history);
@@ -147,9 +169,9 @@ describe("SendTokenPayment", () => {
           networksList: DEFAULT_NETWORKS,
         },
         transactionSubmission: {
-          ...transactionSubmissionInitialState,
+          ...transactionSubmission.initialState,
           transactionData: {
-            ...transactionSubmissionInitialState.transactionData,
+            ...transactionSubmission.initialState.transactionData,
             asset,
             isToken: true,
           },
@@ -159,10 +181,7 @@ describe("SendTokenPayment", () => {
           },
           accountBalances: mockBalances,
         },
-        soroban: {
-          ...sorobanInitialState,
-          tokenBalances: mockTokenBalances.tokenBalances,
-        },
+        tokenPaymentSimulation: tokenPaymentActions.initialState,
       }}
     >
       <SendPayment />

@@ -3,6 +3,7 @@ const playgroundPaths = [
   "isConnected",
   "isAllowed",
   "setAllowed",
+  "requestAccess",
   "getPublicKey",
   "getUserInfo",
   "getNetwork",
@@ -16,7 +17,7 @@ const GUIDE_BASE_PATH = "guide";
 const guidePaths = [
   "introduction",
   "gettingStarted",
-  "usingFreighterNode",
+  "usingFreighterWebApp",
   "usingFreighterBrowser",
 ];
 

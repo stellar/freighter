@@ -6,13 +6,11 @@ import {
   Asset,
   Memo,
   Operation,
-  SorobanRpc,
   TransactionBuilder,
 } from "stellar-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -60,13 +58,15 @@ import {
   AccountAssets,
   AssetIcon,
 } from "popup/components/account/AccountAssets";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
+import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
+import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -106,7 +106,10 @@ const TwoAssetCard = ({
           {sourceAsset.code}
           <ScamAssetIcon isScamAsset={isSourceAssetScam} />
         </div>
-        <div className="TwoAssetCard__row__right">
+        <div
+          className="TwoAssetCard__row__right"
+          data-testid="TransactionDetailsAssetSource"
+        >
           {formatAmount(sourceAmount)} {sourceAsset.code}
         </div>
       </div>
@@ -123,7 +126,10 @@ const TwoAssetCard = ({
           {destAsset.code}
           <ScamAssetIcon isScamAsset={isDestAssetScam} />
         </div>
-        <div className="TwoAssetCard__row__right">
+        <div
+          className="TwoAssetCard__row__right"
+          data-testid="TransactionDetailsAssetDestination"
+        >
           {formatAmount(new BigNumber(destAmount).toFixed())} {destAsset.code}
         </div>
       </div>
@@ -184,8 +190,8 @@ const getOperation = (
 };
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
-  const sorobanClient = useContext(SorobanContext);
   const dispatch: AppDispatch = useDispatch();
+  const sorobanClient = useContext(SorobanContext);
   const submission = useSelector(transactionSubmissionSelector);
   const {
     destinationBalances,
@@ -266,18 +272,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
     try {
-      if (!hasSorobanClient(sorobanClient)) {
-        throw new Error("Soroban RPC not supported for this network");
-      }
-
-      const preparedTransaction = SorobanRpc.assembleTransaction(
-        transactionSimulation.raw!,
-        transactionSimulation.response!,
-      );
-
       const res = await dispatch(
         signFreighterSorobanTransaction({
-          transactionXDR: preparedTransaction.build().toXDR(),
+          transactionXDR: transactionSimulation.preparedTransaction!,
           network: networkDetails.networkPassphrase,
         }),
       );
@@ -288,10 +285,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterSorobanTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
             sorobanClient,
-            refreshBalances: true,
           }),
         );
 
@@ -361,7 +358,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            refreshBalances: true,
+            sorobanClient,
           }),
         );
 
@@ -414,10 +411,20 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       </Button>
     ) : null;
 
+  const renderPageTitle = (isSuccess: boolean) => {
+    if (isSuccess) {
+      return isSwap ? t("Swapped") : `${t("Sent")} ${sourceAsset.code}`;
+    }
+
+    return isSwap ? t("Confirm Swap") : `${t("Confirm Send")}`;
+  };
+
   return (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="TransactionDetails">
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
+      <View data-testid="transaction-details-view">
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -432,11 +439,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           </div>
         )}
         <SubviewHeader
-          title={
-            submission.submitStatus === ActionStatus.SUCCESS
-              ? `${isSwap ? t("Swapped") : t("Sent")} ${sourceAsset.code}`
-              : `${isSwap ? t("Confirm Swap") : t("Confirm Send")}`
-          }
+          title={renderPageTitle(
+            submission.submitStatus === ActionStatus.SUCCESS,
+          )}
           customBackAction={goBack}
           customBackIcon={
             submission.submitStatus === ActionStatus.SUCCESS ? (
@@ -444,124 +449,138 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             ) : null
           }
         />
-        {!(isPathPayment || isSwap) && (
-          <div className="TransactionDetails__cards">
-            <Card>
-              <AccountAssets
-                assetIcons={assetIcons}
-                sortedBalances={[
-                  {
-                    token: {
-                      issuer: { key: sourceAsset.issuer },
-                      code: sourceAsset.code,
+        <View.Content
+          contentFooter={
+            <div className="TransactionDetails__bottom-wrapper__copy">
+              {(isPathPayment || isSwap) &&
+                submission.submitStatus !== ActionStatus.SUCCESS &&
+                t("The final amount is approximate and may change")}
+            </div>
+          }
+        >
+          {!(isPathPayment || isSwap) && (
+            <div className="TransactionDetails__cards">
+              <Card>
+                <AccountAssets
+                  assetIcons={assetIcons}
+                  sortedBalances={[
+                    {
+                      token: {
+                        issuer: { key: sourceAsset.issuer },
+                        code: sourceAsset.code,
+                      },
+                      total: amount || "0",
                     },
-                    total: amount || "0",
-                  },
-                ]}
-              />
-            </Card>
-          </div>
-        )}
-
-        {(isPathPayment || isSwap) && (
-          <TwoAssetCard
-            sourceAssetIcons={assetIcons}
-            sourceCanon={asset}
-            sourceAmount={amount}
-            destAssetIcons={destAssetIcons}
-            destCanon={destinationAsset || "native"}
-            destAmount={destinationAmount}
-          />
-        )}
-
-        {!isSwap && (
-          <div className="TransactionDetails__row">
-            <div>{t("Sending to")} </div>
-            <div className="TransactionDetails__row__right">
-              <div className="TransactionDetails__identicon">
-                <FedOrGAddress
-                  fedAddress={truncatedFedAddress(federationAddress)}
-                  gAddress={destination}
+                  ]}
                 />
-              </div>
+              </Card>
             </div>
-          </div>
-        )}
-        {showMemo && (
-          <div className="TransactionDetails__row">
-            <div>{t("Memo")}</div>
-            <div className="TransactionDetails__row__right">
-              {memo || t("None")}
-            </div>
-          </div>
-        )}
+          )}
 
-        {(isPathPayment || isSwap) && (
-          <div className="TransactionDetails__row">
-            <div>{t("Conversion rate")} </div>
-            <div className="TransactionDetails__row__right">
-              1 {sourceAsset.code} /{" "}
-              {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
-              {destAsset.code}
-            </div>
-          </div>
-        )}
-        <div className="TransactionDetails__row">
-          <div>{t("Transaction fee")} </div>
-          <div className="TransactionDetails__row__right">
-            {transactionFee} XLM
-          </div>
-        </div>
-        {transactionSimulation.response && (
-          <>
+          {(isPathPayment || isSwap) && (
+            <TwoAssetCard
+              sourceAssetIcons={assetIcons}
+              sourceCanon={asset}
+              sourceAmount={amount}
+              destAssetIcons={destAssetIcons}
+              destCanon={destinationAsset || "native"}
+              destAmount={destinationAmount}
+            />
+          )}
+
+          {!isSwap && (
             <div className="TransactionDetails__row">
-              <div>{t("Resource cost")} </div>
+              <div>{t("Sending to")} </div>
               <div className="TransactionDetails__row__right">
-                <div className="TransactionDetails__row__right__item">
-                  {transactionSimulation.response.cost.cpuInsns} CPU
-                </div>
-                <div className="TransactionDetails__row__right__item">
-                  {transactionSimulation.response.cost.memBytes} Bytes
+                <div className="TransactionDetails__identicon">
+                  <FedOrGAddress
+                    fedAddress={truncatedFedAddress(federationAddress)}
+                    gAddress={destination}
+                  />
                 </div>
               </div>
             </div>
+          )}
+          {showMemo && (
             <div className="TransactionDetails__row">
-              <div>{t("Minimum resource fee")} </div>
+              <div>{t("Memo")}</div>
               <div className="TransactionDetails__row__right">
-                {transactionSimulation.response.minResourceFee} XLM
+                {memo || t("None")}
               </div>
             </div>
-          </>
-        )}
-        {isSwap && (
+          )}
+
+          {(isPathPayment || isSwap) && (
+            <div className="TransactionDetails__row">
+              <div>{t("Conversion rate")} </div>
+              <div
+                className="TransactionDetails__row__right"
+                data-testid="TransactionDetailsConversionRate"
+              >
+                1 {sourceAsset.code} /{" "}
+                {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
+                {destAsset.code}
+              </div>
+            </div>
+          )}
           <div className="TransactionDetails__row">
-            <div>{t("Minimum Received")} </div>
-            <div className="TransactionDetails__row__right">
-              {computeDestMinWithSlippage(
-                allowedSlippage,
-                destinationAmount,
-              ).toFixed()}{" "}
-              {destAsset.code}
+            <div>{t("Transaction fee")} </div>
+            <div
+              className="TransactionDetails__row__right"
+              data-testid="TransactionDetailsTransactionFee"
+            >
+              {transactionFee} XLM
             </div>
           </div>
-        )}
-        {submission.submitStatus === ActionStatus.IDLE && (
-          <FlaggedWarningMessage
-            isUnsafe={isUnsafe}
-            isMalicious={isMalicious}
-            isMemoRequired={isMemoRequired}
-          />
-        )}
-        <div className="TransactionDetails__bottom-wrapper">
-          <div className="TransactionDetails__bottom-wrapper__copy">
-            {(isPathPayment || isSwap) &&
-              submission.submitStatus !== ActionStatus.SUCCESS &&
-              t("The final amount is approximate and may change")}
-          </div>
+          {transactionSimulation.response && (
+            <>
+              <div className="TransactionDetails__row">
+                <div>{t("Resource cost")} </div>
+                <div className="TransactionDetails__row__right">
+                  <div className="TransactionDetails__row__right__item">
+                    {transactionSimulation.response.cost.cpuInsns} CPU
+                  </div>
+                  <div className="TransactionDetails__row__right__item">
+                    {transactionSimulation.response.cost.memBytes} Bytes
+                  </div>
+                </div>
+              </div>
+              <div className="TransactionDetails__row">
+                <div>{t("Minimum resource fee")} </div>
+                <div className="TransactionDetails__row__right">
+                  {transactionSimulation.response.minResourceFee} XLM
+                </div>
+              </div>
+            </>
+          )}
+          {isSwap && (
+            <div className="TransactionDetails__row">
+              <div>{t("Minimum Received")} </div>
+              <div
+                className="TransactionDetails__row__right"
+                data-testid="TransactionDetailsMinimumReceived"
+              >
+                {computeDestMinWithSlippage(
+                  allowedSlippage,
+                  destinationAmount,
+                ).toFixed()}{" "}
+                {destAsset.code}
+              </div>
+            </div>
+          )}
+          {submission.submitStatus === ActionStatus.IDLE && (
+            <FlaggedWarningMessage
+              isUnsafe={isUnsafe}
+              isMalicious={isMalicious}
+              isMemoRequired={isMemoRequired}
+            />
+          )}
+        </View.Content>
+        <View.Footer isInline>
           {submission.submitStatus === ActionStatus.SUCCESS ? (
             <StellarExpertButton />
           ) : (
-            <div className="TransactionDetails__bottom-wrapper__buttons">
+            <>
               <Button
                 size="md"
                 variant="secondary"
@@ -581,10 +600,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               >
                 {isSwap ? t("Swap") : t("Send")}
               </Button>
-            </div>
+            </>
           )}
-        </div>
-      </div>
+        </View.Footer>
+      </View>
     </>
   );
 };

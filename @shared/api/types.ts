@@ -6,6 +6,7 @@ import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
+import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -17,6 +18,8 @@ export enum ActionStatus {
 export interface UserInfo {
   publicKey: string;
 }
+
+export type MigratableAccount = Account & { keyIdIndex: number };
 
 export interface Response {
   error: string;
@@ -47,10 +50,14 @@ export interface Response {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+  settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
   allAccounts: Array<Account>;
+  migratedAccounts: MigratedAccount[];
   accountName: string;
   assetCode: string;
   assetCanonical: string;
@@ -71,6 +78,10 @@ export interface Response {
   isAllowed: boolean;
   userInfo: UserInfo;
   allowList: string[];
+  migratableAccounts: MigratableAccount[];
+  balancesToMigrate: BalanceToMigrate[];
+  isMergeSelected: boolean;
+  recommendedFee: string;
 }
 
 export interface BlockedDomains {
@@ -131,6 +142,19 @@ export interface Preferences {
   isExperimentalModeEnabled: boolean;
 }
 
+export enum SettingsState {
+  IDLE = "IDLE",
+  LOADING = "LOADING",
+  ERROR = "ERROR",
+  SUCCESS = "SUCCESS",
+}
+
+export interface IndexerSettings {
+  settingsState: SettingsState;
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+}
+
 export type Settings = {
   allowList: string[];
   networkDetails: NetworkDetails;
@@ -146,7 +170,17 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
-export type Balances = Types.BalanceMap | null;
+export interface TokenBalance extends AssetBalance {
+  decimals: number;
+  name: string;
+}
+
+export interface BalanceMap {
+  [key: string]: AssetBalance | NativeBalance | TokenBalance;
+  native: NativeBalance;
+}
+
+export type Balances = BalanceMap | null;
 
 export interface SorobanBalance {
   contractId: string;
@@ -154,12 +188,10 @@ export interface SorobanBalance {
   name: string;
   symbol: string;
   decimals: number;
+  token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType =
-  | Types.AssetBalance
-  | Types.NativeBalance
-  | SorobanBalance;
+export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 
@@ -169,6 +201,7 @@ export type HorizonOperation = any;
 
 export interface AccountBalancesInterface {
   balances: Balances;
+  tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
 }
@@ -181,6 +214,20 @@ export interface ErrorMessage {
   errorMessage: string;
   response?: Horizon.HorizonApi.ErrorResponseData.TransactionFailed;
 }
+
+export interface BalanceToMigrate {
+  publicKey: string;
+  name: string;
+  minBalance: string;
+  xlmBalance: string;
+  trustlineBalances: Horizon.HorizonApi.BalanceLine[];
+  keyIdIndex: number;
+}
+
+export type MigratedAccount = BalanceToMigrate & {
+  newPublicKey: string;
+  isMigrated: boolean;
+};
 
 declare global {
   interface Window {

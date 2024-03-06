@@ -15,10 +15,10 @@ import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 import { getCanonicalFromAsset } from "helpers/stellar";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { getAssetDomain } from "popup/helpers/getAssetDomain";
 
 import { Balances } from "@shared/api/types";
 
@@ -38,7 +38,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
@@ -65,16 +64,18 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           token: { code, issuer },
         } = sortedBalances[i];
 
-        if (code !== "XLM") {
-          const server = stellarSdkServer(networkUrl);
+        if (isSwap && "decimals" in sortedBalances[i]) {
+          // eslint-disable-next-line
+          continue;
+        }
 
+        if (code !== "XLM") {
           let domain = "";
 
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              const acct = await server.loadAccount(issuer.key);
-              domain = acct.home_domain || "";
+              domain = await getAssetDomain(issuer.key, networkUrl);
             } catch (e) {
               console.error(e);
             }
@@ -97,26 +98,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         }
       }
 
-      if (isSorobanSuported && sorobanBalances.length) {
-        // we can't swap with tokens yet, so don't show tokens
-        if (!isSwap) {
-          sorobanBalances.forEach(({ symbol, contractId, name }) => {
-            // TODO:
-            // interestingly, if an ascii value is set for symbol
-            // it gets parsed and doesn't
-            // match the original value after this. How to escape this?
-            collection.push({
-              code: `${symbol}`,
-              issuer: "",
-              image: "",
-              domain: "",
-              contractId,
-              name,
-            });
-          });
-        }
-      }
-
       setAssetRows(collection);
       setIsLoading(false);
     };
@@ -128,49 +109,47 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     networkUrl,
     managingAssets,
     isSorobanSuported,
-    sorobanBalances,
     isSwap,
   ]);
 
   return (
-    <div className="ChooseAsset" data-testid="choose-asset">
-      {isLoading && (
-        <div className="ChooseAsset__loader">
-          <Loader size="2rem" />
-        </div>
-      )}
+    <View data-testid="choose-asset">
       <SubviewHeader
         title="Choose Asset"
         customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
       />
-      <div className="ChooseAsset__wrapper">
-        <div
-          className={`ChooseAsset__assets${
-            managingAssets && isSorobanSuported ? "--short" : ""
-          }`}
-          ref={ManageAssetRowsWrapperRef}
-        >
-          {managingAssets ? (
-            <ManageAssetRows
-              assetRows={assetRows}
-              maxHeight={
-                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
-              }
-            />
-          ) : (
-            <SelectAssetRows
-              assetRows={assetRows}
-              maxHeight={
-                ManageAssetRowsWrapperRef?.current?.clientHeight || 600
-              }
-            />
-          )}
+      <View.Content>
+        {isLoading && (
+          <div className="ChooseAsset__loader">
+            <Loader size="2rem" />
+          </div>
+        )}
+        <div className="ChooseAsset__wrapper">
+          <div
+            className={`ChooseAsset__assets${
+              managingAssets && isSorobanSuported ? "--short" : ""
+            }`}
+            ref={ManageAssetRowsWrapperRef}
+          >
+            {managingAssets ? (
+              <ManageAssetRows assetRows={assetRows} chooseAsset />
+            ) : (
+              <SelectAssetRows assetRows={assetRows} />
+            )}
+          </div>
         </div>
+      </View.Content>
+      <View.Footer isInline allowWrap>
         {managingAssets && (
-          <div className="ChooseAsset__button-container">
+          <>
             <div className="ChooseAsset__button">
               <Link to={ROUTES.searchAsset}>
-                <Button size="md" isFullWidth variant="secondary">
+                <Button
+                  size="md"
+                  isFullWidth
+                  variant="secondary"
+                  data-testid="ChooseAssetAddAssetButton"
+                >
                   {t("Add another asset")}
                 </Button>
               </Link>
@@ -178,15 +157,20 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             {isSorobanSuported ? (
               <div className="ChooseAsset__button">
                 <Link to={ROUTES.addToken}>
-                  <Button size="md" isFullWidth variant="secondary">
+                  <Button
+                    size="md"
+                    isFullWidth
+                    variant="secondary"
+                    data-testid="ChooseAssetAddSorobanTokenButton"
+                  >
                     {t("Add Soroban token")}
                   </Button>
                 </Link>
               </div>
             ) : null}
-          </div>
+          </>
         )}
-      </div>
-    </div>
+      </View.Footer>
+    </View>
   );
 };

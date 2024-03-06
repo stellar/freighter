@@ -20,13 +20,13 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
-import { Settings } from "@shared/api/types";
+import { Settings, IndexerSettings, SettingsState } from "@shared/api/types";
 
 interface ErrorMessage {
   errorMessage: string;
 }
 
-const initialState: Settings = {
+const settingsInitialState: Settings = {
   allowList: [],
   isDataSharingAllowed: false,
   networkDetails: {
@@ -44,6 +44,17 @@ const initialState: Settings = {
   error: "",
 };
 
+const indexerInitialState: IndexerSettings = {
+  settingsState: SettingsState.IDLE,
+  isSorobanPublicEnabled: false,
+  isRpcHealthy: false,
+};
+
+const initialState = {
+  ...settingsInitialState,
+  ...indexerInitialState,
+};
+
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
   loadSettingsService(),
 );
@@ -55,7 +66,7 @@ export const saveAllowList = createAsyncThunk<
   },
   { rejectValue: ErrorMessage }
 >("settings/saveAllowList", async ({ allowList }, thunkApi) => {
-  let res = { allowList: initialState.allowList };
+  let res = { allowList: settingsInitialState.allowList };
 
   try {
     res = await saveAllowListService({
@@ -72,7 +83,7 @@ export const saveAllowList = createAsyncThunk<
 });
 
 export const saveSettings = createAsyncThunk<
-  Settings,
+  Settings & IndexerSettings,
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
@@ -93,7 +104,12 @@ export const saveSettings = createAsyncThunk<
     },
     thunkApi,
   ) => {
-    let res = { ...initialState };
+    let res = {
+      ...settingsInitialState,
+      isSorobanPublicEnabled: false,
+      isRpcHealthy: false,
+      settingsState: SettingsState.IDLE,
+    };
 
     try {
       res = await saveSettingsService({
@@ -115,7 +131,7 @@ export const saveSettings = createAsyncThunk<
 );
 
 export const changeNetwork = createAsyncThunk<
-  NetworkDetails,
+  { networkDetails: NetworkDetails; isRpcHealthy: boolean },
   { networkName: string },
   { rejectValue: ErrorMessage }
 >("settings/changeNetwork", ({ networkName }) =>
@@ -183,36 +199,37 @@ const settingsSlice = createSlice({
         };
       },
     );
-    builder.addCase(
-      saveSettings.fulfilled,
-      (state, action: PayloadAction<Settings>) => {
-        const {
-          isDataSharingAllowed,
-          networkDetails,
-          isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          networksList,
-          isValidatingSafeAssetsEnabled,
-          isExperimentalModeEnabled,
-        } = action?.payload || {
-          ...initialState,
-        };
+    builder.addCase(saveSettings.fulfilled, (state, action) => {
+      const {
+        isDataSharingAllowed,
+        networkDetails,
+        isMemoValidationEnabled,
+        isSafetyValidationEnabled,
+        networksList,
+        isValidatingSafeAssetsEnabled,
+        isExperimentalModeEnabled,
+        isRpcHealthy,
+        isSorobanPublicEnabled,
+      } = action?.payload || {
+        ...initialState,
+      };
 
-        return {
-          ...state,
-          isDataSharingAllowed,
-          isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled,
-          isExperimentalModeEnabled,
-          networkDetails,
-          networksList,
-        };
-      },
-    );
+      return {
+        ...state,
+        isDataSharingAllowed,
+        isMemoValidationEnabled,
+        isSafetyValidationEnabled,
+        isValidatingSafeAssetsEnabled,
+        isExperimentalModeEnabled,
+        networkDetails,
+        networksList,
+        isRpcHealthy,
+        isSorobanPublicEnabled,
+      };
+    });
     builder.addCase(
       loadSettings.fulfilled,
-      (state, action: PayloadAction<Settings>) => {
+      (state, action: PayloadAction<Settings & IndexerSettings>) => {
         const {
           allowList,
           isDataSharingAllowed,
@@ -222,6 +239,8 @@ const settingsSlice = createSlice({
           isSafetyValidationEnabled,
           isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
+          isSorobanPublicEnabled,
+          isRpcHealthy,
         } = action?.payload || {
           ...initialState,
         };
@@ -236,20 +255,51 @@ const settingsSlice = createSlice({
           isSafetyValidationEnabled,
           isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
+          isSorobanPublicEnabled,
+          isRpcHealthy,
+          settingsState: SettingsState.SUCCESS,
         };
       },
     );
+    builder.addCase(loadSettings.pending, (state) => ({
+      ...state,
+      indexerState: SettingsState.LOADING,
+    }));
+    builder.addCase(loadSettings.rejected, (state) => ({
+      ...state,
+      indexerState: SettingsState.ERROR,
+      isRpcHealthy: false,
+    }));
     builder.addCase(
       changeNetwork.fulfilled,
-      (state, action: PayloadAction<NetworkDetails>) => {
-        const networkDetails = action?.payload || MAINNET_NETWORK_DETAILS;
+      (
+        state,
+        action: PayloadAction<{
+          networkDetails: NetworkDetails;
+          isRpcHealthy: boolean;
+        }>,
+      ) => {
+        const { networkDetails, isRpcHealthy } = action?.payload || {
+          networkDetails: MAINNET_NETWORK_DETAILS,
+          isRpcHealthy: false,
+        };
 
         return {
           ...state,
           networkDetails,
+          isRpcHealthy,
+          settingsState: SettingsState.SUCCESS,
         };
       },
     );
+    builder.addCase(changeNetwork.pending, (state) => ({
+      ...state,
+      settingsState: SettingsState.LOADING,
+    }));
+    builder.addCase(changeNetwork.rejected, (state) => ({
+      ...state,
+      settingsState: SettingsState.ERROR,
+    }));
     builder.addCase(
       addCustomNetwork.fulfilled,
       (
@@ -322,8 +372,9 @@ export const { reducer } = settingsSlice;
 
 export const { clearSettingsError } = settingsSlice.actions;
 
-export const settingsSelector = (state: { settings: Settings }) =>
-  state.settings;
+export const settingsSelector = (state: {
+  settings: Settings & IndexerSettings;
+}) => state.settings;
 
 export const settingsDataSharingSelector = createSelector(
   settingsSelector,
@@ -338,7 +389,9 @@ export const settingsExperimentalModeSelector = createSelector(
 export const settingsSorobanSupportedSelector = createSelector(
   settingsSelector,
   (settings) =>
-    settings.isExperimentalModeEnabled || settings.networkDetails.sorobanRpcUrl,
+    settings.networkDetails.network === MAINNET_NETWORK_DETAILS.network
+      ? settings.isSorobanPublicEnabled && settings.isRpcHealthy
+      : settings.isRpcHealthy,
 );
 
 export const settingsNetworkDetailsSelector = createSelector(
@@ -369,4 +422,9 @@ export const settingsPreferencesSelector = createSelector(
 export const settingsErrorSelector = createSelector(
   settingsSelector,
   (settings) => settings.error,
+);
+
+export const settingsStateSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.settingsState,
 );

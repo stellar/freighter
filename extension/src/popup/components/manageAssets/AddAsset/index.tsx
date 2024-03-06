@@ -6,6 +6,7 @@ import { Networks, StellarToml } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
 import { FormRows } from "popup/basics/Forms";
+import { View } from "popup/basics/layout/View";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -80,68 +81,64 @@ export const AddAsset = () => {
     <Formik initialValues={initialValues} onSubmit={handleSubmit}>
       {({ dirty, errors, isSubmitting, isValid, touched }) => (
         <Form>
-          <div className="AddAsset">
+          <View>
             <SubviewHeader title={t("Add Another Asset")} />
-            <FormRows>
-              <div>
-                <Field name="assetDomain">
-                  {({ field }: FieldProps) => (
-                    <Input
-                      fieldSize="md"
-                      autoComplete="off"
-                      id="assetDomain"
-                      placeholder={`${t("Asset domain")}, e.g. “centre.io”`}
-                      error={
-                        errors.assetDomain && touched.assetDomain
-                          ? errors.assetDomain
-                          : ""
-                      }
-                      {...field}
-                    />
-                  )}
-                </Field>
-              </div>
-              <div className="AddAsset__results">
-                {isCurrencyNotFound ? (
-                  <Notification
-                    variant="primary"
-                    title={t("Asset not found")}
-                  />
-                ) : null}
-                {assetRows.length ? (
-                  <>
-                    <div className="AddAsset__title">
-                      {t("Assets found in this domain")}
-                    </div>
-                    <div
-                      className="AddAsset__results__rows"
-                      ref={ManageAssetRowsWrapperRef}
-                    >
-                      <ManageAssetRows
-                        assetRows={assetRows}
-                        maxHeight={
-                          ManageAssetRowsWrapperRef?.current?.clientHeight ||
-                          600
+            <View.Content>
+              <FormRows>
+                <div>
+                  <Field name="assetDomain">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        fieldSize="md"
+                        autoComplete="off"
+                        id="assetDomain"
+                        placeholder={`${t("Asset domain")}, e.g. “centre.io”`}
+                        error={
+                          errors.assetDomain && touched.assetDomain
+                            ? errors.assetDomain
+                            : ""
                         }
+                        {...field}
                       />
-                    </div>
-                  </>
-                ) : null}
-              </div>
-              <div>
-                <Button
-                  size="md"
-                  variant="primary"
-                  isFullWidth
-                  type="submit"
-                  isLoading={isSubmitting}
-                  disabled={!(dirty && isValid)}
-                >
-                  {t("Search")}
-                </Button>
-              </div>
-            </FormRows>
-          </div>
+                    )}
+                  </Field>
+                </div>
+                <div className="AddAsset__results">
+                  {isCurrencyNotFound ? (
+                    <Notification
+                      variant="primary"
+                      title={t("Asset not found")}
+                    />
+                  ) : null}
+                  {assetRows.length ? (
+                    <>
+                      <div className="AddAsset__title">
+                        {t("Assets found in this domain")}
+                      </div>
+                      <div
+                        className="AddAsset__results__rows"
+                        ref={ManageAssetRowsWrapperRef}
+                      >
+                        <ManageAssetRows assetRows={assetRows} />
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </FormRows>
+            </View.Content>
+            <View.Footer>
+              <Button
+                size="md"
+                variant="primary"
+                isFullWidth
+                type="submit"
+                isLoading={isSubmitting}
+                disabled={!(dirty && isValid)}
+              >
+                {t("Search")}
+              </Button>
+            </View.Footer>
+          </View>
         </Form>
       )}
     </Formik>

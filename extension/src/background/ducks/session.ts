@@ -1,23 +1,66 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+} from "@reduxjs/toolkit";
 
-import { Account } from "@shared/api/types";
-import { getIsHardwareWalletActive } from "background/helpers/account";
+import { Account, ErrorMessage } from "@shared/api/types";
+import {
+  getIsHardwareWalletActive,
+  subscribeAccount as internalSubscribeAccount,
+} from "background/helpers/account";
+
+export const logIn = createAsyncThunk<
+  UiData,
+  UiData,
+  { rejectValue: ErrorMessage }
+>("logIn", async ({ publicKey, mnemonicPhrase, allAccounts }, thunkApi) => {
+  try {
+    await internalSubscribeAccount(publicKey);
+    return {
+      publicKey,
+      mnemonicPhrase,
+      allAccounts,
+    };
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+  }
+});
+
+export const setActivePublicKey = createAsyncThunk<
+  UiData,
+  UiData,
+  { rejectValue: ErrorMessage }
+>("setActivePublicKey", async ({ publicKey }, thunkApi) => {
+  try {
+    await internalSubscribeAccount(publicKey);
+    return {
+      publicKey,
+      privateKey: "",
+    };
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+  }
+});
 
 const initialState = {
   publicKey: "",
   privateKey: "",
   mnemonicPhrase: "",
   allAccounts: [] as Array<Account>,
+  migratedMnemonicPhrase: "",
 };
 
 interface UiData {
   publicKey: string;
   mnemonicPhrase?: string;
   allAccounts?: Array<Account>;
+  migratedMnemonicPhrase?: string;
 }
 
 interface AppData {
-  privateKey: string;
+  privateKey?: string;
+  password?: string;
 }
 
 export const sessionSlice = createSlice({
@@ -25,36 +68,24 @@ export const sessionSlice = createSlice({
   initialState,
   reducers: {
     reset: () => initialState,
-    logIn: (state, action: { payload: UiData }) => {
-      const {
-        publicKey,
-        mnemonicPhrase = "",
-        allAccounts = [],
-      } = action.payload;
-
-      return {
-        ...state,
-        publicKey,
-        mnemonicPhrase,
-        allAccounts,
-      };
-    },
     logOut: () => initialState,
     setActivePrivateKey: (state, action: { payload: AppData }) => {
-      const { privateKey } = action.payload;
+      const { privateKey = "" } = action.payload;
 
       return {
         ...state,
         privateKey,
       };
     },
-    setActivePublicKey: (state, action: { payload: UiData }) => {
-      const { publicKey } = action.payload;
+    setMigratedMnemonicPhrase: (
+      state,
+      action: { payload: { migratedMnemonicPhrase: string } },
+    ) => {
+      const { migratedMnemonicPhrase = "" } = action.payload;
 
       return {
         ...state,
-        publicKey,
-        privateKey: "",
+        migratedMnemonicPhrase,
       };
     },
     timeoutAccountAccess: (state) => ({ ...state, privateKey: "" }),
@@ -82,6 +113,17 @@ export const sessionSlice = createSlice({
       };
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(logIn.fulfilled, (state, action) => {
+      state.publicKey = action.payload.publicKey;
+      state.mnemonicPhrase = action.payload.mnemonicPhrase || "";
+      state.allAccounts = action.payload.allAccounts || [];
+    });
+    builder.addCase(setActivePublicKey.fulfilled, (state, action) => {
+      state.publicKey = action.payload.publicKey;
+      state.privateKey = "";
+    });
+  },
 });
 
 export const sessionSelector = (state: { session: UiData & AppData }) =>
@@ -90,12 +132,11 @@ export const sessionSelector = (state: { session: UiData & AppData }) =>
 export const {
   actions: {
     reset,
-    logIn,
     logOut,
     setActivePrivateKey,
-    setActivePublicKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
+    setMigratedMnemonicPhrase,
   },
 } = sessionSlice;
 
@@ -107,6 +148,10 @@ export const mnemonicPhraseSelector = createSelector(
   sessionSelector,
   (session) => session.mnemonicPhrase,
 );
+export const migratedMnemonicPhraseSelector = createSelector(
+  sessionSelector,
+  (session) => session.migratedMnemonicPhrase,
+);
 export const allAccountsSelector = createSelector(
   sessionSelector,
   (session) => session.allAccounts || [],
@@ -115,10 +160,14 @@ export const hasPrivateKeySelector = createSelector(
   sessionSelector,
   async (session) => {
     const isHardwareWalletActive = await getIsHardwareWalletActive();
-    return isHardwareWalletActive || !!session.privateKey.length;
+    return isHardwareWalletActive || !!session?.privateKey?.length;
   },
 );
 export const privateKeySelector = createSelector(
   sessionSelector,
-  (session) => session.privateKey,
+  (session) => session.privateKey || "",
+);
+export const passwordSelector = createSelector(
+  sessionSelector,
+  (session) => session.password,
 );

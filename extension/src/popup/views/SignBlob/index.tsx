@@ -14,24 +14,19 @@ import {
   WarningMessage,
   FirstTimeWarningMessage,
 } from "popup/components/WarningMessages";
+import { View } from "popup/basics/layout/View";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
-import {
-  ButtonsContainer,
-  ModalHeader,
-  ModalWrapper,
-} from "popup/basics/Modal";
-
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { BlobToSign, parsedSearchParam } from "helpers/urls";
 import { truncatedPublicKey } from "helpers/stellar";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
 import "./styles.scss";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
 export const SignBlob = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -43,7 +38,7 @@ export const SignBlob = () => {
   );
 
   const blob = parsedSearchParam(location.search) as BlobToSign;
-  const { accountToSign, domain, isDomainListedAllowed } = blob;
+  const { accountToSign, domain, isDomainListedAllowed, url } = blob;
 
   const {
     allAccounts,
@@ -58,45 +53,42 @@ export const SignBlob = () => {
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   } = useSetupSigningFlow(rejectBlob, signBlob, blob.blob, accountToSign);
 
   if (isHardwareWallet) {
     return (
-      <ModalWrapper>
-        <WarningMessage
-          variant={WarningMessageVariant.warning}
-          handleCloseClick={() => window.close()}
-          isActive
-          header={t("Unsupported signing method")}
-        >
-          <p>
-            {t(
-              "Signing arbitrary data with a hardware wallet is currently not supported.",
-            )}
-          </p>
-        </WarningMessage>
-      </ModalWrapper>
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={t("Unsupported signing method")}
+      >
+        <p>
+          {t(
+            "Signing arbitrary data with a hardware wallet is currently not supported.",
+          )}
+        </p>
+      </WarningMessage>
     );
   }
 
-  if (!domain.startsWith("https") && !isExperimentalModeEnabled) {
+  if (!url.startsWith("https") && !isExperimentalModeEnabled) {
     return (
-      <ModalWrapper>
-        <WarningMessage
-          handleCloseClick={() => window.close()}
-          isActive
-          variant={WarningMessageVariant.warning}
-          header={t("WEBSITE CONNECTION IS NOT SECURE")}
-        >
-          <p>
-            <Trans domain={domain}>
-              The website <strong>{{ domain }}</strong> does not use an SSL
-              certificate. For additional safety Freighter only works with
-              websites that provide an SSL certificate.
-            </Trans>
-          </p>
-        </WarningMessage>
-      </ModalWrapper>
+      <WarningMessage
+        handleCloseClick={() => window.close()}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("WEBSITE CONNECTION IS NOT SECURE")}
+      >
+        <p>
+          <Trans domain={url}>
+            The website <strong>{{ url }}</strong> does not use an SSL
+            certificate. For additional safety Freighter only works with
+            websites that provide an SSL certificate.
+          </Trans>
+        </p>
+      </WarningMessage>
     );
   }
 
@@ -108,12 +100,12 @@ export const SignBlob = () => {
     />
   ) : (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <div className="SignBlob" data-testid="SignBlob">
-        <ModalWrapper>
-          <ModalHeader>
-            <strong>{t("Confirm Data")}</strong>
-          </ModalHeader>
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
+      <View data-testid="SignBlob">
+        <View.AppHeader pageTitle={t("Confirm Data")} />
+        <View.Content>
           {isExperimentalModeEnabled ? (
             <WarningMessage
               header="Experimental Mode"
@@ -186,8 +178,8 @@ export const SignBlob = () => {
             ) : null}
           </div>
           <Blob blob={blob.blob} />
-        </ModalWrapper>
-        <ButtonsContainer>
+        </View.Content>
+        <View.Footer isInline>
           <Button
             size="md"
             isFullWidth
@@ -205,7 +197,7 @@ export const SignBlob = () => {
           >
             {t("Approve")}
           </Button>
-        </ButtonsContainer>
+        </View.Footer>
         <SlideupModal
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
@@ -218,7 +210,7 @@ export const SignBlob = () => {
             />
           </div>
         </SlideupModal>
-      </div>
+      </View>
     </>
   );
 };

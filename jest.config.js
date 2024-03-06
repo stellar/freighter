@@ -1,4 +1,4 @@
-const esModules = ["@stellar/wallet-sdk"];
+const esModules = ["@stellar/wallet-sdk", "@stellar/design-system"];
 
 const jsdomTests = {
   rootDir: __dirname,
@@ -18,7 +18,7 @@ const jsdomTests = {
   transform: {
     "^.+\\.(js|jsx|ts|tsx|mjs)$": ["babel-jest"],
   },
-  transformIgnorePatterns: [`/node_modules/(?!${esModules})`],
+  transformIgnorePatterns: [`/node_modules/(?!${esModules.join("|")})`],
   moduleNameMapper: {
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
       "<rootDir>/config/jest/__mocks__/fileMock.ts",
@@ -27,6 +27,8 @@ const jsdomTests = {
   moduleFileExtensions: ["js", "jsx", "json", "node", "mjs", "ts", "tsx"],
   moduleDirectories: ["node_modules", "<rootDir>/extension/src", "<rootDir>/."],
   testEnvironment: "jsdom",
+  resolver: "<rootDir>/config/jest/resolver.js",
+  modulePathIgnorePatterns: ["extension/e2e-tests"],
 };
 
 module.exports = {

@@ -16,9 +16,10 @@ const routeToEventName = {
   [ROUTES.importAccount]: METRIC_NAMES.viewImportAccount,
   [ROUTES.connectWallet]: METRIC_NAMES.viewConnectWallet,
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
-  [ROUTES.connectLedger]: METRIC_NAMES.viewConnectLedger,
+  [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
   [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
+  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
@@ -64,6 +65,15 @@ const routeToEventName = {
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
   [ROUTES.leaveFeedback]: METRIC_NAMES.viewLeaveFeedback,
+  [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
+  [ROUTES.accountMigrationReviewMigration]:
+    METRIC_NAMES.viewAccountMigrationReviewMigration,
+  [ROUTES.accountMigrationMnemonicPhrase]:
+    METRIC_NAMES.viewAccountMigrationMnemonicPhrase,
+  [ROUTES.accountMigrationConfirmMigration]:
+    METRIC_NAMES.viewAccountMigrationConfirmMigration,
+  [ROUTES.accountMigrationMigrationComplete]:
+    METRIC_NAMES.viewAccountMigrationMigrationComplete,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

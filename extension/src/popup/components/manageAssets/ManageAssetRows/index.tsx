@@ -1,14 +1,8 @@
 import React, { useContext, useState, useEffect } from "react";
-import {
-  Account,
-  Asset,
-  Operation,
-  StellarToml,
-  TransactionBuilder,
-  Networks,
-} from "stellar-sdk";
+import { StellarToml, Networks } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { Button } from "@stellar/design-system";
 import { ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
@@ -18,16 +12,12 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { getApiStellarExpertUrl } from "popup/helpers/account";
 import {
   formatDomain,
   getCanonicalFromAsset,
-  xlmToStroop,
   truncateString,
 } from "helpers/stellar";
 
-import { SimpleBarWrapper } from "popup/basics/SimpleBarWrapper";
-import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -35,9 +25,9 @@ import { ROUTES } from "popup/constants/routes";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
+  addTokenId,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { removeTokenId, sorobanSelector } from "popup/ducks/soroban";
 import {
   getAccountBalances,
   resetSubmission,
@@ -46,22 +36,30 @@ import {
   transactionSubmissionSelector,
   startHwSign,
   ShowOverlayStatus,
+  removeTokenId,
+  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   ScamAssetWarning,
   NewAssetWarning,
+  UnverifiedTokenWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
+import { NETWORKS } from "@shared/constants/stellar";
+import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
+import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
+import { isContractId } from "popup/helpers/soroban";
+import IconAdd from "popup/assets/icon-add.svg";
+import IconRemove from "popup/assets/icon-remove.svg";
+
+import { SorobanContext } from "popup/SorobanContext";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
-  contractId?: string;
-  name?: string;
 };
 
 export interface NewAssetFlags {
@@ -74,20 +72,22 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
-  maxHeight: number;
+  chooseAsset?: boolean;
+  isVerifiedToken?: boolean;
 }
 
 export const ManageAssetRows = ({
   children,
   header,
   assetRows,
-  maxHeight,
+  chooseAsset,
+  isVerifiedToken,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
-    accountBalances: { balances = {} },
+    accountBalances,
     submitStatus,
     hardwareWalletData: { status: hwStatus },
     blockedDomains,
@@ -95,16 +95,15 @@ export const ManageAssetRows = ({
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
   const { recommendedFee } = useNetworkFees();
-  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const { getTokenBalancesStatus, tokensWithNoBalance } = useSelector(
-    sorobanSelector,
-  );
-  const sorobanClient = useContext(SorobanContext);
+  const { accountBalanceStatus } = useSelector(tokensSelector);
+  const walletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!walletType;
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
     false,
   );
   const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
+  const [showUnverifiedWarning, setShowUnverifiedWarning] = useState(false);
   const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
     isNewAsset: false,
     isInvalidDomain: false,
@@ -116,6 +115,7 @@ export const ManageAssetRows = ({
     issuer: "",
     image: "",
   });
+  const sorobanClient = useContext(SorobanContext);
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -124,25 +124,18 @@ export const ManageAssetRows = ({
     assetIssuer: string,
     addTrustline: boolean,
   ) => {
-    const changeParams = addTrustline ? {} : { limit: "0" };
-    const sourceAccount: Account = await server.loadAccount(publicKey);
     const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
-
     setAssetSubmitting(canonicalAsset);
 
-    const transactionXDR = new TransactionBuilder(sourceAccount, {
-      fee: xlmToStroop(recommendedFee).toFixed(),
-      networkPassphrase: networkDetails.networkPassphrase,
-    })
-      .addOperation(
-        Operation.changeTrust({
-          asset: new Asset(assetCode, assetIssuer),
-          ...changeParams,
-        }),
-      )
-      .setTimeout(180)
-      .build()
-      .toXDR();
+    const transactionXDR = await getManageAssetXDR({
+      publicKey,
+      assetCode,
+      assetIssuer,
+      addTrustline,
+      server,
+      recommendedFee,
+      networkDetails,
+    });
 
     const trackChangeTrustline = () => {
       emitMetric(
@@ -178,6 +171,7 @@ export const ManageAssetRows = ({
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
+          sorobanClient,
         }),
       );
 
@@ -187,6 +181,7 @@ export const ManageAssetRows = ({
           getAccountBalances({
             publicKey,
             networkDetails,
+            sorobanClient,
           }),
         );
         trackChangeTrustline();
@@ -200,6 +195,13 @@ export const ManageAssetRows = ({
     }
   };
 
+  useEffect(
+    () => () => {
+      setAssetSubmitting("");
+    },
+    [],
+  );
+
   // watch submitStatus if used ledger to send transaction
   useEffect(() => {
     if (submitStatus === ActionStatus.ERROR) {
@@ -208,63 +210,9 @@ export const ManageAssetRows = ({
       dispatch(resetSubmission());
       navigateTo(ROUTES.account);
     }
-  }, [submitStatus, assetSubmitting, dispatch]);
+  }, [submitStatus, dispatch]);
 
   const isBlockedDomain = (domain: string) => blockedDomains.domains[domain];
-
-  const checkForSuspiciousAsset = async (
-    code: string,
-    issuer: string,
-    domain: string,
-  ): Promise<NewAssetFlags> => {
-    // check revocable
-    let isRevocable = false;
-    try {
-      const resp = await server.assets().forCode(code).forIssuer(issuer).call();
-      isRevocable = resp.records[0]
-        ? resp.records[0]?.flags?.auth_revocable
-        : false;
-    } catch (e) {
-      console.error(e);
-    }
-
-    // check if new asset
-    let isNewAsset = false;
-    try {
-      const resp = await fetch(
-        `${getApiStellarExpertUrl(
-          networkDetails,
-        )}/asset/${code}-${issuer}/rating`,
-      );
-      const json = await resp.json();
-      const age = json.rating?.age;
-      if (!age || age <= 3) {
-        isNewAsset = true;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    // check domain
-    let isInvalidDomain = false;
-    try {
-      const resp = await StellarToml.Resolver.resolve(domain);
-      let found = false;
-      (resp?.CURRENCIES || []).forEach(
-        (c: { code?: string; issuer?: string }) => {
-          if (c.code === code && c.issuer === issuer) {
-            found = true;
-          }
-        },
-      );
-      isInvalidDomain = !found;
-    } catch (e) {
-      console.error(e);
-      isInvalidDomain = true;
-    }
-
-    return { isRevocable, isNewAsset, isInvalidDomain };
-  };
 
   const handleRowClick = async (
     assetRowData = {
@@ -275,11 +223,13 @@ export const ManageAssetRows = ({
     },
     isTrustlineActive: boolean,
   ) => {
-    const resp = await checkForSuspiciousAsset(
-      assetRowData.code,
-      assetRowData.issuer,
-      assetRowData.domain,
-    );
+    const resp = await checkForSuspiciousAsset({
+      code: assetRowData.code,
+      issuer: assetRowData.issuer,
+      domain: assetRowData.domain,
+      server,
+      networkDetails,
+    });
 
     if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
       setShowBlockedDomainWarning(true);
@@ -301,23 +251,52 @@ export const ManageAssetRows = ({
   };
 
   const handleTokenRowClick = async (
-    contractId: string,
+    assetRowData = {
+      code: "",
+      issuer: "",
+      domain: "",
+      image: "",
+    },
+    isTrustlineActive: boolean,
     canonicalAsset?: string,
   ) => {
+    const contractId = assetRowData.issuer;
     setAssetSubmitting(canonicalAsset || contractId);
-    await dispatch(
-      removeTokenId({
-        contractId,
-        network: networkDetails.network as Networks,
-        sorobanClient,
-      }),
-    );
-    navigateTo(ROUTES.account);
+    if (!isTrustlineActive) {
+      if (isVerifiedToken) {
+        await dispatch(
+          addTokenId({
+            publicKey,
+            tokenId: contractId,
+            network: networkDetails.network as Networks,
+          }),
+        );
+        navigateTo(ROUTES.account);
+      } else {
+        setSuspiciousAssetData({
+          domain: assetRowData.domain,
+          code: assetRowData.code,
+          issuer: assetRowData.issuer,
+          image: assetRowData.image,
+        });
+        setShowUnverifiedWarning(true);
+      }
+    } else {
+      await dispatch(
+        removeTokenId({
+          contractId,
+          network: networkDetails.network as NETWORKS,
+        }),
+      );
+      navigateTo(ROUTES.account);
+    }
   };
 
   return (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && walletType && (
+        <HardwareSign walletType={walletType} />
+      )}
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           domain={suspiciousAssetData.domain}
@@ -341,48 +320,59 @@ export const ManageAssetRows = ({
           }}
         />
       )}
-      <SimpleBarWrapper
-        className="ManageAssetRows__scrollbar"
-        style={{
-          maxHeight: `${maxHeight}px`,
-        }}
-      >
+      {showUnverifiedWarning && (
+        <UnverifiedTokenWarning
+          domain={suspiciousAssetData.domain}
+          code={suspiciousAssetData.code}
+          issuer={suspiciousAssetData.issuer}
+          onClose={() => {
+            setShowUnverifiedWarning(false);
+          }}
+        />
+      )}
+      <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
           {assetRows.map(
-            ({
-              code = "",
-              domain,
-              image = "",
-              issuer = "",
-              contractId = "",
-            }) => {
-              if (!balances) return null;
+            ({ code = "", domain, image = "", issuer = "", name = "" }) => {
+              if (!accountBalances.balances) return null;
+              const isContract = isContractId(issuer);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = Object.keys(balances).some(
-                (balance) => balance === canonicalAsset,
-              );
+              const isTrustlineActive =
+                Object.keys(accountBalances.balances).some(
+                  (balance) => balance === canonicalAsset,
+                ) || accountBalances.tokensWithNoBalance.includes(issuer);
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
-                getTokenBalancesStatus === ActionStatus.PENDING;
-
+                accountBalanceStatus === ActionStatus.PENDING;
               return (
-                <div className="ManageAssetRows__row" key={canonicalAsset}>
+                <div
+                  className="ManageAssetRows__row"
+                  key={canonicalAsset}
+                  data-testid="ManageAssetRow"
+                >
                   <ManageAssetRow
                     code={code}
                     issuer={issuer}
                     image={image}
-                    domain={contractId ? truncateString(contractId) : domain}
+                    domain={domain}
+                    name={name}
                   />
                   <div className="ManageAssetRows__button">
-                    <PillButton
+                    <Button
+                      size="md"
+                      variant="secondary"
                       disabled={isActionPending}
                       isLoading={
                         isActionPending && assetSubmitting === canonicalAsset
                       }
                       onClick={() => {
-                        if (contractId) {
-                          handleTokenRowClick(contractId, canonicalAsset);
+                        if (isContract) {
+                          handleTokenRowClick(
+                            { code, issuer, image, domain },
+                            isTrustlineActive,
+                            canonicalAsset,
+                          );
                         } else {
                           handleRowClick(
                             { code, issuer, image, domain },
@@ -391,38 +381,66 @@ export const ManageAssetRows = ({
                         }
                       }}
                       type="button"
+                      data-testid="ManageAssetRowButton"
                     >
-                      {isTrustlineActive || contractId ? t("Remove") : t("Add")}
-                    </PillButton>
+                      {isTrustlineActive ? (
+                        <>
+                          <div className="ManageAssetRows__button__label">
+                            {t("Remove")}
+                          </div>
+                          <img src={IconRemove} alt="icon remove" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="ManageAssetRows__button__label">
+                            {t("Add")}
+                          </div>
+                          <img src={IconAdd} alt="icon add" />
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               );
             },
           )}
 
-          {tokensWithNoBalance.map((tokenId) => {
-            const isActionPending =
-              getTokenBalancesStatus === ActionStatus.PENDING;
+          {chooseAsset &&
+            accountBalances.tokensWithNoBalance.map((contract) => {
+              const isActionPending =
+                accountBalanceStatus === ActionStatus.PENDING;
 
-            return (
-              <div className="ManageAssetRows__row" key={tokenId}>
-                <ManageAssetRow domain={truncateString(tokenId)} />
-                <div className="ManageAssetRows__button">
-                  <PillButton
-                    disabled={isActionPending}
-                    isLoading={isActionPending && assetSubmitting === tokenId}
-                    onClick={() => handleTokenRowClick(tokenId)}
-                    type="button"
-                  >
-                    {t("Remove")}
-                  </PillButton>
+              return (
+                <div className="ManageAssetRows__row" key={contract}>
+                  <ManageAssetRow domain={truncateString(contract)} />
+                  <div className="ManageAssetRows__button">
+                    <Button
+                      size="md"
+                      variant="secondary"
+                      disabled={isActionPending}
+                      isLoading={
+                        isActionPending && assetSubmitting === contract
+                      }
+                      onClick={() =>
+                        handleTokenRowClick(
+                          { code: "", issuer: contract, image: "", domain: "" },
+                          true,
+                        )
+                      }
+                      type="button"
+                    >
+                      <div className="ManageAssetRows__button__label">
+                        {t("Remove")}
+                      </div>
+                      <img src={IconRemove} alt="icon remove" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
         {children}
-      </SimpleBarWrapper>
+      </div>
       <LoadingBackground
         onClick={() => {}}
         isActive={showNewAssetWarning || showBlockedDomainWarning}
@@ -436,6 +454,7 @@ interface AssetRowData {
   issuer?: string;
   image?: string;
   domain: string;
+  name?: string;
 }
 
 export const ManageAssetRow = ({
@@ -443,6 +462,7 @@ export const ManageAssetRow = ({
   issuer = "",
   image = "",
   domain,
+  name,
 }: AssetRowData) => {
   const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
@@ -457,10 +477,15 @@ export const ManageAssetRow = ({
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
-          {code}
+          <span data-testid="ManageAssetCode">{name || code}</span>
           <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
-        <div className="ManageAssetRows__domain">{formatDomain(domain)}</div>
+        <div
+          className="ManageAssetRows__domain"
+          data-testid="ManageAssetDomain"
+        >
+          {formatDomain(domain)}
+        </div>
       </div>
     </>
   );

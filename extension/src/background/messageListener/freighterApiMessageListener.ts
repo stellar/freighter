@@ -104,6 +104,17 @@ export const freighterApiMessageListener = (
     });
   };
 
+  const requestPublicKey = async () => {
+    const publicKey = publicKeySelector(sessionStore.getState());
+
+    if ((await isSenderAllowed({ sender })) && publicKey) {
+      // okay, the requester checks out and we have public key, send it
+      return { publicKey };
+    }
+
+    return { publicKey: "" };
+  };
+
   const submitTransaction = async () => {
     const {
       transactionXdr,
@@ -445,6 +456,7 @@ export const freighterApiMessageListener = (
 
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
+    [EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY]: requestPublicKey,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB]: submitBlob,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_AUTH_ENTRY]: submitAuthEntry,

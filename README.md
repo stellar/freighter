@@ -1,5 +1,9 @@
 # Freighter
 
+Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. Learn more at [freighter.app](https://www.freighter.app/).
+
+## Yarn Workspaces
+
 This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 - the browser extension (`/extension`)

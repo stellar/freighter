@@ -158,7 +158,7 @@ export const isActiveNetwork = (
   networkB: NetworkDetails,
 ) => isEqual(networkA, networkB);
 
-export const CUSTOM_NETWORK = "CUSTOM";
+export const CUSTOM_NETWORK = "STANDALONE";
 
 export const isCustomNetwork = (networkDetails: NetworkDetails) => {
   const { network } = networkDetails;

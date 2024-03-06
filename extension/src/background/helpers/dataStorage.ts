@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 import semver from "semver";
 
 import {
+  HAS_ACCOUNT_SUBSCRIPTION,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
@@ -11,6 +12,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
@@ -172,7 +174,7 @@ const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
 
     const currentNetwork = await localStore.getItem(NETWORK_ID);
 
-    if (currentNetwork.network === NETWORKS.TESTNET) {
+    if (currentNetwork && currentNetwork.network === NETWORKS.TESTNET) {
       await localStore.setItem(NETWORK_ID, TESTNET_NETWORK_DETAILS);
     }
 
@@ -181,11 +183,77 @@ const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   }
 };
 
+export const migrateToAccountSubscriptions = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  // we only want to run this once per user
+  if (!storageVersion || semver.eq(storageVersion, "3.0.0")) {
+    // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
+  }
+};
+
+const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.0.0")) {
+    const networksList: NetworkDetails[] =
+      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+    const migratedNetworkList = networksList.map((network) => {
+      if (network.network === NETWORKS.PUBLIC) {
+        return {
+          ...MAINNET_NETWORK_DETAILS,
+          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+        };
+      }
+
+      return network;
+    });
+
+    const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+    if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+      await localStore.setItem(NETWORK_ID, MAINNET_NETWORK_DETAILS);
+    }
+
+    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    await migrateDataStorageVersion("4.0.0");
+  }
+};
+
+const migrateSorobanRpcUrlNetwork = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.0.1")) {
+    // an edge case exists in `migrateSorobanRpcUrlNetworkDetails` where we may have updated the `networksList` in storage,
+    // but not the `network`, which is the current active network,
+    // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
+
+    const migratedNetwork: NetworkDetails = await localStore.getItem(
+      NETWORK_ID,
+    );
+    if (
+      migratedNetwork.network === NETWORKS.FUTURENET &&
+      !migratedNetwork.sorobanRpcUrl
+    ) {
+      await localStore.setItem(NETWORK_ID, FUTURENET_NETWORK_DETAILS);
+    }
+    await migrateDataStorageVersion("4.0.1");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
   await migrateTokenIdList();
   await migrateTestnetSorobanRpcUrlNetworkDetails();
+  await migrateToAccountSubscriptions();
+  await migrateMainnetSorobanRpcUrlNetworkDetails();
+  await migrateSorobanRpcUrlNetwork();
 };
 
 // Updates storage version

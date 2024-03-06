@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { BASE_FEE, SorobanRpc, TransactionBuilder } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
 
 import { SOROBAN_RPC_URLS, NETWORKS } from "@shared/constants/stellar";
 
@@ -12,8 +13,8 @@ export const hasSorobanClient = (
   context.server !== undefined && context.newTxBuilder !== undefined;
 
 export interface SorobanContextInterface {
-  server?: SorobanRpc.Server;
-  newTxBuilder?: (fee?: string) => Promise<TransactionBuilder>;
+  server: SorobanRpc.Server;
+  newTxBuilder: (fee?: string) => Promise<TransactionBuilder>;
 }
 
 export const SorobanContext = React.createContext(
@@ -31,17 +32,33 @@ export const SorobanProvider = ({
 
   let server: SorobanContextInterface["server"];
   let newTxBuilder: SorobanContextInterface["newTxBuilder"];
-  if (
-    !networkDetails.sorobanRpcUrl &&
-    networkDetails.network === NETWORKS.FUTURENET
-  ) {
-    // TODO: after enough time has passed to assume most clients have ran
-    // the migrateSorobanRpcUrlNetworkDetails migration, remove and use networkDetails.sorobanRpcUrl
-    const serverUrl = SOROBAN_RPC_URLS[NETWORKS.FUTURENET]!;
+  if (!networkDetails.sorobanRpcUrl) {
+    // handle any issues with a network missing sorobanRpcUrl
+    let serverUrl;
+
+    switch (networkDetails.network) {
+      case NETWORKS.FUTURENET:
+        serverUrl = SOROBAN_RPC_URLS[NETWORKS.FUTURENET];
+        break;
+      case NETWORKS.TESTNET:
+        serverUrl = SOROBAN_RPC_URLS[NETWORKS.TESTNET];
+        break;
+      case NETWORKS.PUBLIC:
+        serverUrl = SOROBAN_RPC_URLS[NETWORKS.PUBLIC];
+        break;
+      default:
+        serverUrl = SOROBAN_RPC_URLS[NETWORKS.TESTNET];
+    }
 
     server = new SorobanRpc.Server(serverUrl, {
       allowHttp: serverUrl.startsWith("http://"),
     });
+
+    if (!server) {
+      captureException(
+        `Failed to instantiate SorobanContext on ${networkDetails.networkName} with ${networkDetails.sorobanRpcUrl}`,
+      );
+    }
 
     newTxBuilder = async (fee = BASE_FEE) => {
       const sourceAccount = await server!.getAccount(pubKey);
@@ -50,7 +67,7 @@ export const SorobanProvider = ({
         networkPassphrase: networkDetails.networkPassphrase,
       });
     };
-  } else if (networkDetails.sorobanRpcUrl) {
+  } else {
     server = new SorobanRpc.Server(networkDetails.sorobanRpcUrl, {
       allowHttp: networkDetails.sorobanRpcUrl.startsWith("http://"),
     });

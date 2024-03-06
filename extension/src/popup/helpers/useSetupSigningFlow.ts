@@ -19,6 +19,8 @@ import {
   startHwSign,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 export function useSetupSigningFlow(
   reject: typeof rejectTransaction,
@@ -47,11 +49,13 @@ export function useSetupSigningFlow(
   } = useSelector(transactionSubmissionSelector);
 
   const rejectAndClose = () => {
+    emitMetric(METRIC_NAMES.rejectSigning);
     dispatch(reject());
     window.close();
   };
 
   const signAndClose = async () => {
+    emitMetric(METRIC_NAMES.approveSign);
     if (isHardwareWallet) {
       dispatch(
         startHwSign({ transactionXDR: transactionXdr, shouldSubmit: false }),
@@ -134,5 +138,6 @@ export function useSetupSigningFlow(
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   };
 }
