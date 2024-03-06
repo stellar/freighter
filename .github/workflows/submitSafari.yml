@@ -1,0 +1,81 @@
+name: Safari Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: New Version
+        default: "1.0.0"
+        required: true
+env:
+  GYM_PROJECT: "./extension/freighter-xcode"
+jobs:
+  bump-version:
+    name: Bump Package Version and Submit Extension
+    runs-on: macos-latest
+    steps:
+      - uses: maxim-lobanov/setup-xcode@v1
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Update package.json version
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/package.json
+          field: version
+          value: ${{ github.event.inputs.version }}
+      - name: Update manifest-v2.json version_name
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/public/static/manifest/v2.json
+          field: version_name
+          value: ${{ github.event.inputs.version }}
+      - name: Update manifest-v3.json version_name
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: version_name
+          value: ${{ github.event.inputs.version }}
+      - name: Get manifest.json version
+        id: manifest_version
+        uses: frabert/replace-string-action@4ec615c8a75164a61d8fb333ad5e2e86ff038af1 #v1.2
+        with:
+          string: ${{ github.event.inputs.version }}
+          pattern: \-(.*)
+          replace-with: ""
+      - name: Update manifest-v2.json version
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/public/static/manifest/v2.json
+          field: version
+          value: ${{ steps.manifest_version.outputs.replaced }}
+      - name: Update manifest-v3.json version
+        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: version
+          value: ${{ steps.manifest_version.outputs.replaced }}
+      - name: Build extension
+        uses: actions/setup-node@v1
+        with:
+          node-version: "18"
+      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
+      - name: Convert extension to Xcode project
+        run: xcrun safari-web-extension-converter ./extension/build --project-location $GYM_PROJECT --macos-only
+      - name: Set up ruby env
+        uses: ruby/setup-ruby@v1.138.0
+        with:
+         ruby-version: 2.6.10
+         bundler-cache: true
+      - name: Bundle extension for Safari
+        run: bundle exec fastlane build
+        env:
+          GYM_PROJECT: $GYM_PROJECT
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPLE_APP_ID: ${{ secrets.APPLE_APP_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_USER_ID: ${{ secrets.APPLE_USER_ID }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          APPLE_B64_KEY: ${{ secrets.APPLE_B64_KEY }}
+          XCODE_PROJ_PATH: $GYM_PROJECT
+      - name: Upload archive to Apple Store
+        run: bundle exec fastlane upload
