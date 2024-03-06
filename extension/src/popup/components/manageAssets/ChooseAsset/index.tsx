@@ -54,6 +54,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let i = 0; i < sortedBalances.length; i += 1) {
         if (sortedBalances[i].liquidityPoolId) {
           // eslint-disable-next-line
@@ -75,7 +76,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              domain = await getAssetDomain(issuer.key, networkUrl);
+              domain = await getAssetDomain(issuer.key as string, networkUrl);
             } catch (e) {
               console.error(e);
             }
@@ -84,7 +85,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           collection.push({
             code,
             issuer: issuer?.key || "",
-            image: assetIcons[getCanonicalFromAsset(code, issuer?.key)],
+            image:
+              assetIcons[
+                getCanonicalFromAsset(code as string, issuer?.key as string)
+              ],
             domain,
           });
           // include native asset for asset dropdown selection

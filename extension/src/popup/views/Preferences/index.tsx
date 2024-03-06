@@ -39,7 +39,7 @@ export const Preferences = () => {
     isExperimentalModeEnabledValue: isExperimentalModeEnabled,
   };
 
-  const handleSubmit = async (formValue: SettingValues) => {
+  const handleSubmit = (formValue: SettingValues) => {
     const {
       isValidatingMemoValue,
       isValidatingSafetyValue,
@@ -48,7 +48,7 @@ export const Preferences = () => {
       isExperimentalModeEnabledValue,
     } = formValue;
 
-    await dispatch(
+    dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,

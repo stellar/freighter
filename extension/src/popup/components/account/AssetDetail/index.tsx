@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Notification } from "@stellar/design-system";
 
-import { HorizonOperation, AssetType, TokenBalance } from "@shared/api/types";
+import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
@@ -49,8 +49,8 @@ import "./styles.scss";
 import { formatAmount } from "popup/helpers/formatters";
 
 interface AssetDetailProps {
-  assetOperations: Array<HorizonOperation>;
-  accountBalances: Array<AssetType>;
+  assetOperations: HorizonOperation[];
+  accountBalances: AssetType[];
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
@@ -174,7 +174,7 @@ export const AssetDetail = ({
                 assetDomain={assetDomain}
                 contractId={
                   balance && "decimals" in balance
-                    ? (balance as TokenBalance).token.issuer.key
+                    ? balance.token.issuer.key
                     : undefined
                 }
               />
@@ -242,7 +242,7 @@ export const AssetDetail = ({
                     ...operation,
                     isPayment: getIsPayment(operation.type),
                     isSwap: getIsSwap(operation),
-                  };
+                  } as any; // TODO: isPayment/isSwap overload op type
                   return (
                     <HistoryItem
                       key={operation.id}

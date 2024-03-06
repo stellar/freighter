@@ -74,8 +74,9 @@ export const saveAllowList = createAsyncThunk<
     });
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
 
@@ -121,8 +122,9 @@ export const saveSettings = createAsyncThunk<
       });
     } catch (e) {
       console.error(e);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message,
+        errorMessage: message,
       });
     }
 
@@ -148,8 +150,9 @@ export const addCustomNetwork = createAsyncThunk<
     res = await addCustomNetworkService(networkDetails);
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
 

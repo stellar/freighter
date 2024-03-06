@@ -83,7 +83,7 @@ export const Account = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
+  const [sortedBalances, setSortedBalances] = useState([] as AssetType[]);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
 
@@ -115,7 +115,9 @@ export const Account = () => {
   ]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
 
     setSortedBalances(sortBalances(balances));
     dispatch(getAssetIcons({ balances, networkDetails }));
@@ -123,7 +125,9 @@ export const Account = () => {
   }, [balances, networkDetails, dispatch]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
 
     const fetchAccountHistory = async () => {
       try {

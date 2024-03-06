@@ -22,8 +22,8 @@ export const MigrationStart = () => {
   const dispatch = useDispatch();
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  const handleContinue = async () => {
-    await dispatch(changeNetwork({ networkName: NETWORK_NAMES.PUBNET }));
+  const handleContinue = () => {
+    dispatch(changeNetwork({ networkName: NETWORK_NAMES.PUBNET }));
     navigateTo(ROUTES.accountMigrationReviewMigration);
   };
 

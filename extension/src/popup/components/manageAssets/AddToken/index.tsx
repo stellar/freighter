@@ -111,9 +111,10 @@ export const AddToken = () => {
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearch = useCallback(
     debounce(async ({ target: { value: contractId } }) => {
-      if (!isContractId(contractId)) {
+      if (!isContractId(contractId as string)) {
         setAssetRows([]);
         return;
       }
@@ -144,12 +145,12 @@ export const AddToken = () => {
           );
         } else if (isCustomNetwork(networkDetails)) {
           const name = await getName(
-            contractId,
+            contractId as string,
             sorobanClient.server,
             await sorobanClient.newTxBuilder(),
           );
           const symbol = await getSymbol(
-            contractId,
+            contractId as string,
             sorobanClient.server,
             await sorobanClient.newTxBuilder(),
           );
@@ -206,6 +207,7 @@ export const AddToken = () => {
   }, [assetRows]);
 
   return (
+    // eslint-disable-next-line
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
         <Form

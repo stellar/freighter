@@ -10,6 +10,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
 
+// eslint-disable-next-line
 interface ErrorBoundaryProps {}
 
 export class ErrorBoundary extends Component<
@@ -20,8 +21,10 @@ export class ErrorBoundary extends Component<
     return { hasError: true };
   }
 
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   constructor(props: ErrorBoundaryProps) {
     super(props);
+    // eslint-disable-next-line
     this.state = { hasError: false, errorString: "" };
   }
 

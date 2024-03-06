@@ -39,7 +39,7 @@ export const VerifyAccount = ({
     if (customSubmit) {
       await customSubmit(values.password);
     } else {
-      await dispatch(confirmPassword(values.password));
+      dispatch(confirmPassword(values.password));
       navigateTo(from || ROUTES.account);
     }
   };

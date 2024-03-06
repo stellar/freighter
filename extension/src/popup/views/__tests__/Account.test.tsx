@@ -1,5 +1,6 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
+import { Horizon } from "stellar-sdk";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import {
@@ -18,10 +19,12 @@ const mockHistoryOperations = {
       amount: "1",
       type: "payment",
       asset_type: "native",
+      asset_issuer: "issuer",
+      asset_code: "code",
       from: "G1",
       to: "G2",
     },
-  ],
+  ] as Horizon.ServerApi.PaymentOperationRecord[],
 };
 
 jest.spyOn(global, "fetch").mockImplementation(() =>

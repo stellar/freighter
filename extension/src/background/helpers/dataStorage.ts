@@ -78,7 +78,7 @@ export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const localStorageEntries = Object.entries(localStorage);
 
-  // eslint-disable-next-line no-plusplus
+  // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
     const [key, value] = localStorageEntries[i];
     try {

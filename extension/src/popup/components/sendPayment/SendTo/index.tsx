@@ -104,7 +104,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { destinationBalances } = useSelector(transactionSubmissionSelector);
 
-  const [recentAddresses, setRecentAddresses] = useState<Array<string>>([]);
+  const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
   const [validatedPubKey, setValidatedPubKey] = useState("");
   const [fedAddress, setFedAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -146,8 +146,9 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   };
 
   // calls form validation and then saves destination
+  /* eslint-disable react-hooks/exhaustive-deps */
   const db = useCallback(
-    debounce(async (inputDest) => {
+    debounce(async (inputDest: string) => {
       const errors = await formik.validateForm();
       if (Object.keys(errors).length !== 0) {
         setIsLoading(false);
@@ -156,9 +157,8 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       // muxed account
       if (isMuxedAccount(inputDest)) {
         setValidatedPubKey(inputDest);
-      }
-      // federation address
-      else if (isFederationAddress(inputDest)) {
+      } else if (isFederationAddress(inputDest)) {
+        // federation address
         try {
           const fedResp = await Federation.Server.resolve(inputDest);
           setValidatedPubKey(fedResp.account_id);
@@ -166,9 +166,8 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
         } catch (e) {
           formik.setErrors({ destination: t("invalid federation address") });
         }
-      }
-      // else, a regular account
-      else {
+      } else {
+        // else, a regular account
         setValidatedPubKey(inputDest);
       }
       setIsLoading(false);
@@ -199,7 +198,9 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
   // on valid input get destination balances
   useEffect(() => {
-    if (!validatedPubKey) return;
+    if (!validatedPubKey) {
+      return;
+    }
 
     // TODO - remove once wallet-sdk can handle muxed
     let publicKey = validatedPubKey;

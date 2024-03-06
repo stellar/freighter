@@ -28,13 +28,17 @@ export const KeyIdenticon = ({
   const customStyle = {
     ...(isSmall
       ? {
+          // eslint-disable-next-line
           "--Icon-padding": "0.2rem",
+          // eslint-disable-next-line
           "--Icon-dimension": "1.5rem",
         }
       : {}),
     ...(customSize
       ? {
+          // eslint-disable-next-line
           "--Icon-padding": customSize.padding,
+          // eslint-disable-next-line
           "--Icon-dimension": customSize.dimension,
         }
       : {}),

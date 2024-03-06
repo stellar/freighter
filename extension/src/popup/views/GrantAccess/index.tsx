@@ -36,9 +36,9 @@ export const GrantAccess = () => {
     window.close();
   };
 
-  const grantAndClose = async () => {
+  const grantAndClose = () => {
     setIsGranting(true);
-    await dispatch(grantAccess(url));
+    dispatch(grantAccess(url));
     window.close();
   };
 

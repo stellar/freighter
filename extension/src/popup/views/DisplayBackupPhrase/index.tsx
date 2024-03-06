@@ -47,6 +47,7 @@ export const DisplayBackupPhrase = () => {
     if (res.error) {
       setErrorMessage(res.error);
       emitMetric(METRIC_NAMES.backupPhraseFail, {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         error_type: res.error,
       });
     } else {

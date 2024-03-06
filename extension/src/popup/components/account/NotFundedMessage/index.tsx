@@ -20,8 +20,8 @@ export const NotFundedMessage = ({
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const handleFundAccount = async () => {
-    await dispatch(fundAccount(publicKey));
+  const handleFundAccount = () => {
+    dispatch(fundAccount(publicKey));
     setIsAccountFriendbotFunded(true);
   };
 

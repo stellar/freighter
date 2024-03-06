@@ -322,7 +322,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+      const transactionXDR = new TransactionBuilder(sourceAccount, {
         fee: xlmToStroop(transactionFee).toFixed(),
         networkPassphrase: networkDetails.networkPassphrase,
       })

@@ -90,7 +90,9 @@ export const AccountHistory = () => {
     const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
       getIsSupportedSorobanOp(operation, networkDetails);
 
-    const createSegments = (operations: HorizonOperation[]) => {
+    const createSegments = (
+      operations: Horizon.ServerApi.OperationRecord[],
+    ) => {
       const _operations = operations.filter(
         (op) => op.type_i !== 24 || isSupportedSorobanAccountItem(op),
       );
@@ -119,7 +121,7 @@ export const AccountHistory = () => {
         if ((isPayment || isSorobanXfer) && !isSwap) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
-          } else if (operation.to === publicKey) {
+          } else if ("to" in operation && operation.to === publicKey) {
             segments[SELECTOR_OPTIONS.RECEIVED].push(historyOperation);
           }
         }
@@ -136,7 +138,7 @@ export const AccountHistory = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        let operations = [];
+        let operations = [] as Horizon.ServerApi.OperationRecord[];
         if (isCustomNetwork(networkDetails)) {
           operations = await getAccountHistoryStandalone({
             publicKey,
@@ -197,7 +199,7 @@ export const AccountHistory = () => {
                 {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
                   <HistoryList>
                     <>
-                      {historySegments![SELECTOR_OPTIONS[selectedSegment]].map(
+                      {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
                         (operation: HistoryItemOperation) => (
                           <HistoryItem
                             key={operation.id}

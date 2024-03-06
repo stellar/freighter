@@ -49,7 +49,7 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 
-import { BalanceMap } from "@shared/api/types";
+import { BalanceMap, SorobanBalance } from "@shared/api/types";
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
@@ -143,11 +143,15 @@ export const SendAmount = ({
     image: "",
   });
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let availBalance = new BigNumber("0");
+      let _availBalance = new BigNumber("0");
       if (isToken) {
-        const tokenBalance = accountBalances?.balances?.[selectedAsset] as any;
+        // TODO: balances is incorrectly typed and does not include SorobanBalance
+        const tokenBalance = (accountBalances?.balances?.[
+          selectedAsset
+        ] as any) as SorobanBalance;
         return getTokenBalance(tokenBalance);
       }
       if (accountBalances.balances) {
@@ -161,20 +165,20 @@ export const SendAmount = ({
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(balance.toFixed());
-          availBalance = currentBal
+          _availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
 
-          if (availBalance.lt(minBalance)) {
+          if (_availBalance.lt(minBalance)) {
             return "0";
           }
         } else {
           // needed for different wallet-sdk bignumber.js version
-          availBalance = new BigNumber(balance);
+          _availBalance = new BigNumber(balance);
         }
       }
 
-      return availBalance.toFixed().toString();
+      return _availBalance.toFixed().toString();
     },
     [
       accountBalances.balances,
@@ -268,8 +272,9 @@ export const SendAmount = ({
 
   // on asset select get conversion rate
   useEffect(() => {
-    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0)
+    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
       return;
+    }
     setLoadingRate(true);
     // clear dest amount before re-calculating for UI
     dispatch(resetDestinationAmount());
@@ -548,6 +553,7 @@ export const SendAmount = ({
         {isSwap && <BottomNav />}
       </View>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />

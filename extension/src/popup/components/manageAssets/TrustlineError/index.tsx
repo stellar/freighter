@@ -132,7 +132,9 @@ export const TrustlineError = ({
   }, [error]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
     const balance = balances[errorAsset];
 
     if (balance) {
