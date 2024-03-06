@@ -205,7 +205,11 @@ describe("Swap", () => {
   it("set max amount", async () => {
     const setMaxButton = screen.getByTestId("SendAmountSetMax");
 
-    fireEvent.click(setMaxButton);
+    await waitFor(async () => {
+      expect(setMaxButton).toBeInTheDocument();
+      fireEvent.click(setMaxButton);
+    });
+
     expect(screen.getByTestId("send-amount-amount-input")).toHaveValue(
       "220.49999",
     );
@@ -240,7 +244,8 @@ describe("Swap", () => {
     await waitFor(async () => {
       const continueButton = screen.getByTestId("send-amount-btn-continue");
       expect(continueButton).toBeEnabled();
-      await fireEvent.click(continueButton);
+      expect(continueButton).toBeInTheDocument();
+      fireEvent.click(continueButton);
     });
 
     // Swap Settings view
@@ -260,7 +265,8 @@ describe("Swap", () => {
     await waitFor(async () => {
       const reviewSwapButton = screen.getByTestId("send-settings-btn-continue");
       expect(reviewSwapButton).toBeEnabled();
-      await fireEvent.click(reviewSwapButton);
+      expect(reviewSwapButton).toBeInTheDocument();
+      fireEvent.click(reviewSwapButton);
     });
 
     // Confirm Swap view
@@ -289,7 +295,10 @@ describe("Swap", () => {
     await waitFor(async () => {
       const swapButton = screen.getByTestId("transaction-details-btn-send");
       expect(swapButton).toBeEnabled();
-      await fireEvent.click(swapButton);
+      await waitFor(() => {
+        expect(swapButton).toBeInTheDocument();
+        fireEvent.click(swapButton);
+      });
     });
 
     // Swap success view
@@ -310,7 +319,8 @@ describe("Swap", () => {
     await waitFor(async () => {
       const viewDetailsButton = screen.getByTestId("SubmitResultDetailsButton");
       expect(viewDetailsButton).toBeEnabled();
-      await fireEvent.click(viewDetailsButton);
+      expect(viewDetailsButton).toBeInTheDocument();
+      fireEvent.click(viewDetailsButton);
     });
 
     // Swap details view

@@ -735,7 +735,11 @@ export const Operations = ({
         const type = op.type;
 
         return (
-          <div className="Operations--wrapper" key={operationIndex}>
+          <div
+            className="Operations--wrapper"
+            key={operationIndex}
+            data-testid="OperationsWrapper"
+          >
             <div className="Operations--header">
               <Icon.DeployedCode />
               <strong className="OpType">
