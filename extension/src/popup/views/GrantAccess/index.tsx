@@ -36,9 +36,10 @@ export const GrantAccess = () => {
     window.close();
   };
 
-  const grantAndClose = () => {
+  const grantAndClose = async () => {
     setIsGranting(true);
-    dispatch(grantAccess(url));
+    // eslint-disable-next-line
+    await dispatch(grantAccess(url));
     window.close();
   };
 

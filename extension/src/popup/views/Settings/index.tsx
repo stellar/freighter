@@ -21,9 +21,10 @@ export const Settings = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const signOutAndClose = (e: React.FormEvent) => {
+  const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(signOut());
+    // eslint-disable-next-line
+    await dispatch(signOut());
     navigateTo(ROUTES.welcome);
   };
 
