@@ -50,7 +50,8 @@ export const AccountCreator = () => {
   };
 
   const handleSubmit = async (values: FormValues) => {
-    dispatch(createAccount(values.password));
+    // eslint-disable-next-line
+    await dispatch(createAccount(values.password));
     const res = await showBackupPhrase(values.password);
 
     setMnemonicPhrase(res.mnemonicPhrase);

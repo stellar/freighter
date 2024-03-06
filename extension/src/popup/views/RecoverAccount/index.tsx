@@ -114,10 +114,11 @@ export const RecoverAccount = () => {
   const [phraseInputs, setPhraseInputs] = useState([] as string[]);
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = async (values: FormValues) => {
     const { password } = values;
 
-    dispatch(
+    // eslint-disable-next-line
+    await dispatch(
       recoverAccount({
         password,
         mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),

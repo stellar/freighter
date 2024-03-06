@@ -349,7 +349,8 @@ export const ScamAssetWarning = ({
       .toXDR();
 
     if (isHardwareWallet) {
-      dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      // eslint-disable-next-line
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
       const res = await dispatch(
@@ -554,7 +555,8 @@ export const NewAssetWarning = ({
     });
 
     if (isHardwareWallet) {
-      dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      // eslint-disable-next-line
+      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
       const res = await dispatch(

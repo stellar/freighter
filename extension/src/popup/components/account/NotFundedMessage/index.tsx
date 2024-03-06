@@ -20,8 +20,9 @@ export const NotFundedMessage = ({
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const handleFundAccount = () => {
-    dispatch(fundAccount(publicKey));
+  const handleFundAccount = async () => {
+    // eslint-disable-next-line
+    await dispatch(fundAccount(publicKey));
     setIsAccountFriendbotFunded(true);
   };
 

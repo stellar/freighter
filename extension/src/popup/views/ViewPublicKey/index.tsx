@@ -54,10 +54,11 @@ export const ViewPublicKey = () => {
     accountName,
   };
 
-  const handleSubmit = (values: FormValue) => {
+  const handleSubmit = async (values: FormValue) => {
     const { accountName: newAccountName } = values;
     if (accountName !== newAccountName) {
-      dispatch(updateAccountName(newAccountName));
+      // eslint-disable-next-line
+      await dispatch(updateAccountName(newAccountName));
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
     }
     setIsEditingName(false);

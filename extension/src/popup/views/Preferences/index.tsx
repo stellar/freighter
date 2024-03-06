@@ -39,7 +39,7 @@ export const Preferences = () => {
     isExperimentalModeEnabledValue: isExperimentalModeEnabled,
   };
 
-  const handleSubmit = (formValue: SettingValues) => {
+  const handleSubmit = async (formValue: SettingValues) => {
     const {
       isValidatingMemoValue,
       isValidatingSafetyValue,
@@ -48,7 +48,8 @@ export const Preferences = () => {
       isExperimentalModeEnabledValue,
     } = formValue;
 
-    dispatch(
+    // eslint-disable-next-line
+    await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,
