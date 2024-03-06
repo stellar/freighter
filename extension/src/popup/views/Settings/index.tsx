@@ -19,9 +19,9 @@ export const Settings = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const signOutAndClose = async (e: React.FormEvent) => {
+  const signOutAndClose = (e: React.FormEvent) => {
     e.preventDefault();
-    await dispatch(signOut());
+    dispatch(signOut());
     navigateTo(ROUTES.welcome);
   };
 

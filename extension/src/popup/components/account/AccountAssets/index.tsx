@@ -125,7 +125,7 @@ export const AssetIcon = ({
 
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
-  sortedBalances: Array<any>;
+  sortedBalances: any[];
   setSelectedAsset?: (selectedAsset: string) => void;
 }
 
@@ -153,7 +153,9 @@ export const AccountAssets = ({
     code: string;
   }) => {
     /* if we retried the toml and their link is still bad, just give up here */
-    if (hasIconFetchRetried) return;
+    if (hasIconFetchRetried) {
+      return;
+    }
     try {
       const res = await retryAssetIcon({
         key,
@@ -200,7 +202,7 @@ export const AccountAssets = ({
         let amountUnit;
         if (rb.liquidityPoolId) {
           issuer = "lp";
-          code = getLPShareCode(rb.reserves);
+          code = getLPShareCode(rb.reserves as Horizon.HorizonApi.Reserve[]);
           amountUnit = "shares";
         } else if (rb.contractId) {
           issuer = {
@@ -215,14 +217,17 @@ export const AccountAssets = ({
         }
 
         const isLP = issuer === "lp";
-        const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+        const canonicalAsset = getCanonicalFromAsset(
+          code,
+          issuer?.key as string,
+        );
 
         const assetDomain = assetDomains[canonicalAsset];
         const isScamAsset = !!blockedDomains.domains[assetDomain];
 
-        const bigTotal = new BigNumber(rb.total);
+        const bigTotal = new BigNumber(rb.total as string);
         const amountVal = rb.contractId
-          ? formatTokenAmount(bigTotal, rb.decimals)
+          ? formatTokenAmount(bigTotal, rb.decimals as number)
           : bigTotal.toFixed();
 
         return (

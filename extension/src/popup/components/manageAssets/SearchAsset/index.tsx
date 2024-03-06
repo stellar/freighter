@@ -80,6 +80,7 @@ export const SearchAsset = () => {
     tomlInfo?: { image: string };
   }
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearch = useCallback(
     debounce(async ({ target: { value: asset } }) => {
       if (!asset) {
@@ -101,6 +102,7 @@ export const SearchAsset = () => {
       setIsSearching(false);
 
       setAssetRows(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         resJson._embedded.records
           // only show records that have a domain and domains that don't have just whitespace
           .filter(
@@ -129,6 +131,7 @@ export const SearchAsset = () => {
   }
 
   return (
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
         <Form

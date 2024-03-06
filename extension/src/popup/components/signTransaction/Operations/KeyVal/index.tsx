@@ -82,7 +82,9 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
             <>
               <KeyValueList
                 operationKey={t("Salt")}
-                operationValue={truncateString(_invocation.args.wasm.salt)}
+                operationValue={truncateString(
+                  _invocation.args.wasm.salt as string,
+                )}
               />
               <KeyValueList
                 operationKey={t("Hash")}

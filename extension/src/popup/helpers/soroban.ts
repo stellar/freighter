@@ -192,16 +192,18 @@ export const getAttrsFromSorobanHorizonOp = (
   }
 
   // operation record from Mercury
-  if (operation.transaction_attr.contractId) {
+  // why does transaction_attr not exist on any horizon types?
+  const _op = operation as any;
+  if (_op.transaction_attr.contractId) {
     return {
-      contractId: operation.transaction_attr.contractId,
-      fnName: operation.transaction_attr.fnName,
-      ...operation.transaction_attr.args,
+      contractId: _op.transaction_attr.contractId,
+      fnName: _op.transaction_attr.fnName,
+      ..._op.transaction_attr.args,
     };
   }
 
   const txEnvelope = TransactionBuilder.fromXDR(
-    operation.transaction_attr.envelope_xdr,
+    _op.transaction_attr.envelope_xdr as string,
     networkDetails.networkPassphrase,
   ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
 

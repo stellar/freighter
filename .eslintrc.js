@@ -29,6 +29,8 @@ module.exports = {
     "@typescript-eslint/no-unused-vars": ["error"],
     "no-console": "off",
     "react/jsx-filename-extension": ["error", { extensions: [".tsx", ".jsx"] }],
+    "jsdoc/newline-after-description": "off",
+    "max-len": "off",
   },
   settings: {
     "import/resolver": {

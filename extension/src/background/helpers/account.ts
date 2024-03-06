@@ -34,7 +34,8 @@ export const getKeyIdList = async () =>
 
 export const getAccountNameList = async () => {
   const encodedaccountNameList =
-    (await localStore.getItem(ACCOUNT_NAME_LIST_ID)) || encodeObject({});
+    ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
+    encodeObject({});
 
   return JSON.parse(decodeString(encodedaccountNameList));
 };
@@ -46,7 +47,10 @@ export const addAccountName = async ({
   keyId: string;
   accountName: string;
 }) => {
-  const accountNameList = await getAccountNameList();
+  const accountNameList = (await getAccountNameList()) as Record<
+    string,
+    string
+  >;
 
   accountNameList[keyId] = accountName;
 
@@ -103,7 +107,7 @@ export const getIsHardwareWalletActive = async () =>
   ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
 export const getBipPath = async () => {
-  const keyId = (await localStore.getItem(KEY_ID)) || "";
+  const keyId = ((await localStore.getItem(KEY_ID)) as string) || "";
   const hwData = (await localStore.getItem(keyId)) || {};
   return hwData.bipPath || "";
 };
@@ -189,9 +193,11 @@ export const subscribeAccount = async (publicKey: string) => {
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        // eslint-disable-next-line
         pub_key: publicKey,
         network: networkDetails.network,
       }),
@@ -228,10 +234,13 @@ export const subscribeTokenBalance = async (
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        // eslint-disable-next-line
         pub_key: publicKey,
+        // eslint-disable-next-line
         contract_id: contractId,
         network: networkDetails.network,
       }),
@@ -261,8 +270,10 @@ export const subscribeTokenHistory = async (
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
+      // eslint-disable-next-line
       body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
     };
     const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
@@ -290,6 +301,7 @@ export const verifySorobanRpcUrls = async () => {
 
   const networksList: NetworkDetails[] = await getNetworksList();
 
+  // eslint-disable-next-line
   for (let i = 0; i < networksList.length; i += 1) {
     const networksListDetails = networksList[i];
 

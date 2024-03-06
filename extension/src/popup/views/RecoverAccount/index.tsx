@@ -114,10 +114,10 @@ export const RecoverAccount = () => {
   const [phraseInputs, setPhraseInputs] = useState([] as string[]);
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit = (values: FormValues) => {
     const { password } = values;
 
-    await dispatch(
+    dispatch(
       recoverAccount({
         password,
         mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),

@@ -284,6 +284,7 @@ export const ScamAssetWarning = ({
   issuer,
   image,
   onClose,
+  // eslint-disable-next-line
   onContinue = () => {},
 }: {
   isSendWarning?: boolean;
@@ -348,7 +349,7 @@ export const ScamAssetWarning = ({
       .toXDR();
 
     if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
       const res = await dispatch(
@@ -553,7 +554,7 @@ export const NewAssetWarning = ({
     });
 
     if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
       const res = await dispatch(
@@ -919,7 +920,9 @@ export const UnverifiedTokenTransferWarning = ({
       });
       const verifiedTokens = [] as string[];
 
+      // eslint-disable-next-line
       for (let i = 0; i < verifiedTokenRes.assets.length; i += 1) {
+        // eslint-disable-next-line
         for (let j = 0; j < details.length; j += 1) {
           if (details[j].contractId === verifiedTokenRes.assets[i].contract) {
             verifiedTokens.push(details[j].contractId);

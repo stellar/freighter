@@ -16,6 +16,7 @@ export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
   const formik = useFormikContext();
   const [didSaveFail, setDidSaveFail] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSubmit = useCallback(
     debounce(async (ctx: typeof formik) => {
       try {

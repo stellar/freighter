@@ -113,9 +113,13 @@ export const Operations = ({
   const { t } = useTranslation();
 
   const AuthorizationMapToDisplay: { [index: string]: string } = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "1": "Authorization Required",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "2": "Authorization Revocable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "4": "Authorization Immutable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "8": "Authorization Clawback Enabled",
   };
 

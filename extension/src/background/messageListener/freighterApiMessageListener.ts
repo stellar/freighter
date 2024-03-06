@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import {
   TransactionBuilder,
   Networks,
@@ -54,13 +56,13 @@ import {
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
-interface WINDOW_PARAMS {
+interface WindowParams {
   height: number;
   type: "popup";
   width: number;
 }
 
-const WINDOW_SETTINGS: WINDOW_PARAMS = {
+const WINDOW_SETTINGS: WindowParams = {
   type: "popup",
   width: POPUP_WIDTH,
   height: POPUP_HEIGHT + 32, // include browser frame height,
@@ -169,7 +171,7 @@ export const freighterApiMessageListener = (
     if (isValidatingMemo || isValidatingSafety) {
       _operations.forEach((operation: Operation) => {
         accountData.forEach(
-          ({ address, tags }: { address: string; tags: Array<string> }) => {
+          ({ address, tags }: { address: string; tags: string[] }) => {
             if (
               "destination" in operation &&
               address === operation.destination
@@ -204,8 +206,8 @@ export const freighterApiMessageListener = (
 
     try {
       await server.checkMemoRequired(transaction as Transaction);
-    } catch (e) {
-      if (e.accountId) {
+    } catch (e: any) {
+      if ("accountId" in e) {
         flaggedKeys[e.accountId] = {
           ...flaggedKeys[e.accountId],
           tags: [TRANSACTION_WARNING.memoRequired],
@@ -470,3 +472,5 @@ export const freighterApiMessageListener = (
 
   return messageResponder[request.type]();
 };
+
+/* eslint-enable @typescript-eslint/no-unsafe-argument */

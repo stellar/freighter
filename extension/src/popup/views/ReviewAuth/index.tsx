@@ -60,7 +60,7 @@ export const ReviewAuth = () => {
 
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const transaction = TransactionBuilder.fromXDR(
-    params.transactionXdr,
+    params.transactionXdr as string,
     networkPassphrase,
   ) as Transaction;
 
@@ -81,8 +81,8 @@ export const ReviewAuth = () => {
   } = useSetupSigningFlow(
     rejectTransaction,
     signTransaction,
-    params.transactionXdr,
-    params.accountToSign,
+    params.transactionXdr as string,
+    params.accountToSign as string,
   );
 
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;

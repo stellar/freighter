@@ -50,7 +50,7 @@ export const AccountCreator = () => {
   };
 
   const handleSubmit = async (values: FormValues) => {
-    await dispatch(createAccount(values.password));
+    dispatch(createAccount(values.password));
     const res = await showBackupPhrase(values.password);
 
     setMnemonicPhrase(res.mnemonicPhrase);
