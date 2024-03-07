@@ -277,9 +277,11 @@ describe("Manage assets", () => {
   it("renders manage assets view initial state", async () => {
     await initView();
 
-    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Choose Asset",
+      );
+    });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
 
@@ -353,9 +355,11 @@ describe("Manage assets", () => {
   it("remove asset", async () => {
     await initView();
 
-    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Choose Asset",
+      );
+    });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const removeButton = within(addedTrustlines[1]).getByTestId(
@@ -365,7 +369,7 @@ describe("Manage assets", () => {
     await waitFor(async () => {
       expect(removeButton).toHaveTextContent("Remove");
       expect(removeButton).toBeEnabled();
-      await fireEvent.click(removeButton);
+      fireEvent.click(removeButton);
     });
 
     const lastRoute = history.entries.pop();
@@ -382,9 +386,11 @@ describe("Manage assets", () => {
 
     await initView(true);
 
-    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Choose Asset",
+      );
+    });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const removeButton = within(addedTrustlines[0]).getByTestId(
