@@ -28,7 +28,7 @@ export const MnemonicPhrase = ({
 
   if (mnemonicPhrase) {
     return isConfirmed ? (
-      <View isAppLayout={false}>
+      <React.Fragment>
         <View.Header />
         <View.Content alignment="center">
           <Onboarding layout="full" customWidth="31rem">
@@ -39,9 +39,9 @@ export const MnemonicPhrase = ({
             />
           </Onboarding>
         </View.Content>
-      </View>
+      </React.Fragment>
     ) : (
-      <View isAppLayout={false}>
+      <React.Fragment>
         <View.Header />
         <View.Content alignment="center">
           <Onboarding layout="full">
@@ -51,7 +51,7 @@ export const MnemonicPhrase = ({
             />
           </Onboarding>
         </View.Content>
-      </View>
+      </React.Fragment>
     );
   }
 

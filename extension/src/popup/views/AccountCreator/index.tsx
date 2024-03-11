@@ -65,7 +65,7 @@ export const AccountCreator = () => {
   return mnemonicPhrase && publicKey ? (
     <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
   ) : (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Formik
@@ -159,6 +159,6 @@ export const AccountCreator = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

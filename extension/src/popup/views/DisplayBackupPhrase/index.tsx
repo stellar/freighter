@@ -58,7 +58,7 @@ export const DisplayBackupPhrase = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title={t("Show recovery phrase")} />
       {isPhraseUnlocked ? (
         <>
@@ -118,6 +118,6 @@ export const DisplayBackupPhrase = () => {
           </Formik>
         </>
       )}
-    </View>
+    </React.Fragment>
   );
 };

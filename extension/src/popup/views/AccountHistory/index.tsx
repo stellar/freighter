@@ -33,7 +33,6 @@ import {
   TransactionDetail,
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
-import { BottomNav } from "popup/components/BottomNav";
 import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
@@ -166,7 +165,7 @@ export const AccountHistory = () => {
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
-    <View>
+    <>
       <View.Content>
         <div className="AccountHistory">
           {isLoading ? (
@@ -225,7 +224,6 @@ export const AccountHistory = () => {
           )}
         </div>
       </View.Content>
-      <BottomNav />
-    </View>
+    </>
   );
 };

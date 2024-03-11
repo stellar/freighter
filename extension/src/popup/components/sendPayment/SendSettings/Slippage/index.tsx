@@ -33,7 +33,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
   }
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title="Allowed Slippage"
         customBackAction={() => navigateTo(previous)}
@@ -153,6 +153,6 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

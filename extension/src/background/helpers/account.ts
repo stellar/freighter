@@ -143,6 +143,10 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
       const res = await fetch(
         `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
       );
+
+      if (!res.ok) {
+        captureException(`Failed to load rpc health for Soroban`);
+      }
       rpcHealth = await res.json();
     } catch (e) {
       captureException(

@@ -54,7 +54,7 @@ export const UnhandledError = ({
   // expected to work outside of <Router />
   const isOnAccount = window.location.hash === "#/account";
   return (
-    <View>
+    <React.Fragment>
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="UnexpectedError__content">
@@ -89,6 +89,6 @@ export const UnhandledError = ({
           </Button>
         )}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };
