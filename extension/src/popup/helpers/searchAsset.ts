@@ -1,5 +1,5 @@
 import { fetchAssetList } from "@stellar-asset-lists/sdk";
-import { NetworkDetails } from "@shared/constants/stellar";
+import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 
 export const searchAsset = async ({
@@ -21,6 +21,37 @@ export const searchAsset = async ({
   }
 };
 
+export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
+  const nativeContractDetails = [] as [] | TokenRecord[];
+  const NATIVE_CONTRACT_DEFAULTS = {
+    code: "native",
+    decimals: 7,
+    domain: "https://stellar.org",
+    icon: "",
+    org: "",
+  };
+  switch (networkDetails.network as keyof typeof NETWORKS) {
+    case NETWORKS.PUBLIC:
+      return [
+        {
+          ...NATIVE_CONTRACT_DEFAULTS,
+          contract: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          issuer: "GDMTVHLWJTHSUDMZVVMXXH6VJHA2ZV3HNG5LYNAZ6RTWB7GISM6PGTUV",
+        },
+      ];
+    case NETWORKS.TESTNET:
+      return [
+        {
+          ...NATIVE_CONTRACT_DEFAULTS,
+          contract: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+          issuer: "",
+        },
+      ];
+    default:
+      return nativeContractDetails;
+  }
+};
+
 export const searchTokenUrl = (networkDetails: NetworkDetails) =>
   `${getApiStellarExpertUrl(networkDetails)}/asset-list/top50`;
 
@@ -31,12 +62,20 @@ export const searchToken = async ({
   networkDetails: NetworkDetails;
   onError: (e: any) => void;
 }) => {
+  let verifiedAssets = [] as TokenRecord[];
   try {
     const res = await fetchAssetList(searchTokenUrl(networkDetails));
-    return res;
+    verifiedAssets = verifiedAssets.concat(res.assets);
   } catch (e) {
-    return onError(e);
+    onError(e);
   }
+
+  // add native contract to list
+  verifiedAssets = verifiedAssets.concat(
+    getNativeContractDetails(networkDetails),
+  );
+
+  return verifiedAssets;
 };
 
 export interface TokenRecord {
@@ -72,7 +111,7 @@ export const getVerifiedTokens = async ({
       },
     });
 
-    verifiedTokens = verifiedTokenRes.assets.filter((record: TokenRecord) => {
+    verifiedTokens = verifiedTokenRes.filter((record: TokenRecord) => {
       const regex = new RegExp(contractId, "i");
       if (record.contract.match(regex)) {
         return true;

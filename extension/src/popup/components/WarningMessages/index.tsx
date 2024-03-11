@@ -919,9 +919,9 @@ export const UnverifiedTokenTransferWarning = ({
       });
       const verifiedTokens = [] as string[];
 
-      for (let i = 0; i < verifiedTokenRes.assets.length; i += 1) {
+      for (let i = 0; i < verifiedTokenRes.length; i += 1) {
         for (let j = 0; j < details.length; j += 1) {
-          if (details[j].contractId === verifiedTokenRes.assets[i].contract) {
+          if (details[j].contractId === verifiedTokenRes[i].contract) {
             verifiedTokens.push(details[j].contractId);
             return;
           }
