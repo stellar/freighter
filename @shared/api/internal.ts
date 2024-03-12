@@ -442,8 +442,6 @@ export const getAccountIndexerBalances = async (
   const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
   url.searchParams.append("network", networkDetails.network);
-  url.searchParams.append("horizon_url", networkDetails.networkUrl);
-  url.searchParams.append("soroban_url", networkDetails.sorobanRpcUrl!);
   for (const id of contractIds) {
     url.searchParams.append("contract_ids", id);
   }
@@ -669,7 +667,7 @@ export const getIndexerAccountHistory = async ({
 }) => {
   try {
     const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}&horizon_url=${networkDetails.networkUrl}`,
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
     );
     const response = await fetch(url.href);
 

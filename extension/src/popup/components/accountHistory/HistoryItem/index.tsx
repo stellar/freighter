@@ -304,7 +304,7 @@ export const HistoryItem = ({
                 setIsLoading(false);
               } else {
                 const response = await fetch(
-                  `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
+                  `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
                 );
 
                 if (!response.ok) {

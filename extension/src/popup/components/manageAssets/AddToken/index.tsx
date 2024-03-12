@@ -170,10 +170,6 @@ export const AddToken = () => {
           );
           tokenUrl.searchParams.append("network", networkDetails.network);
           tokenUrl.searchParams.append("pub_key", publicKey);
-          tokenUrl.searchParams.append(
-            "soroban_url",
-            networkDetails.sorobanRpcUrl!,
-          );
 
           const res = await fetch(tokenUrl.href);
           const resJson = await res.json();

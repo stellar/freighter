@@ -969,8 +969,8 @@ const WarningMessageTokenDetails = ({
 
   const tokenDetailsUrl = React.useCallback(
     (contractId: string) =>
-      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
-    [publicKey, networkDetails.network, networkDetails.sorobanRpcUrl],
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
+    [publicKey, networkDetails.network],
   );
   React.useEffect(() => {
     async function getTokenDetails() {
