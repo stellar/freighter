@@ -59,7 +59,8 @@ export const signFreighterTransaction = createAsyncThunk<
       network,
     });
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -76,7 +77,8 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
         network,
       });
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({ errorMessage: message });
     }
   },
 );
@@ -108,9 +110,9 @@ export const submitFreighterTransaction = createAsyncThunk<
 
         return txRes;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
         });
       }
     } else {
@@ -118,11 +120,15 @@ export const submitFreighterTransaction = createAsyncThunk<
         const options = {
           method: "POST",
           headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             signed_xdr: signedXDR,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_url: networkDetails.networkUrl,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
@@ -136,9 +142,9 @@ export const submitFreighterTransaction = createAsyncThunk<
         }
         return response;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
         });
       }
     }
@@ -172,9 +178,9 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
 
         return txRes;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
         });
       }
     } else {
@@ -182,11 +188,15 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         const options = {
           method: "POST",
           headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             signed_xdr: signedXDR,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_url: networkDetails.networkUrl,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
@@ -200,9 +210,9 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         }
         return response;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
         });
       }
     }
@@ -240,32 +250,35 @@ export const signWithHardwareWallet = createAsyncThunk<
 
       return tx.toXDR();
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({ errorMessage: message });
     }
   },
 );
 
 export const addRecentAddress = createAsyncThunk<
-  { recentAddresses: Array<string> },
+  { recentAddresses: string[] },
   { publicKey: string },
   { rejectValue: ErrorMessage }
 >("addRecentAddress", async ({ publicKey }, thunkApi) => {
   try {
     return await internalAddRecentAddress({ publicKey });
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
 export const loadRecentAddresses = createAsyncThunk<
-  { recentAddresses: Array<string> },
+  { recentAddresses: string[] },
   undefined,
   { rejectValue: ErrorMessage }
 >("loadRecentAddresses", async (_: any, thunkApi) => {
   try {
     return await internalLoadRecentAddresses();
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -351,7 +364,7 @@ export const getAccountBalances = createAsyncThunk<
       storeBalanceMetricData(publicKey, balances.isFunded || false);
       return balances;
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+      return thunkApi.rejectWithValue({ errorMessage: e as string });
     }
   },
 );
@@ -378,7 +391,7 @@ export const getDestinationBalances = createAsyncThunk<
       }
       return await internalgetAccountIndexerBalances(publicKey, networkDetails);
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+      return thunkApi.rejectWithValue({ errorMessage: e as string });
     }
   },
 );
@@ -434,9 +447,9 @@ export const getBestPath = createAsyncThunk<
         networkDetails,
       });
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
+        errorMessage: message,
       });
     }
   },
@@ -451,7 +464,7 @@ export const getBlockedDomains = createAsyncThunk<
     const resp = await internalGetBlockedDomains();
     return resp.blockedDomains || [];
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -464,7 +477,7 @@ export const getBlockedAccounts = createAsyncThunk<
     const resp = await internalGetBlockedAccounts();
     return resp.blockedAccounts || [];
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -482,7 +495,7 @@ interface TransactionData {
   memo: string;
   destinationAsset: string;
   destinationAmount: string;
-  path: Array<string>;
+  path: string[];
   allowedSlippage: string;
   isToken: boolean;
   isMergeSelected: boolean;
@@ -740,7 +753,7 @@ const transactionSubmissionSlice = createSlice({
       }
 
       // store in canonical form for easier use
-      const path: Array<string> = [];
+      const path: string[] = [];
       action.payload.path.forEach((p) => {
         if (!p.asset_code && !p.asset_issuer) {
           path.push(p.asset_type);

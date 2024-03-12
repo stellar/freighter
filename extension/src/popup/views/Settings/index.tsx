@@ -21,6 +21,7 @@ export const Settings = () => {
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
+    // eslint-disable-next-line
     await dispatch(signOut());
     navigateTo(ROUTES.welcome);
   };

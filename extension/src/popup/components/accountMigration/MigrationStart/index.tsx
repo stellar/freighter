@@ -23,6 +23,7 @@ export const MigrationStart = () => {
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const handleContinue = async () => {
+    // eslint-disable-next-line
     await dispatch(changeNetwork({ networkName: NETWORK_NAMES.PUBNET }));
     navigateTo(ROUTES.accountMigrationReviewMigration);
   };

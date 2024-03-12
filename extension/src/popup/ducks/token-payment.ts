@@ -73,14 +73,18 @@ export const simulateTokenPayment = createAsyncThunk<
       const options = {
         method: "POST",
         headers: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           address,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           pub_key: publicKey,
           memo,
           params,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           network_url: networkDetails.sorobanRpcUrl,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           network_passphrase: networkDetails.networkPassphrase,
         }),
       };
@@ -97,9 +101,9 @@ export const simulateTokenPayment = createAsyncThunk<
       }
       return response;
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
+        errorMessage: message,
       });
     }
   },

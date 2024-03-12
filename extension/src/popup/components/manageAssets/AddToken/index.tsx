@@ -115,9 +115,10 @@ export const AddToken = () => {
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearch = useCallback(
     debounce(async ({ target: { value: contractId } }) => {
-      if (!isContractId(contractId)) {
+      if (!isContractId(contractId as string)) {
         setAssetRows([]);
         return;
       }
@@ -242,6 +243,7 @@ export const AddToken = () => {
   }, [isAllowListVerificationEnabled]);
 
   return (
+    // eslint-disable-next-line
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
         <Form

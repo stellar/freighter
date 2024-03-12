@@ -206,7 +206,10 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    userEvent.click(screen.getByTestId("Tab-Details"));
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
 
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
@@ -261,7 +264,11 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    userEvent.click(screen.getByTestId("Tab-Details"));
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
+
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")

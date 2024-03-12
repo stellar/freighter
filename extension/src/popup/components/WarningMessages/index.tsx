@@ -284,6 +284,7 @@ export const ScamAssetWarning = ({
   issuer,
   image,
   onClose,
+  // eslint-disable-next-line
   onContinue = () => {},
 }: {
   isSendWarning?: boolean;
@@ -348,6 +349,7 @@ export const ScamAssetWarning = ({
       .toXDR();
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -553,6 +555,7 @@ export const NewAssetWarning = ({
     });
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -969,8 +972,8 @@ const WarningMessageTokenDetails = ({
 
   const tokenDetailsUrl = React.useCallback(
     (contractId: string) =>
-      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
-    [publicKey, networkDetails.network, networkDetails.sorobanRpcUrl],
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
+    [publicKey, networkDetails.network],
   );
   React.useEffect(() => {
     async function getTokenDetails() {

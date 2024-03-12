@@ -26,7 +26,7 @@ import "./styles.scss";
 
 interface AccountHeaderProps {
   // accountDropDownRef: React.RefObject<HTMLDivElement>;
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
 }

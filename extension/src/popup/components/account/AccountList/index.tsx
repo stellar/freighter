@@ -14,7 +14,9 @@ export const OptionTag = ({
   hardwareWalletType?: WalletType;
   imported: boolean;
 }) => {
-  if (!hardwareWalletType && !imported) return null;
+  if (!hardwareWalletType && !imported) {
+    return null;
+  }
   return (
     <span className="AccountList__option-tag">
       &bull; {hardwareWalletType || "Imported"}
@@ -60,7 +62,7 @@ export const AccountListItem = ({
 );
 
 interface AccounsListProps {
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   publicKey: string;
   setIsDropdownOpen: (isDropdownOpen: boolean) => void;
 }

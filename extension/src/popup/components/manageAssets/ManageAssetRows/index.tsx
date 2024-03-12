@@ -147,6 +147,7 @@ export const ManageAssetRows = ({
     };
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackChangeTrustline();
     } else {
@@ -335,7 +336,9 @@ export const ManageAssetRows = ({
         <div className="ManageAssetRows__content">
           {assetRows.map(
             ({ code = "", domain, image = "", issuer = "", name = "" }) => {
-              if (!accountBalances.balances) return null;
+              if (!accountBalances.balances) {
+                return null;
+              }
               const isContract = isContractId(issuer);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               const isTrustlineActive =
@@ -442,6 +445,7 @@ export const ManageAssetRows = ({
         {children}
       </div>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showNewAssetWarning || showBlockedDomainWarning}
       />

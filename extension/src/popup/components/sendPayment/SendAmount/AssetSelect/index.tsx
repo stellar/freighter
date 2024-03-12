@@ -22,13 +22,13 @@ import { getVerifiedTokens } from "popup/helpers/searchAsset";
 
 import "./styles.scss";
 
-export function AssetSelect({
+export const AssetSelect = ({
   assetCode,
   issuerKey,
 }: {
   assetCode: string;
   issuerKey: string;
-}) {
+}) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
@@ -111,9 +111,9 @@ export function AssetSelect({
       </div>
     </>
   );
-}
+};
 
-export function PathPayAssetSelect({
+export const PathPayAssetSelect = ({
   source,
   assetCode,
   issuerKey,
@@ -123,7 +123,7 @@ export function PathPayAssetSelect({
   assetCode: string;
   issuerKey: string;
   balance: string;
-}) {
+}) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
@@ -186,4 +186,4 @@ export function PathPayAssetSelect({
       </div>
     </div>
   );
-}
+};

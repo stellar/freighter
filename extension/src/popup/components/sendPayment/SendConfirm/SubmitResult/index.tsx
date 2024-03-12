@@ -119,6 +119,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     };
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackRemoveTrustline();
     } else {
@@ -412,25 +413,23 @@ export const SubmitFail = () => {
     }
     return errorDetails;
   };
-  const errorDetails = getErrorDetails(error);
+  const errDetails = getErrorDetails(error);
 
   return (
     <React.Fragment>
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="SubmitResult__content">
-          <div className="SubmitResult__amount">{errorDetails.title}</div>
+          <div className="SubmitResult__amount">{errDetails.title}</div>
           <div className="SubmitResult__icon SubmitResult__fail">
             <img src={IconFail} alt="Icon Fail" />
           </div>
           <div className="SubmitResult__error-code">
-            {errorDetails.status ? `${errorDetails.status}:` : ""}{" "}
-            {errorDetails.opError}
+            {errDetails.status ? `${errDetails.status}:` : ""}{" "}
+            {errDetails.opError}
           </div>
         </div>
-        <div className="SubmitResult__error-block">
-          {errorDetails.errorBlock}
-        </div>
+        <div className="SubmitResult__error-block">{errDetails.errorBlock}</div>
       </View.Content>
       <View.Footer>
         <Button

@@ -72,7 +72,7 @@ export const formatAmountPreserveCursor = (
   }
 
   // no decimals, need to account for newly added commas and for chars lost to cleanAmount which moved the cursor
-  const { commaDiff, cleanedDiff } = preserveCursor(
+  const { commaDiff: _commaDiff, cleanedDiff: _cleanDiff } = preserveCursor(
     val,
     staleVal,
     cleaned.slice(0, maxDigits),
@@ -80,7 +80,7 @@ export const formatAmountPreserveCursor = (
 
   return {
     amount: decimal.format(Number(cleaned.slice(0, maxDigits))).toString(),
-    newCursor: cursorPosition + commaDiff - cleanedDiff,
+    newCursor: cursorPosition + _commaDiff - _cleanDiff,
   };
 };
 

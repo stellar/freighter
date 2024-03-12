@@ -37,21 +37,19 @@ export const store = configureStore({
 
 export type AppDispatch = typeof store.dispatch;
 
-export function App() {
-  return (
-    <ErrorBoundary>
-      <Provider store={store}>
-        <ErrorTracking />
-        <Suspense
-          fallback={
-            <div className="RouterLoading">
-              <Loading />
-            </div>
-          }
-        >
-          <Router />
-        </Suspense>
-      </Provider>
-    </ErrorBoundary>
-  );
-}
+export const App = () => (
+  <ErrorBoundary>
+    <Provider store={store}>
+      <ErrorTracking />
+      <Suspense
+        fallback={
+          <div className="RouterLoading">
+            <Loading />
+          </div>
+        }
+      >
+        <Router />
+      </Suspense>
+    </Provider>
+  </ErrorBoundary>
+);
