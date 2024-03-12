@@ -220,7 +220,7 @@ describe("SignTransactions", () => {
     ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Contract ID${Stellar.truncatedPublicKey(args?.contractId)}`,
+        `Contract ID${Stellar.truncatedPublicKey(args?.contractId!)}`,
       ),
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
@@ -271,7 +271,7 @@ describe("SignTransactions", () => {
     ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Contract ID${Stellar.truncatedPublicKey(args?.contractId)}`,
+        `Contract ID${Stellar.truncatedPublicKey(args?.contractId!)}`,
       ),
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
