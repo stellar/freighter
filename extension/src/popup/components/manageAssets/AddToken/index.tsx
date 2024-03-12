@@ -24,6 +24,7 @@ import {
   getVerifiedTokens,
   TokenRecord,
   searchTokenUrl,
+  getNativeContractDetails,
 } from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
 
@@ -106,6 +107,9 @@ export const AddToken = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
+  const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
+    false,
+  );
   const ResultsRef = useRef<HTMLDivElement>(null);
   const sorobanClient = useContext(SorobanContext);
   const isAllowListVerificationEnabled =
@@ -117,86 +121,114 @@ export const AddToken = () => {
         setAssetRows([]);
         return;
       }
-      setIsSearching(true);
 
+      // clear the UI while we work through the flow
+      setIsSearching(true);
+      setIsVerifiedToken(false);
+      setIsVerificationInfoShowing(false);
+      setAssetRows([]);
+
+      const nativeContractDetails = getNativeContractDetails(networkDetails);
       let verifiedTokens = [] as TokenRecord[];
 
+      // step around verification for native contract and unverifiable networks
+
+      if (nativeContractDetails.contract === contractId) {
+        // override our rules for verification for XLM
+        setAssetRows([
+          {
+            code: nativeContractDetails.code,
+            issuer: contractId,
+            domain: nativeContractDetails.domain,
+          },
+        ]);
+        setIsSearching(false);
+        return;
+      }
+
+      if (isCustomNetwork(networkDetails)) {
+        const name = await getName(
+          contractId,
+          sorobanClient.server,
+          await sorobanClient.newTxBuilder(),
+        );
+        const symbol = await getSymbol(
+          contractId,
+          sorobanClient.server,
+          await sorobanClient.newTxBuilder(),
+        );
+
+        setAssetRows([
+          {
+            code: symbol,
+            issuer: contractId,
+            domain: "",
+            name,
+          },
+        ]);
+        setIsSearching(false);
+        return;
+      }
+
       if (isAllowListVerificationEnabled) {
+        // usual binary case of a token being verified or unverified
         verifiedTokens = await getVerifiedTokens({
           networkDetails,
           contractId,
           setIsSearching,
         });
+
+        try {
+          if (verifiedTokens.length) {
+            setIsVerifiedToken(true);
+            setAssetRows(
+              verifiedTokens.map((record: TokenRecord) => ({
+                code: record.code,
+                issuer: record.contract,
+                image: record.icon,
+                domain: record.domain,
+              })),
+            );
+          } else {
+            // lookup contract
+            setIsVerifiedToken(false);
+            const tokenUrl = new URL(
+              `${INDEXER_URL}/token-details/${contractId}`,
+            );
+            tokenUrl.searchParams.append("network", networkDetails.network);
+            tokenUrl.searchParams.append("pub_key", publicKey);
+            tokenUrl.searchParams.append(
+              "soroban_url",
+              networkDetails.sorobanRpcUrl!,
+            );
+
+            const res = await fetch(tokenUrl.href);
+            const resJson = await res.json();
+            if (!res.ok) {
+              throw new Error(JSON.stringify(resJson));
+            } else {
+              setAssetRows([
+                {
+                  code: resJson.symbol,
+                  issuer: contractId,
+                  domain: "",
+                  name: resJson.name,
+                },
+              ]);
+            }
+          }
+        } catch (e) {
+          setAssetRows([]);
+          captureException(
+            `Failed to fetch token details - ${JSON.stringify(e)}`,
+          );
+          console.error(e);
+        }
       }
+
+      setIsVerificationInfoShowing(isAllowListVerificationEnabled);
 
       setIsSearching(false);
-
-      try {
-        if (verifiedTokens.length) {
-          setIsVerifiedToken(true);
-          setAssetRows(
-            verifiedTokens.map((record: TokenRecord) => ({
-              code: record.code,
-              issuer: record.contract,
-              image: record.icon,
-              domain: record.domain,
-            })),
-          );
-        } else if (isCustomNetwork(networkDetails)) {
-          const name = await getName(
-            contractId,
-            sorobanClient.server,
-            await sorobanClient.newTxBuilder(),
-          );
-          const symbol = await getSymbol(
-            contractId,
-            sorobanClient.server,
-            await sorobanClient.newTxBuilder(),
-          );
-
-          setAssetRows([
-            {
-              code: symbol,
-              issuer: contractId,
-              domain: "",
-              name,
-            },
-          ]);
-        } else {
-          // lookup contract
-          setIsVerifiedToken(false);
-          const tokenUrl = new URL(
-            `${INDEXER_URL}/token-details/${contractId}`,
-          );
-          tokenUrl.searchParams.append("network", networkDetails.network);
-          tokenUrl.searchParams.append("pub_key", publicKey);
-          tokenUrl.searchParams.append(
-            "soroban_url",
-            networkDetails.sorobanRpcUrl!,
-          );
-
-          const res = await fetch(tokenUrl.href);
-          const resJson = await res.json();
-          if (!res.ok) {
-            throw new Error(JSON.stringify(resJson));
-          } else {
-            setAssetRows([
-              {
-                code: resJson.symbol,
-                issuer: contractId,
-                domain: "",
-                name: resJson.name,
-              },
-            ]);
-          }
-        }
-      } catch (e) {
-        setAssetRows([]);
-        captureException(
-          `Failed to fetch token details - ${JSON.stringify(e)}`,
-        );
-        console.error(e);
-      }
     }, 500),
     [],
   );
@@ -204,6 +236,10 @@ export const AddToken = () => {
   useEffect(() => {
     setHasNoResults(!assetRows.length);
   }, [assetRows]);
+
+  useEffect(() => {
+    setIsVerificationInfoShowing(isAllowListVerificationEnabled);
+  }, [isAllowListVerificationEnabled]);
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>
@@ -244,7 +280,7 @@ export const AddToken = () => {
                       <Loader />
                     </div>
                   ) : null}
-                  {assetRows.length && isAllowListVerificationEnabled ? (
+                  {assetRows.length && isVerificationInfoShowing ? (
                     <VerificationBadge
                       isVerified={isVerifiedToken}
                       networkDetails={networkDetails}
@@ -255,7 +291,9 @@ export const AddToken = () => {
                     <ManageAssetRows
                       header={null}
                       assetRows={assetRows}
-                      isVerifiedToken={isVerifiedToken}
+                      isVerifiedToken={
+                        isVerifiedToken || !isVerificationInfoShowing
+                      }
                     />
                   ) : null}
                   {hasNoResults && dirty && !isSearching ? (
