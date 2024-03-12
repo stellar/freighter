@@ -196,18 +196,24 @@ export const subscribeAccount = async (publicKey: string) => {
         network: networkDetails.network,
       }),
     };
-    await fetch(`${INDEXER_URL}/subscription/account`, options);
+    const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
       ...hasAccountSubByKeyId,
       [keyId]: true,
     };
-    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+
+    if (res.ok) {
+      await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+    } else {
+      const resJson = await res.json();
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
-    captureException(
-      `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
-    );
-    throw new Error("Error subscribing account");
+    // Turn on when Mercury is enabled
+    // captureException(
+    //   `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
+    // );
   }
 
   return { publicKey };
@@ -230,13 +236,20 @@ export const subscribeTokenBalance = async (
         network: networkDetails.network,
       }),
     };
-    await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
+    const res = await fetch(
+      `${INDEXER_URL}/subscription/token-balance`,
+      options,
+    );
+
+    if (!res.ok) {
+      const resJson = await res.json();
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
     captureException(
       `Failed to subscribe token balance - ${JSON.stringify(e)}`,
     );
-    throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
 
@@ -252,13 +265,17 @@ export const subscribeTokenHistory = async (
       },
       body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
     };
-    await fetch(`${INDEXER_URL}/subscription/token`, options);
+    const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
+
+    if (!res.ok) {
+      const resJson = await res.json();
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
     captureException(
       `Failed to subscribe token history - ${JSON.stringify(e)}`,
     );
-    throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
 
