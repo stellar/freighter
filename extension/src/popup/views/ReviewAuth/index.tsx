@@ -211,52 +211,44 @@ type TokenDetailMap = Record<string, { name: string; symbol: string }>;
 const TransferSummary = ({
   transfer,
   symbol,
-  publicKey,
 }: {
   transfer: {
     contractId: string;
     amount: string;
     to: string;
+    from: string;
   };
   symbol: string;
-  publicKey: string;
-}) => {
-  const isSending = transfer.to !== publicKey;
-
-  return (
-    <div className="AuthDetail__InfoBlock TransferSummary">
-      {isSending ? (
-        <div className="SummaryBlock">
-          <div className="SummaryBlock__Title">
-            <Icon.ArrowCircleRight />
-            <p>Sending to</p>
-          </div>
-          <KeyIdenticon publicKey={transfer.to} isSmall />
-        </div>
-      ) : (
-        <div className="SummaryBlock">
-          <div className="SummaryBlock__Title">
-            <Icon.ArrowCircleLeft />
-            <p>From</p>
-          </div>
-          <KeyIdenticon publicKey={transfer.to} isSmall />
-        </div>
-      )}
-      <div className="SummaryBlock">
-        <div className="SummaryBlock__Title">
-          <Icon.Toll />
-          <p>Amount</p>
-        </div>
-        <div className="SummaryBlock__Title">
-          <p>
-            {transfer.amount} {symbol}
-          </p>
-          <SorobanTokenIcon />
-        </div>
+}) => (
+  <div className="AuthDetail__InfoBlock TransferSummary">
+    <div className="SummaryBlock">
+      <div className="SummaryBlock__Title">
+        <Icon.ArrowCircleRight />
+        <p>Receiver</p>
+      </div>
+      <KeyIdenticon publicKey={transfer.to} isSmall />
+    </div>
+    <div className="SummaryBlock">
+      <div className="SummaryBlock__Title">
+        <Icon.ArrowCircleLeft />
+        <p>Sender</p>
+      </div>
+      <KeyIdenticon publicKey={transfer.from} isSmall />
+    </div>
+    <div className="SummaryBlock">
+      <div className="SummaryBlock__Title">
+        <Icon.Toll />
+        <p>Amount</p>
+      </div>
+      <div className="SummaryBlock__Title">
+        <p>
+          {transfer.amount} {symbol}
+        </p>
+        <SorobanTokenIcon />
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 const AuthDetail = ({
   authEntry,
@@ -343,7 +335,6 @@ const AuthDetail = ({
             <TransferSummary
               transfer={transfer}
               symbol={tokenDetails[transfer.contractId]?.symbol}
-              publicKey={publicKey}
             />
           ))}
           {invocations.map((detail) => (
