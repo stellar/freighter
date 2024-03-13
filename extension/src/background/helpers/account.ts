@@ -37,6 +37,7 @@ export const getAccountNameList = async () => {
     ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
     encodeObject({});
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return JSON.parse(decodeString(encodedaccountNameList));
 };
 

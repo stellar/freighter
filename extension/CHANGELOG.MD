@@ -1,3 +1,15 @@
+# Release notes - Wallets - Freighter-5.17.3
+
+### Bug
+
+Improve alerting for Soroban RPC issues
+
+### Story
+
+Move bottom nav out of pages to improve loading UX
+
+Streamline Sentry error tracking
+
 # Release notes - Wallets - Freighter-5.17.2
 
 ### Bug
