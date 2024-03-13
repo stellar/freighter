@@ -45,6 +45,7 @@ import {
   UnverifiedTokenTransferWarning,
 } from "popup/components/WarningMessages";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
@@ -246,8 +247,11 @@ const TransferSummary = ({
           <Icon.Toll />
           <p>Amount</p>
         </div>
-        <div>
-          {transfer.amount} {symbol}
+        <div className="SummaryBlock__Title">
+          <p>
+            {transfer.amount} {symbol}
+          </p>
+          <SorobanTokenIcon />
         </div>
       </div>
     </div>

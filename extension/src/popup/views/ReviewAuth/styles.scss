@@ -99,8 +99,16 @@
             display: flex;
             align-items: center;
 
+            .AccountAssets__asset--soroban-token {
+              height: 24px;
+              width: 24px;
+              margin-left: 0.5rem;
+              margin-right: 0;
+            }
+
             p {
               font-size: 0.75rem;
+              margin-bottom: 0 !important; // sds rule override
             }
 
             svg {
