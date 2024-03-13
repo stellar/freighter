@@ -59,7 +59,9 @@ export const searchToken = async ({
 }) => {
   let verifiedAssets = [] as TokenRecord[];
   try {
-    const res = await fetchAssetList(searchTokenUrl(networkDetails));
+    const res: { assets: TokenRecord[] } = await fetchAssetList(
+      searchTokenUrl(networkDetails),
+    );
     verifiedAssets = verifiedAssets.concat(res.assets);
   } catch (e) {
     onError(e);

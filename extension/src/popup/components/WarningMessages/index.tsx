@@ -922,7 +922,9 @@ export const UnverifiedTokenTransferWarning = ({
       });
       const verifiedTokens = [] as string[];
 
+      // eslint-disable-next-line
       for (let i = 0; i < verifiedTokenRes.length; i += 1) {
+        // eslint-disable-next-line
         for (let j = 0; j < details.length; j += 1) {
           if (details[j].contractId === verifiedTokenRes[i].contract) {
             verifiedTokens.push(details[j].contractId);

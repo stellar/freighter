@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import React, {
   useContext,
   useEffect,
@@ -310,3 +311,4 @@ export const AddToken = () => {
     </Formik>
   );
 };
+/* eslint-enable @typescript-eslint/no-unsafe-argument */
