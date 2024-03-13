@@ -37,6 +37,7 @@ export const getAccountNameList = async () => {
     ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
     encodeObject({});
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return JSON.parse(decodeString(encodedaccountNameList));
 };
 
@@ -212,7 +213,7 @@ export const subscribeAccount = async (publicKey: string) => {
       await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
     } else {
       const resJson = await res.json();
-      throw new Error(resJson);
+      throw new Error(resJson as string);
     }
   } catch (e) {
     console.error(e);
@@ -252,7 +253,7 @@ export const subscribeTokenBalance = async (
 
     if (!res.ok) {
       const resJson = await res.json();
-      throw new Error(resJson);
+      throw new Error(resJson as string);
     }
   } catch (e) {
     console.error(e);
@@ -280,7 +281,7 @@ export const subscribeTokenHistory = async (
 
     if (!res.ok) {
       const resJson = await res.json();
-      throw new Error(resJson);
+      throw new Error(resJson as string);
     }
   } catch (e) {
     console.error(e);
