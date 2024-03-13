@@ -220,10 +220,11 @@ describe("SignTransactions", () => {
     ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Contract ID${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(args?.contractId || "")}`,
       ),
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("displays mint parameters for Soroban mint operations", async () => {
@@ -271,10 +272,11 @@ describe("SignTransactions", () => {
     ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Contract ID${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(args?.contractId || "")}`,
       ),
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("memo: doesn't render memo if there is no memo", async () => {

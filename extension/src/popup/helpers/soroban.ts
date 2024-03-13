@@ -19,7 +19,11 @@ import {
   SorobanBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import {
+  ArgsForTokenInvocation,
+  SorobanTokenInterface,
+  TokenInvocationArgs,
+} from "@shared/constants/soroban/token";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -109,8 +113,8 @@ export const parseTokenAmount = (value: string, decimals: number) => {
 export const getArgsForTokenInvocation = (
   fnName: string,
   args: xdr.ScVal[],
-) => {
-  let amount: BigNumber;
+): ArgsForTokenInvocation => {
+  let amount: bigint | number;
   let from = "";
   let to = "";
 
@@ -131,7 +135,7 @@ export const getArgsForTokenInvocation = (
       amount = scValToNative(args[1]);
       break;
     default:
-      amount = new BigNumber(0);
+      amount = BigInt(0);
   }
 
   return { from, to, amount };
@@ -142,12 +146,12 @@ const isSorobanOp = (operation: HorizonOperation) =>
 
 export const getTokenInvocationArgs = (
   hostFn: Operation.InvokeHostFunction,
-) => {
+): TokenInvocationArgs | null => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
 
-  let invokedContract;
+  let invokedContract: xdr.InvokeContractArgs;
 
   try {
     invokedContract = hostFn.func.invokeContract();
@@ -168,7 +172,7 @@ export const getTokenInvocationArgs = (
     return null;
   }
 
-  let opArgs;
+  let opArgs: ArgsForTokenInvocation;
 
   try {
     opArgs = getArgsForTokenInvocation(fnName, args);
