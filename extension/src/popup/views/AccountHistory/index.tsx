@@ -8,7 +8,7 @@ import {
   getAccountHistoryStandalone,
   getIndexerAccountHistory,
 } from "@shared/api/internal";
-import { ActionStatus, HorizonOperation } from "@shared/api/types";
+import { ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -16,7 +16,6 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
-  getIsSupportedSorobanOp,
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
@@ -86,21 +85,15 @@ export const AccountHistory = () => {
     accountBalanceStatus === ActionStatus.PENDING;
 
   useEffect(() => {
-    const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
-      getIsSupportedSorobanOp(operation, networkDetails);
-
     const createSegments = (
       operations: Horizon.ServerApi.OperationRecord[],
     ) => {
-      const _operations = operations.filter(
-        (op) => op.type_i !== 24 || isSupportedSorobanAccountItem(op),
-      );
       const segments = {
         [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
         [SELECTOR_OPTIONS.SENT]: [] as HistoryItemOperation[],
         [SELECTOR_OPTIONS.RECEIVED]: [] as HistoryItemOperation[],
       };
-      _operations.forEach((operation) => {
+      operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
         const isSorobanXfer =
           getAttrsFromSorobanHorizonOp(operation, networkDetails)?.fnName ===
