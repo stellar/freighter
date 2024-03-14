@@ -138,6 +138,7 @@ export const submitFreighterTransaction = createAsyncThunk<
         if (!res.ok) {
           return thunkApi.rejectWithValue({
             errorMessage: response,
+            response,
           });
         }
         return response;
@@ -145,6 +146,7 @@ export const submitFreighterTransaction = createAsyncThunk<
         const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
           errorMessage: message,
+          response: e as any,
         });
       }
     }
@@ -206,6 +208,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         if (!res.ok) {
           return thunkApi.rejectWithValue({
             errorMessage: response,
+            response,
           });
         }
         return response;
@@ -213,6 +216,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
           errorMessage: message,
+          response: e as any,
         });
       }
     }
