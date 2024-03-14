@@ -517,6 +517,7 @@ export enum AssetSelectType {
 interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
+  destinationAccountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
   response:
     | Horizon.HorizonApi.TransactionResponse
@@ -545,6 +546,7 @@ interface InitialState {
 export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
+  destinationAccountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
@@ -580,7 +582,7 @@ export const initialState: InitialState = {
   destinationBalances: {
     tokensWithNoBalance: [],
     balances: null,
-    isFunded: false,
+    isFunded: true,
     subentryCount: 0,
   },
   assetIcons: {},
@@ -728,6 +730,7 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
+      state.destinationAccountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getAssetIcons.fulfilled, (state, action) => {
       const assetIcons = action.payload || {};
