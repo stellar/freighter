@@ -322,17 +322,19 @@ export function pickTransfers(invocationTree: InvocationTree) {
   // the transfer sig is (from, to, amount)
   if (invocationTree.args.function === "transfer") {
     transfers.push({
-      contractId: invocationTree.args.source,
-      amount: invocationTree.args.args[2].toString(),
-      to: invocationTree.args.args[1],
+      contractId: invocationTree.args.source as string,
+      amount: invocationTree.args.args[2].toString() as string,
+      to: invocationTree.args.args[1] as string,
+      from: invocationTree.args.args[0] as string,
     });
   }
   const subTransfers = invocationTree.invocations
     .filter((i) => i.args.function === "transfer")
     .map((i) => ({
-      contractId: i.args.source,
-      amount: i.args.args[2].toString(),
-      to: i.args.args[1],
+      contractId: i.args.source as string,
+      amount: i.args.args[2].toString() as string,
+      to: i.args.args[1] as string,
+      from: i.args.args[0] as string,
     }));
   return [...transfers, ...subTransfers];
 }

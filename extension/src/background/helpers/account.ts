@@ -212,8 +212,8 @@ export const subscribeAccount = async (publicKey: string) => {
     if (res.ok) {
       await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
     } else {
-      const resJson = await res.json();
-      throw new Error(resJson as string);
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
     }
   } catch (e) {
     console.error(e);
@@ -252,8 +252,8 @@ export const subscribeTokenBalance = async (
     );
 
     if (!res.ok) {
-      const resJson = await res.json();
-      throw new Error(resJson as string);
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
     }
   } catch (e) {
     console.error(e);
@@ -280,8 +280,8 @@ export const subscribeTokenHistory = async (
     const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
 
     if (!res.ok) {
-      const resJson = await res.json();
-      throw new Error(resJson as string);
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
     }
   } catch (e) {
     console.error(e);
