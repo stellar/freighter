@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
+import BigNumber from "bignumber.js";
 import {
   MemoType,
   Operation,
@@ -17,6 +18,7 @@ import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import StellarLogo from "popup/assets/stellar-logo.png";
 
 import {
   KeyValueInvokeHostFnArgs,
@@ -31,6 +33,7 @@ import {
   FnArgsCreateWasm,
   FnArgsInvoke,
   buildInvocationTree,
+  formatTokenAmount,
   getInvocationDetails,
   pickTransfers,
 } from "popup/helpers/soroban";
@@ -206,49 +209,68 @@ export const ReviewAuth = () => {
   );
 };
 
-type TokenDetailMap = Record<string, { name: string; symbol: string }>;
+interface TokenDetails {
+  name: string;
+  symbol: string;
+  decimals: number;
+}
+type TokenDetailMap = Record<string, TokenDetails>;
 
 const TransferSummary = ({
   transfer,
-  symbol,
+  tokenDetails,
 }: {
   transfer: {
-    contractId: string;
     amount: string;
-    to: string;
+    contractId: string;
     from: string;
+    to: string;
   };
-  symbol: string;
-}) => (
-  <div className="AuthDetail__InfoBlock TransferSummary">
-    <div className="SummaryBlock">
-      <div className="SummaryBlock__Title">
-        <Icon.ArrowCircleRight />
-        <p>Receiver</p>
+  tokenDetails: TokenDetails;
+}) => {
+  const isNative = tokenDetails.symbol === "native";
+  const symbol = isNative ? "XLM" : tokenDetails.symbol;
+  return (
+    <div className="AuthDetail__InfoBlock TransferSummary">
+      <div className="SummaryBlock">
+        <div className="SummaryBlock__Title">
+          <Icon.ArrowCircleRight />
+          <p>Receiver</p>
+        </div>
+        <KeyIdenticon publicKey={transfer.to} isSmall />
       </div>
-      <KeyIdenticon publicKey={transfer.to} isSmall />
+      <div className="SummaryBlock">
+        <div className="SummaryBlock__Title">
+          <Icon.ArrowCircleLeft />
+          <p>Sender</p>
+        </div>
+        <KeyIdenticon publicKey={transfer.from} isSmall />
+      </div>
+      <div className="SummaryBlock">
+        <div className="SummaryBlock__Title">
+          <Icon.Toll />
+          <p>Amount</p>
+        </div>
+        <div className="SummaryBlock__Title">
+          <p>
+            {formatTokenAmount(
+              new BigNumber(transfer.amount),
+              tokenDetails.decimals,
+            )}{" "}
+            {symbol}
+          </p>
+          {isNative ? (
+            <div className="AccountAssets__asset--logo AccountAssets__asset--soroban-token">
+              <img src={StellarLogo} alt="Stellar icon" />
+            </div>
+          ) : (
+            <SorobanTokenIcon />
+          )}
+        </div>
+      </div>
     </div>
-    <div className="SummaryBlock">
-      <div className="SummaryBlock__Title">
-        <Icon.ArrowCircleLeft />
-        <p>Sender</p>
-      </div>
-      <KeyIdenticon publicKey={transfer.from} isSmall />
-    </div>
-    <div className="SummaryBlock">
-      <div className="SummaryBlock__Title">
-        <Icon.Toll />
-        <p>Amount</p>
-      </div>
-      <div className="SummaryBlock__Title">
-        <p>
-          {transfer.amount} {symbol}
-        </p>
-        <SorobanTokenIcon />
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const AuthDetail = ({
   authEntry,
@@ -334,7 +356,7 @@ const AuthDetail = ({
           {transfers.map((transfer) => (
             <TransferSummary
               transfer={transfer}
-              symbol={tokenDetails[transfer.contractId]?.symbol}
+              tokenDetails={tokenDetails[transfer.contractId]}
             />
           ))}
           {invocations.map((detail) => (
