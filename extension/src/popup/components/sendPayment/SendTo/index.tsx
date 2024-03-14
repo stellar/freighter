@@ -41,6 +41,7 @@ import {
 import { SorobanContext } from "popup/SorobanContext";
 
 import "../styles.scss";
+import { ActionStatus } from "@shared/api/types";
 
 const baseReserve = new BigNumber(1);
 
@@ -102,7 +103,9 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     transactionDataSelector,
   );
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { destinationBalances } = useSelector(transactionSubmissionSelector);
+  const { destinationBalances, destinationAccountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
 
   const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
   const [validatedPubKey, setValidatedPubKey] = useState("");
@@ -287,24 +290,29 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                 <div>
                   {formik.isValid ? (
                     <>
-                      {!destinationBalances.isFunded && (
-                        <AccountDoesntExistWarning />
-                      )}
-                      {isFederationAddress(formik.values.destination) && (
+                      {destinationAccountBalanceStatus ===
+                      ActionStatus.SUCCESS ? (
                         <>
-                          <div className="SendTo__subheading">
-                            {t("FEDERATION ADDRESS")}
-                          </div>
-                          <div className="SendTo__subsection-copy">
-                            {formik.values.destination}
+                          {!destinationBalances.isFunded && (
+                            <AccountDoesntExistWarning />
+                          )}
+                          {isFederationAddress(formik.values.destination) && (
+                            <>
+                              <div className="SendTo__subheading">
+                                {t("FEDERATION ADDRESS")}
+                              </div>
+                              <div className="SendTo__subsection-copy">
+                                {formik.values.destination}
+                              </div>
+                            </>
+                          )}
+                          <div className="SendTo__subheading">Address</div>
+                          <div className="SendTo__subheading-identicon">
+                            <IdenticonImg publicKey={validatedPubKey} />
+                            <span>{truncatedPublicKey(validatedPubKey)}</span>
                           </div>
                         </>
-                      )}
-                      <div className="SendTo__subheading">Address</div>
-                      <div className="SendTo__subheading-identicon">
-                        <IdenticonImg publicKey={validatedPubKey} />
-                        <span>{truncatedPublicKey(validatedPubKey)}</span>
-                      </div>
+                      ) : null}
                     </>
                   ) : (
                     <InvalidAddressWarning />
