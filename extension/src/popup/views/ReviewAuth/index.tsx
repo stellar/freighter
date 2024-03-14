@@ -228,6 +228,7 @@ const TransferSummary = ({
   };
   tokenDetails: TokenDetails;
 }) => {
+  const hasTokenDetails = tokenDetails.symbol && tokenDetails.decimals;
   const isNative = tokenDetails.symbol === "native";
   const symbol = isNative ? "XLM" : tokenDetails.symbol;
   return (
@@ -252,22 +253,37 @@ const TransferSummary = ({
           <p>Amount</p>
         </div>
         <div className="SummaryBlock__Title">
-          <p>
-            {formatTokenAmount(
-              new BigNumber(transfer.amount),
-              tokenDetails.decimals,
-            )}{" "}
-            {symbol}
-          </p>
-          {isNative ? (
-            <div className="AccountAssets__asset--logo AccountAssets__asset--soroban-token">
-              <img src={StellarLogo} alt="Stellar icon" />
-            </div>
+          {hasTokenDetails ? (
+            <>
+              <p>
+                {formatTokenAmount(
+                  new BigNumber(transfer.amount),
+                  tokenDetails.decimals,
+                )}{" "}
+                {symbol}
+              </p>
+              {isNative ? (
+                <div className="AccountAssets__asset--logo AccountAssets__asset--soroban-token">
+                  <img src={StellarLogo} alt="Stellar icon" />
+                </div>
+              ) : (
+                <SorobanTokenIcon />
+              )}
+            </>
           ) : (
-            <SorobanTokenIcon />
+            <>
+              <p>{transfer.amount}</p>
+            </>
           )}
         </div>
       </div>
+      {!hasTokenDetails && (
+        <div className="SummaryBlock">
+          <p className="MissingDetailWarning">
+            Failed to fetch token details, showing raw amount.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
