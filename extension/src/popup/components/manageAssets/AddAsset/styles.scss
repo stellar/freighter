@@ -13,6 +13,13 @@
     text-transform: uppercase;
   }
 
+  &__FormContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
   &__results {
     flex-grow: 1;
     height: var(--AddAsset--results-height);
@@ -24,11 +31,4 @@
       );
     }
   }
-}
-
-.FormContainer {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
 }
