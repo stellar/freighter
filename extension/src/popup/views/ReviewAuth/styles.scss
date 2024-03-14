@@ -95,6 +95,12 @@
           display: flex;
           justify-content: space-between;
 
+          .MissingDetailWarning {
+            width: 100%;
+            font-style: italic;
+            font-size: 0.75rem;
+          }
+
           &__Title {
             display: flex;
             align-items: center;
