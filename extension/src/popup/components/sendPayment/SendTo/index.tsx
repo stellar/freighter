@@ -20,6 +20,7 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 
+import { ActionStatus } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
@@ -41,7 +42,6 @@ import {
 import { SorobanContext } from "popup/SorobanContext";
 
 import "../styles.scss";
-import { ActionStatus } from "@shared/api/types";
 
 const baseReserve = new BigNumber(1);
 
