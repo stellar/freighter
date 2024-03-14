@@ -95,27 +95,35 @@ const uploadMetrics = throttle(async () => {
     return;
   }
 
-  const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
-    method: "POST",
-    headers: {
-      // eslint-disable-next-line
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      // eslint-disable-next-line
-      api_key: AMPLITUDE_KEY,
-      events: toUpload,
-    }),
-  });
+  try {
+    const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
+      method: "POST",
+      headers: {
+        // eslint-disable-next-line
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        // eslint-disable-next-line
+        api_key: AMPLITUDE_KEY,
+        events: toUpload,
+      }),
+    });
 
-  if (!amplitudeFetchRes.ok) {
-    const amplitudeFetchResJson = await amplitudeFetchRes.json();
+    if (!amplitudeFetchRes.ok) {
+      const amplitudeFetchResJson = await amplitudeFetchRes.json();
+      captureException(
+        `Error uploading to Amplitude with error: ${JSON.stringify(
+          amplitudeFetchResJson,
+        )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
+          toUpload,
+        )}`,
+      );
+    }
+  } catch (e) {
     captureException(
-      `Error uploading to Amplitude with error: ${JSON.stringify(
-        amplitudeFetchResJson,
-      )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
-        toUpload,
-      )}`,
+      `Amplitude fetch threw error: ${JSON.stringify(e)} | cache size: ${
+        toUpload.length
+      } | cache contents: ${JSON.stringify(toUpload)}`,
     );
   }
 }, 500);
