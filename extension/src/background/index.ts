@@ -28,12 +28,12 @@ export const initContentScriptMessageListener = () => {
 };
 
 export const initExtensionMessageListener = (sessionStore: Store) => {
-  browser?.runtime?.onMessage?.addListener((request, sender) => {
+  browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     // todo this is kinda ugly
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type as SERVICE_TYPES)) {
       // eslint-disable-next-line
-      res = popupMessageListener(request, sessionStore);
+      res = await popupMessageListener(request, sessionStore);
     }
     if (
       Object.values(EXTERNAL_SERVICE_TYPES).includes(
@@ -41,7 +41,7 @@ export const initExtensionMessageListener = (sessionStore: Store) => {
       )
     ) {
       // eslint-disable-next-line
-      res = freighterApiMessageListener(request, sender, sessionStore);
+      res = await freighterApiMessageListener(request, sender, sessionStore);
     }
 
     return res;
