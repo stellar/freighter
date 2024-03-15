@@ -420,7 +420,7 @@ export const SubmitFail = () => {
             <img src={IconFail} alt="Icon Fail" />
           </div>
           <div className="SubmitResult__error-code">
-            {errDetails.status ? `${errDetails.status}:` : ""}{" "}
+            {errDetails.status ? `Status ${errDetails.status}:` : ""}{" "}
             {errDetails.opError}
           </div>
         </div>
