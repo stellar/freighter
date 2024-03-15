@@ -452,6 +452,11 @@ export const getAccountIndexerBalances = async (
     throw new Error(_err);
   }
 
+  if ("error" in data && (data?.error?.horizon || data?.error?.soroban)) {
+    const _err = JSON.stringify(data.error);
+    captureException(`Failed to fetch account balances - ${_err}`);
+  }
+
   const formattedBalances = {} as NonNullable<
     AccountBalancesInterface["balances"]
   >;
@@ -1040,6 +1045,7 @@ export const saveSettings = async ({
     isValidatingSafeAssetsEnabled: true,
     isExperimentalModeEnabled: false,
     isRpcHealthy: false,
+    userNotification: { enabled: false, message: "" },
     settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     error: "",

@@ -73,6 +73,7 @@ import {
   getIsExperimentalModeEnabled,
   getIsHardwareWalletActive,
   getIsRpcHealthy,
+  getUserNotification,
   getSavedNetworks,
   getNetworkDetails,
   getNetworksList,
@@ -1231,6 +1232,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const networkDetails = await getNetworkDetails();
     const featureFlags = await getFeatureFlags();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const userNotification = await getUserNotification();
 
     return {
       allowList: await getAllowList(),
@@ -1243,6 +1245,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       networksList: await getNetworksList(),
       isSorobanPublicEnabled: featureFlags.useSorobanPublic,
       isRpcHealthy,
+      userNotification,
     };
   };
 
