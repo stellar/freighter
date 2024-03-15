@@ -195,6 +195,7 @@ export const Account = () => {
             allAccounts={allAccounts}
             currentAccountName={currentAccountName}
             publicKey={publicKey}
+            setLoading={setLoading}
           />
           <View.Content
             hasNoTopPadding
@@ -284,7 +285,7 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {balances !== null && !isFunded && !hasError && (
+              {!isFunded && !hasError && (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}
                   setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}

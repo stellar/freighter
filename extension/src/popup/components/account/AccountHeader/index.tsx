@@ -29,6 +29,7 @@ interface AccountHeaderProps {
   allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
+  setLoading: (isLoading: boolean) => void;
 }
 
 export const AccountHeader = ({
@@ -36,6 +37,7 @@ export const AccountHeader = ({
   allAccounts,
   currentAccountName,
   publicKey,
+  setLoading,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -93,6 +95,7 @@ export const AccountHeader = ({
             allAccounts={allAccounts}
             publicKey={publicKey}
             setIsDropdownOpen={setIsDropdownOpen}
+            setLoading={setLoading}
           />
           <div className="AccountList__footer">
             <hr className="AccountHeader__list-divider" />
