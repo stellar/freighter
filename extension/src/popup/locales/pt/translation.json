@@ -423,9 +423,7 @@
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
   "The asset is not part of Stellar Expert's top 50 assets list": "The asset is not part of Stellar Expert's top 50 assets list",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
-  "The destination account does not accept the asset you’re sending": {
-    " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
-  },
+  "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
   "The destination account doesn’t exist": "The destination account doesn’t exist.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",

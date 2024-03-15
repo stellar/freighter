@@ -336,10 +336,15 @@ export const SubmitFail = () => {
           "Destination account does not accept this asset",
         );
         errorDetails.errorBlock = (
-          <Notification variant="error" title="">
+          <Notification
+            variant="error"
+            title={t(
+              "The destination account does not accept the asset you’re sending",
+            )}
+          >
             <div>
               {t(
-                "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it.",
+                "The destination account must opt to accept this asset before receiving it.",
               )}{" "}
               <Link
                 isUnderline
