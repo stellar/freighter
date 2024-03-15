@@ -66,7 +66,7 @@ jest
   .mockImplementation(() => Promise.resolve(mockHistoryOperations.operations));
 
 jest.spyOn(UseAssetDomain, "useAssetDomain").mockImplementation(() => {
-  return { assetDomain: "centre.io" };
+  return { assetDomain: "centre.io", error: "" };
 });
 
 describe("Account view", () => {

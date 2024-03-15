@@ -608,7 +608,6 @@ const transactionSubmissionSlice = createSlice({
     resetSubmission: () => initialState,
     resetAccountBalanceStatus: (state) => {
       state.accountBalanceStatus = initialState.accountBalanceStatus;
-      state.accountBalances = initialState.accountBalances;
     },
     resetDestinationAmount: (state) => {
       state.transactionData.destinationAmount =

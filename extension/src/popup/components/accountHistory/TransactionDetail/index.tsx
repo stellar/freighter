@@ -6,6 +6,7 @@ import { Button } from "@stellar/design-system";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
+import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 
 import { emitMetric } from "helpers/metrics";
@@ -72,12 +73,15 @@ export const TransactionDetail = ({
 
   const { t } = useTranslation();
 
-  const { assetDomain } = useAssetDomain({
+  const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const showContent = assetIssuer && !assetDomain && !assetError;
 
-  return assetIssuer && !assetDomain ? null : (
+  return showContent ? (
+    <Loading />
+  ) : (
     <React.Fragment>
       <SubviewHeader
         customBackAction={() => setIsDetailViewShowing(false)}
