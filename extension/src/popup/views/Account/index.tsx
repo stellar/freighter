@@ -22,6 +22,7 @@ import {
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
+  settingsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
@@ -80,6 +81,7 @@ export const Account = () => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
+  const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
   const [sortedBalances, setSortedBalances] = useState([] as AssetType[]);
@@ -89,7 +91,7 @@ export const Account = () => {
 
   const sorobanClient = useContext(SorobanContext);
 
-  const { balances, isFunded } = accountBalances;
+  const { balances, isFunded, error } = accountBalances;
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -272,6 +274,28 @@ export const Account = () => {
                     variant="primary"
                   >
                     {t("Some features may be disabled at this time.")}
+                  </Notification>
+                </div>
+              )}
+              {error?.horizon && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Horizon is temporarily experiencing issues")}
+                    variant="primary"
+                  >
+                    {t(
+                      "Some of your assets may not appear, but they are still safe on the network!",
+                    )}
+                  </Notification>
+                </div>
+              )}
+              {userNotification?.enabled && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Please note the following the message:")}
+                    variant="primary"
+                  >
+                    {userNotification.message}
                   </Notification>
                 </div>
               )}

@@ -52,6 +52,7 @@ export interface Response {
   isExperimentalModeEnabled: boolean;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
+  userNotification: UserNotification;
   settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
@@ -149,10 +150,16 @@ export enum SettingsState {
   SUCCESS = "SUCCESS",
 }
 
+export interface UserNotification {
+  enabled: boolean;
+  message: string;
+}
+
 export interface IndexerSettings {
   settingsState: SettingsState;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
+  userNotification: UserNotification;
 }
 
 export type Settings = {
@@ -204,6 +211,7 @@ export interface AccountBalancesInterface {
   tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
+  error?: any;
 }
 
 export interface AccountHistoryInterface {

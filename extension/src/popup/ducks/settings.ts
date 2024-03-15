@@ -48,6 +48,7 @@ const indexerInitialState: IndexerSettings = {
   settingsState: SettingsState.IDLE,
   isSorobanPublicEnabled: false,
   isRpcHealthy: false,
+  userNotification: { enabled: false, message: "" },
 };
 
 const initialState = {
@@ -109,6 +110,7 @@ export const saveSettings = createAsyncThunk<
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
+      userNotification: { enabled: false, message: "" },
       settingsState: SettingsState.IDLE,
     };
 
@@ -244,6 +246,7 @@ const settingsSlice = createSlice({
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          userNotification,
         } = action?.payload || {
           ...initialState,
         };
@@ -260,6 +263,7 @@ const settingsSlice = createSlice({
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          userNotification,
           settingsState: SettingsState.SUCCESS,
         };
       },
