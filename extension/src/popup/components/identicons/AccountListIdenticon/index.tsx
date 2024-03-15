@@ -32,9 +32,7 @@ export const AccountListIdenticon = ({
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
-    console.log(setLoading, "has set loading");
     if (setLoading) {
-      console.log("set to true");
       setLoading(true);
     }
 
