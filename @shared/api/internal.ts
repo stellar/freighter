@@ -447,29 +447,19 @@ export const getAccountIndexerBalances = async (
   const response = await fetch(url.href);
 
   // response has changed to a composite error so we need to handle both ways until we can deploy both and are able to remove the old path
-  const json = (await response.json()) as
-    | {
-        data: AccountBalancesInterface;
-        error: { horizon: string; soroban: string };
-      }
-    | AccountBalancesInterface;
+  const data = (await response.json()) as AccountBalancesInterface & {
+    error: { horizon: string; soroban: string };
+  };
   if (!response.ok) {
-    const _err = JSON.stringify(json);
+    const _err = JSON.stringify(data);
     captureException(`Failed to fetch account balances - ${_err}`);
     throw new Error(_err);
   }
 
-  if ("error" in json && (json.error.horizon || json.error.soroban)) {
-    const _err = JSON.stringify(json.error);
+  if ("error" in data && (data.error.horizon || data.error.soroban)) {
+    const _err = JSON.stringify(data.error);
     captureException(`Failed to fetch account balances - ${_err}`);
     throw new Error(_err);
-  }
-
-  let data;
-  if ("data" in json) {
-    data = json.data as AccountBalancesInterface;
-  } else {
-    data = json;
   }
 
   const formattedBalances = {} as NonNullable<
