@@ -292,7 +292,7 @@ export const Account = () => {
               {userNotification?.enabled && (
                 <div className="AccountView__fetch-fail">
                   <Notification
-                    title={t("Please note the following the message:")}
+                    title={t("Please note the following the message")}
                     variant="primary"
                   >
                     {userNotification.message}
