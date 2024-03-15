@@ -47,6 +47,7 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 
 import "./styles.scss";
 import { formatAmount } from "popup/helpers/formatters";
+import { Loading } from "popup/components/Loading";
 
 interface AssetDetailProps {
   assetOperations: HorizonOperation[];
@@ -126,7 +127,7 @@ export const AssetDetail = ({
 
   if (assetIssuer && !assetDomain && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
-    return null;
+    return <Loading />;
   }
 
   return isDetailViewShowing ? (
