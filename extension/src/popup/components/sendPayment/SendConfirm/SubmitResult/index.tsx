@@ -344,7 +344,7 @@ export const SubmitFail = () => {
           >
             <div>
               {t(
-                "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it.",
+                "The destination account must opt to accept this asset before receiving it.",
               )}{" "}
               <Link
                 isUnderline
@@ -425,7 +425,7 @@ export const SubmitFail = () => {
             <img src={IconFail} alt="Icon Fail" />
           </div>
           <div className="SubmitResult__error-code">
-            {errDetails.status ? `${errDetails.status}:` : ""}{" "}
+            {errDetails.status ? `Status ${errDetails.status}:` : ""}{" "}
             {errDetails.opError}
           </div>
         </div>

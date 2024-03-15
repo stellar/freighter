@@ -46,6 +46,7 @@ import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
+import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
 
@@ -117,7 +118,7 @@ export const AssetDetail = ({
     defaultDetailViewProps,
   );
 
-  const { assetDomain } = useAssetDomain({
+  const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
 
@@ -127,9 +128,9 @@ export const AssetDetail = ({
     return null;
   }
 
-  if (assetIssuer && !assetDomain && !isSorobanAsset) {
+  if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
-    return null;
+    return <Loading />;
   }
 
   return isDetailViewShowing ? (
