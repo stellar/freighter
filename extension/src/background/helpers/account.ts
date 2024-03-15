@@ -171,9 +171,7 @@ export const getUserNotification = async () => {
     const res = await fetch(`${INDEXER_URL}/user-notification`);
     response = await res.json();
   } catch (e) {
-    captureException(
-      `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(e)}`,
-    );
+    captureException(`Failed to load user notification - ${JSON.stringify(e)}`);
     console.error(e);
   }
 
@@ -187,9 +185,7 @@ export const getFeatureFlags = async () => {
     const res = await fetch(`${INDEXER_URL}/feature-flags`);
     featureFlags = await res.json();
   } catch (e) {
-    captureException(
-      `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(e)}`,
-    );
+    captureException(`Failed to load feature flag - ${JSON.stringify(e)}`);
     console.error(e);
   }
 
