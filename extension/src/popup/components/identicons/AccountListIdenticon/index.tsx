@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 
 import { truncatedPublicKey } from "helpers/stellar";
 import { makeAccountActive } from "popup/ducks/accountServices";
+import { resetAccountBalanceStatus } from "popup/ducks/transactionSubmission";
 
 import { IdenticonImg } from "../IdenticonImg";
 
@@ -29,11 +30,13 @@ export const AccountListIdenticon = ({
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
-    if (!active) {
-      dispatch(makeAccountActive(publicKey));
-    }
     if (setIsDropdownOpen) {
       setIsDropdownOpen(false);
+    }
+
+    if (!active) {
+      dispatch(makeAccountActive(publicKey));
+      dispatch(resetAccountBalanceStatus());
     }
   };
 
