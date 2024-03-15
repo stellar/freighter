@@ -85,13 +85,16 @@ export const Account = () => {
   const [sortedBalances, setSortedBalances] = useState([] as AssetType[]);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
+  const [isLoading, setLoading] = useState(true);
 
   const sorobanClient = useContext(SorobanContext);
 
   const { balances, isFunded } = accountBalances;
+
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
+    setLoading(true);
     dispatch(resetSubmission());
     dispatch(
       getAccountBalances({
@@ -158,10 +161,18 @@ export const Account = () => {
   }, [publicKey, networkDetails, balances, sortedBalances]);
 
   const hasError = accountBalanceStatus === ActionStatus.ERROR;
-  const isLoading =
-    accountBalanceStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.IDLE ||
-    accountStatus === ActionStatus.PENDING;
+
+  useEffect(() => {
+    if (
+      !(
+        accountBalanceStatus === ActionStatus.PENDING ||
+        accountBalanceStatus === ActionStatus.IDLE ||
+        accountStatus === ActionStatus.PENDING
+      )
+    ) {
+      setLoading(false);
+    }
+  }, [accountBalanceStatus, accountStatus]);
 
   return selectedAsset ? (
     <AssetDetail
@@ -273,7 +284,7 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {!isFunded && !hasError && (
+              {balances !== null && !isFunded && !hasError && (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}
                   setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
