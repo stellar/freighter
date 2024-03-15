@@ -16,6 +16,7 @@ interface KeyIdenticonProps {
   publicKey: string;
   displayKey?: boolean;
   setIsDropdownOpen?: (IsDropdownOpen: boolean) => void;
+  setLoading?: (isLoading: boolean) => void;
 }
 
 export const AccountListIdenticon = ({
@@ -25,11 +26,18 @@ export const AccountListIdenticon = ({
   publicKey = "",
   displayKey = false,
   setIsDropdownOpen,
+  setLoading,
 }: KeyIdenticonProps) => {
   const dispatch = useDispatch();
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
+    console.log(setLoading, "has set loading");
+    if (setLoading) {
+      console.log("set to true");
+      setLoading(true);
+    }
+
     if (setIsDropdownOpen) {
       setIsDropdownOpen(false);
     }
