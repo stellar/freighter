@@ -309,7 +309,7 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {!isFunded && !hasError && (
+              {!isFunded && !hasError && !error?.horizon && (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}
                   setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
