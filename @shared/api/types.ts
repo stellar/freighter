@@ -211,7 +211,7 @@ export interface AccountBalancesInterface {
   tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
-  error?: any;
+  error?: { horizon: any; soroban: any };
 }
 
 export interface AccountHistoryInterface {
