@@ -284,6 +284,7 @@ export const ScamAssetWarning = ({
   issuer,
   image,
   onClose,
+  // eslint-disable-next-line
   onContinue = () => {},
 }: {
   isSendWarning?: boolean;
@@ -348,6 +349,7 @@ export const ScamAssetWarning = ({
       .toXDR();
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -553,6 +555,7 @@ export const NewAssetWarning = ({
     });
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -919,9 +922,11 @@ export const UnverifiedTokenTransferWarning = ({
       });
       const verifiedTokens = [] as string[];
 
-      for (let i = 0; i < verifiedTokenRes.assets.length; i += 1) {
+      // eslint-disable-next-line
+      for (let i = 0; i < verifiedTokenRes.length; i += 1) {
+        // eslint-disable-next-line
         for (let j = 0; j < details.length; j += 1) {
-          if (details[j].contractId === verifiedTokenRes.assets[i].contract) {
+          if (details[j].contractId === verifiedTokenRes[i].contract) {
             verifiedTokens.push(details[j].contractId);
             return;
           }
@@ -969,8 +974,8 @@ const WarningMessageTokenDetails = ({
 
   const tokenDetailsUrl = React.useCallback(
     (contractId: string) =>
-      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
-    [publicKey, networkDetails.network, networkDetails.sorobanRpcUrl],
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
+    [publicKey, networkDetails.network],
   );
   React.useEffect(() => {
     async function getTokenDetails() {

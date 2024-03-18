@@ -6,6 +6,7 @@ import { Button } from "@stellar/design-system";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
+import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 
 import { emitMetric } from "helpers/metrics";
@@ -40,7 +41,9 @@ export const TransactionDetail = ({
   operationText,
   externalUrl,
   setIsDetailViewShowing,
-}: TransactionDetailProps) => {
+}: Omit<TransactionDetailProps, "isCreateExternalAccount">) => {
+  // Why does transaction_attr not exist on Horizon types?
+  const _op = operation as any;
   const {
     asset_code: assetCode,
     asset_issuer: assetIssuer,
@@ -49,8 +52,8 @@ export const TransactionDetail = ({
     to,
     created_at: createdAt,
     transaction_attr: { fee_charged: feeCharged, memo },
-  } = operation;
-  const createdAtDateInstance = new Date(Date.parse(createdAt));
+  } = _op;
+  const createdAtDateInstance = new Date(Date.parse(createdAt as string));
   const createdAtLocalStrArr = createdAtDateInstance
     .toLocaleString()
     .split(" ");
@@ -70,12 +73,15 @@ export const TransactionDetail = ({
 
   const { t } = useTranslation();
 
-  const { assetDomain } = useAssetDomain({
+  const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const showContent = assetIssuer && !assetDomain && !assetError;
 
-  return assetIssuer && !assetDomain ? null : (
+  return showContent ? (
+    <Loading />
+  ) : (
     <React.Fragment>
       <SubviewHeader
         customBackAction={() => setIsDetailViewShowing(false)}
@@ -142,7 +148,7 @@ export const TransactionDetail = ({
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Transaction fee")}</div>
-              <div>{stroopToXlm(feeCharged).toString()} XLM</div>
+              <div>{stroopToXlm(feeCharged as string).toString()} XLM</div>
             </div>
           </div>
         </div>

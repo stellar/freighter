@@ -34,8 +34,10 @@ export const getKeyIdList = async () =>
 
 export const getAccountNameList = async () => {
   const encodedaccountNameList =
-    (await localStore.getItem(ACCOUNT_NAME_LIST_ID)) || encodeObject({});
+    ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
+    encodeObject({});
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return JSON.parse(decodeString(encodedaccountNameList));
 };
 
@@ -46,7 +48,10 @@ export const addAccountName = async ({
   keyId: string;
   accountName: string;
 }) => {
-  const accountNameList = await getAccountNameList();
+  const accountNameList = (await getAccountNameList()) as Record<
+    string,
+    string
+  >;
 
   accountNameList[keyId] = accountName;
 
@@ -103,7 +108,7 @@ export const getIsHardwareWalletActive = async () =>
   ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
 export const getBipPath = async () => {
-  const keyId = (await localStore.getItem(KEY_ID)) || "";
+  const keyId = ((await localStore.getItem(KEY_ID)) as string) || "";
   const hwData = (await localStore.getItem(keyId)) || {};
   return hwData.bipPath || "";
 };
@@ -159,6 +164,20 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
   return rpcHealth.status === "healthy";
 };
 
+export const getUserNotification = async () => {
+  let response = { enabled: false, message: "" };
+
+  try {
+    const res = await fetch(`${INDEXER_URL}/user-notification`);
+    response = await res.json();
+  } catch (e) {
+    captureException(`Failed to load user notification - ${JSON.stringify(e)}`);
+    console.error(e);
+  }
+
+  return response;
+};
+
 export const getFeatureFlags = async () => {
   let featureFlags = { useSorobanPublic: false };
 
@@ -166,9 +185,7 @@ export const getFeatureFlags = async () => {
     const res = await fetch(`${INDEXER_URL}/feature-flags`);
     featureFlags = await res.json();
   } catch (e) {
-    captureException(
-      `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(e)}`,
-    );
+    captureException(`Failed to load feature flag - ${JSON.stringify(e)}`);
     console.error(e);
   }
 
@@ -189,25 +206,33 @@ export const subscribeAccount = async (publicKey: string) => {
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        // eslint-disable-next-line
         pub_key: publicKey,
         network: networkDetails.network,
       }),
     };
-    await fetch(`${INDEXER_URL}/subscription/account`, options);
+    const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
       ...hasAccountSubByKeyId,
       [keyId]: true,
     };
-    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+
+    if (res.ok) {
+      await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+    } else {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
-    captureException(
-      `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
-    );
-    throw new Error("Error subscribing account");
+    // Turn on when Mercury is enabled
+    // captureException(
+    //   `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
+    // );
   }
 
   return { publicKey };
@@ -222,21 +247,31 @@ export const subscribeTokenBalance = async (
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        // eslint-disable-next-line
         pub_key: publicKey,
+        // eslint-disable-next-line
         contract_id: contractId,
         network: networkDetails.network,
       }),
     };
-    await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
+    const res = await fetch(
+      `${INDEXER_URL}/subscription/token-balance`,
+      options,
+    );
+
+    if (!res.ok) {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
     captureException(
       `Failed to subscribe token balance - ${JSON.stringify(e)}`,
     );
-    throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
 
@@ -248,17 +283,23 @@ export const subscribeTokenHistory = async (
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
+      // eslint-disable-next-line
       body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
     };
-    await fetch(`${INDEXER_URL}/subscription/token`, options);
+    const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
+
+    if (!res.ok) {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
     captureException(
       `Failed to subscribe token history - ${JSON.stringify(e)}`,
     );
-    throw new Error(`Error subscribing to token: ${contractId}`);
   }
 };
 
@@ -273,6 +314,7 @@ export const verifySorobanRpcUrls = async () => {
 
   const networksList: NetworkDetails[] = await getNetworksList();
 
+  // eslint-disable-next-line
   for (let i = 0; i < networksList.length; i += 1) {
     const networksListDetails = networksList[i];
 

@@ -38,33 +38,33 @@ export const migrateTrustlines = async ({
   isMergeSelected,
   networkPassphrase,
 }: MigrateTrustLinesParams) => {
-  if (!trustlineBalances.length) return;
+  if (!trustlineBalances.length) {
+    return;
+  }
 
   const trustlineRecipientAccount = await server.loadAccount(
     newKeyPair.publicKey,
   );
   const txFee = new BigNumber(fee).times(trustlineBalances.length).toString();
 
-  const changeTrustTx = await new TransactionBuilder(
-    trustlineRecipientAccount,
-    {
-      fee: txFee,
-      networkPassphrase,
-    },
-  );
-
-  const removeTrustTx = await new TransactionBuilder(sourceAccount, {
+  const changeTrustTx = new TransactionBuilder(trustlineRecipientAccount, {
     fee: txFee,
     networkPassphrase,
   });
 
-  const sendTrustlineBalanceTx = await new TransactionBuilder(sourceAccount, {
+  const removeTrustTx = new TransactionBuilder(sourceAccount, {
+    fee: txFee,
+    networkPassphrase,
+  });
+
+  const sendTrustlineBalanceTx = new TransactionBuilder(sourceAccount, {
     fee: txFee,
     networkPassphrase,
   });
 
   const recipientSourceKeys = Keypair.fromSecret(newKeyPair.privateKey);
 
+  // eslint-disable-next-line
   for (let i = 0; i < trustlineBalances.length; i += 1) {
     const bal = trustlineBalances[i];
     let asset;

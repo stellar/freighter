@@ -117,6 +117,7 @@ export const RecoverAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
 
+    // eslint-disable-next-line
     await dispatch(
       recoverAccount({
         password,

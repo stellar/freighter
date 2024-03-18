@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import "popup/helpers/localizationConfig";
 
@@ -7,4 +7,5 @@ import "popup/helpers/localizationConfig";
 import "@stellar/design-system/build/styles.min.css";
 
 // eslint-disable-next-line react/jsx-filename-extension
-ReactDOM.render(<App />, document.getElementById("root"));
+const root = createRoot(document.getElementById("root")!);
+root.render(<App />);

@@ -48,6 +48,7 @@ const indexerInitialState: IndexerSettings = {
   settingsState: SettingsState.IDLE,
   isSorobanPublicEnabled: false,
   isRpcHealthy: false,
+  userNotification: { enabled: false, message: "" },
 };
 
 const initialState = {
@@ -74,8 +75,9 @@ export const saveAllowList = createAsyncThunk<
     });
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
 
@@ -108,6 +110,7 @@ export const saveSettings = createAsyncThunk<
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
+      userNotification: { enabled: false, message: "" },
       settingsState: SettingsState.IDLE,
     };
 
@@ -121,8 +124,9 @@ export const saveSettings = createAsyncThunk<
       });
     } catch (e) {
       console.error(e);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message,
+        errorMessage: message,
       });
     }
 
@@ -148,8 +152,9 @@ export const addCustomNetwork = createAsyncThunk<
     res = await addCustomNetworkService(networkDetails);
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
 
@@ -241,6 +246,7 @@ const settingsSlice = createSlice({
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          userNotification,
         } = action?.payload || {
           ...initialState,
         };
@@ -257,6 +263,7 @@ const settingsSlice = createSlice({
           isExperimentalModeEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          userNotification,
           settingsState: SettingsState.SUCCESS,
         };
       },

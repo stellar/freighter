@@ -39,6 +39,7 @@ export const VerifyAccount = ({
     if (customSubmit) {
       await customSubmit(values.password);
     } else {
+      // eslint-disable-next-line
       await dispatch(confirmPassword(values.password));
       navigateTo(from || ROUTES.account);
     }

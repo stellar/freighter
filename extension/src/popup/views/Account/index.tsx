@@ -22,6 +22,7 @@ import {
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
+  settingsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
@@ -80,18 +81,22 @@ export const Account = () => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
+  const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
+  const [sortedBalances, setSortedBalances] = useState([] as AssetType[]);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
+  const [isLoading, setLoading] = useState(true);
 
   const sorobanClient = useContext(SorobanContext);
 
-  const { balances, isFunded } = accountBalances;
+  const { balances, isFunded, error } = accountBalances;
+
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
+    setLoading(true);
     dispatch(resetSubmission());
     dispatch(
       getAccountBalances({
@@ -114,7 +119,9 @@ export const Account = () => {
   ]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
 
     setSortedBalances(sortBalances(balances));
     dispatch(getAssetIcons({ balances, networkDetails }));
@@ -122,7 +129,9 @@ export const Account = () => {
   }, [balances, networkDetails, dispatch]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
 
     const fetchAccountHistory = async () => {
       try {
@@ -154,10 +163,18 @@ export const Account = () => {
   }, [publicKey, networkDetails, balances, sortedBalances]);
 
   const hasError = accountBalanceStatus === ActionStatus.ERROR;
-  const isLoading =
-    accountBalanceStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.IDLE ||
-    accountStatus === ActionStatus.PENDING;
+
+  useEffect(() => {
+    if (
+      !(
+        accountBalanceStatus === ActionStatus.PENDING ||
+        accountBalanceStatus === ActionStatus.IDLE ||
+        accountStatus === ActionStatus.PENDING
+      )
+    ) {
+      setLoading(false);
+    }
+  }, [accountBalanceStatus, accountStatus]);
 
   return selectedAsset ? (
     <AssetDetail
@@ -180,6 +197,7 @@ export const Account = () => {
             allAccounts={allAccounts}
             currentAccountName={currentAccountName}
             publicKey={publicKey}
+            setLoading={setLoading}
           />
           <View.Content
             hasNoTopPadding
@@ -259,6 +277,28 @@ export const Account = () => {
                   </Notification>
                 </div>
               )}
+              {error?.horizon && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Horizon is temporarily experiencing issues")}
+                    variant="primary"
+                  >
+                    {t(
+                      "Some of your assets may not appear, but they are still safe on the network!",
+                    )}
+                  </Notification>
+                </div>
+              )}
+              {userNotification?.enabled && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Please note the following message")}
+                    variant="primary"
+                  >
+                    {userNotification.message}
+                  </Notification>
+                </div>
+              )}
 
               {isFunded && !hasError && (
                 <div className="AccountView__assets-wrapper">
@@ -269,7 +309,7 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {!isFunded && !hasError && (
+              {!isFunded && !hasError && !error?.horizon && (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}
                   setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}

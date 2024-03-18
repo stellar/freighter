@@ -54,11 +54,13 @@ export const ImportAccount = () => {
 
     if (importAccount.fulfilled.match(res)) {
       emitMetric(METRIC_NAMES.accountScreenImportAccount, {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         number_of_accounts: res.payload.allAccounts.length,
       });
       navigateTo(ROUTES.account);
     } else {
       emitMetric(METRIC_NAMES.accountScreenImportAccountFail, {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         error_type: res.payload?.errorMessage || "",
       });
     }

@@ -195,6 +195,7 @@
   "History": "History",
   "Home": "Home",
   "Home Domain": "Home Domain",
+  "Horizon is temporarily experiencing issues": "Horizon is temporarily experiencing issues",
   "HORIZON RPC URL": "HORIZON RPC URL",
   "I have my 12 word seed phrase": "I have my 12 word seed phrase",
   "I have my recovery phrase safe": "I have my recovery phrase safe",
@@ -330,6 +331,7 @@
   "Please double-check its information and characteristics": {
     " This can help you identify fraudulent assets": "Please double-check its information and characteristics. This can help you identify fraudulent assets."
   },
+  "Please note the following message": "Please note the following message",
   "Please proceed with caution": "Please proceed with caution.",
   "Please select a different network before removing it": "Please select a different network before removing it.",
   "Please select each word in the same order you have": "Please select each word in the same order you have",
@@ -401,6 +403,7 @@
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
   "Signs for external accounts": "Signs for external accounts",
   "Some features may be disabled at this time": "Some features may be disabled at this time.",
+  "Some of your assets may not appear, but they are still safe on the network!": "Some of your assets may not appear, but they are still safe on the network!",
   "Soroban RPC is temporarily experiencing issues": "Soroban RPC is temporarily experiencing issues",
   "SOROBAN RPC URL": "SOROBAN RPC URL",
   "Source": "Source",
@@ -423,10 +426,9 @@
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
   "The asset is not part of Stellar Expert's top 50 assets list": "The asset is not part of Stellar Expert's top 50 assets list",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
-  "The destination account does not accept the asset you’re sending": {
-    " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
-  },
+  "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
   "The destination account doesn’t exist": "The destination account doesn’t exist.",
+  "The destination account must opt to accept this asset before receiving it": "The destination account must opt to accept this asset before receiving it.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",

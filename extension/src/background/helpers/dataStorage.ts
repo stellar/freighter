@@ -78,7 +78,7 @@ export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const localStorageEntries = Object.entries(localStorage);
 
-  // eslint-disable-next-line no-plusplus
+  // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
     const [key, value] = localStorageEntries[i];
     try {
@@ -246,6 +246,16 @@ const migrateSorobanRpcUrlNetwork = async () => {
   }
 };
 
+export const resetAccountSubscriptions = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
+    // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -254,6 +264,7 @@ export const versionedMigration = async () => {
   await migrateToAccountSubscriptions();
   await migrateMainnetSorobanRpcUrlNetworkDetails();
   await migrateSorobanRpcUrlNetwork();
+  await resetAccountSubscriptions();
 };
 
 // Updates storage version

@@ -48,6 +48,7 @@ export const Preferences = () => {
       isExperimentalModeEnabledValue,
     } = formValue;
 
+    // eslint-disable-next-line
     await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,

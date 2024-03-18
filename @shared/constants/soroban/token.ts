@@ -4,6 +4,17 @@ export enum SorobanTokenInterface {
   mint = "mint",
 }
 
+export type ArgsForTokenInvocation = {
+  from: string;
+  to: string;
+  amount: bigint | number;
+};
+
+export type TokenInvocationArgs = ArgsForTokenInvocation & {
+  fnName: SorobanTokenInterface;
+  contractId: string;
+};
+
 // TODO: can we generate this at build time using the cli TS generator? Also should we?
 export interface SorobanToken {
   // only currently holds fields we care about
