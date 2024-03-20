@@ -1009,7 +1009,7 @@ const WarningMessageTokenDetails = ({
     <div className="TokenDetails">
       <p className="FnName">TRANSFER #{index + 1}:</p>
       {/* eslint-disable-next-line */}
-      {isLoadingTokenDetails && tokenDetails[transfer.contractId] ? (
+      {isLoadingTokenDetails ? (
         <div className="TokenDetails__loader">
           <Loader size="1rem" />
         </div>
