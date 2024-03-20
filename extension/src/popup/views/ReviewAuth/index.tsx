@@ -231,7 +231,7 @@ const TransferSummary = ({
   };
   tokenDetails: TokenDetails;
 }) => {
-  const hasTokenDetails = tokenDetails?.symbol && tokenDetails?.decimals;
+  const hasTokenDetails = tokenDetails.symbol && tokenDetails.decimals;
   const isNative = tokenDetails.symbol === "native";
   const symbol = isNative ? "XLM" : tokenDetails.symbol;
   return (
