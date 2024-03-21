@@ -482,7 +482,7 @@ export const getAccountIndexerBalances = async (
   };
 };
 
-const getSorobanTokenBalance = async (
+export const getSorobanTokenBalance = async (
   server: SorobanRpc.Server,
   contractId: string,
   txBuilders: {

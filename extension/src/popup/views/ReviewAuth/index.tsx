@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 import {
   MemoType,
+  Address,
   Operation,
   Transaction,
   TransactionBuilder,
@@ -14,6 +15,7 @@ import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { getSorobanTokenBalance } from "@shared/api/internal";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
@@ -25,7 +27,7 @@ import {
   KeyValueList,
 } from "popup/components/signTransaction/Operations/KeyVal";
 import { useTranslation } from "react-i18next";
-import { truncateString } from "helpers/stellar";
+import { isCustomNetwork, truncateString } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { FlaggedKeys } from "types/transactions";
 import {
@@ -50,6 +52,7 @@ import {
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { OPERATION_TYPES } from "constants/transaction";
+import { SorobanContext } from "popup/SorobanContext";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
 import { Data } from "../SignTransaction/Preview/Data";
@@ -218,7 +221,7 @@ type TokenDetailMap = Record<string, TokenDetails>;
 
 const TransferSummary = ({
   transfer,
-  tokenDetails,
+  tokenDetails = { name: "", symbol: "", decimals: 0 },
 }: {
   transfer: {
     amount: string;
@@ -297,6 +300,7 @@ const AuthDetail = ({
   const [isLoading, setLoading] = useState(true);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const sorobanClient = useContext(SorobanContext);
 
   const { t } = useTranslation();
   const rootInvocation = authEntry.rootInvocation();
@@ -332,15 +336,53 @@ const AuthDetail = ({
       // eslint-disable-next-line
       for (const transfer of transfers) {
         try {
-          // eslint-disable-next-line
-          const response = await fetch(tokenDetailsUrl(transfer.contractId));
+          if (isCustomNetwork(networkDetails)) {
+            // eslint-disable-next-line
+            const tokenBal = await getSorobanTokenBalance(
+              sorobanClient.server,
+              transfer.contractId,
+              {
+                // eslint-disable-next-line
+                balance: await sorobanClient.newTxBuilder(),
+                // eslint-disable-next-line
+                name: await sorobanClient.newTxBuilder(),
+                // eslint-disable-next-line
+                decimals: await sorobanClient.newTxBuilder(),
+                // eslint-disable-next-line
+                symbol: await sorobanClient.newTxBuilder(),
+              },
+              [new Address(publicKey).toScVal()],
+            );
 
-          if (!response.ok) {
-            throw new Error("failed to fetch token details");
+            if (!tokenBal) {
+              throw new Error("failed to fetch token details");
+            }
+
+            _tokenDetails[transfer.contractId] = {
+              name: tokenBal.name,
+              symbol: tokenBal.symbol,
+              decimals: tokenBal.decimals,
+            };
+
+            setTokenDetails(_tokenDetails);
+          } else {
+            // eslint-disable-next-line
+            const response = await fetch(tokenDetailsUrl(transfer.contractId));
+
+            if (!response.ok) {
+              // default details
+              _tokenDetails[transfer.contractId] = {
+                name: "",
+                symbol: "",
+                decimals: 0,
+              };
+              setTokenDetails(_tokenDetails);
+              throw new Error("failed to fetch token details");
+            }
+            // eslint-disable-next-line
+            const _details = await response.json();
+            _tokenDetails[transfer.contractId] = _details;
           }
-          // eslint-disable-next-line
-          const _details = await response.json();
-          _tokenDetails[transfer.contractId] = _details;
         } catch (error) {
           captureException(
             `Failed to fetch token details - ${JSON.stringify(error)}`,
@@ -371,6 +413,7 @@ const AuthDetail = ({
           )}
           {transfers.map((transfer) => (
             <TransferSummary
+              key={JSON.stringify(transfer)}
               transfer={transfer}
               tokenDetails={tokenDetails[transfer.contractId]}
             />
