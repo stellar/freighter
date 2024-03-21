@@ -50,6 +50,7 @@ export const AccountCreator = () => {
   };
 
   const handleSubmit = async (values: FormValues) => {
+    // eslint-disable-next-line
     await dispatch(createAccount(values.password));
     const res = await showBackupPhrase(values.password);
 
@@ -65,7 +66,7 @@ export const AccountCreator = () => {
   return mnemonicPhrase && publicKey ? (
     <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
   ) : (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Formik
@@ -159,6 +160,6 @@ export const AccountCreator = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

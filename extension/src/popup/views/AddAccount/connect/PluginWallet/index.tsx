@@ -8,7 +8,6 @@ import { navigateTo, openTab } from "popup/helpers/navigate";
 import { pluginWalletInfo } from "popup/helpers/hardwareConnect";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { BottomNav } from "popup/components/BottomNav";
 
 import "./styles.scss";
 import { View } from "popup/basics/layout/View";
@@ -26,7 +25,7 @@ export const PluginWallet = () => {
   const pluginWalletInfoSection = pluginWalletInfo[walletType];
 
   return (
-    <View>
+    <>
       <SubviewHeader
         title={`Connect with ${walletType}`}
         hasBackButton={true}
@@ -84,7 +83,6 @@ export const PluginWallet = () => {
           </Button>
         </div>
       </View.Content>
-      <BottomNav />
-    </View>
+    </>
   );
 };

@@ -50,6 +50,10 @@ export interface Response {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+  userNotification: UserNotification;
+  settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
@@ -139,6 +143,25 @@ export interface Preferences {
   isExperimentalModeEnabled: boolean;
 }
 
+export enum SettingsState {
+  IDLE = "IDLE",
+  LOADING = "LOADING",
+  ERROR = "ERROR",
+  SUCCESS = "SUCCESS",
+}
+
+export interface UserNotification {
+  enabled: boolean;
+  message: string;
+}
+
+export interface IndexerSettings {
+  settingsState: SettingsState;
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+  userNotification: UserNotification;
+}
+
 export type Settings = {
   allowList: string[];
   networkDetails: NetworkDetails;
@@ -172,6 +195,7 @@ export interface SorobanBalance {
   name: string;
   symbol: string;
   decimals: number;
+  token?: { code: string; issuer: { key: string } };
 }
 
 export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
@@ -179,7 +203,7 @@ export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
 export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */
-export type HorizonOperation = any;
+export type HorizonOperation = Horizon.ServerApi.OperationRecord;
 /* eslint-enable camelcase */
 
 export interface AccountBalancesInterface {
@@ -187,6 +211,7 @@ export interface AccountBalancesInterface {
   tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
+  error?: { horizon: any; soroban: any };
 }
 
 export interface AccountHistoryInterface {

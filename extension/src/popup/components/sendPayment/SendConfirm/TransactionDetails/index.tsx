@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -66,6 +66,7 @@ import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
+import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -190,6 +191,7 @@ const getOperation = (
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
+  const sorobanClient = useContext(SorobanContext);
   const submission = useSelector(transactionSubmissionSelector);
   const {
     destinationBalances,
@@ -283,8 +285,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterSorobanTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
+            sorobanClient,
           }),
         );
 
@@ -318,7 +322,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+      const transactionXDR = new TransactionBuilder(sourceAccount, {
         fee: xlmToStroop(transactionFee).toFixed(),
         networkPassphrase: networkDetails.networkPassphrase,
       })
@@ -351,8 +355,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
+            sorobanClient,
           }),
         );
 
@@ -418,7 +424,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="transaction-details-view">
+      <React.Fragment>
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -597,7 +603,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </>
           )}
         </View.Footer>
-      </View>
+      </React.Fragment>
     </>
   );
 };

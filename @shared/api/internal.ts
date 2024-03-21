@@ -1,16 +1,33 @@
-import { SorobanRpc, Networks, Horizon } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
+import {
+  Address,
+  SorobanRpc,
+  Networks,
+  Horizon,
+  FeeBumpTransaction,
+  Transaction,
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
+import { DataProvider } from "@stellar/wallet-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import {
+  getBalance,
+  getDecimals,
+  getName,
+  getSymbol,
+} from "@shared/helpers/soroban/token";
+import {
   Account,
   AccountBalancesInterface,
-  AccountHistoryInterface,
   BalanceToMigrate,
   Balances,
-  HorizonOperation,
   MigratableAccount,
   MigratedAccount,
   Settings,
+  IndexerSettings,
+  SettingsState,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -24,7 +41,7 @@ import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
-import { stellarSdkServer } from "./helpers/stellarSdkServer";
+import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -421,61 +438,210 @@ export const getAccountIndexerBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
 ): Promise<AccountBalancesInterface> => {
-  try {
-    const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
-    const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
-    url.searchParams.append("network", networkDetails.network);
-    url.searchParams.append("horizon_url", networkDetails.networkUrl);
-    url.searchParams.append("soroban_url", networkDetails.sorobanRpcUrl!);
-    for (const id of contractIds) {
-      url.searchParams.append("contract_ids", id);
-    }
-    const response = await fetch(url.href);
-    const data = (await response.json()) as AccountBalancesInterface;
-    const formattedBalances = {} as NonNullable<
-      AccountBalancesInterface["balances"]
-    >;
-    const balanceIds = [] as string[];
-    for (const balanceKey of Object.keys(data.balances || {})) {
-      const balance = data.balances![balanceKey];
-      formattedBalances[balanceKey] = {
-        ...balance,
-        available: new BigNumber(balance.available),
-        total: new BigNumber(balance.total),
-      };
-      // track token IDs that come back from the server in order to get
-      // the difference between contractIds set in the client and balances returned from server.
-      const [_, assetId] = balanceKey.split(":");
-      if (contractIds.includes(assetId)) {
-        balanceIds.push(assetId);
-      }
-    }
-    return {
-      ...data,
-      balances: formattedBalances,
-      tokensWithNoBalance: contractIds.filter((id) => !balanceIds.includes(id)),
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      balances: {} as AccountBalancesInterface["balances"],
-      tokensWithNoBalance: [],
-      isFunded: false,
-      subentryCount: 0,
-    };
+  const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
+  const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
+  url.searchParams.append("network", networkDetails.network);
+  for (const id of contractIds) {
+    url.searchParams.append("contract_ids", id);
   }
+  const response = await fetch(url.href);
+  const data = (await response.json()) as AccountBalancesInterface;
+  if (!response.ok) {
+    const _err = JSON.stringify(data);
+    captureException(`Failed to fetch account balances - ${_err}`);
+    throw new Error(_err);
+  }
+
+  if ("error" in data && (data?.error?.horizon || data?.error?.soroban)) {
+    const _err = JSON.stringify(data.error);
+    captureException(`Failed to fetch account balances - ${_err}`);
+  }
+
+  const formattedBalances = {} as NonNullable<
+    AccountBalancesInterface["balances"]
+  >;
+  const balanceIds = [] as string[];
+  for (const balanceKey of Object.keys(data.balances || {})) {
+    const balance = data.balances![balanceKey];
+    formattedBalances[balanceKey] = {
+      ...balance,
+      available: new BigNumber(balance.available),
+      total: new BigNumber(balance.total),
+    };
+    // track token IDs that come back from the server in order to get
+    // the difference between contractIds set in the client and balances returned from server.
+    const [_, assetId] = balanceKey.split(":");
+    if (contractIds.includes(assetId)) {
+      balanceIds.push(assetId);
+    }
+  }
+  return {
+    ...data,
+    balances: formattedBalances,
+    tokensWithNoBalance: contractIds.filter((id) => !balanceIds.includes(id)),
+  };
 };
 
-export const getAccountHistory = async ({
+export const getSorobanTokenBalance = async (
+  server: SorobanRpc.Server,
+  contractId: string,
+  txBuilders: {
+    // need a builder per operation, Soroban currently has single op transactions
+    balance: TransactionBuilder;
+    name: TransactionBuilder;
+    decimals: TransactionBuilder;
+    symbol: TransactionBuilder;
+  },
+  balanceParams: xdr.ScVal[],
+) => {
+  // Right now we can only have 1 operation per TX in Soroban
+  // for now we need to do 4 tx simulations to show 1 user balance. :(
+  // TODO: figure out how to fetch ledger keys to do this more efficiently
+  const decimals = await getDecimals(contractId, server, txBuilders.decimals);
+  const name = await getName(contractId, server, txBuilders.name);
+  const symbol = await getSymbol(contractId, server, txBuilders.symbol);
+  const balance = await getBalance(
+    contractId,
+    balanceParams,
+    server,
+    txBuilders.balance,
+  );
+
+  return {
+    balance,
+    decimals,
+    name,
+    symbol,
+  };
+};
+
+export const getAccountBalancesStandalone = async ({
+  publicKey,
+  networkDetails,
+  sorobanClientServer,
+  sorobanClientTxBuilder,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  sorobanClientServer: SorobanRpc.Server;
+  sorobanClientTxBuilder: () => Promise<TransactionBuilder>;
+}): Promise<AccountBalancesInterface> => {
+  const { network, networkUrl, networkPassphrase } = networkDetails;
+
+  let balances: any = null;
+  let isFunded = null;
+  let subentryCount = 0;
+
+  try {
+    const dataProvider = new DataProvider({
+      serverUrl: networkUrl,
+      accountOrKey: publicKey,
+      networkPassphrase,
+      metadata: {
+        allowHttp: networkUrl.startsWith("http://"),
+      },
+    });
+
+    const resp = await dataProvider.fetchAccountDetails();
+    balances = resp.balances;
+    subentryCount = resp.subentryCount;
+
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < Object.keys(resp.balances).length; i++) {
+      const k = Object.keys(resp.balances)[i];
+      const v: any = resp.balances[k];
+      if (v.liquidity_pool_id) {
+        const server = stellarSdkServer(networkUrl);
+        // eslint-disable-next-line no-await-in-loop
+        const lp = await server
+          .liquidityPools()
+          .liquidityPoolId(v.liquidity_pool_id)
+          .call();
+        balances[k] = {
+          ...balances[k],
+          liquidityPoolId: v.liquidity_pool_id,
+          reserves: lp.reserves,
+        };
+        delete balances[k].liquidity_pool_id;
+      }
+    }
+    isFunded = true;
+  } catch (e) {
+    console.error(e);
+    return {
+      balances,
+      isFunded: false,
+      subentryCount,
+      tokensWithNoBalance: [],
+    };
+  }
+
+  // Get token balances to combine with classic balances
+  const tokenIdList = await getTokenIds(network as NETWORKS);
+
+  const tokenBalances = {} as any;
+  const tokensWithNoBalance = [];
+
+  if (tokenIdList.length) {
+    const params = [new Address(publicKey).toScVal()];
+
+    for (let i = 0; i < tokenIdList.length; i += 1) {
+      const tokenId = tokenIdList[i];
+      /*
+        Right now, Soroban transactions only support 1 operation per tx
+        so we need a builder per value from the contract,
+        once/if multi-op transactions are supported this can send
+        1 tx with an operation for each value.
+      */
+      try {
+        /* eslint-disable no-await-in-loop */
+        const { balance, symbol, ...rest } = await getSorobanTokenBalance(
+          sorobanClientServer,
+          tokenId,
+          {
+            balance: await sorobanClientTxBuilder(),
+            name: await sorobanClientTxBuilder(),
+            decimals: await sorobanClientTxBuilder(),
+            symbol: await sorobanClientTxBuilder(),
+          },
+          params,
+        );
+        /* eslint-enable no-await-in-loop */
+
+        const total = new BigNumber(balance);
+
+        tokenBalances[`${symbol}:${tokenId}`] = {
+          token: { issuer: { key: tokenId }, code: symbol },
+          contractId: tokenId,
+          total,
+          symbol,
+          ...rest,
+        };
+      } catch (e) {
+        console.error(`Token "${tokenId}" missing data on RPC server`);
+        tokensWithNoBalance.push(tokenId);
+      }
+    }
+  }
+
+  return {
+    balances: { ...balances, ...tokenBalances },
+    isFunded,
+    subentryCount,
+    tokensWithNoBalance: [],
+  };
+};
+
+export const getAccountHistoryStandalone = async ({
   publicKey,
   networkDetails,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<AccountHistoryInterface> => {
+}): Promise<Horizon.ServerApi.OperationRecord[]> => {
   const { networkUrl } = networkDetails;
 
-  let operations = [] as Array<HorizonOperation>;
+  let operations = [] as Horizon.ServerApi.OperationRecord[];
 
   try {
     const server = stellarSdkServer(networkUrl);
@@ -493,9 +659,7 @@ export const getAccountHistory = async ({
     console.error(e);
   }
 
-  return {
-    operations,
-  };
+  return operations;
 };
 
 export const getIndexerAccountHistory = async ({
@@ -504,14 +668,14 @@ export const getIndexerAccountHistory = async ({
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}) => {
+}): Promise<Horizon.ServerApi.OperationRecord[]> => {
   try {
     const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}&horizon_url=${networkDetails.networkUrl}`,
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
     );
     const response = await fetch(url.href);
 
-    const data = (await response.json()) as HorizonOperation;
+    const data = await response.json();
     if (!response.ok) {
       throw new Error(data);
     }
@@ -712,6 +876,77 @@ export const signFreighterSorobanTransaction = async ({
   return { signedTransaction };
 };
 
+export const submitFreighterTransaction = ({
+  signedXDR,
+  networkDetails,
+}: {
+  signedXDR: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const tx = TransactionBuilder.fromXDR(
+    signedXDR,
+    networkDetails.networkPassphrase,
+  );
+  const server = stellarSdkServer(networkDetails.networkUrl);
+
+  return submitTx({ server, tx });
+};
+
+export const submitFreighterSorobanTransaction = async ({
+  signedXDR,
+  networkDetails,
+}: {
+  signedXDR: string;
+  networkDetails: NetworkDetails;
+}) => {
+  let tx = {} as Transaction | FeeBumpTransaction;
+  try {
+    tx = TransactionBuilder.fromXDR(
+      signedXDR,
+      networkDetails.networkPassphrase,
+    );
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (!networkDetails.sorobanRpcUrl) {
+    throw new Error("soroban rpc not supported");
+  }
+
+  const serverUrl = networkDetails.sorobanRpcUrl || "";
+
+  const server = new SorobanRpc.Server(serverUrl, {
+    allowHttp: !serverUrl.startsWith("https"),
+  });
+
+  const response = await server.sendTransaction(tx);
+
+  if (response.errorResult) {
+    throw new Error(response.errorResult.result().toString());
+  }
+
+  if (response.status === SendTxStatus.Pending) {
+    let txResponse = await server.getTransaction(response.hash);
+
+    // Poll this until the status is not "NOT_FOUND"
+    while (txResponse.status === GetTxStatus.NotFound) {
+      // See if the transaction is complete
+      // eslint-disable-next-line no-await-in-loop
+      txResponse = await server.getTransaction(response.hash);
+      // Wait a second
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    return response;
+    // eslint-disable-next-line no-else-return
+  } else {
+    throw new Error(
+      `Unabled to submit transaction, status: ${response.status}`,
+    );
+  }
+};
+
 export const addRecentAddress = async ({
   publicKey,
 }: {
@@ -799,7 +1034,7 @@ export const saveSettings = async ({
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
-}): Promise<Settings> => {
+}): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
     isDataSharingAllowed: false,
@@ -809,6 +1044,10 @@ export const saveSettings = async ({
     isSafetyValidationEnabled: true,
     isValidatingSafeAssetsEnabled: true,
     isExperimentalModeEnabled: false,
+    isRpcHealthy: false,
+    userNotification: { enabled: false, message: "" },
+    settingsState: SettingsState.IDLE,
+    isSorobanPublicEnabled: false,
     error: "",
   };
 
@@ -830,11 +1069,12 @@ export const saveSettings = async ({
 
 export const changeNetwork = async (
   networkName: string,
-): Promise<NetworkDetails> => {
+): Promise<{ networkDetails: NetworkDetails; isRpcHealthy: boolean }> => {
   let networkDetails = MAINNET_NETWORK_DETAILS;
+  let isRpcHealthy = false;
 
   try {
-    ({ networkDetails } = await sendMessageToBackground({
+    ({ networkDetails, isRpcHealthy } = await sendMessageToBackground({
       networkName,
       type: SERVICE_TYPES.CHANGE_NETWORK,
     }));
@@ -842,7 +1082,7 @@ export const changeNetwork = async (
     console.error(e);
   }
 
-  return networkDetails;
+  return { networkDetails, isRpcHealthy };
 };
 
 export const addCustomNetwork = async (
@@ -922,7 +1162,7 @@ export const editCustomNetwork = async ({
   return response;
 };
 
-export const loadSettings = (): Promise<Settings> =>
+export const loadSettings = (): Promise<Settings & IndexerSettings> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });

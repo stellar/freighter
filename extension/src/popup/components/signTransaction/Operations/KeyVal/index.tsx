@@ -6,7 +6,6 @@ import {
   LiquidityPoolAsset,
   nativeToScVal,
   Operation,
-  scValToNative,
   Signer,
   SignerKeyOptions,
   StrKey,
@@ -15,87 +14,15 @@ import {
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { truncatedPublicKey, truncateString } from "helpers/stellar";
+import { truncateString } from "helpers/stellar";
+import { formattedBuffer } from "popup/helpers/formatters";
 
-import { buildInvocationTree, InvocationTree } from "popup/helpers/soroban";
+import {
+  buildInvocationTree,
+  InvocationTree,
+  scValByType,
+} from "popup/helpers/soroban";
 import "./styles.scss";
-
-const ScValByType = ({ scVal }: { scVal: xdr.ScVal }) => {
-  switch (scVal.switch()) {
-    case xdr.ScValType.scvAddress(): {
-      const address = scVal.address();
-      const addressType = address.switch();
-      if (addressType.name === "scAddressTypeAccount") {
-        return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
-      }
-      return StrKey.encodeContract(address.contractId());
-    }
-
-    case xdr.ScValType.scvBool(): {
-      return scVal.b();
-    }
-
-    case xdr.ScValType.scvBytes(): {
-      return scVal.bytes().toString();
-    }
-
-    case xdr.ScValType.scvContractInstance(): {
-      const instance = scVal.instance();
-      return instance.executable().wasmHash()?.toString();
-    }
-
-    case xdr.ScValType.scvError(): {
-      const error = scVal.error();
-      return `${error.contractCode()} - ${error.code().name}`;
-    }
-
-    case xdr.ScValType.scvTimepoint():
-    case xdr.ScValType.scvDuration():
-    case xdr.ScValType.scvI128():
-    case xdr.ScValType.scvI256():
-    case xdr.ScValType.scvI32():
-    case xdr.ScValType.scvI64():
-    case xdr.ScValType.scvU128():
-    case xdr.ScValType.scvU256():
-    case xdr.ScValType.scvU32():
-    case xdr.ScValType.scvU64(): {
-      return scValToNative(scVal).toString();
-    }
-
-    case xdr.ScValType.scvLedgerKeyNonce():
-    case xdr.ScValType.scvLedgerKeyContractInstance(): {
-      return scValToNative(scVal);
-    }
-
-    case xdr.ScValType.scvVec():
-    case xdr.ScValType.scvMap(): {
-      return JSON.stringify(
-        scValToNative(scVal),
-        (_, val) => (typeof val === "bigint" ? val.toString() : val),
-        2,
-      );
-    }
-
-    case xdr.ScValType.scvString():
-    case xdr.ScValType.scvSymbol(): {
-      const native = scValToNative(scVal);
-      if (native.constructor === "Uint8Array") {
-        return native.toString();
-      }
-      return native;
-    }
-
-    case xdr.ScValType.scvVoid(): {
-      return null;
-    }
-
-    default:
-      return null;
-  }
-};
-
-const formattedBuffer = (data: Buffer) =>
-  truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
 
 export const KeyValueList = ({
   operationKey,
@@ -155,7 +82,9 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
             <>
               <KeyValueList
                 operationKey={t("Salt")}
-                operationValue={_invocation.args.wasm.salt}
+                operationValue={truncateString(
+                  _invocation.args.wasm.salt as string,
+                )}
               />
               <KeyValueList
                 operationKey={t("Hash")}
@@ -456,8 +385,8 @@ export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
     <div>Parameters</div>
     <div className="OperationParameters">
       {args.map((arg) => (
-        <div className="Parameter">
-          <ScValByType scVal={arg} />
+        <div className="Parameter" key={arg.toXDR().toString()}>
+          {scValByType(arg)}
         </div>
       ))}
     </div>
@@ -500,7 +429,10 @@ export const KeyValueInvokeHostFn = ({
                   operationKey={t("Account ID")}
                   operationValue={accountId}
                 />
-                <KeyValueList operationKey={t("Salt")} operationValue={salt} />
+                <KeyValueList
+                  operationKey={t("Salt")}
+                  operationValue={truncateString(salt)}
+                />
                 <KeyValueList
                   operationKey={t("Executable Type")}
                   operationValue={executableType}
@@ -525,7 +457,10 @@ export const KeyValueInvokeHostFn = ({
                 operationKey={t("Contract ID")}
                 operationValue={contractId}
               />
-              <KeyValueList operationKey={t("Salt")} operationValue={salt} />
+              <KeyValueList
+                operationKey={t("Salt")}
+                operationValue={truncateString(salt)}
+              />
               <KeyValueList
                 operationKey={t("Executable Type")}
                 operationValue={executableType}

@@ -57,6 +57,7 @@ export const ViewPublicKey = () => {
   const handleSubmit = async (values: FormValue) => {
     const { accountName: newAccountName } = values;
     if (accountName !== newAccountName) {
+      // eslint-disable-next-line
       await dispatch(updateAccountName(newAccountName));
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
     }
@@ -64,7 +65,7 @@ export const ViewPublicKey = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
@@ -150,6 +151,6 @@ export const ViewPublicKey = () => {
           ) : null}
         </div>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

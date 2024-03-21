@@ -21,7 +21,7 @@ export const Security = () => {
   const { t } = useTranslation();
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title="Security" />
       <View.Content hasNoTopPadding>
         <ListNavLinkWrapper>
@@ -44,6 +44,6 @@ export const Security = () => {
           </ListNavButtonLink> */}
         </ListNavLinkWrapper>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

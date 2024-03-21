@@ -62,7 +62,6 @@
   "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
   "Asset Info": "Asset Info",
   "Asset not found": "Asset not found",
-  "Asset not in the asset list": "Asset not in the asset list",
   "Assets found in this domain": "Assets found in this domain",
   "At least one uppercase letter": "At least one uppercase letter",
   "At the end of this process, Freighter will only display accounts related to the new backup phrase": {
@@ -96,6 +95,7 @@
   "Clear Flags": "Clear Flags",
   "Click on Freighter’s pin button to have it always visible": "Click on Freighter’s pin button to have it always visible",
   "Click on the extensions button at the top of your browser’s bar": "Click on the extensions button at the top of your browser’s bar",
+  "Close": "Close",
   "Confirm": "Confirm",
   "Confirm Data": "Confirm Data",
   "Confirm password": "Confirm password",
@@ -108,6 +108,7 @@
   "Connect device to computer": "Connect device to computer",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Continue": "Continue",
+  "Contract Address": "Contract Address",
   "Contract ID": "Contract ID",
   "Conversion rate": "Conversion rate",
   "Conversion rate changed": "Conversion rate changed",
@@ -155,7 +156,8 @@
   "Error code": "Error code",
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
-  "Extend TO": "Extend TO",
+  "Extend To": "Extend To",
+  "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fee": "Fee",
   "Fees can vary depending on the network congestion": {
@@ -193,6 +195,7 @@
   "History": "History",
   "Home": "Home",
   "Home Domain": "Home Domain",
+  "Horizon is temporarily experiencing issues": "Horizon is temporarily experiencing issues",
   "HORIZON RPC URL": "HORIZON RPC URL",
   "I have my 12 word seed phrase": "I have my 12 word seed phrase",
   "I have my recovery phrase safe": "I have my recovery phrase safe",
@@ -250,6 +253,7 @@
   "Log In": "Log In",
   "Log Out": "Log Out",
   "Low Threshold": "Low Threshold",
+  "Make sure it is a funded Stellar account and try again": "Make sure it is a funded Stellar account and try again.",
   "Make sure you have your 12 word backup phrase": "Make sure you have your 12 word backup phrase",
   "Make sure you have your current 12 words backup phrase before continuing": "Make sure you have your current 12 words backup phrase before continuing.",
   "Malicious": "Malicious",
@@ -303,7 +307,6 @@
   "Not enough lumens": "Not enough lumens",
   "Not funded": "Not funded",
   "Not migrated": "Not migrated",
-  "Not part of the asset list": "Not part of the asset list",
   "Not recommended asset": "Not recommended asset",
   "Now, let’s create a new mnemonic phrase": "Now, let’s create a new mnemonic phrase",
   "Offer ID": "Offer ID",
@@ -318,7 +321,6 @@
   "Operation": "Operation",
   "Operations": "Operations",
   "Optional": "Optional",
-  "Part of the asset list": "Part of the asset list",
   "Passphrase": "Passphrase",
   "Paths": "Paths",
   "Please check if the network information is correct and try again": {
@@ -329,6 +331,7 @@
   "Please double-check its information and characteristics": {
     " This can help you identify fraudulent assets": "Please double-check its information and characteristics. This can help you identify fraudulent assets."
   },
+  "Please note the following message": "Please note the following message",
   "Please proceed with caution": "Please proceed with caution.",
   "Please select a different network before removing it": "Please select a different network before removing it.",
   "Please select each word in the same order you have": "Please select each word in the same order you have",
@@ -374,6 +377,7 @@
   "Send": "Send",
   "SEND": "SEND",
   "Send Amount": "Send Amount",
+  "Send at least 1 XLM to create account": "Send at least 1 XLM to create account.",
   "Send Max": "Send Max",
   "Send Payment": "Send Payment",
   "Send Type": "Send Type",
@@ -398,6 +402,9 @@
   "Signing arbitrary data with a hardware wallet is currently not supported": "Signing arbitrary data with a hardware wallet is currently not supported.",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
   "Signs for external accounts": "Signs for external accounts",
+  "Some features may be disabled at this time": "Some features may be disabled at this time.",
+  "Some of your assets may not appear, but they are still safe on the network!": "Some of your assets may not appear, but they are still safe on the network!",
+  "Soroban RPC is temporarily experiencing issues": "Soroban RPC is temporarily experiencing issues",
   "SOROBAN RPC URL": "SOROBAN RPC URL",
   "Source": "Source",
   "Sponsored ID": "Sponsored ID",
@@ -417,13 +424,11 @@
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
+  "The asset is not part of Stellar Expert's top 50 assets list": "The asset is not part of Stellar Expert's top 50 assets list",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
-  "The destination account does not accept the asset you’re sending": {
-    " The destination account must opt to accept this asset before receiving it": "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it."
-  },
-  "The destination account doesn’t exist": {
-    " Make sure it is a funded Stellar account and try again": "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again."
-  },
+  "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
+  "The destination account doesn’t exist": "The destination account doesn’t exist.",
+  "The destination account must opt to accept this asset before receiving it": "The destination account must opt to accept this asset before receiving it.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
@@ -437,9 +442,12 @@
   "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
   "This asset has a balance of": "This asset has a balance of",
+  "This asset is not part of": "This asset is not part of",
+  "This asset is part of": "This asset is part of",
   "This asset was tagged as fraudulent by stellar": {
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
+  "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction": "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
@@ -501,6 +509,7 @@
   "Your account balance is not sufficient for this transaction": {
     " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
   },
+  "Your account balances could not be fetched at this time": "Your account balances could not be fetched at this time.",
   "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"

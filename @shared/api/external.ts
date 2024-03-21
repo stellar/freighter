@@ -3,11 +3,29 @@ import { NetworkDetails } from "../constants/stellar";
 import { sendMessageToContentScript } from "./helpers/extensionMessaging";
 import { UserInfo } from "./types";
 
-export const requestPublicKey = async (): Promise<string> => {
+export const requestAccess = async (): Promise<string> => {
   let response = { publicKey: "", error: "" };
   try {
     response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const { publicKey, error } = response;
+
+  if (error) {
+    throw error;
+  }
+  return publicKey;
+};
+
+export const requestPublicKey = async (): Promise<string> => {
+  let response = { publicKey: "", error: "" };
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY,
     });
   } catch (e) {
     console.error(e);

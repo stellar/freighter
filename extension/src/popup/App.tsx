@@ -16,6 +16,7 @@ import { ErrorTracking } from "popup/components/ErrorTracking";
 import { Router } from "./Router";
 
 import "./styles/global.scss";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const rootReducer = combineReducers({
   auth,
@@ -36,13 +37,19 @@ export const store = configureStore({
 
 export type AppDispatch = typeof store.dispatch;
 
-export function App() {
-  return (
+export const App = () => (
+  <ErrorBoundary>
     <Provider store={store}>
       <ErrorTracking />
-      <Suspense fallback={<Loading />}>
+      <Suspense
+        fallback={
+          <div className="RouterLoading">
+            <Loading />
+          </div>
+        }
+      >
         <Router />
       </Suspense>
     </Provider>
-  );
-}
+  </ErrorBoundary>
+);

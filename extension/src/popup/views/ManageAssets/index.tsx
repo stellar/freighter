@@ -27,7 +27,7 @@ export const ManageAssets = () => {
   const [errorAsset, setErrorAsset] = useState("");
 
   useEffect(() => {
-    const xdrEnvelope = error?.response?.extras.envelope_xdr;
+    const xdrEnvelope = error?.response?.extras?.envelope_xdr;
     if (xdrEnvelope) {
       const parsedTx = TransactionBuilder.fromXDR(
         xdrEnvelope,

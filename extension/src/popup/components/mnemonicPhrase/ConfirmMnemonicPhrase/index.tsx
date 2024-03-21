@@ -123,7 +123,7 @@ export const ConfirmMnemonicPhrase = ({
                   key={wordKey}
                   onChange={(e) => {
                     handleChange(e);
-                    updatePhrase(e.target);
+                    updatePhrase(e.target as HTMLInputElement);
                   }}
                   wordKey={wordKey}
                   word={convertToWord(wordKey)}

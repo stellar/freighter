@@ -117,6 +117,7 @@ export const RecoverAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
 
+    // eslint-disable-next-line
     await dispatch(
       recoverAccount({
         password,
@@ -160,7 +161,7 @@ export const RecoverAccount = () => {
   };
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Formik
@@ -312,6 +313,6 @@ export const RecoverAccount = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

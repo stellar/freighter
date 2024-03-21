@@ -24,7 +24,7 @@ import { useIsSwap } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals } from "popup/helpers/soroban";
+import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -44,13 +44,12 @@ import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
-import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 
+import { BalanceMap, SorobanBalance } from "@shared/api/types";
 import "../styles.scss";
-import { BalanceMap } from "@shared/api/types";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -143,38 +142,49 @@ export const SendAmount = ({
     image: "",
   });
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let availBalance = new BigNumber("0");
+      let _availBalance = new BigNumber("0");
+      if (isToken) {
+        // TODO: balances is incorrectly typed and does not include SorobanBalance
+        const tokenBalance = (accountBalances?.balances?.[
+          selectedAsset
+        ] as any) as SorobanBalance;
+        return getTokenBalance(tokenBalance);
+      }
       if (accountBalances.balances) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
           (2 + accountBalances.subentryCount) * BASE_RESERVE,
         );
 
+        const balance =
+          accountBalances.balances[selectedAsset]?.total || new BigNumber("0");
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
-          const currentBal = new BigNumber(
-            accountBalances.balances[selectedAsset].total.toFixed(),
-          );
-          availBalance = currentBal
+          const currentBal = new BigNumber(balance.toFixed());
+          _availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
 
-          if (availBalance.lt(minBalance)) {
+          if (_availBalance.lt(minBalance)) {
             return "0";
           }
         } else {
           // needed for different wallet-sdk bignumber.js version
-          availBalance = new BigNumber(
-            accountBalances.balances[selectedAsset].total,
-          );
+          _availBalance = new BigNumber(balance);
         }
       }
 
-      return availBalance.toFixed().toString();
+      return _availBalance.toFixed().toString();
     },
-    [accountBalances.balances, accountBalances.subentryCount, recommendedFee],
+    [
+      accountBalances.balances,
+      accountBalances.subentryCount,
+      recommendedFee,
+      isToken,
+    ],
   );
 
   const [availBalance, setAvailBalance] = useState(
@@ -261,8 +271,9 @@ export const SendAmount = ({
 
   // on asset select get conversion rate
   useEffect(() => {
-    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0)
+    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
       return;
+    }
     setLoadingRate(true);
     // clear dest amount before re-calculating for UI
     dispatch(resetDestinationAmount());
@@ -391,7 +402,7 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <View data-testid="send-amount-view">
+      <React.Fragment>
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
           subtitle={
@@ -538,9 +549,9 @@ export const SendAmount = ({
             </div>
           </div>
         </View.Content>
-        {isSwap && <BottomNav />}
-      </View>
+      </React.Fragment>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />

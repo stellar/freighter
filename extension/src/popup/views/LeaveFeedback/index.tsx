@@ -16,7 +16,7 @@ export const LeaveFeedback = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title="Leave Feedback" />
       <View.Content hasNoTopPadding>
         <div className="LeaveFeedback">
@@ -73,6 +73,6 @@ export const LeaveFeedback = () => {
           </div>
         </div>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

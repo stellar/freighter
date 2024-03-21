@@ -12,7 +12,7 @@ export const Welcome = () => {
   const { t } = useTranslation();
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content>
         <div className="Welcome__column">
@@ -63,6 +63,6 @@ export const Welcome = () => {
           </div>
         </div>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

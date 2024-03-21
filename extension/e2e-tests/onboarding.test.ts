@@ -6,6 +6,7 @@ test.beforeEach(async ({ page, extensionId }) => {
 });
 
 test("Welcome page loads", async ({ page }) => {
+  await page.locator(".Welcome__column").waitFor();
   await expect(
     page.getByText("Welcome! Is this your first time using Freighter?"),
   ).toBeVisible();

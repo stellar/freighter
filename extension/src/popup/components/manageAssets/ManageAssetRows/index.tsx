@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { StellarToml, Networks } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -55,6 +55,8 @@ import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { isContractId } from "popup/helpers/soroban";
 import IconAdd from "popup/assets/icon-add.svg";
 import IconRemove from "popup/assets/icon-remove.svg";
+
+import { SorobanContext } from "popup/SorobanContext";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -113,6 +115,7 @@ export const ManageAssetRows = ({
     issuer: "",
     image: "",
   });
+  const sorobanClient = useContext(SorobanContext);
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -144,6 +147,7 @@ export const ManageAssetRows = ({
     };
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackChangeTrustline();
     } else {
@@ -165,8 +169,10 @@ export const ManageAssetRows = ({
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
+          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
+          sorobanClient,
         }),
       );
 
@@ -176,6 +182,7 @@ export const ManageAssetRows = ({
           getAccountBalances({
             publicKey,
             networkDetails,
+            sorobanClient,
           }),
         );
         trackChangeTrustline();
@@ -329,7 +336,9 @@ export const ManageAssetRows = ({
         <div className="ManageAssetRows__content">
           {assetRows.map(
             ({ code = "", domain, image = "", issuer = "", name = "" }) => {
-              if (!accountBalances.balances) return null;
+              if (!accountBalances.balances) {
+                return null;
+              }
               const isContract = isContractId(issuer);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               const isTrustlineActive =
@@ -436,6 +445,7 @@ export const ManageAssetRows = ({
         {children}
       </div>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showNewAssetWarning || showBlockedDomainWarning}
       />
