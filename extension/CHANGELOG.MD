@@ -1,3 +1,33 @@
+# Release notes - Wallets - FE-Freighter-5.17.4
+
+### Bug
+
+Check contract against allowList \+ native contract
+
+Account sub 400 level errors not properly handled
+
+Add an option to send from the select asset detail screen for Soroban tokens
+
+Fix missing loading state glitch during switch accounts
+
+Fix scrolling issue on search/add asset screens
+
+Show Horizon errors in extension UI
+
+### Story
+
+Upgrade Typescript to v5
+
+Address dependabot alerts
+
+Special case token transfers in sign tx details overview
+
+Upgrade React to v18
+
+\[FE\] Generic extension notification from Freighter BE
+
+\[FE\] Add degraded service notification for Horizon outage
+
 # Release notes - Wallets - Freighter-5.17.3
 
 ### Bug
