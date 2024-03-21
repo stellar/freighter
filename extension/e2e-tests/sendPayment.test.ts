@@ -1,7 +1,5 @@
-import { generateMnemonic } from "stellar-hd-wallet";
 import { test, expect } from "./test-fixtures";
-
-const PASSWORD = "My-password123";
+import { login, PASSWORD } from "./helpers/login";
 
 // test.beforeAll(async ({ page, extensionId }) => {
 //   await page.goto(`chrome-extension://${extensionId}/index.html`);
@@ -31,29 +29,26 @@ const PASSWORD = "My-password123";
 //   });
 // });
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    const mock = {
-      applicationState: "MNEMONIC_PHRASE_CONFIRMED",
+// test.beforeEach(async ({ page }) => {
+//   await page.addInitScript(() => {
+//     const mock = {
+//       applicationState: "MNEMONIC_PHRASE_CONFIRMED",
 
-      "stellarkeys:0.6724197884945977": {
-        encryptedBlob:
-          "AYhorC6+806D2+vWt5VOEHhefk2H6DCHoshDTSrVjREGXo8/03K9MRwl0mRPZxMsmlnWI/8gZoBshUceQj1WmOQzSVlXHdyCP1oEs1Wrglb1FffbXEWcHJ4nM5S+ktr1ckUFuCICFV1W7y3+Eo8XTGvdqt1MdZcehSMdiVgMyOLkXsrcDDEhifj7L3TEvnhRBmV875NiL7CRD6C/gJEenFEfQV7wqrS7Ym88gjtRpQ6D57HdA5Buj6tL4Wc9n1nq4H3KAYyeAXwdze7eFWftlnBUUs4T5d9y2UaoauBS8ugj2R1YMMwn0iLEpXdwCDFPD7QWgxzX75jnOTKonPhzu+cFD6Bddl4f4qMaNZVkex980bLW8DpfCHU6slaU2dqOCUTWaph2ZY9N9dM1mXUWA+7YuUJudecRtlUnxKsc8S8=",
-        encrypterName: "ScryptEncrypter",
-        id: "0.6724197884945977",
-        salt: "TseGH97ldIaXjFhPTFL8TyyDi9j+8Hdk7TCm+d2iYd4=",
-      },
-    };
-    // Supposed to mock chrome.storage.sync.get
-    chrome.storage.local.get = async () => mock;
-  });
-});
+//       "stellarkeys:0.6724197884945977": {
+//         encryptedBlob:
+//           "AYhorC6+806D2+vWt5VOEHhefk2H6DCHoshDTSrVjREGXo8/03K9MRwl0mRPZxMsmlnWI/8gZoBshUceQj1WmOQzSVlXHdyCP1oEs1Wrglb1FffbXEWcHJ4nM5S+ktr1ckUFuCICFV1W7y3+Eo8XTGvdqt1MdZcehSMdiVgMyOLkXsrcDDEhifj7L3TEvnhRBmV875NiL7CRD6C/gJEenFEfQV7wqrS7Ym88gjtRpQ6D57HdA5Buj6tL4Wc9n1nq4H3KAYyeAXwdze7eFWftlnBUUs4T5d9y2UaoauBS8ugj2R1YMMwn0iLEpXdwCDFPD7QWgxzX75jnOTKonPhzu+cFD6Bddl4f4qMaNZVkex980bLW8DpfCHU6slaU2dqOCUTWaph2ZY9N9dM1mXUWA+7YuUJudecRtlUnxKsc8S8=",
+//         encrypterName: "ScryptEncrypter",
+//         id: "0.6724197884945977",
+//         salt: "TseGH97ldIaXjFhPTFL8TyyDi9j+8Hdk7TCm+d2iYd4=",
+//       },
+//     };
+//     // Supposed to mock chrome.storage.sync.get
+//     window.chrome.storage.local.get = async () => mock;
+//   });
+// });
 
 test("Send XLM payment", async ({ page, extensionId }) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
-  await expect(page.getByTestId("account-assets")).toBeVisible({
-    timeout: 10000,
-  });
+  await login({ page, extensionId });
   await page.getByTitle("Send Payment").click();
 
   await expect(page.getByText("Send To")).toBeVisible();
@@ -79,7 +74,9 @@ test("Send XLM payment", async ({ page, extensionId }) => {
   await expect(page.getByText("Confirm Send")).toBeVisible();
   await page.getByTestId("transaction-details-btn-send").click();
 
-  await expect(page.getByText("Successfully sent")).toBeVisible();
+  await expect(page.getByText("Successfully sent")).toBeVisible({
+    timeout: 20000,
+  });
 
   await page.getByText("Details").click();
   await expect(page.getByText("Sent XLM")).toBeVisible();
