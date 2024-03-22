@@ -15,8 +15,8 @@ import { parsedSearchParam, getUrlHostname } from "./urls";
 export const truncateString = (str: string, charCount = 4) =>
   str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
-export const truncatedPublicKey = (publicKey: string) =>
-  truncateString(publicKey);
+export const truncatedPublicKey = (publicKey: string, charCount = 4) =>
+  truncateString(publicKey, charCount);
 
 export const truncatedFedAddress = (addr: string) => {
   if (!addr || addr.indexOf("*") === -1) {
