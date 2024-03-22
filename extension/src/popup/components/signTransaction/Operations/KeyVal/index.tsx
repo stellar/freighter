@@ -1,4 +1,4 @@
-import React, { RefObject, useRef } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { CopyText, Icon } from "@stellar/design-system";
 import {
@@ -28,17 +28,13 @@ import "./styles.scss";
 export const KeyValueList = ({
   operationKey,
   operationValue,
-  valueRef,
 }: {
   operationKey: string;
   operationValue: string | number | React.ReactNode;
-  valueRef?: RefObject<HTMLDivElement>;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
     <div className="Operations__pair--key">{operationKey}</div>
-    <div className="Operations__pair--value" ref={valueRef}>
-      {operationValue}
-    </div>
+    <div className="Operations__pair--value">{operationValue}</div>
   </div>
 );
 
@@ -414,7 +410,6 @@ export const KeyValueInvokeHostFn = ({
 }) => {
   const { t } = useTranslation();
   const hostfn = op.func;
-  const pubKeyParentRef = useRef<HTMLDivElement>(null);
 
   function renderDetails() {
     switch (hostfn.switch()) {
@@ -548,7 +543,6 @@ export const KeyValueInvokeHostFn = ({
               operationValue="Invoke Contract"
             />
             <KeyValueList
-              valueRef={pubKeyParentRef}
               operationKey={t("Contract ID")}
               operationValue={
                 <CopyText textToCopy={contractId}>
