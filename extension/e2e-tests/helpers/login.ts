@@ -24,7 +24,9 @@ export const login = async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Test Net").click();
-  await page.getByRole("button", { name: "Fund with Friendbot" }).click();
+  await page
+    .getByRole("button", { name: "Fund with Friendbot" })
+    .click({ force: true });
 
   await expect(page.getByTestId("account-assets")).toBeVisible({
     timeout: 10000,
