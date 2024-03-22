@@ -1,4 +1,4 @@
-import React from "react";
+import React, { RefObject, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Asset,
@@ -23,17 +23,22 @@ import {
   scValByType,
 } from "popup/helpers/soroban";
 import "./styles.scss";
+import { TruncateMiddle } from "popup/components/TruncateMiddle";
 
 export const KeyValueList = ({
   operationKey,
   operationValue,
+  valueRef,
 }: {
   operationKey: string;
   operationValue: string | number | React.ReactNode;
+  valueRef?: RefObject<HTMLDivElement>;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
     <div className="Operations__pair--key">{operationKey}</div>
-    <div className="Operations__pair--value">{operationValue}</div>
+    <div className="Operations__pair--value" ref={valueRef}>
+      {operationValue}
+    </div>
   </div>
 );
 
@@ -400,6 +405,7 @@ export const KeyValueInvokeHostFn = ({
 }) => {
   const { t } = useTranslation();
   const hostfn = op.func;
+  const pubKeyParentRef = useRef<HTMLDivElement>(null);
 
   function renderDetails() {
     switch (hostfn.switch()) {
@@ -533,8 +539,14 @@ export const KeyValueInvokeHostFn = ({
               operationValue="Invoke Contract"
             />
             <KeyValueList
+              valueRef={pubKeyParentRef}
               operationKey={t("Contract ID")}
-              operationValue={truncateString(contractId)}
+              operationValue={
+                <TruncateMiddle
+                  value={contractId}
+                  parentRef={pubKeyParentRef}
+                />
+              }
             />
             <KeyValueList
               operationKey={t("Function Name")}

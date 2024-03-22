@@ -1,6 +1,8 @@
 import { truncateString } from "helpers/stellar";
 import React, { useEffect, useState, RefObject } from "react";
 
+import "./styles.scss";
+
 function getStringWidth(value: string, font = "16px Inter, sans-serif") {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d")!;
@@ -16,7 +18,7 @@ export const TruncateMiddle = ({
 }: {
   parentRef: RefObject<Element>;
   value: string;
-  font: string;
+  font?: string;
 }) => {
   //  the difference between the parent elements width, and out strings width
   const [widthPercentage, setWidthPercentage] = useState(0);
@@ -32,7 +34,9 @@ export const TruncateMiddle = ({
     }
   }, [parentRef, value, font]);
 
-  if (!widthPercentage) return <></>;
+  if (!widthPercentage) {
+    return <></>;
+  }
 
   // fits in parent element
   if (widthPercentage > 100) {
