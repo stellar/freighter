@@ -7,6 +7,7 @@ import {
   Loader,
   Link,
   Notification,
+  CopyText,
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
@@ -1028,13 +1029,25 @@ const WarningMessageTokenDetails = ({
         </p>
       )}
       <p>
-        <span className="InlineLabel">Contract ID:</span> {transfer.contractId}
+        <span className="InlineLabel">Contract ID:</span>
+        <CopyText textToCopy={transfer.contractId}>
+          <div className="CopyContractId">
+            <Icon.ContentCopy />
+            <span className="Value">{transfer.contractId}</span>
+          </div>
+        </CopyText>
       </p>
       <p>
         <span className="InlineLabel">Amount:</span> {transfer.amount}
       </p>
       <p>
-        <span className="InlineLabel">To:</span> {transfer.to}
+        <span className="InlineLabel">To:</span>
+        <CopyText textToCopy={transfer.to}>
+          <div className="CopyContractId">
+            <Icon.ContentCopy />
+            <span className="Value">{transfer.to}</span>
+          </div>
+        </CopyText>
       </p>
     </div>
   );

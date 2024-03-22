@@ -41,6 +41,21 @@
         flex-grow: 1;
         display: flex;
         justify-content: flex-end;
+
+        .CopyText {
+          .Floater {
+            .CopyText__content {
+              .CopyContractId {
+                display: flex;
+                align-items: center;
+
+                .Value {
+                  margin-left: 0.25rem;
+                }
+              }
+            }
+          }
+        }
       }
 
       &--invoke {

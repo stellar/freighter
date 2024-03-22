@@ -11,7 +11,7 @@ import {
   xdr,
 } from "stellar-sdk";
 import { useSelector } from "react-redux";
-import { Button, Icon, Loader } from "@stellar/design-system";
+import { Button, CopyText, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -155,7 +155,10 @@ export const ReviewAuth = () => {
                 className="ReviewAuth__Actions__PublicKey"
                 onClick={() => setIsDropdownOpen(true)}
               >
-                <KeyIdenticon publicKey={currentAccount.publicKey} />
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
                 <Icon.ChevronDown />
               </button>
             </div>
@@ -241,14 +244,24 @@ const TransferSummary = ({
           <Icon.ArrowCircleRight />
           <p>Receiver</p>
         </div>
-        <KeyIdenticon publicKey={transfer.to} isSmall />
+        <KeyIdenticon
+          allowCopy
+          iconSide="right"
+          publicKey={transfer.to}
+          isSmall
+        />
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
           <Icon.ArrowCircleLeft />
           <p>Sender</p>
         </div>
-        <KeyIdenticon publicKey={transfer.from} isSmall />
+        <KeyIdenticon
+          allowCopy
+          iconSide="right"
+          publicKey={transfer.from}
+          isSmall
+        />
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
@@ -427,7 +440,16 @@ const AuthDetail = ({
               <div className="AuthDetail__InfoBlock">
                 <KeyValueList
                   operationKey={t("Contract ID")}
-                  operationValue={truncateString(detail.contractId)}
+                  operationValue={
+                    <CopyText textToCopy={detail.contractId}>
+                      <div className="CopyContractId">
+                        <Icon.ContentCopy />
+                        <span className="Value">
+                          {truncateString(detail.contractId)}
+                        </span>
+                      </div>
+                    </CopyText>
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Function Name")}
@@ -446,7 +468,16 @@ const AuthDetail = ({
               <div className="AuthDetail__InfoBlock">
                 <KeyValueList
                   operationKey={t("Contract Address")}
-                  operationValue={truncateString(detail.address)}
+                  operationValue={
+                    <CopyText textToCopy={detail.address}>
+                      <div className="CopyContractId">
+                        <Icon.ContentCopy />
+                        <span className="Value">
+                          {truncateString(detail.address)}
+                        </span>
+                      </div>
+                    </CopyText>
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Hash")}

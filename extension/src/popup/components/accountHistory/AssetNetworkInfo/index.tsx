@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { CopyText, Icon } from "@stellar/design-system";
 
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
@@ -60,7 +61,7 @@ export const AssetNetworkInfo = ({
     if (networkIconUrl || assetType === "native") {
       return <img src={networkIconUrl || StellarLogo} alt="Network icon" />;
     }
-    return <div className="AssetNetworkInfo__network__icon" />;
+    return null;
   };
 
   return (
@@ -68,7 +69,12 @@ export const AssetNetworkInfo = ({
       <>
         {decideNetworkIcon()}
         {contractId ? (
-          <span>{displaySorobanId(contractId, 32)}</span>
+          <CopyText textToCopy={contractId}>
+            <div className="CopyContractId">
+              <Icon.ContentCopy />
+              <span className="Value">{displaySorobanId(contractId, 28)}</span>
+            </div>
+          </CopyText>
         ) : (
           <span>{assetDomain || "Stellar Lumens"}</span>
         )}

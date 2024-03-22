@@ -1,5 +1,6 @@
 import React, { RefObject, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { CopyText, Icon } from "@stellar/design-system";
 import {
   Asset,
   Claimant,
@@ -23,7 +24,6 @@ import {
   scValByType,
 } from "popup/helpers/soroban";
 import "./styles.scss";
-import { TruncateMiddle } from "popup/components/TruncateMiddle";
 
 export const KeyValueList = ({
   operationKey,
@@ -391,7 +391,16 @@ export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
     <div className="OperationParameters">
       {args.map((arg) => (
         <div className="Parameter" key={arg.toXDR().toString()}>
-          {scValByType(arg)}
+          {arg.switch() === xdr.ScValType.scvAddress() ? (
+            <CopyText textToCopy={scValByType(arg)}>
+              <div className="CopyContractId">
+                <Icon.ContentCopy />
+                <span className="Value">{scValByType(arg)}</span>
+              </div>
+            </CopyText>
+          ) : (
+            scValByType(arg)
+          )}
         </div>
       ))}
     </div>
@@ -542,10 +551,14 @@ export const KeyValueInvokeHostFn = ({
               valueRef={pubKeyParentRef}
               operationKey={t("Contract ID")}
               operationValue={
-                <TruncateMiddle
-                  value={contractId}
-                  parentRef={pubKeyParentRef}
-                />
+                <CopyText textToCopy={contractId}>
+                  <div className="CopyContractId">
+                    <Icon.ContentCopy />
+                    <span className="Value">
+                      {truncateString(contractId, 6)}
+                    </span>
+                  </div>
+                </CopyText>
               }
             />
             <KeyValueList

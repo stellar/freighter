@@ -1,5 +1,4 @@
 .KeyIdenticon {
-  width: 100%;
   --Icon-padding: 0.25rem;
   --Icon-dimension: 1.5rem;
 
@@ -11,7 +10,6 @@
     border: 1px solid var(--color-gray-60);
     border-radius: 2rem;
     display: flex;
-    margin-right: 0.5rem;
     padding: var(--Icon-padding);
     height: var(--Icon-dimension);
     width: var(--Icon-dimension);
@@ -20,5 +18,14 @@
   &--key {
     width: 100%;
     display: flex;
+
+    .CopyContractId {
+      display: flex;
+      align-items: center;
+
+      .Value {
+        margin-left: 0.25rem;
+      }
+    }
   }
 }
