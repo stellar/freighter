@@ -74,7 +74,6 @@ import { SettingsState } from "@shared/api/types";
 import { SignBlob } from "./views/SignBlob";
 import { ReviewAuth } from "./views/ReviewAuth";
 
-import { SorobanProvider } from "./SorobanContext";
 import { View } from "./basics/layout/View";
 import { BottomNav } from "./components/BottomNav";
 import { useIsSwap } from "./helpers/useIsSwap";
@@ -113,11 +112,7 @@ export const PublicKeyRoute = (props: RouteProps) => {
       />
     );
   }
-  return (
-    <SorobanProvider pubKey={publicKey}>
-      <Route {...props} />
-    </SorobanProvider>
-  );
+  return <Route {...props} />;
 };
 
 export const PrivateKeyRoute = (props: RouteProps) => {
