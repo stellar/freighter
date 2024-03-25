@@ -1,4 +1,4 @@
-import React, { useContext, useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import {
@@ -59,7 +59,6 @@ import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 import { searchToken } from "popup/helpers/searchAsset";
 import { captureException } from "@sentry/browser";
-import { SorobanContext } from "popup/SorobanContext";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -306,7 +305,6 @@ export const ScamAssetWarning = ({
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const sorobanClient = useContext(SorobanContext);
 
   const closeOverlay = () => {
     if (warningRef.current) {
@@ -367,7 +365,6 @@ export const ScamAssetWarning = ({
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
           }),
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
@@ -501,7 +498,6 @@ export const NewAssetWarning = ({
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
   const warningRef = useRef<HTMLDivElement>(null);
   const { recommendedFee } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -573,7 +569,6 @@ export const NewAssetWarning = ({
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
           }),
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {

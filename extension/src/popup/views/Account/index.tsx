@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
@@ -9,16 +9,12 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import {
-  getAccountHistoryStandalone,
-  getIndexerAccountHistory,
-} from "@shared/api/internal";
+import { getAccountHistory } from "@shared/api/internal";
 import {
   AccountBalancesInterface,
   ActionStatus,
   AssetType,
 } from "@shared/api/types";
-import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import {
   settingsNetworkDetailsSelector,
@@ -59,8 +55,6 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import "popup/metrics/authServices";
 
-import { SorobanContext } from "../../SorobanContext";
-
 import "./styles.scss";
 
 export const defaultAccountBalances = {
@@ -90,8 +84,6 @@ export const Account = () => {
   const [selectedAsset, setSelectedAsset] = useState("");
   const [isLoading, setLoading] = useState(true);
 
-  const sorobanClient = useContext(SorobanContext);
-
   const { balances, isFunded, error } = accountBalances;
 
   useEffect(() => {
@@ -103,7 +95,6 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
-        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());
@@ -111,13 +102,7 @@ export const Account = () => {
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [
-    publicKey,
-    networkDetails,
-    isAccountFriendbotFunded,
-    sorobanClient,
-    dispatch,
-  ]);
+  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
     if (!balances) {
@@ -136,18 +121,7 @@ export const Account = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        let operations = [];
-        if (isCustomNetwork(networkDetails)) {
-          operations = await getAccountHistoryStandalone({
-            publicKey,
-            networkDetails,
-          });
-        } else {
-          operations = await getIndexerAccountHistory({
-            publicKey,
-            networkDetails,
-          });
-        }
+        const operations = await getAccountHistory(publicKey, networkDetails);
         setAssetOperations(
           sortOperationsByAsset({
             operations,

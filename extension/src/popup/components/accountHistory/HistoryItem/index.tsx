@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 // In order to allow that rule we need to refactor this to use the correct Horizon types and narrow operation types
 
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
 import { Icon, Loader } from "@stellar/design-system";
@@ -28,7 +28,6 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getIndexerTokenDetails } from "@shared/api/internal";
 
-import { SorobanContext } from "popup/SorobanContext";
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
 
@@ -134,7 +133,6 @@ export const HistoryItem = ({
   const [BodyComponent, setBodyComponent] = useState(
     null as React.ReactElement | null,
   );
-  const sorobanClient = useContext(SorobanContext);
 
   const renderBodyComponent = () => BodyComponent;
   const renderIcon = () => IconComponent;
@@ -439,7 +437,6 @@ export const HistoryItem = ({
     t,
     to,
     accountBalances.balances,
-    sorobanClient,
   ]);
 
   return (
