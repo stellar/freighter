@@ -13,13 +13,9 @@ import {
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
-import {
-  isMainnet,
-  isTestnet,
-  isFuturenet,
-  isCustomNetwork,
-} from "helpers/stellar";
+import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,

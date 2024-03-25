@@ -10,6 +10,7 @@ import {
 } from "@shared/api/internal";
 import { ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -20,7 +21,6 @@ import {
   getStellarExpertUrl,
 } from "popup/helpers/account";
 import { getAttrsFromSorobanHorizonOp } from "popup/helpers/soroban";
-import { isCustomNetwork } from "helpers/stellar";
 
 import {
   historyItemDetailViewProps,

@@ -42,6 +42,11 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -684,6 +689,65 @@ export const getIndexerAccountHistory = async ({
   } catch (e) {
     console.error(e);
     return [];
+  }
+};
+
+export const getIndexerTokenDetails = async ({
+  contractId,
+  publicKey,
+  networkDetails,
+}: {
+  contractId: string;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<{ name: string; decimals: number; symbol: string } | null> => {
+  try {
+    if (isCustomNetwork(networkDetails)) {
+      if (!networkDetails.sorobanRpcUrl) {
+        throw new Error(
+          `No Soroban RPC available for ${networkDetails.networkName}`,
+        );
+      }
+
+      // You need on Tx Builder per call in Soroban right now
+      const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+      const name = await getName(
+        contractId,
+        server,
+        await getNewTxBuilder(publicKey, networkDetails, server),
+      );
+      const symbol = await getSymbol(
+        contractId,
+        server,
+        await getNewTxBuilder(publicKey, networkDetails, server),
+      );
+      const decimals = await getDecimals(
+        contractId,
+        server,
+        await getNewTxBuilder(publicKey, networkDetails, server),
+      );
+
+      return {
+        name,
+        symbol,
+        decimals,
+      };
+    }
+
+    const response = await fetch(
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data);
+    }
+    return data;
+  } catch (error) {
+    console.error(error);
+    captureException(
+      `Failed to fetch token details - ${JSON.stringify(error)}`,
+    );
+    return null;
   }
 };
 

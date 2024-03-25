@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
@@ -19,7 +20,6 @@ import {
   getAttrsFromSorobanHorizonOp,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
-import { isCustomNetwork } from "helpers/stellar";
 
 import {
   AccountBalancesInterface,

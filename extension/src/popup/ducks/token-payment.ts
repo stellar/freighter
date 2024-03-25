@@ -4,7 +4,8 @@ import { ActionStatus, ErrorMessage } from "@shared/api/types";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { transfer } from "@shared/helpers/soroban/token";
-import { isCustomNetwork, xlmToStroop } from "helpers/stellar";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+import { xlmToStroop } from "helpers/stellar";
 import { SorobanContextInterface } from "popup/SorobanContext";
 
 export const simulateTokenPayment = createAsyncThunk<
