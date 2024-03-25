@@ -1,9 +1,9 @@
 import React from "react";
 import { CopyText } from "@stellar/design-system";
 
+import { CopyValue } from "popup/components/CopyValue";
 import { truncateString } from "helpers/stellar";
 import { IdenticonImg } from "../IdenticonImg";
-import { CopyValue } from "popup/components/CopyValue";
 
 import "./styles.scss";
 

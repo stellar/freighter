@@ -11,7 +11,7 @@ import {
   xdr,
 } from "stellar-sdk";
 import { useSelector } from "react-redux";
-import { Button, CopyText, Icon, Loader } from "@stellar/design-system";
+import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -51,6 +51,7 @@ import {
 } from "popup/components/WarningMessages";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
+import { CopyValue } from "popup/components/CopyValue";
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanContext } from "popup/SorobanContext";
 import { Summary } from "../SignTransaction/Preview/Summary";
@@ -59,7 +60,6 @@ import { Data } from "../SignTransaction/Preview/Data";
 import { VerifyAccount } from "../VerifyAccount";
 
 import "./styles.scss";
-import { CopyValue } from "popup/components/CopyValue";
 
 export const ReviewAuth = () => {
   const location = useLocation();

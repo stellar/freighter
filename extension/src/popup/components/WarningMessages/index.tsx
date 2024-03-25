@@ -7,7 +7,6 @@ import {
   Loader,
   Link,
   Notification,
-  CopyText,
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";

@@ -9,13 +9,11 @@ export const CopyValue = ({
 }: {
   value: string;
   displayValue: string;
-}) => {
-  return (
-    <CopyText textToCopy={value}>
-      <div className="CopyValue">
-        <Icon.ContentCopy />
-        <span className="Value">{displayValue}</span>
-      </div>
-    </CopyText>
-  );
-};
+}) => (
+  <CopyText textToCopy={value}>
+    <div className="CopyValue">
+      <Icon.ContentCopy />
+      <span className="Value">{displayValue}</span>
+    </div>
+  </CopyText>
+);
