@@ -444,7 +444,7 @@ const AuthDetail = ({
                   operationValue={
                     <CopyValue
                       value={detail.contractId}
-                      displayValue={detail.contractId}
+                      displayValue={truncateString(detail.contractId)}
                     />
                   }
                 />
@@ -468,7 +468,7 @@ const AuthDetail = ({
                   operationValue={
                     <CopyValue
                       value={detail.address}
-                      displayValue={detail.address}
+                      displayValue={truncateString(detail.address)}
                     />
                   }
                 />
