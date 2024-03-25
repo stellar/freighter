@@ -218,12 +218,15 @@ describe("SignTransactions", () => {
 
     expect(
       opDetails.includes(
-        `Parameters${args?.from.toString()}${args?.to.toString()}${args?.amount.toString()}`,
+        `Parameters${args?.from.toString()}Copied${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
     ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Contract ID${Stellar.truncatedPublicKey(args?.contractId || "")}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
@@ -273,12 +276,15 @@ describe("SignTransactions", () => {
 
     expect(
       opDetails.includes(
-        `Parameters${args?.to.toString()}${args?.amount.toString()}`,
+        `Parameters${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
     ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Contract ID${Stellar.truncatedPublicKey(args?.contractId || "")}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();

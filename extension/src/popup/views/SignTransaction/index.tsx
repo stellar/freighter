@@ -316,7 +316,10 @@ export const SignTransaction = () => {
                 className="SignTransaction__Actions__PublicKey"
                 onClick={() => setIsDropdownOpen(true)}
               >
-                <KeyIdenticon publicKey={currentAccount.publicKey} />
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
                 <Icon.ChevronDown />
               </button>
             </div>

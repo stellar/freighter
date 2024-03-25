@@ -62,6 +62,7 @@ import { captureException } from "@sentry/browser";
 import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
+import { CopyValue } from "../CopyValue";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -1028,13 +1029,18 @@ const WarningMessageTokenDetails = ({
         </p>
       )}
       <p>
-        <span className="InlineLabel">Contract ID:</span> {transfer.contractId}
+        <span className="InlineLabel">Contract ID:</span>
+        <CopyValue
+          value={transfer.contractId}
+          displayValue={transfer.contractId}
+        />
       </p>
       <p>
         <span className="InlineLabel">Amount:</span> {transfer.amount}
       </p>
       <p>
-        <span className="InlineLabel">To:</span> {transfer.to}
+        <span className="InlineLabel">To:</span>
+        <CopyValue value={transfer.to} displayValue={transfer.to} />
       </p>
     </div>
   );

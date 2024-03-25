@@ -51,6 +51,7 @@ import {
 } from "popup/components/WarningMessages";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
+import { CopyValue } from "popup/components/CopyValue";
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanContext } from "popup/SorobanContext";
 import { Summary } from "../SignTransaction/Preview/Summary";
@@ -155,7 +156,10 @@ export const ReviewAuth = () => {
                 className="ReviewAuth__Actions__PublicKey"
                 onClick={() => setIsDropdownOpen(true)}
               >
-                <KeyIdenticon publicKey={currentAccount.publicKey} />
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
                 <Icon.ChevronDown />
               </button>
             </div>
@@ -241,14 +245,24 @@ const TransferSummary = ({
           <Icon.ArrowCircleRight />
           <p>Receiver</p>
         </div>
-        <KeyIdenticon publicKey={transfer.to} isSmall />
+        <KeyIdenticon
+          isCopyAllowed
+          iconSide="right"
+          publicKey={transfer.to}
+          isSmall
+        />
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
           <Icon.ArrowCircleLeft />
           <p>Sender</p>
         </div>
-        <KeyIdenticon publicKey={transfer.from} isSmall />
+        <KeyIdenticon
+          isCopyAllowed
+          iconSide="right"
+          publicKey={transfer.from}
+          isSmall
+        />
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
@@ -427,7 +441,12 @@ const AuthDetail = ({
               <div className="AuthDetail__InfoBlock">
                 <KeyValueList
                   operationKey={t("Contract ID")}
-                  operationValue={truncateString(detail.contractId)}
+                  operationValue={
+                    <CopyValue
+                      value={detail.contractId}
+                      displayValue={truncateString(detail.contractId)}
+                    />
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Function Name")}
@@ -446,7 +465,12 @@ const AuthDetail = ({
               <div className="AuthDetail__InfoBlock">
                 <KeyValueList
                   operationKey={t("Contract Address")}
-                  operationValue={truncateString(detail.address)}
+                  operationValue={
+                    <CopyValue
+                      value={detail.address}
+                      displayValue={truncateString(detail.address)}
+                    />
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Hash")}

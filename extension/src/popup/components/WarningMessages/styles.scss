@@ -385,6 +385,25 @@
       line-height: 1.375rem;
       margin: 0;
     }
+
+    .CopyText {
+      width: 100%;
+      .Floater {
+        .CopyText__content {
+          width: 100%;
+          .CopyValue {
+            width: 100%;
+
+            .Value {
+              width: 100%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+        }
+      }
+    }
   }
 }
 
