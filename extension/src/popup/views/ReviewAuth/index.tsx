@@ -16,6 +16,8 @@ import { Button, Icon, Loader } from "@stellar/design-system";
 import { decodeString } from "helpers/urls";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { getSorobanTokenBalance } from "@shared/api/internal";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
@@ -27,7 +29,7 @@ import {
   KeyValueList,
 } from "popup/components/signTransaction/Operations/KeyVal";
 import { useTranslation } from "react-i18next";
-import { isCustomNetwork, truncateString } from "helpers/stellar";
+import { truncateString } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { FlaggedKeys } from "types/transactions";
 import {

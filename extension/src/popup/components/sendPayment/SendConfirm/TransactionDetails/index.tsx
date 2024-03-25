@@ -19,12 +19,12 @@ import {
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
-  isCustomNetwork,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";

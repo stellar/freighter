@@ -18,6 +18,7 @@ import {
   ActionStatus,
   AssetType,
 } from "@shared/api/types";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import {
   settingsNetworkDetailsSelector,
@@ -48,7 +49,7 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { isCustomNetwork, truncatedPublicKey } from "helpers/stellar";
+import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";

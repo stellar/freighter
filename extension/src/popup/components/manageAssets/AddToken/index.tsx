@@ -15,12 +15,13 @@ import { useTranslation } from "react-i18next";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { getName, getSymbol } from "@shared/helpers/soroban/token";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { FormRows } from "popup/basics/Forms";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { isCustomNetwork, isMainnet, isTestnet } from "helpers/stellar";
+import { isMainnet, isTestnet } from "helpers/stellar";
 import {
   getVerifiedTokens,
   TokenRecord,

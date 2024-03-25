@@ -38,8 +38,9 @@ import {
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
-import { getCanonicalFromAsset, isCustomNetwork } from "helpers/stellar";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
