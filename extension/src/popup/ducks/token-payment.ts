@@ -6,7 +6,10 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { transfer } from "@shared/helpers/soroban/token";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { xlmToStroop } from "helpers/stellar";
-import { SorobanContextInterface } from "popup/SorobanContext";
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
 
 export const simulateTokenPayment = createAsyncThunk<
   {
@@ -23,7 +26,6 @@ export const simulateTokenPayment = createAsyncThunk<
       amount: number;
     };
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
     transactionFee: string;
   },
   {
@@ -32,20 +34,21 @@ export const simulateTokenPayment = createAsyncThunk<
 >(
   "simulateTokenPayment",
   async (
-    {
-      address,
-      publicKey,
-      memo,
-      params,
-      networkDetails,
-      sorobanClient,
-      transactionFee,
-    },
+    { address, publicKey, memo, params, networkDetails, transactionFee },
     thunkApi,
   ) => {
     try {
       if (isCustomNetwork(networkDetails)) {
-        const builder = await sorobanClient.newTxBuilder(
+        if (!networkDetails.sorobanRpcUrl) {
+          throw new Error(
+            `Soroban RPC not available for ${networkDetails.networkName}`,
+          );
+        }
+        const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+        const builder = await getNewTxBuilder(
+          publicKey,
+          networkDetails,
+          server,
           xlmToStroop(transactionFee).toFixed(),
         );
 
@@ -55,7 +58,7 @@ export const simulateTokenPayment = createAsyncThunk<
           new XdrLargeInt("i128", params.amount).toI128(), // amount
         ];
         const transaction = transfer(address, transferParams, memo, builder);
-        const simulationResponse = await sorobanClient.server.simulateTransaction(
+        const simulationResponse = await server.simulateTransaction(
           transaction,
         );
 
