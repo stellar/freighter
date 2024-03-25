@@ -21,6 +21,7 @@ import {
 } from "stellar-sdk";
 
 import { ActionStatus } from "@shared/api/types";
+import { getIndexerTokenDetails } from "@shared/api/internal";
 
 import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
 
@@ -56,13 +57,12 @@ import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
 import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
-import { INDEXER_URL } from "@shared/constants/mercury";
 import { searchToken } from "popup/helpers/searchAsset";
 import { captureException } from "@sentry/browser";
 import { SorobanContext } from "popup/SorobanContext";
+import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
-import { CopyValue } from "../CopyValue";
 
 const DirectoryLink = () => {
   const { t } = useTranslation();
@@ -972,12 +972,6 @@ const WarningMessageTokenDetails = ({
   const [tokenDetails, setTokenDetails] = React.useState(
     {} as Record<string, { name: string; symbol: string }>,
   );
-
-  const tokenDetailsUrl = React.useCallback(
-    (contractId: string) =>
-      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
-    [publicKey, networkDetails.network],
-  );
   React.useEffect(() => {
     async function getTokenDetails() {
       setLoadingTokenDetails(true);
@@ -986,13 +980,16 @@ const WarningMessageTokenDetails = ({
         { name: string; symbol: string }
       >;
       try {
-        const response = await fetch(tokenDetailsUrl(transfer.contractId));
+        const tokenDetailsResponse = await getIndexerTokenDetails({
+          contractId: transfer.contractId,
+          publicKey,
+          networkDetails,
+        });
 
-        if (!response.ok) {
+        if (!tokenDetailsResponse) {
           throw new Error("failed to fetch token details");
         }
-        const details = await response.json();
-        _tokenDetails[transfer.contractId] = details;
+        _tokenDetails[transfer.contractId] = tokenDetailsResponse;
       } catch (error) {
         // falls back to only showing contract ID
         captureException(
@@ -1004,7 +1001,7 @@ const WarningMessageTokenDetails = ({
       setLoadingTokenDetails(false);
     }
     getTokenDetails();
-  }, [transfer.contractId, tokenDetailsUrl]);
+  }, [transfer.contractId, networkDetails, publicKey]);
 
   return (
     <div className="TokenDetails">

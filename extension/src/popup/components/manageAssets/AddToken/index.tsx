@@ -12,10 +12,10 @@ import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Input, Link, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
-import { INDEXER_URL } from "@shared/constants/mercury";
 import { getName, getSymbol } from "@shared/helpers/soroban/token";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { getIndexerTokenDetails } from "@shared/api/internal";
 
 import { FormRows } from "popup/basics/Forms";
 
@@ -195,27 +195,20 @@ export const AddToken = () => {
           } else {
             // lookup contract
             setIsVerifiedToken(false);
-            const tokenUrl = new URL(
-              `${INDEXER_URL}/token-details/${contractId}`,
-            );
-            tokenUrl.searchParams.append("network", networkDetails.network);
-            tokenUrl.searchParams.append("pub_key", publicKey);
-            tokenUrl.searchParams.append(
-              "soroban_url",
-              networkDetails.sorobanRpcUrl!,
-            );
-
-            const res = await fetch(tokenUrl.href);
-            const resJson = await res.json();
-            if (!res.ok) {
-              throw new Error(JSON.stringify(resJson));
+            const tokenDetailsResponse = await getIndexerTokenDetails({
+              contractId,
+              publicKey,
+              networkDetails,
+            });
+            if (!tokenDetailsResponse) {
+              throw new Error(contractId);
             } else {
               setAssetRows([
                 {
-                  code: resJson.symbol,
+                  code: tokenDetailsResponse.symbol,
                   issuer: contractId,
                   domain: "",
-                  name: resJson.name,
+                  name: tokenDetailsResponse.name,
                 },
               ]);
             }

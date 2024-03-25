@@ -10,8 +10,6 @@ import { useTranslation } from "react-i18next";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { INDEXER_URL } from "@shared/constants/mercury";
-import { isCustomNetwork } from "@shared/helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
@@ -28,7 +26,7 @@ import {
   TokenBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getDecimals, getName, getSymbol } from "@shared/helpers/soroban/token";
+import { getIndexerTokenDetails } from "@shared/api/internal";
 
 import { SorobanContext } from "popup/SorobanContext";
 import { TransactionDetailProps } from "../TransactionDetail";
@@ -247,34 +245,28 @@ export const HistoryItem = ({
             setIsLoading(true);
 
             try {
-              if (isCustomNetwork(networkDetails)) {
-                const name = await getName(
-                  attrs.contractId,
-                  sorobanClient.server,
-                  await sorobanClient.newTxBuilder(),
-                );
-                const symbol = await getSymbol(
-                  attrs.contractId,
-                  sorobanClient.server,
-                  await sorobanClient.newTxBuilder(),
-                );
-                const decimals = await getDecimals(
-                  attrs.contractId,
-                  sorobanClient.server,
-                  await sorobanClient.newTxBuilder(),
-                );
-                const tokenDetails = {
-                  name,
-                  symbol,
-                  decimals,
-                };
+              const tokenDetailsResponse = await getIndexerTokenDetails({
+                contractId: attrs.contractId,
+                publicKey,
+                networkDetails,
+              });
+
+              if (!tokenDetailsResponse) {
+                setRowText(operationString);
+                setTxDetails((_state) => ({
+                  ..._state,
+                  headerTitle: t("Transaction"),
+                  operationText: operationString,
+                }));
+              } else {
                 const _token = {
                   contractId: attrs.contractId,
                   total: isRecieving ? attrs.amount : 0,
-                  decimals: tokenDetails.decimals,
-                  name: tokenDetails.name,
-                  symbol: tokenDetails.symbol,
+                  decimals: tokenDetailsResponse.decimals,
+                  name: tokenDetailsResponse.name,
+                  symbol: tokenDetailsResponse.symbol,
                 };
+
                 const formattedTokenAmount = formatTokenAmount(
                   new BigNumber(attrs.amount),
                   _token.decimals,
@@ -301,76 +293,14 @@ export const HistoryItem = ({
                     to: attrs.to,
                   },
                   headerTitle: `${t(capitalize(attrs.fnName))} ${
-                    tokenDetails.symbol
+                    _token.symbol
                   }`,
                   isPayment: false,
                   isRecipient: isRecieving,
-                  operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
+                  operationText: `${formattedTokenAmount} ${_token.symbol}`,
                 }));
-                setIsLoading(false);
-              } else {
-                const response = await fetch(
-                  `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
-                );
-
-                if (!response.ok) {
-                  const _err = await response.json();
-                  captureException(
-                    `Failed to fetch token details - ${JSON.stringify(_err)}`,
-                  );
-
-                  setRowText(operationString);
-                  setTxDetails((_state) => ({
-                    ..._state,
-                    headerTitle: t("Transaction"),
-                    operationText: operationString,
-                  }));
-                } else {
-                  const tokenDetails = await response.json();
-
-                  const _token = {
-                    contractId: attrs.contractId,
-                    total: isRecieving ? attrs.amount : 0,
-                    decimals: tokenDetails.decimals,
-                    name: tokenDetails.name,
-                    symbol: tokenDetails.symbol,
-                  };
-
-                  const formattedTokenAmount = formatTokenAmount(
-                    new BigNumber(attrs.amount),
-                    _token.decimals,
-                  );
-                  setBodyComponent(
-                    <>
-                      {isRecieving && "+"}
-                      {formattedTokenAmount} {_token.symbol}
-                    </>,
-                  );
-
-                  setDateText(
-                    (_dateText) =>
-                      `${
-                        isRecieving ? t("Received") : t("Minted")
-                      } \u2022 ${date}`,
-                  );
-                  setRowText(t(capitalize(attrs.fnName)));
-                  setTxDetails((_state) => ({
-                    ..._state,
-                    operation: {
-                      ..._state.operation,
-                      from: attrs.from,
-                      to: attrs.to,
-                    },
-                    headerTitle: `${t(capitalize(attrs.fnName))} ${
-                      tokenDetails.symbol
-                    }`,
-                    isPayment: false,
-                    isRecipient: isRecieving,
-                    operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
-                  }));
-                }
-                setIsLoading(false);
               }
+              setIsLoading(false);
             } catch (error) {
               console.error(error);
               captureException(`Error fetching token details: ${error}`);
