@@ -1,8 +1,9 @@
 import React from "react";
-import { CopyText, Icon } from "@stellar/design-system";
+import { CopyText } from "@stellar/design-system";
 
 import { truncateString } from "helpers/stellar";
 import { IdenticonImg } from "../IdenticonImg";
+import { CopyValue } from "popup/components/CopyValue";
 
 import "./styles.scss";
 
@@ -15,14 +16,14 @@ interface IdenticonWrapperElProps {
 }
 
 interface KeyIdenticonProps extends IdenticonWrapperElProps {
-  allowCopy?: boolean;
+  isCopyAllowed?: boolean;
   publicKey: string;
   iconSide?: "left" | "right";
   keyTruncationAmount?: number;
 }
 
 export const KeyIdenticon = ({
-  allowCopy = false,
+  isCopyAllowed = false,
   publicKey = "",
   isSmall = false,
   customSize,
@@ -41,7 +42,7 @@ export const KeyIdenticon = ({
           marginLeft: iconSide === "right" ? "0.5rem" : 0,
         }
       : {
-          marginRight: !allowCopy ? "0.5rem" : 0,
+          marginRight: !isCopyAllowed ? "0.5rem" : 0,
         }),
     ...(customSize
       ? {
@@ -53,7 +54,7 @@ export const KeyIdenticon = ({
           marginLeft: iconSide === "right" ? "0.5rem" : 0,
         }
       : {
-          marginRight: !allowCopy ? "0.5rem" : 0,
+          marginRight: !isCopyAllowed ? "0.5rem" : 0,
         }),
   } as React.CSSProperties;
 
@@ -64,15 +65,13 @@ export const KeyIdenticon = ({
           <IdenticonImg publicKey={publicKey} />
         </div>
       )}
-      {allowCopy ? (
+      {isCopyAllowed ? (
         <CopyText textToCopy={publicKey}>
           <span {...props} className="KeyIdenticon--key">
-            <div className="CopyContractId">
-              <Icon.ContentCopy />
-              <span className="Value">
-                {truncateString(publicKey, keyTruncationAmount)}
-              </span>
-            </div>
+            <CopyValue
+              value={publicKey}
+              displayValue={truncateString(publicKey, keyTruncationAmount)}
+            />
           </span>
         </CopyText>
       ) : (

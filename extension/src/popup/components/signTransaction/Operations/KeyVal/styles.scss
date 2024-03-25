@@ -18,17 +18,14 @@
         .CopyText__content {
           width: 100%;
 
-          .CopyContractId {
+          .CopyValue {
             width: 100%;
-            display: flex;
-            align-items: center;
 
             .Value {
               width: 100%;
               display: block;
               overflow: hidden;
               text-overflow: ellipsis;
-              margin-left: 0.25rem;
             }
           }
         }

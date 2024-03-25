@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { CopyText, Icon } from "@stellar/design-system";
 
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
+import { CopyValue } from "popup/components/CopyValue";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { displaySorobanId, isSorobanIssuer } from "popup/helpers/account";
 
@@ -61,7 +61,11 @@ export const AssetNetworkInfo = ({
     if (networkIconUrl || assetType === "native") {
       return <img src={networkIconUrl || StellarLogo} alt="Network icon" />;
     }
-    return null;
+    if (!assetDomain) {
+      return null;
+    }
+
+    return <div className="AssetNetworkInfo__network__icon" />;
   };
 
   return (
@@ -69,12 +73,10 @@ export const AssetNetworkInfo = ({
       <>
         {decideNetworkIcon()}
         {contractId ? (
-          <CopyText textToCopy={contractId}>
-            <div className="CopyContractId">
-              <Icon.ContentCopy />
-              <span className="Value">{displaySorobanId(contractId, 28)}</span>
-            </div>
-          </CopyText>
+          <CopyValue
+            value={contractId}
+            displayValue={displaySorobanId(contractId, 28)}
+          />
         ) : (
           <span>{assetDomain || "Stellar Lumens"}</span>
         )}

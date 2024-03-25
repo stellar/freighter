@@ -12,14 +12,5 @@
       height: var(--TransactionDetail--icon-dimension);
       width: var(--TransactionDetail--icon-dimension);
     }
-
-    .CopyContractId {
-      display: flex;
-      align-items: center;
-
-      .Value {
-        margin-left: 0.25rem;
-      }
-    }
   }
 }

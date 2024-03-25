@@ -1,6 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { CopyText, Icon } from "@stellar/design-system";
 import {
   Asset,
   Claimant,
@@ -15,6 +14,7 @@ import {
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { CopyValue } from "popup/components/CopyValue";
 import { truncateString } from "helpers/stellar";
 import { formattedBuffer } from "popup/helpers/formatters";
 
@@ -388,12 +388,10 @@ export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
       {args.map((arg) => (
         <div className="Parameter" key={arg.toXDR().toString()}>
           {arg.switch() === xdr.ScValType.scvAddress() ? (
-            <CopyText textToCopy={scValByType(arg)}>
-              <div className="CopyContractId">
-                <Icon.ContentCopy />
-                <span className="Value">{scValByType(arg)}</span>
-              </div>
-            </CopyText>
+            <CopyValue
+              value={scValByType(arg)}
+              displayValue={scValByType(arg)}
+            />
           ) : (
             scValByType(arg)
           )}
@@ -545,14 +543,10 @@ export const KeyValueInvokeHostFn = ({
             <KeyValueList
               operationKey={t("Contract ID")}
               operationValue={
-                <CopyText textToCopy={contractId}>
-                  <div className="CopyContractId">
-                    <Icon.ContentCopy />
-                    <span className="Value">
-                      {truncateString(contractId, 6)}
-                    </span>
-                  </div>
-                </CopyText>
+                <CopyValue
+                  value={contractId}
+                  displayValue={truncateString(contractId, 6)}
+                />
               }
             />
             <KeyValueList

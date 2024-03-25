@@ -391,17 +391,14 @@
       .Floater {
         .CopyText__content {
           width: 100%;
-          .CopyContractId {
+          .CopyValue {
             width: 100%;
-            display: flex;
-            align-items: center;
 
             .Value {
               width: 100%;
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
-              margin-left: 0.25rem;
             }
           }
         }

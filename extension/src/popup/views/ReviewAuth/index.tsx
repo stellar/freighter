@@ -59,6 +59,7 @@ import { Data } from "../SignTransaction/Preview/Data";
 import { VerifyAccount } from "../VerifyAccount";
 
 import "./styles.scss";
+import { CopyValue } from "popup/components/CopyValue";
 
 export const ReviewAuth = () => {
   const location = useLocation();
@@ -245,7 +246,7 @@ const TransferSummary = ({
           <p>Receiver</p>
         </div>
         <KeyIdenticon
-          allowCopy
+          isCopyAllowed
           iconSide="right"
           publicKey={transfer.to}
           isSmall
@@ -257,7 +258,7 @@ const TransferSummary = ({
           <p>Sender</p>
         </div>
         <KeyIdenticon
-          allowCopy
+          isCopyAllowed
           iconSide="right"
           publicKey={transfer.from}
           isSmall
@@ -441,14 +442,10 @@ const AuthDetail = ({
                 <KeyValueList
                   operationKey={t("Contract ID")}
                   operationValue={
-                    <CopyText textToCopy={detail.contractId}>
-                      <div className="CopyContractId">
-                        <Icon.ContentCopy />
-                        <span className="Value">
-                          {truncateString(detail.contractId)}
-                        </span>
-                      </div>
-                    </CopyText>
+                    <CopyValue
+                      value={detail.contractId}
+                      displayValue={detail.contractId}
+                    />
                   }
                 />
                 <KeyValueList
@@ -469,14 +466,10 @@ const AuthDetail = ({
                 <KeyValueList
                   operationKey={t("Contract Address")}
                   operationValue={
-                    <CopyText textToCopy={detail.address}>
-                      <div className="CopyContractId">
-                        <Icon.ContentCopy />
-                        <span className="Value">
-                          {truncateString(detail.address)}
-                        </span>
-                      </div>
-                    </CopyText>
+                    <CopyValue
+                      value={detail.address}
+                      displayValue={detail.address}
+                    />
                   }
                 />
                 <KeyValueList
