@@ -523,13 +523,9 @@ export const getSorobanTokenBalance = async (
 export const getAccountBalancesStandalone = async ({
   publicKey,
   networkDetails,
-  sorobanClientServer,
-  sorobanClientTxBuilder,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-  sorobanClientServer: SorobanRpc.Server;
-  sorobanClientTxBuilder: () => Promise<TransactionBuilder>;
 }): Promise<AccountBalancesInterface> => {
   const { network, networkUrl, networkPassphrase } = networkDetails;
 
@@ -588,6 +584,14 @@ export const getAccountBalancesStandalone = async ({
   const tokensWithNoBalance = [];
 
   if (tokenIdList.length) {
+    if (!networkDetails.sorobanRpcUrl) {
+      throw new Error(
+        `No Soroban RPC available for network - ${networkDetails.networkName}`,
+      );
+    }
+
+    const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+
     const params = [new Address(publicKey).toScVal()];
 
     for (let i = 0; i < tokenIdList.length; i += 1) {
@@ -601,13 +605,13 @@ export const getAccountBalancesStandalone = async ({
       try {
         /* eslint-disable no-await-in-loop */
         const { balance, symbol, ...rest } = await getSorobanTokenBalance(
-          sorobanClientServer,
+          server,
           tokenId,
           {
-            balance: await sorobanClientTxBuilder(),
-            name: await sorobanClientTxBuilder(),
-            decimals: await sorobanClientTxBuilder(),
-            symbol: await sorobanClientTxBuilder(),
+            balance: await getNewTxBuilder(publicKey, networkDetails, server),
+            name: await getNewTxBuilder(publicKey, networkDetails, server),
+            decimals: await getNewTxBuilder(publicKey, networkDetails, server),
+            symbol: await getNewTxBuilder(publicKey, networkDetails, server),
           },
           params,
         );
@@ -690,6 +694,22 @@ export const getIndexerAccountHistory = async ({
     console.error(e);
     return [];
   }
+};
+
+export const getAccountHistory = async (
+  publicKey: string,
+  networkDetails: NetworkDetails,
+) => {
+  if (isCustomNetwork(networkDetails)) {
+    return await getAccountHistoryStandalone({
+      publicKey,
+      networkDetails,
+    });
+  }
+  return await getIndexerAccountHistory({
+    publicKey,
+    networkDetails,
+  });
 };
 
 export const getIndexerTokenDetails = async ({

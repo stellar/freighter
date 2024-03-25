@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { StellarToml, Networks } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -55,8 +55,6 @@ import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { isContractId } from "popup/helpers/soroban";
 import IconAdd from "popup/assets/icon-add.svg";
 import IconRemove from "popup/assets/icon-remove.svg";
-
-import { SorobanContext } from "popup/SorobanContext";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -115,7 +113,6 @@ export const ManageAssetRows = ({
     issuer: "",
     image: "",
   });
-  const sorobanClient = useContext(SorobanContext);
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -172,7 +169,6 @@ export const ManageAssetRows = ({
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
-          sorobanClient,
         }),
       );
 
@@ -182,7 +178,6 @@ export const ManageAssetRows = ({
           getAccountBalances({
             publicKey,
             networkDetails,
-            sorobanClient,
           }),
         );
         trackChangeTrustline();

@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import React, {
-  useContext,
-  useEffect,
-  useCallback,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 import { Formik, Form, Field, FieldProps } from "formik";
@@ -16,6 +10,10 @@ import { getName, getSymbol } from "@shared/helpers/soroban/token";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { getIndexerTokenDetails } from "@shared/api/internal";
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
 
 import { FormRows } from "popup/basics/Forms";
 
@@ -33,7 +31,6 @@ import { isContractId } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import IconUnverified from "popup/assets/icon-unverified.svg";
-import { SorobanContext } from "popup/SorobanContext";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import "./styles.scss";
@@ -113,7 +110,6 @@ export const AddToken = () => {
     false,
   );
   const ResultsRef = useRef<HTMLDivElement>(null);
-  const sorobanClient = useContext(SorobanContext);
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
 
@@ -150,25 +146,30 @@ export const AddToken = () => {
       }
 
       if (isCustomNetwork(networkDetails)) {
-        const name = await getName(
-          contractId,
-          sorobanClient.server,
-          await sorobanClient.newTxBuilder(),
-        );
-        const symbol = await getSymbol(
-          contractId,
-          sorobanClient.server,
-          await sorobanClient.newTxBuilder(),
-        );
+        if (!networkDetails.sorobanRpcUrl) {
+          setAssetRows([]);
+        } else {
+          const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+          const name = await getName(
+            contractId,
+            server,
+            await getNewTxBuilder(publicKey, networkDetails, server),
+          );
+          const symbol = await getSymbol(
+            contractId,
+            server,
+            await getNewTxBuilder(publicKey, networkDetails, server),
+          );
 
-        setAssetRows([
-          {
-            code: symbol,
-            issuer: contractId,
-            domain: "",
-            name,
-          },
-        ]);
+          setAssetRows([
+            {
+              code: symbol,
+              issuer: contractId,
+              domain: "",
+              name,
+            },
+          ]);
+        }
         setIsSearching(false);
         return;
       }
