@@ -38,6 +38,7 @@ import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ManageConnectedApps } from "popup/views/ManageConnectedApps";
+import { ManageAssetsLists } from "popup/views/ManageAssetsLists";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { SelectHardwareWallet } from "popup/views/AddAccount/connect/SelectHardwareWallet";
 import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
@@ -392,6 +393,9 @@ const Outlet = () => {
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.manageConnectedApps}>
             <ManageConnectedApps />
+          </PublicKeyRoute>
+          <PublicKeyRoute path={ROUTES.manageAssetsLists}>
+            <ManageAssetsLists />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.accountMigration}>
             <AccountMigration />

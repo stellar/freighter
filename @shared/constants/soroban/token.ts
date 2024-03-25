@@ -1,3 +1,5 @@
+import { NETWORKS } from "@shared/constants/stellar";
+
 // https://github.com/stellar/soroban-examples/blob/main/token/src/contract.rs
 export enum SorobanTokenInterface {
   transfer = "transfer",
@@ -26,3 +28,35 @@ export interface SorobanToken {
   symbol: string;
   decimals: number;
 }
+
+export type AssetsListKey = NETWORKS.PUBLIC | NETWORKS.TESTNET;
+
+export type AssetsLists = {
+  [K in AssetsListKey]: AssetsListItem[];
+};
+
+export interface AssetsListItem {
+  url: string;
+  enabled: boolean;
+}
+
+export const DEFAULT_ASSETS_LISTS: AssetsLists = {
+  [NETWORKS.PUBLIC]: [
+    {
+      url: "https://api.stellar.expert/explorer/public/asset-list/top50",
+      enabled: true,
+    },
+    {
+      url:
+        "https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json",
+      enabled: true,
+    },
+    { url: "https://lobstr.co/api/v1/sep/assets/curated.json", enabled: true },
+  ],
+  [NETWORKS.TESTNET]: [
+    {
+      url: "https://api.stellar.expert/explorer/testnet/asset-list/top50",
+      enabled: true,
+    },
+  ],
+};

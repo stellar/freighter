@@ -19,6 +19,10 @@ import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
+import {
+  AssetsLists,
+  DEFAULT_ASSETS_LISTS,
+} from "@shared/constants/soroban/token";
 
 import { Settings, IndexerSettings, SettingsState } from "@shared/api/types";
 
@@ -54,6 +58,7 @@ const indexerInitialState: IndexerSettings = {
 const initialState = {
   ...settingsInitialState,
   ...indexerInitialState,
+  assetsLists: DEFAULT_ASSETS_LISTS,
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
@@ -234,7 +239,12 @@ const settingsSlice = createSlice({
     });
     builder.addCase(
       loadSettings.fulfilled,
-      (state, action: PayloadAction<Settings & IndexerSettings>) => {
+      (
+        state,
+        action: PayloadAction<
+          Settings & IndexerSettings & { assetsLists: AssetsLists }
+        >,
+      ) => {
         const {
           allowList,
           isDataSharingAllowed,
@@ -247,6 +257,7 @@ const settingsSlice = createSlice({
           isSorobanPublicEnabled,
           isRpcHealthy,
           userNotification,
+          assetsLists,
         } = action?.payload || {
           ...initialState,
         };
@@ -264,6 +275,7 @@ const settingsSlice = createSlice({
           isSorobanPublicEnabled,
           isRpcHealthy,
           userNotification,
+          assetsLists,
           settingsState: SettingsState.SUCCESS,
         };
       },
@@ -380,7 +392,7 @@ export const { reducer } = settingsSlice;
 export const { clearSettingsError } = settingsSlice.actions;
 
 export const settingsSelector = (state: {
-  settings: Settings & IndexerSettings;
+  settings: Settings & IndexerSettings & { assetsLists: AssetsLists };
 }) => state.settings;
 
 export const settingsDataSharingSelector = createSelector(

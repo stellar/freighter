@@ -65,6 +65,7 @@ const routeToEventName = {
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
   [ROUTES.leaveFeedback]: METRIC_NAMES.viewLeaveFeedback,
+  [ROUTES.manageAssetsLists]: METRIC_NAMES.viewManageAssetsLists,
   [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
   [ROUTES.accountMigrationReviewMigration]:
     METRIC_NAMES.viewAccountMigrationReviewMigration,

@@ -77,6 +77,7 @@ import {
   getSavedNetworks,
   getNetworkDetails,
   getNetworksList,
+  getAssetsLists,
   HW_PREFIX,
   getBipPath,
   subscribeTokenBalance,
@@ -1233,6 +1234,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const featureFlags = await getFeatureFlags();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
     const userNotification = await getUserNotification();
+    const assetsLists = await getAssetsLists();
 
     return {
       allowList: await getAllowList(),
@@ -1246,6 +1248,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isSorobanPublicEnabled: featureFlags.useSorobanPublic,
       isRpcHealthy,
       userNotification,
+      assetsLists,
     };
   };
 
