@@ -31,6 +31,7 @@ module.exports = {
     "react/jsx-filename-extension": ["error", { extensions: [".tsx", ".jsx"] }],
     "jsdoc/newline-after-description": "off",
     "max-len": "off",
+    "no-await-in-loop": "off",
   },
   settings: {
     "import/resolver": {

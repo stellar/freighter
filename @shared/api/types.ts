@@ -1,12 +1,13 @@
 import BigNumber from "bignumber.js";
 import { Horizon } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
+import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
-import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
+import { AssetsLists } from "../constants/soroban/token";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -53,11 +54,12 @@ export interface Response {
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
   userNotification: UserNotification;
+  assetsLists: AssetsLists;
   settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   migratedAccounts: MigratedAccount[];
   accountName: string;
   assetCode: string;
@@ -66,7 +68,7 @@ export interface Response {
   network: string;
   networkIndex: number;
   networkName: string;
-  recentAddresses: Array<string>;
+  recentAddresses: string[];
   hardwareWalletType: WalletType;
   bipPath: string;
   blockedDomains: BlockedDomains;

@@ -32,6 +32,7 @@ export const METRIC_NAMES = {
   viewSecurity: "loaded screen: security",
   viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
+  viewManageAssetsLists: "loaded screen: manage assets lists",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",

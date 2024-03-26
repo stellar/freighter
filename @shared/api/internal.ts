@@ -12,6 +12,7 @@ import {
 import { DataProvider } from "@stellar/wallet-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { AssetsLists } from "@shared/constants/soroban/token";
 import {
   getBalance,
   getDecimals,
@@ -1162,7 +1163,9 @@ export const editCustomNetwork = async ({
   return response;
 };
 
-export const loadSettings = (): Promise<Settings & IndexerSettings> =>
+export const loadSettings = (): Promise<
+  Settings & IndexerSettings & { assetsLists: AssetsLists }
+> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
