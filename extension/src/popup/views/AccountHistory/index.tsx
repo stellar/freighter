@@ -127,7 +127,6 @@ export const AccountHistory = () => {
     const fetchAccountHistory = async () => {
       try {
         const operations = await getAccountHistory(publicKey, networkDetails);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         setHistorySegments(createSegments(operations));
       } catch (e) {
         console.error(e);

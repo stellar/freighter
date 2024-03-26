@@ -37,6 +37,7 @@ import {
   NETWORKS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
@@ -586,9 +587,7 @@ export const getAccountBalancesStandalone = async ({
 
   if (tokenIdList.length) {
     if (!networkDetails.sorobanRpcUrl) {
-      throw new Error(
-        `No Soroban RPC available for network - ${networkDetails.networkName}`,
-      );
+      throw new SorobanRpcNotSupportedError();
     }
 
     const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
@@ -725,12 +724,10 @@ export const getIndexerTokenDetails = async ({
   try {
     if (isCustomNetwork(networkDetails)) {
       if (!networkDetails.sorobanRpcUrl) {
-        throw new Error(
-          `No Soroban RPC available for ${networkDetails.networkName}`,
-        );
+        throw new SorobanRpcNotSupportedError();
       }
 
-      // You need on Tx Builder per call in Soroban right now
+      // You need one Tx Builder per call in Soroban right now
       const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
       const name = await getName(
         contractId,
@@ -995,7 +992,7 @@ export const submitFreighterSorobanTransaction = async ({
   }
 
   if (!networkDetails.sorobanRpcUrl) {
-    throw new Error("soroban rpc not supported");
+    throw new SorobanRpcNotSupportedError();
   }
 
   const serverUrl = networkDetails.sorobanRpcUrl || "";
