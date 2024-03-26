@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ActionStatus, ErrorMessage } from "@shared/api/types";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { SorobanRpcNotSupportedError } from "@shared/constants/errors";
 import { transfer } from "@shared/helpers/soroban/token";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { xlmToStroop } from "helpers/stellar";
@@ -40,9 +41,7 @@ export const simulateTokenPayment = createAsyncThunk<
     try {
       if (isCustomNetwork(networkDetails)) {
         if (!networkDetails.sorobanRpcUrl) {
-          throw new Error(
-            `Soroban RPC not available for ${networkDetails.networkName}`,
-          );
+          throw new SorobanRpcNotSupportedError();
         }
         const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
         const builder = await getNewTxBuilder(
