@@ -80,6 +80,7 @@ export const AccountHeader = ({
       rightContent={
         <div
           className="AccountHeader__network-wrapper"
+          data-testid="network-selector-open"
           onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
         >
           <NetworkIcon index={activeNetworkIndex.current} />
