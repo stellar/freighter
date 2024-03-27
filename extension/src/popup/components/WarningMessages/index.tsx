@@ -57,7 +57,10 @@ import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
 import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
-import { searchToken } from "popup/helpers/searchAsset";
+import {
+  getVerifiedTokens,
+  VerifiedTokenRecord,
+} from "popup/helpers/searchAsset";
 import { captureException } from "@sentry/browser";
 import { CopyValue } from "../CopyValue";
 
@@ -903,8 +906,9 @@ export const UnverifiedTokenTransferWarning = ({
 }: {
   details: { contractId: string }[];
 }) => {
+  console.log(1);
   const { t } = useTranslation();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkDetails, assetsLists } = useSelector(settingsSelector);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
   useEffect(() => {
@@ -912,21 +916,16 @@ export const UnverifiedTokenTransferWarning = ({
       return;
     }
     const fetchVerifiedTokens = async () => {
-      const verifiedTokenRes = await searchToken({
-        networkDetails,
-        onError: (e) => console.error(e),
-      });
-      const verifiedTokens = [] as string[];
+      let verifiedTokens = [] as VerifiedTokenRecord[];
 
       // eslint-disable-next-line
-      for (let i = 0; i < verifiedTokenRes.length; i += 1) {
-        // eslint-disable-next-line
-        for (let j = 0; j < details.length; j += 1) {
-          if (details[j].contractId === verifiedTokenRes[i].contract) {
-            verifiedTokens.push(details[j].contractId);
-            return;
-          }
-        }
+      for (let j = 0; j < details.length; j += 1) {
+        const c = details[j].contractId;
+        verifiedTokens = await getVerifiedTokens({
+          contractId: c,
+          networkDetails,
+          assetsLists,
+        });
       }
 
       if (!verifiedTokens.length) {
@@ -935,7 +934,7 @@ export const UnverifiedTokenTransferWarning = ({
     };
 
     fetchVerifiedTokens();
-  }, [networkDetails, details]);
+  }, [networkDetails, details, assetsLists]);
 
   return isUnverifiedToken ? (
     <WarningMessage

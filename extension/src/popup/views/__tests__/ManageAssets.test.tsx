@@ -171,6 +171,7 @@ jest
           icon: "",
           issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
           org: "unknown",
+          verifiedLists: [],
         },
       ]);
     }

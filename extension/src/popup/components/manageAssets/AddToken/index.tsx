@@ -7,7 +7,6 @@ import { Icon, Input, Link, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { getName, getSymbol } from "@shared/helpers/soroban/token";
-import { NetworkDetails } from "@shared/constants/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 import {
@@ -18,12 +17,14 @@ import {
 import { FormRows } from "popup/basics/Forms";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import {
   getVerifiedTokens,
   TokenRecord,
-  searchTokenUrl,
   getNativeContractDetails,
 } from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
@@ -42,15 +43,9 @@ const initialValues: FormValues = {
   asset: "",
 };
 
-const VerificationBadge = ({
-  isVerified,
-  networkDetails,
-}: {
-  isVerified: boolean;
-  networkDetails: NetworkDetails;
-}) => {
+const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
   const { t } = useTranslation();
-  const linkUrl = searchTokenUrl(networkDetails);
+  const linkUrl = "";
 
   return (
     <div className="AddToken__heading" data-testid="add-token-verification">
@@ -109,6 +104,8 @@ export const AddToken = () => {
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
     false,
   );
+  const { assetsLists } = useSelector(settingsSelector);
+
   const ResultsRef = useRef<HTMLDivElement>(null);
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
@@ -180,7 +177,10 @@ export const AddToken = () => {
           networkDetails,
           contractId,
           setIsSearching,
+          assetsLists,
         });
+
+        console.log(verifiedTokens);
 
         try {
           if (verifiedTokens.length) {
@@ -279,10 +279,7 @@ export const AddToken = () => {
                     </div>
                   ) : null}
                   {assetRows.length && isVerificationInfoShowing ? (
-                    <VerificationBadge
-                      isVerified={isVerifiedToken}
-                      networkDetails={networkDetails}
-                    />
+                    <VerificationBadge isVerified={isVerifiedToken} />
                   ) : null}
 
                   {assetRows.length ? (

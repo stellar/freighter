@@ -1,5 +1,6 @@
-import { fetchAssetList } from "@stellar-asset-lists/sdk";
+import { captureException } from "@sentry/browser";
 import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
+import { AssetsLists, AssetsListKey } from "@shared/constants/soroban/token";
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 
 export const searchAsset = async ({
@@ -47,34 +48,6 @@ export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
   }
 };
 
-export const searchTokenUrl = (networkDetails: NetworkDetails) =>
-  `${getApiStellarExpertUrl(networkDetails)}/asset-list/top50`;
-
-export const searchToken = async ({
-  networkDetails,
-  onError,
-}: {
-  networkDetails: NetworkDetails;
-  onError: (e: any) => void;
-}) => {
-  let verifiedAssets = [] as TokenRecord[];
-  try {
-    const res: { assets: TokenRecord[] } = await fetchAssetList(
-      searchTokenUrl(networkDetails),
-    );
-    verifiedAssets = verifiedAssets.concat(res.assets);
-  } catch (e) {
-    onError(e);
-  }
-
-  // add native contract to list
-  verifiedAssets = verifiedAssets.concat([
-    getNativeContractDetails(networkDetails),
-  ]);
-
-  return verifiedAssets;
-};
-
 export interface TokenRecord {
   code: string;
   issuer: string;
@@ -85,39 +58,77 @@ export interface TokenRecord {
   decimals: number;
 }
 
+export type VerifiedTokenRecord = TokenRecord & { verifiedLists: string[] };
+
 export const getVerifiedTokens = async ({
   networkDetails,
   contractId,
   setIsSearching,
+  assetsLists,
 }: {
   networkDetails: NetworkDetails;
   contractId: string;
   setIsSearching?: (isSearching: boolean) => void;
+  assetsLists: AssetsLists;
 }) => {
-  let verifiedTokens = [] as TokenRecord[];
+  const networkLists = assetsLists[networkDetails.network as AssetsListKey];
+  const promiseArr = [];
 
-  const fetchVerifiedTokens = async () => {
-    const verifiedTokenRes = await searchToken({
-      networkDetails,
-      onError: (e) => {
-        console.error(e);
-        if (setIsSearching) {
-          setIsSearching(false);
-        }
-        throw new Error("Unable to search for tokens");
-      },
-    });
+  const nativeContract = getNativeContractDetails(networkDetails);
 
-    verifiedTokens = verifiedTokenRes.filter((record: TokenRecord) => {
-      const regex = new RegExp(contractId, "i");
-      if (record.contract.match(regex)) {
-        return true;
+  if (contractId === nativeContract.contract) {
+    return [{ ...nativeContract, verifiedLists: [] }];
+  }
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const networkList of networkLists) {
+    const { url = "" } = networkList;
+
+    const fetchAndParse = async () => {
+      let res;
+      try {
+        res = await fetch(url);
+      } catch (e) {
+        captureException(`Failed to load asset list: ${url}`);
       }
-      return false;
-    });
-  };
 
-  await fetchVerifiedTokens();
+      return res?.json();
+    };
+
+    promiseArr.push(fetchAndParse());
+  }
+
+  const promiseRes = await Promise.allSettled(promiseArr);
+  if (setIsSearching) {
+    setIsSearching(false);
+  }
+
+  const verifiedTokens = [] as VerifiedTokenRecord[];
+
+  let verifiedToken = {} as TokenRecord;
+  const verifiedLists: string[] = [];
+
+  promiseRes.forEach((r) => {
+    if (r.status === "fulfilled") {
+      const list = r.value?.tokens ? r.value?.tokens : r.value?.assets;
+      if (list) {
+        list.forEach((record: TokenRecord) => {
+          const regex = new RegExp(contractId, "i");
+          if (record.contract && record.contract.match(regex)) {
+            verifiedToken = record;
+            verifiedLists.push(r.value.name as string);
+          }
+        });
+      }
+    }
+  });
+
+  if (Object.keys(verifiedToken).length) {
+    verifiedTokens.push({
+      ...verifiedToken,
+      verifiedLists,
+    });
+  }
 
   return verifiedTokens;
 };

@@ -269,6 +269,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   }, [dispatch]);
 
   const handleXferTransaction = async () => {
+    console.log(transactionSimulation.preparedTransaction);
     try {
       const res = await dispatch(
         signFreighterSorobanTransaction({
