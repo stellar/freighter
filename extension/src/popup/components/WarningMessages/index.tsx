@@ -21,7 +21,7 @@ import {
 } from "stellar-sdk";
 
 import { ActionStatus } from "@shared/api/types";
-import { getIndexerTokenDetails } from "@shared/api/internal";
+import { getTokenDetails } from "@shared/api/internal";
 
 import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
 
@@ -968,14 +968,14 @@ const WarningMessageTokenDetails = ({
     {} as Record<string, { name: string; symbol: string }>,
   );
   React.useEffect(() => {
-    async function getTokenDetails() {
+    async function _getTokenDetails() {
       setLoadingTokenDetails(true);
       const _tokenDetails = {} as Record<
         string,
         { name: string; symbol: string }
       >;
       try {
-        const tokenDetailsResponse = await getIndexerTokenDetails({
+        const tokenDetailsResponse = await getTokenDetails({
           contractId: transfer.contractId,
           publicKey,
           networkDetails,
@@ -995,7 +995,7 @@ const WarningMessageTokenDetails = ({
       setTokenDetails(_tokenDetails);
       setLoadingTokenDetails(false);
     }
-    getTokenDetails();
+    _getTokenDetails();
   }, [transfer.contractId, networkDetails, publicKey]);
 
   return (

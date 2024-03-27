@@ -13,7 +13,7 @@ import { useSelector } from "react-redux";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
-import { getIndexerTokenDetails } from "@shared/api/internal";
+import { getTokenDetails } from "@shared/api/internal";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -62,6 +62,7 @@ import "./styles.scss";
 export const ReviewAuth = () => {
   const location = useLocation();
   const { t } = useTranslation();
+  const [isLoadingAuth, setLoadingAuth] = useState(true);
 
   const decodedSearchParam = decodeString(location.search.replace("?", ""));
   const params = decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
@@ -100,6 +101,7 @@ export const ReviewAuth = () => {
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
   const reviewAuthEntry = () => {
     emitMetric(METRIC_NAMES.reviewedAuthEntry);
+    setLoadingAuth(true);
     if (isLastEntry) {
       setHasConfirmedAuth(true);
     } else {
@@ -131,7 +133,11 @@ export const ReviewAuth = () => {
               <h5>
                 {activeAuthEntryIndex + 1}/{authCount} Authorizations
               </h5>
-              <AuthDetail authEntry={op.auth[activeAuthEntryIndex]} />
+              <AuthDetail
+                authEntry={op.auth[activeAuthEntryIndex]}
+                isLoading={isLoadingAuth}
+                setLoading={setLoadingAuth}
+              />
             </>
           ) : (
             <SignTransaction
@@ -305,11 +311,13 @@ const TransferSummary = ({
 
 const AuthDetail = ({
   authEntry,
+  setLoading,
+  isLoading,
 }: {
   authEntry: xdr.SorobanAuthorizationEntry;
+  setLoading: (isLoading: boolean) => void;
+  isLoading: boolean;
 }) => {
-  // start off in loading state, we always need to fetch token details
-  const [isLoading, setLoading] = useState(true);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -334,7 +342,7 @@ const AuthDetail = ({
 
   const transfersDepKey = JSON.stringify(transfers);
   React.useEffect(() => {
-    async function getTokenDetails() {
+    async function _getTokenDetails() {
       setLoading(true);
       const _tokenDetails = {} as TokenDetailMap;
 
@@ -342,7 +350,7 @@ const AuthDetail = ({
       for (const transfer of transfers) {
         try {
           // eslint-disable-next-line
-          const tokenDetailsResponse = await getIndexerTokenDetails({
+          const tokenDetailsResponse = await getTokenDetails({
             contractId: transfer.contractId,
             publicKey,
             networkDetails,
@@ -369,7 +377,7 @@ const AuthDetail = ({
       setTokenDetails(_tokenDetails);
       setLoading(false);
     }
-    getTokenDetails();
+    _getTokenDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transfersDepKey]);
 

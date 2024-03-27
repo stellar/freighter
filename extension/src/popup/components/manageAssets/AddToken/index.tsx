@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { getName, getSymbol } from "@shared/helpers/soroban/token";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
-import { getIndexerTokenDetails } from "@shared/api/internal";
+import { getTokenDetails } from "@shared/api/internal";
 import {
   buildSorobanServer,
   getNewTxBuilder,
@@ -196,7 +196,7 @@ export const AddToken = () => {
           } else {
             // lookup contract
             setIsVerifiedToken(false);
-            const tokenDetailsResponse = await getIndexerTokenDetails({
+            const tokenDetailsResponse = await getTokenDetails({
               contractId,
               publicKey,
               networkDetails,
