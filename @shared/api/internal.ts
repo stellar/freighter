@@ -712,7 +712,7 @@ export const getAccountHistory = async (
   });
 };
 
-export const getIndexerTokenDetails = async ({
+export const getTokenDetails = async ({
   contractId,
   publicKey,
   networkDetails,

@@ -26,7 +26,7 @@ import {
   TokenBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getIndexerTokenDetails } from "@shared/api/internal";
+import { getTokenDetails } from "@shared/api/internal";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
@@ -243,7 +243,7 @@ export const HistoryItem = ({
             setIsLoading(true);
 
             try {
-              const tokenDetailsResponse = await getIndexerTokenDetails({
+              const tokenDetailsResponse = await getTokenDetails({
                 contractId: attrs.contractId,
                 publicKey,
                 networkDetails,
