@@ -1,3 +1,9 @@
+# Release notes - Wallets - FE-Freighter-5.17.7
+
+### Bug
+
+Use indexer to fetch token details for Futurenet
+
 # Release notes - Wallets - FE-Freighter-5.17.6
 
 ### Bug
