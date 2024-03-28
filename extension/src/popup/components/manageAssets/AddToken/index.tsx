@@ -172,6 +172,33 @@ export const AddToken = () => {
         return;
       }
 
+      const indexerLookup = async () => {
+        // lookup contract
+        setIsVerifiedToken(false);
+        const tokenUrl = new URL(`${INDEXER_URL}/token-details/${contractId}`);
+        tokenUrl.searchParams.append("network", networkDetails.network);
+        tokenUrl.searchParams.append("pub_key", publicKey);
+        tokenUrl.searchParams.append(
+          "soroban_url",
+          networkDetails.sorobanRpcUrl!,
+        );
+
+        const res = await fetch(tokenUrl.href);
+        const resJson = await res.json();
+        if (!res.ok) {
+          throw new Error(JSON.stringify(resJson));
+        } else {
+          setAssetRows([
+            {
+              code: resJson.symbol,
+              issuer: contractId,
+              domain: "",
+              name: resJson.name,
+            },
+          ]);
+        }
+      };
+
       if (isAllowListVerificationEnabled) {
         // usual binary case of a token being verified or unverified
         verifiedTokens = await getVerifiedTokens({
@@ -192,32 +219,8 @@ export const AddToken = () => {
               })),
             );
           } else {
-            // lookup contract
-            setIsVerifiedToken(false);
-            const tokenUrl = new URL(
-              `${INDEXER_URL}/token-details/${contractId}`,
-            );
-            tokenUrl.searchParams.append("network", networkDetails.network);
-            tokenUrl.searchParams.append("pub_key", publicKey);
-            tokenUrl.searchParams.append(
-              "soroban_url",
-              networkDetails.sorobanRpcUrl!,
-            );
-
-            const res = await fetch(tokenUrl.href);
-            const resJson = await res.json();
-            if (!res.ok) {
-              throw new Error(JSON.stringify(resJson));
-            } else {
-              setAssetRows([
-                {
-                  code: resJson.symbol,
-                  issuer: contractId,
-                  domain: "",
-                  name: resJson.name,
-                },
-              ]);
-            }
+            // token not found on asset list, look up the details manually
+            await indexerLookup();
           }
         } catch (e) {
           setAssetRows([]);
@@ -226,6 +229,9 @@ export const AddToken = () => {
           );
           console.error(e);
         }
+      } else {
+        // Futurenet token lookup
+        await indexerLookup();
       }
 
       setIsVerificationInfoShowing(isAllowListVerificationEnabled);
