@@ -24,8 +24,8 @@ import {
 import { isMainnet, isTestnet } from "helpers/stellar";
 import {
   getVerifiedTokens,
-  TokenRecord,
   getNativeContractDetails,
+  VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
 
@@ -43,7 +43,13 @@ const initialValues: FormValues = {
   asset: "",
 };
 
-const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
+const VerificationBadge = ({
+  isVerified,
+  verifiedLists,
+}: {
+  isVerified: boolean;
+  verifiedLists: string[];
+}) => {
   const { t } = useTranslation();
   const linkUrl = "";
 
@@ -53,20 +59,8 @@ const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
         <>
           <Icon.Verified />
           <span className="AddToken__heading__text">
-            {t("This asset is part of")}{" "}
-            <Link
-              data-testid="add-token-verification-url"
-              variant="secondary"
-              href={linkUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Stellar Expert's top 50 assets list
-            </Link>
-            .{" "}
-            <Link variant="secondary" href="https://www.freighter.app/faq">
-              {t("Learn more")}
-            </Link>
+            {t("This asset is part of the asset lists")}{" "}
+            {verifiedLists.join(", ")}
           </span>
         </>
       ) : (
@@ -104,6 +98,7 @@ export const AddToken = () => {
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
     false,
   );
+  const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
 
   const ResultsRef = useRef<HTMLDivElement>(null);
@@ -125,7 +120,7 @@ export const AddToken = () => {
       setAssetRows([]);
 
       const nativeContractDetails = getNativeContractDetails(networkDetails);
-      let verifiedTokens = [] as TokenRecord[];
+      let verifiedTokens = [] as VerifiedTokenRecord[];
 
       // step around verification for native contract and unverifiable networks
 
@@ -185,8 +180,9 @@ export const AddToken = () => {
         try {
           if (verifiedTokens.length) {
             setIsVerifiedToken(true);
+            setVerifiedLists(verifiedTokens[0].verifiedLists);
             setAssetRows(
-              verifiedTokens.map((record: TokenRecord) => ({
+              verifiedTokens.map((record: VerifiedTokenRecord) => ({
                 code: record.code,
                 issuer: record.contract,
                 image: record.icon,
@@ -279,7 +275,10 @@ export const AddToken = () => {
                     </div>
                   ) : null}
                   {assetRows.length && isVerificationInfoShowing ? (
-                    <VerificationBadge isVerified={isVerifiedToken} />
+                    <VerificationBadge
+                      isVerified={isVerifiedToken}
+                      verifiedLists={verifiedLists}
+                    />
                   ) : null}
 
                   {assetRows.length ? (

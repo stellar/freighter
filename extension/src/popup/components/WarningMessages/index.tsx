@@ -928,6 +928,8 @@ export const UnverifiedTokenTransferWarning = ({
         });
       }
 
+      console.log(verifiedTokens);
+
       if (!verifiedTokens.length) {
         setIsUnverifiedToken(true);
       }
@@ -938,13 +940,13 @@ export const UnverifiedTokenTransferWarning = ({
 
   return isUnverifiedToken ? (
     <WarningMessage
-      header="This asset is not on the asset list"
+      header="This asset is not on an asset list"
       variant={WarningMessageVariant.default}
     >
       <div className="TokenTransferWarning">
         <p>
           {t(
-            `This asset is not part of the asset list by stellar.expert (${networkDetails.network})`,
+            `This asset is not part of any of your enabled asset lists (${networkDetails.network})`,
           )}
         </p>
       </div>
