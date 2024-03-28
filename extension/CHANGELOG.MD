@@ -1,3 +1,15 @@
+# Release notes - Wallets - FE-Freighter-5.17.6
+
+### Bug
+
+Unable to Add Token when stellar.expert API is down
+
+# Release notes - Wallets - FE-Freighter-5.17.5
+
+### Bug
+
+Standalone token transfer summary throws error
+
 # Release notes - Wallets - FE-Freighter-5.17.4
 
 ### Bug
