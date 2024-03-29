@@ -187,7 +187,7 @@ export const AddToken = () => {
       setIsVerificationInfoShowing(isAllowListVerificationEnabled);
 
       setIsSearching(false);
-    }, 250),
+    }, 500),
     [],
   );
 
