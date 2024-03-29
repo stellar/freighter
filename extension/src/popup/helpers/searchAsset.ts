@@ -1,3 +1,4 @@
+import { captureException } from "@sentry/browser";
 import { fetchAssetList } from "@stellar-asset-lists/sdk";
 import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import { getApiStellarExpertUrl } from "popup/helpers/account";
@@ -103,8 +104,8 @@ export const getVerifiedTokens = async ({
         console.error(e);
         if (setIsSearching) {
           setIsSearching(false);
+          captureException("Unable to search stellar.expert token list");
         }
-        throw new Error("Unable to search for tokens");
       },
     });
 

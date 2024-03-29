@@ -174,6 +174,29 @@ export const AddToken = () => {
         return;
       }
 
+      const indexerLookup = async () => {
+        // lookup contract
+        setIsVerifiedToken(false);
+        const tokenDetailsResponse = await getTokenDetails({
+          contractId,
+          publicKey,
+          networkDetails,
+        });
+
+        if (!tokenDetailsResponse) {
+          throw new Error(JSON.stringify(contractId));
+        } else {
+          setAssetRows([
+            {
+              code: tokenDetailsResponse.symbol,
+              issuer: contractId,
+              domain: "",
+              name: tokenDetailsResponse.name,
+            },
+          ]);
+        }
+      };
+
       if (isAllowListVerificationEnabled) {
         // usual binary case of a token being verified or unverified
         verifiedTokens = await getVerifiedTokens({
@@ -194,25 +217,8 @@ export const AddToken = () => {
               })),
             );
           } else {
-            // lookup contract
-            setIsVerifiedToken(false);
-            const tokenDetailsResponse = await getTokenDetails({
-              contractId,
-              publicKey,
-              networkDetails,
-            });
-            if (!tokenDetailsResponse) {
-              throw new Error(contractId);
-            } else {
-              setAssetRows([
-                {
-                  code: tokenDetailsResponse.symbol,
-                  issuer: contractId,
-                  domain: "",
-                  name: tokenDetailsResponse.name,
-                },
-              ]);
-            }
+            // token not found on asset list, look up the details manually
+            await indexerLookup();
           }
         } catch (e) {
           setAssetRows([]);
@@ -221,6 +227,9 @@ export const AddToken = () => {
           );
           console.error(e);
         }
+      } else {
+        // Futurenet token lookup
+        await indexerLookup();
       }
 
       setIsVerificationInfoShowing(isAllowListVerificationEnabled);
