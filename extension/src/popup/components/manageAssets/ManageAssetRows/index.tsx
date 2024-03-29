@@ -72,7 +72,7 @@ interface ManageAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   chooseAsset?: boolean;
   isVerifiedToken?: boolean;
-  isNativeToken?: boolean;
+  isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
 }
 
@@ -90,7 +90,7 @@ export const ManageAssetRows = ({
   assetRows,
   chooseAsset,
   isVerifiedToken,
-  isNativeToken,
+  isVerificationInfoShowing,
   verifiedLists,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
@@ -272,16 +272,7 @@ export const ManageAssetRows = ({
     const contractId = assetRowData.issuer;
     setAssetSubmitting(canonicalAsset || contractId);
     if (!isTrustlineActive) {
-      if (isNativeToken) {
-        await dispatch(
-          addTokenId({
-            publicKey,
-            tokenId: contractId,
-            network: networkDetails.network as Networks,
-          }),
-        );
-        navigateTo(ROUTES.account);
-      } else {
+      if (isVerificationInfoShowing) {
         setSuspiciousAssetData({
           domain: assetRowData.domain,
           code: assetRowData.code,
@@ -290,6 +281,15 @@ export const ManageAssetRows = ({
           isVerifiedToken: !!isVerifiedToken,
         });
         setShowUnverifiedWarning(true);
+      } else {
+        await dispatch(
+          addTokenId({
+            publicKey,
+            tokenId: contractId,
+            network: networkDetails.network as Networks,
+          }),
+        );
+        navigateTo(ROUTES.account);
       }
     } else {
       await dispatch(

@@ -6,13 +6,7 @@ import { Formik, Form, Field, FieldProps } from "formik";
 import { Input, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
-import { INDEXER_URL } from "@shared/constants/mercury";
-import { getName, getSymbol } from "@shared/helpers/soroban/token";
-import { isCustomNetwork } from "@shared/helpers/stellar";
-import {
-  buildSorobanServer,
-  getNewTxBuilder,
-} from "@shared/helpers/soroban/server";
+import { getTokenDetails } from "@shared/api/internal";
 
 import { FormRows } from "popup/basics/Forms";
 
@@ -51,7 +45,6 @@ export const AddToken = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
-  const [isNativeToken, setIsNativeToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
     false,
   );
@@ -73,7 +66,6 @@ export const AddToken = () => {
       // clear the UI while we work through the flow
       setIsSearching(true);
       setIsVerifiedToken(false);
-      setIsNativeToken(false);
       setIsVerificationInfoShowing(false);
       setAssetRows([]);
 
@@ -84,7 +76,7 @@ export const AddToken = () => {
 
       if (nativeContractDetails.contract === contractId) {
         // override our rules for verification for XLM
-        setIsNativeToken(true);
+        setIsVerificationInfoShowing(false);
         setAssetRows([
           {
             code: nativeContractDetails.code,
@@ -96,46 +88,23 @@ export const AddToken = () => {
         return;
       }
 
-      if (isCustomNetwork(networkDetails)) {
-        if (!networkDetails.sorobanRpcUrl) {
-          setAssetRows([]);
-        } else {
-          const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
-          const name = await getName(
-            contractId,
-            server,
-            await getNewTxBuilder(publicKey, networkDetails, server),
-          );
-          const symbol = await getSymbol(
-            contractId,
-            server,
-            await getNewTxBuilder(publicKey, networkDetails, server),
-          );
-
-          setAssetRows([
-            {
-              code: symbol,
-              issuer: contractId,
-              domain: "",
-              name,
-            },
-          ]);
-        }
-        setIsSearching(false);
-        return;
-      }
-
-      const indexerLookup = async () => {
+      const tokenLookup = async () => {
         // lookup contract
         setIsVerifiedToken(false);
-        const tokenDetailsResponse = await getTokenDetails({
-          contractId,
-          publicKey,
-          networkDetails,
-        });
+        let tokenDetailsResponse;
+
+        try {
+          tokenDetailsResponse = await getTokenDetails({
+            contractId,
+            publicKey,
+            networkDetails,
+          });
+        } catch (e) {
+          setAssetRows([]);
+        }
 
         if (!tokenDetailsResponse) {
-          throw new Error(JSON.stringify(contractId));
+          setAssetRows([]);
         } else {
           setAssetRows([
             {
@@ -170,7 +139,7 @@ export const AddToken = () => {
             );
           } else {
             // token not found on asset list, look up the details manually
-            await indexerLookup();
+            await tokenLookup();
           }
         } catch (e) {
           setAssetRows([]);
@@ -181,7 +150,7 @@ export const AddToken = () => {
         }
       } else {
         // Futurenet token lookup
-        await indexerLookup();
+        await tokenLookup();
       }
 
       setIsVerificationInfoShowing(isAllowListVerificationEnabled);
@@ -247,10 +216,8 @@ export const AddToken = () => {
                     <ManageAssetRows
                       header={null}
                       assetRows={assetRows}
-                      isVerifiedToken={
-                        isVerifiedToken || !isVerificationInfoShowing
-                      }
-                      isNativeToken={isNativeToken}
+                      isVerifiedToken={isVerifiedToken}
+                      isVerificationInfoShowing={isVerificationInfoShowing}
                       verifiedLists={verifiedLists}
                     />
                   ) : null}
