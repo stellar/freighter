@@ -29,6 +29,7 @@ import {
 } from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
 
+import { AssetNotifcation } from "popup/components/AssetNotification";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import IconUnverified from "popup/assets/icon-unverified.svg";
@@ -43,7 +44,7 @@ const initialValues: FormValues = {
   asset: "",
 };
 
-const VerificationBadge = ({
+export const VerificationBadge = ({
   isVerified,
   verifiedLists,
 }: {
@@ -176,6 +177,7 @@ export const AddToken = () => {
         });
 
         console.log(verifiedTokens);
+        console.log(verifiedLists);
 
         try {
           if (verifiedTokens.length) {
@@ -222,7 +224,7 @@ export const AddToken = () => {
       setIsVerificationInfoShowing(isAllowListVerificationEnabled);
 
       setIsSearching(false);
-    }, 500),
+    }, 250),
     [],
   );
 
@@ -275,10 +277,7 @@ export const AddToken = () => {
                     </div>
                   ) : null}
                   {assetRows.length && isVerificationInfoShowing ? (
-                    <VerificationBadge
-                      isVerified={isVerifiedToken}
-                      verifiedLists={verifiedLists}
-                    />
+                    <AssetNotifcation isVerified={isVerifiedToken} />
                   ) : null}
 
                   {assetRows.length ? (
