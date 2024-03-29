@@ -1,13 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import {
-  Button,
-  Icon,
-  Loader,
-  Link,
-  Notification,
-} from "@stellar/design-system";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import {
@@ -19,6 +13,7 @@ import {
   Networks,
   xdr,
 } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
 
 import { ActionStatus } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
@@ -57,11 +52,12 @@ import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
 import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
+import IconUnverified from "popup/assets/icon-unverified.svg";
+import IconNewAsset from "popup/assets/icon-new-asset.svg";
 import {
   getVerifiedTokens,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
-import { captureException } from "@sentry/browser";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -692,16 +688,20 @@ export const NewAssetWarning = ({
   );
 };
 
-export const UnverifiedTokenWarning = ({
+export const TokenWarning = ({
   domain,
   code,
   issuer,
   onClose,
+  isVerifiedToken,
+  verifiedLists = [],
 }: {
   domain: string;
   code: string;
   issuer: string;
   onClose: () => void;
+  isVerifiedToken: boolean;
+  verifiedLists?: string[];
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -749,70 +749,78 @@ export const UnverifiedTokenWarning = ({
   };
 
   return (
-    <div className="UnverifiedTokenWarning">
+    <div className="TokenWarning">
       <View.Content>
-        <div className="UnverifiedTokenWarning__wrapper" ref={warningRef}>
-          <div className="UnverifiedTokenWarning__heading">
-            <div className="UnverifiedTokenWarning__icon">
+        <div className="TokenWarning__wrapper" ref={warningRef}>
+          <div className="TokenWarning__heading">
+            <div className="TokenWarning__icon">
               <SorobanTokenIcon noMargin />
             </div>
-            <div className="UnverifiedTokenWarning__code">{code}</div>
-            <div className="UnverifiedTokenWarning__domain">{domain}</div>
-            <div className="UnverifiedTokenWarning__description">
-              <div className="UnverifiedTokenWarning__description__icon">
+            <div className="TokenWarning__code">{code}</div>
+            <div className="TokenWarning__domain">{domain}</div>
+            <div className="TokenWarning__description">
+              <div className="TokenWarning__description__icon">
                 <Icon.VerifiedUser />
               </div>
-              <div className="UnverifiedTokenWarning__description__text">
+              <div className="TokenWarning__description__text">
                 {t("Add Asset Trustline")}
               </div>
             </div>
           </div>
+          {isVerifiedToken ? (
+            <Notification
+              title={`${t(
+                "This asset is part of the asset lists",
+              )} "${verifiedLists.join(", ")}."`}
+              variant="primary"
+            >
+              {t(
+                "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+              )}
+            </Notification>
+          ) : (
+            <Notification
+              title={t(
+                "This asset is not part of an asset list. Please, double-check the asset you're interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+              )}
+              variant="warning"
+            />
+          )}
 
-          <Notification
-            title={t(
-              "Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets.",
-            )}
-            variant="warning"
-          />
-          <div className="UnverifiedTokenWarning__flags">
-            <div className="UnverifiedTokenWarning__flags__info">
-              {t("Asset Info")}
-            </div>
-            <div className="UnverifiedTokenWarning__flag">
-              <div className="UnverifiedTokenWarning__flag__icon">
-                <Icon.Info />
-              </div>
-              <div className="UnverifiedTokenWarning__flag__content">
-                <div className="UnverifiedTokenWarning__flag__header UnverifiedTokenWarning__flags__icon--unverified">
-                  {t(
-                    "The asset is not part of Stellar Expert's top 50 assets list",
-                  )}
+          <div className="TokenWarning__flags">
+            <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
+
+            {isVerifiedToken ? null : (
+              <div className="TokenWarning__flag">
+                <div className="TokenWarning__flag__icon">
+                  <img src={IconUnverified} alt="unverified icon" />
                 </div>
-                <div className="UnverifiedTokenWarning__flag__description">
-                  {t("This asset is not part of")}{" "}
-                  <Link
-                    isUnderline
-                    variant="secondary"
-                    href="https://api.stellar.expert/explorer/testnet/asset-list/top50"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Stellar Expert's top 50 assets list
-                  </Link>
-                  <br />
-                  <Link
-                    isUnderline
-                    variant="secondary"
-                    href="https://www.freighter.app/faq"
-                  >
-                    {t("Learn more")}
-                  </Link>
+                <div className="TokenWarning_flag__content">
+                  <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
+                    {t("Unverified asset")}
+                  </div>
+                  <div className="TokenWarning__flag__content">
+                    {t("Proceed with caution")}
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="TokenWarning__flag">
+              <div className="TokenWarning__flag__icon">
+                <img src={IconNewAsset} alt="new asset icon" />
+              </div>
+              <div className="TokenWarning_flag__content">
+                <div className="TokenWarning__flag__header TokenWarning__flag__icon">
+                  {t("New asset")}
+                </div>
+                <div className="TokenWarning__flag__content">
+                  {t("This is a relatively new asset")}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="UnverifiedTokenWarning__bottom-content">
+          <div className="TokenWarning__bottom-content">
             <div className="ScamAssetWarning__btns">
               <Button
                 size="md"

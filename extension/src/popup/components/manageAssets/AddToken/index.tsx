@@ -3,12 +3,12 @@ import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Icon, Input, Link, Loader } from "@stellar/design-system";
+import { Input, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import { getName, getSymbol } from "@shared/helpers/soroban/token";
 import { isCustomNetwork } from "@shared/helpers/stellar";
-import { getTokenDetails } from "@shared/api/internal";
 import {
   buildSorobanServer,
   getNewTxBuilder,
@@ -32,7 +32,6 @@ import { isContractId } from "popup/helpers/soroban";
 import { AssetNotifcation } from "popup/components/AssetNotification";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import IconUnverified from "popup/assets/icon-unverified.svg";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import "./styles.scss";
@@ -44,50 +43,6 @@ const initialValues: FormValues = {
   asset: "",
 };
 
-export const VerificationBadge = ({
-  isVerified,
-  verifiedLists,
-}: {
-  isVerified: boolean;
-  verifiedLists: string[];
-}) => {
-  const { t } = useTranslation();
-  const linkUrl = "";
-
-  return (
-    <div className="AddToken__heading" data-testid="add-token-verification">
-      {isVerified ? (
-        <>
-          <Icon.Verified />
-          <span className="AddToken__heading__text">
-            {t("This asset is part of the asset lists")}{" "}
-            {verifiedLists.join(", ")}
-          </span>
-        </>
-      ) : (
-        <>
-          <img src={IconUnverified} alt="unverified icon" />
-          <span className="AddToken__heading__text">
-            {t("This asset is not part of")}{" "}
-            <Link
-              variant="secondary"
-              href={linkUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Stellar Expert's top 50 assets list
-            </Link>
-            .{" "}
-            <Link variant="secondary" href="https://www.freighter.app/faq">
-              {t("Learn more")}
-            </Link>
-          </span>
-        </>
-      )}
-    </div>
-  );
-};
-
 export const AddToken = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -96,6 +51,7 @@ export const AddToken = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
+  const [isNativeToken, setIsNativeToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
     false,
   );
@@ -117,6 +73,7 @@ export const AddToken = () => {
       // clear the UI while we work through the flow
       setIsSearching(true);
       setIsVerifiedToken(false);
+      setIsNativeToken(false);
       setIsVerificationInfoShowing(false);
       setAssetRows([]);
 
@@ -127,6 +84,7 @@ export const AddToken = () => {
 
       if (nativeContractDetails.contract === contractId) {
         // override our rules for verification for XLM
+        setIsNativeToken(true);
         setAssetRows([
           {
             code: nativeContractDetails.code,
@@ -167,12 +125,38 @@ export const AddToken = () => {
         return;
       }
 
+      const indexerLookup = async () => {
+        // lookup contract
+        setIsVerifiedToken(false);
+        const tokenUrl = new URL(`${INDEXER_URL}/token-details/${contractId}`);
+        tokenUrl.searchParams.append("network", networkDetails.network);
+        tokenUrl.searchParams.append("pub_key", publicKey);
+        tokenUrl.searchParams.append(
+          "soroban_url",
+          networkDetails.sorobanRpcUrl!,
+        );
+
+        const res = await fetch(tokenUrl.href);
+        const resJson = await res.json();
+        if (!res.ok) {
+          throw new Error(JSON.stringify(resJson));
+        } else {
+          setAssetRows([
+            {
+              code: resJson.symbol,
+              issuer: contractId,
+              domain: "",
+              name: resJson.name,
+            },
+          ]);
+        }
+      };
+
       if (isAllowListVerificationEnabled) {
         // usual binary case of a token being verified or unverified
         verifiedTokens = await getVerifiedTokens({
           networkDetails,
           contractId,
-          setIsSearching,
           assetsLists,
         });
 
@@ -192,25 +176,8 @@ export const AddToken = () => {
               })),
             );
           } else {
-            // lookup contract
-            setIsVerifiedToken(false);
-            const tokenDetailsResponse = await getTokenDetails({
-              contractId,
-              publicKey,
-              networkDetails,
-            });
-            if (!tokenDetailsResponse) {
-              throw new Error(contractId);
-            } else {
-              setAssetRows([
-                {
-                  code: tokenDetailsResponse.symbol,
-                  issuer: contractId,
-                  domain: "",
-                  name: tokenDetailsResponse.name,
-                },
-              ]);
-            }
+            // token not found on asset list, look up the details manually
+            await indexerLookup();
           }
         } catch (e) {
           setAssetRows([]);
@@ -219,6 +186,9 @@ export const AddToken = () => {
           );
           console.error(e);
         }
+      } else {
+        // Futurenet token lookup
+        await indexerLookup();
       }
 
       setIsVerificationInfoShowing(isAllowListVerificationEnabled);
@@ -287,6 +257,8 @@ export const AddToken = () => {
                       isVerifiedToken={
                         isVerifiedToken || !isVerificationInfoShowing
                       }
+                      isNativeToken={isNativeToken}
+                      verifiedLists={verifiedLists}
                     />
                   ) : null}
                   {hasNoResults && dirty && !isSearching ? (

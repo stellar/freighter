@@ -73,7 +73,6 @@ export const getVerifiedTokens = async ({
 }) => {
   const networkLists = assetsLists[networkDetails.network as AssetsListKey];
   const promiseArr = [];
-
   const nativeContract = getNativeContractDetails(networkDetails);
 
   if (contractId === nativeContract.contract) {
@@ -99,9 +98,6 @@ export const getVerifiedTokens = async ({
   }
 
   const promiseRes = await Promise.allSettled(promiseArr);
-  if (setIsSearching) {
-    setIsSearching(false);
-  }
 
   const verifiedTokens = [] as VerifiedTokenRecord[];
 
@@ -128,6 +124,10 @@ export const getVerifiedTokens = async ({
       ...verifiedToken,
       verifiedLists,
     });
+  }
+
+  if (setIsSearching) {
+    setIsSearching(false);
   }
 
   return verifiedTokens;
