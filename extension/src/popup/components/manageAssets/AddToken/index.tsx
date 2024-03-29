@@ -160,9 +160,6 @@ export const AddToken = () => {
           assetsLists,
         });
 
-        console.log(verifiedTokens);
-        console.log(verifiedLists);
-
         try {
           if (verifiedTokens.length) {
             setIsVerifiedToken(true);

@@ -914,7 +914,6 @@ export const UnverifiedTokenTransferWarning = ({
 }: {
   details: { contractId: string }[];
 }) => {
-  console.log(1);
   const { t } = useTranslation();
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
@@ -935,8 +934,6 @@ export const UnverifiedTokenTransferWarning = ({
           assetsLists,
         });
       }
-
-      console.log(verifiedTokens);
 
       if (!verifiedTokens.length) {
         setIsUnverifiedToken(true);
