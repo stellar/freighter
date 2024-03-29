@@ -128,25 +128,21 @@ export const AddToken = () => {
       const indexerLookup = async () => {
         // lookup contract
         setIsVerifiedToken(false);
-        const tokenUrl = new URL(`${INDEXER_URL}/token-details/${contractId}`);
-        tokenUrl.searchParams.append("network", networkDetails.network);
-        tokenUrl.searchParams.append("pub_key", publicKey);
-        tokenUrl.searchParams.append(
-          "soroban_url",
-          networkDetails.sorobanRpcUrl!,
-        );
+        const tokenDetailsResponse = await getTokenDetails({
+          contractId,
+          publicKey,
+          networkDetails,
+        });
 
-        const res = await fetch(tokenUrl.href);
-        const resJson = await res.json();
-        if (!res.ok) {
-          throw new Error(JSON.stringify(resJson));
+        if (!tokenDetailsResponse) {
+          throw new Error(JSON.stringify(contractId));
         } else {
           setAssetRows([
             {
-              code: resJson.symbol,
+              code: tokenDetailsResponse.symbol,
               issuer: contractId,
               domain: "",
-              name: resJson.name,
+              name: tokenDetailsResponse.name,
             },
           ]);
         }
