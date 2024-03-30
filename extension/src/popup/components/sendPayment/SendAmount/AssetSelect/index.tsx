@@ -17,7 +17,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 
 import "./styles.scss";
@@ -32,7 +32,7 @@ export const AssetSelect = ({
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkDetails, assetsLists } = useSelector(settingsSelector);
   const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
@@ -49,6 +49,7 @@ export const AssetSelect = ({
       const verifiedTokens = await getVerifiedTokens({
         networkDetails,
         contractId: issuerKey,
+        assetsLists,
       });
 
       if (!verifiedTokens.length) {
@@ -57,7 +58,7 @@ export const AssetSelect = ({
     };
 
     fetchVerifiedTokens();
-  }, [issuerKey, networkDetails]);
+  }, [issuerKey, networkDetails, assetsLists]);
 
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));

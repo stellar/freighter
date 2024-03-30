@@ -80,9 +80,6 @@
   "Balance ID": "Balance ID",
   "Before we start with migration, please read": "Before we start with migration, please read",
   "Before You Add This Asset": "Before You Add This Asset",
-  "Before you add this asset, please double-check its information and characteristics": {
-    " This can help you identify fraudulent assets": "Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets."
-  },
   "Block malicious or unsafe addresses and domains": "Block malicious or unsafe addresses and domains",
   "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
   "Blocked asset": "Blocked asset",
@@ -181,6 +178,9 @@
     " It’s a safer alternative to copying and pasting private keys for use with web apps": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps."
   },
   "Freighter is set to": "Freighter is set to",
+  "Freighter uses asset lists to check assets you interact with": {
+    " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+  },
   "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website": "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
   "Freighter will use experimental API‘s and connect to the Futurenet, a test network": {
     " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
@@ -300,6 +300,7 @@
   "Never disclose your recovery phrase": "Never disclose your recovery phrase",
   "Nevermind, cancel": "Nevermind, cancel",
   "New account": "New account",
+  "New asset": "New asset",
   "New Asset": "New Asset",
   "New password": "New password",
   "Next": "Next",
@@ -309,9 +310,11 @@
   "Not enough lumens": "Not enough lumens",
   "Not funded": "Not funded",
   "Not migrated": "Not migrated",
+  "Not on your lists": "Not on your lists",
   "Not recommended asset": "Not recommended asset",
   "Now, let’s create a new mnemonic phrase": "Now, let’s create a new mnemonic phrase",
   "Offer ID": "Offer ID",
+  "On your lists": "On your lists",
   "One of your accounts is a signer for another account": {
     " Freighter won’t migrate signing settings": {
       " For your safety, Freighter won’t merge accounts with signature set up so you can still control it": "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it."
@@ -343,6 +346,7 @@
   "Preferences": "Preferences",
   "Price": "Price",
   "Privacy Policy": "Privacy Policy",
+  "Proceed with caution": "Proceed with caution",
   "Processing": "Processing",
   "Projects related to this asset may be fraudulent even if the creators say otherwise": {
     " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
@@ -426,7 +430,6 @@
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
-  "The asset is not part of Stellar Expert's top 50 assets list": "The asset is not part of Stellar Expert's top 50 assets list",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
   "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
   "The destination account doesn’t exist": "The destination account doesn’t exist.",
@@ -445,7 +448,14 @@
   "This asset has a balance": "This asset has a balance",
   "This asset has a balance of": "This asset has a balance of",
   "This asset is not part of": "This asset is not part of",
-  "This asset is part of": "This asset is part of",
+  "This asset is not part of an asset list": {
+    " Please, double-check the asset you're interacting with and proceed with care": {
+      " Freighter uses asset lists to check assets you interact with": {
+        " You can define your own assets lists in Settings": "This asset is not part of an asset list. Please, double-check the asset you're interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+      }
+    }
+  },
+  "This asset is part of the asset lists": "This asset is part of the asset lists",
   "This asset was tagged as fraudulent by stellar": {
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
@@ -477,6 +487,7 @@
   "Unable to search for assets": "Unable to search for assets",
   "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
+  "Unverified asset": "Unverified asset",
   "Validate addresses that require a memo": "Validate addresses that require a memo",
   "Value": "Value",
   "Verification": "Verification",

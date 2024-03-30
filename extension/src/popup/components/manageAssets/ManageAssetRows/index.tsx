@@ -44,7 +44,7 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   ScamAssetWarning,
   NewAssetWarning,
-  UnverifiedTokenWarning,
+  TokenWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
@@ -72,6 +72,16 @@ interface ManageAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   chooseAsset?: boolean;
   isVerifiedToken?: boolean;
+  isVerificationInfoShowing?: boolean;
+  verifiedLists?: string[];
+}
+
+interface SuspiciousAssetData {
+  domain: string;
+  code: string;
+  issuer: string;
+  image: string;
+  isVerifiedToken?: boolean;
 }
 
 export const ManageAssetRows = ({
@@ -80,6 +90,8 @@ export const ManageAssetRows = ({
   assetRows,
   chooseAsset,
   isVerifiedToken,
+  isVerificationInfoShowing,
+  verifiedLists,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -112,7 +124,8 @@ export const ManageAssetRows = ({
     code: "",
     issuer: "",
     image: "",
-  });
+    isVerifiedToken: false,
+  } as SuspiciousAssetData);
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -259,7 +272,16 @@ export const ManageAssetRows = ({
     const contractId = assetRowData.issuer;
     setAssetSubmitting(canonicalAsset || contractId);
     if (!isTrustlineActive) {
-      if (isVerifiedToken) {
+      if (isVerificationInfoShowing) {
+        setSuspiciousAssetData({
+          domain: assetRowData.domain,
+          code: assetRowData.code,
+          issuer: assetRowData.issuer,
+          image: assetRowData.image,
+          isVerifiedToken: !!isVerifiedToken,
+        });
+        setShowUnverifiedWarning(true);
+      } else {
         await dispatch(
           addTokenId({
             publicKey,
@@ -268,14 +290,6 @@ export const ManageAssetRows = ({
           }),
         );
         navigateTo(ROUTES.account);
-      } else {
-        setSuspiciousAssetData({
-          domain: assetRowData.domain,
-          code: assetRowData.code,
-          issuer: assetRowData.issuer,
-          image: assetRowData.image,
-        });
-        setShowUnverifiedWarning(true);
       }
     } else {
       await dispatch(
@@ -317,13 +331,15 @@ export const ManageAssetRows = ({
         />
       )}
       {showUnverifiedWarning && (
-        <UnverifiedTokenWarning
+        <TokenWarning
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           onClose={() => {
             setShowUnverifiedWarning(false);
           }}
+          isVerifiedToken={!!suspiciousAssetData.isVerifiedToken}
+          verifiedLists={verifiedLists}
         />
       )}
       <div className="ManageAssetRows__scrollbar">

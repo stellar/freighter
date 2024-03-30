@@ -265,7 +265,7 @@
   }
 }
 
-.UnverifiedTokenWarning {
+.TokenWarning {
   z-index: var(--z-index--scam-warning);
   display: flex;
   position: fixed;
@@ -340,7 +340,7 @@
 
   &__flag {
     display: flex;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.375rem;
     column-gap: 0.5rem;
     &__header {
       color: var(--color-white);
@@ -352,8 +352,13 @@
       font-size: 0.75rem;
       line-height: 1.25rem;
     }
-    &__icon {
-      color: var(--color-purple-50);
+    &__icon--unverified {
+      color: var(--color-yellow-50);
+    }
+    &__content {
+      color: var(--color-gray-70);
+      font-size: 0.875rem;
+      line-height: 1.125rem;
     }
   }
 
