@@ -8,7 +8,7 @@ export const AssetNotifcation = ({ isVerified }: { isVerified: boolean }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="AssetNotification">
+    <div className="AssetNotification" data-testid="asset-notification">
       {isVerified ? t("On your lists") : t("Not on your lists")}
       <Tooltip
         placement="right"
