@@ -81,12 +81,14 @@ export const createAccount = async (
 };
 
 export const fundAccount = async (publicKey: string): Promise<void> => {
+  console.log("FUNDACCOUNT");
   try {
     await sendMessageToBackground({
       publicKey,
       type: SERVICE_TYPES.FUND_ACCOUNT,
     });
   } catch (e) {
+    console.log(e);
     console.error(e);
   }
 };
