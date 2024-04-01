@@ -12,7 +12,14 @@
 }
 
 .CheckButton {
-  display: none;
+  opacity: 0;
+
+  &:focus + label {
+    outline-color: rgb(153, 200, 255);
+    outline-offset: 1px;
+    outline-style: auto;
+    outline-width: 1px;
+  }
 
   &:checked + label {
     background: var(--color-gray-10);
