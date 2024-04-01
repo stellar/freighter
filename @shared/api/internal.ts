@@ -440,6 +440,8 @@ export const getAccountIndexerBalances = async (
 ): Promise<AccountBalancesInterface> => {
   console.log("getAccountIndexerBalances");
   const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
+  console.log(INDEXER_URL);
+  console.log(publicKey);
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
   url.searchParams.append("network", networkDetails.network);
   for (const id of contractIds) {
