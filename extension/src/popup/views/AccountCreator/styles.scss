@@ -1,3 +1,5 @@
+@use "../../styles/utils.scss" as *;
+
 .AccountCreator {
   margin-bottom: 1rem;
 
@@ -25,10 +27,7 @@
   .Checkbox__container {
     input[type="checkbox"]:focus + label {
       span {
-        outline-color: rgb(153, 200, 255);
-        outline-offset: 1px;
-        outline-style: auto;
-        outline-width: 1px;
+        @include native-like-outline;
       }
     }
   }

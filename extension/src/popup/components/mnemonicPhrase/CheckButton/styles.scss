@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 .ButtonLabel {
   border: 1px solid var(--color-gray-10);
   border-radius: 6.25rem;
@@ -15,10 +17,7 @@
   opacity: 0;
 
   &:focus + label {
-    outline-color: rgb(153, 200, 255);
-    outline-offset: 1px;
-    outline-style: auto;
-    outline-width: 1px;
+    @include native-like-outline;
   }
 
   &:checked + label {
