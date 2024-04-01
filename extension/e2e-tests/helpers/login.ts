@@ -4,6 +4,7 @@ import { expect } from "../test-fixtures";
 export const PASSWORD = "My-password123";
 
 export const login = async ({ page, extensionId }) => {
+  page.on("console", (msg) => console.log(msg.text()));
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("Import Wallet").click();
 

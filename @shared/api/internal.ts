@@ -438,6 +438,7 @@ export const getAccountIndexerBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
 ): Promise<AccountBalancesInterface> => {
+  console.log("getAccountIndexerBalances");
   const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
   url.searchParams.append("network", networkDetails.network);
@@ -448,12 +449,14 @@ export const getAccountIndexerBalances = async (
   const data = (await response.json()) as AccountBalancesInterface;
   if (!response.ok) {
     const _err = JSON.stringify(data);
+    console.log(`Failed to fetch account balances - ${_err}`);
     captureException(`Failed to fetch account balances - ${_err}`);
     throw new Error(_err);
   }
 
   if ("error" in data && (data?.error?.horizon || data?.error?.soroban)) {
     const _err = JSON.stringify(data.error);
+    console.log(`Failed to fetch account balances - ${_err}`);
     captureException(`Failed to fetch account balances - ${_err}`);
   }
 
