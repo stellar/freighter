@@ -368,6 +368,8 @@ export const getAccountBalances = createAsyncThunk<
       storeBalanceMetricData(publicKey, balances.isFunded || false);
       return balances;
     } catch (e) {
+      console.log("getAccountBalances Error");
+      console.log(e);
       return thunkApi.rejectWithValue({ errorMessage: e as string });
     }
   },
