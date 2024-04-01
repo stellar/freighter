@@ -312,10 +312,12 @@ export const Account = () => {
               <div data-testid="can-use">
                 CAN USE FRIENDBOT: {networkDetails.friendbotUrl}{" "}
                 {JSON.stringify(networkDetails)}
-                ISFUND: {isFunded}
-                HASERROR: {hasError}
+                ISFUND: {isFunded ? "true" : "false"}
+                HASERROR: {hasError ? "true" : "false"}
                 E: {error?.horizon}
                 PUBLIC KEY: {publicKey}
+                Conditional:{" "}
+                {!isFunded && !hasError && !error?.horizon ? "true" : "false"}
               </div>
               {!isFunded && !hasError && !error?.horizon && (
                 <NotFundedMessage
