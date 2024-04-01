@@ -2,6 +2,7 @@ import { test, expect } from "./test-fixtures";
 import { login, PASSWORD } from "./helpers/login";
 
 test("Send XLM payment", async ({ page, extensionId }) => {
+  test.slow();
   await login({ page, extensionId });
   await page.getByTitle("Send Payment").click({ force: true });
 

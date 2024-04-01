@@ -22,8 +22,14 @@ export const login = async ({ page, extensionId }) => {
   });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
-  await page.getByTestId("network-selector-open").click({ force: true });
-  await page.getByText("Test Net").click({ force: true });
+  await expect(page.getByTestId("network-selector-open")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("network-selector-open").click();
+  await page.getByText("Test Net").click();
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 10000,
+  });
   await page
     .getByRole("button", { name: "Fund with Friendbot" })
     .click({ force: true });
