@@ -42,6 +42,6 @@ export const login = async ({ page, extensionId }) => {
   await page.getByRole("button", { name: "Fund with Friendbot" }).click();
 
   await expect(page.getByTestId("account-assets")).toBeVisible({
-    timeout: 10000,
+    timeout: 30000,
   });
 };
