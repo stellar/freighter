@@ -81,7 +81,7 @@ export const getVerifiedTokens = async ({
 
   // eslint-disable-next-line no-restricted-syntax
   for (const networkList of networkLists) {
-    const { url = "" } = networkList;
+    const { url = "", isEnabled } = networkList;
 
     const fetchAndParse = async () => {
       let res;
@@ -94,7 +94,9 @@ export const getVerifiedTokens = async ({
       return res?.json();
     };
 
-    promiseArr.push(fetchAndParse());
+    if (isEnabled) {
+      promiseArr.push(fetchAndParse());
+    }
   }
 
   const promiseRes = await Promise.allSettled(promiseArr);
