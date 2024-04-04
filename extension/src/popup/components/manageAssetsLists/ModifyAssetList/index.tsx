@@ -96,6 +96,8 @@ export const ModifyAssetList = ({
       );
     } catch (err) {
       captureException("Unable to fetch SEP-0042 JSON schema");
+      setFetchErrorString("Unable to validate asset asset list");
+      return;
     }
 
     const schemaResJson = await schemaRes?.json();
