@@ -52,6 +52,7 @@ export const ModifyAssetList = ({
 
   useEffect(() => {
     if (assetListIndex) {
+      /* Based on the query param, we're in EDIT mode. Prepopulate some information */
       const assetsListsSelection = assetsListsData[Number(assetListIndex)];
       if (assetsListsSelection) {
         const {
@@ -87,7 +88,7 @@ export const ModifyAssetList = ({
     setAssetListInfo({} as AssetsListsData);
     event.preventDefault();
 
-    // fetch json schema
+    // fetch json schema to check asset list against
     let schemaRes;
 
     try {
@@ -161,6 +162,7 @@ export const ModifyAssetList = ({
     setIsFetchingAssetList(false);
   };
 
+  /* handle editing an exisiting asset list's "enabled" status */
   const handleIsEnabledChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -182,6 +184,7 @@ export const ModifyAssetList = ({
     }
   };
 
+  /* handle adding a brand a new asset list */
   const handleAddAssetList = async (values: FormValues) => {
     const assetsList = {
       url: values.assetList,
@@ -202,6 +205,7 @@ export const ModifyAssetList = ({
     }
   };
 
+  /* handle deleting an existing asset list  */
   const handleEditAssetList = async () => {
     const modifyAssetsListResp = await dispatch(
       modifyAssetsList({
