@@ -7,7 +7,7 @@ import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
-import { AssetsLists } from "../constants/soroban/token";
+import { AssetsLists, AssetsListItem } from "../constants/soroban/token";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -55,6 +55,8 @@ export interface Response {
   isRpcHealthy: boolean;
   userNotification: UserNotification;
   assetsLists: AssetsLists;
+  assetsList: AssetsListItem;
+  isDeleteAssetsList: boolean;
   settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;

@@ -1,44 +1,42 @@
 import React, { useEffect, useState } from "react";
-import { Button, Select, Loader } from "@stellar/design-system";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
+import { Switch } from "react-router-dom";
 import { captureException } from "@sentry/browser";
+import { useTranslation } from "react-i18next";
 
-import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
 import { NETWORKS } from "@shared/constants/stellar";
 import { AssetsListKey } from "@shared/constants/soroban/token";
 import { settingsSelector } from "popup/ducks/settings";
+import { PublicKeyRoute } from "popup/Router";
 
-import { SubviewHeader } from "popup/components/SubviewHeader";
-import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-import { View } from "popup/basics/layout/View";
+import { AssetLists } from "popup/components/manageAssetsLists/AssetLists";
+import { ModifyAssetList } from "popup/components/manageAssetsLists/ModifyAssetList";
 
 import "./styles.scss";
 
-const ASSETS_LISTS_NETWORKS = [
-  ["Mainnet", NETWORKS.PUBLIC],
-  ["Testnet", NETWORKS.TESTNET],
-];
-
-interface AssetsListData {
+export interface AssetsListsData {
+  url: string;
   name: string;
   provider: string;
+  description: string;
+  isEnabled: boolean;
 }
 
 export const ManageAssetsLists = () => {
-  const { t } = useTranslation();
   const [selectedNetwork, setSelectedNetwork] = useState(
     NETWORKS.PUBLIC as AssetsListKey,
   );
-  const [assetsListData, setAssetsListData] = useState([] as AssetsListData[]);
+  const [assetsListsData, setAssetsListsData] = useState(
+    [] as AssetsListsData[],
+  );
   const [isLoading, setIsLoading] = useState(true);
   const { assetsLists } = useSelector(settingsSelector);
+  const { t } = useTranslation();
 
   useEffect(() => {
-    const networkLists = assetsLists[selectedNetwork];
-    const listsArr: AssetsListData[] = [];
+    const networkLists = assetsLists[selectedNetwork] || [];
+    const listsArr: AssetsListsData[] = [];
 
     const fetchLists = async () => {
       setIsLoading(true);
@@ -46,17 +44,20 @@ export const ManageAssetsLists = () => {
       // TODO: make these calls concurrent
       // eslint-disable-next-line no-restricted-syntax
       for (const networkList of networkLists) {
-        const { url = "" } = networkList;
+        const { url = "", isEnabled } = networkList;
+        console.log(networkList);
         try {
           const res = await fetch(url);
-          const resJson: AssetsListData = await res.json();
+          const resJson: AssetsListsData = await res.json();
+          resJson.url = url;
+          resJson.isEnabled = isEnabled;
           listsArr.push(resJson);
         } catch (e) {
           captureException(`Failed to load asset list: ${url}`);
         }
       }
 
-      setAssetsListData(listsArr);
+      setAssetsListsData(listsArr);
       setIsLoading(false);
     };
 
@@ -67,54 +68,26 @@ export const ManageAssetsLists = () => {
     setSelectedNetwork(e.target.value as AssetsListKey);
   };
 
-  return (
+  return assetsLists ? (
     <>
-      <SubviewHeader title="Security" />
-      <View.Content hasNoTopPadding>
-        <Select
-          fieldSize="sm"
-          id="select"
-          className="ManageAssetsLists__select"
-          onChange={handleSelectChange}
-        >
-          {ASSETS_LISTS_NETWORKS.map(([networkName, networkValue]) => (
-            <option value={networkValue}>{networkName}</option>
-          ))}
-        </Select>
-        <div className="ManageAssetsLists__network">
-          <NetworkIcon index={selectedNetwork === NETWORKS.PUBLIC ? 0 : 1} />
-        </div>
-        {isLoading ? (
-          <div className="ManageAssetsLists__loader">
-            <Loader size="5rem" />
-          </div>
-        ) : (
-          <div className="ManageAssetsLists__list">
-            <ListNavLinkWrapper>
-              {assetsListData.map(({ name, provider }) => (
-                <ListNavLink href={ROUTES.manageAssetsLists}>
-                  <div>
-                    <div className="ManageAssetsLists__title">{name}</div>
-                    <div className="ManageAssetsLists__subtitle">
-                      {provider}
-                    </div>
-                  </div>
-                </ListNavLink>
-              ))}
-            </ListNavLinkWrapper>
-          </div>
-        )}
-      </View.Content>
-      <View.Footer>
-        <Button
-          size="md"
-          isFullWidth
-          variant="tertiary"
-          onClick={() => navigateTo(ROUTES.account)}
-        >
-          {t("Add new list")}
-        </Button>
-      </View.Footer>
+      <Switch>
+        <PublicKeyRoute exact path={ROUTES.manageAssetsLists}>
+          <AssetLists
+            assetsListsData={assetsListsData}
+            handleSelectChange={handleSelectChange}
+            selectedNetwork={selectedNetwork}
+            isLoading={isLoading}
+          />
+        </PublicKeyRoute>
+        <PublicKeyRoute exact path={ROUTES.manageAssetsListsModifyAssetList}>
+          <ModifyAssetList
+            assetsListsData={assetsListsData}
+            selectedNetwork={selectedNetwork}
+          />
+        </PublicKeyRoute>
+      </Switch>
     </>
+  ) : (
+    <div>{t("Unable to parse assets lists")}</div>
   );
 };
