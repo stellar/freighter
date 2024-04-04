@@ -86,6 +86,8 @@ export const METRIC_NAMES = {
   manageAssetRemoveAsset: "manage asset: remove asset",
   manageAssetError: "manage asset: error",
 
+  manageAssetListsModifyAssetList: "manage asset list: modify asset list",
+
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
 

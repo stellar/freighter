@@ -36,6 +36,7 @@ import { MessageResponder } from "background/types";
 import {
   ALLOWLIST_ID,
   APPLICATION_ID,
+  ASSETS_LISTS_ID,
   CACHED_ASSET_ICONS_ID,
   CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
@@ -116,6 +117,10 @@ import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
+import {
+  AssetsListKey,
+  DEFAULT_ASSETS_LISTS,
+} from "@shared/constants/soroban/token";
 
 // number of public keys to auto-import
 const numOfPublicKeysToCheck = 5;
@@ -1647,6 +1652,57 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     };
   };
 
+  const addAssetsList = async () => {
+    const { assetsList, network } = request;
+
+    const currentAssetsLists = await getAssetsLists();
+
+    if (
+      currentAssetsLists[network].some(
+        (list: { url: string }) => list.url === assetsList.url,
+      )
+    ) {
+      return {
+        error: "Asset list already exists",
+      };
+    }
+
+    currentAssetsLists[network].push(assetsList);
+
+    await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
+
+    return { assetsLists: await getAssetsLists() };
+  };
+
+  const modifyAssetsList = async () => {
+    const { assetsList, network, isDeleteAssetsList } = request;
+
+    const currentAssetsLists = await getAssetsLists();
+    const networkAssetsLists = currentAssetsLists[network];
+
+    const index = networkAssetsLists.findIndex(
+      ({ url }: { url: string }) => url === assetsList.url,
+    );
+
+    if (
+      index < DEFAULT_ASSETS_LISTS[network as AssetsListKey].length &&
+      isDeleteAssetsList
+    ) {
+      // if a user is somehow able to trigger a delete on a default asset list, return an error
+      return { error: "Unable to delete asset list" };
+    }
+
+    if (isDeleteAssetsList) {
+      networkAssetsLists.splice(index, 1);
+    } else {
+      networkAssetsLists.splice(index, 1, assetsList);
+    }
+
+    await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
+
+    return { assetsLists: await getAssetsLists() };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1694,6 +1750,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS]: getMigratableAccounts,
     [SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE]: getMigratedMnemonicPhrase,
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
+    [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
+    [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
   };
 
   return messageResponder[request.type]();

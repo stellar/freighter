@@ -13,13 +13,17 @@ import {
   addCustomNetwork as addCustomNetworkService,
   removeCustomNetwork as removeCustomNetworkService,
   editCustomNetwork as editCustomNetworkService,
+  addAssetsList as addAssetsListService,
+  modifyAssetsList as modifyAssetsListService,
 } from "@shared/api/internal";
 import {
+  NETWORKS,
   NetworkDetails,
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import {
+  AssetsListItem,
   AssetsLists,
   DEFAULT_ASSETS_LISTS,
 } from "@shared/constants/soroban/token";
@@ -180,6 +184,49 @@ export const editCustomNetwork = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("settings/editCustomNetwork", ({ networkDetails, networkIndex }) =>
   editCustomNetworkService({ networkDetails, networkIndex }),
+);
+
+export const addAssetsList = createAsyncThunk<
+  { assetsLists: AssetsLists; error: string },
+  { assetsList: AssetsListItem; network: NETWORKS },
+  { rejectValue: ErrorMessage }
+>("settings/addAssetsList", async ({ assetsList, network }, thunkApi) => {
+  const res = await addAssetsListService({ assetsList, network });
+
+  if (res.error) {
+    return thunkApi.rejectWithValue({
+      errorMessage: res.error || "Unable to add asset list",
+    });
+  }
+
+  return res;
+});
+
+export const modifyAssetsList = createAsyncThunk<
+  { assetsLists: AssetsLists; error: string },
+  {
+    assetsList: AssetsListItem;
+    network: NETWORKS;
+    isDeleteAssetsList: boolean;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/modifyAssetsList",
+  async ({ assetsList, network, isDeleteAssetsList }, thunkApi) => {
+    const res = await modifyAssetsListService({
+      assetsList,
+      network,
+      isDeleteAssetsList,
+    });
+
+    if (res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Unable to modify asset list",
+      });
+    }
+
+    return res;
+  },
 );
 
 const settingsSlice = createSlice({
@@ -381,6 +428,42 @@ const settingsSlice = createSlice({
           ...state,
           networkDetails,
           networksList,
+        };
+      },
+    );
+    builder.addCase(
+      addAssetsList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          assetsLists: AssetsLists;
+        }>,
+      ) => {
+        const { assetsLists } = action?.payload || {
+          assetsLists: initialState.assetsLists,
+        };
+
+        return {
+          ...state,
+          assetsLists,
+        };
+      },
+    );
+    builder.addCase(
+      modifyAssetsList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          assetsLists: AssetsLists;
+        }>,
+      ) => {
+        const { assetsLists } = action?.payload || {
+          assetsLists: initialState.assetsLists,
+        };
+
+        return {
+          ...state,
+          assetsLists,
         };
       },
     );

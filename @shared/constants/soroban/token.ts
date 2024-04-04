@@ -37,26 +37,29 @@ export type AssetsLists = {
 
 export interface AssetsListItem {
   url: string;
-  enabled: boolean;
+  isEnabled: boolean;
 }
 
 export const DEFAULT_ASSETS_LISTS: AssetsLists = {
   [NETWORKS.PUBLIC]: [
     {
       url: "https://api.stellar.expert/explorer/public/asset-list/top50",
-      enabled: true,
+      isEnabled: true,
     },
     {
       url:
         "https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json",
-      enabled: true,
+      isEnabled: true,
     },
-    { url: "https://lobstr.co/api/v1/sep/assets/curated.json", enabled: true },
+    {
+      url: "https://lobstr.co/api/v1/sep/assets/curated.json",
+      isEnabled: true,
+    },
   ],
   [NETWORKS.TESTNET]: [
     {
       url: "https://api.stellar.expert/explorer/testnet/asset-list/top50",
-      enabled: true,
+      isEnabled: true,
     },
   ],
 };

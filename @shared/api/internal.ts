@@ -12,7 +12,7 @@ import {
 import { DataProvider } from "@stellar/wallet-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { AssetsLists } from "@shared/constants/soroban/token";
+import { AssetsListItem, AssetsLists } from "@shared/constants/soroban/token";
 import {
   getBalance,
   getDecimals,
@@ -1314,4 +1314,49 @@ export const removeTokenId = async ({
     network,
   });
   return resp.tokenIdList;
+};
+
+export const addAssetsList = async ({
+  assetsList,
+  network,
+}: {
+  assetsList: AssetsListItem;
+  network: NETWORKS;
+}) => {
+  let response = {
+    error: "",
+    assetsLists: {} as AssetsLists,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.ADD_ASSETS_LIST,
+    assetsList,
+    network,
+  });
+
+  return { assetsLists: response.assetsLists, error: response.error };
+};
+
+export const modifyAssetsList = async ({
+  assetsList,
+  network,
+  isDeleteAssetsList,
+}: {
+  assetsList: AssetsListItem;
+  network: NETWORKS;
+  isDeleteAssetsList: boolean;
+}) => {
+  let response = {
+    error: "",
+    assetsLists: {} as AssetsLists,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.MODIFY_ASSETS_LIST,
+    assetsList,
+    network,
+    isDeleteAssetsList,
+  });
+
+  return { assetsLists: response.assetsLists, error: response.error };
 };
