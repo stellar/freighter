@@ -87,7 +87,6 @@ export const fundAccount = async (publicKey: string): Promise<void> => {
       type: SERVICE_TYPES.FUND_ACCOUNT,
     });
   } catch (e) {
-    console.log(e);
     console.error(e);
   }
 };
