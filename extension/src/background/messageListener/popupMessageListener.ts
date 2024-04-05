@@ -381,7 +381,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const fundAccount = async () => {
-    console.log("BG FUND ACCOUNT");
     const { publicKey } = request;
 
     const { friendbotUrl } = await getNetworkDetails();

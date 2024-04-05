@@ -32,13 +32,9 @@ export const login = async ({ page, extensionId }) => {
     timeout: 10000,
   });
 
-  const html = await page.content();
-  console.log(html);
   await expect(page.getByTestId("not-funded")).toBeVisible({
     timeout: 10000,
   });
-  const html2 = await page.content();
-  console.log(html2);
   await page.getByRole("button", { name: "Fund with Friendbot" }).click();
 
   await expect(page.getByTestId("account-assets")).toBeVisible({

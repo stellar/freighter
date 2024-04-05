@@ -64,7 +64,6 @@ export const fundAccount = createAsyncThunk(
       await fundAccountService(publicKey);
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
-      console.log(`eeeee ${message}`);
       console.error("Failed when funding an account: ", message);
     }
   },
