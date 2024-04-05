@@ -1,9 +1,9 @@
 import { test, expect } from "./test-fixtures";
-import { login, PASSWORD } from "./helpers/login";
+import { loginAndFund, PASSWORD } from "./helpers/login";
 
 test("Send XLM payment", async ({ page, extensionId }) => {
   test.slow();
-  await login({ page, extensionId });
+  await loginAndFund({ page, extensionId });
   await page.getByTitle("Send Payment").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();
