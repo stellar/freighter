@@ -21,6 +21,7 @@ import { addAssetsList, modifyAssetsList } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
 
 import "./styles.scss";
+import { DeleteModal } from "../DeleteModal";
 
 interface ModifyAssetListProps {
   selectedNetwork: AssetsListKey;
@@ -47,6 +48,7 @@ export const ModifyAssetList = ({
   const [isFetchingAssetList, setIsFetchingAssetList] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDefaultAssetList, setIsDefaultAssetList] = useState(false);
+  const [isShowingDeleteModal, setIsShowingDeleteModal] = useState(false);
 
   const defaultAssetsListIndex = DEFAULT_ASSETS_LISTS[selectedNetwork].length;
 
@@ -230,6 +232,11 @@ export const ModifyAssetList = ({
     }
   };
 
+  /* Show the confirm delete modal */
+  const handleShowDeleteModal = () => {
+    setIsShowingDeleteModal(true);
+  };
+
   return (
     <>
       <SubviewHeader title="Add Asset List" />
@@ -239,11 +246,27 @@ export const ModifyAssetList = ({
             assetList: assetListInfo.url || "",
             isEnabled: assetListInfo.isEnabled || true,
           }}
-          onSubmit={isEditing ? handleEditAssetList : handleAddAssetList}
+          onSubmit={isEditing ? handleShowDeleteModal : handleAddAssetList}
           enableReinitialize={true}
         >
-          {({ dirty, isSubmitting, isValid, errors, values }) => (
+          {({
+            dirty,
+            isSubmitting,
+            isValid,
+            errors,
+            values,
+            setSubmitting,
+          }) => (
             <Form>
+              {isShowingDeleteModal ? (
+                <DeleteModal
+                  handleCancel={() => {
+                    setIsShowingDeleteModal(false);
+                    setSubmitting(false);
+                  }}
+                  handleSubmit={handleEditAssetList}
+                />
+              ) : null}
               <div>
                 <label className="ModifyAssetList__label">
                   {t("Enter a Stellar Asset List compatible URL")}
