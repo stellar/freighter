@@ -83,18 +83,18 @@ export const getVerifiedTokens = async ({
   for (const networkList of networkLists) {
     const { url = "", isEnabled } = networkList;
 
-    const fetchAndParse = async () => {
-      let res;
-      try {
-        res = await fetch(url);
-      } catch (e) {
-        captureException(`Failed to load asset list: ${url}`);
-      }
-
-      return res?.json();
-    };
-
     if (isEnabled) {
+      const fetchAndParse = async () => {
+        let res;
+        try {
+          res = await fetch(url);
+        } catch (e) {
+          captureException(`Failed to load asset list: ${url}`);
+        }
+
+        return res?.json();
+      };
+
       promiseArr.push(fetchAndParse());
     }
   }
