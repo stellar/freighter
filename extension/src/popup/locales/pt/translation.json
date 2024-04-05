@@ -52,6 +52,7 @@
   "Approve and review next": "Approve and review next",
   "Approve using": "Approve using",
   "are required to add a new asset": "are required to add a new asset.",
+  "Are you sure you want to delete this list?": "Are you sure you want to delete this list?",
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
   "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged": {
     " For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)": "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)."
@@ -99,6 +100,7 @@
   "Close": "Close",
   "Confirm": "Confirm",
   "Confirm Data": "Confirm Data",
+  "Confirm delete": "Confirm delete",
   "Confirm password": "Confirm password",
   "Confirm removing Network": "Confirm removing Network",
   "Confirm Send": "Confirm Send",
@@ -214,6 +216,7 @@
   "I’m new!": "I’m new!",
   "I’ve done this before": "I’ve done this before",
   "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam": "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
+  "If you delete this list, you will have to re-add it manually": "If you delete this list, you will have to re-add it manually.",
   "Import": "Import",
   "Import a Stellar secret key": "Import a Stellar secret key",
   "Import Stellar Secret Key": "Import Stellar Secret Key",
