@@ -81,20 +81,22 @@ export const getVerifiedTokens = async ({
 
   // eslint-disable-next-line no-restricted-syntax
   for (const networkList of networkLists) {
-    const { url = "" } = networkList;
+    const { url = "", isEnabled } = networkList;
 
-    const fetchAndParse = async () => {
-      let res;
-      try {
-        res = await fetch(url);
-      } catch (e) {
-        captureException(`Failed to load asset list: ${url}`);
-      }
+    if (isEnabled) {
+      const fetchAndParse = async () => {
+        let res;
+        try {
+          res = await fetch(url);
+        } catch (e) {
+          captureException(`Failed to load asset list: ${url}`);
+        }
 
-      return res?.json();
-    };
+        return res?.json();
+      };
 
-    promiseArr.push(fetchAndParse());
+      promiseArr.push(fetchAndParse());
+    }
   }
 
   const promiseRes = await Promise.allSettled(promiseArr);
