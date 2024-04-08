@@ -688,6 +688,19 @@ export const NewAssetWarning = ({
   );
 };
 
+export const UnverifiedTokenNotification = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Notification
+      title={t(
+        "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+      )}
+      variant="warning"
+    />
+  );
+};
+
 export const TokenWarning = ({
   domain,
   code,
@@ -779,12 +792,7 @@ export const TokenWarning = ({
               )}
             </Notification>
           ) : (
-            <Notification
-              title={t(
-                "This asset is not part of an asset list. Please, double-check the asset you're interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-              )}
-              variant="warning"
-            />
+            <UnverifiedTokenNotification />
           )}
 
           <div className="TokenWarning__flags">
