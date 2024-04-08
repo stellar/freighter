@@ -45,7 +45,6 @@ export const ManageAssetsLists = () => {
       // eslint-disable-next-line no-restricted-syntax
       for (const networkList of networkLists) {
         const { url = "", isEnabled } = networkList;
-        console.log(networkList);
         try {
           const res = await fetch(url);
           const resJson: AssetsListsData = await res.json();

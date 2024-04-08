@@ -368,8 +368,8 @@ export const ModifyAssetList = ({
                 </Button>
               )}
 
-              {dirty && submitErrorString ? (
-                <div className="ModifyAssetList__not-found">
+              {submitErrorString ? (
+                <div className="ModifyAssetList__submit-error">
                   {submitErrorString}
                 </div>
               ) : null}
