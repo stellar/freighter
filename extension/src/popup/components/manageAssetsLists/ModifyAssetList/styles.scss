@@ -22,10 +22,11 @@
     justify-content: space-between;
   }
 
-  &__not-found {
+  &__submit-error {
     color: var(--color-red-70);
     font-size: 0.75rem;
     line-height: 1.125rem;
+    margin: 1.25rem 0;
   }
 
   &__info {
