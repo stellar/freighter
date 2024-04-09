@@ -24,17 +24,18 @@ export interface AssetsListsData {
 }
 
 export const ManageAssetsLists = () => {
-  const [selectedNetwork, setSelectedNetwork] = useState(
-    NETWORKS.PUBLIC as AssetsListKey,
-  );
+  const [selectedNetwork, setSelectedNetwork] = useState("" as AssetsListKey);
   const [assetsListsData, setAssetsListsData] = useState(
     [] as AssetsListsData[],
   );
   const [isLoading, setIsLoading] = useState(true);
-  const { assetsLists } = useSelector(settingsSelector);
+  const { assetsLists, networkDetails } = useSelector(settingsSelector);
   const { t } = useTranslation();
 
   useEffect(() => {
+    if (!selectedNetwork) {
+      return;
+    }
     const networkLists = assetsLists[selectedNetwork] || [];
     const listsArr: AssetsListsData[] = [];
 
@@ -62,6 +63,18 @@ export const ManageAssetsLists = () => {
 
     fetchLists();
   }, [selectedNetwork, assetsLists]);
+
+  useEffect(() => {
+    if (networkDetails.network === NETWORKS.TESTNET) {
+      setSelectedNetwork(NETWORKS.TESTNET);
+    }
+
+    setSelectedNetwork(
+      networkDetails.network === NETWORKS.TESTNET
+        ? NETWORKS.TESTNET
+        : NETWORKS.PUBLIC,
+    );
+  }, [networkDetails]);
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedNetwork(e.target.value as AssetsListKey);
