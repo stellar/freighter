@@ -65,10 +65,6 @@ export const ManageAssetsLists = () => {
   }, [selectedNetwork, assetsLists]);
 
   useEffect(() => {
-    if (networkDetails.network === NETWORKS.TESTNET) {
-      setSelectedNetwork(NETWORKS.TESTNET);
-    }
-
     setSelectedNetwork(
       networkDetails.network === NETWORKS.TESTNET
         ? NETWORKS.TESTNET
