@@ -249,14 +249,7 @@ export const ModifyAssetList = ({
           onSubmit={isEditing ? handleShowDeleteModal : handleAddAssetList}
           enableReinitialize={true}
         >
-          {({
-            dirty,
-            isSubmitting,
-            isValid,
-            errors,
-            values,
-            setSubmitting,
-          }) => (
+          {({ isSubmitting, isValid, errors, values, setSubmitting }) => (
             <Form>
               {isShowingDeleteModal ? (
                 <DeleteModal
@@ -338,7 +331,7 @@ export const ModifyAssetList = ({
                     </div>
                   </>
                 ) : null}
-                {dirty && fetchErrorString ? (
+                {fetchErrorString ? (
                   <div className="ModifyAssetList__not-found">
                     {fetchErrorString}
                   </div>

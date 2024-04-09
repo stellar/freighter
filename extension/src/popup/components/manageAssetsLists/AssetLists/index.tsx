@@ -47,7 +47,11 @@ export const AssetLists = ({
           onChange={handleSelectChange}
         >
           {ASSETS_LISTS_NETWORKS.map(([networkName, networkValue]) => (
-            <option value={networkValue} key={networkName}>
+            <option
+              value={networkValue}
+              key={networkName}
+              selected={networkValue === selectedNetwork}
+            >
               {networkName}
             </option>
           ))}
