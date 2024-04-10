@@ -8,7 +8,6 @@ import {
   transactionSubmissionSelector,
   saveAsset,
   saveDestinationAsset,
-  saveIsToken,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -76,11 +75,6 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
               onClick={() => {
                 if (assetSelect.isSource) {
                   dispatch(saveAsset(canonical));
-                  if (isContract) {
-                    dispatch(saveIsToken(true));
-                  } else {
-                    dispatch(saveIsToken(false));
-                  }
                   history.goBack();
                 } else {
                   dispatch(saveDestinationAsset(canonical));

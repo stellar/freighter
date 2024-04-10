@@ -30,6 +30,7 @@ import "../../styles.scss";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 import { SorobanContext } from "popup/SorobanContext";
+import { isSorobanIssuer } from "popup/helpers/account";
 
 export const Settings = ({
   previous,
@@ -48,7 +49,6 @@ export const Settings = ({
     transactionFee,
     memo,
     allowedSlippage,
-    isToken,
   } = useSelector(transactionDataSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
@@ -75,10 +75,11 @@ export const Settings = ({
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = isPathPayment || isSwap;
+  const assetAddress = asset.split(":")[1];
+  const isToken = isSorobanIssuer(assetAddress);
 
   async function goToReview() {
     if (isToken) {
-      const assetAddress = asset.split(":")[1];
       const balances =
         accountBalances.balances || ({} as NonNullable<Balances>);
       const assetBalance = balances[asset] as TokenBalance;

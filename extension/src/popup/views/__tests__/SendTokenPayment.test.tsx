@@ -173,7 +173,6 @@ describe("SendTokenPayment", () => {
           transactionData: {
             ...transactionSubmission.initialState.transactionData,
             asset,
-            isToken: true,
           },
           transactionSimulation: {
             raw: null,

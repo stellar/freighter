@@ -17,7 +17,7 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
-import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
+import { formatTokenAmount } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 
@@ -39,7 +39,6 @@ import { View } from "popup/basics/layout/View";
 import {
   saveAsset,
   saveDestinationAsset,
-  saveIsToken,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
@@ -73,7 +72,7 @@ export const AssetDetail = ({
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
-  const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
+  const isSorobanAsset = isSorobanIssuer(canonical.issuer);
   const isOwnedScamAsset = useIsOwnedScamAsset(
     canonical.code,
     canonical.issuer,
@@ -121,8 +120,6 @@ export const AssetDetail = ({
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
-
-  const isContract = isContractId(assetIssuer);
 
   if (!assetOperations && !isSorobanAsset) {
     return null;
@@ -190,11 +187,6 @@ export const AssetDetail = ({
                 <PillButton
                   onClick={() => {
                     dispatch(saveAsset(selectedAsset));
-                    if (isContract) {
-                      dispatch(saveIsToken(true));
-                    } else {
-                      dispatch(saveIsToken(false));
-                    }
                     navigateTo(ROUTES.sendPayment);
                   }}
                 >

@@ -24,6 +24,7 @@ import {
   SorobanTokenInterface,
   TokenInvocationArgs,
 } from "@shared/constants/soroban/token";
+import { isSorobanIssuer } from "./account";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -37,9 +38,8 @@ export const CLASSIC_ASSET_DECIMALS = 7;
 export const getAssetDecimals = (
   asset: string,
   balances: AccountBalancesInterface,
-  isToken: boolean,
 ) => {
-  if (isToken) {
+  if (isSorobanIssuer(asset)) {
     const _balances = balances.balances || ({} as NonNullable<Balances>);
     const balance = _balances[asset];
 
