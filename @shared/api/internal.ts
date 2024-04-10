@@ -678,22 +678,17 @@ export const getIndexerAccountHistory = async ({
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<Horizon.ServerApi.OperationRecord[]> => {
-  try {
-    const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
-    );
-    const response = await fetch(url.href);
+  const url = new URL(
+    `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
+  );
+  const response = await fetch(url.href);
 
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data);
-    }
-
-    return data;
-  } catch (e) {
-    console.error(e);
-    return [];
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data);
   }
+
+  return data;
 };
 
 export const getAccountHistory = async (
