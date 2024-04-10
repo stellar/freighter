@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Loader } from "@stellar/design-system";
+import { Loader, Notification } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
 
 import {
   getAccountHistoryStandalone,
@@ -76,6 +77,7 @@ export const AccountHistory = () => {
     defaultDetailViewProps,
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [hasHistoryError, setHasHistoryError] = React.useState(false);
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
@@ -144,6 +146,8 @@ export const AccountHistory = () => {
         }
         setHistorySegments(createSegments(operations));
       } catch (e) {
+        captureException(`Failed to fetch account history - ${e}`);
+        setHasHistoryError(true);
         console.error(e);
       }
     };
@@ -215,6 +219,14 @@ export const AccountHistory = () => {
                   </div>
                 )}
               </div>
+              {hasHistoryError && (
+                <Notification
+                  variant="error"
+                  title={t("Failed to fetch your account history.")}
+                >
+                  {t("Your account history could not be fetched at this time.")}
+                </Notification>
+              )}
             </>
           )}
         </div>
