@@ -127,7 +127,6 @@ export const SendAmount = ({
     destinationAmount,
     destinationAsset,
   } = transactionData;
-  console.log(transactionData);
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
