@@ -168,7 +168,6 @@ export const Account = () => {
       ) : (
         <>
           <AccountHeader
-            // accountDropDownRef={accountDropDownRef}
             allAccounts={allAccounts}
             currentAccountName={currentAccountName}
             publicKey={publicKey}
@@ -221,6 +220,7 @@ export const Account = () => {
                   </div>
                   <div className="AccountView__send-receive-button">
                     <NavButton
+                      disabled={hasError}
                       showBorder
                       title={t("Send Payment")}
                       id="nav-btn-send"
