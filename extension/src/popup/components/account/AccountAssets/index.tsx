@@ -14,8 +14,8 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import ImageMissingIcon from "popup/assets/image-missing.svg";
-import IconSoroban from "popup/assets/icon-soroban.svg";
+import ImageMissingIcon from "popup/assets/image-missing.svg?react";
+import IconSoroban from "popup/assets/icon-soroban.svg?react";
 
 import "./styles.scss";
 import { formatAmount } from "popup/helpers/formatters";
@@ -28,7 +28,7 @@ export const SorobanTokenIcon = ({ noMargin }: { noMargin?: boolean }) => (
       noMargin ? "AccountAssets__asset--no-margin" : ""
     }`}
   >
-    <img src={IconSoroban} alt="icon soroban" />
+    <IconSoroban />
   </div>
 );
 
@@ -118,7 +118,7 @@ export const AssetIcon = ({
   ) : (
     // the image path wasn't found, show a default broken image icon
     <div className="AccountAssets__asset--logo AccountAssets__asset--error">
-      <img src={ImageMissingIcon} alt="Asset icon missing" />
+      <ImageMissingIcon />
     </div>
   );
 };
