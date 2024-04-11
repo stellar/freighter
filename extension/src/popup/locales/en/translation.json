@@ -158,6 +158,7 @@
   "Executable Wasm Hash": "Executable Wasm Hash",
   "Extend To": "Extend To",
   "Failed to fetch your account balances": "Failed to fetch your account balances.",
+  "Failed to fetch your account history": "Failed to fetch your account history.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fee": "Fee",
   "Fees can vary depending on the network congestion": {
@@ -510,6 +511,7 @@
     " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
   },
   "Your account balances could not be fetched at this time": "Your account balances could not be fetched at this time.",
+  "Your account history could not be fetched at this time": "Your account history could not be fetched at this time.",
   "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"
