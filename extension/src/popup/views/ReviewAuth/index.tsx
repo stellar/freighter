@@ -18,7 +18,6 @@ import { getTokenDetails } from "@shared/api/internal";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
-
 import { publicKeySelector } from "popup/ducks/accountServices";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -53,7 +52,6 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { CopyValue } from "popup/components/CopyValue";
 import { OPERATION_TYPES } from "constants/transaction";
-
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
 import { Data } from "../SignTransaction/Preview/Data";
