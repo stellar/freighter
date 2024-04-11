@@ -15,6 +15,10 @@ import {
   ListNavLinkWrapper,
 } from "popup/basics/ListNavLink";
 
+import IconAssetList from "popup/assets/icon-security-asset-list.svg?react";
+import IconPhrase from "popup/assets/icon-security-phrase.svg?react";
+import IconConnected from "popup/assets/icon-security-connected.svg?react";
+
 import "./styles.scss";
 
 export const Security = () => {
@@ -29,13 +33,16 @@ export const Security = () => {
       TODO: Add Change Password
       <ListNavLink href="/">Change Password</ListNavLink>
       */}
-          <ListNavLink href={ROUTES.manageAssetsLists}>
+          <ListNavLink href={ROUTES.manageAssetsLists} icon={<IconAssetList />}>
             {t("Asset lists")}
           </ListNavLink>
-          <ListNavLink href={ROUTES.displayBackupPhrase}>
+          <ListNavLink href={ROUTES.displayBackupPhrase} icon={<IconPhrase />}>
             {t("Show recovery phrase")}
           </ListNavLink>
-          <ListNavLink href={ROUTES.manageConnectedApps}>
+          <ListNavLink
+            href={ROUTES.manageConnectedApps}
+            icon={<IconConnected />}
+          >
             {t("Manage connected apps")}
           </ListNavLink>
           {/* <ListNavButtonLink
