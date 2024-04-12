@@ -144,7 +144,6 @@ export const getVerifiedTokens = async ({
       const list = validatedList?.tokens
         ? validatedList?.tokens
         : validatedList?.assets;
-      console.log(list);
       if (list) {
         // eslint-disable-next-line no-restricted-syntax
         for (const record of list) {

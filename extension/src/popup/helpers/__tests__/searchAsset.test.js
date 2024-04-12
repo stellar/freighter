@@ -103,7 +103,6 @@ describe("searchAsset", () => {
         },
       ],
     });
-    console.log(v);
     expect(v.assets).toStrictEqual([]);
 
     // error for missing `name` and error for additional key `title`
