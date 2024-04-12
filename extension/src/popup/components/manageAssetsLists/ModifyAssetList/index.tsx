@@ -4,7 +4,6 @@ import { Formik, Form, Field, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { validate } from "jsonschema";
 import { captureException } from "@sentry/browser";
 
 import {
@@ -19,6 +18,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { addAssetsList, modifyAssetsList } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
+import { schemaValidatedAssetList } from "popup/helpers/searchAsset";
 
 import "./styles.scss";
 import { DeleteModal } from "../DeleteModal";
@@ -90,21 +90,6 @@ export const ModifyAssetList = ({
     setAssetListInfo({} as AssetsListsData);
     event.preventDefault();
 
-    // fetch json schema to check asset list against
-    let schemaRes;
-
-    try {
-      schemaRes = await fetch(
-        "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
-      );
-    } catch (err) {
-      captureException("Unable to fetch SEP-0042 JSON schema");
-      setFetchErrorString("Unable to validate asset asset list");
-      return;
-    }
-
-    const schemaResJson = await schemaRes?.json();
-
     try {
       url = new URL(values.assetList);
     } catch (err) {
@@ -132,12 +117,22 @@ export const ModifyAssetList = ({
     const resJson = await res.json();
 
     // check against the SEP-0042 schema
-    const validatedList = validate(resJson, schemaResJson);
+    const validatedList = await schemaValidatedAssetList(resJson);
 
-    if (validatedList.errors.length) {
+    if (!validatedList) {
+      captureException("Unable to fetch SEP-0042 JSON schema");
+      setFetchErrorString("Unable to validate asset asset list");
+      return;
+    }
+
+    if (validatedList.errors?.length) {
+      const errors = validatedList.errors.map(
+        ({ stack }: { stack: string }) => stack,
+      );
+
       setFetchErrorString(
         `Fetched asset list does not conform to schema: ${JSON.stringify(
-          validatedList.errors,
+          errors.join(" | "),
         )}`,
       );
       setIsFetchingAssetList(false);
