@@ -1,8 +1,4 @@
 import React from "react";
-import { Platform } from "react-native";
-
-if (Platform.OS === "web") {
-}
 
 import { Button, Card, Heading } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -11,7 +7,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 
-import "../styles.scss";
+import "./styles.scss";
 
 const Welcome = () => {
   const { t } = useTranslation();

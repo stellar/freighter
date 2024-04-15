@@ -50,7 +50,7 @@ import { RecoverAccount } from "popup/views/RecoverAccount";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { SignAuthEntry } from "popup/views/SignAuthEntry";
 import { UnlockAccount } from "popup/views/UnlockAccount";
-import { Welcome } from "popup/views/Welcome";
+import Welcome from "popup/views/Welcome/welcome-web";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
 import { IntegrationTest } from "popup/views/IntegrationTest";
