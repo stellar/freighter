@@ -107,6 +107,7 @@
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
     "ts-loader": "9.5.1",
+    "react-native": "^0.73.6",
     "typescript": "^5.3.3",
     "webpack": "5.97.1",
     "webpack-cli": "5.1.4",
