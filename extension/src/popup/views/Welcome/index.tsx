@@ -1,64 +1,99 @@
 import React from "react";
-import { Button, Heading } from "@stellar/design-system";
-import { useTranslation } from "react-i18next";
-
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
-import { View } from "popup/basics/layout/View";
-
-import LogoWelcome from "popup/assets/logo-freighter-welcome.svg";
-
-import "./styles.scss";
+import {
+  Platform,
+  View as RNView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from "react-native";
+import { Colors } from "react-native/Libraries/NewAppScreen";
 
 export const Welcome = () => {
-  const { t } = useTranslation();
+  const Component = Platform.select({
+    ios: () => {
+      const styles = StyleSheet.create({
+        button: {
+          marginTop: 24,
+          backgroundColor: "#7c66dc",
+          borderRadius: 4,
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+        },
+        buttonText: {
+          color: "#fff",
+          fontSize: 16,
+          fontWeight: "bold",
+          textAlign: "center",
+        },
+        title: {
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: "bold",
+          marginTop: 32,
+        },
+        importCard: {
+          backgroundColor: "black",
+          borderRadius: 4,
+          borderWidth: 1,
+          borderColor: "#2e2e2e",
+          paddingVertical: 24,
+          paddingHorizontal: 10,
+          marginTop: 24,
+          width: "95%",
+          height: 160,
+        },
+        createCard: {
+          backgroundColor: "#161618",
+          borderRadius: 4,
+          borderWidth: 1,
+          borderColor: "#2e2e2e",
+          paddingVertical: 24,
+          paddingHorizontal: 10,
+          marginTop: 64,
+          width: "95%",
+          height: 160,
+        },
+        cardTextTitle: {
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: "bold",
+        },
+        cardText: {
+          color: Colors.white,
+          fontSize: 14,
+          marginTop: 12,
+        },
+      });
+      return (
+        <React.Fragment>
+          <Text style={styles.title}>
+            Welcome! Is this your first time using Freighter?
+          </Text>
+          <RNView style={styles.createCard}>
+            <Text style={styles.cardTextTitle}>I'm new!</Text>
+            <Text style={styles.cardText}>I'm going to need a seed phrase</Text>
+            <TouchableOpacity
+              onPress={() => console.log("pressed create!")}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Create Wallet</Text>
+            </TouchableOpacity>
+          </RNView>
+          <RNView style={styles.importCard}>
+            <Text style={styles.cardTextTitle}>I've done this before</Text>
+            <Text style={styles.cardText}>I have my 12 word seed phrase</Text>
+            <TouchableOpacity
+              onPress={() => console.log("pressed import!")}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Import Wallet</Text>
+            </TouchableOpacity>
+          </RNView>
+        </React.Fragment>
+      );
+    },
+    web: () => import("./welcome-web") as any,
+  })!;
 
-  return (
-    <React.Fragment>
-      <View.Content>
-        <div className="Welcome__column">
-          <div className="Welcome__centered-screen">
-            <img src={LogoWelcome} alt="Freighter logo" />
-            <div>
-              <Heading
-                addlClassName="Welcome__heading"
-                as="h1"
-                size="xl"
-                weight="semi-bold"
-              >
-                {t("Welcome to Freighter")}
-              </Heading>
-              <Heading
-                addlClassName="Welcome__heading Welcome__heading--subheading"
-                as="h1"
-                size="xl"
-                weight="semi-bold"
-              >
-                {t("Your favorite Stellar wallet")}
-              </Heading>
-            </div>
-            <div className="Welcome__cta">
-              {t("How do you want to get started?")}
-            </div>
-          </div>
-          <div className="Welcome__row-screen">
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => navigateTo(ROUTES.accountCreator)}
-            >
-              {t("Create new wallet")}
-            </Button>
-            <Button
-              size="lg"
-              variant="tertiary"
-              onClick={() => navigateTo(ROUTES.recoverAccount)}
-            >
-              {t("Import wallet")}
-            </Button>
-          </div>
-        </div>
-      </View.Content>
-    </React.Fragment>
-  );
+  return <Component />;
 };
