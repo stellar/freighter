@@ -482,6 +482,9 @@ export const ManageAssetRow = ({
   const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   const isScamAsset = !!blockedDomains.domains[domain];
+  const assetCode = name || code;
+  const truncatedAssetCode =
+    assetCode.length > 20 ? truncateString(assetCode) : assetCode;
 
   return (
     <>
@@ -492,7 +495,7 @@ export const ManageAssetRow = ({
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
-          <span data-testid="ManageAssetCode">{name || code}</span>
+          <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
           <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div
