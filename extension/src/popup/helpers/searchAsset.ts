@@ -151,6 +151,7 @@ export const getVerifiedTokens = async ({
           if (record.contract && record.contract.match(regex)) {
             verifiedToken = record;
             verifiedLists.push(r.value.name as string);
+            break;
           }
         }
       }
