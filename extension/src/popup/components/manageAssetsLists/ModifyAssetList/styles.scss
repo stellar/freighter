@@ -22,12 +22,17 @@
     justify-content: space-between;
   }
 
-  &__submit-error,
+  &__submit-error {
+    color: var(--color-red-70);
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+  }
+
   &__not-found {
     color: var(--color-red-70);
     font-size: 0.75rem;
     line-height: 1.125rem;
-    margin: 1.25rem 0;
+    margin: 0 0 1.25rem 0;
   }
 
   &__info {
