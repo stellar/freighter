@@ -762,7 +762,7 @@ export const TokenWarning = ({
   };
 
   return (
-    <div className="TokenWarning">
+    <div className="TokenWarning" data-testid="TokenWarning">
       <View.Content>
         <div className="TokenWarning__wrapper" ref={warningRef}>
           <div className="TokenWarning__heading">
@@ -780,20 +780,22 @@ export const TokenWarning = ({
               </div>
             </div>
           </div>
-          {isVerifiedToken ? (
-            <Notification
-              title={`${t(
-                "This asset is part of the asset lists",
-              )} "${verifiedLists.join(", ")}."`}
-              variant="primary"
-            >
-              {t(
-                "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-              )}
-            </Notification>
-          ) : (
-            <UnverifiedTokenNotification />
-          )}
+          <div data-testid="token-warning-notification">
+            {isVerifiedToken ? (
+              <Notification
+                title={`${t(
+                  "This asset is part of the asset lists",
+                )} "${verifiedLists.join(", ")}."`}
+                variant="primary"
+              >
+                {t(
+                  "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+                )}
+              </Notification>
+            ) : (
+              <UnverifiedTokenNotification />
+            )}
+          </div>
 
           <div className="TokenWarning__flags">
             <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
@@ -840,6 +842,7 @@ export const TokenWarning = ({
                 {t("Cancel")}
               </Button>
               <Button
+                data-testid="add-asset"
                 size="md"
                 isFullWidth
                 onClick={handleSubmit}
