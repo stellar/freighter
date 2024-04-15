@@ -1,6 +1,8 @@
 import { captureException } from "@sentry/browser";
+import { validate } from "jsonschema";
 import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import { AssetsLists, AssetsListKey } from "@shared/constants/soroban/token";
+
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 
 export const searchAsset = async ({
@@ -20,6 +22,34 @@ export const searchAsset = async ({
   } catch (e) {
     return onError(e);
   }
+};
+
+export const schemaValidatedAssetList = async (assetListJson: any) => {
+  let schemaRes;
+  try {
+    schemaRes = await fetch(
+      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
+    );
+  } catch (err) {
+    captureException("Error fetching SEP-0042 JSON schema");
+    return { assets: [] };
+  }
+
+  if (!schemaRes.ok) {
+    captureException("Unable to fetch SEP-0042 JSON schema");
+    return { assets: [] };
+  }
+
+  const schemaResJson = await schemaRes?.json();
+
+  // check against the SEP-0042 schema
+  const validatedList = validate(assetListJson, schemaResJson);
+
+  if (validatedList.errors.length) {
+    return { assets: [], errors: validatedList.errors };
+  }
+
+  return assetListJson;
 };
 
 export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
@@ -106,20 +136,26 @@ export const getVerifiedTokens = async ({
   let verifiedToken = {} as TokenRecord;
   const verifiedLists: string[] = [];
 
-  promiseRes.forEach((r) => {
+  // eslint-disable-next-line no-restricted-syntax
+  for (const r of promiseRes) {
     if (r.status === "fulfilled") {
-      const list = r.value?.tokens ? r.value?.tokens : r.value?.assets;
+      // confirm that this list still adheres to the agreed upon schema
+      const validatedList = await schemaValidatedAssetList(r.value);
+      const list = validatedList?.tokens
+        ? validatedList?.tokens
+        : validatedList?.assets;
       if (list) {
-        list.forEach((record: TokenRecord) => {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const record of list) {
           const regex = new RegExp(contractId, "i");
           if (record.contract && record.contract.match(regex)) {
             verifiedToken = record;
             verifiedLists.push(r.value.name as string);
           }
-        });
+        }
       }
     }
-  });
+  }
 
   if (Object.keys(verifiedToken).length) {
     verifiedTokens.push({
