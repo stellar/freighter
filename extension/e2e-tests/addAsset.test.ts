@@ -24,7 +24,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("token-warning-notification")).toHaveText(
     "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
-  await page.getByTestId("add-asset").click({ force: true });
+  await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toContainText("100 E2E");
 });
 test("Adding Soroban verified token", async ({ page, extensionId }) => {
@@ -54,6 +54,6 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
     `This asset is part of the asset lists "StellarExpert Top 50."Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.
     `,
   );
-  await page.getByTestId("add-asset").click({ force: true });
+  await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toBeVisible();
 });

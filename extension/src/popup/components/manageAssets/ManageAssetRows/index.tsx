@@ -458,11 +458,7 @@ export const ManageAssetRows = ({
       <LoadingBackground
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
-        isActive={
-          showNewAssetWarning ||
-          showBlockedDomainWarning ||
-          showUnverifiedWarning
-        }
+        isActive={showNewAssetWarning || showBlockedDomainWarning}
       />
     </>
   );
