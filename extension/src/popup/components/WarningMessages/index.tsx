@@ -36,6 +36,7 @@ import {
   NewAssetFlags,
 } from "popup/components/manageAssets/ManageAssetRows";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
@@ -761,104 +762,108 @@ export const TokenWarning = ({
     setIsSubmitting(false);
   };
 
-  return (
-    <div className="TokenWarning" data-testid="TokenWarning">
-      <View.Content>
-        <div className="TokenWarning__wrapper" ref={warningRef}>
-          <div className="TokenWarning__heading">
-            <div className="TokenWarning__icon">
-              <SorobanTokenIcon noMargin />
-            </div>
-            <div className="TokenWarning__code">{code}</div>
-            <div className="TokenWarning__domain">{domain}</div>
-            <div className="TokenWarning__description">
-              <div className="TokenWarning__description__icon">
-                <Icon.VerifiedUser />
+  return createPortal(
+    <>
+      <LoadingBackground isActive isOpaque />
+      <div className="TokenWarning" data-testid="TokenWarning">
+        <View.Content>
+          <div className="TokenWarning__wrapper" ref={warningRef}>
+            <div className="TokenWarning__heading">
+              <div className="TokenWarning__icon">
+                <SorobanTokenIcon noMargin />
               </div>
-              <div className="TokenWarning__description__text">
-                {t("Add Asset Trustline")}
+              <div className="TokenWarning__code">{code}</div>
+              <div className="TokenWarning__domain">{domain}</div>
+              <div className="TokenWarning__description">
+                <div className="TokenWarning__description__icon">
+                  <Icon.VerifiedUser />
+                </div>
+                <div className="TokenWarning__description__text">
+                  {t("Add Asset Trustline")}
+                </div>
               </div>
             </div>
-          </div>
-          <div data-testid="token-warning-notification">
-            {isVerifiedToken ? (
-              <Notification
-                title={`${t(
-                  "This asset is part of the asset lists",
-                )} "${verifiedLists.join(", ")}."`}
-                variant="primary"
-              >
-                {t(
-                  "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-                )}
-              </Notification>
-            ) : (
-              <UnverifiedTokenNotification />
-            )}
-          </div>
+            <div data-testid="token-warning-notification">
+              {isVerifiedToken ? (
+                <Notification
+                  title={`${t(
+                    "This asset is part of the asset lists",
+                  )} "${verifiedLists.join(", ")}."`}
+                  variant="primary"
+                >
+                  {t(
+                    "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+                  )}
+                </Notification>
+              ) : (
+                <UnverifiedTokenNotification />
+              )}
+            </div>
 
-          <div className="TokenWarning__flags">
-            <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
+            <div className="TokenWarning__flags">
+              <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
 
-            {isVerifiedToken ? null : (
+              {isVerifiedToken ? null : (
+                <div className="TokenWarning__flag">
+                  <div className="TokenWarning__flag__icon">
+                    <img src={IconUnverified} alt="unverified icon" />
+                  </div>
+                  <div className="TokenWarning_flag__content">
+                    <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
+                      {t("Unverified asset")}
+                    </div>
+                    <div className="TokenWarning__flag__content">
+                      {t("Proceed with caution")}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="TokenWarning__flag">
                 <div className="TokenWarning__flag__icon">
-                  <img src={IconUnverified} alt="unverified icon" />
+                  <img src={IconNewAsset} alt="new asset icon" />
                 </div>
                 <div className="TokenWarning_flag__content">
-                  <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
-                    {t("Unverified asset")}
+                  <div className="TokenWarning__flag__header TokenWarning__flag__icon">
+                    {t("New asset")}
                   </div>
                   <div className="TokenWarning__flag__content">
-                    {t("Proceed with caution")}
+                    {t("This is a relatively new asset")}
                   </div>
-                </div>
-              </div>
-            )}
-            <div className="TokenWarning__flag">
-              <div className="TokenWarning__flag__icon">
-                <img src={IconNewAsset} alt="new asset icon" />
-              </div>
-              <div className="TokenWarning_flag__content">
-                <div className="TokenWarning__flag__header TokenWarning__flag__icon">
-                  {t("New asset")}
-                </div>
-                <div className="TokenWarning__flag__content">
-                  {t("This is a relatively new asset")}
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="TokenWarning__bottom-content">
-            <div className="ScamAssetWarning__btns">
-              <Button
-                size="md"
-                isFullWidth
-                variant="secondary"
-                type="button"
-                onClick={closeOverlay}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                data-testid="add-asset"
-                size="md"
-                isFullWidth
-                onClick={handleSubmit}
-                type="button"
-                variant="primary"
-                isLoading={
-                  isSubmitting || submitStatus === ActionStatus.PENDING
-                }
-              >
-                {t("Add asset")}
-              </Button>
-            </div>{" "}
+            <div className="TokenWarning__bottom-content">
+              <div className="ScamAssetWarning__btns">
+                <Button
+                  size="md"
+                  isFullWidth
+                  variant="secondary"
+                  type="button"
+                  onClick={closeOverlay}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  data-testid="add-asset"
+                  size="md"
+                  isFullWidth
+                  onClick={handleSubmit}
+                  type="button"
+                  variant="primary"
+                  isLoading={
+                    isSubmitting || submitStatus === ActionStatus.PENDING
+                  }
+                >
+                  {t("Add asset")}
+                </Button>
+              </div>{" "}
+            </div>
           </div>
-        </div>
-      </View.Content>
-    </div>
+        </View.Content>
+      </div>
+    </>,
+    document.querySelector("#modal-root")!,
   );
 };
 
