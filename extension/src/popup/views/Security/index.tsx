@@ -36,14 +36,14 @@ export const Security = () => {
           <ListNavLink href={ROUTES.manageAssetsLists} icon={<IconAssetList />}>
             {t("Asset lists")}
           </ListNavLink>
-          <ListNavLink href={ROUTES.displayBackupPhrase} icon={<IconPhrase />}>
-            {t("Show recovery phrase")}
-          </ListNavLink>
           <ListNavLink
             href={ROUTES.manageConnectedApps}
             icon={<IconConnected />}
           >
             {t("Manage connected apps")}
+          </ListNavLink>
+          <ListNavLink href={ROUTES.displayBackupPhrase} icon={<IconPhrase />}>
+            {t("Show recovery phrase")}
           </ListNavLink>
           {/* <ListNavButtonLink
             handleClick={() => {
