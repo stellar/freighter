@@ -325,11 +325,14 @@ export const ModifyAssetList = ({
                   </>
                 ) : null}
                 {fetchErrorString ? (
-                  <div className="ModifyAssetList__not-found">
-                    {fetchErrorString}
-                  </div>
+                  <View.Inset hasScrollShadow>
+                    <div className="ModifyAssetList__not-found">
+                      {fetchErrorString}
+                    </div>
+                  </View.Inset>
                 ) : null}
               </div>
+
               {isEditing ? (
                 <Button
                   size="md"
