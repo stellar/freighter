@@ -30,7 +30,6 @@ interface ModifyAssetListProps {
 
 interface FormValues {
   assetList: string;
-  isEnabled: boolean;
 }
 
 export const ModifyAssetList = ({
@@ -140,8 +139,14 @@ export const ModifyAssetList = ({
     }
 
     if (resJson.network !== selectedNetwork.toLowerCase()) {
+      const getNetworkName = (network: string) =>
+        network === "public" ? "Mainnet" : "Testnet";
       setFetchErrorString(
-        `Fetched asset list is for the wrong network: ${resJson.network}`,
+        `The entered asset list belongs to "${getNetworkName(
+          resJson.network as string,
+        )}": Currently editing "${getNetworkName(
+          selectedNetwork.toLowerCase(),
+        )}" lists.`,
       );
       setIsFetchingAssetList(false);
       return;
@@ -153,7 +158,8 @@ export const ModifyAssetList = ({
       name: resJson.name,
       description: resJson.description,
       provider: resJson.provider,
-      isEnabled: true,
+      isEnabled:
+        assetListInfo.isEnabled === undefined ? true : assetListInfo.isEnabled,
     });
 
     setIsFetchingAssetList(false);
@@ -163,11 +169,11 @@ export const ModifyAssetList = ({
   const handleIsEnabledChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
+    setAssetListInfo({
+      ...assetListInfo,
+      isEnabled: e.target.checked,
+    });
     if (isEditing) {
-      setAssetListInfo({
-        ...assetListInfo,
-        isEnabled: e.target.checked,
-      });
       await dispatch(
         modifyAssetsList({
           assetsList: {
@@ -185,7 +191,7 @@ export const ModifyAssetList = ({
   const handleAddAssetList = async (values: FormValues) => {
     const assetsList = {
       url: values.assetList,
-      isEnabled: values.isEnabled,
+      isEnabled: assetListInfo.isEnabled,
     };
     const addAssetsListResp = await dispatch(
       addAssetsList({ assetsList, network: selectedNetwork }),
@@ -281,7 +287,7 @@ export const ModifyAssetList = ({
                 isFullWidth
                 variant="tertiary"
                 isLoading={isFetchingAssetList}
-                disabled={!isValid}
+                disabled={!isValid || isDefaultAssetList}
                 onClick={(e) => handleSearch(e, values)}
               >
                 {t("Fetch list information")}
@@ -307,31 +313,26 @@ export const ModifyAssetList = ({
                       >
                         {t("Enable this list")}
                       </label>
-                      {isEditing ? (
-                        <Toggle
-                          checked={assetListInfo.isEnabled}
-                          id="isEnabled"
-                          // @ts-ignore
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            handleIsEnabledChange(e)
-                          }
-                        />
-                      ) : (
-                        <Toggle
-                          checked={assetListInfo.isEnabled || true}
-                          customInput={<Field />}
-                          id="isEnabled"
-                        />
-                      )}
+                      <Toggle
+                        checked={assetListInfo.isEnabled}
+                        id="isEnabled"
+                        // @ts-ignore
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleIsEnabledChange(e)
+                        }
+                      />
                     </div>
                   </>
                 ) : null}
                 {fetchErrorString ? (
-                  <div className="ModifyAssetList__not-found">
-                    {fetchErrorString}
-                  </div>
+                  <View.Inset hasScrollShadow>
+                    <div className="ModifyAssetList__not-found">
+                      {fetchErrorString}
+                    </div>
+                  </View.Inset>
                 ) : null}
               </div>
+
               {isEditing ? (
                 <Button
                   size="md"

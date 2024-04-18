@@ -11,8 +11,13 @@
   }
 
   &__results {
-    height: 20.75rem;
-    margin-top: 0.75rem;
+    height: 20rem;
+    margin: 0.75rem 0;
+    overflow: scroll;
+
+    .View__inset {
+      height: 100%;
+    }
   }
 
   &__enable {
