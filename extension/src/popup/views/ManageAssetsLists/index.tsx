@@ -23,11 +23,20 @@ export interface AssetsListsData {
   isEnabled: boolean;
 }
 
+export interface SortedAssetsListsData {
+  enabled: AssetsListsData[];
+  disabled: AssetsListsData[];
+}
+
 export const ManageAssetsLists = () => {
   const [selectedNetwork, setSelectedNetwork] = useState("" as AssetsListKey);
   const [assetsListsData, setAssetsListsData] = useState(
     [] as AssetsListsData[],
   );
+  const [sortedAssetsListsData, setSortedAssetsListsData] = useState({
+    enabled: [],
+    disabled: [],
+  } as SortedAssetsListsData);
   const [isLoading, setIsLoading] = useState(true);
   const { assetsLists, networkDetails } = useSelector(settingsSelector);
   const { t } = useTranslation();
@@ -65,6 +74,24 @@ export const ManageAssetsLists = () => {
   }, [selectedNetwork, assetsLists]);
 
   useEffect(() => {
+    if (assetsListsData.length) {
+      const sortedList: SortedAssetsListsData = {
+        enabled: [],
+        disabled: [],
+      };
+      assetsListsData.forEach((list) => {
+        if (list.isEnabled) {
+          sortedList.enabled.push(list);
+        } else {
+          sortedList.disabled.push(list);
+        }
+      });
+
+      setSortedAssetsListsData(sortedList);
+    }
+  }, [assetsListsData]);
+
+  useEffect(() => {
     setSelectedNetwork(
       networkDetails.network === NETWORKS.TESTNET
         ? NETWORKS.TESTNET
@@ -81,7 +108,7 @@ export const ManageAssetsLists = () => {
       <Switch>
         <PublicKeyRoute exact path={ROUTES.manageAssetsLists}>
           <AssetLists
-            assetsListsData={assetsListsData}
+            sortedAssetsListsData={sortedAssetsListsData}
             handleSelectChange={handleSelectChange}
             selectedNetwork={selectedNetwork}
             isLoading={isLoading}
