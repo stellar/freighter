@@ -12,7 +12,7 @@ jobs:
   test-ci:
     name: test snapshots
     timeout-minutes: 20
-    runs-on: darwin-latest
+    runs-on: macos-latest
     container:
       image: mcr.microsoft.com/playwright:v1.41.0-jammy
     steps:
