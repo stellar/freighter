@@ -137,6 +137,7 @@
   "digits after the decimal allowed": "digits after the decimal allowed",
   "directory": "directory",
   "disable": "disable",
+  "Disabled": "Disabled",
   "Done": "Done",
   "Double check the domain name": {
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
@@ -144,6 +145,7 @@
   "enable": "enable",
   "Enable experimental mode": "Enable experimental mode",
   "Enable this list": "Enable this list",
+  "Enabled": "Enabled",
   "Enter a Stellar Asset List compatible URL": "Enter a Stellar Asset List compatible URL",
   "Enter Friendbot URL": "Enter Friendbot URL",
   "Enter network name": "Enter network name",

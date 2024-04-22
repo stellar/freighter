@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Select, Loader } from "@stellar/design-system";
+import { Button, Select, Loader, Badge } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
@@ -12,7 +12,10 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { View } from "popup/basics/layout/View";
 
-import { AssetsListsData } from "popup/views/ManageAssetsLists";
+import {
+  AssetsListsData,
+  SortedAssetsListsData,
+} from "popup/views/ManageAssetsLists";
 
 import "./styles.scss";
 
@@ -22,14 +25,27 @@ const ASSETS_LISTS_NETWORKS = [
 ];
 
 interface AssetListsProps {
-  assetsListsData: AssetsListsData[];
+  sortedAssetsListsData: SortedAssetsListsData;
   handleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   selectedNetwork: AssetsListKey;
   isLoading: boolean;
 }
 
+const AssetListLink = ({ assetList }: { assetList: AssetsListsData }) => (
+  <ListNavLink
+    href={ROUTES.manageAssetsListsModifyAssetList}
+    searchParams={`?asset-list-url=${encodeURIComponent(assetList.url)}`}
+    key={assetList.name}
+  >
+    <div>
+      <div className="ManageAssetsLists__title">{assetList.name}</div>
+      <div className="ManageAssetsLists__subtitle">{assetList.provider}</div>
+    </div>
+  </ListNavLink>
+);
+
 export const AssetLists = ({
-  assetsListsData,
+  sortedAssetsListsData,
   handleSelectChange,
   selectedNetwork,
   isLoading,
@@ -64,24 +80,31 @@ export const AssetLists = ({
             <Loader size="5rem" />
           </div>
         ) : (
-          <div className="ManageAssetsLists__list">
-            <ListNavLinkWrapper>
-              {assetsListsData.map(({ name, provider }, i) => (
-                <ListNavLink
-                  href={ROUTES.manageAssetsListsModifyAssetList}
-                  searchParams={`?asset-list-index=${i}`}
-                  key={name}
-                >
-                  <div>
-                    <div className="ManageAssetsLists__title">{name}</div>
-                    <div className="ManageAssetsLists__subtitle">
-                      {provider}
-                    </div>
-                  </div>
-                </ListNavLink>
-              ))}
-            </ListNavLinkWrapper>
-          </div>
+          <>
+            <div className="ManageAssetsLists__list">
+              <div className="ManageAssetsLists__badge">
+                <Badge variant="success">{t("Enabled")}</Badge>
+              </div>
+              <ListNavLinkWrapper>
+                {sortedAssetsListsData.enabled.map((assetList) => (
+                  <AssetListLink assetList={assetList} />
+                ))}
+              </ListNavLinkWrapper>
+            </div>
+
+            {sortedAssetsListsData.disabled.length ? (
+              <div className="ManageAssetsLists__list">
+                <div className="ManageAssetsLists__badge">
+                  <Badge variant="pending">{t("Disabled")}</Badge>
+                </div>
+                <ListNavLinkWrapper>
+                  {sortedAssetsListsData.disabled.map((assetList) => (
+                    <AssetListLink assetList={assetList} />
+                  ))}
+                </ListNavLinkWrapper>
+              </div>
+            ) : null}
+          </>
         )}
       </View.Content>
       <View.Footer>

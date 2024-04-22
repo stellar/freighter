@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Input, Toggle } from "@stellar/design-system";
+import { Button, Input, Toggle, Notification } from "@stellar/design-system";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
@@ -39,7 +39,7 @@ export const ModifyAssetList = ({
   const { t } = useTranslation();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const assetListIndex = params.get("asset-list-index");
+  const assetListUrl = params.get("asset-list-url");
   const dispatch: AppDispatch = useDispatch();
   const [fetchErrorString, setFetchErrorString] = useState("");
   const [submitErrorString, setSubmitErrorString] = useState("");
@@ -49,12 +49,15 @@ export const ModifyAssetList = ({
   const [isDefaultAssetList, setIsDefaultAssetList] = useState(false);
   const [isShowingDeleteModal, setIsShowingDeleteModal] = useState(false);
 
-  const defaultAssetsListIndex = DEFAULT_ASSETS_LISTS[selectedNetwork].length;
+  const defaultAssetsList = DEFAULT_ASSETS_LISTS[selectedNetwork];
 
   useEffect(() => {
-    if (assetListIndex) {
+    if (assetListUrl) {
       /* Based on the query param, we're in EDIT mode. Prepopulate some information */
-      const assetsListsSelection = assetsListsData[Number(assetListIndex)];
+      const decodedAssetListUrl = decodeURIComponent(assetListUrl);
+      const assetsListsSelection = assetsListsData.find(
+        ({ url }) => url === decodedAssetListUrl,
+      );
       if (assetsListsSelection) {
         const {
           url,
@@ -72,13 +75,17 @@ export const ModifyAssetList = ({
         });
         setIsEditing(true);
 
-        if (Number(assetListIndex) < defaultAssetsListIndex) {
+        if (
+          defaultAssetsList.find(
+            ({ url: defaultUrl }) => defaultUrl === decodedAssetListUrl,
+          )
+        ) {
           // this is a default network, disable some features
           setIsDefaultAssetList(true);
         }
       }
     }
-  }, [assetsListsData, assetListIndex, defaultAssetsListIndex]);
+  }, [assetsListsData, assetListUrl, defaultAssetsList]);
 
   const handleSearch = async (event: React.MouseEvent, values: FormValues) => {
     let url;
@@ -331,6 +338,11 @@ export const ModifyAssetList = ({
                     </div>
                   </View.Inset>
                 ) : null}
+                {submitErrorString ? (
+                  <div className="ModifyAssetList__submit-error">
+                    <Notification variant="warning" title={submitErrorString} />
+                  </div>
+                ) : null}
               </div>
 
               {isEditing ? (
@@ -356,12 +368,6 @@ export const ModifyAssetList = ({
                   {t("Add list")}
                 </Button>
               )}
-
-              {submitErrorString ? (
-                <div className="ModifyAssetList__submit-error">
-                  {submitErrorString}
-                </div>
-              ) : null}
             </Form>
           )}
         </Formik>

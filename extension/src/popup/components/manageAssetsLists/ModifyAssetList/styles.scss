@@ -11,6 +11,8 @@
   }
 
   &__results {
+    display: flex;
+    flex-direction: column;
     height: 20rem;
     margin: 0.75rem 0;
     overflow: scroll;
@@ -28,9 +30,7 @@
   }
 
   &__submit-error {
-    color: var(--color-red-70);
-    font-size: 0.75rem;
-    line-height: 1.125rem;
+    margin-top: auto;
   }
 
   &__not-found {
