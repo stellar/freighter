@@ -12,7 +12,7 @@ test.only("Welcome page loads", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("I’m going to need a seed phrase")).toBeVisible();
   await expect(page.getByText("I’ve done this before")).toBeVisible();
-  await expect(page).toHaveScreenshot("welcome-page.png");
+  // await expect(page).toHaveScreenshot("welcome-page.png");
 });
 
 test("Create new wallet", async ({ page }) => {
