@@ -5,14 +5,14 @@ test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
 });
 
-test("Welcome page loads", async ({ page }) => {
+test.only("Welcome page loads", async ({ page }) => {
   await page.locator(".Welcome__column").waitFor();
   await expect(
     page.getByText("Welcome! Is this your first time using Freighter?"),
   ).toBeVisible();
   await expect(page.getByText("I’m going to need a seed phrase")).toBeVisible();
   await expect(page.getByText("I’ve done this before")).toBeVisible();
-  // await expect(page).toHaveScreenshot("welcome-page.png");
+  await expect(page).toHaveScreenshot("welcome-page.png");
 });
 
 test("Create new wallet", async ({ page }) => {

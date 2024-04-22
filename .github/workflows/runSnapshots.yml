@@ -1,0 +1,32 @@
+name: Run Snapshots
+env:
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
+on: workflow_dispatch
+jobs:
+  test-ci:
+    name: test snapshots
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.41.0-jammy
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 18
+      - run: npm install -g yarn && yarn
+      - run: yarn setup
+      - run: yarn build:freighter-api
+      - run: yarn build:extension
+      - run: yarn test:e2e --update-snapshots
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
+          git tag ${{ github.event.inputs.version }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
+        with:
+          title: Adds snapshots
