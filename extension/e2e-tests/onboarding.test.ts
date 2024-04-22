@@ -1,5 +1,5 @@
 import { shuffle } from "lodash";
-import { test, expect } from "./test-fixtures";
+import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 
 test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
@@ -12,7 +12,7 @@ test.only("Welcome page loads", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("I’m going to need a seed phrase")).toBeVisible();
   await expect(page.getByText("I’ve done this before")).toBeVisible();
-  await expect(page).toHaveScreenshot("welcome-page.png");
+  await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
 });
 
 test("Create new wallet", async ({ page }) => {

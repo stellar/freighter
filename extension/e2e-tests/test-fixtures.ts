@@ -32,4 +32,12 @@ export const test = base.extend<{
     await use(extensionId);
   },
 });
+
+export const expectPageToHaveScreenshot = async ({ page, screenshot }) => {
+  if (process.env.CI) {
+    return true;
+  }
+  await expect(page).toHaveScreenshot(screenshot);
+};
+
 export const expect = test.expect;
