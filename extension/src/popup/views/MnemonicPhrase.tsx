@@ -55,5 +55,11 @@ export const MnemonicPhrase = ({
     );
   }
 
-  return null;
+  return (
+    <Redirect
+      to={{
+        pathname: ROUTES.accountCreator,
+      }}
+    />
+  );
 };
