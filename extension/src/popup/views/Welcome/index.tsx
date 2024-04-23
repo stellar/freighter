@@ -19,6 +19,13 @@ export const Welcome = () => {
           paddingVertical: 12,
           paddingHorizontal: 20,
         },
+        buttonImport: {
+          marginTop: 24,
+          backgroundColor: "#161618",
+          borderRadius: 4,
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+        },
         buttonText: {
           color: "#fff",
           fontSize: 16,
@@ -84,7 +91,7 @@ export const Welcome = () => {
             <Text style={styles.cardText}>I have my 12 word seed phrase</Text>
             <TouchableOpacity
               onPress={() => console.log("pressed import!")}
-              style={styles.button}
+              style={styles.buttonImport}
             >
               <Text style={styles.buttonText}>Import Wallet</Text>
             </TouchableOpacity>
