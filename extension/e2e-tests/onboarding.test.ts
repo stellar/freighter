@@ -182,13 +182,16 @@ test("Import wallet with wrong password", async ({ page }) => {
   await page.locator("#termsOfUse-input").focus();
 
   await expect(page.getByText("Passwords must match")).toBeVisible();
-  await expect(page).toHaveScreenshot("recovery-bad-password.png", {
-    mask: [
-      page.locator(".RecoverAccount__mnemonic-input"),
-      page.locator("#password-input"),
-      page.locator("#confirm-password-input"),
-    ],
-  });
+  await expectPageToHaveScreenshot(
+    { page, screenshot: "recovery-bad-password.png" },
+    {
+      mask: [
+        page.locator(".RecoverAccount__mnemonic-input"),
+        page.locator("#password-input"),
+        page.locator("#confirm-password-input"),
+      ],
+    },
+  );
 });
 
 test("Incorrect mnemonic phrase", async ({ page }) => {
