@@ -13,12 +13,20 @@ import {
   addCustomNetwork as addCustomNetworkService,
   removeCustomNetwork as removeCustomNetworkService,
   editCustomNetwork as editCustomNetworkService,
+  addAssetsList as addAssetsListService,
+  modifyAssetsList as modifyAssetsListService,
 } from "@shared/api/internal";
 import {
+  NETWORKS,
   NetworkDetails,
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
+import {
+  AssetsListItem,
+  AssetsLists,
+  DEFAULT_ASSETS_LISTS,
+} from "@shared/constants/soroban/token";
 
 import { Settings, IndexerSettings, SettingsState } from "@shared/api/types";
 
@@ -54,6 +62,7 @@ const indexerInitialState: IndexerSettings = {
 const initialState = {
   ...settingsInitialState,
   ...indexerInitialState,
+  assetsLists: DEFAULT_ASSETS_LISTS,
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
@@ -177,6 +186,49 @@ export const editCustomNetwork = createAsyncThunk<
   editCustomNetworkService({ networkDetails, networkIndex }),
 );
 
+export const addAssetsList = createAsyncThunk<
+  { assetsLists: AssetsLists; error: string },
+  { assetsList: AssetsListItem; network: NETWORKS },
+  { rejectValue: ErrorMessage }
+>("settings/addAssetsList", async ({ assetsList, network }, thunkApi) => {
+  const res = await addAssetsListService({ assetsList, network });
+
+  if (res.error) {
+    return thunkApi.rejectWithValue({
+      errorMessage: res.error || "Unable to add asset list",
+    });
+  }
+
+  return res;
+});
+
+export const modifyAssetsList = createAsyncThunk<
+  { assetsLists: AssetsLists; error: string },
+  {
+    assetsList: AssetsListItem;
+    network: NETWORKS;
+    isDeleteAssetsList: boolean;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/modifyAssetsList",
+  async ({ assetsList, network, isDeleteAssetsList }, thunkApi) => {
+    const res = await modifyAssetsListService({
+      assetsList,
+      network,
+      isDeleteAssetsList,
+    });
+
+    if (res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Unable to modify asset list",
+      });
+    }
+
+    return res;
+  },
+);
+
 const settingsSlice = createSlice({
   name: "settings",
   initialState,
@@ -234,7 +286,12 @@ const settingsSlice = createSlice({
     });
     builder.addCase(
       loadSettings.fulfilled,
-      (state, action: PayloadAction<Settings & IndexerSettings>) => {
+      (
+        state,
+        action: PayloadAction<
+          Settings & IndexerSettings & { assetsLists: AssetsLists }
+        >,
+      ) => {
         const {
           allowList,
           isDataSharingAllowed,
@@ -247,6 +304,7 @@ const settingsSlice = createSlice({
           isSorobanPublicEnabled,
           isRpcHealthy,
           userNotification,
+          assetsLists,
         } = action?.payload || {
           ...initialState,
         };
@@ -264,6 +322,7 @@ const settingsSlice = createSlice({
           isSorobanPublicEnabled,
           isRpcHealthy,
           userNotification,
+          assetsLists,
           settingsState: SettingsState.SUCCESS,
         };
       },
@@ -372,6 +431,42 @@ const settingsSlice = createSlice({
         };
       },
     );
+    builder.addCase(
+      addAssetsList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          assetsLists: AssetsLists;
+        }>,
+      ) => {
+        const { assetsLists } = action?.payload || {
+          assetsLists: initialState.assetsLists,
+        };
+
+        return {
+          ...state,
+          assetsLists,
+        };
+      },
+    );
+    builder.addCase(
+      modifyAssetsList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          assetsLists: AssetsLists;
+        }>,
+      ) => {
+        const { assetsLists } = action?.payload || {
+          assetsLists: initialState.assetsLists,
+        };
+
+        return {
+          ...state,
+          assetsLists,
+        };
+      },
+    );
   },
 });
 
@@ -380,7 +475,7 @@ export const { reducer } = settingsSlice;
 export const { clearSettingsError } = settingsSlice.actions;
 
 export const settingsSelector = (state: {
-  settings: Settings & IndexerSettings;
+  settings: Settings & IndexerSettings & { assetsLists: AssetsLists };
 }) => state.settings;
 
 export const settingsDataSharingSelector = createSelector(

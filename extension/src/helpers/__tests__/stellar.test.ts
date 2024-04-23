@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import {
   getTransactionInfo,
   truncatedPublicKey,
+  truncateString,
   stroopToXlm,
   xlmToStroop,
 } from "../stellar";
@@ -17,6 +18,29 @@ describe("truncatedPublicKey", () => {
   });
   it("returns empty on no input", () => {
     expect(truncatedPublicKey("")).toBe("");
+  });
+});
+
+describe("truncateString", () => {
+  it("truncates using the correct default character count", () => {
+    const defaultCount = 4;
+    const str = truncateString(
+      "GAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWU7B3",
+    );
+    const [firstHalf, secondHalf] = str.split("…");
+    expect(firstHalf.length).toBe(defaultCount);
+    expect(secondHalf.length).toBe(defaultCount);
+  });
+
+  it("truncates using the correct custom character count", () => {
+    const count = 5;
+    const str = truncateString(
+      "GAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWU7B3",
+      count,
+    );
+    const [firstHalf, secondHalf] = str.split("…");
+    expect(firstHalf.length).toBe(count);
+    expect(secondHalf.length).toBe(count);
   });
 });
 
