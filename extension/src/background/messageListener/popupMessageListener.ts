@@ -9,7 +9,13 @@ import {
   TransactionBuilder,
   hash,
 } from "stellar-sdk";
-import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
+import {
+  KeyManager,
+  BrowserStorageKeyStore,
+  ScryptEncrypter,
+  KeyType,
+} from "@stellar/typescript-wallet-sdk-km";
+import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
 import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
@@ -152,12 +158,15 @@ interface KeyPair {
 
 export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
-  localKeyStore.configure({ storage: browserLocalStorage });
+  const localKeyStore = new BrowserStorageKeyStore();
+  // ts-wallet-sdk storage area definition clashes with webkit polyfills
+  localKeyStore.configure({
+    storage: (browserLocalStorage as any) as BrowserStorageConfigParams["storage"],
+  });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
-  keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
+  keyManager.registerEncrypter(ScryptEncrypter);
 
   const _unlockKeystore = ({
     password,
@@ -280,7 +289,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       },
 
       password,
-      encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
+      encrypterName: ScryptEncrypter.name,
     };
 
     let keyStore = { id: "" };
@@ -348,7 +357,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       },
 
       password,
-      encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
+      encrypterName: ScryptEncrypter.name,
     };
 
     let keyStore = { id: "" };
