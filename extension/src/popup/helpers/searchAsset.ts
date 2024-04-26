@@ -1,9 +1,15 @@
 import { captureException } from "@sentry/browser";
 import { validate } from "jsonschema";
-import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+  NETWORKS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { AssetsLists, AssetsListKey } from "@shared/constants/soroban/token";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
 export const searchAsset = async ({
   asset,
@@ -101,14 +107,30 @@ export const getVerifiedTokens = async ({
   setIsSearching?: (isSearching: boolean) => void;
   assetsLists: AssetsLists;
 }) => {
-  const networkLists = assetsLists[networkDetails.network as AssetsListKey];
+  let network = networkDetails.network;
+
+  if (network === CUSTOM_NETWORK) {
+    if (
+      networkDetails.networkPassphrase ===
+      MAINNET_NETWORK_DETAILS.networkPassphrase
+    ) {
+      network = MAINNET_NETWORK_DETAILS.network;
+    }
+    if (
+      networkDetails.networkPassphrase ===
+      TESTNET_NETWORK_DETAILS.networkPassphrase
+    ) {
+      network = TESTNET_NETWORK_DETAILS.network;
+    }
+  }
+
+  const networkLists = assetsLists[network as AssetsListKey];
   const promiseArr = [];
   const nativeContract = getNativeContractDetails(networkDetails);
 
   if (contractId === nativeContract.contract) {
     return [{ ...nativeContract, verifiedLists: [] }];
   }
-
   // eslint-disable-next-line no-restricted-syntax
   for (const networkList of networkLists) {
     const { url = "", isEnabled } = networkList;
