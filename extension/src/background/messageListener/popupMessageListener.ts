@@ -9,7 +9,13 @@ import {
   TransactionBuilder,
   hash,
 } from "stellar-sdk";
-import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
+import {
+  KeyManager,
+  BrowserStorageKeyStore,
+  ScryptEncrypter,
+  KeyType,
+} from "@stellar/typescript-wallet-sdk-km";
+import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
 import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
@@ -152,12 +158,16 @@ interface KeyPair {
 
 export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
-  localKeyStore.configure({ storage: browserLocalStorage });
+  const localKeyStore = new BrowserStorageKeyStore();
+  // ts-wallet-sdk storage area definition clashes with webkit polyfills
+  localKeyStore.configure({
+    storage:
+      browserLocalStorage as any as BrowserStorageConfigParams["storage"],
+  });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
-  keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
+  keyManager.registerEncrypter(ScryptEncrypter);
 
   const _unlockKeystore = ({
     password,
@@ -280,7 +290,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       },
 
       password,
-      encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
+      encrypterName: ScryptEncrypter.name,
     };
 
     let keyStore = { id: "" };
@@ -348,7 +358,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       },
 
       password,
-      encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
+      encrypterName: ScryptEncrypter.name,
     };
 
     let keyStore = { id: "" };
@@ -1179,7 +1189,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     } = request;
 
-    const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
+    const currentIsExperimentalModeEnabled =
+      await getIsExperimentalModeEnabled();
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
@@ -1718,7 +1729,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,
-    [SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE]: confirmMigratedMnemonicPhrase,
+    [SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE]:
+      confirmMigratedMnemonicPhrase,
     [SERVICE_TYPES.RECOVER_ACCOUNT]: recoverAccount,
     [SERVICE_TYPES.CONFIRM_PASSWORD]: confirmPassword,
     [SERVICE_TYPES.GRANT_ACCESS]: grantAccess,
@@ -1729,7 +1741,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
-    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]: signFreighterSorobanTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]:
+      signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
