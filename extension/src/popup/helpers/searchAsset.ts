@@ -109,6 +109,10 @@ export const getVerifiedTokens = async ({
     return [{ ...nativeContract, verifiedLists: [] }];
   }
 
+  if (!networkLists) {
+    return [];
+  }
+
   // eslint-disable-next-line no-restricted-syntax
   for (const networkList of networkLists) {
     const { url = "", isEnabled } = networkList;
