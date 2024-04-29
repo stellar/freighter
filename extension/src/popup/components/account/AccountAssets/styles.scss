@@ -44,6 +44,8 @@ $loader-light-color: #444961;
     }
 
     &--error {
+      width: 32px;
+      height: 32px;
       align-items: center;
       background: rgba(100, 50, 241, 0.32);
       border-radius: 2rem;
@@ -57,6 +59,8 @@ $loader-light-color: #444961;
     }
 
     &--loading {
+      width: 32px;
+      height: 32px;
       background: linear-gradient(
         to right,
         $loader-dark-color 1%,

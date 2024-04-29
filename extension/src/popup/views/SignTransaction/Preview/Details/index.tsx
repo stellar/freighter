@@ -16,7 +16,7 @@ export const Details = ({
   flaggedKeys,
   isMemoRequired,
 }: DetailsProps) => (
-  <div className="DetailsBody">
+  <div className="DetailsBody" data-testid="DetailsBody">
     <Operations
       operations={operations}
       flaggedKeys={flaggedKeys}

@@ -1,6 +1,6 @@
 # Freighter
 
-Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. Learn more at [freighter.app](https://www.freighter.app/). 
+Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. Learn more at [freighter.app](https://www.freighter.app/).
 
 ## Yarn Workspaces
 

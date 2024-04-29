@@ -4,7 +4,6 @@ import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import {
-  FeeBumpTransaction,
   MuxedAccount,
   Transaction,
   TransactionBuilder,
@@ -49,7 +48,6 @@ import {
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SlideupModal } from "popup/components/SlideupModal";
-import { FlaggedKeys } from "types/transactions";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Tabs } from "popup/components/Tabs";
@@ -87,8 +85,8 @@ export const SignTransaction = () => {
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
     transactionXdr,
-    _networkPassphrase,
-  ) as Transaction | FeeBumpTransaction;
+    _networkPassphrase as string,
+  );
 
   let isFeeBump = false;
   let _memo = {};
@@ -126,7 +124,7 @@ export const SignTransaction = () => {
     accountToSign,
   );
 
-  const flaggedKeyValues = Object.values(flaggedKeys as FlaggedKeys);
+  const flaggedKeyValues = Object.values(flaggedKeys);
   const isUnsafe = flaggedKeyValues.some(({ tags }) =>
     tags.includes(TRANSACTION_WARNING.unsafe),
   );
@@ -137,7 +135,7 @@ export const SignTransaction = () => {
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
-  const resolveFederatedAddress = useCallback(async (inputDest) => {
+  const resolveFederatedAddress = useCallback(async (inputDest: string) => {
     let resolvedPublicKey;
     try {
       const fedResp = await Federation.Server.resolve(inputDest);
@@ -157,7 +155,7 @@ export const SignTransaction = () => {
       }
       if (isFederationAddress(_accountToSign)) {
         accountToSign = (await resolveFederatedAddress(
-          accountToSign,
+          accountToSign!,
         )) as string;
       }
     }
@@ -260,7 +258,7 @@ export const SignTransaction = () => {
               title={t("Account not available")}
             >
               {t("The application is requesting a specific account")} (
-              {truncatedPublicKey(accountToSign!)}),{" "}
+              {truncatedPublicKey(accountToSign)}),{" "}
               {t(
                 "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
               )}
@@ -318,7 +316,10 @@ export const SignTransaction = () => {
                 className="SignTransaction__Actions__PublicKey"
                 onClick={() => setIsDropdownOpen(true)}
               >
-                <KeyIdenticon publicKey={currentAccount.publicKey} />
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
                 <Icon.ChevronDown />
               </button>
             </div>

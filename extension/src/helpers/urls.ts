@@ -20,7 +20,7 @@ export interface EntryToSign {
   accountToSign: string;
 }
 
-export const encodeObject = (obj: {}) =>
+export const encodeObject = (obj: object) =>
   btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
 
 export const decodeString = (str: string) =>

@@ -1,7 +1,8 @@
 import React from "react";
+import { CopyText } from "@stellar/design-system";
 
-import { truncatedPublicKey } from "helpers/stellar";
-
+import { CopyValue } from "popup/components/CopyValue";
+import { truncateString } from "helpers/stellar";
 import { IdenticonImg } from "../IdenticonImg";
 
 import "./styles.scss";
@@ -15,37 +16,74 @@ interface IdenticonWrapperElProps {
 }
 
 interface KeyIdenticonProps extends IdenticonWrapperElProps {
+  isCopyAllowed?: boolean;
   publicKey: string;
+  iconSide?: "left" | "right";
+  keyTruncationAmount?: number;
 }
 
 export const KeyIdenticon = ({
+  isCopyAllowed = false,
   publicKey = "",
   isSmall = false,
   customSize,
+  keyTruncationAmount,
+  iconSide = "left",
   ...props
 }: KeyIdenticonProps) => {
-  const shortPublicKey = truncatedPublicKey(publicKey);
   const customStyle = {
     ...(isSmall
       ? {
+          // eslint-disable-next-line
           "--Icon-padding": "0.2rem",
+          // eslint-disable-next-line
           "--Icon-dimension": "1.5rem",
+          marginRight: iconSide === "left" ? "0.5rem" : 0,
+          marginLeft: iconSide === "right" ? "0.5rem" : 0,
         }
-      : {}),
+      : {
+          marginRight: !isCopyAllowed ? "0.5rem" : 0,
+        }),
     ...(customSize
       ? {
+          // eslint-disable-next-line
           "--Icon-padding": customSize.padding,
+          // eslint-disable-next-line
           "--Icon-dimension": customSize.dimension,
+          marginRight: iconSide === "left" ? "0.5rem" : 0,
+          marginLeft: iconSide === "right" ? "0.5rem" : 0,
         }
-      : {}),
+      : {
+          marginRight: !isCopyAllowed ? "0.5rem" : 0,
+        }),
   } as React.CSSProperties;
 
   return (
     <div className="KeyIdenticon">
-      <div className="KeyIdenticon--icon" style={customStyle}>
-        <IdenticonImg publicKey={publicKey} />
-      </div>
-      <span {...props}>{shortPublicKey}</span>
+      {iconSide === "left" && (
+        <div className="KeyIdenticon--icon" style={customStyle}>
+          <IdenticonImg publicKey={publicKey} />
+        </div>
+      )}
+      {isCopyAllowed ? (
+        <CopyText textToCopy={publicKey}>
+          <span {...props} className="KeyIdenticon--key">
+            <CopyValue
+              value={publicKey}
+              displayValue={truncateString(publicKey, keyTruncationAmount)}
+            />
+          </span>
+        </CopyText>
+      ) : (
+        <span {...props} className="KeyIdenticon--key">
+          {truncateString(publicKey, keyTruncationAmount)}
+        </span>
+      )}
+      {iconSide === "right" && (
+        <div className="KeyIdenticon--icon" style={customStyle}>
+          <IdenticonImg publicKey={publicKey} />
+        </div>
+      )}
     </div>
   );
 };

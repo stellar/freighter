@@ -50,6 +50,7 @@ export const AccountCreator = () => {
   };
 
   const handleSubmit = async (values: FormValues) => {
+    // eslint-disable-next-line
     await dispatch(createAccount(values.password));
     const res = await showBackupPhrase(values.password);
 
@@ -120,12 +121,18 @@ export const AccountCreator = () => {
                   <PasswordRequirements />
 
                   <Field name="termsOfUse">
-                    {({ field }: FieldProps) => (
+                    {({ field, form }: FieldProps) => (
                       <Checkbox
                         fieldSize="md"
                         autoComplete="off"
                         error={touched.termsOfUse ? errors.termsOfUse : null}
                         id="termsOfUse-input"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            form.setFieldValue("termsOfUse", !field.value);
+                            e.currentTarget.checked = !field.value;
+                          }
+                        }}
                         label={
                           <>
                             {t("I have read and agree to")}{" "}

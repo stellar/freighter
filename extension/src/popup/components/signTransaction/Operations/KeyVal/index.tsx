@@ -14,6 +14,7 @@ import {
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { CopyValue } from "popup/components/CopyValue";
 import { truncateString } from "helpers/stellar";
 import { formattedBuffer } from "popup/helpers/formatters";
 
@@ -32,8 +33,8 @@ export const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
-    <div>{operationKey}</div>
-    <div>{operationValue}</div>
+    <div className="Operations__pair--key">{operationKey}</div>
+    <div className="Operations__pair--value">{operationValue}</div>
   </div>
 );
 
@@ -82,7 +83,9 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
             <>
               <KeyValueList
                 operationKey={t("Salt")}
-                operationValue={truncateString(_invocation.args.wasm.salt)}
+                operationValue={truncateString(
+                  _invocation.args.wasm.salt as string,
+                )}
               />
               <KeyValueList
                 operationKey={t("Hash")}
@@ -384,7 +387,14 @@ export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
     <div className="OperationParameters">
       {args.map((arg) => (
         <div className="Parameter" key={arg.toXDR().toString()}>
-          {scValByType(arg)}
+          {arg.switch() === xdr.ScValType.scvAddress() ? (
+            <CopyValue
+              value={scValByType(arg)}
+              displayValue={scValByType(arg)}
+            />
+          ) : (
+            scValByType(arg)
+          )}
         </div>
       ))}
     </div>
@@ -532,7 +542,12 @@ export const KeyValueInvokeHostFn = ({
             />
             <KeyValueList
               operationKey={t("Contract ID")}
-              operationValue={truncateString(contractId)}
+              operationValue={
+                <CopyValue
+                  value={contractId}
+                  displayValue={truncateString(contractId, 6)}
+                />
+              }
             />
             <KeyValueList
               operationKey={t("Function Name")}

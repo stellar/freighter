@@ -23,16 +23,12 @@
 
   &__loader {
     position: absolute;
-    top: calc(50% - var(--SearchAsset--loader--dimension));
     left: calc(50% - var(--SearchAsset--loader--dimension));
     width: var(--SearchAsset--loader--dimension);
   }
 
   &__results {
     flex-grow: 1;
-
-    &--active {
-    }
   }
 
   &__copy {

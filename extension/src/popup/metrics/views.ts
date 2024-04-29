@@ -65,6 +65,9 @@ const routeToEventName = {
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
   [ROUTES.leaveFeedback]: METRIC_NAMES.viewLeaveFeedback,
+  [ROUTES.manageAssetsLists]: METRIC_NAMES.viewManageAssetsLists,
+  [ROUTES.manageAssetsListsModifyAssetList]:
+    METRIC_NAMES.manageAssetListsModifyAssetList,
   [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
   [ROUTES.accountMigrationReviewMigration]:
     METRIC_NAMES.viewAccountMigrationReviewMigration,
@@ -104,6 +107,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       number_of_operations: operations.length,
       operationTypes,
     };

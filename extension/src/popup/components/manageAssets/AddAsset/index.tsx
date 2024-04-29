@@ -80,8 +80,8 @@ export const AddAsset = () => {
   return (
     <Formik initialValues={initialValues} onSubmit={handleSubmit}>
       {({ dirty, errors, isSubmitting, isValid, touched }) => (
-        <Form>
-          <React.Fragment>
+        <Form className="AddAsset__FormContainer">
+          <View>
             <SubviewHeader title={t("Add Another Asset")} />
             <View.Content>
               <FormRows>
@@ -138,7 +138,7 @@ export const AddAsset = () => {
                 {t("Search")}
               </Button>
             </View.Footer>
-          </React.Fragment>
+          </View>
         </Form>
       )}
     </Formik>

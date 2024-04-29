@@ -17,7 +17,7 @@ export const ErrorTracking = () => {
       tracesSampleRate: 1.0,
       denyUrls: [
         // Amplitude 4xx's on too many Posts, which is expected behavior
-        /api\.amplitude\.com/i,
+        /api\.amplitude\.com\/2\/httpapi/i,
       ],
     });
   }
