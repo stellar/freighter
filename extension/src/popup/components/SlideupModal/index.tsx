@@ -19,15 +19,17 @@ export const SlideupModal = ({
   const [slideupModalHeight, setSlideupModalHeight] = useState(-500);
 
   useEffect(() => {
-    setSlideupModalHeight(slideupModalRef.current?.clientHeight || 0);
+    const height = slideupModalRef.current?.clientHeight || 0;
+    setSlideupModalHeight(-height);
   }, [slideupModalRef]);
+
   return (
     <>
       <div
         className="SlideupModal"
         ref={slideupModalRef}
         style={{
-          bottom: isModalOpen ? "0px" : `-${slideupModalHeight}px`,
+          bottom: isModalOpen ? "0px" : `${slideupModalHeight}px`,
         }}
       >
         {children}

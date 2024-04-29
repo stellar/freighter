@@ -37,6 +37,8 @@ const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
 const verifiedToken =
   "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+const unverifiedToken =
+  "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
 
 const manageAssetsMockBalances = {
   balances: ({
@@ -171,6 +173,7 @@ jest
           icon: "",
           issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
           org: "unknown",
+          verifiedLists: [],
         },
       ]);
     }
@@ -179,8 +182,17 @@ jest
   });
 
 jest
+  .spyOn(ApiInternal, "getTokenDetails")
+  .mockImplementation(() =>
+    Promise.resolve({ name: "foo", symbol: "baz", decimals: 7 }),
+  );
+
+jest
   .spyOn(SorobanHelpers, "isContractId")
-  .mockImplementation((contractId) => contractId === verifiedToken);
+  .mockImplementation(
+    (contractId) =>
+      contractId === verifiedToken || contractId === unverifiedToken,
+  );
 
 const mockHistoryGetter = jest.fn();
 jest.mock("popup/constants/history", () => ({
@@ -468,7 +480,7 @@ describe("Manage assets", () => {
     const lastRoute = history.entries.pop();
     expect(lastRoute?.pathname).toBe("/account");
   });
-  it("add soroban token", async () => {
+  it("add soroban token on asset list", async () => {
     // init Mainnet view
     await initView(false, true);
 
@@ -494,14 +506,10 @@ describe("Manage assets", () => {
     });
     await waitFor(async () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-      const verificationBadge = screen.getByTestId("add-token-verification");
+      const verificationBadge = screen.getByTestId("asset-notification");
 
       expect(verificationBadge).toHaveTextContent(
-        "This asset is part of Stellar Expert's top 50 assets list. Learn more",
-      );
-      expect(screen.getByTestId("add-token-verification-url")).toHaveAttribute(
-        "href",
-        "https://api.stellar.expert/explorer/public/asset-list/top50",
+        "On your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
       );
 
       expect(addedTrustlines.length).toBe(1);
@@ -511,6 +519,55 @@ describe("Manage assets", () => {
       expect(
         within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
       ).toHaveTextContent("centre.io");
+
+      const addAssetButton = within(addedTrustlines[0]).getByTestId(
+        "ManageAssetRowButton",
+      );
+
+      expect(addAssetButton).toHaveTextContent("Add");
+      expect(addAssetButton).toBeEnabled();
+      await fireEvent.click(addAssetButton);
+    });
+  });
+  it("add soroban token not on asset list", async () => {
+    // init Mainnet view
+    await initView(false, true);
+
+    const addTokenButton = screen.getByTestId(
+      "ChooseAssetAddSorobanTokenButton",
+    );
+    expect(addTokenButton).toBeEnabled();
+    await fireEvent.click(addTokenButton);
+
+    await waitFor(() => {
+      screen.getByTestId("AppHeaderPageTitle");
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Add a Soroban token by ID",
+      );
+
+      const searchInput = screen.getByTestId("search-token-input");
+      fireEvent.change(searchInput, {
+        target: {
+          value: unverifiedToken,
+        },
+      });
+      expect(searchInput).toHaveValue(unverifiedToken);
+    });
+    await waitFor(async () => {
+      const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
+      const verificationBadge = screen.getByTestId("asset-notification");
+
+      expect(verificationBadge).toHaveTextContent(
+        "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+      );
+
+      expect(addedTrustlines.length).toBe(1);
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+      ).toHaveTextContent("foo");
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+      ).toHaveTextContent("Stellar Network");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
         "ManageAssetRowButton",
