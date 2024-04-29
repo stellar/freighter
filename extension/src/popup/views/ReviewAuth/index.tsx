@@ -13,7 +13,8 @@ import { useSelector } from "react-redux";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
-import { INDEXER_URL } from "@shared/constants/mercury";
+import { getTokenDetails } from "@shared/api/internal";
+
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
@@ -49,6 +50,7 @@ import {
 } from "popup/components/WarningMessages";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
+import { CopyValue } from "popup/components/CopyValue";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
@@ -60,6 +62,7 @@ import "./styles.scss";
 export const ReviewAuth = () => {
   const location = useLocation();
   const { t } = useTranslation();
+  const [isLoadingAuth, setLoadingAuth] = useState(true);
 
   const decodedSearchParam = decodeString(location.search.replace("?", ""));
   const params = decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
@@ -98,6 +101,7 @@ export const ReviewAuth = () => {
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
   const reviewAuthEntry = () => {
     emitMetric(METRIC_NAMES.reviewedAuthEntry);
+    setLoadingAuth(true);
     if (isLastEntry) {
       setHasConfirmedAuth(true);
     } else {
@@ -129,7 +133,11 @@ export const ReviewAuth = () => {
               <h5>
                 {activeAuthEntryIndex + 1}/{authCount} Authorizations
               </h5>
-              <AuthDetail authEntry={op.auth[activeAuthEntryIndex]} />
+              <AuthDetail
+                authEntry={op.auth[activeAuthEntryIndex]}
+                isLoading={isLoadingAuth}
+                setLoading={setLoadingAuth}
+              />
             </>
           ) : (
             <SignTransaction
@@ -152,7 +160,10 @@ export const ReviewAuth = () => {
                 className="ReviewAuth__Actions__PublicKey"
                 onClick={() => setIsDropdownOpen(true)}
               >
-                <KeyIdenticon publicKey={currentAccount.publicKey} />
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
                 <Icon.ChevronDown />
               </button>
             </div>
@@ -218,7 +229,7 @@ type TokenDetailMap = Record<string, TokenDetails>;
 
 const TransferSummary = ({
   transfer,
-  tokenDetails,
+  tokenDetails = { name: "", symbol: "", decimals: 0 },
 }: {
   transfer: {
     amount: string;
@@ -238,14 +249,24 @@ const TransferSummary = ({
           <Icon.ArrowCircleRight />
           <p>Receiver</p>
         </div>
-        <KeyIdenticon publicKey={transfer.to} isSmall />
+        <KeyIdenticon
+          isCopyAllowed
+          iconSide="right"
+          publicKey={transfer.to}
+          isSmall
+        />
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
           <Icon.ArrowCircleLeft />
           <p>Sender</p>
         </div>
-        <KeyIdenticon publicKey={transfer.from} isSmall />
+        <KeyIdenticon
+          isCopyAllowed
+          iconSide="right"
+          publicKey={transfer.from}
+          isSmall
+        />
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
@@ -290,11 +311,13 @@ const TransferSummary = ({
 
 const AuthDetail = ({
   authEntry,
+  setLoading,
+  isLoading,
 }: {
   authEntry: xdr.SorobanAuthorizationEntry;
+  setLoading: (isLoading: boolean) => void;
+  isLoading: boolean;
 }) => {
-  // start off in loading state, we always need to fetch token details
-  const [isLoading, setLoading] = useState(true);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
@@ -317,15 +340,9 @@ const AuthDetail = ({
 
   const [tokenDetails, setTokenDetails] = React.useState({} as TokenDetailMap);
 
-  const tokenDetailsUrl = React.useCallback(
-    (contractId: string) =>
-      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
-    [publicKey, networkDetails.network],
-  );
-
   const transfersDepKey = JSON.stringify(transfers);
   React.useEffect(() => {
-    async function getTokenDetails() {
+    async function _getTokenDetails() {
       setLoading(true);
       const _tokenDetails = {} as TokenDetailMap;
 
@@ -333,14 +350,23 @@ const AuthDetail = ({
       for (const transfer of transfers) {
         try {
           // eslint-disable-next-line
-          const response = await fetch(tokenDetailsUrl(transfer.contractId));
+          const tokenDetailsResponse = await getTokenDetails({
+            contractId: transfer.contractId,
+            publicKey,
+            networkDetails,
+          });
 
-          if (!response.ok) {
+          if (!tokenDetailsResponse) {
+            // default details
+            _tokenDetails[transfer.contractId] = {
+              name: "",
+              symbol: "",
+              decimals: 0,
+            };
+            setTokenDetails(_tokenDetails);
             throw new Error("failed to fetch token details");
           }
-          // eslint-disable-next-line
-          const _details = await response.json();
-          _tokenDetails[transfer.contractId] = _details;
+          _tokenDetails[transfer.contractId] = tokenDetailsResponse;
         } catch (error) {
           captureException(
             `Failed to fetch token details - ${JSON.stringify(error)}`,
@@ -351,9 +377,9 @@ const AuthDetail = ({
       setTokenDetails(_tokenDetails);
       setLoading(false);
     }
-    getTokenDetails();
+    _getTokenDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transfersDepKey, tokenDetailsUrl]);
+  }, [transfersDepKey]);
 
   return (
     <div className="AuthDetail">
@@ -371,6 +397,7 @@ const AuthDetail = ({
           )}
           {transfers.map((transfer) => (
             <TransferSummary
+              key={JSON.stringify(transfer)}
               transfer={transfer}
               tokenDetails={tokenDetails[transfer.contractId]}
             />
@@ -384,7 +411,12 @@ const AuthDetail = ({
               <div className="AuthDetail__InfoBlock">
                 <KeyValueList
                   operationKey={t("Contract ID")}
-                  operationValue={truncateString(detail.contractId)}
+                  operationValue={
+                    <CopyValue
+                      value={detail.contractId}
+                      displayValue={truncateString(detail.contractId)}
+                    />
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Function Name")}
@@ -403,7 +435,12 @@ const AuthDetail = ({
               <div className="AuthDetail__InfoBlock">
                 <KeyValueList
                   operationKey={t("Contract Address")}
-                  operationValue={truncateString(detail.address)}
+                  operationValue={
+                    <CopyValue
+                      value={detail.address}
+                      displayValue={truncateString(detail.address)}
+                    />
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Hash")}

@@ -147,7 +147,7 @@ const getUserId = () => {
  * @param {object?} body An optional object containing event metadata
  * @returns {void}
  */
-export const emitMetric = (name: string, body?: any) => {
+export const emitMetric = async (name: string, body?: any) => {
   const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
   if (!isDataSharingAllowed) {
     return;
@@ -169,5 +169,5 @@ export const emitMetric = (name: string, body?: any) => {
     secret_key_account_funded: metricsData.importedFunded,
     /* eslint-enable */
   });
-  uploadMetrics();
+  await uploadMetrics();
 };
