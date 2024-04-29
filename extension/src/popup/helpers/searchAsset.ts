@@ -1,7 +1,15 @@
 import { captureException } from "@sentry/browser";
-import { fetchAssetList } from "@stellar-asset-lists/sdk";
-import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
+import { validate } from "jsonschema";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+  NETWORKS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { AssetsLists, AssetsListKey } from "@shared/constants/soroban/token";
+
 import { getApiStellarExpertUrl } from "popup/helpers/account";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
 export const searchAsset = async ({
   asset,
@@ -20,6 +28,34 @@ export const searchAsset = async ({
   } catch (e) {
     return onError(e);
   }
+};
+
+export const schemaValidatedAssetList = async (assetListJson: any) => {
+  let schemaRes;
+  try {
+    schemaRes = await fetch(
+      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
+    );
+  } catch (err) {
+    captureException("Error fetching SEP-0042 JSON schema");
+    return { assets: [] };
+  }
+
+  if (!schemaRes.ok) {
+    captureException("Unable to fetch SEP-0042 JSON schema");
+    return { assets: [] };
+  }
+
+  const schemaResJson = await schemaRes?.json();
+
+  // check against the SEP-0042 schema
+  const validatedList = validate(assetListJson, schemaResJson);
+
+  if (validatedList.errors.length) {
+    return { assets: [], errors: validatedList.errors };
+  }
+
+  return assetListJson;
 };
 
 export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
@@ -48,34 +84,6 @@ export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
   }
 };
 
-export const searchTokenUrl = (networkDetails: NetworkDetails) =>
-  `${getApiStellarExpertUrl(networkDetails)}/asset-list/top50`;
-
-export const searchToken = async ({
-  networkDetails,
-  onError,
-}: {
-  networkDetails: NetworkDetails;
-  onError: (e: any) => void;
-}) => {
-  let verifiedAssets = [] as TokenRecord[];
-  try {
-    const res: { assets: TokenRecord[] } = await fetchAssetList(
-      searchTokenUrl(networkDetails),
-    );
-    verifiedAssets = verifiedAssets.concat(res.assets);
-  } catch (e) {
-    onError(e);
-  }
-
-  // add native contract to list
-  verifiedAssets = verifiedAssets.concat([
-    getNativeContractDetails(networkDetails),
-  ]);
-
-  return verifiedAssets;
-};
-
 export interface TokenRecord {
   code: string;
   issuer: string;
@@ -86,39 +94,102 @@ export interface TokenRecord {
   decimals: number;
 }
 
+export type VerifiedTokenRecord = TokenRecord & { verifiedLists: string[] };
+
 export const getVerifiedTokens = async ({
   networkDetails,
   contractId,
   setIsSearching,
+  assetsLists,
 }: {
   networkDetails: NetworkDetails;
   contractId: string;
   setIsSearching?: (isSearching: boolean) => void;
+  assetsLists: AssetsLists;
 }) => {
-  let verifiedTokens = [] as TokenRecord[];
+  let network = networkDetails.network;
 
-  const fetchVerifiedTokens = async () => {
-    const verifiedTokenRes = await searchToken({
-      networkDetails,
-      onError: (e) => {
-        console.error(e);
-        if (setIsSearching) {
-          setIsSearching(false);
-          captureException("Unable to search stellar.expert token list");
+  if (network === CUSTOM_NETWORK) {
+    if (
+      networkDetails.networkPassphrase ===
+      MAINNET_NETWORK_DETAILS.networkPassphrase
+    ) {
+      network = MAINNET_NETWORK_DETAILS.network;
+    }
+    if (
+      networkDetails.networkPassphrase ===
+      TESTNET_NETWORK_DETAILS.networkPassphrase
+    ) {
+      network = TESTNET_NETWORK_DETAILS.network;
+    }
+  }
+
+  const networkLists = assetsLists[network as AssetsListKey];
+  const promiseArr = [];
+  const nativeContract = getNativeContractDetails(networkDetails);
+
+  if (contractId === nativeContract.contract) {
+    return [{ ...nativeContract, verifiedLists: [] }];
+  }
+  // eslint-disable-next-line no-restricted-syntax
+  for (const networkList of networkLists) {
+    const { url = "", isEnabled } = networkList;
+
+    if (isEnabled) {
+      const fetchAndParse = async () => {
+        let res;
+        try {
+          res = await fetch(url);
+        } catch (e) {
+          captureException(`Failed to load asset list: ${url}`);
         }
-      },
-    });
 
-    verifiedTokens = verifiedTokenRes.filter((record: TokenRecord) => {
-      const regex = new RegExp(contractId, "i");
-      if (record.contract.match(regex)) {
-        return true;
+        return res?.json();
+      };
+
+      promiseArr.push(fetchAndParse());
+    }
+  }
+
+  const promiseRes = await Promise.allSettled(promiseArr);
+
+  const verifiedTokens = [] as VerifiedTokenRecord[];
+
+  let verifiedToken = {} as TokenRecord;
+  const verifiedLists: string[] = [];
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const r of promiseRes) {
+    if (r.status === "fulfilled") {
+      // confirm that this list still adheres to the agreed upon schema
+      const validatedList = await schemaValidatedAssetList(r.value);
+      const list = validatedList?.tokens
+        ? validatedList?.tokens
+        : validatedList?.assets;
+      if (list) {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const record of list) {
+          const regex = new RegExp(contractId, "i");
+          if (record.contract && record.contract.match(regex)) {
+            verifiedToken = record;
+            verifiedLists.push(r.value.name as string);
+            break;
+          }
+        }
       }
-      return false;
-    });
-  };
+    }
+  }
 
-  await fetchVerifiedTokens();
+  if (Object.keys(verifiedToken).length) {
+    verifiedTokens.push({
+      ...verifiedToken,
+      verifiedLists,
+    });
+  }
+
+  if (setIsSearching) {
+    setIsSearching(false);
+  }
 
   return verifiedTokens;
 };

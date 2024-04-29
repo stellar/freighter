@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { StellarToml, Networks } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -44,7 +44,7 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   ScamAssetWarning,
   NewAssetWarning,
-  UnverifiedTokenWarning,
+  TokenWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
@@ -55,8 +55,6 @@ import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { isContractId } from "popup/helpers/soroban";
 import IconAdd from "popup/assets/icon-add.svg";
 import IconRemove from "popup/assets/icon-remove.svg";
-
-import { SorobanContext } from "popup/SorobanContext";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -74,6 +72,16 @@ interface ManageAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   chooseAsset?: boolean;
   isVerifiedToken?: boolean;
+  isVerificationInfoShowing?: boolean;
+  verifiedLists?: string[];
+}
+
+interface SuspiciousAssetData {
+  domain: string;
+  code: string;
+  issuer: string;
+  image: string;
+  isVerifiedToken?: boolean;
 }
 
 export const ManageAssetRows = ({
@@ -82,6 +90,8 @@ export const ManageAssetRows = ({
   assetRows,
   chooseAsset,
   isVerifiedToken,
+  isVerificationInfoShowing,
+  verifiedLists,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -114,8 +124,8 @@ export const ManageAssetRows = ({
     code: "",
     issuer: "",
     image: "",
-  });
-  const sorobanClient = useContext(SorobanContext);
+    isVerifiedToken: false,
+  } as SuspiciousAssetData);
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -172,7 +182,6 @@ export const ManageAssetRows = ({
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
-          sorobanClient,
         }),
       );
 
@@ -182,7 +191,6 @@ export const ManageAssetRows = ({
           getAccountBalances({
             publicKey,
             networkDetails,
-            sorobanClient,
           }),
         );
         trackChangeTrustline();
@@ -264,7 +272,16 @@ export const ManageAssetRows = ({
     const contractId = assetRowData.issuer;
     setAssetSubmitting(canonicalAsset || contractId);
     if (!isTrustlineActive) {
-      if (isVerifiedToken) {
+      if (isVerificationInfoShowing) {
+        setSuspiciousAssetData({
+          domain: assetRowData.domain,
+          code: assetRowData.code,
+          issuer: assetRowData.issuer,
+          image: assetRowData.image,
+          isVerifiedToken: !!isVerifiedToken,
+        });
+        setShowUnverifiedWarning(true);
+      } else {
         await dispatch(
           addTokenId({
             publicKey,
@@ -273,14 +290,6 @@ export const ManageAssetRows = ({
           }),
         );
         navigateTo(ROUTES.account);
-      } else {
-        setSuspiciousAssetData({
-          domain: assetRowData.domain,
-          code: assetRowData.code,
-          issuer: assetRowData.issuer,
-          image: assetRowData.image,
-        });
-        setShowUnverifiedWarning(true);
       }
     } else {
       await dispatch(
@@ -322,13 +331,15 @@ export const ManageAssetRows = ({
         />
       )}
       {showUnverifiedWarning && (
-        <UnverifiedTokenWarning
+        <TokenWarning
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           onClose={() => {
             setShowUnverifiedWarning(false);
           }}
+          isVerifiedToken={!!suspiciousAssetData.isVerifiedToken}
+          verifiedLists={verifiedLists}
         />
       )}
       <div className="ManageAssetRows__scrollbar">
@@ -471,6 +482,9 @@ export const ManageAssetRow = ({
   const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   const isScamAsset = !!blockedDomains.domains[domain];
+  const assetCode = name || code;
+  const truncatedAssetCode =
+    assetCode.length > 20 ? truncateString(assetCode) : assetCode;
 
   return (
     <>
@@ -481,7 +495,7 @@ export const ManageAssetRow = ({
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
-          <span data-testid="ManageAssetCode">{name || code}</span>
+          <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
           <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div

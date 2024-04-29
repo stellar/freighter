@@ -1,0 +1,37 @@
+name: Run Snapshots
+env:
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch name
+        default: ""
+        required: true
+jobs:
+  test-ci:
+    name: test snapshots
+    timeout-minutes: 20
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 18
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - name: Install docker # Taken from https://github.com/actions/virtual-environments/issues/1143#issuecomment-652264388
+        run: |
+          mkdir -p ~/.docker/machine/cache
+          curl -Lo ~/.docker/machine/cache/boot2docker.iso https://github.com/boot2docker/boot2docker/releases/download/v19.03.12/boot2docker.iso
+          brew install docker docker-machine
+          docker-machine create --driver virtualbox default
+          docker-machine env default
+      - run: npm install -g yarn && yarn
+      - run: npx playwright install --with-deps chromium
+      - run: yarn setup
+      - run: yarn build:freighter-api
+      - run: yarn build:extension
+      - run: yarn test:e2e

@@ -125,6 +125,14 @@ export const ConfirmMnemonicPhrase = ({
                     handleChange(e);
                     updatePhrase(e.target as HTMLInputElement);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      e.target.checked = e.target.value !== "true";
+                      handleChange(e);
+                      updatePhrase(e.target as HTMLInputElement);
+                    }
+                  }}
                   wordKey={wordKey}
                   word={convertToWord(wordKey)}
                 />

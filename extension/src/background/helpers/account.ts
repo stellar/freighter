@@ -10,16 +10,14 @@ import {
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
+  ASSETS_LISTS_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
 import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
-import {
-  isMainnet,
-  isTestnet,
-  isFuturenet,
-  isCustomNetwork,
-} from "helpers/stellar";
+import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
@@ -136,6 +134,16 @@ export const getNetworksList = async () => {
     (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
   return networksList;
+};
+
+export const getAssetsLists = async () => {
+  if (!(await localStore.getItem(ASSETS_LISTS_ID))) {
+    await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
+  }
+  const assetLists =
+    (await localStore.getItem(ASSETS_LISTS_ID)) ?? DEFAULT_ASSETS_LISTS;
+
+  return assetLists;
 };
 
 export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
