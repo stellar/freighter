@@ -7,6 +7,7 @@ import {
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
   TOKEN_ID_LIST,
+  ASSETS_LISTS_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -17,6 +18,7 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
 
 interface SetItemParams {
   [key: string]: any;
@@ -149,8 +151,8 @@ const migrateTokenIdList = async () => {
       [NETWORKS.FUTURENET]: tokenIdsByKey,
     };
     await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    await migrateDataStorageVersion("1.0.0");
   }
-  await migrateDataStorageVersion("1.0.0");
 };
 
 const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
@@ -253,6 +255,18 @@ export const resetAccountSubscriptions = async () => {
   if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
     // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
+    await migrateDataStorageVersion("4.0.2");
+  }
+};
+
+export const addAssetsLists = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.1.0")) {
+    // add the base asset lists
+    await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
+    await migrateDataStorageVersion("4.1.0");
   }
 };
 
@@ -265,6 +279,7 @@ export const versionedMigration = async () => {
   await migrateMainnetSorobanRpcUrlNetworkDetails();
   await migrateSorobanRpcUrlNetwork();
   await resetAccountSubscriptions();
+  await addAssetsLists();
 };
 
 // Updates storage version

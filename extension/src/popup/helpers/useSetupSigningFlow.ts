@@ -55,7 +55,6 @@ export function useSetupSigningFlow(
   };
 
   const signAndClose = async () => {
-    emitMetric(METRIC_NAMES.approveSign);
     if (isHardwareWallet) {
       dispatch(
         startHwSign({ transactionXDR: transactionXdr, shouldSubmit: false }),
@@ -63,6 +62,7 @@ export function useSetupSigningFlow(
       setStartedHwSign(true);
     } else {
       await dispatch(signFn());
+      await emitMetric(METRIC_NAMES.approveSign);
       window.close();
     }
   };

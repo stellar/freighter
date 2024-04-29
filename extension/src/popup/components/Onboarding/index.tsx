@@ -97,7 +97,7 @@ export const OnboardingButtons = ({
           {showBackButton ? (
             <BackButton
               customButtonComponent={
-                <Button variant="secondary" size="md">
+                <Button variant="secondary" size="md" type="button">
                   {t("Back")}
                 </Button>
               }

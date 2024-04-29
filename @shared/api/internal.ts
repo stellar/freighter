@@ -12,6 +12,7 @@ import {
 import { DataProvider } from "@stellar/wallet-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { AssetsListItem, AssetsLists } from "@shared/constants/soroban/token";
 import {
   getBalance,
   getDecimals,
@@ -36,12 +37,18 @@ import {
   NETWORKS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -518,13 +525,9 @@ export const getSorobanTokenBalance = async (
 export const getAccountBalancesStandalone = async ({
   publicKey,
   networkDetails,
-  sorobanClientServer,
-  sorobanClientTxBuilder,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-  sorobanClientServer: SorobanRpc.Server;
-  sorobanClientTxBuilder: () => Promise<TransactionBuilder>;
 }): Promise<AccountBalancesInterface> => {
   const { network, networkUrl, networkPassphrase } = networkDetails;
 
@@ -583,6 +586,12 @@ export const getAccountBalancesStandalone = async ({
   const tokensWithNoBalance = [];
 
   if (tokenIdList.length) {
+    if (!networkDetails.sorobanRpcUrl) {
+      throw new SorobanRpcNotSupportedError();
+    }
+
+    const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+
     const params = [new Address(publicKey).toScVal()];
 
     for (let i = 0; i < tokenIdList.length; i += 1) {
@@ -596,13 +605,13 @@ export const getAccountBalancesStandalone = async ({
       try {
         /* eslint-disable no-await-in-loop */
         const { balance, symbol, ...rest } = await getSorobanTokenBalance(
-          sorobanClientServer,
+          server,
           tokenId,
           {
-            balance: await sorobanClientTxBuilder(),
-            name: await sorobanClientTxBuilder(),
-            decimals: await sorobanClientTxBuilder(),
-            symbol: await sorobanClientTxBuilder(),
+            balance: await getNewTxBuilder(publicKey, networkDetails, server),
+            name: await getNewTxBuilder(publicKey, networkDetails, server),
+            decimals: await getNewTxBuilder(publicKey, networkDetails, server),
+            symbol: await getNewTxBuilder(publicKey, networkDetails, server),
           },
           params,
         );
@@ -684,6 +693,79 @@ export const getIndexerAccountHistory = async ({
   } catch (e) {
     console.error(e);
     return [];
+  }
+};
+
+export const getAccountHistory = async (
+  publicKey: string,
+  networkDetails: NetworkDetails,
+) => {
+  if (isCustomNetwork(networkDetails)) {
+    return await getAccountHistoryStandalone({
+      publicKey,
+      networkDetails,
+    });
+  }
+  return await getIndexerAccountHistory({
+    publicKey,
+    networkDetails,
+  });
+};
+
+export const getTokenDetails = async ({
+  contractId,
+  publicKey,
+  networkDetails,
+}: {
+  contractId: string;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<{ name: string; decimals: number; symbol: string } | null> => {
+  try {
+    if (isCustomNetwork(networkDetails)) {
+      if (!networkDetails.sorobanRpcUrl) {
+        throw new SorobanRpcNotSupportedError();
+      }
+
+      // You need one Tx Builder per call in Soroban right now
+      const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+      const name = await getName(
+        contractId,
+        server,
+        await getNewTxBuilder(publicKey, networkDetails, server),
+      );
+      const symbol = await getSymbol(
+        contractId,
+        server,
+        await getNewTxBuilder(publicKey, networkDetails, server),
+      );
+      const decimals = await getDecimals(
+        contractId,
+        server,
+        await getNewTxBuilder(publicKey, networkDetails, server),
+      );
+
+      return {
+        name,
+        symbol,
+        decimals,
+      };
+    }
+
+    const response = await fetch(
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data);
+    }
+    return data;
+  } catch (error) {
+    console.error(error);
+    captureException(
+      `Failed to fetch token details - ${JSON.stringify(error)}`,
+    );
+    return null;
   }
 };
 
@@ -910,7 +992,7 @@ export const submitFreighterSorobanTransaction = async ({
   }
 
   if (!networkDetails.sorobanRpcUrl) {
-    throw new Error("soroban rpc not supported");
+    throw new SorobanRpcNotSupportedError();
   }
 
   const serverUrl = networkDetails.sorobanRpcUrl || "";
@@ -1162,7 +1244,9 @@ export const editCustomNetwork = async ({
   return response;
 };
 
-export const loadSettings = (): Promise<Settings & IndexerSettings> =>
+export const loadSettings = (): Promise<
+  Settings & IndexerSettings & { assetsLists: AssetsLists }
+> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
@@ -1230,4 +1314,49 @@ export const removeTokenId = async ({
     network,
   });
   return resp.tokenIdList;
+};
+
+export const addAssetsList = async ({
+  assetsList,
+  network,
+}: {
+  assetsList: AssetsListItem;
+  network: NETWORKS;
+}) => {
+  let response = {
+    error: "",
+    assetsLists: {} as AssetsLists,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.ADD_ASSETS_LIST,
+    assetsList,
+    network,
+  });
+
+  return { assetsLists: response.assetsLists, error: response.error };
+};
+
+export const modifyAssetsList = async ({
+  assetsList,
+  network,
+  isDeleteAssetsList,
+}: {
+  assetsList: AssetsListItem;
+  network: NETWORKS;
+  isDeleteAssetsList: boolean;
+}) => {
+  let response = {
+    error: "",
+    assetsLists: {} as AssetsLists,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.MODIFY_ASSETS_LIST,
+    assetsList,
+    network,
+    isDeleteAssetsList,
+  });
+
+  return { assetsLists: response.assetsLists, error: response.error };
 };

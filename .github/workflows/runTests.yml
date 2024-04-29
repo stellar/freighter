@@ -1,4 +1,6 @@
 name: Run Tests
+env:
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
 on: [pull_request]
 jobs:
   test-ci:

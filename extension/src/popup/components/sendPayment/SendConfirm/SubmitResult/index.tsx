@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
 import { Button, Icon, Link, Notification } from "@stellar/design-system";
@@ -35,7 +35,6 @@ import "./styles.scss";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { formatAmount } from "popup/helpers/formatters";
-import { SorobanContext } from "popup/SorobanContext";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -83,7 +82,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { t } = useTranslation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
 
   const sourceAsset = getAssetFromCanonical(asset);
   const { recommendedFee } = useNetworkFees();
@@ -144,7 +142,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
-          sorobanClient,
         }),
       );
 
