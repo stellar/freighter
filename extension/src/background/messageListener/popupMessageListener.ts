@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import { Store } from "redux";
 import {
   Keypair,
@@ -34,6 +36,7 @@ import { MessageResponder } from "background/types";
 import {
   ALLOWLIST_ID,
   APPLICATION_ID,
+  ASSETS_LISTS_ID,
   CACHED_ASSET_ICONS_ID,
   CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
@@ -70,11 +73,19 @@ import {
   getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
   getIsHardwareWalletActive,
+  getIsRpcHealthy,
+  getUserNotification,
   getSavedNetworks,
   getNetworkDetails,
   getNetworksList,
+  getAssetsLists,
   HW_PREFIX,
   getBipPath,
+  subscribeTokenBalance,
+  subscribeAccount,
+  subscribeTokenHistory,
+  getFeatureFlags,
+  verifySorobanRpcUrls,
 } from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -96,39 +107,43 @@ import {
   publicKeySelector,
   setActivePublicKey,
   setActivePrivateKey,
-  setPassword,
-  setMigratedMnemonicPhrase,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
   reset,
   passwordSelector,
+  setMigratedMnemonicPhrase,
 } from "background/ducks/session";
 import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
+import {
+  AssetsListKey,
+  DEFAULT_ASSETS_LISTS,
+} from "@shared/constants/soroban/token";
 
 // number of public keys to auto-import
 const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
+// eslint-disable-next-line
 export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Array<Transaction> = [];
-export const blobQueue: Array<{
+export const transactionQueue: Transaction[] = [];
+export const blobQueue: {
   isDomainListedAllowed: boolean;
   domain: string;
   tab: browser.Tabs.Tab | undefined;
   blob: string;
   url: string;
   accountToSign: string;
-}> = [];
+}[] = [];
 
-export const authEntryQueue: Array<{
+export const authEntryQueue: {
   accountToSign: string;
   tab: browser.Tabs.Tab | undefined;
   entry: string; // xdr.SorobanAuthorizationEntry
   url: string;
-}> = [];
+}[] = [];
 
 interface KeyPair {
   publicKey: string;
@@ -183,7 +198,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const keyId = `${HW_PREFIX}${publicKey}`;
     const keyIdListArr = await getKeyIdList();
     const accountName = `${hardwareWalletType} ${
-      keyIdListArr.filter((k: string) => k.indexOf(HW_PREFIX) !== -1).length + 1
+      allAccounts.filter(
+        ({ hardwareWalletType: hwType }) => hwType !== hardwareWalletType,
+      ).length + 1
     }`;
 
     if (keyIdListArr.indexOf(keyId) === -1) {
@@ -211,12 +228,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(KEY_ID, keyId);
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
         allAccounts,
-      }),
+      }) as any,
     );
 
     // an active hw account should not have an active private key
@@ -239,7 +256,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const allAccounts = allAccountsSelector(sessionStore.getState());
     const accountName = `Account ${allAccounts.length + 1}`;
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
@@ -251,7 +268,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             imported,
           },
         ],
-      }),
+      }) as any,
     );
 
     const keyMetadata = {
@@ -314,12 +331,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       imported: false,
     };
 
-    sessionStore.dispatch(
+    await sessionStore.dispatch(
       logIn({
         publicKey,
         mnemonicPhrase,
         allAccounts: newAllAccounts,
-      }),
+      }) as any,
     );
 
     const keyMetadata = {
@@ -366,7 +383,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(KEY_ID, activeKeyId);
 
-    sessionStore.dispatch(setActivePublicKey({ publicKey }));
+    await sessionStore.dispatch(setActivePublicKey({ publicKey }) as any);
   };
 
   const fundAccount = async () => {
@@ -636,16 +653,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const changeNetwork = async () => {
     const { networkName } = request;
+    const currentState = sessionStore.getState();
 
     const savedNetworks = await getSavedNetworks();
+    const pubKey = publicKeySelector(currentState);
     const networkDetails =
       savedNetworks.find(
         ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
     await localStore.setItem(NETWORK_ID, networkDetails);
+    await subscribeAccount(pubKey);
 
-    return { networkDetails };
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+
+    return { networkDetails, isRpcHealthy };
   };
 
   const loadAccount = async () => {
@@ -743,7 +765,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       localStore.clear();
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
-      _storeAccount({ mnemonicPhrase: recoverMnemonic, password, keyPair });
+      await _storeAccount({
+        mnemonicPhrase: recoverMnemonic,
+        password,
+        keyPair,
+      });
 
       // if we don't have an application state, assign them one
       applicationState =
@@ -827,10 +853,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const _getLocalStorageAccounts = async (password: string) => {
     const keyIdList = await getKeyIdList();
     const accountNameList = await getAccountNameList();
-    const unlockedAccounts = [] as Array<Account>;
+    const unlockedAccounts = [] as Account[];
 
     // for loop to preserve order of accounts
-    // eslint-disable-next-line no-plusplus
+    // eslint-disable-next-line
     for (let i = 0; i < keyIdList.length; i++) {
       const keyId = keyIdList[i];
       let keyStore;
@@ -928,12 +954,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // construct allAccounts from local storage
       // log the user in using all accounts and public key/phrase from above to create the store
 
-      sessionStore.dispatch(
+      await sessionStore.dispatch(
         logIn({
           publicKey: hwPublicKey || activePublicKey,
           mnemonicPhrase: activeMnemonicPhrase,
           allAccounts: await _getLocalStorageAccounts(password),
-        }),
+        }) as any,
       );
     }
 
@@ -944,8 +970,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         setActivePrivateKey({ privateKey: activePrivateKey }),
       );
     }
-
-    sessionStore.dispatch(setPassword({ password }));
 
     return {
       publicKey: publicKeySelector(sessionStore.getState()),
@@ -1028,7 +1052,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signBlob = async () => {
+  const signBlob = () => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
@@ -1036,7 +1060,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       const blob = blobQueue.pop();
       const response = blob
-        ? await sourceKeys.sign(Buffer.from(blob.blob, "base64"))
+        ? sourceKeys.sign(Buffer.from(blob.blob, "base64"))
         : null;
 
       const blobResponse = responseQueue.pop();
@@ -1050,7 +1074,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signAuthEntry = async () => {
+  const signAuthEntry = () => {
     const privateKey = privateKeySelector(sessionStore.getState());
 
     if (privateKey.length) {
@@ -1058,7 +1082,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? await sourceKeys.sign(hash(Buffer.from(authEntry.entry, "base64")))
+        ? sourceKeys.sign(hash(Buffer.from(authEntry.entry, "base64")))
         : null;
 
       const entryResponse = responseQueue.pop();
@@ -1188,6 +1212,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     );
 
+    const networkDetails = await getNetworkDetails();
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const featureFlags = await getFeatureFlags();
+
     return {
       allowList: await getAllowList(),
       isDataSharingAllowed,
@@ -1195,14 +1223,23 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
       isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
-      networkDetails: await getNetworkDetails(),
+      networkDetails,
       networksList: await getNetworksList(),
+      isRpcHealthy,
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
     };
   };
 
   const loadSettings = async () => {
+    await verifySorobanRpcUrls();
+
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
+    const networkDetails = await getNetworkDetails();
+    const featureFlags = await getFeatureFlags();
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const userNotification = await getUserNotification();
+    const assetsLists = await getAssetsLists();
 
     return {
       allowList: await getAllowList(),
@@ -1213,6 +1250,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
+      isRpcHealthy,
+      userNotification,
+      assetsLists,
     };
   };
 
@@ -1312,7 +1353,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addTokenId = async () => {
-    const { tokenId, network } = request;
+    const { tokenId, network, publicKey } = request;
     const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
     const tokenIdList = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
@@ -1323,14 +1364,22 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       return { error: "Token ID already exists" };
     }
 
-    accountTokenIdList.push(tokenId);
-    await localStore.setItem(TOKEN_ID_LIST, {
-      ...tokenIdsByNetwork,
-      [network]: {
-        ...tokenIdList,
-        [keyId]: accountTokenIdList,
-      },
-    });
+    try {
+      await subscribeTokenBalance(publicKey, tokenId);
+      await subscribeTokenHistory(publicKey, tokenId);
+
+      accountTokenIdList.push(tokenId);
+      await localStore.setItem(TOKEN_ID_LIST, {
+        ...tokenIdsByNetwork,
+        [network]: {
+          ...tokenIdList,
+          [keyId]: accountTokenIdList,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      return { error: "Failed to subscribe to token details" };
+    }
 
     return { accountTokenIdList };
   };
@@ -1367,7 +1416,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const getMigratableAccounts = async () => {
-    const keyIdList = await getKeyIdList();
+    const keyIdList = (await getKeyIdList()) as string[];
 
     const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
     const allAccounts = allAccountsSelector(sessionStore.getState());
@@ -1415,8 +1464,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const migratedAccounts = [];
 
     const password = passwordSelector(sessionStore.getState());
-    if (!password || !migratedMnemonicPhrase)
+    if (!password || !migratedMnemonicPhrase) {
       return { error: "Authentication error" };
+    }
 
     const newWallet = fromMnemonic(migratedMnemonicPhrase);
     const keyIdList: string = await getKeyIdList();
@@ -1437,6 +1487,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account
     */
 
+    // eslint-disable-next-line
     for (let i = 0; i < balancesToMigrate.length; i += 1) {
       const {
         publicKey,
@@ -1466,7 +1517,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       };
 
       // eslint-disable-next-line no-await-in-loop
-      const transaction = await new TransactionBuilder(sourceAccount, {
+      const transaction = new TransactionBuilder(sourceAccount, {
         fee,
         networkPassphrase,
       });
@@ -1532,7 +1583,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
         // eslint-disable-next-line no-await-in-loop
-        const mergeTransaction = await new TransactionBuilder(sourceAccount, {
+        const mergeTransaction = new TransactionBuilder(sourceAccount, {
           fee,
           networkPassphrase,
         });
@@ -1601,6 +1652,57 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     };
   };
 
+  const addAssetsList = async () => {
+    const { assetsList, network } = request;
+
+    const currentAssetsLists = await getAssetsLists();
+
+    if (
+      currentAssetsLists[network].some(
+        (list: { url: string }) => list.url === assetsList.url,
+      )
+    ) {
+      return {
+        error: "Asset list already exists",
+      };
+    }
+
+    currentAssetsLists[network].push(assetsList);
+
+    await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
+
+    return { assetsLists: await getAssetsLists() };
+  };
+
+  const modifyAssetsList = async () => {
+    const { assetsList, network, isDeleteAssetsList } = request;
+
+    const currentAssetsLists = await getAssetsLists();
+    const networkAssetsLists = currentAssetsLists[network];
+
+    const index = networkAssetsLists.findIndex(
+      ({ url }: { url: string }) => url === assetsList.url,
+    );
+
+    if (
+      index < DEFAULT_ASSETS_LISTS[network as AssetsListKey].length &&
+      isDeleteAssetsList
+    ) {
+      // if a user is somehow able to trigger a delete on a default asset list, return an error
+      return { error: "Unable to delete asset list" };
+    }
+
+    if (isDeleteAssetsList) {
+      networkAssetsLists.splice(index, 1);
+    } else {
+      networkAssetsLists.splice(index, 1, assetsList);
+    }
+
+    await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
+
+    return { assetsLists: await getAssetsLists() };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1648,7 +1750,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS]: getMigratableAccounts,
     [SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE]: getMigratedMnemonicPhrase,
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
+    [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
+    [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
   };
 
   return messageResponder[request.type]();
 };
+
+/* eslint-enable @typescript-eslint/no-unsafe-argument */

@@ -2,13 +2,15 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
-import { Button, Card, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
 import {
-  FeeBumpTransaction,
   MuxedAccount,
   Transaction,
   TransactionBuilder,
   Federation,
+  Memo,
+  MemoType,
+  Operation,
 } from "stellar-sdk";
 
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
@@ -19,8 +21,9 @@ import {
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
-import { TRANSACTION_WARNING } from "constants/transaction";
+import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
+import { encodeObject } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
@@ -30,12 +33,11 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { TransactionHeading } from "popup/basics/TransactionHeading";
-
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-import { AccountList, OptionTag } from "popup/components/account/AccountList";
+import { AccountList } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessageVariant,
@@ -43,17 +45,17 @@ import {
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
-import { Transaction as SignTxTransaction } from "popup/components/signTransaction/Transaction";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SlideupModal } from "popup/components/SlideupModal";
-import { View } from "popup/basics/layout/View";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
+import { Tabs } from "popup/components/Tabs";
+import { Summary } from "./Preview/Summary";
+import { Details } from "./Preview/Details";
+import { Data } from "./Preview/Data";
 
 import "./styles.scss";
-
-import { FlaggedKeys } from "types/transactions";
-import { TransactionInfo } from "popup/components/signTransaction/TransactionInfo";
 
 export const SignTransaction = () => {
   const location = useLocation();
@@ -72,6 +74,7 @@ export const SignTransaction = () => {
 
   const {
     accountToSign: _accountToSign,
+    transaction: { _fee, _networkPassphrase },
     transactionXdr,
     domain,
     isDomainListedAllowed,
@@ -79,27 +82,17 @@ export const SignTransaction = () => {
     flaggedKeys,
   } = tx;
 
-  /*
-  Reconstruct the tx from xdr as passing a tx through extension contexts
-  loses custom prototypes associated with some values. This is fine for most cases
-  where we just need a high level overview of the tx, like just a list of operations.
-  But in this case, we will need the hostFn prototype associated with Soroban tx operations.
-  */
-
+  // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
     transactionXdr,
-    networkPassphrase,
-  ) as Transaction | FeeBumpTransaction;
-
-  const { fee: _fee, networkPassphrase: _networkPassphrase } = transaction;
+    _networkPassphrase as string,
+  );
 
   let isFeeBump = false;
-  let _innerTransaction;
   let _memo = {};
-  let _sequence;
+  let _sequence = "";
 
   if ("innerTransaction" in transaction) {
-    _innerTransaction = transaction.innerTransaction;
     isFeeBump = true;
   } else {
     _sequence = transaction.sequence;
@@ -123,6 +116,7 @@ export const SignTransaction = () => {
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   } = useSetupSigningFlow(
     rejectTransaction,
     signTransaction,
@@ -130,7 +124,7 @@ export const SignTransaction = () => {
     accountToSign,
   );
 
-  const flaggedKeyValues = Object.values(flaggedKeys as FlaggedKeys);
+  const flaggedKeyValues = Object.values(flaggedKeys);
   const isUnsafe = flaggedKeyValues.some(({ tags }) =>
     tags.includes(TRANSACTION_WARNING.unsafe),
   );
@@ -141,7 +135,7 @@ export const SignTransaction = () => {
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
-  const resolveFederatedAddress = useCallback(async (inputDest) => {
+  const resolveFederatedAddress = useCallback(async (inputDest: string) => {
     let resolvedPublicKey;
     try {
       const fedResp = await Federation.Server.resolve(inputDest);
@@ -161,7 +155,7 @@ export const SignTransaction = () => {
       }
       if (isFederationAddress(_accountToSign)) {
         accountToSign = (await resolveFederatedAddress(
-          accountToSign,
+          accountToSign!,
         )) as string;
       }
     }
@@ -218,6 +212,80 @@ export const SignTransaction = () => {
     );
   }
 
+  function renderTab(tab: string) {
+    function renderTabBody() {
+      const _tx = transaction as Transaction<Memo<MemoType>, Operation[]>;
+      switch (tab) {
+        case "Summary": {
+          return (
+            <Summary
+              sequenceNumber={_sequence}
+              fee={_fee}
+              memo={decodedMemo}
+              operationNames={_tx.operations.map(
+                (op) => OPERATION_TYPES[op.type] || op.type,
+              )}
+            />
+          );
+        }
+
+        case "Details": {
+          return (
+            <Details
+              operations={_tx.operations}
+              flaggedKeys={flaggedKeys}
+              isMemoRequired={isMemoRequired}
+            />
+          );
+        }
+
+        case "Data": {
+          return <Data xdr={_tx.toXDR()} />;
+        }
+
+        default:
+          return <></>;
+      }
+    }
+
+    return (
+      <div className="BodyWrapper">
+        {accountNotFound && accountToSign ? (
+          <div className="SignTransaction__account-not-found">
+            <Notification
+              variant="warning"
+              icon={<Icon.Warning />}
+              title={t("Account not available")}
+            >
+              {t("The application is requesting a specific account")} (
+              {truncatedPublicKey(accountToSign)}),{" "}
+              {t(
+                "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
+              )}
+            </Notification>
+          </div>
+        ) : null}
+        {flaggedKeyValues.length ? (
+          <FlaggedWarningMessage
+            isUnsafe={isUnsafe}
+            isMalicious={isMalicious}
+            isMemoRequired={isMemoRequired}
+          />
+        ) : null}
+        {!isDomainListedAllowed && !isSubmitDisabled ? (
+          <FirstTimeWarningMessage />
+        ) : null}
+        {renderTabBody()}
+      </div>
+    );
+  }
+
+  const needsReviewAuth =
+    !isFeeBump &&
+    (transaction as Transaction<Memo<MemoType>, Operation[]>).operations.some(
+      (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
+    );
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -226,126 +294,82 @@ export const SignTransaction = () => {
     />
   ) : (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <View data-testid="SignTransaction">
-        <View.AppHeader pageTitle={t("Confirm Transaction")} />
-        <View.Content>
-          {isExperimentalModeEnabled ? (
-            <WarningMessage
-              header="Experimental Mode"
-              variant={WarningMessageVariant.default}
-            >
-              <p>
-                {t(
-                  "You are interacting with a transaction that may be using untested and changing schemas. Proceed at your own risk.",
-                )}
-              </p>
-            </WarningMessage>
-          ) : null}
-          {flaggedKeyValues.length ? (
-            <FlaggedWarningMessage
-              isUnsafe={isUnsafe}
-              isMalicious={isMalicious}
-              isMemoRequired={isMemoRequired}
-            />
-          ) : null}
-          {!isDomainListedAllowed && !isSubmitDisabled ? (
-            <FirstTimeWarningMessage />
-          ) : null}
-          <div className="SignTransaction__info">
-            <Card variant="secondary">
-              <PunycodedDomain domain={domain} isRow />
-              <div className="SignTransaction__subject">
-                {t("is requesting approval to a")}{" "}
-                {isFeeBump ? "fee bump " : ""}
-                {t("transaction")}:
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
+      <div data-testid="SignTransaction" className="SignTransaction">
+        <div className="SignTransaction__Body">
+          <div className="SignTransaction__Title">
+            <PunycodedDomain domain={domain} domainTitle="" />
+            <div className="SignTransaction--connection-request">
+              <div className="SignTransaction--connection-request-pill">
+                <Icon.Link />
+                <p>Transaction Request</p>
               </div>
-              <div className="SignTransaction__approval">
-                <div className="SignTransaction__approval__title">
-                  {t("Approve using")}:
-                </div>
-                <div
-                  className="SignTransaction__current-account"
-                  onClick={() => setIsDropdownOpen(true)}
-                >
-                  <AccountListIdenticon
-                    displayKey
-                    accountName={currentAccount.name}
-                    active
-                    publicKey={currentAccount.publicKey}
-                    setIsDropdownOpen={setIsDropdownOpen}
-                  >
-                    <OptionTag
-                      hardwareWalletType={currentAccount.hardwareWalletType}
-                      imported={currentAccount.imported}
-                    />
-                  </AccountListIdenticon>
-                  <div className="SignTransaction__current-account__chevron">
-                    <Icon.ChevronDown />
-                  </div>
-                </div>
-              </div>
-            </Card>
-            {accountNotFound && accountToSign ? (
-              <div className="SignTransaction__account-not-found">
-                <Notification
-                  variant="warning"
-                  icon={<Icon.Warning />}
-                  title={t("Account not available")}
-                >
-                  {t("The application is requesting a specific account")} (
-                  {truncatedPublicKey(accountToSign)}),{" "}
-                  {t(
-                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
-                  )}
-                </Notification>
-              </div>
-            ) : null}
-          </div>
-          {isFeeBump ? (
-            <div className="SignTransaction__inner-transaction">
-              <SignTxTransaction
-                flaggedKeys={flaggedKeys}
-                isMemoRequired={isMemoRequired}
-                transaction={_innerTransaction}
-              />
             </div>
-          ) : (
-            <SignTxTransaction
-              flaggedKeys={flaggedKeys}
-              isMemoRequired={isMemoRequired}
-              transaction={transaction}
-            />
-          )}
-          <TransactionHeading>{t("Transaction Info")}</TransactionHeading>
-          <TransactionInfo
-            _fee={_fee}
-            _sequence={_sequence}
-            isFeeBump={isFeeBump}
-            isMemoRequired={isMemoRequired}
-            memo={memo ? decodedMemo : undefined}
-          />
-        </View.Content>
-        <View.Footer isInline>
-          <Button
-            isFullWidth
-            size="md"
-            variant="tertiary"
-            onClick={() => rejectAndClose()}
-          >
-            {t("Reject")}
-          </Button>
-          <Button
-            disabled={isSubmitDisabled}
-            variant="primary"
-            isFullWidth
-            size="md"
-            isLoading={isConfirming}
-            onClick={() => handleApprove()}
-          >
-            {t("Approve")}
-          </Button>
-        </View.Footer>
+          </div>
+          <Tabs tabs={["Summary", "Details", "Data"]} renderTab={renderTab} />
+          <div className="SignTransaction__Actions">
+            <div className="SignTransaction__Actions__SigningWith">
+              <h5>Signing with</h5>
+              <button
+                className="SignTransaction__Actions__PublicKey"
+                onClick={() => setIsDropdownOpen(true)}
+              >
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
+                <Icon.ChevronDown />
+              </button>
+            </div>
+            <div className="SignTransaction__Actions__BtnRow">
+              <Button
+                isFullWidth
+                size="md"
+                variant="secondary"
+                onClick={() => rejectAndClose()}
+              >
+                {t("Cancel")}
+              </Button>
+              {needsReviewAuth ? (
+                <Button
+                  disabled={isSubmitDisabled}
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() =>
+                    navigateTo(
+                      ROUTES.reviewAuthorization,
+                      `?${encodeObject({
+                        accountToSign,
+                        transactionXdr,
+                        domain,
+                        flaggedKeys,
+                        isMemoRequired,
+                        memo: decodedMemo,
+                      })}`,
+                    )
+                  }
+                >
+                  {t("Review")}
+                </Button>
+              ) : (
+                <Button
+                  disabled={isSubmitDisabled}
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Sign")}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
         <SlideupModal
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
@@ -358,7 +382,7 @@ export const SignTransaction = () => {
             />
           </div>
         </SlideupModal>
-      </View>
+      </div>
     </>
   );
 };

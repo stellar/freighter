@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -6,13 +6,11 @@ import {
   Asset,
   Memo,
   Operation,
-  SorobanRpc,
   TransactionBuilder,
 } from "stellar-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { SorobanContext, hasSorobanClient } from "popup/SorobanContext";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -21,12 +19,12 @@ import {
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
-  isCustomNetwork,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -60,7 +58,7 @@ import {
   AccountAssets,
   AssetIcon,
 } from "popup/components/account/AccountAssets";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
@@ -191,7 +189,6 @@ const getOperation = (
 };
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
-  const sorobanClient = useContext(SorobanContext);
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -273,18 +270,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handleXferTransaction = async () => {
     try {
-      if (!hasSorobanClient(sorobanClient)) {
-        throw new Error("Soroban RPC not supported for this network");
-      }
-
-      const preparedTransaction = SorobanRpc.assembleTransaction(
-        transactionSimulation.raw!,
-        transactionSimulation.response!,
-      );
-
       const res = await dispatch(
         signFreighterSorobanTransaction({
-          transactionXDR: preparedTransaction.build().toXDR(),
+          transactionXDR: transactionSimulation.preparedTransaction!,
           network: networkDetails.networkPassphrase,
         }),
       );
@@ -295,10 +283,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterSorobanTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
-            refreshBalances: true,
           }),
         );
 
@@ -332,7 +319,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+      const transactionXDR = new TransactionBuilder(sourceAccount, {
         fee: xlmToStroop(transactionFee).toFixed(),
         networkPassphrase: networkDetails.networkPassphrase,
       })
@@ -368,7 +355,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            refreshBalances: true,
           }),
         );
 
@@ -431,8 +417,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   return (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <View data-testid="transaction-details-view">
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
+      <React.Fragment>
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -611,7 +599,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </>
           )}
         </View.Footer>
-      </View>
+      </React.Fragment>
     </>
   );
 };

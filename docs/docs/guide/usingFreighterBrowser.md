@@ -21,7 +21,7 @@ _NOTE:_ You must use version `1.1.2` or above
 
 This will expose a global variable called `window.freighterApi` that will contain our library.
 
-The call signatures will be exactly the same as the [node version](./usingFreighterNode), but you will call the methods directly from `window.freighterApi`:
+The call signatures will be exactly the same as the [node version](./usingFreighterWebApp), but you will call the methods directly from `window.freighterApi`:
 
 For example:
 

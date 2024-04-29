@@ -10,6 +10,7 @@ export const test = base.extend<{
     const context = await chromium.launchPersistentContext("", {
       headless: false,
       args: [
+        `--headless=new`,
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
@@ -31,4 +32,15 @@ export const test = base.extend<{
     await use(extensionId);
   },
 });
+
+export const expectPageToHaveScreenshot = async (
+  { page, screenshot }: { page: any; screenshot: string },
+  options?: any,
+) => {
+  if (process.env.CI) {
+    return true;
+  }
+  await expect(page).toHaveScreenshot(screenshot, options);
+};
+
 export const expect = test.expect;

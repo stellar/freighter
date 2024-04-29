@@ -1,5 +1,18 @@
 import { FeeBumpTransaction, Horizon, Transaction } from "stellar-sdk";
 
+interface HorizonError {
+  response: {
+    status: number;
+  };
+}
+const isHorizonError = (val: unknown): val is HorizonError =>
+  typeof val === "object" &&
+  val !== null &&
+  "response" in val &&
+  typeof val.response == "object" &&
+  val.response !== null &&
+  "status" in val.response;
+
 export const getIsAllowHttp = (networkUrl: string) =>
   !networkUrl.includes("https");
 
@@ -19,8 +32,8 @@ export const submitTx = async ({
 
   try {
     submittedTx = await server.submitTransaction(tx);
-  } catch (e) {
-    if (e.response.status === 504) {
+  } catch (e: unknown) {
+    if (isHorizonError(e) && e.response.status === 504) {
       // in case of 504, keep retrying this tx until submission succeeds or we get a different error
       // https://developers.stellar.org/api/errors/http-status-codes/horizon-specific/timeout
       // https://developers.stellar.org/docs/encyclopedia/error-handling

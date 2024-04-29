@@ -1,20 +1,62 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+} from "@reduxjs/toolkit";
 
-import { Account } from "@shared/api/types";
-import { getIsHardwareWalletActive } from "background/helpers/account";
+import { Account, ErrorMessage } from "@shared/api/types";
+import {
+  getIsHardwareWalletActive,
+  subscribeAccount as internalSubscribeAccount,
+} from "background/helpers/account";
+
+export const logIn = createAsyncThunk<
+  UiData,
+  UiData,
+  { rejectValue: ErrorMessage }
+>("logIn", async ({ publicKey, mnemonicPhrase, allAccounts }, thunkApi) => {
+  try {
+    await internalSubscribeAccount(publicKey);
+    return {
+      publicKey,
+      mnemonicPhrase,
+      allAccounts,
+    };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
+  }
+});
+
+export const setActivePublicKey = createAsyncThunk<
+  UiData,
+  UiData,
+  { rejectValue: ErrorMessage }
+>("setActivePublicKey", async ({ publicKey }, thunkApi) => {
+  try {
+    await internalSubscribeAccount(publicKey);
+    return {
+      publicKey,
+      privateKey: "",
+    };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
+  }
+});
 
 const initialState = {
   publicKey: "",
   privateKey: "",
   mnemonicPhrase: "",
-  allAccounts: [] as Array<Account>,
+  allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
 };
 
 interface UiData {
   publicKey: string;
   mnemonicPhrase?: string;
-  allAccounts?: Array<Account>;
+  allAccounts?: Account[];
   migratedMnemonicPhrase?: string;
 }
 
@@ -28,20 +70,6 @@ export const sessionSlice = createSlice({
   initialState,
   reducers: {
     reset: () => initialState,
-    logIn: (state, action: { payload: UiData }) => {
-      const {
-        publicKey,
-        mnemonicPhrase = "",
-        allAccounts = [],
-      } = action.payload;
-
-      return {
-        ...state,
-        publicKey,
-        mnemonicPhrase,
-        allAccounts,
-      };
-    },
     logOut: () => initialState,
     setActivePrivateKey: (state, action: { payload: AppData }) => {
       const { privateKey = "" } = action.payload;
@@ -49,23 +77,6 @@ export const sessionSlice = createSlice({
       return {
         ...state,
         privateKey,
-      };
-    },
-    setActivePublicKey: (state, action: { payload: UiData }) => {
-      const { publicKey } = action.payload;
-
-      return {
-        ...state,
-        publicKey,
-        privateKey: "",
-      };
-    },
-    setPassword: (state, action: { payload: AppData }) => {
-      const { password } = action.payload;
-
-      return {
-        ...state,
-        password,
       };
     },
     setMigratedMnemonicPhrase: (
@@ -104,6 +115,17 @@ export const sessionSlice = createSlice({
       };
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(logIn.fulfilled, (state, action) => {
+      state.publicKey = action.payload.publicKey;
+      state.mnemonicPhrase = action.payload.mnemonicPhrase || "";
+      state.allAccounts = action.payload.allAccounts || [];
+    });
+    builder.addCase(setActivePublicKey.fulfilled, (state, action) => {
+      state.publicKey = action.payload.publicKey;
+      state.privateKey = "";
+    });
+  },
 });
 
 export const sessionSelector = (state: { session: UiData & AppData }) =>
@@ -112,13 +134,10 @@ export const sessionSelector = (state: { session: UiData & AppData }) =>
 export const {
   actions: {
     reset,
-    logIn,
     logOut,
     setActivePrivateKey,
-    setActivePublicKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
-    setPassword,
     setMigratedMnemonicPhrase,
   },
 } = sessionSlice;

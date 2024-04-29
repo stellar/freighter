@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 
 import { truncatedPublicKey } from "helpers/stellar";
-import { LedgerSign } from "popup/components/hardwareConnect/LedgerSign";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -52,6 +52,7 @@ export const SignAuthEntry = () => {
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   } = useSetupSigningFlow(
     rejectAuthEntry,
     signEntry,
@@ -103,8 +104,10 @@ export const SignAuthEntry = () => {
     />
   ) : (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && <LedgerSign />}
-      <View data-testid="SignAuthEntry">
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
+      <React.Fragment>
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
           {isExperimentalModeEnabled ? (
@@ -174,7 +177,10 @@ export const SignAuthEntry = () => {
             isMemoRequired={false}
             transaction={{ _operations: [{ auth: params.entry }] }}
           /> */}
-          <AuthEntry preimageXdr={params.entry} />
+          <AuthEntry
+            preimageXdr={params.entry}
+            rejectAndClose={rejectAndClose}
+          />
         </View.Content>
         <View.Footer isInline>
           <Button
@@ -207,7 +213,7 @@ export const SignAuthEntry = () => {
             />
           </div>
         </SlideupModal>
-      </View>
+      </React.Fragment>
     </>
   );
 };

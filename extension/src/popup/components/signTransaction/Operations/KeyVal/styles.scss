@@ -1,0 +1,35 @@
+.OperationParameters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  width: 100%;
+
+  .Parameter {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    color: var(--color-gray-60);
+
+    .CopyText {
+      width: 100%;
+
+      .Floater {
+        .CopyText__content {
+          width: 100%;
+
+          .CopyValue {
+            width: 100%;
+
+            .Value {
+              width: 100%;
+              display: block;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+          }
+        }
+      }
+    }
+  }
+}

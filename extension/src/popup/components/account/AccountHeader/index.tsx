@@ -26,9 +26,10 @@ import "./styles.scss";
 
 interface AccountHeaderProps {
   // accountDropDownRef: React.RefObject<HTMLDivElement>;
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
+  setLoading: (isLoading: boolean) => void;
 }
 
 export const AccountHeader = ({
@@ -36,6 +37,7 @@ export const AccountHeader = ({
   allAccounts,
   currentAccountName,
   publicKey,
+  setLoading,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -78,6 +80,7 @@ export const AccountHeader = ({
       rightContent={
         <div
           className="AccountHeader__network-wrapper"
+          data-testid="network-selector-open"
           onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
         >
           <NetworkIcon index={activeNetworkIndex.current} />
@@ -93,6 +96,7 @@ export const AccountHeader = ({
             allAccounts={allAccounts}
             publicKey={publicKey}
             setIsDropdownOpen={setIsDropdownOpen}
+            setLoading={setLoading}
           />
           <div className="AccountList__footer">
             <hr className="AccountHeader__list-divider" />

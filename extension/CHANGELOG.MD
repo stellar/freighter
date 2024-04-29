@@ -1,3 +1,182 @@
+# Release notes - Wallets - FE-Freighter-5.17.7
+
+### Bug
+
+Use indexer to fetch token details for Futurenet
+
+# Release notes - Wallets - FE-Freighter-5.17.6
+
+### Bug
+
+Unable to Add Token when stellar.expert API is down
+
+# Release notes - Wallets - FE-Freighter-5.17.5
+
+### Bug
+
+Standalone token transfer summary throws error
+
+# Release notes - Wallets - FE-Freighter-5.17.4
+
+### Bug
+
+Check contract against allowList \+ native contract
+
+Account sub 400 level errors not properly handled
+
+Add an option to send from the select asset detail screen for Soroban tokens
+
+Fix missing loading state glitch during switch accounts
+
+Fix scrolling issue on search/add asset screens
+
+Show Horizon errors in extension UI
+
+### Story
+
+Upgrade Typescript to v5
+
+Address dependabot alerts
+
+Special case token transfers in sign tx details overview
+
+Upgrade React to v18
+
+\[FE\] Generic extension notification from Freighter BE
+
+\[FE\] Add degraded service notification for Horizon outage
+
+# Release notes - Wallets - Freighter-5.17.3
+
+### Bug
+
+Improve alerting for Soroban RPC issues
+
+### Story
+
+Move bottom nav out of pages to improve loading UX
+
+Streamline Sentry error tracking
+
+# Release notes - Wallets - Freighter-5.17.2
+
+### Bug
+
+Missing loading state in loadSettings
+
+unfunded accounts hit runtime error on swap
+
+Fix sorobanRpcUrl missing error
+
+# Release notes - Wallets - Freighter-5.17.1
+
+### Bug
+
+Account for contract creation when rendering auth entry invocation tree
+
+Freighter backend has downtime between deploys
+
+Token balances not being formatted for decimals
+
+Fix displaying balances for Standalone networks
+
+Fix SendPayment flow for Standalone networks
+
+### Story
+
+Global error handler and better error states
+
+Add amplitude events to new screens/actions in sign tx flow
+
+\[TESTS\] Allow list warnings
+
+\[TESTS\] Auth signing flow in Sign TX
+
+Add invoker auth warning to auth entry in tx sign flow
+
+Adds rpc health route to backend
+
+Restore client only mode for custom networks
+
+Check rpc health and disable Soroban functionality if needed
+
+Add GetPublicKey method that doesn't prompt users for access
+
+# Release notes - Wallets - Freighter-5.17.0
+
+### Bug
+
+Create account error string
+
+Account for contract creation when rendering auth entry invocation tree
+
+Display scvBytes as array of numbers
+
+### Story
+
+Enable Soroban on Mainnet ahead of vote
+
+Add invoker auth warning to auth entry in tx sign flow
+
+Copy updates for token allowlist warnings
+
+# Release notes - Wallets - Freighter-5.16.0
+
+### Story
+
+Update Sign TX Preview with Summary, Detail, Data tabs
+
+Check tokens against stellar.expert top 50 asset list
+
+Add notifications for assets not on stellar.expert asset list \(adding token,
+sending payment, signing tx\)
+
+# Release notes - Wallets - Freighter-5.15.2
+
+### Bug
+
+Account for optional wasm hash when rendering contract create invocations
+
+# Release notes - Wallets - Freighter-5.15.1
+
+### Bug
+
+Fixes bug in transaction signing preview for scvMap rendering
+
+# Release notes - Wallets - Freighter-5.15.0
+
+### Story
+
+Improve types for SignTransaction
+
+Add stop gap for token payment sub invocations
+
+# Release notes - Wallets - Freighter-5.14.0
+
+### Bug
+
+Editing transaction fee and slippage percentage takes user to Review screen
+
+### Story
+
+Create interface to allow Hardware Wallets to easily add themselves to repo
+
+# Release notes - Wallets - Freighter-5.13.0
+
+### Story
+
+Add 24-word mnemonic phrase toggle in Recover Account onboarding screen
+
+# Release notes - Wallets - Freighter-5.12.0
+
+### Bug
+
+accounts list not scrollable
+
+### Story
+
+Upgrade stellar-sdk to v11.1.0
+
 # Release notes - Wallets - Freighter-5.11.0
 
 ### Bug

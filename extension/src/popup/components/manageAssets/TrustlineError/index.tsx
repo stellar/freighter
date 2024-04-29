@@ -132,7 +132,9 @@ export const TrustlineError = ({
   }, [error]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
     const balance = balances[errorAsset];
 
     if (balance) {
@@ -147,7 +149,7 @@ export const TrustlineError = ({
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return (
-    <View data-testid="trustline-error-view">
+    <React.Fragment>
       <SubviewHeader title={t("Trustline Error")} hasBackButton={false} />
       <View.Content>
         <div className="TrustlineError__inset">
@@ -171,6 +173,6 @@ export const TrustlineError = ({
           {t("Got it")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

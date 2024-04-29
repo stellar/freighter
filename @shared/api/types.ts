@@ -1,11 +1,13 @@
 import BigNumber from "bignumber.js";
 import { Horizon } from "stellar-sdk";
 import { Types } from "@stellar/wallet-sdk";
+import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
+import { AssetsLists, AssetsListItem } from "../constants/soroban/token";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -49,10 +51,17 @@ export interface Response {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+  userNotification: UserNotification;
+  assetsLists: AssetsLists;
+  assetsList: AssetsListItem;
+  isDeleteAssetsList: boolean;
+  settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   migratedAccounts: MigratedAccount[];
   accountName: string;
   assetCode: string;
@@ -61,7 +70,7 @@ export interface Response {
   network: string;
   networkIndex: number;
   networkName: string;
-  recentAddresses: Array<string>;
+  recentAddresses: string[];
   hardwareWalletType: WalletType;
   bipPath: string;
   blockedDomains: BlockedDomains;
@@ -138,6 +147,25 @@ export interface Preferences {
   isExperimentalModeEnabled: boolean;
 }
 
+export enum SettingsState {
+  IDLE = "IDLE",
+  LOADING = "LOADING",
+  ERROR = "ERROR",
+  SUCCESS = "SUCCESS",
+}
+
+export interface UserNotification {
+  enabled: boolean;
+  message: string;
+}
+
+export interface IndexerSettings {
+  settingsState: SettingsState;
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+  userNotification: UserNotification;
+}
+
 export type Settings = {
   allowList: string[];
   networkDetails: NetworkDetails;
@@ -153,7 +181,17 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
-export type Balances = Types.BalanceMap | null;
+export interface TokenBalance extends AssetBalance {
+  decimals: number;
+  name: string;
+}
+
+export interface BalanceMap {
+  [key: string]: AssetBalance | NativeBalance | TokenBalance;
+  native: NativeBalance;
+}
+
+export type Balances = BalanceMap | null;
 
 export interface SorobanBalance {
   contractId: string;
@@ -161,23 +199,23 @@ export interface SorobanBalance {
   name: string;
   symbol: string;
   decimals: number;
+  token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType =
-  | Types.AssetBalance
-  | Types.NativeBalance
-  | SorobanBalance;
+export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */
-export type HorizonOperation = any;
+export type HorizonOperation = Horizon.ServerApi.OperationRecord;
 /* eslint-enable camelcase */
 
 export interface AccountBalancesInterface {
   balances: Balances;
+  tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
+  error?: { horizon: any; soroban: any };
 }
 
 export interface AccountHistoryInterface {

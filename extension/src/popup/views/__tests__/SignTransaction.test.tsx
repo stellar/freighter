@@ -1,5 +1,6 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as createStellarIdenticon from "stellar-identicon-js";
 import {
   Memo,
@@ -11,7 +12,7 @@ import {
 } from "stellar-sdk";
 
 import * as Stellar from "helpers/stellar";
-import { getAttrsFromSorobanTxOp } from "popup/helpers/soroban";
+import { getTokenInvocationArgs } from "popup/helpers/soroban";
 
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper } from "../../__testHelpers__";
@@ -32,7 +33,7 @@ const defaultSettingsState = {
 const mockTransactionInfo = {
   accountToSign: "",
   transaction: {
-    networkPassphrase: "foo",
+    _networkPassphrase: Networks.TESTNET,
     _operations: [
       {
         flags: {
@@ -62,34 +63,41 @@ const transactions = {
     "AAAAAgAAAACM6IR9GHiRoVVAO78JJNksy2fKDQNs2jBn8bacsRLcrDucQIQAAAWIAAAAMQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABHkEVdJ+UfDnWpBr/qF582IEoDQ0iW0WPzO9CEUdvvh8AAAAEbWludAAAAAIAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAoAAAAAAAAAAAAAAAAAAAAFAAAAAQAAAAAAAAAAAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAABG1pbnQAAAACAAAAEgAAAAAAAAAA6BZdgAk/R2ZGwnrmk/TACHUraXX+fMDNz9uJ5e9/AJ0AAAAKAAAAAAAAAAAAAAAAAAAABQAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAAFAAAAAEAAAAHa35L+/RxV6EuJOVk78H5rCN+eubXBWtsKrRxeLnnpRAAAAABAAAABgAAAAEeQRV0n5R8OdakGv+oXnzYgSgNDSJbRY/M70IRR2++HwAAABAAAAABAAAAAgAAAA8AAAAHQmFsYW5jZQAAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAEAYpBIAAAfrAAAAJQAAAAAAAAdYwAAAAA=",
 };
 
-const getMemoMockTransactionInfo = (xdr: string, op: Operation) => ({
-  transaction: {
-    networkPassphrase: Networks.TESTNET,
-    _operations: [op],
-  },
-  transactionXdr: xdr,
-  accountToSign: "",
-  domain: "laboratory.stellar.org",
-  flaggedKeys: {},
-  isDomainListedAllowed: true,
-  isHttpsDomain: true,
-});
-
-const MEMO_TXN_NO_MEMO =
-  "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABVvU5/EF8mFV8VbCrtaboJUyso8pHnPX6HerHf4QV1EwAAAAAAAAAASVBPgAAAAAAAAAAA";
-const MEMO_TXN_TEXT =
-  "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAl0ZXh0IG1lbW8AAAAAAAABAAAAAAAAAAEAAAAAVb1OfxBfJhVfFWwq7Wm6CVMrKPKR5z1+h3qx3+EFdRMAAAAAAAAAAElQT4AAAAAAAAAAAA==";
-const MEMO_TXN_ID =
-  "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAeJAAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
-const MEMO_TXN_HASH =
-  "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAA+mIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
-const MEMO_TXN_RETURN =
-  "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAABOmIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
-
 describe("SignTransactions", () => {
+  const getMemoMockTransactionInfo = (xdr: string, op: Operation) => ({
+    transaction: {
+      _networkPassphrase: Networks.FUTURENET,
+      _operations: [op],
+    },
+    transactionXdr: xdr,
+    accountToSign: "",
+    domain: "laboratory.stellar.org",
+    flaggedKeys: {},
+    isDomainListedAllowed: true,
+    isHttpsDomain: true,
+  });
+
+  const MEMO_TXN_NO_MEMO =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABVvU5/EF8mFV8VbCrtaboJUyso8pHnPX6HerHf4QV1EwAAAAAAAAAASVBPgAAAAAAAAAAA";
+  const MEMO_TXN_TEXT =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAl0ZXh0IG1lbW8AAAAAAAABAAAAAAAAAAEAAAAAVb1OfxBfJhVfFWwq7Wm6CVMrKPKR5z1+h3qx3+EFdRMAAAAAAAAAAElQT4AAAAAAAAAAAA==";
+  const MEMO_TXN_ID =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAeJAAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
+  const MEMO_TXN_HASH =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAA+mIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
+  const MEMO_TXN_RETURN =
+    "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAABOmIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
+
   beforeEach(() => {
     const mockCanvas = document.createElement("canvas");
     jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
+    jest.spyOn(global, "fetch").mockImplementation(() =>
+      Promise.resolve({
+        json: async () => ({
+          decimals: 7,
+        }),
+      } as any),
+    );
   });
 
   afterEach(() => {
@@ -106,7 +114,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
-        networkPassphrase: Networks.FUTURENET,
+        _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -140,7 +148,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.classic,
       transaction: {
-        networkPassphrase: Networks.TESTNET,
+        _networkPassphrase: Networks.TESTNET,
         _operations: [op],
       },
       isHttpsDomain: false,
@@ -152,7 +160,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: false,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: "Test SDF Network ; September 2015",
             },
           },
         }}
@@ -177,7 +185,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
-        networkPassphrase: Networks.FUTURENET,
+        _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -198,26 +206,31 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    const args = getAttrsFromSorobanTxOp(op);
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
+
+    const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);
 
-    expect(opDetails.includes(`Amount:${args?.amount.toString()}`));
     expect(
       opDetails.includes(
-        `Contract ID:${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Parameters${args?.from.toString()}Copied${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
-    );
+    ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Destination:${Stellar.truncatedPublicKey(args?.to!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
-    );
-    expect(
-      opDetails.includes(`Source:${Stellar.truncatedPublicKey(args?.from!)}`),
-    );
-    expect(opDetails.includes(`Function Name:${args?.fnName}`));
+    ).toBeTruthy();
+    expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("displays mint parameters for Soroban mint operations", async () => {
@@ -230,7 +243,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanMint,
       transaction: {
-        networkPassphrase: Networks.FUTURENET,
+        _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
     }));
@@ -251,26 +264,31 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    const args = getAttrsFromSorobanTxOp(op);
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
+
+    const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);
 
-    expect(opDetails.includes(`Amount:${args?.amount.toString()}`));
     expect(
       opDetails.includes(
-        `Contract ID:${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Parameters${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
-    );
+    ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Destination:${Stellar.truncatedPublicKey(args?.to!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
-    );
-    expect(
-      opDetails.includes(`Source:${Stellar.truncatedPublicKey(args?.from!)}`),
-    );
-    expect(opDetails.includes(`Function Name:${args?.fnName}`));
+    ).toBeTruthy();
+    expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("memo: doesn't render memo if there is no memo", async () => {
@@ -290,8 +308,7 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.queryByTestId("SignTransactionMemo")).toBeNull();
+    expect(screen.queryByTestId("MemoBlock")).toBeNull();
   });
 
   it("memo: render memo text", async () => {
@@ -306,13 +323,22 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "text memo (MEMO_TEXT)",
     );
   });
@@ -329,18 +355,27 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "123456 (MEMO_ID)",
     );
   });
 
-  xit("memo: render memo hash", async () => {
+  it("memo: render memo hash", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_HASH,
       Networks.TESTNET,
@@ -352,18 +387,27 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_HASH)",
     );
   });
 
-  xit("memo: render memo return", async () => {
+  it("memo: render memo return", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_RETURN,
       Networks.TESTNET,
@@ -375,13 +419,22 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper
+        state={{
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
         <SignTransaction />
       </Wrapper>,
     );
 
-    await waitFor(() => screen.getByTestId("TransactionInfoWrapper"));
-    expect(screen.getByTestId("SignTransactionMemo")).toHaveTextContent(
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_RETURN)",
     );
   });

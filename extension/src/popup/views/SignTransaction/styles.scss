@@ -1,7 +1,63 @@
 .SignTransaction {
-  height: var(--popup--height);
+  height: 100vh;
   overflow: hidden;
   position: relative;
+  padding: 1rem;
+  background-color: var(--color-gray-10);
+  display: flex;
+  justify-content: center;
+
+  &__Title {
+    display: flex;
+    flex-direction: column;
+    height: 130px;
+  }
+
+  .Tabs {
+    width: 100%;
+    flex-grow: 1;
+
+    .BodyWrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      border-radius: 4px;
+      background-color: var(--color-gray-20);
+      padding: 1rem;
+      overflow-y: scroll;
+    }
+  }
+
+  &__Body {
+    display: flex;
+    flex-direction: column;
+    margin-top: 2rem;
+    max-width: 57rem;
+    width: 100%;
+  }
+
+  &--connection-request {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+
+  &--connection-request-pill {
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    background-color: var(--color-gray-20);
+    color: var(--color-gray-70);
+    border: 1px solid var(--color-gray-30);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    line-height: 1.25rem;
+
+    p {
+      font-size: 0.75rem;
+      margin-left: 0.25rem;
+    }
+  }
 
   .Blob {
     display: -webkit-box;
@@ -10,16 +66,6 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     word-wrap: break-word;
-  }
-
-  &__inner-transaction {
-    border: 1px solid var(--color-gray-30);
-    border-radius: 0.5rem;
-    height: 10rem;
-    opacity: 0.7;
-    overflow: auto;
-    padding: 1rem 2rem;
-    zoom: 0.7;
   }
 
   &__info {
@@ -60,9 +106,45 @@
 
   &__modal {
     padding: 0.5rem 0 0.5rem 1.5rem;
+
+    .View__inset--scroll-shadows {
+      --bgRGB: 22, 22, 24;
+    }
   }
 
   &__account-not-found {
-    margin-top: 1rem;
+    margin: 1rem 0;
+  }
+
+  &__Actions {
+    display: flex;
+    flex-direction: column;
+    align-self: flex-end;
+    width: 100%;
+    height: 130px;
+
+    &__SigningWith {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__PublicKey {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 7px;
+      border: 1px solid;
+      margin-top: 10px;
+      border-color: var(--color-gray-40);
+    }
+
+    &__BtnRow {
+      display: flex;
+      margin-top: 10px;
+      gap: 0.5rem;
+    }
   }
 }

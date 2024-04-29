@@ -47,6 +47,7 @@ export const DisplayBackupPhrase = () => {
     if (res.error) {
       setErrorMessage(res.error);
       emitMetric(METRIC_NAMES.backupPhraseFail, {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         error_type: res.error,
       });
     } else {
@@ -58,7 +59,7 @@ export const DisplayBackupPhrase = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title={t("Show recovery phrase")} />
       {isPhraseUnlocked ? (
         <>
@@ -118,6 +119,6 @@ export const DisplayBackupPhrase = () => {
           </Formik>
         </>
       )}
-    </View>
+    </React.Fragment>
   );
 };

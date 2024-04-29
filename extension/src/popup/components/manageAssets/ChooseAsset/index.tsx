@@ -15,7 +15,6 @@ import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import { sorobanSelector } from "popup/ducks/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { getCanonicalFromAsset } from "helpers/stellar";
@@ -39,7 +38,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances: sorobanBalances } = useSelector(sorobanSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
@@ -56,6 +54,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let i = 0; i < sortedBalances.length; i += 1) {
         if (sortedBalances[i].liquidityPoolId) {
           // eslint-disable-next-line
@@ -66,13 +65,18 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           token: { code, issuer },
         } = sortedBalances[i];
 
+        if (isSwap && "decimals" in sortedBalances[i]) {
+          // eslint-disable-next-line
+          continue;
+        }
+
         if (code !== "XLM") {
           let domain = "";
 
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              domain = await getAssetDomain(issuer.key, networkUrl);
+              domain = await getAssetDomain(issuer.key as string, networkUrl);
             } catch (e) {
               console.error(e);
             }
@@ -81,7 +85,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           collection.push({
             code,
             issuer: issuer?.key || "",
-            image: assetIcons[getCanonicalFromAsset(code, issuer?.key)],
+            image:
+              assetIcons[
+                getCanonicalFromAsset(code as string, issuer?.key as string)
+              ],
             domain,
           });
           // include native asset for asset dropdown selection
@@ -91,26 +98,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             issuer: "",
             image: "",
             domain: "",
-          });
-        }
-      }
-
-      if (isSorobanSuported && sorobanBalances.length) {
-        // we can't swap with tokens yet, so don't show tokens
-        if (!isSwap) {
-          sorobanBalances.forEach(({ symbol, contractId, name }) => {
-            // TODO:
-            // interestingly, if an ascii value is set for symbol
-            // it gets parsed and doesn't
-            // match the original value after this. How to escape this?
-            collection.push({
-              code: `${symbol}`,
-              issuer: "",
-              image: "",
-              domain: "",
-              contractId,
-              name,
-            });
           });
         }
       }
@@ -126,12 +113,11 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     networkUrl,
     managingAssets,
     isSorobanSuported,
-    sorobanBalances,
     isSwap,
   ]);
 
   return (
-    <View data-testid="choose-asset">
+    <React.Fragment>
       <SubviewHeader
         title="Choose Asset"
         customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
@@ -150,7 +136,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             ref={ManageAssetRowsWrapperRef}
           >
             {managingAssets ? (
-              <ManageAssetRows assetRows={assetRows} />
+              <ManageAssetRows assetRows={assetRows} chooseAsset />
             ) : (
               <SelectAssetRows assetRows={assetRows} />
             )}
@@ -189,6 +175,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           </>
         )}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

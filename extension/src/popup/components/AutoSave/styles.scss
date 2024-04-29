@@ -6,7 +6,7 @@
     position: fixed;
     top: 0;
     width: 100%;
-    transition: opacity var(--anim-transition-default);
+    transition: opacity var(--dropdown-animation);
 
     &--failed {
       opacity: 1;

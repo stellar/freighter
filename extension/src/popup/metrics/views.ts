@@ -16,9 +16,10 @@ const routeToEventName = {
   [ROUTES.importAccount]: METRIC_NAMES.viewImportAccount,
   [ROUTES.connectWallet]: METRIC_NAMES.viewConnectWallet,
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
-  [ROUTES.connectLedger]: METRIC_NAMES.viewConnectLedger,
+  [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
   [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
+  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
@@ -64,6 +65,9 @@ const routeToEventName = {
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
   [ROUTES.leaveFeedback]: METRIC_NAMES.viewLeaveFeedback,
+  [ROUTES.manageAssetsLists]: METRIC_NAMES.viewManageAssetsLists,
+  [ROUTES.manageAssetsListsModifyAssetList]:
+    METRIC_NAMES.manageAssetListsModifyAssetList,
   [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
   [ROUTES.accountMigrationReviewMigration]:
     METRIC_NAMES.viewAccountMigrationReviewMigration,
@@ -103,6 +107,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       number_of_operations: operations.length,
       operationTypes,
     };

@@ -16,8 +16,10 @@ const sessionStore = dataStorageAccess(browserSessionStorage);
 export async function loadState() {
   try {
     const state = await sessionStore.getItem(REDUX_STORE_KEY);
-    if (!state) return undefined;
-    return JSON.parse(state);
+    if (!state) {
+      return undefined;
+    }
+    return JSON.parse(state as string);
   } catch (_error) {
     return undefined;
   }

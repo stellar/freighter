@@ -2,7 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject } from "yup";
-import { Input, Checkbox, Icon, Link, Button } from "@stellar/design-system";
+import {
+  Input,
+  Checkbox,
+  Icon,
+  Link,
+  Button,
+  Toggle,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -35,15 +42,22 @@ interface PhraseInputProps {
   phraseInput: string;
   index: number;
   handleMnemonicInputChange: (value: string, index: number) => void;
+  isTextShowing: boolean;
+  isLongPhrase: boolean;
 }
 
 const PhraseInput = ({
   phraseInput,
   index,
   handleMnemonicInputChange,
+  isTextShowing,
+  isLongPhrase,
 }: PhraseInputProps) => {
-  const [isTextShowing, setIsTextShowing] = useState(false);
   const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    setInputValue("");
+  }, [isLongPhrase]);
 
   return (
     <div key={phraseInput} className="RecoverAccount__phrase-input">
@@ -61,15 +75,12 @@ const PhraseInput = ({
         type={isTextShowing ? "text" : "password"}
         value={inputValue}
       />
-      <div
-        className="RecoverAccount__password-toggle"
-        onClick={() => setIsTextShowing(!isTextShowing)}
-      >
-        {isTextShowing ? <Icon.Show /> : <Icon.Hide />}
-      </div>
     </div>
   );
 };
+
+const SHORT_PHRASE = 12;
+const LONG_PHRASE = 24;
 
 const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
   mnemonicPhraseArr.join(" ").trim();
@@ -98,13 +109,15 @@ export const RecoverAccount = () => {
   });
 
   const dispatch = useDispatch();
-  const PHRASE_LENGTH = 12;
+  const [isLongPhrase, setIsLongPhrase] = useState(false);
+  const [isTextShowing, setIsTextShowing] = useState(false);
   const [phraseInputs, setPhraseInputs] = useState([] as string[]);
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
 
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
 
+    // eslint-disable-next-line
     await dispatch(
       recoverAccount({
         password,
@@ -120,14 +133,25 @@ export const RecoverAccount = () => {
   }, [publicKey]);
 
   useEffect(() => {
-    const phraseInputsArr = [];
+    const phraseInputsArr: string[] = [];
+    let PHRASE_LENGTH = SHORT_PHRASE;
 
-    // eslint-disable-next-line no-plusplus
-    for (let i = 1; i <= PHRASE_LENGTH; i++) {
-      phraseInputsArr.push(`MnemonicPhrase-${i}`);
-    }
-    setPhraseInputs(phraseInputsArr);
-  }, [PHRASE_LENGTH]);
+    // delay to account for css transition
+    setTimeout(() => {
+      PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
+
+      // eslint-disable-next-line no-plusplus
+      for (let i = 1; i <= PHRASE_LENGTH; i++) {
+        phraseInputsArr.push(`MnemonicPhrase-${i}`);
+      }
+      setPhraseInputs(phraseInputsArr);
+
+      if (PHRASE_LENGTH === SHORT_PHRASE) {
+        // when going back to 12 words, clear all the fields
+        setMnemonicPhraseArr([]);
+      }
+    }, 150);
+  }, [isLongPhrase]);
 
   const handleMnemonicInputChange = (value: string, i: number) => {
     const arr = [...mnemonicPhraseArr];
@@ -137,7 +161,7 @@ export const RecoverAccount = () => {
   };
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Formik
@@ -159,17 +183,51 @@ export const RecoverAccount = () => {
 
                 <OnboardingTwoCol>
                   <OnboardingOneCol>
-                    <div className="RecoverAccount__mnemonic-input">
-                      {phraseInputs.map((phraseInput, i) => (
-                        <PhraseInput
-                          key={phraseInput}
-                          phraseInput={phraseInput}
-                          handleMnemonicInputChange={handleMnemonicInputChange}
-                          index={i}
-                        />
-                      ))}
+                    <div>
+                      <div
+                        className={`RecoverAccount__mnemonic-input ${
+                          isLongPhrase
+                            ? "RecoverAccount__mnemonic-input--long-phrase"
+                            : ""
+                        }`}
+                      >
+                        {phraseInputs.map((phraseInput, i) => (
+                          <PhraseInput
+                            key={phraseInput}
+                            phraseInput={phraseInput}
+                            handleMnemonicInputChange={
+                              handleMnemonicInputChange
+                            }
+                            isTextShowing={isTextShowing}
+                            isLongPhrase={isLongPhrase}
+                            index={i}
+                          />
+                        ))}
+                      </div>
+                      {authError ? <FormError>{authError}</FormError> : <></>}
+                      <div className="RecoverAccount__mnemonic-footer">
+                        <div className="RecoverAccount__phrase-toggle">
+                          <div>{SHORT_PHRASE} word</div>
+                          <Toggle
+                            checked={isLongPhrase}
+                            id="RecoverAccount__toggle"
+                            onChange={() => setIsLongPhrase(!isLongPhrase)}
+                          />
+                          <div>{LONG_PHRASE} word</div>
+                        </div>
+                        <div className="RecoverAccount__mnemonic__text-toggle">
+                          <Button
+                            variant="secondary"
+                            onClick={() => setIsTextShowing(!isTextShowing)}
+                            size="xs"
+                            type="button"
+                          >
+                            <span> {isTextShowing ? "Hide" : "Show"}</span>
+                            {isTextShowing ? <Icon.Hide /> : <Icon.Show />}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    {authError ? <FormError>{authError}</FormError> : <></>}
                   </OnboardingOneCol>
 
                   <OnboardingOneCol>
@@ -206,7 +264,7 @@ export const RecoverAccount = () => {
                     </FormRows>
 
                     <Field name="termsOfUse">
-                      {({ field }: FieldProps) => (
+                      {({ field, form }: FieldProps) => (
                         <Checkbox
                           fieldSize="md"
                           autoComplete="off"
@@ -216,6 +274,12 @@ export const RecoverAccount = () => {
                               ? errors.termsOfUse
                               : null
                           }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              form.setFieldValue("termsOfUse", !field.value);
+                              e.currentTarget.checked = !field.value;
+                            }
+                          }}
                           label={
                             <>
                               {t("I have read and agree to")}{" "}
@@ -255,6 +319,6 @@ export const RecoverAccount = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

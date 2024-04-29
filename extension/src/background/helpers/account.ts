@@ -9,14 +9,21 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
+  HAS_ACCOUNT_SUBSCRIPTION,
+  ASSETS_LISTS_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
+import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
 } from "background/helpers/dataStorage";
+import { INDEXER_URL } from "@shared/constants/mercury";
+import { captureException } from "@sentry/browser";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
@@ -25,8 +32,10 @@ export const getKeyIdList = async () =>
 
 export const getAccountNameList = async () => {
   const encodedaccountNameList =
-    (await localStore.getItem(ACCOUNT_NAME_LIST_ID)) || encodeObject({});
+    ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
+    encodeObject({});
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return JSON.parse(decodeString(encodedaccountNameList));
 };
 
@@ -37,7 +46,10 @@ export const addAccountName = async ({
   keyId: string;
   accountName: string;
 }) => {
-  const accountNameList = await getAccountNameList();
+  const accountNameList = (await getAccountNameList()) as Record<
+    string,
+    string
+  >;
 
   accountNameList[keyId] = accountName;
 
@@ -94,7 +106,7 @@ export const getIsHardwareWalletActive = async () =>
   ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
 export const getBipPath = async () => {
-  const keyId = (await localStore.getItem(KEY_ID)) || "";
+  const keyId = ((await localStore.getItem(KEY_ID)) as string) || "";
   const hwData = (await localStore.getItem(keyId)) || {};
   return hwData.bipPath || "";
 };
@@ -124,7 +136,199 @@ export const getNetworksList = async () => {
   return networksList;
 };
 
-export const getIsSorobanSupported = async () => {
+export const getAssetsLists = async () => {
+  if (!(await localStore.getItem(ASSETS_LISTS_ID))) {
+    await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
+  }
+  const assetLists =
+    (await localStore.getItem(ASSETS_LISTS_ID)) ?? DEFAULT_ASSETS_LISTS;
+
+  return assetLists;
+};
+
+export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
+  let rpcHealth = { status: "" };
+  if (isCustomNetwork(networkDetails)) {
+    // TODO: use server.getHealth method to get accurate result for standalone network
+    rpcHealth = { status: "healthy" };
+  } else {
+    try {
+      const res = await fetch(
+        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
+      );
+
+      if (!res.ok) {
+        captureException(`Failed to load rpc health for Soroban`);
+      }
+      rpcHealth = await res.json();
+    } catch (e) {
+      captureException(
+        `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
+      );
+      console.error(e);
+    }
+  }
+
+  return rpcHealth.status === "healthy";
+};
+
+export const getUserNotification = async () => {
+  let response = { enabled: false, message: "" };
+
+  try {
+    const res = await fetch(`${INDEXER_URL}/user-notification`);
+    response = await res.json();
+  } catch (e) {
+    captureException(`Failed to load user notification - ${JSON.stringify(e)}`);
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const getFeatureFlags = async () => {
+  let featureFlags = { useSorobanPublic: false };
+
+  try {
+    const res = await fetch(`${INDEXER_URL}/feature-flags`);
+    featureFlags = await res.json();
+  } catch (e) {
+    captureException(`Failed to load feature flag - ${JSON.stringify(e)}`);
+    console.error(e);
+  }
+
+  return featureFlags;
+};
+
+export const subscribeAccount = async (publicKey: string) => {
+  // if pub key already has a subscription setup, skip this
+  const keyId = await localStore.getItem(KEY_ID);
+  const hasAccountSubByKeyId =
+    (await localStore.getItem(HAS_ACCOUNT_SUBSCRIPTION)) || {};
+  if (!keyId || hasAccountSubByKeyId[keyId]) {
+    return { publicKey };
+  }
+
+  try {
+    const networkDetails = await getNetworkDetails();
+    const options = {
+      method: "POST",
+      headers: {
+        // eslint-disable-next-line
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        // eslint-disable-next-line
+        pub_key: publicKey,
+        network: networkDetails.network,
+      }),
+    };
+    const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
+    const subsByKeyId = {
+      ...hasAccountSubByKeyId,
+      [keyId]: true,
+    };
+
+    if (res.ok) {
+      await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+    } else {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
+  } catch (e) {
+    console.error(e);
+    // Turn on when Mercury is enabled
+    // captureException(
+    //   `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
+    // );
+  }
+
+  return { publicKey };
+};
+
+export const subscribeTokenBalance = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  try {
+    const networkDetails = await getNetworkDetails();
+    const options = {
+      method: "POST",
+      headers: {
+        // eslint-disable-next-line
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        // eslint-disable-next-line
+        pub_key: publicKey,
+        // eslint-disable-next-line
+        contract_id: contractId,
+        network: networkDetails.network,
+      }),
+    };
+    const res = await fetch(
+      `${INDEXER_URL}/subscription/token-balance`,
+      options,
+    );
+
+    if (!res.ok) {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
+  } catch (e) {
+    console.error(e);
+    captureException(
+      `Failed to subscribe token balance - ${JSON.stringify(e)}`,
+    );
+  }
+};
+
+export const subscribeTokenHistory = async (
+  publicKey: string,
+  contractId: string,
+) => {
+  try {
+    const options = {
+      method: "POST",
+      headers: {
+        // eslint-disable-next-line
+        "Content-Type": "application/json",
+      },
+      // eslint-disable-next-line
+      body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
+    };
+    const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
+
+    if (!res.ok) {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
+  } catch (e) {
+    console.error(e);
+    captureException(
+      `Failed to subscribe token history - ${JSON.stringify(e)}`,
+    );
+  }
+};
+
+export const verifySorobanRpcUrls = async () => {
   const networkDetails = await getNetworkDetails();
-  return !!networkDetails.sorobanRpcUrl;
+
+  if (!networkDetails.sorobanRpcUrl) {
+    networkDetails.sorobanRpcUrl = getSorobanRpcUrl(networkDetails);
+
+    await localStore.setItem(NETWORK_ID, networkDetails);
+  }
+
+  const networksList: NetworkDetails[] = await getNetworksList();
+
+  // eslint-disable-next-line
+  for (let i = 0; i < networksList.length; i += 1) {
+    const networksListDetails = networksList[i];
+
+    if (!networksListDetails.sorobanRpcUrl) {
+      networksListDetails.sorobanRpcUrl = getSorobanRpcUrl(networkDetails);
+    }
+  }
+  await localStore.setItem(NETWORKS_LIST_ID, networksList);
 };

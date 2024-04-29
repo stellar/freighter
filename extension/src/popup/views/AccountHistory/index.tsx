@@ -1,26 +1,18 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
-import { Horizon, Networks } from "stellar-sdk";
+import { Horizon } from "stellar-sdk";
 
 import { getAccountHistory } from "@shared/api/internal";
-import { HorizonOperation, ActionStatus } from "@shared/api/types";
+import { ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import {
-  sorobanSelector,
-  getTokenBalances,
-  resetSorobanTokensStatus,
-} from "popup/ducks/soroban";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
-  getIsSupportedSorobanOp,
   getIsSwap,
   getStellarExpertUrl,
 } from "popup/helpers/account";
@@ -36,9 +28,7 @@ import {
   TransactionDetail,
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
-import { BottomNav } from "popup/components/BottomNav";
 import { View } from "popup/basics/layout/View";
-import { SorobanContext } from "../../SorobanContext";
 
 import "./styles.scss";
 
@@ -60,16 +50,13 @@ export const AccountHistory = () => {
       }
     | null;
 
-  const sorobanClient = useContext(SorobanContext);
-
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { tokenBalances, getTokenBalancesStatus } = useSelector(
-    sorobanSelector,
+  const { accountBalances, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
   );
-  const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
@@ -88,33 +75,21 @@ export const AccountHistory = () => {
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const isTokenBalanceLoading =
-    (getTokenBalancesStatus === ActionStatus.IDLE ||
-      getTokenBalancesStatus === ActionStatus.PENDING) &&
-    isSorobanSuported;
-  const isAccountHistoryLoading = isSorobanSuported
-    ? historySegments === null || isTokenBalanceLoading
-    : historySegments === null;
+  const isAccountHistoryLoading =
+    historySegments === null ||
+    accountBalanceStatus === ActionStatus.IDLE ||
+    accountBalanceStatus === ActionStatus.PENDING;
 
   useEffect(() => {
-    const isSupportedSorobanAccountItem = (operation: HorizonOperation) =>
-      getIsSupportedSorobanOp(operation, networkDetails);
-
     const createSegments = (
-      operations: HorizonOperation[],
-      showSorobanTxs = false,
+      operations: Horizon.ServerApi.OperationRecord[],
     ) => {
-      const _operations = showSorobanTxs
-        ? operations.filter(
-            (op) => op.type_i !== 24 || isSupportedSorobanAccountItem(op),
-          )
-        : operations.filter((op) => op.type_i !== 24);
       const segments = {
         [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
         [SELECTOR_OPTIONS.SENT]: [] as HistoryItemOperation[],
         [SELECTOR_OPTIONS.RECEIVED]: [] as HistoryItemOperation[],
       };
-      _operations.forEach((operation) => {
+      operations.forEach((operation) => {
         const isPayment = getIsPayment(operation.type);
         const isSorobanXfer =
           getAttrsFromSorobanHorizonOp(operation, networkDetails)?.fnName ===
@@ -134,7 +109,7 @@ export const AccountHistory = () => {
         if ((isPayment || isSorobanXfer) && !isSwap) {
           if (operation.source_account === publicKey) {
             segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
-          } else if (operation.to === publicKey) {
+          } else if ("to" in operation && operation.to === publicKey) {
             segments[SELECTOR_OPTIONS.RECEIVED].push(historyOperation);
           }
         }
@@ -151,19 +126,8 @@ export const AccountHistory = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        const res = await getAccountHistory({ publicKey, networkDetails });
-        setHistorySegments(
-          createSegments(res.operations, isSorobanSuported as boolean),
-        );
-
-        if (isSorobanSuported) {
-          dispatch(
-            getTokenBalances({
-              sorobanClient,
-              network: networkDetails.network as Networks,
-            }),
-          );
-        }
+        const operations = await getAccountHistory(publicKey, networkDetails);
+        setHistorySegments(createSegments(operations));
       } catch (e) {
         console.error(e);
       }
@@ -176,21 +140,15 @@ export const AccountHistory = () => {
     };
 
     getData();
-
-    return () => {
-      if (isSorobanSuported) {
-        dispatch(resetSorobanTokensStatus());
-      }
-    };
-  }, [publicKey, networkDetails, sorobanClient, isSorobanSuported, dispatch]);
+  }, [publicKey, networkDetails, dispatch]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
-    <View>
+    <>
       <View.Content>
         <div className="AccountHistory">
-          {isLoading || isTokenBalanceLoading ? (
+          {isLoading ? (
             <div className="AccountHistory__loader">
               <Loader size="2rem" />
             </div>
@@ -218,11 +176,11 @@ export const AccountHistory = () => {
                 {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
                   <HistoryList>
                     <>
-                      {historySegments![SELECTOR_OPTIONS[selectedSegment]].map(
+                      {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
                         (operation: HistoryItemOperation) => (
                           <HistoryItem
                             key={operation.id}
-                            tokenBalances={tokenBalances}
+                            accountBalances={accountBalances}
                             operation={operation}
                             publicKey={publicKey}
                             url={stellarExpertUrl}
@@ -246,7 +204,6 @@ export const AccountHistory = () => {
           )}
         </div>
       </View.Content>
-      <BottomNav />
-    </View>
+    </>
   );
 };

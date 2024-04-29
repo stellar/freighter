@@ -40,16 +40,15 @@ import {
   getBestPath,
   resetDestinationAmount,
 } from "popup/ducks/transactionSubmission";
-import { sorobanSelector } from "popup/ducks/soroban";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
-import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 
+import { BalanceMap, SorobanBalance } from "@shared/api/types";
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
@@ -121,7 +120,6 @@ export const SendAmount = ({
     blockedDomains,
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
-  const { tokenBalances } = useSelector(sorobanSelector);
 
   const {
     amount,
@@ -144,12 +142,16 @@ export const SendAmount = ({
     image: "",
   });
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let availBalance = new BigNumber("0");
+      let _availBalance = new BigNumber("0");
       if (isToken) {
-        const contractId = selectedAsset.split(":")[1];
-        return getTokenBalance(tokenBalances, contractId);
+        // TODO: balances is incorrectly typed and does not include SorobanBalance
+        const tokenBalance = (accountBalances?.balances?.[
+          selectedAsset
+        ] as any) as SorobanBalance;
+        return getTokenBalance(tokenBalance);
       }
       if (accountBalances.balances) {
         // take base reserve into account for XLM payments
@@ -157,34 +159,31 @@ export const SendAmount = ({
           (2 + accountBalances.subentryCount) * BASE_RESERVE,
         );
 
+        const balance =
+          accountBalances.balances[selectedAsset]?.total || new BigNumber("0");
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
-          const currentBal = new BigNumber(
-            accountBalances.balances[selectedAsset].total.toFixed(),
-          );
-          availBalance = currentBal
+          const currentBal = new BigNumber(balance.toFixed());
+          _availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
 
-          if (availBalance.lt(minBalance)) {
+          if (_availBalance.lt(minBalance)) {
             return "0";
           }
         } else {
           // needed for different wallet-sdk bignumber.js version
-          availBalance = new BigNumber(
-            accountBalances.balances[selectedAsset].total,
-          );
+          _availBalance = new BigNumber(balance);
         }
       }
 
-      return availBalance.toFixed().toString();
+      return _availBalance.toFixed().toString();
     },
     [
       accountBalances.balances,
       accountBalances.subentryCount,
       recommendedFee,
       isToken,
-      tokenBalances,
     ],
   );
 
@@ -272,8 +271,9 @@ export const SendAmount = ({
 
   // on asset select get conversion rate
   useEffect(() => {
-    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0)
+    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
       return;
+    }
     setLoadingRate(true);
     // clear dest amount before re-calculating for UI
     dispatch(resetDestinationAmount());
@@ -305,10 +305,15 @@ export const SendAmount = ({
       if (formik.values.asset !== Asset.native().toString()) {
         defaultDestAsset = Asset.native().toString();
       } else {
-        // otherwise default to first non-native asset if exists
+        // otherwise default to first non-native/classic side asset if exists
         const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
           (b) =>
-            b !== Asset.native().toString() && b.indexOf(LP_IDENTIFIER) === -1,
+            b !== Asset.native().toString() &&
+            b.indexOf(LP_IDENTIFIER) === -1 &&
+            !(
+              "decimals" in
+              (accountBalances.balances || ({} as NonNullable<BalanceMap>))[b]
+            ),
         );
         defaultDestAsset = nonXlmAssets[0]
           ? nonXlmAssets[0]
@@ -375,7 +380,7 @@ export const SendAmount = ({
           ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
-            getAssetDecimals(asset, tokenBalances, isToken),
+            getAssetDecimals(asset, accountBalances, isToken),
           )}
           )`}
         />
@@ -397,7 +402,7 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <View data-testid="send-amount-view">
+      <React.Fragment>
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
           subtitle={
@@ -480,7 +485,7 @@ export const SendAmount = ({
                       } = formatAmountPreserveCursor(
                         e.target.value,
                         formik.values.amount,
-                        getAssetDecimals(asset, tokenBalances, isToken),
+                        getAssetDecimals(asset, accountBalances, isToken),
                         e.target.selectionStart || 1,
                       );
                       formik.setFieldValue("amount", newAmount);
@@ -544,9 +549,9 @@ export const SendAmount = ({
             </div>
           </div>
         </View.Content>
-        {isSwap && <BottomNav />}
-      </View>
+      </React.Fragment>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />
