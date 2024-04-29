@@ -24,10 +24,10 @@ import { simulateTokenPayment } from "popup/ducks/token-payment";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { parseTokenAmount } from "popup/helpers/soroban";
 import "../../styles.scss";
 import { Balances, TokenBalance } from "@shared/api/types";
-import { getNetworkDetails } from "background/helpers/account";
 import { AppDispatch } from "popup/App";
 
 export const Settings = ({
@@ -48,6 +48,7 @@ export const Settings = ({
     allowedSlippage,
     isToken,
   } = useSelector(transactionDataSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const { accountBalances } = useSelector(transactionSubmissionSelector);
@@ -95,15 +96,14 @@ export const Settings = ({
         amount: parsedAmount.toNumber(),
       };
 
-      const networkDetails = await getNetworkDetails();
       const simulation = await dispatch(
         simulateTokenPayment({
           address: assetAddress,
           publicKey,
           memo,
           params,
-          networkUrl: networkDetails.sorobanRpcUrl!,
-          networkPassphrase: networkDetails.networkPassphrase,
+          networkDetails,
+          transactionFee,
         }),
       );
 
@@ -117,7 +117,7 @@ export const Settings = ({
   }
 
   return (
-    <View data-testid="send-settings-view">
+    <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
         customBackAction={() => navigateTo(previous)}
@@ -285,6 +285,6 @@ export const Settings = ({
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

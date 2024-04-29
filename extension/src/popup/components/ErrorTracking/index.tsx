@@ -15,6 +15,10 @@ export const ErrorTracking = () => {
       release: `freighter@${packageJson.version}`,
       integrations: [new Integrations.BrowserTracing()],
       tracesSampleRate: 1.0,
+      denyUrls: [
+        // Amplitude 4xx's on too many Posts, which is expected behavior
+        /api\.amplitude\.com\/2\/httpapi/i,
+      ],
     });
   }
 

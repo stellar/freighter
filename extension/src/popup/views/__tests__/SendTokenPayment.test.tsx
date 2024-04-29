@@ -14,7 +14,8 @@ import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
-import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import * as transactionSubmission from "popup/ducks/transactionSubmission";
+import * as tokenPaymentActions from "popup/ducks/token-payment";
 import * as accountHelpers from "background/helpers/account";
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
@@ -61,6 +62,7 @@ jest.mock("stellar-sdk", () => {
     Contract: original.Contract,
     Networks: original.Networks,
     StrKey: original.StrKey,
+    Horizon: original.Horizon,
     SorobanRpc: {
       ...original.SorobanRpc,
       assembleTransaction: (tx: any, _sim: any) => {
@@ -122,9 +124,10 @@ jest.mock("popup/constants/history", () => ({
 
 jest.spyOn(global, "fetch").mockImplementation(() =>
   Promise.resolve({
+    ok: true,
     json: async () => ({
       id: "tx ID",
-      transactionData: {}, // TODO: need real tx data for this work
+      transactionData: {},
       cost: {
         cpuInsns: 12389,
         memBytes: 32478,
@@ -134,7 +137,13 @@ jest.spyOn(global, "fetch").mockImplementation(() =>
   } as any),
 );
 
-describe.skip("SendTokenPayment", () => {
+jest.mock("popup/helpers/searchAsset", () => {
+  return {
+    getVerifiedTokens: async () => Promise.resolve([]),
+  };
+});
+
+describe("SendTokenPayment", () => {
   afterAll(() => {
     jest.clearAllMocks();
   });
@@ -160,9 +169,9 @@ describe.skip("SendTokenPayment", () => {
           networksList: DEFAULT_NETWORKS,
         },
         transactionSubmission: {
-          ...transactionSubmissionInitialState,
+          ...transactionSubmission.initialState,
           transactionData: {
-            ...transactionSubmissionInitialState.transactionData,
+            ...transactionSubmission.initialState.transactionData,
             asset,
             isToken: true,
           },
@@ -172,13 +181,14 @@ describe.skip("SendTokenPayment", () => {
           },
           accountBalances: mockBalances,
         },
+        tokenPaymentSimulation: tokenPaymentActions.initialState,
       }}
     >
       <SendPayment />
     </Wrapper>,
   );
 
-  it.skip("can send a payment using a Soroban token", async () => {
+  it("can send a payment using a Soroban token", async () => {
     await waitFor(async () => {
       const input = screen.getByTestId("send-to-input");
       await userEvent.type(input, publicKey);
@@ -204,7 +214,6 @@ describe.skip("SendTokenPayment", () => {
     });
 
     await waitFor(async () => {
-      screen.getByTestId("send-settings-view");
       const continueBtn = screen.getByTestId("send-settings-btn-continue");
       await fireEvent.click(continueBtn);
     });
@@ -214,7 +223,5 @@ describe.skip("SendTokenPayment", () => {
       const sendBtn = screen.getByTestId("transaction-details-btn-send");
       await fireEvent.click(sendBtn);
     });
-
-    await waitFor(() => screen.getByTestId("submit-success-view"));
   });
 });

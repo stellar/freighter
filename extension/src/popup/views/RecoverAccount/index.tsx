@@ -117,6 +117,7 @@ export const RecoverAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
 
+    // eslint-disable-next-line
     await dispatch(
       recoverAccount({
         password,
@@ -160,7 +161,7 @@ export const RecoverAccount = () => {
   };
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Formik
@@ -263,7 +264,7 @@ export const RecoverAccount = () => {
                     </FormRows>
 
                     <Field name="termsOfUse">
-                      {({ field }: FieldProps) => (
+                      {({ field, form }: FieldProps) => (
                         <Checkbox
                           fieldSize="md"
                           autoComplete="off"
@@ -273,6 +274,12 @@ export const RecoverAccount = () => {
                               ? errors.termsOfUse
                               : null
                           }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              form.setFieldValue("termsOfUse", !field.value);
+                              e.currentTarget.checked = !field.value;
+                            }
+                          }}
                           label={
                             <>
                               {t("I have read and agree to")}{" "}
@@ -312,6 +319,6 @@ export const RecoverAccount = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

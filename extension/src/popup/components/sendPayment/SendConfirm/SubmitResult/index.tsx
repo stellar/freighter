@@ -117,6 +117,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     };
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackRemoveTrustline();
     } else {
@@ -138,6 +139,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
+          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
         }),
@@ -154,13 +156,15 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     }
   };
 
+  // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
+
   const suggestRemoveTrustline =
     accountBalances.balances &&
     accountBalances.balances[asset] &&
-    accountBalances.balances[asset].available.isZero();
+    accountBalances.balances[asset].available?.isZero();
 
   return (
-    <View data-testid="submit-success-view">
+    <React.Fragment>
       <View.AppHeader
         pageTitle={`${t("Successfully")} ${isSwap ? t("swapped") : t("sent")}`}
       />
@@ -232,7 +236,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           {t("Done")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };
 
@@ -277,7 +281,7 @@ export const SubmitFail = () => {
             <div>
               {t(
                 "Fees can vary depending on the network congestion. Please try using the suggested fee and try again.",
-              )}
+              )}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -310,9 +314,7 @@ export const SubmitFail = () => {
             title={t("The destination account doesn’t exist")}
           >
             <div>
-              {t(
-                "The destination account doesn’t exist. Make sure it is a funded Stellar account and try again.",
-              )}
+              {t("Make sure it is a funded Stellar account and try again.")}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -339,8 +341,8 @@ export const SubmitFail = () => {
           >
             <div>
               {t(
-                "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it.",
-              )}
+                "The destination account must opt to accept this asset before receiving it.",
+              )}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -359,7 +361,7 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("Conversion rate")}>
             <div>
-              {t("Please check the new rate and try again.")}
+              {t("Please check the new rate and try again.")}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -380,7 +382,7 @@ export const SubmitFail = () => {
             <div>
               {t(
                 "To create a new account you need to send at least 1 XLM to it.",
-              )}
+              )}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -408,25 +410,23 @@ export const SubmitFail = () => {
     }
     return errorDetails;
   };
-  const errorDetails = getErrorDetails(error);
+  const errDetails = getErrorDetails(error);
 
   return (
-    <View>
+    <React.Fragment>
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="SubmitResult__content">
-          <div className="SubmitResult__amount">{errorDetails.title}</div>
+          <div className="SubmitResult__amount">{errDetails.title}</div>
           <div className="SubmitResult__icon SubmitResult__fail">
             <img src={IconFail} alt="Icon Fail" />
           </div>
           <div className="SubmitResult__error-code">
-            {errorDetails.status ? `${errorDetails.status}:` : ""}{" "}
-            {errorDetails.opError}
+            {errDetails.status ? `Status ${errDetails.status}:` : ""}{" "}
+            {errDetails.opError}
           </div>
         </div>
-        <div className="SubmitResult__error-block">
-          {errorDetails.errorBlock}
-        </div>
+        <div className="SubmitResult__error-block">{errDetails.errorBlock}</div>
       </View.Content>
       <View.Footer>
         <Button
@@ -440,6 +440,6 @@ export const SubmitFail = () => {
           {t("Got it")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

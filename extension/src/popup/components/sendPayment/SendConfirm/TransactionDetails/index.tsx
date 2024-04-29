@@ -19,12 +19,12 @@ import {
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
-  isCustomNetwork,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -283,6 +283,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterSorobanTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
           }),
@@ -318,7 +319,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+      const transactionXDR = new TransactionBuilder(sourceAccount, {
         fee: xlmToStroop(transactionFee).toFixed(),
         networkPassphrase: networkDetails.networkPassphrase,
       })
@@ -351,6 +352,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       ) {
         const submitResp = await dispatch(
           submitFreighterTransaction({
+            publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
           }),
@@ -418,7 +420,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="transaction-details-view">
+      <React.Fragment>
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -597,7 +599,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </>
           )}
         </View.Footer>
-      </View>
+      </React.Fragment>
     </>
   );
 };

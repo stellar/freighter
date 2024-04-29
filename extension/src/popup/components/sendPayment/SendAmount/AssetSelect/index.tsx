@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Icon, Notification } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
+import { UnverifiedTokenNotification } from "popup/components/WarningMessages";
 import {
   transactionSubmissionSelector,
   saveAssetSelectSource,
@@ -15,22 +17,21 @@ import {
 import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 
 import "./styles.scss";
 
-export function AssetSelect({
+export const AssetSelect = ({
   assetCode,
   issuerKey,
 }: {
   assetCode: string;
   issuerKey: string;
-}) {
+}) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkDetails, assetsLists } = useSelector(settingsSelector);
   const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
@@ -47,6 +48,7 @@ export function AssetSelect({
       const verifiedTokens = await getVerifiedTokens({
         networkDetails,
         contractId: issuerKey,
+        assetsLists,
       });
 
       if (!verifiedTokens.length) {
@@ -55,7 +57,7 @@ export function AssetSelect({
     };
 
     fetchVerifiedTokens();
-  }, [issuerKey, networkDetails]);
+  }, [issuerKey, networkDetails, assetsLists]);
 
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
@@ -67,10 +69,7 @@ export function AssetSelect({
     <>
       {isUnverifiedToken ? (
         <div className="AssetSelect__unverified">
-          <Notification
-            title="This asset is not on the asset list"
-            variant="primary"
-          />
+          <UnverifiedTokenNotification />
         </div>
       ) : null}
       <div
@@ -95,9 +94,9 @@ export function AssetSelect({
       </div>
     </>
   );
-}
+};
 
-export function PathPayAssetSelect({
+export const PathPayAssetSelect = ({
   source,
   assetCode,
   issuerKey,
@@ -107,7 +106,7 @@ export function PathPayAssetSelect({
   assetCode: string;
   issuerKey: string;
   balance: string;
-}) {
+}) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
@@ -170,4 +169,4 @@ export function PathPayAssetSelect({
       </div>
     </div>
   );
-}
+};

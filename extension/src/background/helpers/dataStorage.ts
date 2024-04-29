@@ -7,15 +7,18 @@ import {
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
   TOKEN_ID_LIST,
+  ASSETS_LISTS_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
 
 interface SetItemParams {
   [key: string]: any;
@@ -77,7 +80,7 @@ export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const localStorageEntries = Object.entries(localStorage);
 
-  // eslint-disable-next-line no-plusplus
+  // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
     const [key, value] = localStorageEntries[i];
     try {
@@ -148,8 +151,8 @@ const migrateTokenIdList = async () => {
       [NETWORKS.FUTURENET]: tokenIdsByKey,
     };
     await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    await migrateDataStorageVersion("1.0.0");
   }
-  await migrateDataStorageVersion("1.0.0");
 };
 
 const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
@@ -193,12 +196,90 @@ export const migrateToAccountSubscriptions = async () => {
   }
 };
 
+const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.0.0")) {
+    const networksList: NetworkDetails[] =
+      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+    const migratedNetworkList = networksList.map((network) => {
+      if (network.network === NETWORKS.PUBLIC) {
+        return {
+          ...MAINNET_NETWORK_DETAILS,
+          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+        };
+      }
+
+      return network;
+    });
+
+    const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+    if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+      await localStore.setItem(NETWORK_ID, MAINNET_NETWORK_DETAILS);
+    }
+
+    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    await migrateDataStorageVersion("4.0.0");
+  }
+};
+
+const migrateSorobanRpcUrlNetwork = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.0.1")) {
+    // an edge case exists in `migrateSorobanRpcUrlNetworkDetails` where we may have updated the `networksList` in storage,
+    // but not the `network`, which is the current active network,
+    // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
+
+    const migratedNetwork: NetworkDetails = await localStore.getItem(
+      NETWORK_ID,
+    );
+    if (
+      migratedNetwork.network === NETWORKS.FUTURENET &&
+      !migratedNetwork.sorobanRpcUrl
+    ) {
+      await localStore.setItem(NETWORK_ID, FUTURENET_NETWORK_DETAILS);
+    }
+    await migrateDataStorageVersion("4.0.1");
+  }
+};
+
+export const resetAccountSubscriptions = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
+    // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
+    await migrateDataStorageVersion("4.0.2");
+  }
+};
+
+export const addAssetsLists = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.1.0")) {
+    // add the base asset lists
+    await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
+    await migrateDataStorageVersion("4.1.0");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
   await migrateTokenIdList();
   await migrateTestnetSorobanRpcUrlNetworkDetails();
   await migrateToAccountSubscriptions();
+  await migrateMainnetSorobanRpcUrlNetworkDetails();
+  await migrateSorobanRpcUrlNetwork();
+  await resetAccountSubscriptions();
+  await addAssetsLists();
 };
 
 // Updates storage version

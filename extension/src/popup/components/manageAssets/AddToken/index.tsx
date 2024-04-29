@@ -1,25 +1,31 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Redirect } from "react-router-dom";
+import { captureException } from "@sentry/browser";
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Icon, Input, Loader } from "@stellar/design-system";
+import { Input, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
-import { INDEXER_URL } from "@shared/constants/mercury";
+import { getTokenDetails } from "@shared/api/internal";
 
 import { FormRows } from "popup/basics/Forms";
 
-import { ROUTES } from "popup/constants/routes";
-
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { isCustomNetwork, isMainnet, isTestnet } from "helpers/stellar";
-import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
+import { isMainnet, isTestnet } from "helpers/stellar";
+import {
+  getVerifiedTokens,
+  getNativeContractDetails,
+  VerifiedTokenRecord,
+} from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
 
+import { AssetNotifcation } from "popup/components/AssetNotification";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import IconUnverified from "popup/assets/icon-unverified.svg";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import "./styles.scss";
@@ -31,30 +37,6 @@ const initialValues: FormValues = {
   asset: "",
 };
 
-const VerificationBadge = ({ isVerified }: { isVerified: boolean }) => {
-  const { t } = useTranslation();
-
-  return (
-    <div className="AddToken__heading">
-      {isVerified ? (
-        <>
-          <Icon.Verified />
-          <span className="AddToken__heading__text">
-            {t("Part of the asset list")}
-          </span>
-        </>
-      ) : (
-        <>
-          <img src={IconUnverified} alt="unverified icon" />
-          <span className="AddToken__heading__text">
-            {t("Not part of the asset list")}
-          </span>
-        </>
-      )}
-    </div>
-  );
-};
-
 export const AddToken = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -63,78 +45,117 @@ export const AddToken = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
+  const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
+    false,
+  );
+  const [verifiedLists, setVerifiedLists] = useState([] as string[]);
+  const { assetsLists } = useSelector(settingsSelector);
+
   const ResultsRef = useRef<HTMLDivElement>(null);
+  const isAllowListVerificationEnabled =
+    isMainnet(networkDetails) || isTestnet(networkDetails);
 
-  interface TokenRecord {
-    code: string;
-    issuer: string;
-    contract: string;
-    org: string;
-    domain: string;
-    icon: string;
-    decimals: number;
-  }
-
+  /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearch = useCallback(
     debounce(async ({ target: { value: contractId } }) => {
-      if (!isContractId(contractId)) {
+      if (!isContractId(contractId as string)) {
         setAssetRows([]);
         return;
       }
+
+      // clear the UI while we work through the flow
       setIsSearching(true);
+      setIsVerifiedToken(false);
+      setIsVerificationInfoShowing(false);
+      setAssetRows([]);
 
-      let verifiedTokens = [] as TokenRecord[];
+      const nativeContractDetails = getNativeContractDetails(networkDetails);
+      let verifiedTokens = [] as VerifiedTokenRecord[];
 
-      if (isMainnet(networkDetails) || isTestnet(networkDetails)) {
+      // step around verification for native contract and unverifiable networks
+
+      if (nativeContractDetails.contract === contractId) {
+        // override our rules for verification for XLM
+        setIsVerificationInfoShowing(false);
+        setAssetRows([
+          {
+            code: nativeContractDetails.code,
+            issuer: contractId,
+            domain: nativeContractDetails.domain,
+          },
+        ]);
+        setIsSearching(false);
+        return;
+      }
+
+      const tokenLookup = async () => {
+        // lookup contract
+        setIsVerifiedToken(false);
+        let tokenDetailsResponse;
+
+        try {
+          tokenDetailsResponse = await getTokenDetails({
+            contractId,
+            publicKey,
+            networkDetails,
+          });
+        } catch (e) {
+          setAssetRows([]);
+        }
+
+        if (!tokenDetailsResponse) {
+          setAssetRows([]);
+        } else {
+          setAssetRows([
+            {
+              code: tokenDetailsResponse.symbol,
+              issuer: contractId,
+              domain: "",
+              name: tokenDetailsResponse.name,
+            },
+          ]);
+        }
+      };
+
+      if (isAllowListVerificationEnabled) {
+        // usual binary case of a token being verified or unverified
         verifiedTokens = await getVerifiedTokens({
           networkDetails,
           contractId,
-          setIsSearching,
+          assetsLists,
         });
-      }
 
-      setIsSearching(false);
-
-      if (verifiedTokens.length) {
-        setIsVerifiedToken(true);
-        setAssetRows(
-          verifiedTokens.map((record: TokenRecord) => ({
-            code: record.code,
-            issuer: record.contract,
-            image: record.icon,
-            domain: record.domain,
-          })),
-        );
-      } else {
-        // lookup contract
-        setIsVerifiedToken(false);
         try {
-          const tokenUrl = new URL(
-            `${INDEXER_URL}/token-details/${contractId}`,
-          );
-          tokenUrl.searchParams.append("network", networkDetails.network);
-          tokenUrl.searchParams.append("pub_key", publicKey);
-          tokenUrl.searchParams.append(
-            "soroban_url",
-            networkDetails.sorobanRpcUrl!,
-          );
-
-          const res = await fetch(tokenUrl.href);
-          const resJson = await res.json();
-
-          setAssetRows([
-            {
-              code: resJson.symbol,
-              issuer: contractId,
-              domain: "",
-              name: resJson.name,
-            },
-          ]);
+          if (verifiedTokens.length) {
+            setIsVerifiedToken(true);
+            setVerifiedLists(verifiedTokens[0].verifiedLists);
+            setAssetRows(
+              verifiedTokens.map((record: VerifiedTokenRecord) => ({
+                code: record.code,
+                issuer: record.contract,
+                image: record.icon,
+                domain: record.domain,
+              })),
+            );
+          } else {
+            // token not found on asset list, look up the details manually
+            await tokenLookup();
+          }
         } catch (e) {
           setAssetRows([]);
+          captureException(
+            `Failed to fetch token details - ${JSON.stringify(e)}`,
+          );
           console.error(e);
         }
+      } else {
+        // Futurenet token lookup
+        await tokenLookup();
       }
+
+      setIsVerificationInfoShowing(isAllowListVerificationEnabled);
+
+      setIsSearching(false);
     }, 500),
     [],
   );
@@ -143,11 +164,12 @@ export const AddToken = () => {
     setHasNoResults(!assetRows.length);
   }, [assetRows]);
 
-  if (isCustomNetwork(networkDetails)) {
-    return <Redirect to={ROUTES.addAsset} />;
-  }
+  useEffect(() => {
+    setIsVerificationInfoShowing(isAllowListVerificationEnabled);
+  }, [isAllowListVerificationEnabled]);
 
   return (
+    // eslint-disable-next-line
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
         <Form
@@ -156,7 +178,7 @@ export const AddToken = () => {
             setHasNoResults(false);
           }}
         >
-          <View data-testid="add-token">
+          <React.Fragment>
             <SubviewHeader title={t("Add a Soroban token by ID")} />
             <View.Content>
               <FormRows>
@@ -170,7 +192,7 @@ export const AddToken = () => {
                         id="asset"
                         placeholder={t("Token ID")}
                         {...field}
-                        data-testid="search-asset-input"
+                        data-testid="search-token-input"
                       />
                     )}
                   </Field>
@@ -186,8 +208,8 @@ export const AddToken = () => {
                       <Loader />
                     </div>
                   ) : null}
-                  {assetRows.length ? (
-                    <VerificationBadge isVerified={isVerifiedToken} />
+                  {assetRows.length && isVerificationInfoShowing ? (
+                    <AssetNotifcation isVerified={isVerifiedToken} />
                   ) : null}
 
                   {assetRows.length ? (
@@ -195,6 +217,8 @@ export const AddToken = () => {
                       header={null}
                       assetRows={assetRows}
                       isVerifiedToken={isVerifiedToken}
+                      isVerificationInfoShowing={isVerificationInfoShowing}
+                      verifiedLists={verifiedLists}
                     />
                   ) : null}
                   {hasNoResults && dirty && !isSearching ? (
@@ -203,9 +227,10 @@ export const AddToken = () => {
                 </div>
               </FormRows>
             </View.Content>
-          </View>
+          </React.Fragment>
         </Form>
       )}
     </Formik>
   );
 };
+/* eslint-enable @typescript-eslint/no-unsafe-argument */

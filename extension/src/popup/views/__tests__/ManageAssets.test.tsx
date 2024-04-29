@@ -13,6 +13,7 @@ import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
+  MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types";
 import { createMemoryHistory } from "history";
@@ -23,6 +24,7 @@ import * as AssetDomain from "popup/helpers/getAssetDomain";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as ManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as SearchAsset from "popup/helpers/searchAsset";
+import * as SorobanHelpers from "popup/helpers/soroban";
 import {
   AssetSelectType,
   initialState as transactionSubmissionInitialState,
@@ -33,6 +35,10 @@ import { ManageAssets } from "../ManageAssets";
 
 const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
+const verifiedToken =
+  "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+const unverifiedToken =
+  "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
 
 const manageAssetsMockBalances = {
   balances: ({
@@ -154,6 +160,39 @@ jest.spyOn(SearchAsset, "searchAsset").mockImplementation(({ asset }) => {
     },
   });
 });
+jest
+  .spyOn(SearchAsset, "getVerifiedTokens")
+  .mockImplementation(({ contractId }) => {
+    if (contractId === verifiedToken) {
+      return Promise.resolve([
+        {
+          code: "USDC",
+          contract: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+          decimals: 7,
+          domain: "centre.io",
+          icon: "",
+          issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          org: "unknown",
+          verifiedLists: [],
+        },
+      ]);
+    }
+
+    return Promise.resolve([]);
+  });
+
+jest
+  .spyOn(ApiInternal, "getTokenDetails")
+  .mockImplementation(() =>
+    Promise.resolve({ name: "foo", symbol: "baz", decimals: 7 }),
+  );
+
+jest
+  .spyOn(SorobanHelpers, "isContractId")
+  .mockImplementation(
+    (contractId) =>
+      contractId === verifiedToken || contractId === unverifiedToken,
+  );
 
 const mockHistoryGetter = jest.fn();
 jest.mock("popup/constants/history", () => ({
@@ -184,9 +223,15 @@ jest.mock("stellar-sdk", () => {
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 const history = createMemoryHistory();
 
-const initView = async (rejectTxn: boolean = false) => {
+const initView = async (
+  rejectTxn: boolean = false,
+  isMainnet: boolean = false,
+) => {
   history.push(ROUTES.manageAssets);
   mockHistoryGetter.mockReturnValue(history);
+  const configuredNetworkDetails = isMainnet
+    ? MAINNET_NETWORK_DETAILS
+    : TESTNET_NETWORK_DETAILS;
 
   render(
     <Wrapper
@@ -201,10 +246,12 @@ const initView = async (rejectTxn: boolean = false) => {
         },
         settings: {
           networkDetails: {
-            ...TESTNET_NETWORK_DETAILS,
+            ...configuredNetworkDetails,
             networkName: rejectTxn ? "Test Net Reject" : "Test Net",
           },
           networksList: DEFAULT_NETWORKS,
+          isSorobanPublicEnabled: true,
+          isRpcHealthy: true,
         },
         transactionSubmission: {
           ...transactionSubmissionInitialState,
@@ -221,7 +268,7 @@ const initView = async (rejectTxn: boolean = false) => {
   );
 
   await waitFor(() => {
-    expect(screen.getByTestId("choose-asset")).toBeDefined();
+    expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
   });
 };
 
@@ -242,9 +289,11 @@ describe("Manage assets", () => {
   it("renders manage assets view initial state", async () => {
     await initView();
 
-    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Choose Asset",
+      );
+    });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
 
@@ -281,7 +330,7 @@ describe("Manage assets", () => {
     await fireEvent.click(addButton);
 
     await waitFor(() => {
-      screen.getByTestId("search-asset");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Choose Asset",
       );
@@ -318,9 +367,11 @@ describe("Manage assets", () => {
   it("remove asset", async () => {
     await initView();
 
-    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Choose Asset",
+      );
+    });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const removeButton = within(addedTrustlines[1]).getByTestId(
@@ -330,7 +381,7 @@ describe("Manage assets", () => {
     await waitFor(async () => {
       expect(removeButton).toHaveTextContent("Remove");
       expect(removeButton).toBeEnabled();
-      await fireEvent.click(removeButton);
+      fireEvent.click(removeButton);
     });
 
     const lastRoute = history.entries.pop();
@@ -347,9 +398,11 @@ describe("Manage assets", () => {
 
     await initView(true);
 
-    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Choose Asset",
+      );
+    });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const removeButton = within(addedTrustlines[0]).getByTestId(
@@ -362,7 +415,7 @@ describe("Manage assets", () => {
     });
 
     await waitFor(() => {
-      screen.getByTestId("trustline-error-view");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Trustline Error",
       );
@@ -381,7 +434,7 @@ describe("Manage assets", () => {
     await fireEvent.click(addButton);
 
     await waitFor(() => {
-      screen.getByTestId("search-asset");
+      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Choose Asset",
       );
@@ -426,5 +479,103 @@ describe("Manage assets", () => {
 
     const lastRoute = history.entries.pop();
     expect(lastRoute?.pathname).toBe("/account");
+  });
+  it("add soroban token on asset list", async () => {
+    // init Mainnet view
+    await initView(false, true);
+
+    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+      "Choose Asset",
+    );
+
+    const addTokenButton = screen.getByTestId(
+      "ChooseAssetAddSorobanTokenButton",
+    );
+    expect(addTokenButton).toBeEnabled();
+    await fireEvent.click(addTokenButton);
+
+    await waitFor(() => {
+      screen.getByTestId("AppHeaderPageTitle");
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Add a Soroban token by ID",
+      );
+
+      const searchInput = screen.getByTestId("search-token-input");
+      fireEvent.change(searchInput, { target: { value: verifiedToken } });
+      expect(searchInput).toHaveValue(verifiedToken);
+    });
+    await waitFor(async () => {
+      const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
+      const verificationBadge = screen.getByTestId("asset-notification");
+
+      expect(verificationBadge).toHaveTextContent(
+        "On your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+      );
+
+      expect(addedTrustlines.length).toBe(1);
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+      ).toHaveTextContent("USDC");
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+      ).toHaveTextContent("centre.io");
+
+      const addAssetButton = within(addedTrustlines[0]).getByTestId(
+        "ManageAssetRowButton",
+      );
+
+      expect(addAssetButton).toHaveTextContent("Add");
+      expect(addAssetButton).toBeEnabled();
+      await fireEvent.click(addAssetButton);
+    });
+  });
+  it("add soroban token not on asset list", async () => {
+    // init Mainnet view
+    await initView(false, true);
+
+    const addTokenButton = screen.getByTestId(
+      "ChooseAssetAddSorobanTokenButton",
+    );
+    expect(addTokenButton).toBeEnabled();
+    await fireEvent.click(addTokenButton);
+
+    await waitFor(() => {
+      screen.getByTestId("AppHeaderPageTitle");
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Add a Soroban token by ID",
+      );
+
+      const searchInput = screen.getByTestId("search-token-input");
+      fireEvent.change(searchInput, {
+        target: {
+          value: unverifiedToken,
+        },
+      });
+      expect(searchInput).toHaveValue(unverifiedToken);
+    });
+    await waitFor(async () => {
+      const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
+      const verificationBadge = screen.getByTestId("asset-notification");
+
+      expect(verificationBadge).toHaveTextContent(
+        "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+      );
+
+      expect(addedTrustlines.length).toBe(1);
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+      ).toHaveTextContent("foo");
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+      ).toHaveTextContent("Stellar Network");
+
+      const addAssetButton = within(addedTrustlines[0]).getByTestId(
+        "ManageAssetRowButton",
+      );
+
+      expect(addAssetButton).toHaveTextContent("Add");
+      expect(addAssetButton).toBeEnabled();
+      await fireEvent.click(addAssetButton);
+    });
   });
 });

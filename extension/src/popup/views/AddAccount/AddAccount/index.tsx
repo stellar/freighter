@@ -43,6 +43,7 @@ export const AddAccount = () => {
 
     if (addAccount.fulfilled.match(res)) {
       emitMetric(METRIC_NAMES.accountScreenAddAccount, {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         number_of_accounts: res.payload.allAccounts.length,
       });
       navigateTo(ROUTES.account);
@@ -54,7 +55,7 @@ export const AddAccount = () => {
   ]);
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title="Add a new Stellar address" />
       <Formik initialValues={initialValues} onSubmit={handleSubmit}>
         {({ dirty, isSubmitting, isValid, errors, touched }) => (
@@ -96,6 +97,6 @@ export const AddAccount = () => {
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

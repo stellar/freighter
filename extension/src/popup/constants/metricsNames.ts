@@ -32,6 +32,7 @@ export const METRIC_NAMES = {
   viewSecurity: "loaded screen: security",
   viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
+  viewManageAssetsLists: "loaded screen: manage assets lists",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
@@ -84,6 +85,8 @@ export const METRIC_NAMES = {
   manageAssetAddUnsafeAsset: "manage asset: add unsafe asset",
   manageAssetRemoveAsset: "manage asset: remove asset",
   manageAssetError: "manage asset: error",
+
+  manageAssetListsModifyAssetList: "manage asset list: modify asset list",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
@@ -146,4 +149,8 @@ export const METRIC_NAMES = {
   viewLeaveFeedback: "loaded screen: leave feedback",
 
   invalidAuthEntry: "invalid authorization entry",
+
+  rejectSigning: "user cancelled signing flow",
+  approveSign: "user signed transaction",
+  reviewedAuthEntry: "reviewed authorization entry",
 };

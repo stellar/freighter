@@ -113,9 +113,13 @@ export const Operations = ({
   const { t } = useTranslation();
 
   const AuthorizationMapToDisplay: { [index: string]: string } = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "1": "Authorization Required",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "2": "Authorization Revocable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "4": "Authorization Immutable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "8": "Authorization Clawback Enabled",
   };
 
@@ -616,7 +620,7 @@ export const Operations = ({
         const { extendTo } = op;
         return (
           <KeyValueList
-            operationKey={t("Extend TO")}
+            operationKey={t("Extend To")}
             operationValue={extendTo}
           />
         );
@@ -731,7 +735,11 @@ export const Operations = ({
         const type = op.type;
 
         return (
-          <div className="Operations--wrapper" key={operationIndex}>
+          <div
+            className="Operations--wrapper"
+            key={operationIndex}
+            data-testid="OperationsWrapper"
+          >
             <div className="Operations--header">
               <Icon.DeployedCode />
               <strong className="OpType">

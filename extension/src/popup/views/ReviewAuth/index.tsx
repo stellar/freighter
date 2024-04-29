@@ -1,20 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { captureException } from "@sentry/browser";
+import BigNumber from "bignumber.js";
 import {
   MemoType,
   Operation,
-  StrKey,
   Transaction,
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
 import { useSelector } from "react-redux";
+import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
-import { Button, Icon } from "@stellar/design-system";
+import { getTokenDetails } from "@shared/api/internal";
+
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import StellarLogo from "popup/assets/stellar-logo.png";
 
 import {
   KeyValueInvokeHostFnArgs,
@@ -22,26 +27,42 @@ import {
 } from "popup/components/signTransaction/Operations/KeyVal";
 import { useTranslation } from "react-i18next";
 import { truncateString } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
 import { FlaggedKeys } from "types/transactions";
+import {
+  FnArgsCreateSac,
+  FnArgsCreateWasm,
+  FnArgsInvoke,
+  buildInvocationTree,
+  formatTokenAmount,
+  getInvocationDetails,
+  pickTransfers,
+} from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Tabs } from "popup/components/Tabs";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AccountList } from "popup/components/account/AccountList";
 import {
+  InvokerAuthWarning,
   TransferWarning,
   UnverifiedTokenTransferWarning,
 } from "popup/components/WarningMessages";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
+import { CopyValue } from "popup/components/CopyValue";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
 import { Data } from "../SignTransaction/Preview/Data";
 import { VerifyAccount } from "../VerifyAccount";
+
 import "./styles.scss";
 
 export const ReviewAuth = () => {
   const location = useLocation();
   const { t } = useTranslation();
+  const [isLoadingAuth, setLoadingAuth] = useState(true);
 
   const decodedSearchParam = decodeString(location.search.replace("?", ""));
   const params = decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
@@ -52,7 +73,7 @@ export const ReviewAuth = () => {
 
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const transaction = TransactionBuilder.fromXDR(
-    params.transactionXdr,
+    params.transactionXdr as string,
     networkPassphrase,
   ) as Transaction;
 
@@ -73,11 +94,20 @@ export const ReviewAuth = () => {
   } = useSetupSigningFlow(
     rejectTransaction,
     signTransaction,
-    params.transactionXdr,
-    params.accountToSign,
+    params.transactionXdr as string,
+    params.accountToSign as string,
   );
 
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
+  const reviewAuthEntry = () => {
+    emitMetric(METRIC_NAMES.reviewedAuthEntry);
+    setLoadingAuth(true);
+    if (isLastEntry) {
+      setHasConfirmedAuth(true);
+    } else {
+      setActiveAuthEntryIndex(activeAuthEntryIndex + 1);
+    }
+  };
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -103,7 +133,11 @@ export const ReviewAuth = () => {
               <h5>
                 {activeAuthEntryIndex + 1}/{authCount} Authorizations
               </h5>
-              <AuthDetail authEntry={op.auth[activeAuthEntryIndex]} />
+              <AuthDetail
+                authEntry={op.auth[activeAuthEntryIndex]}
+                isLoading={isLoadingAuth}
+                setLoading={setLoadingAuth}
+              />
             </>
           ) : (
             <SignTransaction
@@ -126,7 +160,10 @@ export const ReviewAuth = () => {
                 className="ReviewAuth__Actions__PublicKey"
                 onClick={() => setIsDropdownOpen(true)}
               >
-                <KeyIdenticon publicKey={currentAccount.publicKey} />
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
                 <Icon.ChevronDown />
               </button>
             </div>
@@ -148,11 +185,7 @@ export const ReviewAuth = () => {
                 isFullWidth
                 size="md"
                 isLoading={isConfirming}
-                onClick={() =>
-                  isLastEntry
-                    ? setHasConfirmedAuth(true)
-                    : setActiveAuthEntryIndex(activeAuthEntryIndex + 1)
-                }
+                onClick={reviewAuthEntry}
               >
                 {isLastEntry
                   ? t("Approve and continue")
@@ -187,53 +220,255 @@ export const ReviewAuth = () => {
   );
 };
 
-function getInvocationDetails(invocation: xdr.SorobanAuthorizedInvocation) {
-  return [
-    getInvocationArgs(invocation),
-    ...invocation.subInvocations().map(getInvocationArgs),
-  ];
+interface TokenDetails {
+  name: string;
+  symbol: string;
+  decimals: number;
 }
+type TokenDetailMap = Record<string, TokenDetails>;
 
-function getInvocationArgs(invocation: xdr.SorobanAuthorizedInvocation) {
-  const _invocation = invocation.function().contractFn();
-  const contractId = StrKey.encodeContract(
-    _invocation.contractAddress().contractId(),
+const TransferSummary = ({
+  transfer,
+  tokenDetails = { name: "", symbol: "", decimals: 0 },
+}: {
+  transfer: {
+    amount: string;
+    contractId: string;
+    from: string;
+    to: string;
+  };
+  tokenDetails: TokenDetails;
+}) => {
+  const hasTokenDetails = tokenDetails.symbol && tokenDetails.decimals;
+  const isNative = tokenDetails.symbol === "native";
+  const symbol = isNative ? "XLM" : tokenDetails.symbol;
+  return (
+    <div className="AuthDetail__InfoBlock TransferSummary">
+      <div className="SummaryBlock">
+        <div className="SummaryBlock__Title">
+          <Icon.ArrowCircleRight />
+          <p>Receiver</p>
+        </div>
+        <KeyIdenticon
+          isCopyAllowed
+          iconSide="right"
+          publicKey={transfer.to}
+          isSmall
+        />
+      </div>
+      <div className="SummaryBlock">
+        <div className="SummaryBlock__Title">
+          <Icon.ArrowCircleLeft />
+          <p>Sender</p>
+        </div>
+        <KeyIdenticon
+          isCopyAllowed
+          iconSide="right"
+          publicKey={transfer.from}
+          isSmall
+        />
+      </div>
+      <div className="SummaryBlock">
+        <div className="SummaryBlock__Title">
+          <Icon.Toll />
+          <p>Amount</p>
+        </div>
+        <div className="SummaryBlock__Title">
+          {hasTokenDetails ? (
+            <>
+              <p>
+                {formatTokenAmount(
+                  new BigNumber(transfer.amount),
+                  tokenDetails.decimals,
+                )}{" "}
+                {symbol}
+              </p>
+              {isNative ? (
+                <div className="AccountAssets__asset--logo AccountAssets__asset--soroban-token">
+                  <img src={StellarLogo} alt="Stellar icon" />
+                </div>
+              ) : (
+                <SorobanTokenIcon />
+              )}
+            </>
+          ) : (
+            <>
+              <p>{transfer.amount}</p>
+            </>
+          )}
+        </div>
+      </div>
+      {!hasTokenDetails && (
+        <div className="SummaryBlock">
+          <p className="MissingDetailWarning">
+            Failed to fetch token details, showing raw amount.
+          </p>
+        </div>
+      )}
+    </div>
   );
-  const fnName = _invocation.functionName().toString();
-  const args = _invocation.args();
-  return { fnName, contractId, args };
-}
+};
 
 const AuthDetail = ({
   authEntry,
+  setLoading,
+  isLoading,
 }: {
   authEntry: xdr.SorobanAuthorizationEntry;
+  setLoading: (isLoading: boolean) => void;
+  isLoading: boolean;
 }) => {
+  const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
   const { t } = useTranslation();
-  const details = getInvocationDetails(authEntry.rootInvocation());
+  const rootInvocation = authEntry.rootInvocation();
+  const details = getInvocationDetails(rootInvocation);
+  const invocations = details.filter(
+    (detail) => detail.type === "invoke",
+  ) as FnArgsInvoke[];
+  const createWasms = details.filter(
+    (detail) => detail.type === "wasm",
+  ) as FnArgsCreateWasm[];
+  const createSacs = details.filter(
+    (detail) => detail.type === "sac",
+  ) as FnArgsCreateSac[];
+
+  const rootJson = buildInvocationTree(rootInvocation);
+  const isInvokeContract = rootInvocation.function().switch().value === 0;
+  const transfers = isInvokeContract ? pickTransfers(rootJson) : [];
+
+  const [tokenDetails, setTokenDetails] = React.useState({} as TokenDetailMap);
+
+  const transfersDepKey = JSON.stringify(transfers);
+  React.useEffect(() => {
+    async function _getTokenDetails() {
+      setLoading(true);
+      const _tokenDetails = {} as TokenDetailMap;
+
+      // eslint-disable-next-line
+      for (const transfer of transfers) {
+        try {
+          // eslint-disable-next-line
+          const tokenDetailsResponse = await getTokenDetails({
+            contractId: transfer.contractId,
+            publicKey,
+            networkDetails,
+          });
+
+          if (!tokenDetailsResponse) {
+            // default details
+            _tokenDetails[transfer.contractId] = {
+              name: "",
+              symbol: "",
+              decimals: 0,
+            };
+            setTokenDetails(_tokenDetails);
+            throw new Error("failed to fetch token details");
+          }
+          _tokenDetails[transfer.contractId] = tokenDetailsResponse;
+        } catch (error) {
+          captureException(
+            `Failed to fetch token details - ${JSON.stringify(error)}`,
+          );
+          console.error(error);
+        }
+      }
+      setTokenDetails(_tokenDetails);
+      setLoading(false);
+    }
+    _getTokenDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transfersDepKey]);
+
   return (
     <div className="AuthDetail">
-      <TransferWarning authEntry={authEntry} />
-      <UnverifiedTokenTransferWarning details={details} />
-      {details.map((detail) => (
-        <React.Fragment key={detail.fnName}>
-          <div className="AuthDetail__TitleRow">
-            <Icon.Code />
-            <h5>Invocation</h5>
-          </div>
-          <div className="AuthDetail__InfoBlock">
-            <KeyValueList
-              operationKey={t("Contract ID")}
-              operationValue={truncateString(detail.contractId)}
+      {isLoading ? (
+        <div className="AuthDetail__loader">
+          <Loader size="3rem" />
+        </div>
+      ) : (
+        <>
+          <TransferWarning authEntry={authEntry} />
+          <UnverifiedTokenTransferWarning details={invocations} />
+          {authEntry.credentials().switch() ===
+            xdr.SorobanCredentialsType.sorobanCredentialsSourceAccount() && (
+            <InvokerAuthWarning />
+          )}
+          {transfers.map((transfer) => (
+            <TransferSummary
+              key={JSON.stringify(transfer)}
+              transfer={transfer}
+              tokenDetails={tokenDetails[transfer.contractId]}
             />
-            <KeyValueList
-              operationKey={t("Function Name")}
-              operationValue={detail.fnName}
-            />
-            <KeyValueInvokeHostFnArgs args={detail.args} />
-          </div>
-        </React.Fragment>
-      ))}
+          ))}
+          {invocations.map((detail) => (
+            <React.Fragment key={detail.fnName}>
+              <div className="AuthDetail__TitleRow">
+                <Icon.Code />
+                <h5>Invocation</h5>
+              </div>
+              <div className="AuthDetail__InfoBlock">
+                <KeyValueList
+                  operationKey={t("Contract ID")}
+                  operationValue={
+                    <CopyValue
+                      value={detail.contractId}
+                      displayValue={truncateString(detail.contractId)}
+                    />
+                  }
+                />
+                <KeyValueList
+                  operationKey={t("Function Name")}
+                  operationValue={detail.fnName}
+                />
+                <KeyValueInvokeHostFnArgs args={detail.args} />
+              </div>
+            </React.Fragment>
+          ))}
+          {createWasms.map((detail) => (
+            <React.Fragment key={detail.hash}>
+              <div className="AuthDetail__TitleRow">
+                <Icon.Code />
+                <h5>Contract Creation</h5>
+              </div>
+              <div className="AuthDetail__InfoBlock">
+                <KeyValueList
+                  operationKey={t("Contract Address")}
+                  operationValue={
+                    <CopyValue
+                      value={detail.address}
+                      displayValue={truncateString(detail.address)}
+                    />
+                  }
+                />
+                <KeyValueList
+                  operationKey={t("Hash")}
+                  operationValue={truncateString(detail.hash)}
+                />
+                <KeyValueList
+                  operationKey={t("Salt")}
+                  operationValue={truncateString(detail.salt)}
+                />
+              </div>
+            </React.Fragment>
+          ))}
+          {createSacs.map((detail) => (
+            <React.Fragment key={detail.asset}>
+              <div className="AuthDetail__TitleRow">
+                <Icon.Code />
+                <h5>Contract Creation</h5>
+              </div>
+              <div className="AuthDetail__InfoBlock">
+                <KeyValueList
+                  operationKey={t("Asset")}
+                  operationValue={truncateString(detail.asset)}
+                />
+              </div>
+            </React.Fragment>
+          ))}
+        </>
+      )}
     </div>
   );
 };

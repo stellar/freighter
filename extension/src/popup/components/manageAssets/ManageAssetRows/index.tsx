@@ -44,7 +44,7 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   ScamAssetWarning,
   NewAssetWarning,
-  UnverifiedTokenWarning,
+  TokenWarning,
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
@@ -72,6 +72,16 @@ interface ManageAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   chooseAsset?: boolean;
   isVerifiedToken?: boolean;
+  isVerificationInfoShowing?: boolean;
+  verifiedLists?: string[];
+}
+
+interface SuspiciousAssetData {
+  domain: string;
+  code: string;
+  issuer: string;
+  image: string;
+  isVerifiedToken?: boolean;
 }
 
 export const ManageAssetRows = ({
@@ -80,6 +90,8 @@ export const ManageAssetRows = ({
   assetRows,
   chooseAsset,
   isVerifiedToken,
+  isVerificationInfoShowing,
+  verifiedLists,
 }: ManageAssetRowsProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -112,7 +124,8 @@ export const ManageAssetRows = ({
     code: "",
     issuer: "",
     image: "",
-  });
+    isVerifiedToken: false,
+  } as SuspiciousAssetData);
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -144,6 +157,7 @@ export const ManageAssetRows = ({
     };
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackChangeTrustline();
     } else {
@@ -165,6 +179,7 @@ export const ManageAssetRows = ({
     if (signFreighterTransaction.fulfilled.match(res)) {
       const submitResp = await dispatch(
         submitFreighterTransaction({
+          publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
         }),
@@ -257,7 +272,16 @@ export const ManageAssetRows = ({
     const contractId = assetRowData.issuer;
     setAssetSubmitting(canonicalAsset || contractId);
     if (!isTrustlineActive) {
-      if (isVerifiedToken) {
+      if (isVerificationInfoShowing) {
+        setSuspiciousAssetData({
+          domain: assetRowData.domain,
+          code: assetRowData.code,
+          issuer: assetRowData.issuer,
+          image: assetRowData.image,
+          isVerifiedToken: !!isVerifiedToken,
+        });
+        setShowUnverifiedWarning(true);
+      } else {
         await dispatch(
           addTokenId({
             publicKey,
@@ -266,14 +290,6 @@ export const ManageAssetRows = ({
           }),
         );
         navigateTo(ROUTES.account);
-      } else {
-        setSuspiciousAssetData({
-          domain: assetRowData.domain,
-          code: assetRowData.code,
-          issuer: assetRowData.issuer,
-          image: assetRowData.image,
-        });
-        setShowUnverifiedWarning(true);
       }
     } else {
       await dispatch(
@@ -315,13 +331,15 @@ export const ManageAssetRows = ({
         />
       )}
       {showUnverifiedWarning && (
-        <UnverifiedTokenWarning
+        <TokenWarning
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           onClose={() => {
             setShowUnverifiedWarning(false);
           }}
+          isVerifiedToken={!!suspiciousAssetData.isVerifiedToken}
+          verifiedLists={verifiedLists}
         />
       )}
       <div className="ManageAssetRows__scrollbar">
@@ -329,7 +347,9 @@ export const ManageAssetRows = ({
         <div className="ManageAssetRows__content">
           {assetRows.map(
             ({ code = "", domain, image = "", issuer = "", name = "" }) => {
-              if (!accountBalances.balances) return null;
+              if (!accountBalances.balances) {
+                return null;
+              }
               const isContract = isContractId(issuer);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               const isTrustlineActive =
@@ -436,6 +456,7 @@ export const ManageAssetRows = ({
         {children}
       </div>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showNewAssetWarning || showBlockedDomainWarning}
       />
@@ -461,6 +482,9 @@ export const ManageAssetRow = ({
   const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   const isScamAsset = !!blockedDomains.domains[domain];
+  const assetCode = name || code;
+  const truncatedAssetCode =
+    assetCode.length > 20 ? truncateString(assetCode) : assetCode;
 
   return (
     <>
@@ -471,7 +495,7 @@ export const ManageAssetRow = ({
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
-          <span data-testid="ManageAssetCode">{name || code}</span>
+          <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
           <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div

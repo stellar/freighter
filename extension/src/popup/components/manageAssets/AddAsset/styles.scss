@@ -1,5 +1,5 @@
 :root {
-  --AddAsset--results-height: 22.9rem;
+  --AddAsset--results-height: 23.2rem;
   --AddAsset--title-height: 3rem;
 }
 
@@ -11,6 +11,13 @@
     line-height: 1.5rem;
     padding: 0.5rem 0 1rem 0;
     text-transform: uppercase;
+  }
+
+  &__FormContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
   }
 
   &__results {

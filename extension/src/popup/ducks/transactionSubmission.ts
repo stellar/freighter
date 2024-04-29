@@ -13,11 +13,14 @@ import {
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountIndexerBalances as internalgetAccountIndexerBalances,
+  getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getBlockedDomains as internalGetBlockedDomains,
   getBlockedAccounts as internalGetBlockedAccounts,
   removeTokenId as internalRemoveTokenId,
+  submitFreighterTransaction as internalSubmitFreighterTransaction,
+  submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
 } from "@shared/api/internal";
 
 import {
@@ -35,6 +38,7 @@ import {
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
@@ -55,7 +59,8 @@ export const signFreighterTransaction = createAsyncThunk<
       network,
     });
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -72,7 +77,8 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
         network,
       });
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({ errorMessage: message });
     }
   },
 );
@@ -80,6 +86,7 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
 export const submitFreighterTransaction = createAsyncThunk<
   Horizon.HorizonApi.TransactionResponse,
   {
+    publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
   },
@@ -88,33 +95,57 @@ export const submitFreighterTransaction = createAsyncThunk<
   }
 >(
   "submitFreighterTransaction",
-  async ({ signedXDR, networkDetails }, thunkApi) => {
-    try {
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          signed_xdr: signedXDR,
-          network_url: networkDetails.networkUrl,
-          network_passphrase: networkDetails.networkPassphrase,
-        }),
-      };
-      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
-      const response = await res.json();
+  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
+    if (isCustomNetwork(networkDetails)) {
+      try {
+        const txRes = await internalSubmitFreighterTransaction({
+          signedXDR,
+          networkDetails,
+        });
 
-      if (!res.ok) {
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
+
+        return txRes;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: response,
+          errorMessage: message,
         });
       }
-      return response;
-    } catch (e) {
-      return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
-      });
+    } else {
+      try {
+        const options = {
+          method: "POST",
+          headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            signed_xdr: signedXDR,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            network_url: networkDetails.networkUrl,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            network_passphrase: networkDetails.networkPassphrase,
+          }),
+        };
+        const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+        const response = await res.json();
+
+        if (!res.ok) {
+          return thunkApi.rejectWithValue({
+            errorMessage: response,
+            response,
+          });
+        }
+        return response;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
+        return thunkApi.rejectWithValue({
+          errorMessage: message,
+          response: e as any,
+        });
+      }
     }
   },
 );
@@ -122,6 +153,7 @@ export const submitFreighterTransaction = createAsyncThunk<
 export const submitFreighterSorobanTransaction = createAsyncThunk<
   SorobanRpc.Api.SendTransactionResponse,
   {
+    publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
   },
@@ -130,33 +162,57 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   }
 >(
   "submitFreighterSorobanTransaction",
-  async ({ signedXDR, networkDetails }, thunkApi) => {
-    try {
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          signed_xdr: signedXDR,
-          network_url: networkDetails.networkUrl,
-          network_passphrase: networkDetails.networkPassphrase,
-        }),
-      };
-      const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
-      const response = await res.json();
+  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
+    if (isCustomNetwork(networkDetails)) {
+      try {
+        const txRes = await internalSubmitFreighterSorobanTransaction({
+          signedXDR,
+          networkDetails,
+        });
 
-      if (!res.ok) {
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
+
+        return txRes;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: response,
+          errorMessage: message,
         });
       }
-      return response;
-    } catch (e) {
-      return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
-      });
+    } else {
+      try {
+        const options = {
+          method: "POST",
+          headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            signed_xdr: signedXDR,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            network_url: networkDetails.networkUrl,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            network_passphrase: networkDetails.networkPassphrase,
+          }),
+        };
+        const res = await fetch(`${INDEXER_URL}/submit-tx`, options);
+        const response = await res.json();
+
+        if (!res.ok) {
+          return thunkApi.rejectWithValue({
+            errorMessage: response,
+            response,
+          });
+        }
+        return response;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
+        return thunkApi.rejectWithValue({
+          errorMessage: message,
+          response: e as any,
+        });
+      }
     }
   },
 );
@@ -192,32 +248,35 @@ export const signWithHardwareWallet = createAsyncThunk<
 
       return tx.toXDR();
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({ errorMessage: message });
     }
   },
 );
 
 export const addRecentAddress = createAsyncThunk<
-  { recentAddresses: Array<string> },
+  { recentAddresses: string[] },
   { publicKey: string },
   { rejectValue: ErrorMessage }
 >("addRecentAddress", async ({ publicKey }, thunkApi) => {
   try {
     return await internalAddRecentAddress({ publicKey });
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
 export const loadRecentAddresses = createAsyncThunk<
-  { recentAddresses: Array<string> },
+  { recentAddresses: string[] },
   undefined,
   { rejectValue: ErrorMessage }
 >("loadRecentAddresses", async (_: any, thunkApi) => {
   try {
     return await internalLoadRecentAddresses();
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -281,26 +340,45 @@ export const getAccountBalances = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
-    const balances = await internalgetAccountIndexerBalances(
-      publicKey,
-      networkDetails,
-    );
+    let balances;
+
+    if (isCustomNetwork(networkDetails)) {
+      balances = await internalGetAccountBalancesStandalone({
+        publicKey,
+        networkDetails,
+      });
+    } else {
+      balances = await internalgetAccountIndexerBalances(
+        publicKey,
+        networkDetails,
+      );
+    }
+
     storeBalanceMetricData(publicKey, balances.isFunded || false);
     return balances;
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
-  { publicKey: string; networkDetails: NetworkDetails },
+  {
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  },
   { rejectValue: ErrorMessage }
 >("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
   try {
+    if (isCustomNetwork(networkDetails)) {
+      return await internalGetAccountBalancesStandalone({
+        publicKey,
+        networkDetails,
+      });
+    }
     return await internalgetAccountIndexerBalances(publicKey, networkDetails);
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -355,9 +433,9 @@ export const getBestPath = createAsyncThunk<
         networkDetails,
       });
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
+        errorMessage: message,
       });
     }
   },
@@ -372,7 +450,7 @@ export const getBlockedDomains = createAsyncThunk<
     const resp = await internalGetBlockedDomains();
     return resp.blockedDomains || [];
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -385,7 +463,7 @@ export const getBlockedAccounts = createAsyncThunk<
     const resp = await internalGetBlockedAccounts();
     return resp.blockedAccounts || [];
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -403,7 +481,7 @@ interface TransactionData {
   memo: string;
   destinationAsset: string;
   destinationAmount: string;
-  path: Array<string>;
+  path: string[];
   allowedSlippage: string;
   isToken: boolean;
   isMergeSelected: boolean;
@@ -425,6 +503,7 @@ export enum AssetSelectType {
 interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
+  destinationAccountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
   response:
     | Horizon.HorizonApi.TransactionResponse
@@ -453,6 +532,7 @@ interface InitialState {
 export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
+  destinationAccountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
@@ -488,7 +568,7 @@ export const initialState: InitialState = {
   destinationBalances: {
     tokensWithNoBalance: [],
     balances: null,
-    isFunded: false,
+    isFunded: true,
     subentryCount: 0,
   },
   assetIcons: {},
@@ -625,8 +705,10 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getAccountBalances.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
+      state.accountBalances = initialState.accountBalances;
     });
-    builder.addCase(getAccountBalances.rejected, (state) => {
+    builder.addCase(getAccountBalances.rejected, (state, action) => {
+      state.error = action.payload;
       state.accountBalanceStatus = ActionStatus.ERROR;
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
@@ -635,6 +717,7 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
+      state.destinationAccountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getAssetIcons.fulfilled, (state, action) => {
       const assetIcons = action.payload || {};
@@ -660,7 +743,7 @@ const transactionSubmissionSlice = createSlice({
       }
 
       // store in canonical form for easier use
-      const path: Array<string> = [];
+      const path: string[] = [];
       action.payload.path.forEach((p) => {
         if (!p.asset_code && !p.asset_issuer) {
           path.push(p.asset_type);

@@ -78,7 +78,7 @@ export const HardwareSign = ({
 
       const res = await dispatch(
         signWithHardwareWallet({
-          transactionXDR: transactionXDR as string,
+          transactionXDR,
           networkPassphrase: networkDetails.networkPassphrase,
           publicKey,
           bipPath,
@@ -89,6 +89,7 @@ export const HardwareSign = ({
         if (shouldSubmit) {
           const submitResp = await dispatch(
             submitFreighterTransaction({
+              publicKey,
               signedXDR: res.payload,
               networkDetails,
             }),

@@ -23,7 +23,9 @@ export enum FRIENDBOT_URLS {
   FUTURENET = "https://friendbot-futurenet.stellar.org",
 }
 
-export const SOROBAN_RPC_URLS: { [key in NETWORKS]?: string } = {
+export const SOROBAN_RPC_URLS: { [key in NETWORKS]: string } = {
+  [NETWORKS.PUBLIC]:
+    "http://soroban-rpc-pubnet-prd.soroban-rpc-pubnet-prd.svc.cluster.local:8000",
   [NETWORKS.TESTNET]: "https://soroban-testnet.stellar.org/",
   [NETWORKS.FUTURENET]: "https://rpc-futurenet.stellar.org/",
 };
@@ -42,6 +44,7 @@ export const MAINNET_NETWORK_DETAILS: NetworkDetails = {
   networkName: NETWORK_NAMES.PUBNET,
   networkUrl: NETWORK_URLS.PUBLIC,
   networkPassphrase: Networks.PUBLIC,
+  sorobanRpcUrl: SOROBAN_RPC_URLS.PUBLIC,
 };
 
 export const TESTNET_NETWORK_DETAILS: NetworkDetails = {

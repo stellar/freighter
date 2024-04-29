@@ -7,6 +7,7 @@ import { object as YupObject, string as YupString } from "yup";
 import { useHistory, useLocation } from "react-router-dom";
 
 import { NETWORKS } from "@shared/constants/stellar";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -15,7 +16,7 @@ import { ROUTES } from "popup/constants/routes";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { isNetworkUrlValid as isNetworkUrlValidHelper } from "popup/helpers/account";
-import { CUSTOM_NETWORK, isActiveNetwork } from "helpers/stellar";
+import { isActiveNetwork } from "helpers/stellar";
 
 import {
   addCustomNetwork,
@@ -272,9 +273,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     ) : null;
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
-        title={isEditing ? t("Add Custom Network") : t("Network Details")}
+        title={!isEditing ? t("Add Custom Network") : t("Network Details")}
       />
       <Formik
         onSubmit={handleSubmit}
@@ -494,6 +495,6 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+// In order to allow that rule we need to refactor this to use the correct Horizon types and narrow operation types
+
 import React, { useState, useEffect } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
@@ -7,7 +10,6 @@ import { useTranslation } from "react-i18next";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { INDEXER_URL } from "@shared/constants/mercury";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
@@ -24,6 +26,7 @@ import {
   TokenBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getTokenDetails } from "@shared/api/internal";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
@@ -70,6 +73,8 @@ export const HistoryItem = ({
   setIsDetailViewShowing,
 }: HistoryItemProps) => {
   const { t } = useTranslation();
+  // Why does Horizon type not include transaction_attr?
+  const _op = operation as any;
   const {
     account,
     amount,
@@ -85,7 +90,7 @@ export const HistoryItem = ({
     isCreateExternalAccount = false,
     isPayment = false,
     isSwap = false,
-  } = operation;
+  } = _op;
   let sourceAssetCode;
   if ("source_asset_code" in operation) {
     sourceAssetCode = operation.source_asset_code;
@@ -105,7 +110,7 @@ export const HistoryItem = ({
   const isInvokeHostFn = typeI === 24;
 
   const transactionDetailPropsBase: TransactionDetailProps = {
-    operation,
+    operation: _op,
     isCreateExternalAccount,
     isRecipient: false,
     isPayment,
@@ -199,9 +204,10 @@ export const HistoryItem = ({
           isPayment: true,
           operation: {
             ...operation,
+            // eslint-disable-next-line
             asset_type: "native",
             to: account,
-          },
+          } as any, // TODO: overloaded op type, native not valid
           operationText: `-${new BigNumber(startingBalance)} XLM`,
         }));
       } else if (isInvokeHostFn) {
@@ -237,53 +243,61 @@ export const HistoryItem = ({
             setIsLoading(true);
 
             try {
-              const response = await fetch(
-                `${INDEXER_URL}/token-details/${attrs.contractId}?pub_key=${publicKey}&network=${networkDetails.network}&soroban_url=${networkDetails.sorobanRpcUrl}`,
-              );
-
-              if (!response.ok) {
-                throw new Error("failed to fetch token details");
-              }
-              const tokenDetails = await response.json();
-
-              const _token = {
+              const tokenDetailsResponse = await getTokenDetails({
                 contractId: attrs.contractId,
-                total: isRecieving ? attrs.amount : 0,
-                decimals: tokenDetails.decimals,
-                name: tokenDetails.name,
-                symbol: tokenDetails.symbol,
-              };
+                publicKey,
+                networkDetails,
+              });
 
-              const formattedTokenAmount = formatTokenAmount(
-                new BigNumber(attrs.amount),
-                _token.decimals,
-              );
-              setBodyComponent(
-                <>
-                  {isRecieving && "+"}
-                  {formattedTokenAmount} {_token.symbol}
-                </>,
-              );
+              if (!tokenDetailsResponse) {
+                setRowText(operationString);
+                setTxDetails((_state) => ({
+                  ..._state,
+                  headerTitle: t("Transaction"),
+                  operationText: operationString,
+                }));
+              } else {
+                const _token = {
+                  contractId: attrs.contractId,
+                  total: isRecieving ? attrs.amount : 0,
+                  decimals: tokenDetailsResponse.decimals,
+                  name: tokenDetailsResponse.name,
+                  symbol: tokenDetailsResponse.symbol,
+                };
 
-              setDateText(
-                (_dateText) =>
-                  `${isRecieving ? t("Received") : t("Minted")} \u2022 ${date}`,
-              );
-              setRowText(t(capitalize(attrs.fnName)));
-              setTxDetails((_state) => ({
-                ..._state,
-                operation: {
-                  ..._state.operation,
-                  from: attrs.from,
-                  to: attrs.to,
-                },
-                headerTitle: `${t(capitalize(attrs.fnName))} ${
-                  tokenDetails.symbol
-                }`,
-                isPayment: false,
-                isRecipient: isRecieving,
-                operationText: `${formattedTokenAmount} ${tokenDetails.symbol}`,
-              }));
+                const formattedTokenAmount = formatTokenAmount(
+                  new BigNumber(attrs.amount),
+                  _token.decimals,
+                );
+                setBodyComponent(
+                  <>
+                    {isRecieving && "+"}
+                    {formattedTokenAmount} {_token.symbol}
+                  </>,
+                );
+
+                setDateText(
+                  (_dateText) =>
+                    `${
+                      isRecieving ? t("Received") : t("Minted")
+                    } \u2022 ${date}`,
+                );
+                setRowText(t(capitalize(attrs.fnName)));
+                setTxDetails((_state) => ({
+                  ..._state,
+                  operation: {
+                    ..._state.operation,
+                    from: attrs.from,
+                    to: attrs.to,
+                  },
+                  headerTitle: `${t(capitalize(attrs.fnName))} ${
+                    _token.symbol
+                  }`,
+                  isPayment: false,
+                  isRecipient: isRecieving,
+                  operationText: `${formattedTokenAmount} ${_token.symbol}`,
+                }));
+              }
               setIsLoading(false);
             } catch (error) {
               console.error(error);
@@ -454,3 +468,4 @@ export const HistoryItem = ({
     </div>
   );
 };
+/* eslint-enable @typescript-eslint/no-unsafe-argument */
