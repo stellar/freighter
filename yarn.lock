@@ -5609,10 +5609,10 @@
   resolved "https://registry.yarnpkg.com/@stellar/freighter-api/-/freighter-api-1.7.1.tgz#d62b432abc7e0140a6025cd672455ecee7b3199a"
   integrity sha512-XvPO+XgEbkeP0VhP0U1edOkds+rGS28+y8GRGbCVXeZ9ZslbWqRFQoETAdX8IXGuykk2ib/aPokiLc5ZaWYP7w==
 
-"@stellar/js-xdr@^3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@stellar/js-xdr/-/js-xdr-3.1.0.tgz#37c23e6c913d011f750808f3d8b60174b633e137"
-  integrity sha512-mYTyFnhgyQgyvpAYZRO1LurUn2MxcIZRj74zZz/BxKEk7zrL4axhQ1ez0HL2BRi0wlG6cHn5BeD/t9Xcyp7CSQ==
+"@stellar/js-xdr@^3.1.1":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@stellar/js-xdr/-/js-xdr-3.1.1.tgz#be0ff90c8a861d6e1101bca130fa20e74d5599bb"
+  integrity sha512-3gnPjAz78htgqsNEDkEsKHKosV2BF2iZkoHCNxpmZwUxiPsw+2VaXMed8RRMe0rGk3d5GZe7RrSba8zV80J3Ag==
 
 "@stellar/js-xdr@^3.1.1":
   version "3.1.1"
@@ -5624,20 +5624,19 @@
   resolved "https://registry.npmjs.org/@stellar/prettier-config/-/prettier-config-1.0.1.tgz"
   integrity sha512-w9OPycQp1XGfmHC2VUHe5shpZjNFRlmsRBaK7IHvOvVpglzV2QNJsVFh8RdLREWA0mzF59AWvQbyUCCJLPfdWw==
 
-"@stellar/stellar-base@^11.0.0":
-  version "11.0.0"
-  resolved "https://registry.yarnpkg.com/@stellar/stellar-base/-/stellar-base-11.0.0.tgz#9c2595f0aa1fe955191656fe9bda7a6b34ef82f0"
-  integrity sha512-KPTjaWJCG2m7hMCPRWFGGPaG5qOkgPLWvFVOhe1HUy7dlE4MxxPfdusz0mcLkf6VT7doqhLB1rIt0D9M2GgQcQ==
+"@stellar/stellar-base@^11.0.1":
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-base/-/stellar-base-11.0.1.tgz#f6eba54e62aa3e827e55d8338b92cdbf5535cfd9"
+  integrity sha512-VQh+1KEtFjegD6spx08+lENt8tQOkQQQZoLtqExjpRXyWlqDhEe+bXMlBTYKDc5MIynHyD42RPEib27UG17trA==
   dependencies:
-    "@stellar/js-xdr" "^3.1.0"
+    "@stellar/js-xdr" "^3.1.1"
     base32.js "^0.1.0"
     bignumber.js "^9.1.2"
     buffer "^6.0.3"
     sha.js "^2.3.6"
     tweetnacl "^1.0.3"
-    typescript "^5.3.3"
   optionalDependencies:
-    sodium-native "^4.0.8"
+    sodium-native "^4.0.10"
 
 "@stellar/stellar-base@^11.0.1":
   version "11.0.1"
@@ -7642,12 +7641,12 @@ axios@^0.25.0:
   dependencies:
     follow-redirects "^1.14.7"
 
-axios@^1.6.7:
-  version "1.6.7"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.7.tgz#7b48c2e27c96f9c68a2f8f31e2ab19f59b06b0a7"
-  integrity sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==
+axios@^1.6.8:
+  version "1.6.8"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.8.tgz#66d294951f5d988a00e87a0ffb955316a619ea66"
+  integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
   dependencies:
-    follow-redirects "^1.15.4"
+    follow-redirects "^1.15.6"
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
@@ -11226,10 +11225,10 @@ follow-redirects@^1.0.0, follow-redirects@^1.14.7:
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.2.tgz"
   integrity sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==
 
-follow-redirects@^1.15.4:
-  version "1.15.5"
-  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.5.tgz#54d4d6d062c0fa7d9d17feb008461550e3ba8020"
-  integrity sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==
+follow-redirects@^1.15.6:
+  version "1.15.6"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.6.tgz#7f815c0cda4249c74ff09e95ef97c23b5fd0399b"
+  integrity sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==
 
 follow-redirects@^1.15.6:
   version "1.15.6"
@@ -14797,7 +14796,7 @@ node-forge@^1:
   resolved "https://registry.npmjs.org/node-forge/-/node-forge-1.3.1.tgz"
   integrity sha512-dPEtOeMvF9VMcYV/1Wb8CPoVAXtp6MKMlcbAt4ddqmGqUJ6fQZFXkNZNkNlfevtNkGtaSoXf/vNNNSvgrdXwtA==
 
-node-gyp-build@^4.1.0, node-gyp-build@^4.6.0:
+node-gyp-build@^4.1.0:
   version "4.6.0"
   resolved "https://registry.npmjs.org/node-gyp-build/-/node-gyp-build-4.6.0.tgz"
   integrity sha512-NTZVKn9IylLwUzaKjkas1e4u2DLNcV4rdYagA4PWdPwW87Bi7z+BznyKSRwS/761tV/lzCGXplWsiaMjLqP2zQ==
@@ -17823,13 +17822,6 @@ sodium-native@^4.0.10:
   dependencies:
     node-gyp-build "^4.8.0"
 
-sodium-native@^4.0.8:
-  version "4.0.10"
-  resolved "https://registry.yarnpkg.com/sodium-native/-/sodium-native-4.0.10.tgz#24af8db06518807a8ddf4e5143d819f14bf7a837"
-  integrity sha512-vrJQt4gASntDbnltRRk9vN4rks1SehjM12HkqQtu250JtWT+/lo8oEOa1HvSq3+8hzJdYcCJuLR5qRGxoRDjAg==
-  dependencies:
-    node-gyp-build "^4.6.0"
-
 sort-css-media-queries@2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/sort-css-media-queries/-/sort-css-media-queries-2.1.0.tgz"
@@ -18059,18 +18051,17 @@ stellar-identicon-js@^1.0.0:
   dependencies:
     html-webpack-plugin "^3.2.0"
 
-stellar-sdk@^11.2.2:
-  version "11.2.2"
-  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.2.2.tgz#930ba86e10bdc71b2ad7a3f0bd60323ff708e12a"
-  integrity sha512-xecQW4gkPIxAvxcVFcw4ZSTtzpUmJPd4A4e4Mr3EkOdyWnshMIZQMzFox5DuAikrThofgihScJGYrDCmo3I/BA==
+stellar-sdk@^11.3.0:
+  version "11.3.0"
+  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.3.0.tgz#385105eac694bb469ec3924e79e796d5766ba7cd"
+  integrity sha512-xOp2zpQm5TIbgJi7wJhAmJh+Uy0ew5GbGtj1kZv6HEWHgSvW95xYMxGaw6MWM9r2YPUSQySboE6JwDc9jdx53A==
   dependencies:
-    "@stellar/stellar-base" "^11.0.0"
-    axios "^1.6.7"
+    "@stellar/stellar-base" "^11.0.1"
+    axios "^1.6.8"
     bignumber.js "^9.1.2"
     eventsource "^2.0.2"
     randombytes "^2.1.0"
     toml "^3.0.0"
-    typescript "^5.3.3"
     urijs "^1.19.1"
 
 stop-iteration-iterator@^1.0.0:
