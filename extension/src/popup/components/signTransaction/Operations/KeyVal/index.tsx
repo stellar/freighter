@@ -212,11 +212,11 @@ export const KeyValueLine = ({
       <>
         <KeyValueList
           operationKey={t("Asset A")}
-          operationValue={line.assetA}
+          operationValue={line.assetA.getCode()}
         />
         <KeyValueList
           operationKey={t("Asset B")}
-          operationValue={line.assetB}
+          operationValue={line.assetB.getCode()}
         />
         <KeyValueList operationKey={t("Fee")} operationValue={line.fee} />
       </>
