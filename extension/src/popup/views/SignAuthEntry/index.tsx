@@ -87,8 +87,8 @@ export const SignAuthEntry = () => {
       >
         <p>
           <Trans domain={params.url}>
-            The website <strong>{{ domain: params.url }}</strong> does not use
-            an SSL certificate. For additional safety Freighter only works with
+            The website <strong>{params.url}</strong> does not use an SSL
+            certificate. For additional safety Freighter only works with
             websites that provide an SSL certificate.
           </Trans>
         </p>
