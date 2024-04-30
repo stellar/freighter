@@ -26,7 +26,7 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
     window.location.origin,
   );
   return new Promise((resolve) => {
-    let requestTimeout = 0;
+    let requestTimeout = 0 as any as NodeJS.Timeout;
 
     /* 
       In the case that Freighter is not installed at all, any messages to 
