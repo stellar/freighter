@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 import semver from "semver";
 
 import {
+  APPLICATION_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
   NETWORK_ID,
   NETWORKS_LIST_ID,
@@ -79,6 +80,13 @@ export const dataStorageAccess = (
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const localStorageEntries = Object.entries(localStorage);
+
+  const applicationState = await localStore.getItem(APPLICATION_ID);
+  const isLocalStoreSetup = !!applicationState?.length;
+
+  if (isLocalStoreSetup) {
+    return;
+  }
 
   // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
