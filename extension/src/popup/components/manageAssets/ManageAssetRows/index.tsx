@@ -302,6 +302,105 @@ export const ManageAssetRows = ({
     }
   };
 
+  interface ManageAssetRowButtonProps {
+    canonicalAsset: string;
+    code: string;
+    issuer: string;
+    image: string;
+    domain: string;
+    name: string;
+    isTrustlineActive: boolean;
+    isActionPending: boolean;
+    isContract: boolean;
+  }
+
+  const ManageAssetRowButton = ({
+    canonicalAsset,
+    code,
+    issuer,
+    image,
+    domain,
+    isTrustlineActive,
+    isActionPending,
+    isContract,
+  }: ManageAssetRowButtonProps) => {
+    const [isShowingDropdown, setIsShowingDropdown] = useState(false);
+
+    return (
+      <div className="ManageAssetRows__button">
+        {isTrustlineActive ? (
+          <div>
+            <div
+              className="ManageAssetRows__button__ellipsis"
+              onClick={() => setIsShowingDropdown(!isShowingDropdown)}
+            >
+              ...
+            </div>
+            {isShowingDropdown ? (
+              <div className="ManageAssetRows__button__dropdown">
+                <Button
+                  size="md"
+                  variant="secondary"
+                  disabled={isActionPending}
+                  isLoading={
+                    isActionPending && assetSubmitting === canonicalAsset
+                  }
+                  onClick={() => {
+                    if (isContract) {
+                      handleTokenRowClick(
+                        { code, issuer, image, domain },
+                        isTrustlineActive,
+                        canonicalAsset,
+                      );
+                    } else {
+                      handleRowClick(
+                        { code, issuer, image, domain },
+                        isTrustlineActive,
+                      );
+                    }
+                  }}
+                  type="button"
+                  data-testid="ManageAssetRowButton"
+                >
+                  <div className="ManageAssetRows__button__label">
+                    {t("Remove")}
+                  </div>
+                  <img src={IconRemove} alt="icon remove" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <Button
+            size="md"
+            variant="secondary"
+            disabled={isActionPending}
+            isLoading={isActionPending && assetSubmitting === canonicalAsset}
+            onClick={() => {
+              if (isContract) {
+                handleTokenRowClick(
+                  { code, issuer, image, domain },
+                  isTrustlineActive,
+                  canonicalAsset,
+                );
+              } else {
+                handleRowClick(
+                  { code, issuer, image, domain },
+                  isTrustlineActive,
+                );
+              }
+            }}
+            type="button"
+            data-testid="ManageAssetRowButton"
+          >
+            <div className="ManageAssetRows__button__label">{t("Add")}</div>
+            <img src={IconAdd} alt="icon add" />
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && walletType && (
@@ -372,48 +471,17 @@ export const ManageAssetRows = ({
                     domain={domain}
                     name={name}
                   />
-                  <div className="ManageAssetRows__button">
-                    <Button
-                      size="md"
-                      variant="secondary"
-                      disabled={isActionPending}
-                      isLoading={
-                        isActionPending && assetSubmitting === canonicalAsset
-                      }
-                      onClick={() => {
-                        if (isContract) {
-                          handleTokenRowClick(
-                            { code, issuer, image, domain },
-                            isTrustlineActive,
-                            canonicalAsset,
-                          );
-                        } else {
-                          handleRowClick(
-                            { code, issuer, image, domain },
-                            isTrustlineActive,
-                          );
-                        }
-                      }}
-                      type="button"
-                      data-testid="ManageAssetRowButton"
-                    >
-                      {isTrustlineActive ? (
-                        <>
-                          <div className="ManageAssetRows__button__label">
-                            {t("Remove")}
-                          </div>
-                          <img src={IconRemove} alt="icon remove" />
-                        </>
-                      ) : (
-                        <>
-                          <div className="ManageAssetRows__button__label">
-                            {t("Add")}
-                          </div>
-                          <img src={IconAdd} alt="icon add" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <ManageAssetRowButton
+                    canonicalAsset={canonicalAsset}
+                    code={code}
+                    issuer={issuer}
+                    image={image}
+                    domain={domain}
+                    name={name}
+                    isTrustlineActive={isTrustlineActive}
+                    isActionPending={isActionPending}
+                    isContract={isContract}
+                  />
                 </div>
               );
             },
