@@ -4,6 +4,7 @@ import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { Balances, TokenBalance } from "@shared/api/types";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -21,14 +22,13 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { simulateTokenPayment } from "popup/ducks/token-payment";
-
+import { AppDispatch } from "popup/App";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { parseTokenAmount } from "popup/helpers/soroban";
+import { isSorobanIssuer } from "popup/helpers/account";
 import "../../styles.scss";
-import { Balances, TokenBalance } from "@shared/api/types";
-import { AppDispatch } from "popup/App";
 
 export const Settings = ({
   previous,
