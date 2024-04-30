@@ -4,10 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
-import {
-  getAccountHistoryStandalone,
-  getIndexerAccountHistory,
-} from "@shared/api/internal";
+import { getAccountHistory } from "@shared/api/internal";
 import { ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
@@ -20,7 +17,6 @@ import {
   getStellarExpertUrl,
 } from "popup/helpers/account";
 import { getAttrsFromSorobanHorizonOp } from "popup/helpers/soroban";
-import { isCustomNetwork } from "helpers/stellar";
 
 import {
   historyItemDetailViewProps,
@@ -130,18 +126,7 @@ export const AccountHistory = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        let operations = [] as Horizon.ServerApi.OperationRecord[];
-        if (isCustomNetwork(networkDetails)) {
-          operations = await getAccountHistoryStandalone({
-            publicKey,
-            networkDetails,
-          });
-        } else {
-          operations = await getIndexerAccountHistory({
-            publicKey,
-            networkDetails,
-          });
-        }
+        const operations = await getAccountHistory(publicKey, networkDetails);
         setHistorySegments(createSegments(operations));
       } catch (e) {
         console.error(e);

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
@@ -29,8 +29,6 @@ import { parseTokenAmount } from "popup/helpers/soroban";
 import "../../styles.scss";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
-import { SorobanContext } from "popup/SorobanContext";
-import { isSorobanIssuer } from "popup/helpers/account";
 
 export const Settings = ({
   previous,
@@ -41,7 +39,6 @@ export const Settings = ({
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
   const {
     asset,
     amount,
@@ -106,7 +103,6 @@ export const Settings = ({
           memo,
           params,
           networkDetails,
-          sorobanClient,
           transactionFee,
         }),
       );

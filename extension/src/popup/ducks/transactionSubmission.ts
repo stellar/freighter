@@ -38,15 +38,15 @@ import {
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
-import { getCanonicalFromAsset, isCustomNetwork } from "helpers/stellar";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { hardwareSign } from "popup/helpers/hardwareConnect";
-import { SorobanContextInterface } from "popup/SorobanContext";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -89,14 +89,13 @@ export const submitFreighterTransaction = createAsyncThunk<
     publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterTransaction",
-  async ({ publicKey, signedXDR, networkDetails, sorobanClient }, thunkApi) => {
+  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
     if (isCustomNetwork(networkDetails)) {
       try {
         const txRes = await internalSubmitFreighterTransaction({
@@ -104,9 +103,7 @@ export const submitFreighterTransaction = createAsyncThunk<
           networkDetails,
         });
 
-        thunkApi.dispatch(
-          getAccountBalances({ publicKey, networkDetails, sorobanClient }),
-        );
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
 
         return txRes;
       } catch (e) {
@@ -159,14 +156,13 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
     publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterSorobanTransaction",
-  async ({ publicKey, signedXDR, networkDetails, sorobanClient }, thunkApi) => {
+  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
     if (isCustomNetwork(networkDetails)) {
       try {
         const txRes = await internalSubmitFreighterSorobanTransaction({
@@ -174,9 +170,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
           networkDetails,
         });
 
-        thunkApi.dispatch(
-          getAccountBalances({ publicKey, networkDetails, sorobanClient }),
-        );
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
 
         return txRes;
       } catch (e) {
@@ -342,63 +336,51 @@ export const getAccountBalances = createAsyncThunk<
   {
     publicKey: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
->(
-  "getAccountBalances",
-  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
-    try {
-      let balances;
+>("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    let balances;
 
-      if (isCustomNetwork(networkDetails)) {
-        balances = await internalGetAccountBalancesStandalone({
-          publicKey,
-          networkDetails,
-          sorobanClientServer: sorobanClient.server,
-          sorobanClientTxBuilder: sorobanClient.newTxBuilder,
-        });
-      } else {
-        balances = await internalgetAccountIndexerBalances(
-          publicKey,
-          networkDetails,
-        );
-      }
-
-      storeBalanceMetricData(publicKey, balances.isFunded || false);
-      return balances;
-    } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e as string });
+    if (isCustomNetwork(networkDetails)) {
+      balances = await internalGetAccountBalancesStandalone({
+        publicKey,
+        networkDetails,
+      });
+    } else {
+      balances = await internalgetAccountIndexerBalances(
+        publicKey,
+        networkDetails,
+      );
     }
-  },
-);
+
+    storeBalanceMetricData(publicKey, balances.isFunded || false);
+    return balances;
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
   {
     publicKey: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
->(
-  "getDestinationBalances",
-  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
-    try {
-      if (isCustomNetwork(networkDetails)) {
-        return await internalGetAccountBalancesStandalone({
-          publicKey,
-          networkDetails,
-          sorobanClientServer: sorobanClient.server,
-          sorobanClientTxBuilder: sorobanClient.newTxBuilder,
-        });
-      }
-      return await internalgetAccountIndexerBalances(publicKey, networkDetails);
-    } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e as string });
+>("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    if (isCustomNetwork(networkDetails)) {
+      return await internalGetAccountBalancesStandalone({
+        publicKey,
+        networkDetails,
+      });
     }
-  },
-);
+    return await internalgetAccountIndexerBalances(publicKey, networkDetails);
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
 
 export const getAssetIcons = createAsyncThunk<
   AssetIcons,

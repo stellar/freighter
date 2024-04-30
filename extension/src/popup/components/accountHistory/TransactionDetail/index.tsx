@@ -11,13 +11,15 @@ import { View } from "popup/basics/layout/View";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { stroopToXlm, isCustomNetwork } from "helpers/stellar";
+import { stroopToXlm } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { HorizonOperation } from "@shared/api/types";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+
 import "./styles.scss";
 
 export interface TransactionDetailProps {

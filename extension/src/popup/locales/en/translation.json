@@ -25,8 +25,10 @@
   "Add custom network": "Add custom network",
   "Add Custom Network": "Add Custom Network",
   "Add it manually": "Add it manually",
+  "Add list": "Add list",
   "Add network": "Add network",
   "Add New Address": "Add New Address",
+  "Add new list": "Add new list",
   "Add Soroban token": "Add Soroban token",
   "Address": "Address",
   "Addresses are uppercase and begin with letters “G“ or “M“": "Addresses are uppercase and begin with letters “G“ or “M“.",
@@ -50,6 +52,7 @@
   "Approve and review next": "Approve and review next",
   "Approve using": "Approve using",
   "are required to add a new asset": "are required to add a new asset.",
+  "Are you sure you want to delete this list?": "Are you sure you want to delete this list?",
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
   "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged": {
     " For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)": "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)."
@@ -61,6 +64,7 @@
   "Asset domain": "Asset domain",
   "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
   "Asset Info": "Asset Info",
+  "Asset lists": "Asset lists",
   "Asset not found": "Asset not found",
   "Assets found in this domain": "Assets found in this domain",
   "At least one uppercase letter": "At least one uppercase letter",
@@ -78,15 +82,13 @@
   "Balance ID": "Balance ID",
   "Before we start with migration, please read": "Before we start with migration, please read",
   "Before You Add This Asset": "Before You Add This Asset",
-  "Before you add this asset, please double-check its information and characteristics": {
-    " This can help you identify fraudulent assets": "Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets."
-  },
   "Block malicious or unsafe addresses and domains": "Block malicious or unsafe addresses and domains",
   "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
   "Blocked asset": "Blocked asset",
   "Bump To": "Bump To",
   "Buy Amount": "Buy Amount",
   "Buying": "Buying",
+  "by": "by",
   "Can’t find the asset you’re looking for?": "Can’t find the asset you’re looking for?",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
@@ -98,6 +100,7 @@
   "Close": "Close",
   "Confirm": "Confirm",
   "Confirm Data": "Confirm Data",
+  "Confirm delete": "Confirm delete",
   "Confirm password": "Confirm password",
   "Confirm removing Network": "Confirm removing Network",
   "Confirm Send": "Confirm Send",
@@ -120,6 +123,7 @@
   "Custom": "Custom",
   "data entries": "data entries",
   "Date": "Date",
+  "Delete": "Delete",
   "Destination": "Destination",
   "Destination account does not accept this asset": "Destination account does not accept this asset",
   "Destination account doesn’t exist": "Destination account doesn’t exist",
@@ -133,12 +137,16 @@
   "digits after the decimal allowed": "digits after the decimal allowed",
   "directory": "directory",
   "disable": "disable",
+  "Disabled": "Disabled",
   "Done": "Done",
   "Double check the domain name": {
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
   },
   "enable": "enable",
   "Enable experimental mode": "Enable experimental mode",
+  "Enable this list": "Enable this list",
+  "Enabled": "Enabled",
+  "Enter a Stellar Asset List compatible URL": "Enter a Stellar Asset List compatible URL",
   "Enter Friendbot URL": "Enter Friendbot URL",
   "Enter network name": "Enter network name",
   "Enter network URL": "Enter network URL",
@@ -163,6 +171,7 @@
   "Fees can vary depending on the network congestion": {
     " Please try using the suggested fee and try again": "Fees can vary depending on the network congestion. Please try using the suggested fee and try again."
   },
+  "Fetch list information": "Fetch list information",
   "Finish": "Finish",
   "For your safety, signing this transaction is disabled": "For your safety, signing this transaction is disabled",
   "For your security, we'll check if you got it right in the next step": "For your security, we'll check if you got it right in the next step.",
@@ -179,6 +188,9 @@
     " It’s a safer alternative to copying and pasting private keys for use with web apps": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps."
   },
   "Freighter is set to": "Freighter is set to",
+  "Freighter uses asset lists to check assets you interact with": {
+    " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+  },
   "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website": "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
   "Freighter will use experimental API‘s and connect to the Futurenet, a test network": {
     " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
@@ -189,7 +201,6 @@
   "Fund with Friendbot": "Fund with Friendbot",
   "Got it": "Got it",
   "Hash": "Hash",
-  "Have a suggestion or bug report? Create an issue on Github": "Have a suggestion or bug report? Create an issue on Github",
   "Help": "Help",
   "High Threshold": "High Threshold",
   "History": "History",
@@ -206,6 +217,7 @@
   "I’m new!": "I’m new!",
   "I’ve done this before": "I’ve done this before",
   "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam": "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
+  "If you delete this list, you will have to re-add it manually": "If you delete this list, you will have to re-add it manually.",
   "Import": "Import",
   "Import a Stellar secret key": "Import a Stellar secret key",
   "Import Stellar Secret Key": "Import Stellar Secret Key",
@@ -228,7 +240,7 @@
   "is requesting approval to sign a blob of data": "is requesting approval to sign a blob of data",
   "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
-  "Join the #wallets Discord channel for updates and questions": "Join the #wallets Discord channel for updates and questions",
+  "Join community Discord": "Join community Discord",
   "Keep it in a safe place": "Keep it in a safe place.",
   "Keep your account safe": "Keep your account safe",
   "Keep your recovery phrase in a safe and secure place": {
@@ -251,6 +263,7 @@
   "LINKS": "LINKS",
   "Liquidity Pool ID": "Liquidity Pool ID",
   "Log In": "Log In",
+  "Log in to your account": "Log in to your account.",
   "Log Out": "Log Out",
   "Low Threshold": "Low Threshold",
   "Make sure it is a funded Stellar account and try again": "Make sure it is a funded Stellar account and try again.",
@@ -298,6 +311,7 @@
   "Never disclose your recovery phrase": "Never disclose your recovery phrase",
   "Nevermind, cancel": "Nevermind, cancel",
   "New account": "New account",
+  "New asset": "New asset",
   "New Asset": "New Asset",
   "New password": "New password",
   "Next": "Next",
@@ -307,9 +321,11 @@
   "Not enough lumens": "Not enough lumens",
   "Not funded": "Not funded",
   "Not migrated": "Not migrated",
+  "Not on your lists": "Not on your lists",
   "Not recommended asset": "Not recommended asset",
   "Now, let’s create a new mnemonic phrase": "Now, let’s create a new mnemonic phrase",
   "Offer ID": "Offer ID",
+  "On your lists": "On your lists",
   "One of your accounts is a signer for another account": {
     " Freighter won’t migrate signing settings": {
       " For your safety, Freighter won’t merge accounts with signature set up so you can still control it": "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it."
@@ -341,6 +357,7 @@
   "Preferences": "Preferences",
   "Price": "Price",
   "Privacy Policy": "Privacy Policy",
+  "Proceed with caution": "Proceed with caution",
   "Processing": "Processing",
   "Projects related to this asset may be fraudulent even if the creators say otherwise": {
     " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
@@ -359,6 +376,7 @@
   },
   "Remove": "Remove",
   "Remove trustline": "Remove trustline",
+  "Report issue on Github": "Report issue on Github",
   "Reserved Balance*": "Reserved Balance*",
   "Resource cost": "Resource cost",
   "Review": "Review",
@@ -424,7 +442,6 @@
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
-  "The asset is not part of Stellar Expert's top 50 assets list": "The asset is not part of Stellar Expert's top 50 assets list",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
   "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
   "The destination account doesn’t exist": "The destination account doesn’t exist.",
@@ -442,8 +459,14 @@
   "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
   "This asset has a balance of": "This asset has a balance of",
-  "This asset is not part of": "This asset is not part of",
-  "This asset is part of": "This asset is part of",
+  "This asset is not part of an asset list": {
+    " Please, double-check the asset you’re interacting with and proceed with care": {
+      " Freighter uses asset lists to check assets you interact with": {
+        " You can define your own assets lists in Settings": "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+      }
+    }
+  },
+  "This asset is part of the asset lists": "This asset is part of the asset lists",
   "This asset was tagged as fraudulent by stellar": {
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
@@ -456,6 +479,7 @@
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
   "Token ID": "Token ID",
+  "Token List URL": "Token List URL",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
   "Trading or sending this asset is not recommended": {
@@ -472,9 +496,11 @@
   "Type": "Type",
   "Unable to connect to": "Unable to connect to",
   "Unable to migrate": "Unable to migrate",
+  "Unable to parse assets lists": "Unable to parse assets lists",
   "Unable to search for assets": "Unable to search for assets",
   "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
+  "Unverified asset": "Unverified asset",
   "Validate addresses that require a memo": "Validate addresses that require a memo",
   "Value": "Value",
   "Verification": "Verification",

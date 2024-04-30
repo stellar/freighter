@@ -2,21 +2,19 @@ import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link, Redirect } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Button, Input, Loader, Notification } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 
+import { Button, Input, Loader, Notification } from "@stellar/design-system";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+
 import { FormRows } from "popup/basics/Forms";
-
 import { ROUTES } from "popup/constants/routes";
-
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { isCustomNetwork } from "helpers/stellar";
 import { searchAsset } from "popup/helpers/searchAsset";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 
 import "./styles.scss";
