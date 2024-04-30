@@ -20,7 +20,7 @@ import {
   getConversionRate,
   truncatedFedAddress,
 } from "helpers/stellar";
-import { getStellarExpertUrl } from "popup/helpers/account";
+import { getStellarExpertUrl, isSorobanIssuer } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -204,7 +204,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       destinationAsset,
       destinationAmount,
       path,
-      isToken,
     },
     assetIcons,
     hardwareWalletData: { status: hwStatus },
@@ -233,6 +232,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const _isMainnet = isMainnet(networkDetails);
   const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
   const isValidatingSafety = isSafetyValidationEnabled && _isMainnet;
+  const isToken = isSorobanIssuer(sourceAsset.issuer);
 
   const matchingBlockedTags = blockedAccounts
     .filter(({ address }) => address === destination)

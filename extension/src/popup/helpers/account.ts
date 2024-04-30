@@ -255,4 +255,5 @@ export const displaySorobanId = (
   );
 };
 
-export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
+export const isSorobanIssuer = (issuer: string) =>
+  issuer && issuer !== "native" && !issuer.startsWith("G");

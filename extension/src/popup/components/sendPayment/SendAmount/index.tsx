@@ -21,7 +21,7 @@ import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { LP_IDENTIFIER } from "popup/helpers/account";
+import { isSorobanIssuer, LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
@@ -126,7 +126,6 @@ export const SendAmount = ({
     asset,
     destinationAmount,
     destinationAsset,
-    isToken,
   } = transactionData;
 
   const isSwap = useIsSwap();
@@ -146,7 +145,7 @@ export const SendAmount = ({
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
       let _availBalance = new BigNumber("0");
-      if (isToken) {
+      if (isSorobanIssuer(selectedAsset)) {
         // TODO: balances is incorrectly typed and does not include SorobanBalance
         const tokenBalance = (accountBalances?.balances?.[
           selectedAsset
@@ -179,12 +178,7 @@ export const SendAmount = ({
 
       return _availBalance.toFixed().toString();
     },
-    [
-      accountBalances.balances,
-      accountBalances.subentryCount,
-      recommendedFee,
-      isToken,
-    ],
+    [accountBalances.balances, accountBalances.subentryCount, recommendedFee],
   );
 
   const [availBalance, setAvailBalance] = useState(
@@ -380,7 +374,7 @@ export const SendAmount = ({
           ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
-            getAssetDecimals(asset, accountBalances, isToken),
+            getAssetDecimals(asset, accountBalances),
           )}
           )`}
         />
@@ -485,7 +479,7 @@ export const SendAmount = ({
                       } = formatAmountPreserveCursor(
                         e.target.value,
                         formik.values.amount,
-                        getAssetDecimals(asset, accountBalances, isToken),
+                        getAssetDecimals(asset, accountBalances),
                         e.target.selectionStart || 1,
                       );
                       formik.setFieldValue("amount", newAmount);

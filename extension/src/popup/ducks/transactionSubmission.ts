@@ -483,7 +483,6 @@ interface TransactionData {
   destinationAmount: string;
   path: string[];
   allowedSlippage: string;
-  isToken: boolean;
   isMergeSelected: boolean;
   balancesToMigrate: BalanceToMigrate[];
 }
@@ -546,7 +545,6 @@ export const initialState: InitialState = {
     destinationAmount: "",
     path: [],
     allowedSlippage: "1",
-    isToken: false,
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
   },
@@ -618,9 +616,6 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
-    },
-    saveIsToken: (state, action) => {
-      state.transactionData.isToken = action.payload;
     },
     saveSimulation: (state, action) => {
       state.transactionSimulation = action.payload;
@@ -777,7 +772,6 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveAllowedSlippage,
-  saveIsToken,
   saveSimulation,
   startHwConnect,
   startHwSign,

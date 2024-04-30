@@ -38,14 +38,12 @@ export const AssetIcon = ({
   issuerKey,
   retryAssetIconFetch,
   isLPShare = false,
-  isSorobanToken = false,
 }: {
   assetIcons: AssetIcons;
   code: string;
   issuerKey: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
-  isSorobanToken?: boolean;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -66,10 +64,7 @@ export const AssetIcon = ({
 
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
   const imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
-
-  const _isSorobanToken = !isSorobanToken
-    ? issuerKey && isSorobanIssuer(issuerKey)
-    : isSorobanToken;
+  const isSorobanToken = issuerKey && isSorobanIssuer(issuerKey);
 
   // If an LP share return early w/ hardcoded icon
   if (isLPShare) {
@@ -81,7 +76,7 @@ export const AssetIcon = ({
   }
 
   // Placeholder for Soroban tokens
-  if (_isSorobanToken) {
+  if (isSorobanToken) {
     return <SorobanTokenIcon />;
   }
 

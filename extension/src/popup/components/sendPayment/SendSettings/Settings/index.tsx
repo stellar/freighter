@@ -4,6 +4,7 @@ import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { Balances, TokenBalance } from "@shared/api/types";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -21,14 +22,13 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { simulateTokenPayment } from "popup/ducks/token-payment";
-
+import { AppDispatch } from "popup/App";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { parseTokenAmount } from "popup/helpers/soroban";
+import { isSorobanIssuer } from "popup/helpers/account";
 import "../../styles.scss";
-import { Balances, TokenBalance } from "@shared/api/types";
-import { AppDispatch } from "popup/App";
 
 export const Settings = ({
   previous,
@@ -46,7 +46,6 @@ export const Settings = ({
     transactionFee,
     memo,
     allowedSlippage,
-    isToken,
   } = useSelector(transactionDataSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
@@ -73,10 +72,11 @@ export const Settings = ({
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = isPathPayment || isSwap;
+  const assetAddress = asset.split(":")[1];
+  const isToken = isSorobanIssuer(assetAddress);
 
   async function goToReview() {
     if (isToken) {
-      const assetAddress = asset.split(":")[1];
       const balances =
         accountBalances.balances || ({} as NonNullable<Balances>);
       const assetBalance = balances[asset] as TokenBalance;
