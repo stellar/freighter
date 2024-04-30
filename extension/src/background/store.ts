@@ -1,4 +1,4 @@
-import { combineReducers } from "redux";
+import { CombinedState, combineReducers } from "redux";
 import { configureStore } from "@reduxjs/toolkit";
 
 import { sessionSlice } from "background/ducks/session";
@@ -25,7 +25,7 @@ export async function loadState() {
   }
 }
 
-function saveStore(state: Record<string, unknown>) {
+function saveStore(state: CombinedState<any>) {
   const serializedState = JSON.stringify(state);
   sessionStore.setItem(REDUX_STORE_KEY, serializedState);
 }
