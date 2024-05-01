@@ -9,7 +9,6 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
-import { DataProvider } from "@stellar/wallet-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { AssetsListItem, AssetsLists } from "@shared/constants/soroban/token";
@@ -44,7 +43,10 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
-import { isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  isCustomNetwork,
+  makeDisplayableBalances,
+} from "@shared/helpers/stellar";
 import {
   buildSorobanServer,
   getNewTxBuilder,
@@ -111,15 +113,11 @@ export const addAccount = async (
   let hasPrivateKey = false;
 
   try {
-    ({
-      allAccounts,
-      error,
-      publicKey,
-      hasPrivateKey,
-    } = await sendMessageToBackground({
-      password,
-      type: SERVICE_TYPES.ADD_ACCOUNT,
-    }));
+    ({ allAccounts, error, publicKey, hasPrivateKey } =
+      await sendMessageToBackground({
+        password,
+        type: SERVICE_TYPES.ADD_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -145,16 +143,12 @@ export const importAccount = async (
   let hasPrivateKey = false;
 
   try {
-    ({
-      allAccounts,
-      publicKey,
-      error,
-      hasPrivateKey,
-    } = await sendMessageToBackground({
-      password,
-      privateKey,
-      type: SERVICE_TYPES.IMPORT_ACCOUNT,
-    }));
+    ({ allAccounts, publicKey, error, hasPrivateKey } =
+      await sendMessageToBackground({
+        password,
+        privateKey,
+        type: SERVICE_TYPES.IMPORT_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -314,16 +308,12 @@ export const recoverAccount = async (
   let error = "";
 
   try {
-    ({
-      allAccounts,
-      publicKey,
-      hasPrivateKey,
-      error,
-    } = await sendMessageToBackground({
-      password,
-      recoverMnemonic,
-      type: SERVICE_TYPES.RECOVER_ACCOUNT,
-    }));
+    ({ allAccounts, publicKey, hasPrivateKey, error } =
+      await sendMessageToBackground({
+        password,
+        recoverMnemonic,
+        type: SERVICE_TYPES.RECOVER_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -422,18 +412,13 @@ export const migrateAccounts = async ({
   let error = "";
 
   try {
-    ({
-      migratedAccounts,
-      allAccounts,
-      publicKey,
-      hasPrivateKey,
-      error,
-    } = await sendMessageToBackground({
-      balancesToMigrate,
-      isMergeSelected,
-      recommendedFee,
-      type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
-    }));
+    ({ migratedAccounts, allAccounts, publicKey, hasPrivateKey, error } =
+      await sendMessageToBackground({
+        balancesToMigrate,
+        isMergeSelected,
+        recommendedFee,
+        type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -529,23 +514,34 @@ export const getAccountBalancesStandalone = async ({
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<AccountBalancesInterface> => {
-  const { network, networkUrl, networkPassphrase } = networkDetails;
+  const { network, networkUrl } = networkDetails;
 
   let balances: any = null;
   let isFunded = null;
   let subentryCount = 0;
 
   try {
-    const dataProvider = new DataProvider({
-      serverUrl: networkUrl,
-      accountOrKey: publicKey,
-      networkPassphrase,
-      metadata: {
-        allowHttp: networkUrl.startsWith("http://"),
-      },
-    });
+    const server = stellarSdkServer(networkUrl);
+    const accountSummary = await server.accounts().accountId(publicKey).call();
 
-    const resp = await dataProvider.fetchAccountDetails();
+    const displayableBalances = makeDisplayableBalances(accountSummary);
+    const sponsor = accountSummary.sponsor
+      ? { sponsor: accountSummary.sponsor }
+      : {};
+    const resp = {
+      ...sponsor,
+      id: accountSummary.id,
+      subentryCount: accountSummary.subentry_count,
+      sponsoredCount: accountSummary.num_sponsored,
+      sponsoringCount: accountSummary.num_sponsoring,
+      inflationDestination: accountSummary.inflation_destination,
+      thresholds: accountSummary.thresholds,
+      signers: accountSummary.signers,
+      flags: accountSummary.flags,
+      sequenceNumber: accountSummary.sequence,
+      balances: displayableBalances,
+    };
+
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 

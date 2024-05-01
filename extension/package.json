@@ -25,7 +25,6 @@
     "@shared/helpers": "1.0.0",
     "@stellar/design-system": "^1.1.2",
     "@stellar/typescript-wallet-sdk-km": "^1.0.1",
-    "@stellar/wallet-sdk": "v0.11.0-beta.1",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^7.1.2",
     "@types/chrome": "^0.0.104",
