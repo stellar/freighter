@@ -1,7 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { Types } from "@stellar/wallet-sdk";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -16,10 +15,10 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import { Balances, SorobanBalance } from "@shared/api/types";
+import { Balance, Balances, SorobanBalance } from "@shared/api/types";
+import { formatAmount } from "popup/helpers/formatters";
 
 import "./styles.scss";
-import { formatAmount } from "popup/helpers/formatters";
 
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
@@ -38,7 +37,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     if (!balances) {
       return "";
     }
-    const bal: Types.Balance = balances[canonical as keyof Balances];
+    const bal: Balance = balances[canonical as keyof Balances];
     if (bal) {
       return bal.total.toString();
     }
