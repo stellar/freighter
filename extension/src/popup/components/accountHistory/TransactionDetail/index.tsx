@@ -110,7 +110,7 @@ export const TransactionDetail = ({
                   {isRecipient ? (
                     <>
                       <div>{t("From")}</div>
-                      <div>
+                      <div className="InfoRow__right">
                         <KeyIdenticon
                           publicKey={from}
                           customSize={identiconDimensions}
@@ -120,7 +120,7 @@ export const TransactionDetail = ({
                   ) : (
                     <>
                       <div>{t("To")}</div>
-                      <div>
+                      <div className="InfoRow__right">
                         <KeyIdenticon
                           publicKey={to}
                           customSize={identiconDimensions}
@@ -133,24 +133,26 @@ export const TransactionDetail = ({
                 !isSwap && (
                   <>
                     <div>{t("Action")}</div>
-                    <div>{operationText}</div>
+                    <div className="InfoRow__right">{operationText}</div>
                   </>
                 )
               )}
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Date")}</div>
-              <div>
+              <div className="InfoRow__right">
                 {createdAtTime} &bull; {createdAtDateStr}
               </div>
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Memo")}</div>
-              <div>{memo || `None`}</div>
+              <div className="InfoRow__right">{memo || `None`}</div>
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Transaction fee")}</div>
-              <div>{stroopToXlm(feeCharged as string).toString()} XLM</div>
+              <div className="InfoRow__right">
+                {stroopToXlm(feeCharged as string).toString()} XLM
+              </div>
             </div>
           </div>
         </div>
