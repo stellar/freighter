@@ -1,5 +1,7 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import * as Sentry from "@sentry/browser";
 import {
   Asset,
   Claimant,
@@ -11,6 +13,8 @@ import {
   StrKey,
   xdr,
 } from "stellar-sdk";
+import { Loader } from "@stellar/design-system";
+import { getContractSpec } from "@shared/api/internal";
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -23,6 +27,7 @@ import {
   InvocationTree,
   scValByType,
 } from "popup/helpers/soroban";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import "./styles.scss";
 
 export const KeyValueList = ({
@@ -67,6 +72,8 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
           />
           <KeyValueInvokeHostFnArgs
             args={_invocation.args.args.map(nativeToScVal)}
+            fnName={_invocation.args.function}
+            contractId={_invocation.args.source}
           />
         </>
       );
@@ -381,25 +388,67 @@ export const KeyValueSignerKeyOptions = ({
   return <></>;
 };
 
-export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
-  <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
-    <div>Parameters</div>
-    <div className="OperationParameters">
-      {args.map((arg) => (
-        <div className="Parameter" key={arg.toXDR().toString()}>
-          {arg.switch() === xdr.ScValType.scvAddress() ? (
-            <CopyValue
-              value={scValByType(arg)}
-              displayValue={scValByType(arg)}
-            />
-          ) : (
-            scValByType(arg)
-          )}
-        </div>
-      ))}
+export const KeyValueInvokeHostFnArgs = ({
+  args,
+  contractId,
+  fnName,
+}: {
+  args: xdr.ScVal[];
+  contractId?: string;
+  fnName?: string;
+}) => {
+  const [isLoading, setLoading] = React.useState(true);
+  const [argNames, setArgNames] = React.useState([] as string[]);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  React.useEffect(() => {
+    async function getSpec(id: string, name: string) {
+      try {
+        const spec = await getContractSpec({ contractId: id, networkDetails });
+        const { definitions } = spec.data;
+        const invocationSpec = definitions[name];
+        const argNamesPositional = invocationSpec.properties?.args
+          ?.required as string[];
+        setArgNames(argNamesPositional);
+        setLoading(false);
+      } catch (error) {
+        Sentry.captureException(
+          `Failed to get contract spec for ${contractId}`,
+        );
+        setLoading(false);
+      }
+    }
+
+    if (contractId && fnName) {
+      getSpec(contractId, fnName);
+    }
+  }, [contractId, fnName, networkDetails]);
+
+  return isLoading ? (
+    <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
+      <Loader size="1rem" />
     </div>
-  </div>
-);
+  ) : (
+    <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
+      <div>Parameters</div>
+      <div className="OperationParameters">
+        {args.map((arg, ind) => (
+          <div className="Parameter" key={arg.toXDR().toString()}>
+            {argNames[ind] && <div>{argNames[ind]}</div>}
+            {arg.switch() === xdr.ScValType.scvAddress() ? (
+              <CopyValue
+                value={scValByType(arg)}
+                displayValue={scValByType(arg)}
+              />
+            ) : (
+              scValByType(arg)
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const KeyValueInvokeHostFn = ({
   op,
@@ -553,7 +602,11 @@ export const KeyValueInvokeHostFn = ({
               operationKey={t("Function Name")}
               operationValue={fnName}
             />
-            <KeyValueInvokeHostFnArgs args={args} />
+            <KeyValueInvokeHostFnArgs
+              args={args}
+              contractId={contractId}
+              fnName={fnName}
+            />
           </>
         );
       }
