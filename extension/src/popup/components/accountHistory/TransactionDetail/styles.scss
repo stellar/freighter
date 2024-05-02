@@ -26,6 +26,7 @@
     &__row {
       color: rgba(255, 255, 255, 0.6);
       display: flex;
+      height: 1.5rem;
       justify-content: space-between;
 
       div:nth-child(2) {
@@ -38,7 +39,10 @@
 
       .InfoRow {
         &__right {
-          width: 50%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 60%;
         }
       }
     }
