@@ -36,6 +36,15 @@
       &:empty {
         display: none;
       }
+
+      .InfoRow {
+        &__right {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 60%;
+        }
+      }
     }
   }
 }
