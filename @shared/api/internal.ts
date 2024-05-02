@@ -687,6 +687,25 @@ export const getIndexerAccountHistory = async ({
   return data;
 };
 
+export const getContractSpec = async ({
+  contractId,
+  networkDetails,
+}: {
+  contractId: string;
+  networkDetails: NetworkDetails;
+}): Promise<Record<string, any>> => {
+  const url = new URL(
+    `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`,
+  );
+  const response = await fetch(url.href);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data);
+  }
+
+  return data;
+};
+
 export const getAccountHistory = async (
   publicKey: string,
   networkDetails: NetworkDetails,

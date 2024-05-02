@@ -422,7 +422,11 @@ const AuthDetail = ({
                   operationKey={t("Function Name")}
                   operationValue={detail.fnName}
                 />
-                <KeyValueInvokeHostFnArgs args={detail.args} />
+                <KeyValueInvokeHostFnArgs
+                  args={detail.args}
+                  contractId={detail.contractId}
+                  fnName={detail.fnName}
+                />
               </div>
             </React.Fragment>
           ))}
