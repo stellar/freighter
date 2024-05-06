@@ -1,6 +1,7 @@
 import { Asset, Horizon } from "stellar-sdk";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { cleanAmount } from "./formatters";
 
 export const horizonGetBestPath = async ({
   amount,
@@ -16,7 +17,7 @@ export const horizonGetBestPath = async ({
   const server = new Horizon.Server(networkDetails.networkUrl);
   const builder = server.strictSendPaths(
     getAssetFromCanonical(sourceAsset) as Asset,
-    amount,
+    cleanAmount(amount),
     [getAssetFromCanonical(destAsset)] as Asset[],
   );
 
