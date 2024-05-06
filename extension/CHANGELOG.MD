@@ -1,3 +1,9 @@
+# Release notes - Wallets - FE Freighter 5.18.3
+
+### Bug
+
+Cannot find paths for swaps
+
 # Release notes - Wallets - FE Freighter 5.18.2
 
 ### Bug
