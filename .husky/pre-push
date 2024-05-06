@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# bash ./.husky/addTranslations.sh
-# bash ./.husky/e2eTests.sh
+bash ./.husky/addTranslations.sh
+bash ./.husky/e2eTests.sh
