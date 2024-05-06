@@ -41,6 +41,7 @@ export const METRIC_NAMES = {
   sendPaymentSettings: "loaded screen: send payment settings",
   sendPaymentSettingsFee: "loaded screen: send payment settings fee",
   sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
+  sendPaymentSettingsTimeout: "loaded screen: send payment settings timeout",
   sendPaymentConfirm: "loaded screen: send payment confirm",
 
   viewAccountMigration: "loaded screen: account migration",
@@ -67,6 +68,7 @@ export const METRIC_NAMES = {
   swapSettings: "loaded screen: swap settings",
   swapSettingsFee: "loaded screen: swap settings fee",
   swapSettingsSlippage: "loaded screen: swap settings slippage",
+  swapSettingsTimeout: "loaded screen: swap settings timeout",
   swapConfirm: "loaded screen: swap confirm",
 
   viewManageAssets: "loaded screen: manage assets",
