@@ -51,7 +51,7 @@ import {
   buildSorobanServer,
   getNewTxBuilder,
 } from "@shared/helpers/soroban/server";
-import { getContractSpec as getContractSpecHelper } from "helpers/soroban";
+import { getContractSpec as getContractSpecHelper } from "./helpers/soroban";
 
 const TRANSACTIONS_LIMIT = 100;
 
