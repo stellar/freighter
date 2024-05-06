@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StellarToml, Networks } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Button } from "@stellar/design-system";
+import { Button, Icon, CopyText } from "@stellar/design-system";
 import { ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
@@ -126,6 +126,7 @@ export const ManageAssetRows = ({
     image: "",
     isVerifiedToken: false,
   } as SuspiciousAssetData);
+  const [rowButtonShowing, setRowButtonShowing] = useState("");
 
   const server = stellarSdkServer(networkDetails.networkUrl);
 
@@ -323,22 +324,33 @@ export const ManageAssetRows = ({
     isTrustlineActive,
     isActionPending,
     isContract,
-  }: ManageAssetRowButtonProps) => {
-    const [isShowingDropdown, setIsShowingDropdown] = useState(false);
-
-    return (
-      <div className="ManageAssetRows__button">
-        {isTrustlineActive ? (
-          <div>
-            <div
-              className="ManageAssetRows__button__ellipsis"
-              onClick={() => setIsShowingDropdown(!isShowingDropdown)}
-            >
-              ...
-            </div>
-            {isShowingDropdown ? (
-              <div className="ManageAssetRows__button__dropdown">
+  }: ManageAssetRowButtonProps) => (
+    <div className="ManageAssetRows__button">
+      {isTrustlineActive ? (
+        <div>
+          <div
+            className="ManageAssetRows__button__ellipsis"
+            onClick={() => {
+              setRowButtonShowing(canonicalAsset);
+            }}
+          >
+            ...
+          </div>
+          {rowButtonShowing === canonicalAsset ? (
+            <div className="ManageAssetRows__button__dropdown">
+              <div className="ManageAssetRows__button__dropdown__row">
+                <CopyText textToCopy={canonicalAsset}>
+                  <>
+                    <div className="ManageAssetRows__button__label">
+                      {t("Copy Address")}
+                    </div>
+                    <Icon.ContentCopy />
+                  </>
+                </CopyText>
+              </div>
+              <div className="ManageAssetRows__button__dropdown__row">
                 <Button
+                  className="ManageAssetRows__button__remove"
                   size="md"
                   variant="secondary"
                   disabled={isActionPending}
@@ -363,43 +375,43 @@ export const ManageAssetRows = ({
                   data-testid="ManageAssetRowButton"
                 >
                   <div className="ManageAssetRows__button__label">
-                    {t("Remove")}
+                    {t("Remove Access")}
                   </div>
                   <img src={IconRemove} alt="icon remove" />
                 </Button>
               </div>
-            ) : null}
-          </div>
-        ) : (
-          <Button
-            size="md"
-            variant="secondary"
-            disabled={isActionPending}
-            isLoading={isActionPending && assetSubmitting === canonicalAsset}
-            onClick={() => {
-              if (isContract) {
-                handleTokenRowClick(
-                  { code, issuer, image, domain },
-                  isTrustlineActive,
-                  canonicalAsset,
-                );
-              } else {
-                handleRowClick(
-                  { code, issuer, image, domain },
-                  isTrustlineActive,
-                );
-              }
-            }}
-            type="button"
-            data-testid="ManageAssetRowButton"
-          >
-            <div className="ManageAssetRows__button__label">{t("Add")}</div>
-            <img src={IconAdd} alt="icon add" />
-          </Button>
-        )}
-      </div>
-    );
-  };
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <Button
+          size="md"
+          variant="secondary"
+          disabled={isActionPending}
+          isLoading={isActionPending && assetSubmitting === canonicalAsset}
+          onClick={() => {
+            if (isContract) {
+              handleTokenRowClick(
+                { code, issuer, image, domain },
+                isTrustlineActive,
+                canonicalAsset,
+              );
+            } else {
+              handleRowClick(
+                { code, issuer, image, domain },
+                isTrustlineActive,
+              );
+            }
+          }}
+          type="button"
+          data-testid="ManageAssetRowButton"
+        >
+          <div className="ManageAssetRows__button__label">{t("Add")}</div>
+          <img src={IconAdd} alt="icon add" />
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <>
