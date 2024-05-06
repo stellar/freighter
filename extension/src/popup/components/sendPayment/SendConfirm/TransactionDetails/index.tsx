@@ -200,6 +200,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       asset,
       memo,
       transactionFee,
+      transactionTimeout,
       allowedSlippage,
       destinationAsset,
       destinationAmount,
@@ -326,7 +327,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         networkPassphrase: networkDetails.networkPassphrase,
       })
         .addOperation(operation)
-        .setTimeout(180);
+        .setTimeout(transactionTimeout);
 
       if (memo) {
         transactionXDR.addMemo(Memo.text(memo));

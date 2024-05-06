@@ -48,6 +48,7 @@ const routeToEventName = {
   [ROUTES.sendPaymentSettingsFee]: METRIC_NAMES.sendPaymentSettingsFee,
   [ROUTES.sendPaymentSettingsSlippage]:
     METRIC_NAMES.sendPaymentSettingsSlippage,
+  [ROUTES.sendPaymentSettingsTimeout]: METRIC_NAMES.sendPaymentSettingsTimeout,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
   [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
@@ -59,6 +60,7 @@ const routeToEventName = {
   [ROUTES.swapSettings]: METRIC_NAMES.swapSettings,
   [ROUTES.swapSettingsFee]: METRIC_NAMES.swapSettingsFee,
   [ROUTES.swapSettingsSlippage]: METRIC_NAMES.swapSettingsSlippage,
+  [ROUTES.swapSettingsTimeout]: METRIC_NAMES.swapSettingsTimeout,
   [ROUTES.swapConfirm]: METRIC_NAMES.swapConfirm,
   [ROUTES.manageNetwork]: METRIC_NAMES.viewManageNetwork,
   [ROUTES.addNetwork]: METRIC_NAMES.viewAddNetwork,
