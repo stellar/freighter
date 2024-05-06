@@ -51,6 +51,7 @@ import {
   buildSorobanServer,
   getNewTxBuilder,
 } from "@shared/helpers/soroban/server";
+import { getContractSpec as getContractSpecHelper } from "helpers/soroban";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -699,13 +700,20 @@ export const getContractSpec = async ({
   contractId: string;
   networkDetails: NetworkDetails;
 }): Promise<Record<string, any>> => {
+  if (isCustomNetwork(networkDetails)) {
+    const data = await getContractSpecHelper(
+      contractId,
+      networkDetails.networkUrl,
+    );
+    return data;
+  }
   const url = new URL(
     `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`,
   );
   const response = await fetch(url.href);
-  const data = await response.json();
+  const { data, error } = await response.json();
   if (!response.ok) {
-    throw new Error(data);
+    throw new Error(error);
   }
 
   return data;
