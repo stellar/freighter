@@ -405,7 +405,7 @@ export const KeyValueInvokeHostFnArgs = ({
     async function getSpec(id: string, name: string) {
       try {
         const spec = await getContractSpec({ contractId: id, networkDetails });
-        const { definitions } = spec.data;
+        const { definitions } = spec;
         const invocationSpec = definitions[name];
         const argNamesPositional = invocationSpec.properties?.args
           ?.required as string[];
