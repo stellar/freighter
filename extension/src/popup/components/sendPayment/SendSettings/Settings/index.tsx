@@ -192,7 +192,7 @@ export const Settings = ({
                       infoText={
                         <span>
                           {t(
-                            "Maximum time that can pass before this transaction can no longer be accepted",
+                            "Number of seconds that can pass before this transaction can no longer be accepted by the network",
                           )}{" "}
                         </span>
                       }
