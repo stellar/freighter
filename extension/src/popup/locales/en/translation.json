@@ -278,7 +278,6 @@
   "max of 24 characters allowed": "max of 24 characters allowed",
   "Max Price": "Max Price",
   "Maximum network transaction fee to be paid": "Maximum network transaction fee to be paid",
-  "Maximum time that can pass before this transaction can no longer be accepted": "Maximum time that can pass before this transaction can no longer be accepted",
   "Medium Threshold": "Medium Threshold",
   "Memo": "Memo",
   "Memo (optional)": "Memo (optional)",
@@ -324,6 +323,7 @@
   "Not on your lists": "Not on your lists",
   "Not recommended asset": "Not recommended asset",
   "Now, let’s create a new mnemonic phrase": "Now, let’s create a new mnemonic phrase",
+  "Number of seconds that can pass before this transaction can no longer be accepted by the network": "Number of seconds that can pass before this transaction can no longer be accepted by the network",
   "Offer ID": "Offer ID",
   "On your lists": "On your lists",
   "One of your accounts is a signer for another account": {
