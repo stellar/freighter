@@ -37,7 +37,9 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     transactionSubmissionSelector,
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
+  const { networkUrl, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
@@ -76,7 +78,11 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           if (issuer?.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              domain = await getAssetDomain(issuer.key as string, networkUrl);
+              domain = await getAssetDomain(
+                issuer.key as string,
+                networkUrl,
+                networkPassphrase,
+              );
             } catch (e) {
               console.error(e);
             }
@@ -114,6 +120,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     managingAssets,
     isSorobanSuported,
     isSwap,
+    networkPassphrase,
   ]);
 
   return (

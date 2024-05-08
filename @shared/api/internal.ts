@@ -9,7 +9,6 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
-import { DataProvider } from "@stellar/wallet-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { AssetsListItem, AssetsLists } from "@shared/constants/soroban/token";
@@ -19,6 +18,16 @@ import {
   getName,
   getSymbol,
 } from "@shared/helpers/soroban/token";
+import {
+  getSdk,
+  isCustomNetwork,
+  makeDisplayableBalances,
+} from "@shared/helpers/stellar";
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
+import { getContractSpec as getContractSpecHelper } from "./helpers/soroban";
 import {
   Account,
   AccountBalancesInterface,
@@ -44,11 +53,6 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
-import { isCustomNetwork } from "@shared/helpers/stellar";
-import {
-  buildSorobanServer,
-  getNewTxBuilder,
-} from "@shared/helpers/soroban/server";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -111,15 +115,11 @@ export const addAccount = async (
   let hasPrivateKey = false;
 
   try {
-    ({
-      allAccounts,
-      error,
-      publicKey,
-      hasPrivateKey,
-    } = await sendMessageToBackground({
-      password,
-      type: SERVICE_TYPES.ADD_ACCOUNT,
-    }));
+    ({ allAccounts, error, publicKey, hasPrivateKey } =
+      await sendMessageToBackground({
+        password,
+        type: SERVICE_TYPES.ADD_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -145,16 +145,12 @@ export const importAccount = async (
   let hasPrivateKey = false;
 
   try {
-    ({
-      allAccounts,
-      publicKey,
-      error,
-      hasPrivateKey,
-    } = await sendMessageToBackground({
-      password,
-      privateKey,
-      type: SERVICE_TYPES.IMPORT_ACCOUNT,
-    }));
+    ({ allAccounts, publicKey, error, hasPrivateKey } =
+      await sendMessageToBackground({
+        password,
+        privateKey,
+        type: SERVICE_TYPES.IMPORT_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -314,16 +310,12 @@ export const recoverAccount = async (
   let error = "";
 
   try {
-    ({
-      allAccounts,
-      publicKey,
-      hasPrivateKey,
-      error,
-    } = await sendMessageToBackground({
-      password,
-      recoverMnemonic,
-      type: SERVICE_TYPES.RECOVER_ACCOUNT,
-    }));
+    ({ allAccounts, publicKey, hasPrivateKey, error } =
+      await sendMessageToBackground({
+        password,
+        recoverMnemonic,
+        type: SERVICE_TYPES.RECOVER_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -422,18 +414,13 @@ export const migrateAccounts = async ({
   let error = "";
 
   try {
-    ({
-      migratedAccounts,
-      allAccounts,
-      publicKey,
-      hasPrivateKey,
-      error,
-    } = await sendMessageToBackground({
-      balancesToMigrate,
-      isMergeSelected,
-      recommendedFee,
-      type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
-    }));
+    ({ migratedAccounts, allAccounts, publicKey, hasPrivateKey, error } =
+      await sendMessageToBackground({
+        balancesToMigrate,
+        isMergeSelected,
+        recommendedFee,
+        type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
+      }));
   } catch (e) {
     console.error(e);
   }
@@ -536,16 +523,27 @@ export const getAccountBalancesStandalone = async ({
   let subentryCount = 0;
 
   try {
-    const dataProvider = new DataProvider({
-      serverUrl: networkUrl,
-      accountOrKey: publicKey,
-      networkPassphrase,
-      metadata: {
-        allowHttp: networkUrl.startsWith("http://"),
-      },
-    });
+    const server = stellarSdkServer(networkUrl, networkPassphrase);
+    const accountSummary = await server.accounts().accountId(publicKey).call();
 
-    const resp = await dataProvider.fetchAccountDetails();
+    const displayableBalances = makeDisplayableBalances(accountSummary);
+    const sponsor = accountSummary.sponsor
+      ? { sponsor: accountSummary.sponsor }
+      : {};
+    const resp = {
+      ...sponsor,
+      id: accountSummary.id,
+      subentryCount: accountSummary.subentry_count,
+      sponsoredCount: accountSummary.num_sponsored,
+      sponsoringCount: accountSummary.num_sponsoring,
+      inflationDestination: accountSummary.inflation_destination,
+      thresholds: accountSummary.thresholds,
+      signers: accountSummary.signers,
+      flags: accountSummary.flags,
+      sequenceNumber: accountSummary.sequence,
+      balances: displayableBalances,
+    };
+
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 
@@ -554,7 +552,7 @@ export const getAccountBalancesStandalone = async ({
       const k = Object.keys(resp.balances)[i];
       const v: any = resp.balances[k];
       if (v.liquidity_pool_id) {
-        const server = stellarSdkServer(networkUrl);
+        const server = stellarSdkServer(networkUrl, networkPassphrase);
         // eslint-disable-next-line no-await-in-loop
         const lp = await server
           .liquidityPools()
@@ -590,7 +588,10 @@ export const getAccountBalancesStandalone = async ({
       throw new SorobanRpcNotSupportedError();
     }
 
-    const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+    const server = buildSorobanServer(
+      networkDetails.sorobanRpcUrl,
+      networkDetails.networkPassphrase,
+    );
 
     const params = [new Address(publicKey).toScVal()];
 
@@ -648,12 +649,12 @@ export const getAccountHistoryStandalone = async ({
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<Horizon.ServerApi.OperationRecord[]> => {
-  const { networkUrl } = networkDetails;
+  const { networkUrl, networkPassphrase } = networkDetails;
 
   let operations = [] as Horizon.ServerApi.OperationRecord[];
 
   try {
-    const server = stellarSdkServer(networkUrl);
+    const server = stellarSdkServer(networkUrl, networkPassphrase);
 
     const operationsData = await server
       .operations()
@@ -696,6 +697,32 @@ export const getIndexerAccountHistory = async ({
   }
 };
 
+export const getContractSpec = async ({
+  contractId,
+  networkDetails,
+}: {
+  contractId: string;
+  networkDetails: NetworkDetails;
+}): Promise<Record<string, any>> => {
+  if (isCustomNetwork(networkDetails)) {
+    const data = await getContractSpecHelper(
+      contractId,
+      networkDetails.networkUrl,
+    );
+    return data;
+  }
+  const url = new URL(
+    `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`,
+  );
+  const response = await fetch(url.href);
+  const { data, error } = await response.json();
+  if (!response.ok) {
+    throw new Error(error);
+  }
+
+  return data;
+};
+
 export const getAccountHistory = async (
   publicKey: string,
   networkDetails: NetworkDetails,
@@ -728,7 +755,10 @@ export const getTokenDetails = async ({
       }
 
       // You need one Tx Builder per call in Soroban right now
-      const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+      const server = buildSorobanServer(
+        networkDetails.sorobanRpcUrl,
+        networkDetails.networkPassphrase,
+      );
       const name = await getName(
         contractId,
         server,
@@ -965,11 +995,15 @@ export const submitFreighterTransaction = ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
-  const tx = TransactionBuilder.fromXDR(
+  const Sdk = getSdk(networkDetails.networkPassphrase);
+  const tx = Sdk.TransactionBuilder.fromXDR(
     signedXDR,
     networkDetails.networkPassphrase,
   );
-  const server = stellarSdkServer(networkDetails.networkUrl);
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
 
   return submitTx({ server, tx });
 };
@@ -982,8 +1016,9 @@ export const submitFreighterSorobanTransaction = async ({
   networkDetails: NetworkDetails;
 }) => {
   let tx = {} as Transaction | FeeBumpTransaction;
+  const Sdk = getSdk(networkDetails.networkPassphrase);
   try {
-    tx = TransactionBuilder.fromXDR(
+    tx = Sdk.TransactionBuilder.fromXDR(
       signedXDR,
       networkDetails.networkPassphrase,
     );
@@ -997,7 +1032,7 @@ export const submitFreighterSorobanTransaction = async ({
 
   const serverUrl = networkDetails.sorobanRpcUrl || "";
 
-  const server = new SorobanRpc.Server(serverUrl, {
+  const server = new Sdk.SorobanRpc.Server(serverUrl, {
     allowHttp: !serverUrl.startsWith("https"),
   });
 

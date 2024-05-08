@@ -109,9 +109,8 @@ export const ManageAssetRows = ({
   const walletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!walletType;
 
-  const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
-    false,
-  );
+  const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
+    useState(false);
   const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
   const [showUnverifiedWarning, setShowUnverifiedWarning] = useState(false);
   const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
@@ -128,7 +127,10 @@ export const ManageAssetRows = ({
   } as SuspiciousAssetData);
   const [rowButtonShowing, setRowButtonShowing] = useState("");
 
-  const server = stellarSdkServer(networkDetails.networkUrl);
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
 
   const changeTrustline = async (
     assetCode: string,
@@ -138,7 +140,7 @@ export const ManageAssetRows = ({
     const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
     setAssetSubmitting(canonicalAsset);
 
-    const transactionXDR = await getManageAssetXDR({
+    const transactionXDR: string = await getManageAssetXDR({
       publicKey,
       assetCode,
       assetIssuer,

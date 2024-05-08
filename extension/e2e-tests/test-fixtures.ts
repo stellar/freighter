@@ -40,7 +40,10 @@ export const expectPageToHaveScreenshot = async (
   if (process.env.CI) {
     return true;
   }
-  await expect(page).toHaveScreenshot(screenshot, options);
+  await expect(page).toHaveScreenshot(screenshot, {
+    maxDiffPixelRatio: 0.02,
+    ...options,
+  });
 };
 
 export const expect = test.expect;

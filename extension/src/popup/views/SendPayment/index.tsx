@@ -10,6 +10,7 @@ import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
+import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
 
 export const SendPayment = () => (
   <Switch>
@@ -39,6 +40,9 @@ export const SendPayment = () => (
     </PublicKeyRoute>
     <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
       <SendSettingsSlippage previous={ROUTES.sendPaymentSettings} />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsTimeout}>
+      <SendSettingsTxTimeout previous={ROUTES.sendPaymentSettings} />
     </PublicKeyRoute>
     <VerifiedAccountRoute exact path={ROUTES.sendPaymentConfirm}>
       <SendConfirm previous={ROUTES.sendPaymentSettings} />

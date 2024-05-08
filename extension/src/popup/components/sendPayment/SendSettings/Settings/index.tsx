@@ -26,9 +26,10 @@ import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { parseTokenAmount } from "popup/helpers/soroban";
-import "../../styles.scss";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
+
+import "../../styles.scss";
 
 export const Settings = ({
   previous,
@@ -44,6 +45,7 @@ export const Settings = ({
     amount,
     destination,
     transactionFee,
+    transactionTimeout,
     memo,
     allowedSlippage,
     isToken,
@@ -68,6 +70,11 @@ export const Settings = ({
   const handleSlippageNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
+    );
+
+  const handleTimeoutNav = () =>
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsTimeout : ROUTES.sendPaymentSettingsTimeout,
     );
 
   // dont show memo for regular sends to Muxed, or for swaps
@@ -178,6 +185,45 @@ export const Settings = ({
                     </div>
                   </div>
                 ) : null}
+
+                <div className="SendSettings__row">
+                  <div className="SendSettings__row__left">
+                    <InfoTooltip
+                      infoText={
+                        <span>
+                          {t(
+                            "Number of seconds that can pass before this transaction can no longer be accepted by the network",
+                          )}{" "}
+                        </span>
+                      }
+                      placement="bottom"
+                    >
+                      <span
+                        className="SendSettings__row__title SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleTimeoutNav();
+                        }}
+                      >
+                        {t("Transaction timeout")}
+                      </span>
+                    </InfoTooltip>
+                  </div>
+                  <div
+                    className="SendSettings__row__right SendSettings__clickable"
+                    onClick={() => {
+                      submitForm();
+                      handleTimeoutNav();
+                    }}
+                  >
+                    <span data-testid="SendSettingsTransactionTimeout">
+                      {transactionTimeout}(s)
+                    </span>
+                    <div>
+                      <Icon.ChevronRight />
+                    </div>
+                  </div>
+                </div>
 
                 {showSlippage && (
                   <div className="SendSettings__row">

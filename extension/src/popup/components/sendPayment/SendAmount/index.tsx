@@ -121,20 +121,14 @@ export const SendAmount = ({
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
 
-  const {
-    amount,
-    asset,
-    destinationAmount,
-    destinationAsset,
-    isToken,
-  } = transactionData;
+  const { amount, asset, destinationAmount, destinationAsset, isToken } =
+    transactionData;
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
   const [loadingRate, setLoadingRate] = useState(false);
-  const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
-    false,
-  );
+  const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
+    useState(false);
   const [suspiciousAssetData, setSuspiciousAssetData] = useState({
     domain: "",
     code: "",
@@ -148,9 +142,9 @@ export const SendAmount = ({
       let _availBalance = new BigNumber("0");
       if (isToken) {
         // TODO: balances is incorrectly typed and does not include SorobanBalance
-        const tokenBalance = (accountBalances?.balances?.[
+        const tokenBalance = accountBalances?.balances?.[
           selectedAsset
-        ] as any) as SorobanBalance;
+        ] as any as SorobanBalance;
         return getTokenBalance(tokenBalance);
       }
       if (accountBalances.balances) {
@@ -479,15 +473,13 @@ export const SendAmount = ({
                     value={formik.values.amount}
                     onChange={(e) => {
                       const input = e.target;
-                      const {
-                        amount: newAmount,
-                        newCursor,
-                      } = formatAmountPreserveCursor(
-                        e.target.value,
-                        formik.values.amount,
-                        getAssetDecimals(asset, accountBalances, isToken),
-                        e.target.selectionStart || 1,
-                      );
+                      const { amount: newAmount, newCursor } =
+                        formatAmountPreserveCursor(
+                          e.target.value,
+                          formik.values.amount,
+                          getAssetDecimals(asset, accountBalances, isToken),
+                          e.target.selectionStart || 1,
+                        );
                       formik.setFieldValue("amount", newAmount);
                       runAfterUpdate(() => {
                         input.selectionStart = newCursor;
@@ -504,7 +496,9 @@ export const SendAmount = ({
                     <ConversionRate
                       loading={loadingRate}
                       source={parsedSourceAsset.code}
-                      sourceAmount={formik.values.amount || defaultSourceAmount}
+                      sourceAmount={
+                        cleanAmount(formik.values.amount) || defaultSourceAmount
+                      }
                       dest={parsedDestAsset.code}
                       destAmount={destinationAmount}
                     />

@@ -17,8 +17,8 @@ export const useAssetDomain = ({ assetIssuer = "" }: UseAssetDomain) => {
 
   useEffect(() => {
     const fetchAssetDomain = async () => {
-      const { networkUrl } = networkDetails;
-      const server = stellarSdkServer(networkUrl);
+      const { networkUrl, networkPassphrase } = networkDetails;
+      const server = stellarSdkServer(networkUrl, networkPassphrase);
 
       let assetDomain = "";
 

@@ -88,7 +88,10 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  const server = stellarSdkServer(networkDetails.networkUrl);
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
@@ -268,9 +271,9 @@ export const SubmitFail = () => {
     const { operations: opErrors, transaction: txError } = getResultCodes(err);
 
     if (opErrors[0]) {
-      errorDetails.opError = opErrors[0];
+      errorDetails.opError = opErrors[0] as RESULT_CODES;
     } else {
-      errorDetails.opError = txError;
+      errorDetails.opError = txError as RESULT_CODES;
     }
 
     switch (errorDetails.opError) {
@@ -397,7 +400,7 @@ export const SubmitFail = () => {
         );
         break;
       default:
-        errorDetails.status = httpCode;
+        errorDetails.status = httpCode as string;
         errorDetails.title = `${
           isSwap ? t("Swap failed") : t("Transaction failed")
         }`;

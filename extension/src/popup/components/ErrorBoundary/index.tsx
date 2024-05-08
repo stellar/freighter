@@ -10,11 +10,8 @@ import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
 
-// eslint-disable-next-line
-interface ErrorBoundaryProps {}
-
 export class ErrorBoundary extends Component<
-  ErrorBoundaryProps,
+  React.PropsWithChildren,
   { hasError: boolean; errorString: string }
 > {
   static getDerivedStateFromError() {
@@ -22,7 +19,7 @@ export class ErrorBoundary extends Component<
   }
 
   // eslint-disable-next-line @typescript-eslint/member-ordering
-  constructor(props: ErrorBoundaryProps) {
+  constructor(props: React.PropsWithChildren) {
     super(props);
     // eslint-disable-next-line
     this.state = { hasError: false, errorString: "" };
