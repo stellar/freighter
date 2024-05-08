@@ -3073,7 +3073,7 @@
   resolved "https://registry.yarnpkg.com/@stellar/prettier-config/-/prettier-config-1.2.0.tgz#b27c411e0c4c63b2d76332c239084e682c37468f"
   integrity sha512-oL9qJ7+7aWnImpbcldroQrvtMCZ9yx4JL/tmDZ860RpBQd2ahkc8bX6/k2ehFK8gpb9ltYu4mtU49wufUuYhGg==
 
-"@stellar/stellar-base@^11.0.1":
+"@stellar/stellar-base@11.1.0", "@stellar/stellar-base@^11.0.1":
   version "11.1.0"
   resolved "https://registry.yarnpkg.com/@stellar/stellar-base/-/stellar-base-11.1.0.tgz#4b561776cb102a87828379cd1ac5d3ce96db4fb3"
   integrity sha512-nMg7QSpFqCZFq3Je/lG12+DY18y01QHRNyCxvjM8i4myS9tPRMDq7zqGcd215BGbCJxenckiOW45YJjQjzdcMQ==
@@ -14557,7 +14557,20 @@ stellar-identicon-js@^1.0.0:
   dependencies:
     html-webpack-plugin "^3.2.0"
 
-stellar-sdk@^11.3.0:
+"stellar-sdk-next@yarn:stellar-sdk@12.0.0-rc.2":
+  version "12.0.0-rc.2"
+  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-12.0.0-rc.2.tgz#a6e2608fcb52acf87dbfc50ddb33a6fb8bcacbac"
+  integrity sha512-agda7+I8CRTArhxID4FgEz5c85/Vpqn40P9Xq8D88zSyu4mj0g+dR5j8TVQGBfeKhap2zqLKiQQb/U73ocIJNg==
+  dependencies:
+    "@stellar/stellar-base" "11.1.0"
+    axios "^1.6.8"
+    bignumber.js "^9.1.2"
+    eventsource "^2.0.2"
+    randombytes "^2.1.0"
+    toml "^3.0.0"
+    urijs "^1.19.1"
+
+"stellar-sdk@yarn:stellar-sdk@^11.3.0":
   version "11.3.0"
   resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.3.0.tgz#385105eac694bb469ec3924e79e796d5766ba7cd"
   integrity sha512-xOp2zpQm5TIbgJi7wJhAmJh+Uy0ew5GbGtj1kZv6HEWHgSvW95xYMxGaw6MWM9r2YPUSQySboE6JwDc9jdx53A==

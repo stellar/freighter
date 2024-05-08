@@ -1,14 +1,22 @@
 import BigNumber from "bignumber.js";
-import { Horizon } from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
+import * as StellarSdkNext from "stellar-sdk-next";
 
 import { BalanceMap } from "@shared/api/types";
 import {
   BASE_RESERVE,
   BASE_RESERVE_MIN_COUNT,
   NetworkDetails,
+  FUTURENET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
 export const CUSTOM_NETWORK = "STANDALONE";
+
+export const isNextSdk = (networkPassphrase: string) =>
+  [FUTURENET_NETWORK_DETAILS.networkPassphrase].includes(networkPassphrase);
+
+export const getSdk = (networkPassphrase: string) =>
+  isNextSdk(networkPassphrase) ? StellarSdkNext : StellarSdk;
 
 export const isCustomNetwork = (networkDetails: NetworkDetails) => {
   const { network } = networkDetails;
@@ -17,7 +25,7 @@ export const isCustomNetwork = (networkDetails: NetworkDetails) => {
 };
 
 export function getBalanceIdentifier(
-  balance: Horizon.HorizonApi.BalanceLine,
+  balance: StellarSdk.Horizon.HorizonApi.BalanceLine,
 ): string {
   if ("asset_issuer" in balance && !balance.asset_issuer) {
     return "native";
@@ -36,7 +44,7 @@ export function getBalanceIdentifier(
 }
 
 export function makeDisplayableBalances(
-  accountDetails: Horizon.ServerApi.AccountRecord,
+  accountDetails: StellarSdk.Horizon.ServerApi.AccountRecord,
 ): BalanceMap {
   const { balances, subentry_count, num_sponsored, num_sponsoring } =
     accountDetails;
@@ -83,7 +91,7 @@ export function makeDisplayableBalances(
       }
 
       const liquidityPoolBalance =
-        balance as Horizon.HorizonApi.BalanceLineLiquidityPool;
+        balance as StellarSdk.Horizon.HorizonApi.BalanceLineLiquidityPool;
       if (identifier.includes(":lp")) {
         return {
           ...memo,
@@ -95,7 +103,8 @@ export function makeDisplayableBalances(
         };
       }
 
-      const assetBalance = balance as Horizon.HorizonApi.BalanceLineAsset;
+      const assetBalance =
+        balance as StellarSdk.Horizon.HorizonApi.BalanceLineAsset;
       const assetSponsor = assetBalance.sponsor
         ? { sponsor: assetBalance.sponsor }
         : {};

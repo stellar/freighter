@@ -5,13 +5,14 @@ import {
   Operation,
   TransactionBuilder,
 } from "stellar-sdk";
+import { Horizon as HorizonNext } from "stellar-sdk-next";
 import { submitTx } from "@shared/api/helpers/stellarSdkServer";
 import BigNumber from "bignumber.js";
 
 interface MigrateTrustLinesParams {
   trustlineBalances: Horizon.HorizonApi.BalanceLine[];
-  server: Horizon.Server;
-  sourceAccount: Horizon.AccountResponse;
+  server: Horizon.Server | HorizonNext.Server;
+  sourceAccount: Horizon.AccountResponse | HorizonNext.AccountResponse;
   sourceKeys: Keypair;
   newKeyPair: { publicKey: string; privateKey: string };
   fee: string;

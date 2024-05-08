@@ -19,6 +19,15 @@ import {
   getSymbol,
 } from "@shared/helpers/soroban/token";
 import {
+  getSdk,
+  isCustomNetwork,
+  makeDisplayableBalances,
+} from "@shared/helpers/stellar";
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
+import {
   Account,
   AccountBalancesInterface,
   BalanceToMigrate,
@@ -43,14 +52,6 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
-import {
-  isCustomNetwork,
-  makeDisplayableBalances,
-} from "@shared/helpers/stellar";
-import {
-  buildSorobanServer,
-  getNewTxBuilder,
-} from "@shared/helpers/soroban/server";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -514,14 +515,14 @@ export const getAccountBalancesStandalone = async ({
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<AccountBalancesInterface> => {
-  const { network, networkUrl } = networkDetails;
+  const { network, networkUrl, networkPassphrase } = networkDetails;
 
   let balances: any = null;
   let isFunded = null;
   let subentryCount = 0;
 
   try {
-    const server = stellarSdkServer(networkUrl);
+    const server = stellarSdkServer(networkUrl, networkPassphrase);
     const accountSummary = await server.accounts().accountId(publicKey).call();
 
     const displayableBalances = makeDisplayableBalances(accountSummary);
@@ -550,7 +551,7 @@ export const getAccountBalancesStandalone = async ({
       const k = Object.keys(resp.balances)[i];
       const v: any = resp.balances[k];
       if (v.liquidity_pool_id) {
-        const server = stellarSdkServer(networkUrl);
+        const server = stellarSdkServer(networkUrl, networkPassphrase);
         // eslint-disable-next-line no-await-in-loop
         const lp = await server
           .liquidityPools()
@@ -586,7 +587,10 @@ export const getAccountBalancesStandalone = async ({
       throw new SorobanRpcNotSupportedError();
     }
 
-    const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+    const server = buildSorobanServer(
+      networkDetails.sorobanRpcUrl,
+      networkDetails.networkPassphrase,
+    );
 
     const params = [new Address(publicKey).toScVal()];
 
@@ -644,12 +648,12 @@ export const getAccountHistoryStandalone = async ({
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<Horizon.ServerApi.OperationRecord[]> => {
-  const { networkUrl } = networkDetails;
+  const { networkUrl, networkPassphrase } = networkDetails;
 
   let operations = [] as Horizon.ServerApi.OperationRecord[];
 
   try {
-    const server = stellarSdkServer(networkUrl);
+    const server = stellarSdkServer(networkUrl, networkPassphrase);
 
     const operationsData = await server
       .operations()
@@ -743,7 +747,10 @@ export const getTokenDetails = async ({
       }
 
       // You need one Tx Builder per call in Soroban right now
-      const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+      const server = buildSorobanServer(
+        networkDetails.sorobanRpcUrl,
+        networkDetails.networkPassphrase,
+      );
       const name = await getName(
         contractId,
         server,
@@ -980,11 +987,15 @@ export const submitFreighterTransaction = ({
   signedXDR: string;
   networkDetails: NetworkDetails;
 }) => {
-  const tx = TransactionBuilder.fromXDR(
+  const Sdk = getSdk(networkDetails.networkPassphrase);
+  const tx = Sdk.TransactionBuilder.fromXDR(
     signedXDR,
     networkDetails.networkPassphrase,
   );
-  const server = stellarSdkServer(networkDetails.networkUrl);
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
 
   return submitTx({ server, tx });
 };
@@ -997,8 +1008,9 @@ export const submitFreighterSorobanTransaction = async ({
   networkDetails: NetworkDetails;
 }) => {
   let tx = {} as Transaction | FeeBumpTransaction;
+  const Sdk = getSdk(networkDetails.networkPassphrase);
   try {
-    tx = TransactionBuilder.fromXDR(
+    tx = Sdk.TransactionBuilder.fromXDR(
       signedXDR,
       networkDetails.networkPassphrase,
     );
@@ -1012,7 +1024,7 @@ export const submitFreighterSorobanTransaction = async ({
 
   const serverUrl = networkDetails.sorobanRpcUrl || "";
 
-  const server = new SorobanRpc.Server(serverUrl, {
+  const server = new Sdk.SorobanRpc.Server(serverUrl, {
     allowHttp: !serverUrl.startsWith("https"),
   });
 

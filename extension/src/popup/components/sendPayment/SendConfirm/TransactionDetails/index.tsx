@@ -214,9 +214,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
-    settingsSelector,
-  );
+  const { isMemoValidationEnabled, isSafetyValidationEnabled } =
+    useSelector(settingsSelector);
   const isSwap = useIsSwap();
 
   const { t } = useTranslation();
@@ -269,6 +268,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   }, [dispatch]);
 
   const handleXferTransaction = async () => {
+    console.log(transactionSimulation.preparedTransaction);
     try {
       const res = await dispatch(
         signFreighterSorobanTransaction({
@@ -302,7 +302,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handlePaymentTransaction = async () => {
     try {
-      const server = stellarSdkServer(networkDetails.networkUrl);
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
       const sourceAccount: Account = await server.loadAccount(publicKey);
 
       const operation = getOperation(
