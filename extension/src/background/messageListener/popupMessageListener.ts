@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import { Store } from "redux";
-import {
-  Keypair,
-  Networks,
-  Operation,
-  Transaction,
-  TransactionBuilder,
-  hash,
-} from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
 import {
   KeyManager,
   BrowserStorageKeyStore,
@@ -127,6 +120,7 @@ import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
 } from "@shared/constants/soroban/token";
+import { getSdk } from "@shared/helpers/stellar";
 
 // number of public keys to auto-import
 const numOfPublicKeysToCheck = 5;
@@ -134,7 +128,7 @@ const sessionTimer = new SessionTimer();
 
 // eslint-disable-next-line
 export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Transaction[] = [];
+export const transactionQueue: StellarSdk.Transaction[] = [];
 export const blobQueue: {
   isDomainListedAllowed: boolean;
   domain: string;
@@ -510,7 +504,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     try {
       await _unlockKeystore({ keyID, password });
-      sourceKeys = Keypair.fromSecret(privateKey);
+      sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
       return { error: "Please enter a valid secret key/password combination" };
@@ -1031,11 +1025,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signTransaction = () => {
+  const signTransaction = async () => {
     const privateKey = privateKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+
+    const Sdk = getSdk(networkDetails.networkPassphrase);
 
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
 
       let response;
 
@@ -1062,11 +1059,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signBlob = () => {
+  const signBlob = async () => {
     const privateKey = privateKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+
+    const Sdk = getSdk(networkDetails.networkPassphrase);
 
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
 
       const blob = blobQueue.pop();
       const response = blob
@@ -1084,15 +1084,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signAuthEntry = () => {
+  const signAuthEntry = async () => {
     const privateKey = privateKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+
+    const Sdk = getSdk(networkDetails.networkPassphrase);
 
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? sourceKeys.sign(hash(Buffer.from(authEntry.entry, "base64")))
+        ? sourceKeys.sign(Sdk.hash(Buffer.from(authEntry.entry, "base64")))
         : null;
 
       const entryResponse = responseQueue.pop();
@@ -1116,11 +1119,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signFreighterTransaction = () => {
     const { transactionXDR, network } = request;
-    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
+
+    const Sdk = getSdk(network);
+
+    const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -1131,11 +1137,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const signFreighterSorobanTransaction = () => {
     const { transactionXDR, network } = request;
 
-    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
+    const Sdk = getSdk(network);
+
+    const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -1484,8 +1492,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const fee = xlmToStroop(recommendedFee).toFixed();
 
     // we expect all migrations to be done on MAINNET
-    const server = stellarSdkServer(NETWORK_URLS.PUBLIC);
-    const networkPassphrase = Networks.PUBLIC;
+    const server = stellarSdkServer(
+      NETWORK_URLS.PUBLIC,
+      MAINNET_NETWORK_DETAILS.networkPassphrase,
+    );
+    const networkPassphrase = StellarSdk.Networks.PUBLIC;
 
     /*
       For each migratable balance, we'll go through the following steps:
@@ -1528,7 +1539,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       };
 
       // eslint-disable-next-line no-await-in-loop
-      const transaction = new TransactionBuilder(sourceAccount, {
+      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
         fee,
         networkPassphrase,
       });
@@ -1546,13 +1557,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         .toString();
 
       transaction.addOperation(
-        Operation.createAccount({
+        StellarSdk.Operation.createAccount({
           destination: newKeyPair.publicKey,
           startingBalance,
         }),
       );
 
-      const sourceKeys = Keypair.fromSecret(store.privateKey);
+      const sourceKeys = StellarSdk.Keypair.fromSecret(store.privateKey);
       const builtTransaction = transaction.setTimeout(180).build();
 
       try {
@@ -1594,12 +1605,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
         // eslint-disable-next-line no-await-in-loop
-        const mergeTransaction = new TransactionBuilder(sourceAccount, {
-          fee,
-          networkPassphrase,
-        });
+        const mergeTransaction = new StellarSdk.TransactionBuilder(
+          sourceAccount,
+          {
+            fee,
+            networkPassphrase,
+          },
+        );
         mergeTransaction.addOperation(
-          Operation.accountMerge({
+          StellarSdk.Operation.accountMerge({
             destination: newKeyPair.publicKey,
           }),
         );

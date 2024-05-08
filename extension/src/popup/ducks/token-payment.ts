@@ -43,7 +43,10 @@ export const simulateTokenPayment = createAsyncThunk<
         if (!networkDetails.sorobanRpcUrl) {
           throw new SorobanRpcNotSupportedError();
         }
-        const server = buildSorobanServer(networkDetails.sorobanRpcUrl);
+        const server = buildSorobanServer(
+          networkDetails.sorobanRpcUrl,
+          networkDetails.networkPassphrase,
+        );
         const builder = await getNewTxBuilder(
           publicKey,
           networkDetails,
