@@ -29,7 +29,7 @@ describe("scValByType", () => {
     const parsedBool = scValByType(bool);
     expect(parsedBool).toEqual(true);
   });
-  it.only("should render bytes as a a hex string", () => {
+  it("should render bytes as a a hex string", () => {
     const bytesBuffer = Buffer.from([0x00, 0x01]);
     const bytes = xdr.ScVal.scvBytes(bytesBuffer);
     const parsedBytes = scValByType(bytes);
