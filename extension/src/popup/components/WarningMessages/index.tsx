@@ -1010,7 +1010,9 @@ const WarningMessageTokenDetails = ({
       } catch (error) {
         // falls back to only showing contract ID
         captureException(
-          `Failed to fetch token details - ${JSON.stringify(error)}`,
+          `Failed to fetch token details - ${JSON.stringify(error)} - ${
+            transfer.contractId
+          } - ${networkDetails.network}`,
         );
         console.error(error);
       }
