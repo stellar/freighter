@@ -1,4 +1,5 @@
 import { Horizon, StellarToml } from "stellar-sdk";
+import { Horizon as HorizonNext } from "stellar-sdk-next";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { NewAssetFlags } from "popup/components/manageAssets/ManageAssetRows";
 import { getApiStellarExpertUrl } from "popup/helpers/account";
@@ -13,7 +14,7 @@ export const checkForSuspiciousAsset = async ({
   code: string;
   issuer: string;
   domain: string;
-  server: Horizon.Server;
+  server: Horizon.Server | HorizonNext.Server;
   networkDetails: NetworkDetails;
 }): Promise<NewAssetFlags> => {
   // check revocable

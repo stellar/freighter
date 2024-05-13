@@ -369,7 +369,9 @@ const AuthDetail = ({
           _tokenDetails[transfer.contractId] = tokenDetailsResponse;
         } catch (error) {
           captureException(
-            `Failed to fetch token details - ${JSON.stringify(error)}`,
+            `Failed to fetch token details - ${JSON.stringify(error)} - ${
+              transfer.contractId
+            } - ${networkDetails.network}`,
           );
           console.error(error);
         }
@@ -422,7 +424,11 @@ const AuthDetail = ({
                   operationKey={t("Function Name")}
                   operationValue={detail.fnName}
                 />
-                <KeyValueInvokeHostFnArgs args={detail.args} />
+                <KeyValueInvokeHostFnArgs
+                  args={detail.args}
+                  contractId={detail.contractId}
+                  fnName={detail.fnName}
+                />
               </div>
             </React.Fragment>
           ))}

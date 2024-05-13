@@ -203,7 +203,7 @@ export const SignTransaction = () => {
       >
         <p>
           <Trans domain={domain}>
-            The website <strong>{{ domain }}</strong> does not use an SSL
+            The website <strong>{domain}</strong> does not use an SSL
             certificate. For additional safety Freighter only works with
             websites that provide an SSL certificate.
           </Trans>

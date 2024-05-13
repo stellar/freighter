@@ -1,7 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Horizon } from "stellar-sdk";
-import { Types } from "@stellar/wallet-sdk";
-import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
+import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -181,6 +179,53 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
+export interface NativeToken {
+  type: SdkAssetType;
+  code: string;
+}
+
+export interface Issuer {
+  key: string;
+  name?: string;
+  url?: string;
+  hostName?: string;
+}
+
+export interface AssetToken {
+  type: SdkAssetType;
+  code: string;
+  issuer: Issuer;
+  anchorAsset?: string;
+  numAccounts?: BigNumber;
+  amount?: BigNumber;
+  bidCount?: BigNumber;
+  askCount?: BigNumber;
+  spread?: BigNumber;
+}
+
+export type Token = NativeToken | AssetToken;
+
+export interface Balance {
+  token: Token;
+
+  // for non-native tokens, this should be total - sellingLiabilities
+  // for native, it should also subtract the minimumBalance
+  available: BigNumber;
+  total: BigNumber;
+  buyingLiabilities: BigNumber;
+  sellingLiabilities: BigNumber;
+}
+
+export interface AssetBalance extends Balance {
+  token: AssetToken;
+  sponsor?: string;
+}
+
+export interface NativeBalance extends Balance {
+  token: NativeToken;
+  minimumBalance: BigNumber;
+}
+
 export interface TokenBalance extends AssetBalance {
   decimals: number;
   name: string;
@@ -202,7 +247,7 @@ export interface SorobanBalance {
   token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
+export type AssetType = AssetBalance | NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 
