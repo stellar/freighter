@@ -793,7 +793,9 @@ export const getTokenDetails = async ({
   } catch (error) {
     console.error(error);
     captureException(
-      `Failed to fetch token details - ${JSON.stringify(error)}`,
+      `Failed to fetch token details - ${JSON.stringify(
+        error,
+      )} - ${contractId} - ${networkDetails.network}`,
     );
     return null;
   }
