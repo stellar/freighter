@@ -227,10 +227,13 @@ const HomeRoute = () => {
 const RouteListener = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const settingsState = useSelector(settingsStateSelector);
 
   useEffect(() => {
-    dispatch(navigate(location));
-  }, [dispatch, location]);
+    if (settingsState === SettingsState.SUCCESS) {
+      dispatch(navigate(location));
+    }
+  }, [dispatch, location, settingsState]);
 
   return null;
 };

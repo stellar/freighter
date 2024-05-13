@@ -169,6 +169,10 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
     }
   }
 
+  if (rpcHealth.status !== "healthy") {
+    captureException(`Soroban RPC is not healthy - ${rpcHealth.status}`);
+  }
+
   return rpcHealth.status === "healthy";
 };
 

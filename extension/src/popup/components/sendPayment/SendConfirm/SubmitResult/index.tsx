@@ -88,7 +88,10 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  const server = stellarSdkServer(networkDetails.networkUrl);
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {

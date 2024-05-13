@@ -323,6 +323,7 @@
   "Not on your lists": "Not on your lists",
   "Not recommended asset": "Not recommended asset",
   "Now, let’s create a new mnemonic phrase": "Now, let’s create a new mnemonic phrase",
+  "Number of seconds that can pass before this transaction can no longer be accepted by the network": "Number of seconds that can pass before this transaction can no longer be accepted by the network",
   "Offer ID": "Offer ID",
   "On your lists": "On your lists",
   "One of your accounts is a signer for another account": {
@@ -448,11 +449,16 @@
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
-  "The website <1>{{domain}}</1> does not use an SSL certificate": {
-    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{{domain}}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
+  "The website <1>{domain}</1> does not use an SSL certificate": {
+    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{domain}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
   },
-  "The website <1>{{url}}</1> does not use an SSL certificate": {
-    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{{url}}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
+  "The website <1>{params": {
+    "url}</1> does not use an SSL certificate": {
+      " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{params.url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
+    }
+  },
+  "The website <1>{url}</1> does not use an SSL certificate": {
+    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
   },
   "them noted to confirm you got them right": "them noted to confirm you got them right",
   "this alert by going to": "this alert by going to",
@@ -488,6 +494,7 @@
   "Transaction": "Transaction",
   "Transaction failed": "Transaction failed",
   "Transaction fee": "Transaction fee",
+  "Transaction timeout": "Transaction timeout",
   "Transactions": "Transactions",
   "Trustline Error": "Trustline Error",
   "trustlines": "trustlines",
