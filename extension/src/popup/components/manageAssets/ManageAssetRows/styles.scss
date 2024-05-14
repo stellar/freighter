@@ -34,28 +34,38 @@
 
     &__label {
       font-size: 0.875rem;
-      font-weight: var(--font-weight-semi-bold);
+      font-weight: var(--font-weight-medium);
     }
 
     &__ellipsis {
       cursor: pointer;
+      position: relative;
+      z-index: 9;
     }
 
     &__dropdown {
       background: var(--bg);
       border-radius: 6px;
-      border: 1px solid var(--color-gray-60);
+      border: 1px solid var(--color-gray-30);
       margin-top: 0.25rem;
       padding: 0.25rem;
       position: absolute;
       right: 1rem;
       width: 10.75rem;
+      z-index: var(--z-index--banner);
+
+      &__background {
+        height: 100vh;
+        position: absolute;
+        width: 100vw;
+      }
 
       &__row {
         padding: 0.375rem 0.5rem;
 
         &:first-child {
           background: var(--color-gray-30);
+          border-radius: 0.25rem;
         }
       }
 
@@ -76,6 +86,7 @@
 
     &__remove {
       color: var(--color-red-70);
+      cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -83,6 +94,11 @@
       background: none;
       padding: 0;
       width: 100%;
+
+      &:disabled {
+        color: var(--color-red-80);
+        cursor: not-allowed;
+      }
     }
   }
 

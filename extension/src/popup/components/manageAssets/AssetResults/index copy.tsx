@@ -5,7 +5,7 @@ import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 
-import { Button, Notification } from "@stellar/design-system";
+import { Button, Loader, Notification } from "@stellar/design-system";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { FormRows } from "popup/basics/Forms";
@@ -16,7 +16,7 @@ import { searchAsset } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
-import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
+import { SearchInput } from "../AssetResults";
 
 import "./styles.scss";
 
@@ -151,28 +151,37 @@ export const SearchAsset = () => {
                       />
                     )}
                   </Field>
-                  <SearchCopy>
+                  <div className="SearchAsset__search-copy">
                     {t("powered by")}{" "}
                     <a
+                      className="SearchAsset__search-copy"
                       href="https://stellar.expert"
                       target="_blank"
                       rel="noreferrer"
                     >
                       stellar.expert
                     </a>
-                  </SearchCopy>
+                  </div>
                 </div>
-                <SearchResults
-                  isSearching={isSearching}
-                  resultsRef={ResultsRef}
+                <div
+                  className={`SearchAsset__results ${
+                    dirty ? "SearchAsset__results--active" : ""
+                  }`}
+                  ref={ResultsRef}
                 >
+                  {isSearching ? (
+                    <div className="SearchAsset__loader">
+                      <Loader />
+                    </div>
+                  ) : null}
+
                   {assetRows.length ? (
                     <ManageAssetRows
                       header={assetRows.length > 1 ? <ResultsHeader /> : null}
                       assetRows={assetRows}
                     />
                   ) : null}
-                </SearchResults>
+                </div>
                 {dirty && hasNoResults ? (
                   <div className="SearchAsset__copy">
                     {t(

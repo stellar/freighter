@@ -13,7 +13,6 @@ import {
 import { emitMetric } from "helpers/metrics";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 import { View } from "popup/basics/layout/View";
-import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { Balances } from "@shared/api/types";
@@ -149,8 +148,10 @@ export const TrustlineError = ({
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return (
-    <React.Fragment>
-      <SubviewHeader title={t("Trustline Error")} hasBackButton={false} />
+    <div className="TrustlineError">
+      {/* <div className="TrustlineError__content">
+
+      </div> */}
       <View.Content>
         <div className="TrustlineError__inset">
           <RenderedError
@@ -159,20 +160,20 @@ export const TrustlineError = ({
             resultCodes={JSON.stringify(getResultCodes(error))}
           />
         </div>
+        <div>
+          <Button
+            size="md"
+            isFullWidth
+            variant="primary"
+            onClick={() => {
+              dispatch(resetSubmission());
+              history.goBack();
+            }}
+          >
+            {t("Got it")}
+          </Button>
+        </div>
       </View.Content>
-      <View.Footer>
-        <Button
-          size="md"
-          isFullWidth
-          variant="primary"
-          onClick={() => {
-            dispatch(resetSubmission());
-            history.goBack();
-          }}
-        >
-          {t("Got it")}
-        </Button>
-      </View.Footer>
-    </React.Fragment>
+    </div>
   );
 };

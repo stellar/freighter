@@ -10,7 +10,6 @@ import {
   Operation,
   Horizon,
   TransactionBuilder,
-  Networks,
   xdr,
 } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
@@ -42,7 +41,6 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
-  addTokenId,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -705,23 +703,20 @@ export const UnverifiedTokenNotification = () => {
 export const TokenWarning = ({
   domain,
   code,
-  issuer,
   onClose,
   isVerifiedToken,
   verifiedLists = [],
+  handleAddToken,
 }: {
   domain: string;
   code: string;
-  issuer: string;
   onClose: () => void;
   isVerifiedToken: boolean;
   verifiedLists?: string[];
+  handleAddToken: null | (() => Promise<void>);
 }) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
   const warningRef = useRef<HTMLDivElement>(null);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const publicKey = useSelector(publicKeySelector);
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -750,14 +745,9 @@ export const TokenWarning = ({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    await dispatch(
-      addTokenId({
-        publicKey,
-        tokenId: issuer,
-        network: networkDetails.network as Networks,
-      }),
-    );
-    navigateTo(ROUTES.account);
+    if (handleAddToken) {
+      await handleAddToken();
+    }
 
     setIsSubmitting(false);
   };

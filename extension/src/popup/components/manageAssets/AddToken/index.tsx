@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { Networks, StellarToml, StrKey } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Input, Loader } from "@stellar/design-system";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { getTokenDetails } from "@shared/api/internal";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
 
@@ -28,6 +30,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
+import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 import "./styles.scss";
 
 interface FormValues {
@@ -37,6 +40,12 @@ const initialValues: FormValues = {
   asset: "",
 };
 
+interface AssetDomainToml {
+  CURRENCIES?: StellarToml.Api.Currency[];
+  DOCUMENTATION?: StellarToml.Api.Documentation;
+  NETWORK_PASSPHRASE?: string;
+}
+
 export const AddToken = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -45,9 +54,8 @@ export const AddToken = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
-  const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
-    false,
-  );
+  const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
+    useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
 
@@ -55,107 +63,162 @@ export const AddToken = () => {
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
 
+  const handleTokenLookup = async (contractId: string) => {
+    // clear the UI while we work through the flow
+    setIsSearching(true);
+    setIsVerifiedToken(false);
+    setIsVerificationInfoShowing(false);
+    setAssetRows([]);
+
+    const nativeContractDetails = getNativeContractDetails(networkDetails);
+    let verifiedTokens = [] as VerifiedTokenRecord[];
+
+    // step around verification for native contract and unverifiable networks
+
+    if (nativeContractDetails.contract === contractId) {
+      // override our rules for verification for XLM
+      setIsVerificationInfoShowing(false);
+      setAssetRows([
+        {
+          code: nativeContractDetails.code,
+          issuer: contractId,
+          domain: nativeContractDetails.domain,
+        },
+      ]);
+      setIsSearching(false);
+      return;
+    }
+
+    const tokenLookup = async () => {
+      // lookup contract
+      setIsVerifiedToken(false);
+      let tokenDetailsResponse;
+
+      try {
+        tokenDetailsResponse = await getTokenDetails({
+          contractId,
+          publicKey,
+          networkDetails,
+        });
+      } catch (e) {
+        setAssetRows([]);
+      }
+
+      const isSacContract = await isSacContractExecutable(
+        contractId,
+        networkDetails,
+      );
+
+      console.log(isSacContract);
+
+      if (!tokenDetailsResponse) {
+        setAssetRows([]);
+      } else {
+        setAssetRows([
+          {
+            code: tokenDetailsResponse.symbol,
+            contract: contractId,
+            issuer: isSacContract
+              ? tokenDetailsResponse.name.split(":")[1] || ""
+              : contractId, // get the issuer name, if applicable ,
+            domain: "",
+            name: tokenDetailsResponse.name,
+          },
+        ]);
+      }
+    };
+
+    if (isAllowListVerificationEnabled) {
+      // usual binary case of a token being verified or unverified
+      verifiedTokens = await getVerifiedTokens({
+        networkDetails,
+        contractId,
+        assetsLists,
+      });
+
+      try {
+        if (verifiedTokens.length) {
+          setIsVerifiedToken(true);
+          setVerifiedLists(verifiedTokens[0].verifiedLists);
+          setAssetRows(
+            verifiedTokens.map((record: VerifiedTokenRecord) => ({
+              code: record.code,
+              issuer: record.issuer,
+              image: record.icon,
+              domain: record.domain,
+              contract: record.contract,
+            })),
+          );
+        } else {
+          // token not found on asset list, look up the details manually
+          await tokenLookup();
+        }
+      } catch (e) {
+        setAssetRows([]);
+        captureException(
+          `Failed to fetch token details - ${JSON.stringify(e)}`,
+        );
+        console.error(e);
+      }
+    } else {
+      // Futurenet token lookup
+      await tokenLookup();
+    }
+    setIsSearching(false);
+    setIsVerificationInfoShowing(isAllowListVerificationEnabled);
+  };
+
+  const handleIssuerLookup = async (issuer: string) => {
+    let assetDomainToml = {} as AssetDomainToml;
+    const server = stellarSdkServer(
+      networkDetails.networkUrl,
+      networkDetails.networkPassphrase,
+    );
+    const acct = await server.loadAccount(issuer);
+    const homeDomain = acct.home_domain || "";
+
+    try {
+      assetDomainToml = await StellarToml.Resolver.resolve(homeDomain);
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (!assetDomainToml.CURRENCIES) {
+      setAssetRows([]);
+    } else {
+      const { networkPassphrase } = networkDetails;
+
+      // check toml file for network passphrase
+      const tomlNetworkPassphrase =
+        assetDomainToml.NETWORK_PASSPHRASE || Networks.PUBLIC;
+
+      if (tomlNetworkPassphrase === networkPassphrase) {
+        setAssetRows(
+          assetDomainToml.CURRENCIES.map((currency) => ({
+            ...currency,
+            domain: homeDomain,
+          })),
+        );
+        // no need for verification on classic assets
+        setIsVerificationInfoShowing(false);
+      } else {
+        // otherwise, discount all found results
+        setAssetRows([]);
+      }
+    }
+    setIsSearching(false);
+  };
+
   /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearch = useCallback(
     debounce(async ({ target: { value: contractId } }) => {
-      if (!isContractId(contractId as string)) {
-        setAssetRows([]);
-        return;
-      }
-
-      // clear the UI while we work through the flow
-      setIsSearching(true);
-      setIsVerifiedToken(false);
-      setIsVerificationInfoShowing(false);
-      setAssetRows([]);
-
-      const nativeContractDetails = getNativeContractDetails(networkDetails);
-      let verifiedTokens = [] as VerifiedTokenRecord[];
-
-      // step around verification for native contract and unverifiable networks
-
-      if (nativeContractDetails.contract === contractId) {
-        // override our rules for verification for XLM
-        setIsVerificationInfoShowing(false);
-        setAssetRows([
-          {
-            code: nativeContractDetails.code,
-            issuer: contractId,
-            domain: nativeContractDetails.domain,
-          },
-        ]);
-        setIsSearching(false);
-        return;
-      }
-
-      const tokenLookup = async () => {
-        // lookup contract
-        setIsVerifiedToken(false);
-        let tokenDetailsResponse;
-
-        try {
-          tokenDetailsResponse = await getTokenDetails({
-            contractId,
-            publicKey,
-            networkDetails,
-          });
-        } catch (e) {
-          setAssetRows([]);
-        }
-
-        if (!tokenDetailsResponse) {
-          setAssetRows([]);
-        } else {
-          setAssetRows([
-            {
-              code: tokenDetailsResponse.symbol,
-              issuer: contractId,
-              domain: "",
-              name: tokenDetailsResponse.name,
-            },
-          ]);
-        }
-      };
-
-      if (isAllowListVerificationEnabled) {
-        // usual binary case of a token being verified or unverified
-        verifiedTokens = await getVerifiedTokens({
-          networkDetails,
-          contractId,
-          assetsLists,
-        });
-
-        try {
-          if (verifiedTokens.length) {
-            setIsVerifiedToken(true);
-            setVerifiedLists(verifiedTokens[0].verifiedLists);
-            setAssetRows(
-              verifiedTokens.map((record: VerifiedTokenRecord) => ({
-                code: record.code,
-                issuer: record.contract,
-                image: record.icon,
-                domain: record.domain,
-              })),
-            );
-          } else {
-            // token not found on asset list, look up the details manually
-            await tokenLookup();
-          }
-        } catch (e) {
-          setAssetRows([]);
-          captureException(
-            `Failed to fetch token details - ${JSON.stringify(e)}`,
-          );
-          console.error(e);
-        }
+      if (isContractId(contractId)) {
+        await handleTokenLookup(contractId);
+      } else if (StrKey.isValidEd25519PublicKey(contractId)) {
+        await handleIssuerLookup(contractId);
       } else {
-        // Futurenet token lookup
-        await tokenLookup();
+        setAssetRows([]);
       }
-
-      setIsVerificationInfoShowing(isAllowListVerificationEnabled);
-
-      setIsSearching(false);
     }, 500),
     [],
   );
@@ -179,35 +242,32 @@ export const AddToken = () => {
           }}
         >
           <React.Fragment>
-            <SubviewHeader title={t("Add a Soroban token by ID")} />
+            <SubviewHeader title={t("Add by address")} />
             <View.Content>
               <FormRows>
                 <div>
                   <Field name="asset">
                     {({ field }: FieldProps) => (
-                      <Input
-                        fieldSize="md"
-                        autoFocus
-                        autoComplete="off"
+                      <SearchInput
                         id="asset"
-                        placeholder={t("Token ID")}
+                        placeholder={t(
+                          "Enter issuer public key or contract ID",
+                        )}
                         {...field}
                         data-testid="search-token-input"
                       />
                     )}
                   </Field>
+                  <SearchCopy>
+                    {t(
+                      "Search home domains, issuer public key, classic assets, SAC assets, and TI assets",
+                    )}
+                  </SearchCopy>
                 </div>
-                <div
-                  className={`SearchAsset__results ${
-                    dirty ? "SearchAsset__results--active" : ""
-                  }`}
-                  ref={ResultsRef}
+                <SearchResults
+                  isSearching={isSearching}
+                  resultsRef={ResultsRef}
                 >
-                  {isSearching ? (
-                    <div className="SearchAsset__loader">
-                      <Loader />
-                    </div>
-                  ) : null}
                   {assetRows.length && isVerificationInfoShowing ? (
                     <AssetNotifcation isVerified={isVerifiedToken} />
                   ) : null}
@@ -222,9 +282,11 @@ export const AddToken = () => {
                     />
                   ) : null}
                   {hasNoResults && dirty && !isSearching ? (
-                    <div className="AddToken__not-found">Token not found</div>
+                    <div className="AddToken__not-found">
+                      {t("Asset not found")}
+                    </div>
                   ) : null}
-                </div>
+                </SearchResults>
               </FormRows>
             </View.Content>
           </React.Fragment>
