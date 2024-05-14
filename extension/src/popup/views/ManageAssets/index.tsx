@@ -6,10 +6,9 @@ import {
   transactionSubmissionSelector,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
-import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
-import { AddToken } from "popup/components/manageAssets/AddToken";
+import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
@@ -48,11 +47,8 @@ export const ManageAssets = () => {
         <PrivateKeyRoute exact path={ROUTES.searchAsset}>
           <SearchAsset />
         </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.addAsset}>
+        <Route exact path={ROUTES.addAsset}>
           <AddAsset />
-        </PrivateKeyRoute>
-        <Route exact path={ROUTES.addToken}>
-          <AddToken />
         </Route>
       </Switch>
     </>

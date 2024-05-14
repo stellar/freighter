@@ -141,7 +141,6 @@ export const isSacContractExecutable = async (
     const response = await fetch(url.href);
 
     const data = await response.json();
-    console.log(data);
     if (!response.ok) {
       throw new Error(data);
     }

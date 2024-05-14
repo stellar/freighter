@@ -1,37 +1,43 @@
-import React, { useRef, useState } from "react";
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Button, Input, Notification } from "@stellar/design-system";
-import { Form, Formik, Field, FieldProps } from "formik";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
-import { useTranslation } from "react-i18next";
 import { captureException } from "@sentry/browser";
+import { Formik, Form, Field, FieldProps } from "formik";
+import debounce from "lodash/debounce";
+import { useTranslation } from "react-i18next";
 import { getTokenDetails } from "@shared/api/internal";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
-import { View } from "popup/basics/layout/View";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsSelector } from "popup/ducks/settings";
-import { isContractId } from "popup/helpers/soroban";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import {
   getVerifiedTokens,
   getNativeContractDetails,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
+import { isContractId } from "popup/helpers/soroban";
 
+import { AssetNotifcation } from "popup/components/AssetNotification";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
-
+import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 import "./styles.scss";
 
 interface FormValues {
-  assetDomain: string;
+  asset: string;
 }
 const initialValues: FormValues = {
-  assetDomain: "",
+  asset: "",
 };
 
 interface AssetDomainToml {
@@ -40,88 +46,22 @@ interface AssetDomainToml {
   NETWORK_PASSPHRASE?: string;
 }
 
-type SearchType = "domain" | "contract" | "issuer";
-
-const getSearchType = (query: string) => {
-  let searchType: SearchType = "domain";
-  try {
-    Boolean(new URL(query));
-    searchType = "domain";
-  } catch (e) {
-    console.error(e);
-  }
-
-  try {
-    Boolean(new URL(query));
-    searchType = "domain";
-  } catch (e) {
-    console.error(e);
-  }
-
-  if (isContractId(query)) {
-    searchType = "contract";
-  }
-
-  if (StrKey.isValidEd25519PublicKey(query)) {
-    searchType = "issuer";
-  }
-
-  console.log(searchType);
-  return searchType;
-};
-
 export const AddAsset = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
-  const { assetsLists, networkDetails } = useSelector(settingsSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
-  const [isCurrencyNotFound, setIsCurrencyNotFound] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
     useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
-  const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
+  const { assetsLists } = useSelector(settingsSelector);
 
+  const ResultsRef = useRef<HTMLDivElement>(null);
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
-
-  const handleDomainSearch = async (assetDomain: string) => {
-    const assetDomainStr = assetDomain.startsWith("http")
-      ? assetDomain
-      : `https://${assetDomain}`;
-    const assetDomainUrl = new URL(assetDomainStr.replace(/\/$/, ""));
-
-    let assetDomainToml = {} as AssetDomainToml;
-
-    try {
-      assetDomainToml = await StellarToml.Resolver.resolve(assetDomainUrl.host);
-    } catch (e) {
-      console.error(e);
-    }
-
-    if (!assetDomainToml.CURRENCIES) {
-      setIsCurrencyNotFound(true);
-    } else {
-      const { networkPassphrase } = networkDetails;
-
-      // check toml file for network passphrase
-      const tomlNetworkPassphrase =
-        assetDomainToml.NETWORK_PASSPHRASE || Networks.PUBLIC;
-
-      if (tomlNetworkPassphrase === networkPassphrase) {
-        setAssetRows(
-          assetDomainToml.CURRENCIES.map((currency) => ({
-            ...currency,
-            domain: assetDomainUrl.host,
-          })),
-        );
-      } else {
-        // otherwise, discount all found results
-        setIsCurrencyNotFound(true);
-      }
-    }
-  };
 
   const handleTokenLookup = async (contractId: string) => {
     // clear the UI while we work through the flow
@@ -164,13 +104,21 @@ export const AddAsset = () => {
         setAssetRows([]);
       }
 
+      const isSacContract = await isSacContractExecutable(
+        contractId,
+        networkDetails,
+      );
+
       if (!tokenDetailsResponse) {
         setAssetRows([]);
       } else {
         setAssetRows([
           {
             code: tokenDetailsResponse.symbol,
-            issuer: contractId,
+            contract: contractId,
+            issuer: isSacContract
+              ? tokenDetailsResponse.name.split(":")[1] || ""
+              : contractId, // get the issuer name, if applicable ,
             domain: "",
             name: tokenDetailsResponse.name,
           },
@@ -193,9 +141,10 @@ export const AddAsset = () => {
           setAssetRows(
             verifiedTokens.map((record: VerifiedTokenRecord) => ({
               code: record.code,
-              issuer: record.contract,
+              issuer: record.issuer,
               image: record.icon,
               domain: record.domain,
+              contract: record.contract,
             })),
           );
         } else {
@@ -213,7 +162,7 @@ export const AddAsset = () => {
       // Futurenet token lookup
       await tokenLookup();
     }
-
+    setIsSearching(false);
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   };
 
@@ -233,7 +182,7 @@ export const AddAsset = () => {
     }
 
     if (!assetDomainToml.CURRENCIES) {
-      setIsCurrencyNotFound(true);
+      setAssetRows([]);
     } else {
       const { networkPassphrase } = networkDetails;
 
@@ -248,105 +197,100 @@ export const AddAsset = () => {
             domain: homeDomain,
           })),
         );
+        // no need for verification on classic assets
+        setIsVerificationInfoShowing(false);
       } else {
         // otherwise, discount all found results
-        setIsCurrencyNotFound(true);
+        setAssetRows([]);
       }
     }
+    setIsSearching(false);
   };
 
-  const handleSubmit = async (values: FormValues) => {
-    setIsCurrencyNotFound(false);
-    setAssetRows([]);
-
-    const { assetDomain } = values;
-    const searchType = getSearchType(assetDomain);
-
-    if (searchType === "domain") {
-      await handleDomainSearch(assetDomain);
-    }
-
-    if (searchType === "contract") {
-      await handleTokenLookup(assetDomain);
-    }
-
-    if (searchType === "issuer") {
-      await handleIssuerLookup(assetDomain);
-    }
-  };
-
-  console.log(
-    isSearching,
-    isAllowListVerificationEnabled,
-    isVerifiedToken,
-    isVerificationInfoShowing,
-    verifiedLists,
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const handleSearch = useCallback(
+    debounce(async ({ target: { value: contractId } }) => {
+      if (isContractId(contractId)) {
+        await handleTokenLookup(contractId);
+      } else if (StrKey.isValidEd25519PublicKey(contractId)) {
+        await handleIssuerLookup(contractId);
+      } else {
+        setAssetRows([]);
+      }
+    }, 500),
+    [],
   );
 
+  useEffect(() => {
+    setHasNoResults(!assetRows.length);
+  }, [assetRows]);
+
+  useEffect(() => {
+    setIsVerificationInfoShowing(isAllowListVerificationEnabled);
+  }, [isAllowListVerificationEnabled]);
+
   return (
-    <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-      {({ dirty, errors, isSubmitting, isValid, touched }) => (
-        <Form className="AddAsset__FormContainer">
-          <View>
-            <SubviewHeader title={t("Add Another Asset")} />
+    // eslint-disable-next-line
+    <Formik initialValues={initialValues} onSubmit={() => {}}>
+      {({ dirty }) => (
+        <Form
+          onChange={(e) => {
+            handleSearch(e);
+            setHasNoResults(false);
+          }}
+        >
+          <React.Fragment>
+            <SubviewHeader title={t("Add by address")} />
             <View.Content>
               <FormRows>
                 <div>
-                  <Field name="assetDomain">
+                  <Field name="asset">
                     {({ field }: FieldProps) => (
-                      <Input
-                        fieldSize="md"
-                        autoComplete="off"
-                        id="assetDomain"
-                        placeholder={`${t("Asset domain")}, e.g. “centre.io”`}
-                        error={
-                          errors.assetDomain && touched.assetDomain
-                            ? errors.assetDomain
-                            : ""
-                        }
+                      <SearchInput
+                        id="asset"
+                        placeholder={t(
+                          "Enter issuer public key or contract ID",
+                        )}
                         {...field}
+                        data-testid="search-token-input"
                       />
                     )}
                   </Field>
+                  <SearchCopy>
+                    {t(
+                      "Search home domains, issuer public key, classic assets, SAC assets, and TI assets",
+                    )}
+                  </SearchCopy>
                 </div>
-                <div className="AddAsset__results">
-                  {isCurrencyNotFound ? (
-                    <Notification
-                      variant="primary"
-                      title={t("Asset not found")}
+                <SearchResults
+                  isSearching={isSearching}
+                  resultsRef={ResultsRef}
+                >
+                  {assetRows.length && isVerificationInfoShowing ? (
+                    <AssetNotifcation isVerified={isVerifiedToken} />
+                  ) : null}
+
+                  {assetRows.length ? (
+                    <ManageAssetRows
+                      header={null}
+                      assetRows={assetRows}
+                      isVerifiedToken={isVerifiedToken}
+                      isVerificationInfoShowing={isVerificationInfoShowing}
+                      verifiedLists={verifiedLists}
                     />
                   ) : null}
-                  {assetRows.length ? (
-                    <>
-                      <div className="AddAsset__title">
-                        {t("Assets found in this domain")}
-                      </div>
-                      <div
-                        className="AddAsset__results__rows"
-                        ref={ManageAssetRowsWrapperRef}
-                      >
-                        <ManageAssetRows assetRows={assetRows} />
-                      </div>
-                    </>
+                  {hasNoResults && dirty && !isSearching ? (
+                    <div className="AddAsset__not-found">
+                      {t("Asset not found")}
+                    </div>
                   ) : null}
-                </div>
+                </SearchResults>
               </FormRows>
             </View.Content>
-            <View.Footer>
-              <Button
-                size="md"
-                variant="primary"
-                isFullWidth
-                type="submit"
-                isLoading={isSubmitting}
-                disabled={!(dirty && isValid)}
-              >
-                {t("Search")}
-              </Button>
-            </View.Footer>
-          </View>
+          </React.Fragment>
         </Form>
       )}
     </Formik>
   );
 };
+/* eslint-enable @typescript-eslint/no-unsafe-argument */

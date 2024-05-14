@@ -1,34 +1,8 @@
-:root {
-  --AddAsset--results-height: 23.2rem;
-  --AddAsset--title-height: 3rem;
-}
-
 .AddAsset {
-  &__title {
-    font-size: var(--font-size-secondary);
-    font-weight: var(--font-weight-medium);
-    height: var(--AddAsset--title-height);
-    line-height: 1.5rem;
-    padding: 0.5rem 0 1rem 0;
-    text-transform: uppercase;
-  }
-
-  &__FormContainer {
+  &__not-found {
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow: hidden;
-  }
-
-  &__results {
-    flex-grow: 1;
-    height: var(--AddAsset--results-height);
-    overflow: hidden;
-
-    &__rows {
-      height: calc(
-        var(--AddAsset--results-height) - var(--AddAsset--title-height)
-      );
-    }
+    align-items: center;
+    margin: 0.5rem 0 1rem 0;
+    justify-content: center;
   }
 }

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Networks, StrKey, TransactionBuilder } from "stellar-sdk";
+import { Networks, StrKey } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, CopyText } from "@stellar/design-system";
@@ -85,9 +85,7 @@ export const ManageAssetRowButton = ({
   const { t } = useTranslation();
   const [rowButtonShowing, setRowButtonShowing] = useState("");
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
-  const { accountBalances, blockedDomains, error } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -127,8 +125,10 @@ export const ManageAssetRowButton = ({
         }),
       );
 
+      setAssetSubmitting("");
+      setRowButtonShowing("");
+
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        setAssetSubmitting("");
         dispatch(
           getAccountBalances({
             publicKey,
@@ -141,23 +141,7 @@ export const ManageAssetRowButton = ({
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
-        console.log(submitResp);
-        console.log(error);
-        const xdrEnvelope = submitResp?.payload?.response?.extras?.envelope_xdr;
-        if (xdrEnvelope) {
-          const parsedTx = TransactionBuilder.fromXDR(
-            xdrEnvelope,
-            networkDetails.networkPassphrase,
-          );
-
-          if ("operations" in parsedTx) {
-            const op = parsedTx.operations[0];
-
-            if ("line" in op) {
-              setIsTrustlineErrorShowing(true);
-            }
-          }
-        }
+        setIsTrustlineErrorShowing(true);
       }
     }
   };
@@ -282,7 +266,7 @@ export const ManageAssetRowButton = ({
   };
 
   return (
-    <div className="ManageAssetRowButtonn">
+    <div className="ManageAssetRowButton">
       {isTrustlineActive ? (
         <div>
           <div
@@ -383,10 +367,7 @@ export const ManageAssetRowButton = ({
       )}
       {isTrustlineErrorShowing
         ? createPortal(
-            <TrustlineError
-              balances={accountBalances.balances}
-              errorAsset={canonicalAsset}
-            />,
+            <TrustlineError />,
             document.querySelector("#modal-root")!,
           )
         : null}

@@ -35,6 +35,7 @@ import {
   NewAssetFlags,
 } from "popup/components/manageAssets/ManageAssetRows";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
+import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -303,6 +304,7 @@ export const ScamAssetWarning = ({
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const closeOverlay = () => {
     if (warningRef.current) {
@@ -369,7 +371,7 @@ export const ScamAssetWarning = ({
           navigateTo(ROUTES.account);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
-          navigateTo(ROUTES.trustlineError);
+          setIsTrustlineErrorShowing(true);
         }
       }
     }
@@ -475,6 +477,12 @@ export const ScamAssetWarning = ({
           </div>
         </div>
       </View.Content>
+      {isTrustlineErrorShowing
+        ? createPortal(
+            <TrustlineError />,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </div>
   );
 };
@@ -502,6 +510,7 @@ export const NewAssetWarning = ({
   const publicKey = useSelector(publicKeySelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
 
@@ -573,7 +582,7 @@ export const NewAssetWarning = ({
           navigateTo(ROUTES.account);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
-          navigateTo(ROUTES.trustlineError);
+          setIsTrustlineErrorShowing(true);
         }
       }
     }
@@ -683,6 +692,12 @@ export const NewAssetWarning = ({
           </div>
         </div>
       </View.Content>
+      {isTrustlineErrorShowing
+        ? createPortal(
+            <TrustlineError />,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </div>
   );
 };

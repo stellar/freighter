@@ -131,7 +131,7 @@ export const SearchAsset = () => {
             <View.Content
               contentFooter={
                 <div>
-                  <Link to={ROUTES.addToken}>
+                  <Link to={ROUTES.addAsset}>
                     <Button size="md" isFullWidth variant="secondary">
                       {t("Add manually")}
                     </Button>

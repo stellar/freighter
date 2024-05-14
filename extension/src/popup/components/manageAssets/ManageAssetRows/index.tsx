@@ -103,8 +103,6 @@ export const ManageAssetRows = ({
     null as null | (() => () => Promise<void>),
   );
 
-  console.log(2);
-
   useEffect(
     () => () => {
       setAssetSubmitting("");
