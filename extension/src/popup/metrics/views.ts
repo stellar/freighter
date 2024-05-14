@@ -19,7 +19,7 @@ const routeToEventName = {
   [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
   [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
-  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewSignTransaction,
+  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewReviewAuthorization,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
