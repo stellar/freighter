@@ -40,7 +40,7 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
       msg.type === EXTERNAL_SERVICE_TYPES.REQUEST_CONNECTION_STATUS ||
       msg.type === EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY
     ) {
-      requestTimeout = window.setTimeout(() => {
+      requestTimeout = setTimeout(() => {
         resolve({
           isConnected: false,
           publicKey: "",
