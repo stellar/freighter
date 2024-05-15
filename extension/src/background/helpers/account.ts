@@ -20,12 +20,12 @@ import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
-  browserLocalStorage,
+  browserSessionStorage,
 } from "background/helpers/dataStorage";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
-const localStore = dataStorageAccess(browserLocalStorage);
+const localStore = dataStorageAccess(browserSessionStorage);
 
 export const getKeyIdList = async () =>
   (await localStore.getItem(KEY_ID_LIST)) || [];

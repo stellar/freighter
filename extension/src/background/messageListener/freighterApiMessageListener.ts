@@ -38,7 +38,7 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
-  browserLocalStorage,
+  browserSessionStorage,
 } from "background/helpers/dataStorage";
 import { publicKeySelector } from "background/ducks/session";
 import { getSdk } from "@shared/helpers/stellar";
@@ -50,7 +50,7 @@ import {
   transactionQueue,
 } from "./popupMessageListener";
 
-const localStore = dataStorageAccess(browserLocalStorage);
+const localStore = dataStorageAccess(browserSessionStorage);
 
 interface WindowParams {
   height: number;

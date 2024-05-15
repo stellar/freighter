@@ -90,7 +90,7 @@ import { SessionTimer } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   dataStorageAccess,
-  browserLocalStorage,
+  browserSessionStorage,
 } from "background/helpers/dataStorage";
 import { migrateTrustlines } from "background/helpers/migration";
 import { xlmToStroop } from "helpers/stellar";
@@ -151,12 +151,12 @@ interface KeyPair {
 }
 
 export const popupMessageListener = (request: Request, sessionStore: Store) => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStore = dataStorageAccess(browserSessionStorage);
   const localKeyStore = new BrowserStorageKeyStore();
   // ts-wallet-sdk storage area definition clashes with webkit polyfills
   localKeyStore.configure({
     storage:
-      browserLocalStorage as any as BrowserStorageConfigParams["storage"],
+      browserSessionStorage as any as BrowserStorageConfigParams["storage"],
   });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
