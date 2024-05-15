@@ -45,9 +45,8 @@ export const HardwareSign = ({
     transactionData: { destination },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
-  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] = useState(
-    false,
-  );
+  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
+    useState(false);
   const [connectError, setConnectError] = useState("");
   const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);

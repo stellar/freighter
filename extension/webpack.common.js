@@ -125,7 +125,7 @@ const commonConfig = (
         to: BUILD_PATH,
       },
       {
-        from: path.resolve(__dirname, "./public/static/manifest/v2.json"),
+        from: path.resolve(__dirname, "./public/static/manifest/v3.json"),
         to: `${BUILD_PATH}/manifest.json`,
       },
     ]),

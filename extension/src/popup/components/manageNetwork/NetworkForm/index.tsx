@@ -80,9 +80,8 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     ? {
         ...networkDetailsToEdit,
         isSwitchSelected: false,
-        isAllowHttpSelected: !networkDetailsToEdit?.networkUrl.includes(
-          "https",
-        ),
+        isAllowHttpSelected:
+          !networkDetailsToEdit?.networkUrl.includes("https"),
       }
     : {
         networkName: "",
@@ -170,9 +169,8 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       }),
     );
 
-    const addCustomNetworkFulfilled = addCustomNetwork.fulfilled.match(
-      addCustomNetworkRes,
-    );
+    const addCustomNetworkFulfilled =
+      addCustomNetwork.fulfilled.match(addCustomNetworkRes);
     let changeNetworkFulfilled = true;
 
     if (values.isSwitchSelected) {
