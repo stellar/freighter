@@ -48,6 +48,7 @@ export const Preferences = () => {
       isExperimentalModeEnabledValue,
     } = formValue;
 
+    // eslint-disable-next-line
     await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
@@ -60,7 +61,7 @@ export const Preferences = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title={t("Preferences")} />
       <Formik
         initialValues={initialValues}
@@ -163,6 +164,6 @@ export const Preferences = () => {
           </div>
         </View.Content>
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -19,12 +19,12 @@ import {
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
-  isCustomNetwork,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -66,7 +66,6 @@ import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
-import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -191,7 +190,6 @@ const getOperation = (
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
   const submission = useSelector(transactionSubmissionSelector);
   const {
     destinationBalances,
@@ -202,6 +200,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       asset,
       memo,
       transactionFee,
+      transactionTimeout,
       allowedSlippage,
       destinationAsset,
       destinationAmount,
@@ -216,9 +215,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
-    settingsSelector,
-  );
+  const { isMemoValidationEnabled, isSafetyValidationEnabled } =
+    useSelector(settingsSelector);
   const isSwap = useIsSwap();
 
   const { t } = useTranslation();
@@ -288,7 +286,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
           }),
         );
 
@@ -305,7 +302,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handlePaymentTransaction = async () => {
     try {
-      const server = stellarSdkServer(networkDetails.networkUrl);
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
       const sourceAccount: Account = await server.loadAccount(publicKey);
 
       const operation = getOperation(
@@ -322,12 +322,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+      const transactionXDR = new TransactionBuilder(sourceAccount, {
         fee: xlmToStroop(transactionFee).toFixed(),
         networkPassphrase: networkDetails.networkPassphrase,
       })
         .addOperation(operation)
-        .setTimeout(180);
+        .setTimeout(transactionTimeout);
 
       if (memo) {
         transactionXDR.addMemo(Memo.text(memo));
@@ -358,7 +358,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
           }),
         );
 
@@ -424,7 +423,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="transaction-details-view">
+      <React.Fragment>
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -603,7 +602,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </>
           )}
         </View.Footer>
-      </View>
+      </React.Fragment>
     </>
   );
 };

@@ -106,7 +106,9 @@ const AccountListItems = ({
 
   useEffect(() => {
     const acctListItems: AccountListItemRow[] = [];
-    if (!recommendedFee) return;
+    if (!recommendedFee) {
+      return;
+    }
     accountList.forEach((acct) => {
       const acctIsReadyToMigrate = isReadyToMigrate({
         xlmBalance: acct.xlmBalance,
@@ -249,7 +251,7 @@ export const ReviewMigration = () => {
         return;
       }
 
-      // eslint-disable-next-line no-plusplus
+      // eslint-disable-next-line
       for (let i = 0; i < migratableAccounts.length; i++) {
         const publicKey = migratableAccounts[i].publicKey;
 

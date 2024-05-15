@@ -206,28 +206,31 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    userEvent.click(screen.getByTestId("Tab-Details"));
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
 
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);
 
-    expect(opDetails.includes(`Amount:${args?.amount.toString()}`));
     expect(
       opDetails.includes(
-        `Contract ID:${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Parameters${args?.from.toString()}Copied${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
-    );
+    ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Destination:${Stellar.truncatedPublicKey(args?.to!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
-    );
-    expect(
-      opDetails.includes(`Source:${Stellar.truncatedPublicKey(args?.from!)}`),
-    );
-    expect(opDetails.includes(`Function Name:${args?.fnName}`));
+    ).toBeTruthy();
+    expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("displays mint parameters for Soroban mint operations", async () => {
@@ -261,27 +264,31 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    userEvent.click(screen.getByTestId("Tab-Details"));
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
+
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);
 
-    expect(opDetails.includes(`Amount:${args?.amount.toString()}`));
     expect(
       opDetails.includes(
-        `Contract ID:${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Parameters${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
-    );
+    ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Destination:${Stellar.truncatedPublicKey(args?.to!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
-    );
-    expect(
-      opDetails.includes(`Source:${Stellar.truncatedPublicKey(args?.from!)}`),
-    );
-    expect(opDetails.includes(`Function Name:${args?.fnName}`));
+    ).toBeTruthy();
+    expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("memo: doesn't render memo if there is no memo", async () => {

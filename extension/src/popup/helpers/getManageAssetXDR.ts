@@ -1,12 +1,8 @@
-import {
-  Account,
-  Asset,
-  Horizon,
-  Operation,
-  TransactionBuilder,
-} from "stellar-sdk";
+import * as StellarSdk from "stellar-sdk";
+import * as StellarSdkNext from "stellar-sdk-next";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { xlmToStroop } from "helpers/stellar";
+import { getSdk } from "@shared/helpers/stellar";
 
 export const getManageAssetXDR = async ({
   publicKey,
@@ -21,20 +17,22 @@ export const getManageAssetXDR = async ({
   assetCode: string;
   assetIssuer: string;
   addTrustline: boolean;
-  server: Horizon.Server;
+  server: StellarSdk.Horizon.Server | StellarSdkNext.Horizon.Server;
   recommendedFee: string;
   networkDetails: NetworkDetails;
 }) => {
   const changeParams = addTrustline ? {} : { limit: "0" };
-  const sourceAccount: Account = await server.loadAccount(publicKey);
+  const sourceAccount: StellarSdk.Account = await server.loadAccount(publicKey);
 
-  return new TransactionBuilder(sourceAccount, {
+  const Sdk = getSdk(networkDetails.networkPassphrase);
+
+  return new Sdk.TransactionBuilder(sourceAccount, {
     fee: xlmToStroop(recommendedFee).toFixed(),
     networkPassphrase: networkDetails.networkPassphrase,
   })
     .addOperation(
-      Operation.changeTrust({
-        asset: new Asset(assetCode, assetIssuer),
+      Sdk.Operation.changeTrust({
+        asset: new Sdk.Asset(assetCode, assetIssuer),
         ...changeParams,
       }),
     )

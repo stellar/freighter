@@ -6,17 +6,20 @@ import { Button } from "@stellar/design-system";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
+import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { stroopToXlm, isCustomNetwork } from "helpers/stellar";
+import { stroopToXlm } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { HorizonOperation } from "@shared/api/types";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+
 import "./styles.scss";
 
 export interface TransactionDetailProps {
@@ -40,7 +43,9 @@ export const TransactionDetail = ({
   operationText,
   externalUrl,
   setIsDetailViewShowing,
-}: TransactionDetailProps) => {
+}: Omit<TransactionDetailProps, "isCreateExternalAccount">) => {
+  // Why does transaction_attr not exist on Horizon types?
+  const _op = operation as any;
   const {
     asset_code: assetCode,
     asset_issuer: assetIssuer,
@@ -49,8 +54,8 @@ export const TransactionDetail = ({
     to,
     created_at: createdAt,
     transaction_attr: { fee_charged: feeCharged, memo },
-  } = operation;
-  const createdAtDateInstance = new Date(Date.parse(createdAt));
+  } = _op;
+  const createdAtDateInstance = new Date(Date.parse(createdAt as string));
   const createdAtLocalStrArr = createdAtDateInstance
     .toLocaleString()
     .split(" ");
@@ -70,13 +75,16 @@ export const TransactionDetail = ({
 
   const { t } = useTranslation();
 
-  const { assetDomain } = useAssetDomain({
+  const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const showContent = assetIssuer && !assetDomain && !assetError;
 
-  return assetIssuer && !assetDomain ? null : (
-    <View>
+  return showContent ? (
+    <Loading />
+  ) : (
+    <React.Fragment>
       <SubviewHeader
         customBackAction={() => setIsDetailViewShowing(false)}
         title={headerTitle}
@@ -102,7 +110,7 @@ export const TransactionDetail = ({
                   {isRecipient ? (
                     <>
                       <div>{t("From")}</div>
-                      <div>
+                      <div className="InfoRow__right">
                         <KeyIdenticon
                           publicKey={from}
                           customSize={identiconDimensions}
@@ -112,7 +120,7 @@ export const TransactionDetail = ({
                   ) : (
                     <>
                       <div>{t("To")}</div>
-                      <div>
+                      <div className="InfoRow__right">
                         <KeyIdenticon
                           publicKey={to}
                           customSize={identiconDimensions}
@@ -125,24 +133,26 @@ export const TransactionDetail = ({
                 !isSwap && (
                   <>
                     <div>{t("Action")}</div>
-                    <div>{operationText}</div>
+                    <div className="InfoRow__right">{operationText}</div>
                   </>
                 )
               )}
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Date")}</div>
-              <div>
+              <div className="InfoRow__right">
                 {createdAtTime} &bull; {createdAtDateStr}
               </div>
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Memo")}</div>
-              <div>{memo || `None`}</div>
+              <div className="InfoRow__right">{memo || `None`}</div>
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Transaction fee")}</div>
-              <div>{stroopToXlm(feeCharged).toString()} XLM</div>
+              <div className="InfoRow__right">
+                {stroopToXlm(feeCharged as string).toString()} XLM
+              </div>
             </div>
           </div>
         </div>
@@ -162,6 +172,6 @@ export const TransactionDetail = ({
           </Button>
         ) : null}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

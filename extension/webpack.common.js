@@ -82,8 +82,15 @@ const commonConfig = (
         type: "asset/resource",
       },
       {
-        test: /\.svg$/,
-        type: "asset/resource",
+        test: /\.svg$/i,
+        type: "asset",
+        resourceQuery: { not: [/react/] }, // exclude react component if *.svg?react
+      },
+      {
+        test: /\.svg$/i,
+        issuer: /\.[jt]sx?$/,
+        resourceQuery: /react/, // *.svg?react
+        use: ["@svgr/webpack"],
       },
       {
         test: /\.(css|sass|scss)$/,

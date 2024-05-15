@@ -7,16 +7,18 @@ import { isSorobanIssuer } from "./account";
 
 interface UseAssetDomain {
   assetIssuer?: string;
+  error?: string;
 }
 
 export const useAssetDomain = ({ assetIssuer = "" }: UseAssetDomain) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [networkDomain, setNetworkDomain] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchAssetDomain = async () => {
-      const { networkUrl } = networkDetails;
-      const server = stellarSdkServer(networkUrl);
+      const { networkUrl, networkPassphrase } = networkDetails;
+      const server = stellarSdkServer(networkUrl, networkPassphrase);
 
       let assetDomain = "";
 
@@ -25,6 +27,7 @@ export const useAssetDomain = ({ assetIssuer = "" }: UseAssetDomain) => {
         assetDomain = account.home_domain || "";
       } catch (e) {
         console.error(e);
+        setError(e as string);
       }
       setNetworkDomain(assetDomain || " ");
     };
@@ -36,5 +39,6 @@ export const useAssetDomain = ({ assetIssuer = "" }: UseAssetDomain) => {
 
   return {
     assetDomain: networkDomain,
+    error,
   };
 };

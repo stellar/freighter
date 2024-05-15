@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Button, Icon } from "@stellar/design-system";
@@ -28,7 +28,6 @@ import {
 } from "popup/helpers/hardwareConnect";
 import LedgerSigning from "popup/assets/ledger-signing.png";
 import Ledger from "popup/assets/ledger.png";
-import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -46,13 +45,11 @@ export const HardwareSign = ({
     transactionData: { destination },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
-  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] = useState(
-    false,
-  );
+  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
+    useState(false);
   const [connectError, setConnectError] = useState("");
   const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
-  const sorobanClient = useContext(SorobanContext);
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
@@ -80,7 +77,7 @@ export const HardwareSign = ({
 
       const res = await dispatch(
         signWithHardwareWallet({
-          transactionXDR: transactionXDR as string,
+          transactionXDR,
           networkPassphrase: networkDetails.networkPassphrase,
           publicKey,
           bipPath,
@@ -94,7 +91,6 @@ export const HardwareSign = ({
               publicKey,
               signedXDR: res.payload,
               networkDetails,
-              sorobanClient,
             }),
           );
           if (

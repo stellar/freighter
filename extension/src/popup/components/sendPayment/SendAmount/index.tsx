@@ -44,12 +44,11 @@ import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
-import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 
-import { BalanceMap } from "@shared/api/types";
+import { BalanceMap, SorobanBalance } from "@shared/api/types";
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
@@ -122,20 +121,14 @@ export const SendAmount = ({
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
 
-  const {
-    amount,
-    asset,
-    destinationAmount,
-    destinationAsset,
-    isToken,
-  } = transactionData;
+  const { amount, asset, destinationAmount, destinationAsset, isToken } =
+    transactionData;
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
   const [loadingRate, setLoadingRate] = useState(false);
-  const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
-    false,
-  );
+  const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
+    useState(false);
   const [suspiciousAssetData, setSuspiciousAssetData] = useState({
     domain: "",
     code: "",
@@ -143,11 +136,15 @@ export const SendAmount = ({
     image: "",
   });
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let availBalance = new BigNumber("0");
+      let _availBalance = new BigNumber("0");
       if (isToken) {
-        const tokenBalance = accountBalances?.balances?.[selectedAsset] as any;
+        // TODO: balances is incorrectly typed and does not include SorobanBalance
+        const tokenBalance = accountBalances?.balances?.[
+          selectedAsset
+        ] as any as SorobanBalance;
         return getTokenBalance(tokenBalance);
       }
       if (accountBalances.balances) {
@@ -161,20 +158,20 @@ export const SendAmount = ({
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(balance.toFixed());
-          availBalance = currentBal
+          _availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
 
-          if (availBalance.lt(minBalance)) {
+          if (_availBalance.lt(minBalance)) {
             return "0";
           }
         } else {
           // needed for different wallet-sdk bignumber.js version
-          availBalance = new BigNumber(balance);
+          _availBalance = new BigNumber(balance);
         }
       }
 
-      return availBalance.toFixed().toString();
+      return _availBalance.toFixed().toString();
     },
     [
       accountBalances.balances,
@@ -268,8 +265,9 @@ export const SendAmount = ({
 
   // on asset select get conversion rate
   useEffect(() => {
-    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0)
+    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
       return;
+    }
     setLoadingRate(true);
     // clear dest amount before re-calculating for UI
     dispatch(resetDestinationAmount());
@@ -398,7 +396,7 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <View data-testid="send-amount-view">
+      <React.Fragment>
         <SubviewHeader
           title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
           subtitle={
@@ -475,15 +473,13 @@ export const SendAmount = ({
                     value={formik.values.amount}
                     onChange={(e) => {
                       const input = e.target;
-                      const {
-                        amount: newAmount,
-                        newCursor,
-                      } = formatAmountPreserveCursor(
-                        e.target.value,
-                        formik.values.amount,
-                        getAssetDecimals(asset, accountBalances, isToken),
-                        e.target.selectionStart || 1,
-                      );
+                      const { amount: newAmount, newCursor } =
+                        formatAmountPreserveCursor(
+                          e.target.value,
+                          formik.values.amount,
+                          getAssetDecimals(asset, accountBalances, isToken),
+                          e.target.selectionStart || 1,
+                        );
                       formik.setFieldValue("amount", newAmount);
                       runAfterUpdate(() => {
                         input.selectionStart = newCursor;
@@ -500,7 +496,9 @@ export const SendAmount = ({
                     <ConversionRate
                       loading={loadingRate}
                       source={parsedSourceAsset.code}
-                      sourceAmount={formik.values.amount || defaultSourceAmount}
+                      sourceAmount={
+                        cleanAmount(formik.values.amount) || defaultSourceAmount
+                      }
                       dest={parsedDestAsset.code}
                       destAmount={destinationAmount}
                     />
@@ -545,9 +543,9 @@ export const SendAmount = ({
             </div>
           </div>
         </View.Content>
-        {isSwap && <BottomNav />}
-      </View>
+      </React.Fragment>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />

@@ -1,4 +1,4 @@
-import { combineReducers } from "redux";
+import { CombinedState, combineReducers } from "redux";
 import { configureStore } from "@reduxjs/toolkit";
 
 import { sessionSlice } from "background/ducks/session";
@@ -16,14 +16,16 @@ const sessionStore = dataStorageAccess(browserSessionStorage);
 export async function loadState() {
   try {
     const state = await sessionStore.getItem(REDUX_STORE_KEY);
-    if (!state) return undefined;
-    return JSON.parse(state);
+    if (!state) {
+      return undefined;
+    }
+    return JSON.parse(state as string);
   } catch (_error) {
     return undefined;
   }
 }
 
-function saveStore(state: Record<string, unknown>) {
+function saveStore(state: CombinedState<any>) {
   const serializedState = JSON.stringify(state);
   sessionStore.setItem(REDUX_STORE_KEY, serializedState);
 }

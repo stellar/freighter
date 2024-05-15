@@ -32,10 +32,16 @@ export const initExtensionMessageListener = () => {
     const sessionStore = await buildStore();
     // todo this is kinda ugly
     let res;
-    if (Object.values(SERVICE_TYPES).includes(request.type)) {
+    if (Object.values(SERVICE_TYPES).includes(request.type as SERVICE_TYPES)) {
+      // eslint-disable-next-line
       res = await popupMessageListener(request, sessionStore);
     }
-    if (Object.values(EXTERNAL_SERVICE_TYPES).includes(request.type)) {
+    if (
+      Object.values(EXTERNAL_SERVICE_TYPES).includes(
+        request.type as EXTERNAL_SERVICE_TYPES,
+      )
+    ) {
+      // eslint-disable-next-line
       res = await freighterApiMessageListener(request, sender, sessionStore);
     }
 
@@ -45,7 +51,9 @@ export const initExtensionMessageListener = () => {
 
 export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(async ({ reason, temporary }) => {
-    if (temporary) return; // skip during development
+    if (temporary) {
+      return; // skip during development
+    }
     switch (reason) {
       case "install":
         await browser.tabs.create({

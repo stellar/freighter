@@ -80,7 +80,7 @@ export const AddAsset = () => {
   return (
     <Formik initialValues={initialValues} onSubmit={handleSubmit}>
       {({ dirty, errors, isSubmitting, isValid, touched }) => (
-        <Form>
+        <Form className="AddAsset__FormContainer">
           <View>
             <SubviewHeader title={t("Add Another Asset")} />
             <View.Content>

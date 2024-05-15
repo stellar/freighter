@@ -1,9 +1,6 @@
-import {
-  TransactionBuilder,
-  Networks,
-  Transaction,
-  Operation,
-} from "stellar-sdk";
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+import * as StellarSdk from "stellar-sdk";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
 
@@ -44,6 +41,7 @@ import {
   browserLocalStorage,
 } from "background/helpers/dataStorage";
 import { publicKeySelector } from "background/ducks/session";
+import { getSdk } from "@shared/helpers/stellar";
 
 import {
   authEntryQueue,
@@ -54,13 +52,13 @@ import {
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
-interface WINDOW_PARAMS {
+interface WindowParams {
   height: number;
   type: "popup";
   width: number;
 }
 
-const WINDOW_SETTINGS: WINDOW_PARAMS = {
+const WINDOW_SETTINGS: WindowParams = {
   type: "popup",
   width: POPUP_WIDTH,
   height: POPUP_HEIGHT + 32, // include browser frame height,
@@ -129,7 +127,9 @@ export const freighterApiMessageListener = (
         : _network;
 
     const isMainnet = await getIsMainnet();
-    const { networkUrl } = await getNetworkDetails();
+    const { networkUrl, networkPassphrase: currentNetworkPassphrase } =
+      await getNetworkDetails();
+    const Sdk = getSdk(currentNetworkPassphrase);
 
     const { tab, url: tabUrl = "" } = sender;
     const domain = getUrlHostname(tabUrl);
@@ -139,9 +139,9 @@ export const freighterApiMessageListener = (
     const allowList = allowListStr.split(",");
     const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = Sdk.TransactionBuilder.fromXDR(
       transactionXdr,
-      networkPassphrase || Networks[network as keyof typeof Networks],
+      networkPassphrase || Sdk.Networks[network as keyof typeof Sdk.Networks],
     );
 
     const directoryLookupJson = await cachedFetch(
@@ -150,7 +150,7 @@ export const freighterApiMessageListener = (
     );
     const accountData = directoryLookupJson?._embedded?.records || [];
 
-    let _operations = [{}] as Operation[];
+    let _operations = [{}] as StellarSdk.Operation[];
 
     if ("operations" in transaction) {
       _operations = transaction.operations;
@@ -167,9 +167,9 @@ export const freighterApiMessageListener = (
       (await getIsSafetyValidationEnabled()) && isMainnet;
 
     if (isValidatingMemo || isValidatingSafety) {
-      _operations.forEach((operation: Operation) => {
+      _operations.forEach((operation: StellarSdk.Operation) => {
         accountData.forEach(
-          ({ address, tags }: { address: string; tags: Array<string> }) => {
+          ({ address, tags }: { address: string; tags: string[] }) => {
             if (
               "destination" in operation &&
               address === operation.destination
@@ -200,12 +200,12 @@ export const freighterApiMessageListener = (
       });
     }
 
-    const server = stellarSdkServer(networkUrl);
+    const server = stellarSdkServer(networkUrl, networkPassphrase);
 
     try {
-      await server.checkMemoRequired(transaction as Transaction);
-    } catch (e) {
-      if (e.accountId) {
+      await server.checkMemoRequired(transaction as StellarSdk.Transaction);
+    } catch (e: any) {
+      if ("accountId" in e) {
         flaggedKeys[e.accountId] = {
           ...flaggedKeys[e.accountId],
           tags: [TRANSACTION_WARNING.memoRequired],
@@ -223,7 +223,7 @@ export const freighterApiMessageListener = (
       accountToSign,
     } as TransactionInfo;
 
-    transactionQueue.push(transaction as Transaction);
+    transactionQueue.push(transaction as StellarSdk.Transaction);
     const encodedBlob = encodeObject(transactionInfo);
 
     const popup = browser.windows.create({
@@ -470,3 +470,5 @@ export const freighterApiMessageListener = (
 
   return messageResponder[request.type]();
 };
+
+/* eslint-enable @typescript-eslint/no-unsafe-argument */

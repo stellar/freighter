@@ -113,9 +113,13 @@ export const Operations = ({
   const { t } = useTranslation();
 
   const AuthorizationMapToDisplay: { [index: string]: string } = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "1": "Authorization Required",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "2": "Authorization Revocable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "4": "Authorization Immutable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "8": "Authorization Clawback Enabled",
   };
 
@@ -168,14 +172,8 @@ export const Operations = ({
       }
 
       case "pathPaymentStrictReceive": {
-        const {
-          sendAsset,
-          sendMax,
-          destination,
-          destAsset,
-          destAmount,
-          path,
-        } = op;
+        const { sendAsset, sendMax, destination, destAsset, destAmount, path } =
+          op;
         return (
           <>
             <KeyValueList
@@ -209,14 +207,8 @@ export const Operations = ({
       }
 
       case "pathPaymentStrictSend": {
-        const {
-          sendAsset,
-          sendAmount,
-          destination,
-          destAsset,
-          destMin,
-          path,
-        } = op;
+        const { sendAsset, sendAmount, destination, destAsset, destMin, path } =
+          op;
         return (
           <>
             <KeyValueList
@@ -558,13 +550,8 @@ export const Operations = ({
       }
 
       case "liquidityPoolDeposit": {
-        const {
-          liquidityPoolId,
-          maxAmountA,
-          maxAmountB,
-          maxPrice,
-          minPrice,
-        } = op;
+        const { liquidityPoolId, maxAmountA, maxAmountB, maxPrice, minPrice } =
+          op;
         return (
           <>
             <KeyValueList
@@ -633,7 +620,7 @@ export const Operations = ({
         // Issue: https://github.com/stellar/js-stellar-base/issues/728
         const type = op.type as string;
         if (type === "revokeTrustlineSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeTrustlineSponsorship;
+          const _op = op as unknown as Operation.RevokeTrustlineSponsorship;
           const { account, asset } = _op;
           return (
             <>
@@ -657,7 +644,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeAccountSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeAccountSponsorship;
+          const _op = op as unknown as Operation.RevokeAccountSponsorship;
           const { account } = _op;
           return (
             <KeyValueWithPublicKey
@@ -667,7 +654,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeOfferSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeOfferSponsorship;
+          const _op = op as unknown as Operation.RevokeOfferSponsorship;
           const { seller, offerId } = _op;
           return (
             <>
@@ -683,7 +670,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeDataSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeDataSponsorship;
+          const _op = op as unknown as Operation.RevokeDataSponsorship;
           const { account, name } = _op;
           return (
             <>
@@ -696,7 +683,8 @@ export const Operations = ({
           );
         }
         if (type === "revokeClaimableBalanceSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeClaimableBalanceSponsorship;
+          const _op =
+            op as unknown as Operation.RevokeClaimableBalanceSponsorship;
           const { balanceId } = _op;
           return (
             <KeyValueList
@@ -706,7 +694,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeSignerSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeSignerSponsorship;
+          const _op = op as unknown as Operation.RevokeSignerSponsorship;
           const { account, signer } = _op;
           return (
             <>
@@ -731,7 +719,11 @@ export const Operations = ({
         const type = op.type;
 
         return (
-          <div className="Operations--wrapper" key={operationIndex}>
+          <div
+            className="Operations--wrapper"
+            key={operationIndex}
+            data-testid="OperationsWrapper"
+          >
             <div className="Operations--header">
               <Icon.DeployedCode />
               <strong className="OpType">

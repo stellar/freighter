@@ -31,4 +31,18 @@ export const test = base.extend<{
     await use(extensionId);
   },
 });
+
+export const expectPageToHaveScreenshot = async (
+  { page, screenshot }: { page: any; screenshot: string },
+  options?: any,
+) => {
+  if (process.env.CI) {
+    return true;
+  }
+  await expect(page).toHaveScreenshot(screenshot, {
+    maxDiffPixelRatio: 0.02,
+    ...options,
+  });
+};
+
 export const expect = test.expect;

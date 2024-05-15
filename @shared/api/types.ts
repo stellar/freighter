@@ -1,12 +1,11 @@
 import BigNumber from "bignumber.js";
-import { Horizon } from "stellar-sdk";
-import { Types } from "@stellar/wallet-sdk";
+import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
-import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
+import { AssetsLists, AssetsListItem } from "../constants/soroban/token";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -52,11 +51,15 @@ export interface Response {
   isExperimentalModeEnabled: boolean;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
+  userNotification: UserNotification;
+  assetsLists: AssetsLists;
+  assetsList: AssetsListItem;
+  isDeleteAssetsList: boolean;
   settingsState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   migratedAccounts: MigratedAccount[];
   accountName: string;
   assetCode: string;
@@ -65,7 +68,7 @@ export interface Response {
   network: string;
   networkIndex: number;
   networkName: string;
-  recentAddresses: Array<string>;
+  recentAddresses: string[];
   hardwareWalletType: WalletType;
   bipPath: string;
   blockedDomains: BlockedDomains;
@@ -149,10 +152,16 @@ export enum SettingsState {
   SUCCESS = "SUCCESS",
 }
 
+export interface UserNotification {
+  enabled: boolean;
+  message: string;
+}
+
 export interface IndexerSettings {
   settingsState: SettingsState;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
+  userNotification: UserNotification;
 }
 
 export type Settings = {
@@ -168,6 +177,53 @@ export interface AssetIcons {
 
 export interface AssetDomains {
   [code: string]: string;
+}
+
+export interface NativeToken {
+  type: SdkAssetType;
+  code: string;
+}
+
+export interface Issuer {
+  key: string;
+  name?: string;
+  url?: string;
+  hostName?: string;
+}
+
+export interface AssetToken {
+  type: SdkAssetType;
+  code: string;
+  issuer: Issuer;
+  anchorAsset?: string;
+  numAccounts?: BigNumber;
+  amount?: BigNumber;
+  bidCount?: BigNumber;
+  askCount?: BigNumber;
+  spread?: BigNumber;
+}
+
+export type Token = NativeToken | AssetToken;
+
+export interface Balance {
+  token: Token;
+
+  // for non-native tokens, this should be total - sellingLiabilities
+  // for native, it should also subtract the minimumBalance
+  available: BigNumber;
+  total: BigNumber;
+  buyingLiabilities: BigNumber;
+  sellingLiabilities: BigNumber;
+}
+
+export interface AssetBalance extends Balance {
+  token: AssetToken;
+  sponsor?: string;
+}
+
+export interface NativeBalance extends Balance {
+  token: NativeToken;
+  minimumBalance: BigNumber;
 }
 
 export interface TokenBalance extends AssetBalance {
@@ -191,12 +247,12 @@ export interface SorobanBalance {
   token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
+export type AssetType = AssetBalance | NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */
-export type HorizonOperation = any;
+export type HorizonOperation = Horizon.ServerApi.OperationRecord;
 /* eslint-enable camelcase */
 
 export interface AccountBalancesInterface {
@@ -204,6 +260,7 @@ export interface AccountBalancesInterface {
   tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
+  error?: { horizon: any; soroban: any };
 }
 
 export interface AccountHistoryInterface {

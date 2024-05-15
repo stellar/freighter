@@ -87,8 +87,8 @@ export const SignAuthEntry = () => {
       >
         <p>
           <Trans domain={params.url}>
-            The website <strong>{{ domain: params.url }}</strong> does not use
-            an SSL certificate. For additional safety Freighter only works with
+            The website <strong>{params.url}</strong> does not use an SSL
+            certificate. For additional safety Freighter only works with
             websites that provide an SSL certificate.
           </Trans>
         </p>
@@ -107,7 +107,7 @@ export const SignAuthEntry = () => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="SignAuthEntry">
+      <React.Fragment>
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
           {isExperimentalModeEnabled ? (
@@ -213,7 +213,7 @@ export const SignAuthEntry = () => {
             />
           </div>
         </SlideupModal>
-      </View>
+      </React.Fragment>
     </>
   );
 };

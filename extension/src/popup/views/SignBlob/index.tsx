@@ -83,9 +83,9 @@ export const SignBlob = () => {
       >
         <p>
           <Trans domain={url}>
-            The website <strong>{{ url }}</strong> does not use an SSL
-            certificate. For additional safety Freighter only works with
-            websites that provide an SSL certificate.
+            The website <strong>{url}</strong> does not use an SSL certificate.
+            For additional safety Freighter only works with websites that
+            provide an SSL certificate.
           </Trans>
         </p>
       </WarningMessage>
@@ -103,7 +103,7 @@ export const SignBlob = () => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="SignBlob">
+      <React.Fragment>
         <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
           {isExperimentalModeEnabled ? (
@@ -210,7 +210,7 @@ export const SignBlob = () => {
             />
           </div>
         </SlideupModal>
-      </View>
+      </React.Fragment>
     </>
   );
 };

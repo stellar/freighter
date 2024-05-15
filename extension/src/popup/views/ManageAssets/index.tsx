@@ -17,17 +17,13 @@ import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 export const ManageAssets = () => {
-  const {
-    accountBalances,
-    destinationBalances,
-    assetSelect,
-    error,
-  } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, destinationBalances, assetSelect, error } =
+    useSelector(transactionSubmissionSelector);
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [errorAsset, setErrorAsset] = useState("");
 
   useEffect(() => {
-    const xdrEnvelope = error?.response?.extras.envelope_xdr;
+    const xdrEnvelope = error?.response?.extras?.envelope_xdr;
     if (xdrEnvelope) {
       const parsedTx = TransactionBuilder.fromXDR(
         xdrEnvelope,

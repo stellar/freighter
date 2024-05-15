@@ -27,7 +27,7 @@ export const NetworkSettings = () => {
   const { t } = useTranslation();
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title={t("Network Settings")} />
       <View.Content hasNoTopPadding>
         <div className="NetworkSettings__header">{t("Network")}</div>
@@ -73,6 +73,6 @@ export const NetworkSettings = () => {
           {t("Add custom network")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

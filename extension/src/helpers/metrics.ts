@@ -9,8 +9,8 @@ import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { AccountType } from "@shared/api/types";
 import { captureException } from "@sentry/browser";
 
-type metricHandler<AppState> = (state: AppState, action: AnyAction) => void;
-const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
+type MetricHandler<AppState> = (state: AppState, action: AnyAction) => void;
+const handlersLookup: { [key: string]: MetricHandler<any>[] } = {};
 
 /*
  * metricsMiddleware is a redux middleware that calls handlers specified to
@@ -18,18 +18,21 @@ const handlersLookup: { [key: string]: metricHandler<any>[] } = {};
  * of registered handlers and passes the current state and action. These are
  * intended for metrics emission, nothing else.
  */
-export function metricsMiddleware<State>(): Middleware<{}, State> {
-  return ({ getState }) => (next) => (action: AnyAction) => {
-    const state = getState();
-    (handlersLookup[action.type] || []).forEach((handler) =>
-      handler(state, action),
-    );
-    return next(action);
-  };
+export function metricsMiddleware<State>(): Middleware<object, State> {
+  return ({ getState }) =>
+    (next) =>
+    (action: AnyAction) => {
+      const state = getState();
+      (handlersLookup[action.type] || []).forEach((handler) =>
+        handler(state, action),
+      );
+      return next(action);
+    };
 }
 
 // I can't figure out how to get the properties off a thunk for the ActionType
 // without creating an intermediate value
+// eslint-disable-next-line
 const dummyThunk = createAsyncThunk<any, any>("dummy", () => {});
 const dummyAction = createAction<any>("also dummy");
 type ActionType =
@@ -59,7 +62,7 @@ export function registerHandler<State>(
   }
 }
 
-interface event {
+interface Event {
   /* eslint-disable camelcase */
   event_type: string;
   event_properties: { [key: string]: any };
@@ -79,11 +82,11 @@ export interface MetricsData {
   hwFunded: boolean;
   importedFunded: boolean;
   freighterFunded: boolean;
-  unfundedFreighterAccounts: Array<string>;
+  unfundedFreighterAccounts: string[];
 }
 
 const METRICS_ENDPOINT = "https://api.amplitude.com/2/httpapi";
-let cache: event[] = [];
+let cache: Event[] = [];
 
 const uploadMetrics = throttle(async () => {
   const toUpload = cache;
@@ -94,25 +97,35 @@ const uploadMetrics = throttle(async () => {
     return;
   }
 
-  const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      api_key: AMPLITUDE_KEY,
-      events: toUpload,
-    }),
-  });
+  try {
+    const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
+      method: "POST",
+      headers: {
+        // eslint-disable-next-line
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        // eslint-disable-next-line
+        api_key: AMPLITUDE_KEY,
+        events: toUpload,
+      }),
+    });
 
-  if (!amplitudeFetchRes.ok) {
-    const amplitudeFetchResJson = await amplitudeFetchRes.json();
+    if (!amplitudeFetchRes.ok) {
+      const amplitudeFetchResJson = await amplitudeFetchRes.json();
+      captureException(
+        `Error uploading to Amplitude with error: ${JSON.stringify(
+          amplitudeFetchResJson,
+        )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
+          toUpload,
+        )}`,
+      );
+    }
+  } catch (e) {
     captureException(
-      `Error uploading to Amplitude with error: ${JSON.stringify(
-        amplitudeFetchResJson,
-      )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
-        toUpload,
-      )}`,
+      `Amplitude fetch threw error: ${JSON.stringify(e)} | cache size: ${
+        toUpload.length
+      } | cache contents: ${JSON.stringify(toUpload)}`,
     );
   }
 }, 500);
@@ -136,16 +149,18 @@ const getUserId = () => {
  * @param {object?} body An optional object containing event metadata
  * @returns {void}
  */
-export const emitMetric = (name: string, body?: any) => {
+export const emitMetric = async (name: string, body?: any) => {
   const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
-  if (!isDataSharingAllowed) return;
+  if (!isDataSharingAllowed) {
+    return;
+  }
 
   const metricsData: MetricsData = JSON.parse(
     localStorage.getItem(METRICS_DATA) || "{}",
   );
 
   cache.push({
-    /* eslint-disable camelcase */
+    /* eslint-disable */
     event_type: name,
     event_properties: body,
     user_id: getUserId(),
@@ -154,7 +169,7 @@ export const emitMetric = (name: string, body?: any) => {
     hw_connected: metricsData.hwExists,
     secret_key_account: metricsData.importedExists,
     secret_key_account_funded: metricsData.importedFunded,
-    /* eslint-enable camelcase */
+    /* eslint-enable */
   });
-  uploadMetrics();
+  await uploadMetrics();
 };

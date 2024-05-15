@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import get from "lodash/get";
 import { Button, Icon, Link, Notification } from "@stellar/design-system";
@@ -35,7 +35,6 @@ import "./styles.scss";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { formatAmount } from "popup/helpers/formatters";
-import { SorobanContext } from "popup/SorobanContext";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -83,14 +82,16 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { t } = useTranslation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
 
   const sourceAsset = getAssetFromCanonical(asset);
   const { recommendedFee } = useNetworkFees();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  const server = stellarSdkServer(networkDetails.networkUrl);
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
@@ -119,6 +120,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     };
 
     if (isHardwareWallet) {
+      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackRemoveTrustline();
     } else {
@@ -143,7 +145,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
-          sorobanClient,
         }),
       );
 
@@ -166,7 +167,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     accountBalances.balances[asset].available?.isZero();
 
   return (
-    <View data-testid="submit-success-view">
+    <React.Fragment>
       <View.AppHeader
         pageTitle={`${t("Successfully")} ${isSwap ? t("swapped") : t("sent")}`}
       />
@@ -238,7 +239,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           {t("Done")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };
 
@@ -270,9 +271,9 @@ export const SubmitFail = () => {
     const { operations: opErrors, transaction: txError } = getResultCodes(err);
 
     if (opErrors[0]) {
-      errorDetails.opError = opErrors[0];
+      errorDetails.opError = opErrors[0] as RESULT_CODES;
     } else {
-      errorDetails.opError = txError;
+      errorDetails.opError = txError as RESULT_CODES;
     }
 
     switch (errorDetails.opError) {
@@ -283,7 +284,7 @@ export const SubmitFail = () => {
             <div>
               {t(
                 "Fees can vary depending on the network congestion. Please try using the suggested fee and try again.",
-              )}
+              )}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -316,7 +317,7 @@ export const SubmitFail = () => {
             title={t("The destination account doesn’t exist")}
           >
             <div>
-              {t("Make sure it is a funded Stellar account and try again.")},
+              {t("Make sure it is a funded Stellar account and try again.")}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -343,8 +344,8 @@ export const SubmitFail = () => {
           >
             <div>
               {t(
-                "The destination account does not accept the asset you’re sending. The destination account must opt to accept this asset before receiving it.",
-              )}
+                "The destination account must opt to accept this asset before receiving it.",
+              )}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -363,7 +364,7 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("Conversion rate")}>
             <div>
-              {t("Please check the new rate and try again.")}
+              {t("Please check the new rate and try again.")}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -384,7 +385,7 @@ export const SubmitFail = () => {
             <div>
               {t(
                 "To create a new account you need to send at least 1 XLM to it.",
-              )}
+              )}{" "}
               <Link
                 isUnderline
                 variant="secondary"
@@ -399,7 +400,7 @@ export const SubmitFail = () => {
         );
         break;
       default:
-        errorDetails.status = httpCode;
+        errorDetails.status = httpCode as string;
         errorDetails.title = `${
           isSwap ? t("Swap failed") : t("Transaction failed")
         }`;
@@ -412,25 +413,23 @@ export const SubmitFail = () => {
     }
     return errorDetails;
   };
-  const errorDetails = getErrorDetails(error);
+  const errDetails = getErrorDetails(error);
 
   return (
-    <View>
+    <React.Fragment>
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="SubmitResult__content">
-          <div className="SubmitResult__amount">{errorDetails.title}</div>
+          <div className="SubmitResult__amount">{errDetails.title}</div>
           <div className="SubmitResult__icon SubmitResult__fail">
             <img src={IconFail} alt="Icon Fail" />
           </div>
           <div className="SubmitResult__error-code">
-            {errorDetails.status ? `${errorDetails.status}:` : ""}{" "}
-            {errorDetails.opError}
+            {errDetails.status ? `Status ${errDetails.status}:` : ""}{" "}
+            {errDetails.opError}
           </div>
         </div>
-        <div className="SubmitResult__error-block">
-          {errorDetails.errorBlock}
-        </div>
+        <div className="SubmitResult__error-block">{errDetails.errorBlock}</div>
       </View.Content>
       <View.Footer>
         <Button
@@ -444,6 +443,6 @@ export const SubmitFail = () => {
           {t("Got it")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };
