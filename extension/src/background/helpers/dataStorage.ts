@@ -79,7 +79,7 @@ export const dataStorageAccess = (
 
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const localStorageEntries = Object.entries(localStorage);
+  const localStorageEntries = await browserLocalStorage.get(null);
 
   const applicationState = await localStore.getItem(APPLICATION_ID);
   const isLocalStoreSetup = !!applicationState?.length;
@@ -95,7 +95,7 @@ export const normalizeMigratedData = async () => {
       if (typeof value === "string") {
         const parsedValue = JSON.parse(value);
         // eslint-disable-next-line no-await-in-loop
-        await localStore.setItem(key, parsedValue);
+        await localStore.setItem(key as string, parsedValue);
       }
     } catch (e) {
       // do not transform v
