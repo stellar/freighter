@@ -247,6 +247,7 @@ const migrateSorobanRpcUrlNetwork = async () => {
       NETWORK_ID,
     );
     if (
+      migratedNetwork &&
       migratedNetwork.network === NETWORKS.FUTURENET &&
       !migratedNetwork.sorobanRpcUrl
     ) {
