@@ -21,7 +21,7 @@ import {
 } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
 
-interface SetItemParams {
+export interface SetItemParams {
   [key: string]: any;
 }
 
@@ -105,7 +105,7 @@ export const normalizeMigratedData = async () => {
 
 // This migration adds a friendbotUrl to testnet and futurenet network details
 export const migrateFriendBotUrlNetworkDetails = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
 
   const networksList: NetworkDetails[] =
     (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
@@ -126,7 +126,7 @@ export const migrateFriendBotUrlNetworkDetails = async () => {
 };
 
 export const migrateSorobanRpcUrlNetworkDetails = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
 
   const networksList: NetworkDetails[] =
     (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
@@ -146,8 +146,8 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 };
 
 // This migration migrates the storage for custom tokens IDs to be keyed by network
-const migrateTokenIdList = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+export const migrateTokenIdList = async () => {
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
   const tokenIdsByKey = (await localStore.getItem(TOKEN_ID_LIST)) as Record<
     string,
     object
@@ -163,8 +163,8 @@ const migrateTokenIdList = async () => {
   }
 };
 
-const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "2.0.0")) {
@@ -292,7 +292,7 @@ export const versionedMigration = async () => {
 
 // Updates storage version
 export const migrateDataStorageVersion = async (version: string) => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
 
   // This value should be manually updated when a new schema change is made
   await localStore.setItem(STORAGE_VERSION, version);
