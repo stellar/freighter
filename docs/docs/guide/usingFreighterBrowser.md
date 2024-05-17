@@ -15,7 +15,7 @@ _NOTE:_ You must use version `1.1.2` or above
 
 ```html
 <head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/2.0.0/index.min.js"></script>
 </head>
 ```
 
