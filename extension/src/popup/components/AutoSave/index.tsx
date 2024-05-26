@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useFormikContext } from "formik";
 import { Banner } from "@stellar/design-system";
 import debounce from "lodash/debounce";
+import isEqual from "lodash/isEqual";
 
 import "./styles.scss";
 
@@ -15,6 +16,7 @@ export interface AutoSaveFieldsProps {
 export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
   const formik = useFormikContext();
   const [didSaveFail, setDidSaveFail] = useState(false);
+  const [values, setValues] = useState(formik.values);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSubmit = useCallback(
@@ -31,7 +33,13 @@ export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
 
   useEffect(() => {
     if (formik.isValid && formik.dirty && !formik.isSubmitting) {
-      debouncedSubmit(formik);
+      console.log(values);
+      console.log(formik.values);
+      if (!isEqual(formik.values, values)) {
+        console.log("change");
+        setValues(formik.values);
+        debouncedSubmit(formik);
+      }
     }
   }, [
     debouncedSubmit,
@@ -40,6 +48,7 @@ export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
     formik.dirty,
     formik.isSubmitting,
     formik.isValid,
+    values,
   ]);
 
   useEffect(() => {

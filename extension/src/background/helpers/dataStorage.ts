@@ -9,6 +9,7 @@ import {
   STORAGE_VERSION,
   TOKEN_ID_LIST,
   ASSETS_LISTS_ID,
+  IS_HASH_SIGNING_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -283,6 +284,17 @@ export const addAssetsLists = async () => {
   }
 };
 
+export const addIsHashSigningEnabled = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.1.1")) {
+    // add the base asset lists
+    await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, false);
+    await migrateDataStorageVersion("4.1.1");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -293,6 +305,7 @@ export const versionedMigration = async () => {
   await migrateSorobanRpcUrlNetwork();
   await resetAccountSubscriptions();
   await addAssetsLists();
+  await addIsHashSigningEnabled();
 };
 
 // Updates storage version

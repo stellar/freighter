@@ -38,6 +38,7 @@ import {
   Settings,
   IndexerSettings,
   SettingsState,
+  ExperimentalFeatures,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -1146,13 +1147,11 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
   isValidatingSafeAssetsEnabled,
-  isExperimentalModeEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
-  isExperimentalModeEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
@@ -1162,7 +1161,6 @@ export const saveSettings = async ({
     isMemoValidationEnabled: true,
     isSafetyValidationEnabled: true,
     isValidatingSafeAssetsEnabled: true,
-    isExperimentalModeEnabled: false,
     isRpcHealthy: false,
     userNotification: { enabled: false, message: "" },
     settingsState: SettingsState.IDLE,
@@ -1176,8 +1174,33 @@ export const saveSettings = async ({
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
-      isExperimentalModeEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const saveExperimentalFeatures = async ({
+  isExperimentalModeEnabled,
+  isHashSigningEnabled,
+}: {
+  isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
+}): Promise<ExperimentalFeatures> => {
+  let response = {
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    error: "",
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      isExperimentalModeEnabled,
+      isHashSigningEnabled,
+      type: SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES,
     });
   } catch (e) {
     console.error(e);
@@ -1282,7 +1305,9 @@ export const editCustomNetwork = async ({
 };
 
 export const loadSettings = (): Promise<
-  Settings & IndexerSettings & { assetsLists: AssetsLists }
+  Settings &
+    IndexerSettings &
+    ExperimentalFeatures & { assetsLists: AssetsLists }
 > =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,
