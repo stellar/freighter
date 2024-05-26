@@ -79,6 +79,7 @@ const routeToEventName = {
     METRIC_NAMES.viewAccountMigrationConfirmMigration,
   [ROUTES.accountMigrationMigrationComplete]:
     METRIC_NAMES.viewAccountMigrationMigrationComplete,
+  [ROUTES.experimentalFeatures]: METRIC_NAMES.viewExperimentalFeatures,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

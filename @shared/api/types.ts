@@ -49,6 +49,7 @@ export interface Response {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
   userNotification: UserNotification;
@@ -142,7 +143,11 @@ export interface Preferences {
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   error: string;
+}
+
+export interface ExperimentalFeatures {
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
 }
 
 export enum SettingsState {
