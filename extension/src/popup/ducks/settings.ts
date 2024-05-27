@@ -321,6 +321,18 @@ const settingsSlice = createSlice({
         isSorobanPublicEnabled,
       };
     });
+    builder.addCase(saveExperimentalFeatures.fulfilled, (state, action) => {
+      const { isExperimentalModeEnabled, isHashSigningEnabled } =
+        action?.payload || {
+          ...initialState,
+        };
+
+      return {
+        ...state,
+        isExperimentalModeEnabled,
+        isHashSigningEnabled,
+      };
+    });
     builder.addCase(
       loadSettings.fulfilled,
       (
