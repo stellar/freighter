@@ -89,7 +89,7 @@ export const hardwareSign: HardwareSign = {
     let result = { signature: Buffer.from([]) };
 
     if (isHashSigningEnabled) {
-      ledgerApi.signHash(bipPath, tx.hash());
+      result = await ledgerApi.signHash(bipPath, tx.hash());
     } else {
       result = await ledgerApi.signTransaction(bipPath, tx.signatureBase());
     }
@@ -169,6 +169,6 @@ export const parseWalletError: ParseWalletError = {
     if (message.indexOf("Transaction approval request was rejected") > -1) {
       return "Transaction Rejected.";
     }
-    return defaultErr;
+    return message;
   },
 };
