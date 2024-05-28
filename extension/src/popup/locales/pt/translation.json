@@ -38,6 +38,7 @@
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
   },
+  "Allow Ledger to sign arbitrary hashes": "Allow Ledger to sign arbitrary hashes",
   "Allowed downward variation in the destination amount": "Allowed downward variation in the destination amount",
   "Allowed slippage": "Allowed slippage",
   "Always check the domain of websites you’re using Freighter with": "Always check the domain of websites you’re using Freighter with",
@@ -138,12 +139,12 @@
   "directory": "directory",
   "disable": "disable",
   "Disabled": "Disabled",
+  "Do not continue if you‘re not sure about what you're doing": "Do not continue if you‘re not sure about what you're doing",
   "Done": "Done",
   "Double check the domain name": {
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
   },
   "enable": "enable",
-  "Enable experimental mode": "Enable experimental mode",
   "Enable this list": "Enable this list",
   "Enabled": "Enabled",
   "Enter a Stellar Asset List compatible URL": "Enter a Stellar Asset List compatible URL",
@@ -164,6 +165,11 @@
   "Error code": "Error code",
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
+  "Experimental features": "Experimental features",
+  "Experimental Features": "Experimental Features",
+  "Experimental features are advised for advanced users only": {
+    " Enabling these may impact the security of your wallets and result in loss of funds": "Experimental features are advised for advanced users only. Enabling these may impact the security of your wallets and result in loss of funds."
+  },
   "Extend To": "Extend To",
   "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
@@ -192,13 +198,11 @@
     " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   },
   "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website": "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
-  "Freighter will use experimental API‘s and connect to the Futurenet, a test network": {
-    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
-  },
   "Friendbot URL": "Friendbot URL",
   "From": "From",
   "Function Name": "Function Name",
   "Fund with Friendbot": "Fund with Friendbot",
+  "Go back": "Go back",
   "Got it": "Got it",
   "Hash": "Hash",
   "Help": "Help",
@@ -211,6 +215,7 @@
   "I have my 12 word seed phrase": "I have my 12 word seed phrase",
   "I have my recovery phrase safe": "I have my recovery phrase safe",
   "I have read and agree to": "I have read and agree to",
+  "I understand, continue": "I understand, continue",
   "I understand, start migration": "I understand, start migration",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
   "I’m going to need a seed phrase": "I’m going to need a seed phrase",
@@ -476,6 +481,7 @@
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
   "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction": "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
+  "This can be used to sign arbitrary transaction hashes without having to decode them first": "This can be used to sign arbitrary transaction hashes without having to decode them first.",
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
@@ -507,6 +513,10 @@
   "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
   "Unverified asset": "Unverified asset",
+  "Use experimental API‘s and connect to the Futurenet, a test network": {
+    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
+  },
+  "Use Futurenet": "Use Futurenet",
   "Validate addresses that require a memo": "Validate addresses that require a memo",
   "Value": "Value",
   "Verification": "Verification",
