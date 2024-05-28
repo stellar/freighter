@@ -34,6 +34,7 @@ import { MessageResponder } from "background/types";
 
 import {
   ALLOWLIST_ID,
+  ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
   ASSETS_LISTS_ID,
   CACHED_ASSET_ICONS_ID,
@@ -766,7 +767,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
-      localStore.clear();
+
+      const keyIdList = await getKeyIdList();
+
+      if (keyIdList.length) {
+        /* Clear any existing account data while maintaining app settings */
+
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let i = 0; i < keyIdList.length; i += 1) {
+          await localStore.remove(`stellarkeys:${keyIdList[i]}`);
+        }
+
+        await localStore.setItem(KEY_ID_LIST, []);
+        await localStore.remove(ACCOUNT_NAME_LIST_ID);
+      }
+
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       await _storeAccount({
