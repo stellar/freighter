@@ -63,6 +63,9 @@ export const dataStorage = (
   clear: async () => {
     await storageApi.clear();
   },
+  remove: async (keys: string | string[]) => {
+    await storageApi.remove(keys);
+  },
 });
 
 export const dataStorageAccess = (
@@ -75,6 +78,7 @@ export const dataStorageAccess = (
       await store.setItem({ [keyId]: value });
     },
     clear: () => store.clear(),
+    remove: store.remove,
   };
 };
 
@@ -149,17 +153,17 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 // This migration migrates the storage for custom tokens IDs to be keyed by network
 const migrateTokenIdList = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const tokenIdsByKey = (await localStore.getItem(TOKEN_ID_LIST)) as Record<
-    string,
-    object
-  >;
+  const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
-    const newTokenList = {
-      [NETWORKS.FUTURENET]: tokenIdsByKey,
-    };
-    await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    if (Array.isArray(tokenIdsByKey)) {
+      const newTokenList = {
+        [NETWORKS.FUTURENET]: tokenIdsByKey,
+      };
+      await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    }
+
     await migrateDataStorageVersion("1.0.0");
   }
 };
