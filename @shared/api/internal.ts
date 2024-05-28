@@ -1193,6 +1193,8 @@ export const saveExperimentalFeatures = async ({
   let response = {
     isExperimentalModeEnabled: false,
     isHashSigningEnabled: false,
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
     error: "",
   };
 

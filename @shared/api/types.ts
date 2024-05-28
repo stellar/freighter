@@ -148,6 +148,8 @@ export interface Preferences {
 export interface ExperimentalFeatures {
   isExperimentalModeEnabled: boolean;
   isHashSigningEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
 }
 
 export enum SettingsState {

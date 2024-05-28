@@ -163,6 +163,8 @@ export const saveExperimentalFeatures = createAsyncThunk<
   async ({ isExperimentalModeEnabled, isHashSigningEnabled }, thunkApi) => {
     let res = {
       ...experimentalFeaturesInitialState,
+      networkDetails: settingsInitialState.networkDetails,
+      networksList: settingsInitialState.networksList,
     };
 
     try {
@@ -322,15 +324,21 @@ const settingsSlice = createSlice({
       };
     });
     builder.addCase(saveExperimentalFeatures.fulfilled, (state, action) => {
-      const { isExperimentalModeEnabled, isHashSigningEnabled } =
-        action?.payload || {
-          ...initialState,
-        };
+      const {
+        isExperimentalModeEnabled,
+        isHashSigningEnabled,
+        networkDetails,
+        networksList,
+      } = action?.payload || {
+        ...initialState,
+      };
 
       return {
         ...state,
         isExperimentalModeEnabled,
         isHashSigningEnabled,
+        networkDetails,
+        networksList,
       };
     });
     builder.addCase(
