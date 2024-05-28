@@ -15,8 +15,7 @@ const validAssetList = {
       name: "yXLM",
       org: "Ultra Capital LLC dba Ultra Capital",
       domain: "ultracapital.xyz",
-      icon:
-        "https://ipfs.io/ipfs/bafkreihntcz2lpaxawmbhwidtuifladkgew6olwuly2dz5pewqillhhpay",
+      icon: "https://ipfs.io/ipfs/bafkreihntcz2lpaxawmbhwidtuifladkgew6olwuly2dz5pewqillhhpay",
       decimals: 7,
     },
   ],
@@ -97,8 +96,7 @@ describe("searchAsset", () => {
           name: "yXLM",
           org: "Ultra Capital LLC dba Ultra Capital",
           domain: "ultracapital.xyz",
-          icon:
-            "https://ipfs.io/ipfs/bafkreihntcz2lpaxawmbhwidtuifladkgew6olwuly2dz5pewqillhhpay",
+          icon: "https://ipfs.io/ipfs/bafkreihntcz2lpaxawmbhwidtuifladkgew6olwuly2dz5pewqillhhpay",
           decimals: 7,
         },
       ],

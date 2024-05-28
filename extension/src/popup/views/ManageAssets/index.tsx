@@ -17,12 +17,8 @@ import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 export const ManageAssets = () => {
-  const {
-    accountBalances,
-    destinationBalances,
-    assetSelect,
-    error,
-  } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, destinationBalances, assetSelect, error } =
+    useSelector(transactionSubmissionSelector);
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [errorAsset, setErrorAsset] = useState("");
 
