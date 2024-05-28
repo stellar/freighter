@@ -33,10 +33,7 @@ export const AutoSaveFields = ({ debounceMs = 500 }: AutoSaveFieldsProps) => {
 
   useEffect(() => {
     if (formik.isValid && formik.dirty && !formik.isSubmitting) {
-      console.log(values);
-      console.log(formik.values);
       if (!isEqual(formik.values, values)) {
-        console.log("change");
         setValues(formik.values);
         debouncedSubmit(formik);
       }
