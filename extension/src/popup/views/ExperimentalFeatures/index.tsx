@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { Notification, Button, Toggle } from "@stellar/design-system";
+import { Notification, Button, Toggle, Loader } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 
 import {
   saveExperimentalFeatures,
   settingsSelector,
 } from "popup/ducks/settings";
+import { SettingsState } from "@shared/api/types";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
@@ -21,8 +22,11 @@ export const ExperimentalFeatures = () => {
   const dispatch = useDispatch();
   const [isUnderstood, setIsUnderstood] = useState(false);
 
-  const { isExperimentalModeEnabled, isHashSigningEnabled } =
-    useSelector(settingsSelector);
+  const {
+    isExperimentalModeEnabled,
+    isHashSigningEnabled,
+    experimentalFeaturesState,
+  } = useSelector(settingsSelector);
 
   interface SettingValues {
     isExperimentalModeEnabledValue: boolean;
@@ -47,6 +51,8 @@ export const ExperimentalFeatures = () => {
     );
   };
 
+  const isLoading = experimentalFeaturesState === SettingsState.LOADING;
+
   return isUnderstood ? (
     <>
       <SubviewHeader title={t("Experimental Features")} />
@@ -64,7 +70,12 @@ export const ExperimentalFeatures = () => {
                   <img src={IconExperimental} alt="icon experimental feature" />
                 </div>
                 <div className="ExperimentalFeatures__feature__row__title">
-                  {t("Use Futurenet")}
+                  <span>{t("Use Futurenet")}</span>
+                  {isLoading ? (
+                    <div className="ExperimentalFeatures__feature__row__loader">
+                      <Loader />
+                    </div>
+                  ) : null}
                 </div>
                 <Toggle
                   checked={initialValues.isExperimentalModeEnabledValue}
@@ -84,7 +95,12 @@ export const ExperimentalFeatures = () => {
                   <img src={IconExperimental} alt="icon experimental feature" />
                 </div>
                 <div className="ExperimentalFeatures__feature__row__title">
-                  {t("Allow Ledger to sign arbitrary hashes")}
+                  <span>{t("Allow Ledger to sign arbitrary hashes")}</span>
+                  {isLoading ? (
+                    <div className="ExperimentalFeatures__feature__row__loader">
+                      <Loader />
+                    </div>
+                  ) : null}
                 </div>
                 <Toggle
                   checked={initialValues.isHashSigningEnabledValue}

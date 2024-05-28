@@ -1195,6 +1195,7 @@ export const saveExperimentalFeatures = async ({
     isHashSigningEnabled: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
+    experimentalFeaturesState: SettingsState.IDLE,
     error: "",
   };
 

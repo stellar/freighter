@@ -57,6 +57,7 @@ export interface Response {
   assetsList: AssetsListItem;
   isDeleteAssetsList: boolean;
   settingsState: SettingsState;
+  experimentalFeaturesState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
@@ -150,6 +151,7 @@ export interface ExperimentalFeatures {
   isHashSigningEnabled: boolean;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
+  experimentalFeaturesState: SettingsState;
 }
 
 export enum SettingsState {

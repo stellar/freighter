@@ -60,6 +60,7 @@ const settingsInitialState: Settings = {
 const experimentalFeaturesInitialState = {
   isExperimentalModeEnabled: false,
   isHashSigningEnabled: false,
+  experimentalFeaturesState: SettingsState.IDLE,
 };
 
 const indexerInitialState: IndexerSettings = {
@@ -323,6 +324,10 @@ const settingsSlice = createSlice({
         isSorobanPublicEnabled,
       };
     });
+    builder.addCase(saveExperimentalFeatures.pending, (state) => ({
+      ...state,
+      experimentalFeaturesState: SettingsState.LOADING,
+    }));
     builder.addCase(saveExperimentalFeatures.fulfilled, (state, action) => {
       const {
         isExperimentalModeEnabled,
@@ -339,6 +344,7 @@ const settingsSlice = createSlice({
         isHashSigningEnabled,
         networkDetails,
         networksList,
+        experimentalFeaturesState: SettingsState.SUCCESS,
       };
     });
     builder.addCase(

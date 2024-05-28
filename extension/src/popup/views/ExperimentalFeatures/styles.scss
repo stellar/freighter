@@ -18,6 +18,13 @@
       &__title {
         line-height: 1.5rem;
         font-weight: var(--font-weight-medium);
+        display: flex;
+        position: relative;
+        align-items: center;
+      }
+      &__loader {
+        position: absolute;
+        right: -2rem;
       }
     }
     &__description {
