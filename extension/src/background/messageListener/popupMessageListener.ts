@@ -1272,6 +1272,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       isHashSigningEnabled: await getIsHashSigningEnabled(),
+      networkDetails: await getNetworkDetails(),
+      networksList: await getNetworksList(),
     };
   };
 
