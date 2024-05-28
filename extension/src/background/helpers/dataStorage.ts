@@ -194,7 +194,7 @@ export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
 };
 
 export const migrateToAccountSubscriptions = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   // we only want to run this once per user
@@ -204,8 +204,8 @@ export const migrateToAccountSubscriptions = async () => {
   }
 };
 
-const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+export const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "4.0.0")) {
@@ -234,8 +234,8 @@ const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   }
 };
 
-const migrateSorobanRpcUrlNetwork = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+export const migrateSorobanRpcUrlNetwork = async () => {
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "4.0.1")) {
@@ -257,7 +257,7 @@ const migrateSorobanRpcUrlNetwork = async () => {
 };
 
 export const resetAccountSubscriptions = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
@@ -268,7 +268,7 @@ export const resetAccountSubscriptions = async () => {
 };
 
 export const addAssetsLists = async () => {
-  const localStore = dataStorageAccess(browserLocalStorage);
+  const localStore = exports.dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "4.1.0")) {
