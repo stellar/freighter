@@ -10,7 +10,6 @@ import {
   Operation,
   Horizon,
   TransactionBuilder,
-  Networks
 } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
