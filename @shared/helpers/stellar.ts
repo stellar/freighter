@@ -8,12 +8,16 @@ import {
   BASE_RESERVE_MIN_COUNT,
   NetworkDetails,
   FUTURENET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
 export const CUSTOM_NETWORK = "STANDALONE";
 
 export const isNextSdk = (networkPassphrase: string) =>
-  [FUTURENET_NETWORK_DETAILS.networkPassphrase].includes(networkPassphrase);
+  [
+    FUTURENET_NETWORK_DETAILS.networkPassphrase,
+    TESTNET_NETWORK_DETAILS.networkPassphrase,
+  ].includes(networkPassphrase);
 
 export const getSdk = (networkPassphrase: string) =>
   isNextSdk(networkPassphrase) ? StellarSdkNext : StellarSdk;
