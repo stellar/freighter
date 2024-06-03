@@ -27,7 +27,10 @@ import {
   buildSorobanServer,
   getNewTxBuilder,
 } from "@shared/helpers/soroban/server";
-import { getContractSpec as getContractSpecHelper } from "./helpers/soroban";
+import {
+  getContractSpec as getContractSpecHelper,
+  getIsTokenSpec as getIsTokenSpecHelper,
+} from "./helpers/soroban";
 import {
   Account,
   AccountBalancesInterface,
@@ -713,6 +716,32 @@ export const getContractSpec = async ({
   }
   const url = new URL(
     `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`,
+  );
+  const response = await fetch(url.href);
+  const { data, error } = await response.json();
+  if (!response.ok) {
+    throw new Error(error);
+  }
+
+  return data;
+};
+
+export const getIsTokenSpec = async ({
+  contractId,
+  networkDetails,
+}: {
+  contractId: string;
+  networkDetails: NetworkDetails;
+}): Promise<boolean> => {
+  if (isCustomNetwork(networkDetails)) {
+    const data = await getIsTokenSpecHelper(
+      contractId,
+      networkDetails.networkUrl,
+    );
+    return data;
+  }
+  const url = new URL(
+    `${INDEXER_URL}/token-spec/${contractId}?network=${networkDetails.network}`,
   );
   const response = await fetch(url.href);
   const { data, error } = await response.json();

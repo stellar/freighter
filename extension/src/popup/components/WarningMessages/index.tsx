@@ -11,12 +11,12 @@ import {
   Horizon,
   TransactionBuilder,
   Networks,
-  xdr,
 } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
 import { ActionStatus } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
+import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
 import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
 
@@ -47,7 +47,6 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
-import { pickTransfers, buildInvocationTree } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
@@ -55,10 +54,7 @@ import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
-import {
-  getVerifiedTokens,
-  VerifiedTokenRecord,
-} from "popup/helpers/searchAsset";
+import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -868,16 +864,11 @@ export const TokenWarning = ({
 };
 
 export const TransferWarning = ({
-  authEntry,
+  transfers,
 }: {
-  authEntry: xdr.SorobanAuthorizationEntry;
+  transfers: TokenArgsDisplay[];
 }) => {
   const { t } = useTranslation();
-
-  const rootInvocation = authEntry.rootInvocation();
-  const rootJson = buildInvocationTree(rootInvocation);
-  const isInvokeContract = rootInvocation.function().switch().value === 0;
-  const transfers = isInvokeContract ? pickTransfers(rootJson) : [];
 
   if (!transfers.length) {
     return null;
@@ -926,9 +917,9 @@ export const InvokerAuthWarning = () => {
 };
 
 export const UnverifiedTokenTransferWarning = ({
-  details,
+  transfers,
 }: {
-  details: { contractId: string }[];
+  transfers: TokenArgsDisplay[];
 }) => {
   const { t } = useTranslation();
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
@@ -939,25 +930,22 @@ export const UnverifiedTokenTransferWarning = ({
       return;
     }
     const fetchVerifiedTokens = async () => {
-      let verifiedTokens = [] as VerifiedTokenRecord[];
-
       // eslint-disable-next-line
-      for (let j = 0; j < details.length; j += 1) {
-        const c = details[j].contractId;
-        verifiedTokens = await getVerifiedTokens({
+      for (let j = 0; j < transfers.length; j += 1) {
+        const c = transfers[j].contractId;
+        const verifiedTokens = await getVerifiedTokens({
           contractId: c,
           networkDetails,
           assetsLists,
         });
-      }
-
-      if (!verifiedTokens.length) {
-        setIsUnverifiedToken(true);
+        if (!verifiedTokens.length) {
+          setIsUnverifiedToken(true);
+        }
       }
     };
 
     fetchVerifiedTokens();
-  }, [networkDetails, details, assetsLists]);
+  }, [networkDetails, transfers, assetsLists]);
 
   return isUnverifiedToken ? (
     <WarningMessage
