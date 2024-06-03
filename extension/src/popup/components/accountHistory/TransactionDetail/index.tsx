@@ -11,13 +11,15 @@ import { View } from "popup/basics/layout/View";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { stroopToXlm, isCustomNetwork } from "helpers/stellar";
+import { stroopToXlm } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { HorizonOperation } from "@shared/api/types";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+
 import "./styles.scss";
 
 export interface TransactionDetailProps {
@@ -108,7 +110,7 @@ export const TransactionDetail = ({
                   {isRecipient ? (
                     <>
                       <div>{t("From")}</div>
-                      <div>
+                      <div className="InfoRow__right">
                         <KeyIdenticon
                           publicKey={from}
                           customSize={identiconDimensions}
@@ -118,7 +120,7 @@ export const TransactionDetail = ({
                   ) : (
                     <>
                       <div>{t("To")}</div>
-                      <div>
+                      <div className="InfoRow__right">
                         <KeyIdenticon
                           publicKey={to}
                           customSize={identiconDimensions}
@@ -131,24 +133,26 @@ export const TransactionDetail = ({
                 !isSwap && (
                   <>
                     <div>{t("Action")}</div>
-                    <div>{operationText}</div>
+                    <div className="InfoRow__right">{operationText}</div>
                   </>
                 )
               )}
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Date")}</div>
-              <div>
+              <div className="InfoRow__right">
                 {createdAtTime} &bull; {createdAtDateStr}
               </div>
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Memo")}</div>
-              <div>{memo || `None`}</div>
+              <div className="InfoRow__right">{memo || `None`}</div>
             </div>
             <div className="TransactionDetail__info__row">
               <div>{t("Transaction fee")}</div>
-              <div>{stroopToXlm(feeCharged as string).toString()} XLM</div>
+              <div className="InfoRow__right">
+                {stroopToXlm(feeCharged as string).toString()} XLM
+              </div>
             </div>
           </div>
         </div>

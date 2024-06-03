@@ -29,11 +29,11 @@ describe("scValByType", () => {
     const parsedBool = scValByType(bool);
     expect(parsedBool).toEqual(true);
   });
-  it("should render bytes as an array of numbers", () => {
+  it("should render bytes as a a hex string", () => {
     const bytesBuffer = Buffer.from([0x00, 0x01]);
     const bytes = xdr.ScVal.scvBytes(bytesBuffer);
     const parsedBytes = scValByType(bytes);
-    expect(parsedBytes).toEqual("[0,1]");
+    expect(parsedBytes).toEqual("0001");
   });
   it("should render an error as a string, including the contract code and name", () => {
     const contractErrorCode = 1;

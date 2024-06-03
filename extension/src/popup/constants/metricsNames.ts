@@ -32,6 +32,7 @@ export const METRIC_NAMES = {
   viewSecurity: "loaded screen: security",
   viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
+  viewManageAssetsLists: "loaded screen: manage assets lists",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
@@ -40,6 +41,7 @@ export const METRIC_NAMES = {
   sendPaymentSettings: "loaded screen: send payment settings",
   sendPaymentSettingsFee: "loaded screen: send payment settings fee",
   sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
+  sendPaymentSettingsTimeout: "loaded screen: send payment settings timeout",
   sendPaymentConfirm: "loaded screen: send payment confirm",
 
   viewAccountMigration: "loaded screen: account migration",
@@ -66,6 +68,7 @@ export const METRIC_NAMES = {
   swapSettings: "loaded screen: swap settings",
   swapSettingsFee: "loaded screen: swap settings fee",
   swapSettingsSlippage: "loaded screen: swap settings slippage",
+  swapSettingsTimeout: "loaded screen: swap settings timeout",
   swapConfirm: "loaded screen: swap confirm",
 
   viewManageAssets: "loaded screen: manage assets",
@@ -84,6 +87,8 @@ export const METRIC_NAMES = {
   manageAssetAddUnsafeAsset: "manage asset: add unsafe asset",
   manageAssetRemoveAsset: "manage asset: remove asset",
   manageAssetError: "manage asset: error",
+
+  manageAssetListsModifyAssetList: "manage asset list: modify asset list",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",

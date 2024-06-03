@@ -1,10 +1,10 @@
 import browser from "webextension-polyfill";
-import { Store } from "redux";
 import { ROUTES } from "popup/constants/routes";
 import {
   EXTERNAL_SERVICE_TYPES,
   SERVICE_TYPES,
 } from "@shared/constants/services";
+import { buildStore } from "background/store";
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
@@ -27,8 +27,9 @@ export const initContentScriptMessageListener = () => {
   });
 };
 
-export const initExtensionMessageListener = (sessionStore: Store) => {
+export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
+    const sessionStore = await buildStore();
     // todo this is kinda ugly
     let res;
     if (Object.values(SERVICE_TYPES).includes(request.type as SERVICE_TYPES)) {
@@ -70,8 +71,9 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(versionedMigration);
 };
 
-export const initAlarmListener = (sessionStore: Store) => {
-  browser?.alarms?.onAlarm.addListener(({ name }: { name: string }) => {
+export const initAlarmListener = () => {
+  browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
+    const sessionStore = await buildStore();
     if (name === SESSION_ALARM_NAME) {
       sessionStore.dispatch(timeoutAccountAccess());
     }

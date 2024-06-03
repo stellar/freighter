@@ -38,6 +38,7 @@ import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
 import { ManageConnectedApps } from "popup/views/ManageConnectedApps";
+import { ManageAssetsLists } from "popup/views/ManageAssetsLists";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { SelectHardwareWallet } from "popup/views/AddAccount/connect/SelectHardwareWallet";
 import { PluginWallet } from "popup/views/AddAccount/connect/PluginWallet";
@@ -74,7 +75,6 @@ import { SettingsState } from "@shared/api/types";
 import { SignBlob } from "./views/SignBlob";
 import { ReviewAuth } from "./views/ReviewAuth";
 
-import { SorobanProvider } from "./SorobanContext";
 import { View } from "./basics/layout/View";
 import { BottomNav } from "./components/BottomNav";
 import { useIsSwap } from "./helpers/useIsSwap";
@@ -113,11 +113,7 @@ export const PublicKeyRoute = (props: RouteProps) => {
       />
     );
   }
-  return (
-    <SorobanProvider pubKey={publicKey}>
-      <Route {...props} />
-    </SorobanProvider>
-  );
+  return <Route {...props} />;
 };
 
 export const PrivateKeyRoute = (props: RouteProps) => {
@@ -231,10 +227,13 @@ const HomeRoute = () => {
 const RouteListener = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const settingsState = useSelector(settingsStateSelector);
 
   useEffect(() => {
-    dispatch(navigate(location));
-  }, [dispatch, location]);
+    if (settingsState === SettingsState.SUCCESS) {
+      dispatch(navigate(location));
+    }
+  }, [dispatch, location, settingsState]);
 
   return null;
 };
@@ -392,6 +391,9 @@ const Outlet = () => {
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.manageConnectedApps}>
             <ManageConnectedApps />
+          </PublicKeyRoute>
+          <PublicKeyRoute path={ROUTES.manageAssetsLists}>
+            <ManageAssetsLists />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.accountMigration}>
             <AccountMigration />

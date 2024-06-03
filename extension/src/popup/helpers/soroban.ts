@@ -355,7 +355,11 @@ export const scValByType = (scVal: xdr.ScVal) => {
     }
 
     case xdr.ScValType.scvBytes(): {
-      return JSON.stringify(scVal.bytes().toJSON().data);
+      return scVal
+        .bytes()
+        .toJSON()
+        .data.map((d) => d.toString(16).padStart(2, "0"))
+        .join("");
     }
 
     case xdr.ScValType.scvContractInstance(): {

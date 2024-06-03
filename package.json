@@ -2,7 +2,7 @@
   "license": "Apache-2.0",
   "private": true,
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.20.0"
   },
   "workspaces": [
     "@shared/api",
@@ -15,7 +15,7 @@
   "scripts": {
     "setup": "yarn install && yarn allow-scripts",
     "build": "run-p --print-label build:freighter-api build:docs build:extension",
-    "build:netlify": "cd docs && npm i --legacy-peer-deps && npm run build",
+    "build:netlify": "cd docs && yarn --legacy-peer-deps && yarn build",
     "build:extension-preview": "run-s build:freighter-api build:extension:experimental",
     "build:freighter-api": "yarn workspace @stellar/freighter-api build",
     "build:docs": "yarn workspace docs build",
@@ -72,8 +72,8 @@
     "@testing-library/dom": "^7.22.2",
     "@testing-library/jest-dom": "^4.2.4",
     "@types/jest": "^24.0.0",
-    "@types/react": "^16.9.0",
-    "@types/react-dom": "^16.9.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.2.24",
     "@types/styled-components": "5.1.4",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",

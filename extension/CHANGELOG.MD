@@ -1,3 +1,39 @@
+# Release notes - Wallets - FE Freighter 5.18.3
+
+### Bug
+
+Cannot find paths for swaps
+
+# Release notes - Wallets - FE Freighter 5.18.2
+
+### Bug
+
+browser storage overrides by local storage
+
+# Release notes - Wallets - FE-Freighter-5.18.1
+
+### Feature
+
+Upgrade stellar-sdk
+
+# Release notes - Wallets - FE-Freighter-5.18.0
+
+### Bug
+
+Asset icons load late
+
+### Story
+
+Contract ID truncation does not adapt
+
+Add Soroswap and Lobstr token allowlists
+
+Add token allowlist management UI
+
+Better usability of contract id in ReviewAuth
+
+Redesign Settings views
+
 # Release notes - Wallets - FE-Freighter-5.17.7
 
 ### Bug

@@ -6,10 +6,11 @@ import { object as YupObject, string as YupString } from "yup";
 import { Icon, Input, CopyText, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { PillButton } from "popup/basics/buttons/PillButton";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
+import { PillButton } from "popup/basics/buttons/PillButton";
 import { emitMetric } from "helpers/metrics";
-import { truncatedPublicKey, isCustomNetwork } from "helpers/stellar";
+import { truncatedPublicKey } from "helpers/stellar";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";

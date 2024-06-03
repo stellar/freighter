@@ -83,9 +83,9 @@ export const SignBlob = () => {
       >
         <p>
           <Trans domain={url}>
-            The website <strong>{{ url }}</strong> does not use an SSL
-            certificate. For additional safety Freighter only works with
-            websites that provide an SSL certificate.
+            The website <strong>{url}</strong> does not use an SSL certificate.
+            For additional safety Freighter only works with websites that
+            provide an SSL certificate.
           </Trans>
         </p>
       </WarningMessage>

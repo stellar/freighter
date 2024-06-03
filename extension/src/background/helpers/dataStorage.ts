@@ -2,11 +2,13 @@ import browser from "webextension-polyfill";
 import semver from "semver";
 
 import {
+  APPLICATION_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
   TOKEN_ID_LIST,
+  ASSETS_LISTS_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -17,6 +19,7 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
 
 interface SetItemParams {
   [key: string]: any;
@@ -36,7 +39,7 @@ export const browserLocalStorage = storage?.local;
 export const browserSessionStorage = storage?.session;
 
 // Session Storage Feature Flag - turn on when storage.session is supported
-export const SESSION_STORAGE_ENABLED = false;
+export const SESSION_STORAGE_ENABLED = true;
 
 export type StorageOption =
   | typeof browserLocalStorage
@@ -59,6 +62,9 @@ export const dataStorage = (
   clear: async () => {
     await storageApi.clear();
   },
+  remove: async (keys: string | string[]) => {
+    await storageApi.remove(keys);
+  },
 });
 
 export const dataStorageAccess = (
@@ -71,12 +77,20 @@ export const dataStorageAccess = (
       await store.setItem({ [keyId]: value });
     },
     clear: () => store.clear(),
+    remove: store.remove,
   };
 };
 
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const localStorageEntries = Object.entries(localStorage);
+  const localStorageEntries = await browserLocalStorage.get(null);
+
+  const applicationState = await localStore.getItem(APPLICATION_ID);
+  const isLocalStoreSetup = !!applicationState?.length;
+
+  if (isLocalStoreSetup) {
+    return;
+  }
 
   // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
@@ -85,7 +99,7 @@ export const normalizeMigratedData = async () => {
       if (typeof value === "string") {
         const parsedValue = JSON.parse(value);
         // eslint-disable-next-line no-await-in-loop
-        await localStore.setItem(key, parsedValue);
+        await localStore.setItem(key as string, parsedValue);
       }
     } catch (e) {
       // do not transform v
@@ -138,19 +152,19 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 // This migration migrates the storage for custom tokens IDs to be keyed by network
 const migrateTokenIdList = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const tokenIdsByKey = (await localStore.getItem(TOKEN_ID_LIST)) as Record<
-    string,
-    object
-  >;
+  const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
-    const newTokenList = {
-      [NETWORKS.FUTURENET]: tokenIdsByKey,
-    };
-    await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    if (Array.isArray(tokenIdsByKey)) {
+      const newTokenList = {
+        [NETWORKS.FUTURENET]: tokenIdsByKey,
+      };
+      await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    }
+
+    await migrateDataStorageVersion("1.0.0");
   }
-  await migrateDataStorageVersion("1.0.0");
 };
 
 const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
@@ -237,6 +251,7 @@ const migrateSorobanRpcUrlNetwork = async () => {
       NETWORK_ID,
     );
     if (
+      migratedNetwork &&
       migratedNetwork.network === NETWORKS.FUTURENET &&
       !migratedNetwork.sorobanRpcUrl
     ) {
@@ -253,6 +268,18 @@ export const resetAccountSubscriptions = async () => {
   if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
     // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
+    await migrateDataStorageVersion("4.0.2");
+  }
+};
+
+export const addAssetsLists = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.1.0")) {
+    // add the base asset lists
+    await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
+    await migrateDataStorageVersion("4.1.0");
   }
 };
 
@@ -265,6 +292,7 @@ export const versionedMigration = async () => {
   await migrateMainnetSorobanRpcUrlNetworkDetails();
   await migrateSorobanRpcUrlNetwork();
   await resetAccountSubscriptions();
+  await addAssetsLists();
 };
 
 // Updates storage version

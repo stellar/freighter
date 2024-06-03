@@ -1,10 +1,14 @@
 import { FeeBumpTransaction, Horizon, Transaction } from "stellar-sdk";
+import { Horizon as HorizonNext } from "stellar-sdk-next";
+
+import { getSdk } from "@shared/helpers/stellar";
 
 interface HorizonError {
   response: {
     status: number;
   };
 }
+
 const isHorizonError = (val: unknown): val is HorizonError =>
   typeof val === "object" &&
   val !== null &&
@@ -16,16 +20,21 @@ const isHorizonError = (val: unknown): val is HorizonError =>
 export const getIsAllowHttp = (networkUrl: string) =>
   !networkUrl.includes("https");
 
-export const stellarSdkServer = (networkUrl: string) =>
-  new Horizon.Server(networkUrl, {
+export const stellarSdkServer = (
+  networkUrl: string,
+  networkPassphrase: string,
+) => {
+  const Sdk = getSdk(networkPassphrase);
+  return new Sdk.Horizon.Server(networkUrl, {
     allowHttp: getIsAllowHttp(networkUrl),
   });
+};
 
 export const submitTx = async ({
   server,
   tx,
 }: {
-  server: Horizon.Server;
+  server: Horizon.Server | HorizonNext.Server;
   tx: Transaction | FeeBumpTransaction;
 }): Promise<any> => {
   let submittedTx;

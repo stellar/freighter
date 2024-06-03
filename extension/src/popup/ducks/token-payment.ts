@@ -3,9 +3,14 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ActionStatus, ErrorMessage } from "@shared/api/types";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { SorobanRpcNotSupportedError } from "@shared/constants/errors";
 import { transfer } from "@shared/helpers/soroban/token";
-import { isCustomNetwork, xlmToStroop } from "helpers/stellar";
-import { SorobanContextInterface } from "popup/SorobanContext";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+import { xlmToStroop } from "helpers/stellar";
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
 
 export const simulateTokenPayment = createAsyncThunk<
   {
@@ -22,7 +27,6 @@ export const simulateTokenPayment = createAsyncThunk<
       amount: number;
     };
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
     transactionFee: string;
   },
   {
@@ -31,20 +35,22 @@ export const simulateTokenPayment = createAsyncThunk<
 >(
   "simulateTokenPayment",
   async (
-    {
-      address,
-      publicKey,
-      memo,
-      params,
-      networkDetails,
-      sorobanClient,
-      transactionFee,
-    },
+    { address, publicKey, memo, params, networkDetails, transactionFee },
     thunkApi,
   ) => {
     try {
       if (isCustomNetwork(networkDetails)) {
-        const builder = await sorobanClient.newTxBuilder(
+        if (!networkDetails.sorobanRpcUrl) {
+          throw new SorobanRpcNotSupportedError();
+        }
+        const server = buildSorobanServer(
+          networkDetails.sorobanRpcUrl,
+          networkDetails.networkPassphrase,
+        );
+        const builder = await getNewTxBuilder(
+          publicKey,
+          networkDetails,
+          server,
           xlmToStroop(transactionFee).toFixed(),
         );
 
@@ -54,7 +60,7 @@ export const simulateTokenPayment = createAsyncThunk<
           new XdrLargeInt("i128", params.amount).toI128(), // amount
         ];
         const transaction = transfer(address, transferParams, memo, builder);
-        const simulationResponse = await sorobanClient.server.simulateTransaction(
+        const simulationResponse = await server.simulateTransaction(
           transaction,
         );
 

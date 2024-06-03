@@ -19,7 +19,7 @@ const routeToEventName = {
   [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
   [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
-  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewSignTransaction,
+  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewReviewAuthorization,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
@@ -48,6 +48,7 @@ const routeToEventName = {
   [ROUTES.sendPaymentSettingsFee]: METRIC_NAMES.sendPaymentSettingsFee,
   [ROUTES.sendPaymentSettingsSlippage]:
     METRIC_NAMES.sendPaymentSettingsSlippage,
+  [ROUTES.sendPaymentSettingsTimeout]: METRIC_NAMES.sendPaymentSettingsTimeout,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
   [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
@@ -59,12 +60,16 @@ const routeToEventName = {
   [ROUTES.swapSettings]: METRIC_NAMES.swapSettings,
   [ROUTES.swapSettingsFee]: METRIC_NAMES.swapSettingsFee,
   [ROUTES.swapSettingsSlippage]: METRIC_NAMES.swapSettingsSlippage,
+  [ROUTES.swapSettingsTimeout]: METRIC_NAMES.swapSettingsTimeout,
   [ROUTES.swapConfirm]: METRIC_NAMES.swapConfirm,
   [ROUTES.manageNetwork]: METRIC_NAMES.viewManageNetwork,
   [ROUTES.addNetwork]: METRIC_NAMES.viewAddNetwork,
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
   [ROUTES.leaveFeedback]: METRIC_NAMES.viewLeaveFeedback,
+  [ROUTES.manageAssetsLists]: METRIC_NAMES.viewManageAssetsLists,
+  [ROUTES.manageAssetsListsModifyAssetList]:
+    METRIC_NAMES.manageAssetListsModifyAssetList,
   [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
   [ROUTES.accountMigrationReviewMigration]:
     METRIC_NAMES.viewAccountMigrationReviewMigration,

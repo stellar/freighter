@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
@@ -9,10 +9,7 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import {
-  getAccountHistoryStandalone,
-  getIndexerAccountHistory,
-} from "@shared/api/internal";
+import { getAccountHistory } from "@shared/api/internal";
 import {
   AccountBalancesInterface,
   ActionStatus,
@@ -48,7 +45,7 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { isCustomNetwork, truncatedPublicKey } from "helpers/stellar";
+import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -57,8 +54,6 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import "popup/metrics/authServices";
-
-import { SorobanContext } from "../../SorobanContext";
 
 import "./styles.scss";
 
@@ -74,9 +69,8 @@ export const Account = () => {
     transactionSubmissionSelector,
   );
   const accountStatus = useSelector(accountStatusSelector);
-  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
-    false,
-  );
+  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
+    useState(false);
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -89,8 +83,6 @@ export const Account = () => {
   const [selectedAsset, setSelectedAsset] = useState("");
   const [isLoading, setLoading] = useState(true);
 
-  const sorobanClient = useContext(SorobanContext);
-
   const { balances, isFunded, error } = accountBalances;
 
   useEffect(() => {
@@ -102,7 +94,6 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
-        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());
@@ -110,13 +101,7 @@ export const Account = () => {
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [
-    publicKey,
-    networkDetails,
-    isAccountFriendbotFunded,
-    sorobanClient,
-    dispatch,
-  ]);
+  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
     if (!balances) {
@@ -135,18 +120,7 @@ export const Account = () => {
 
     const fetchAccountHistory = async () => {
       try {
-        let operations = [];
-        if (isCustomNetwork(networkDetails)) {
-          operations = await getAccountHistoryStandalone({
-            publicKey,
-            networkDetails,
-          });
-        } else {
-          operations = await getIndexerAccountHistory({
-            publicKey,
-            networkDetails,
-          });
-        }
+        const operations = await getAccountHistory(publicKey, networkDetails);
         setAssetOperations(
           sortOperationsByAsset({
             operations,
