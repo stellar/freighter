@@ -71,3 +71,4 @@ export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
 ];
 
 export const BASE_RESERVE = 0.5 as const;
+export const BASE_RESERVE_MIN_COUNT = 2 as const;

@@ -17,6 +17,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
 
 export const Swap = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -63,6 +64,9 @@ export const Swap = () => {
       </PublicKeyRoute>
       <PublicKeyRoute exact path={ROUTES.swapSettingsSlippage}>
         <SendSettingsSlippage previous={ROUTES.swapSettings} />
+      </PublicKeyRoute>
+      <PublicKeyRoute exact path={ROUTES.swapSettingsTimeout}>
+        <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
       </PublicKeyRoute>
       <VerifiedAccountRoute exact path={ROUTES.swapConfirm}>
         <SendConfirm previous={ROUTES.swapSettings} />

@@ -25,7 +25,7 @@ import { Swap } from "popup/views/Swap";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 
 export const swapMockBalances = {
-  balances: ({
+  balances: {
     "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
       token: {
         code: "USDC",
@@ -51,7 +51,7 @@ export const swapMockBalances = {
       total: new BigNumber("333"),
       available: new BigNumber("333"),
     },
-  } as any) as Balances,
+  } as any as Balances,
   isFunded: true,
   subentryCount: 1,
   tokensWithNoBalance: [],

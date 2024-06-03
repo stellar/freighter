@@ -16,10 +16,7 @@ const commonConfig = (
   entry: {
     background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
-    contentScript: [
-      "babel-polyfill",
-      path.resolve(__dirname, "./public/contentScript.ts"),
-    ],
+    contentScript: [path.resolve(__dirname, "./public/contentScript.ts")],
   },
   watchOptions: {
     ignored: ["node_modules/**/*", "build/**/*"],
@@ -125,7 +122,7 @@ const commonConfig = (
         to: BUILD_PATH,
       },
       {
-        from: path.resolve(__dirname, "./public/static/manifest/v2.json"),
+        from: path.resolve(__dirname, "./public/static/manifest/v3.json"),
         to: `${BUILD_PATH}/manifest.json`,
       },
     ]),

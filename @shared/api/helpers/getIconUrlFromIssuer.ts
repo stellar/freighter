@@ -56,8 +56,8 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* Otherwise, 1. load their account from the API */
-    const { networkUrl } = networkDetails;
-    const server = stellarSdkServer(networkUrl);
+    const { networkUrl, networkPassphrase } = networkDetails;
+    const server = stellarSdkServer(networkUrl, networkPassphrase);
 
     response = await server.loadAccount(key);
   } catch (e) {

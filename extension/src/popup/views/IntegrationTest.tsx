@@ -69,7 +69,7 @@ const testCustomNetwork = {
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: Networks.TESTNET,
 };
-const testBalances = ({
+const testBalances = {
   native: {
     token: { type: "native", code: "XLM" },
   },
@@ -84,7 +84,7 @@ const testBalances = ({
       },
     },
   },
-} as unknown) as Balances;
+} as unknown as Balances;
 
 export const IntegrationTest = () => {
   const [isDone, setIsDone] = useState(false);

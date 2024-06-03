@@ -45,9 +45,8 @@ export const AddToken = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
-  const [isVerificationInfoShowing, setIsVerificationInfoShowing] = useState(
-    false,
-  );
+  const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
+    useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
 
@@ -144,7 +143,9 @@ export const AddToken = () => {
         } catch (e) {
           setAssetRows([]);
           captureException(
-            `Failed to fetch token details - ${JSON.stringify(e)}`,
+            `Failed to fetch token details - ${JSON.stringify(
+              e,
+            )} - ${contractId} - ${networkDetails.network}`,
           );
           console.error(e);
         }
