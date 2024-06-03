@@ -355,7 +355,7 @@ const AuthDetail = ({
           contractId: rootJson.args.source,
           networkDetails,
         });
-        if (isToken) {
+        if (isToken && rootJson.args.function === "transfer") {
           transfers.push({
             contractId: rootJson.args.source as string,
             amount: rootJson.args.args[2].toString() as string,
@@ -370,7 +370,7 @@ const AuthDetail = ({
             contractId: subInvocation.args.source,
             networkDetails,
           });
-          if (isSubInvokeToken) {
+          if (isSubInvokeToken && subInvocation.args.function === "transfer") {
             transfers.push({
               contractId: subInvocation.args.source as string,
               amount: subInvocation.args.args[2].toString() as string,
