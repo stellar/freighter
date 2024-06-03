@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Button, Icon } from "@stellar/design-system";
+import { Button, Icon, Loader } from "@stellar/design-system";
 import { handleSignedHwTransaction } from "@shared/api/internal";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
@@ -48,6 +48,7 @@ export const HardwareSign = ({
   const bipPath = useSelector(bipPathSelector);
   const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
     useState(false);
+  const [hardwareWalletIsSigning, setHardwareWalletIsSigning] = useState(false);
   const [connectError, setConnectError] = useState("");
   const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
@@ -75,6 +76,7 @@ export const HardwareSign = ({
     try {
       const publicKey = await getWalletPublicKey[walletType](bipPath);
       setHardwareConnectSuccessful(true);
+      setHardwareWalletIsSigning(true);
 
       const res = await dispatch(
         signWithHardwareWallet({
@@ -113,7 +115,9 @@ export const HardwareSign = ({
           parseWalletError[walletType](res.payload?.errorMessage || ""),
         );
       }
+      setHardwareWalletIsSigning(false);
     } catch (e) {
+      setHardwareWalletIsSigning(false);
       setConnectError(parseWalletError[walletType](e));
     }
     setIsDetecting(false);
@@ -148,6 +152,11 @@ export const HardwareSign = ({
                 ? t("Review transaction on device")
                 : t("Connect device to computer")}
             </span>
+            {hardwareWalletIsSigning && (
+              <div className="HardwareSign__loader">
+                <Loader size="2rem" />
+              </div>
+            )}
           </div>
         </div>
         <div className="HardwareSign__bottom">
