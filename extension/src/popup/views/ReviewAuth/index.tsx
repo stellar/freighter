@@ -18,6 +18,7 @@ import { getTokenDetails } from "@shared/api/internal";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -51,6 +52,7 @@ import {
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { CopyValue } from "popup/components/CopyValue";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
@@ -72,6 +74,7 @@ export const ReviewAuth = () => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
+
   const transaction = TransactionBuilder.fromXDR(
     params.transactionXdr as string,
     networkPassphrase,
@@ -87,6 +90,8 @@ export const ReviewAuth = () => {
     isConfirming,
     publicKey,
     handleApprove,
+    hardwareWalletType,
+    hwStatus,
     rejectAndClose,
     isPasswordRequired,
     setIsPasswordRequired,
@@ -116,107 +121,112 @@ export const ReviewAuth = () => {
       customSubmit={verifyPasswordThenSign}
     />
   ) : (
-    <div className="ReviewAuth">
-      <div className="ReviewAuth__Body">
-        <div className="ReviewAuth__Title">
-          <PunycodedDomain domain={params.domain} domainTitle="" />
-          <div className="ReviewAuth--connection-request">
-            <div className="ReviewAuth--connection-request-pill">
-              <Icon.Link />
-              <p>Transaction Request</p>
+    <>
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
+      <div className="ReviewAuth">
+        <div className="ReviewAuth__Body">
+          <div className="ReviewAuth__Title">
+            <PunycodedDomain domain={params.domain} domainTitle="" />
+            <div className="ReviewAuth--connection-request">
+              <div className="ReviewAuth--connection-request-pill">
+                <Icon.Link />
+                <p>Transaction Request</p>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="ReviewAuth__Details">
-          {!hasConfirmedAuth && op.auth ? (
-            <>
-              <h5>
-                {activeAuthEntryIndex + 1}/{authCount} Authorizations
-              </h5>
-              <AuthDetail
-                authEntry={op.auth[activeAuthEntryIndex]}
-                isLoading={isLoadingAuth}
-                setLoading={setLoadingAuth}
-              />
-            </>
-          ) : (
-            <SignTransaction
-              tx={
-                isFeeBump
-                  ? ((transaction as any).innerTransaction as Transaction)
-                  : transaction
-              }
-              flaggedKeys={params.flaggedKeys}
-              isMemoRequired={params.isMemoRequired}
-              memo={params.memo}
-            />
-          )}
-        </div>
-        <div className="ReviewAuth__Actions">
-          {hasConfirmedAuth && (
-            <div className="ReviewAuth__Actions__SigningWith">
-              <h5>Signing with</h5>
-              <button
-                className="ReviewAuth__Actions__PublicKey"
-                onClick={() => setIsDropdownOpen(true)}
-              >
-                <KeyIdenticon
-                  publicKey={currentAccount.publicKey}
-                  keyTruncationAmount={10}
+          <div className="ReviewAuth__Details">
+            {!hasConfirmedAuth && op.auth ? (
+              <>
+                <h5>
+                  {activeAuthEntryIndex + 1}/{authCount} Authorizations
+                </h5>
+                <AuthDetail
+                  authEntry={op.auth[activeAuthEntryIndex]}
+                  isLoading={isLoadingAuth}
+                  setLoading={setLoadingAuth}
                 />
-                <Icon.ChevronDown />
-              </button>
-            </div>
-          )}
-          <div className="ReviewAuth__Actions__BtnRow">
-            {hasConfirmedAuth ? (
-              <Button
-                variant="tertiary"
-                isFullWidth
-                size="md"
-                isLoading={isConfirming}
-                onClick={() => handleApprove()}
-              >
-                {t("Sign Transaction")}
-              </Button>
+              </>
             ) : (
+              <SignTransaction
+                tx={
+                  isFeeBump
+                    ? ((transaction as any).innerTransaction as Transaction)
+                    : transaction
+                }
+                flaggedKeys={params.flaggedKeys}
+                isMemoRequired={params.isMemoRequired}
+                memo={params.memo}
+              />
+            )}
+          </div>
+          <div className="ReviewAuth__Actions">
+            {hasConfirmedAuth && (
+              <div className="ReviewAuth__Actions__SigningWith">
+                <h5>Signing with</h5>
+                <button
+                  className="ReviewAuth__Actions__PublicKey"
+                  onClick={() => setIsDropdownOpen(true)}
+                >
+                  <KeyIdenticon
+                    publicKey={currentAccount.publicKey}
+                    keyTruncationAmount={10}
+                  />
+                  <Icon.ChevronDown />
+                </button>
+              </div>
+            )}
+            <div className="ReviewAuth__Actions__BtnRow">
+              {hasConfirmedAuth ? (
+                <Button
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Sign Transaction")}
+                </Button>
+              ) : (
+                <Button
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={reviewAuthEntry}
+                >
+                  {isLastEntry
+                    ? t("Approve and continue")
+                    : t("Approve and review next")}
+                </Button>
+              )}
+
               <Button
-                variant="tertiary"
                 isFullWidth
                 size="md"
-                isLoading={isConfirming}
-                onClick={reviewAuthEntry}
+                variant="secondary"
+                onClick={() => rejectAndClose()}
               >
-                {isLastEntry
-                  ? t("Approve and continue")
-                  : t("Approve and review next")}
+                {t("Reject")}
               </Button>
-            )}
-
-            <Button
-              isFullWidth
-              size="md"
-              variant="secondary"
-              onClick={() => rejectAndClose()}
-            >
-              {t("Reject")}
-            </Button>
+            </div>
           </div>
         </div>
+        <SlideupModal
+          isModalOpen={isDropdownOpen}
+          setIsModalOpen={setIsDropdownOpen}
+        >
+          <div className="SignTransaction__modal">
+            <AccountList
+              allAccounts={allAccounts}
+              publicKey={publicKey}
+              setIsDropdownOpen={setIsDropdownOpen}
+            />
+          </div>
+        </SlideupModal>
       </div>
-      <SlideupModal
-        isModalOpen={isDropdownOpen}
-        setIsModalOpen={setIsDropdownOpen}
-      >
-        <div className="SignTransaction__modal">
-          <AccountList
-            allAccounts={allAccounts}
-            publicKey={publicKey}
-            setIsDropdownOpen={setIsDropdownOpen}
-          />
-        </div>
-      </SlideupModal>
-    </div>
+    </>
   );
 };
 
@@ -246,8 +256,8 @@ const TransferSummary = ({
     <div className="AuthDetail__InfoBlock TransferSummary">
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
-          <Icon.ArrowCircleRight />
-          <p>Receiver</p>
+          <Icon.ArrowCircleRight width="18" height="18" />
+          <p className="FieldTitle">Receiver</p>
         </div>
         <KeyIdenticon
           isCopyAllowed
@@ -258,8 +268,8 @@ const TransferSummary = ({
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
-          <Icon.ArrowCircleLeft />
-          <p>Sender</p>
+          <Icon.ArrowCircleLeft width="18" height="18" />
+          <p className="FieldTitle">Sender</p>
         </div>
         <KeyIdenticon
           isCopyAllowed
@@ -270,8 +280,8 @@ const TransferSummary = ({
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
-          <Icon.Toll />
-          <p>Amount</p>
+          <Icon.Toll width="18" height="18" />
+          <p className="FieldTitle">Amount</p>
         </div>
         <div className="SummaryBlock__Title">
           {hasTokenDetails ? (
