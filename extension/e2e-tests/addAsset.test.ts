@@ -1,4 +1,4 @@
-import { test, expect } from "./test-fixtures";
+import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
@@ -8,7 +8,10 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByText("Manage Assets").click({ force: true });
   await page.getByPlaceholder("Enter password").fill(PASSWORD);
   await page.getByText("Log In").click({ force: true });
-
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "manage-assets-page.png",
+  });
   await expect(page.getByText("Choose Asset")).toBeVisible();
   await page.getByText("Add Soroban token").click({ force: true });
   await page
@@ -24,6 +27,10 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("token-warning-notification")).toHaveText(
     "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "manage-assets-unverified-token.png",
+  });
   await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toContainText("100 E2E");
 });
@@ -54,6 +61,10 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
     `This asset is part of the asset lists "StellarExpert Top 50."Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.
     `,
   );
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "manage-assets-verified-token.png",
+  });
   await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toBeVisible();
 });

@@ -1,18 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { Asset, TransactionBuilder } from "stellar-sdk";
 
 import {
   transactionSubmissionSelector,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
-import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
-import { AddToken } from "popup/components/manageAssets/AddToken";
+import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
@@ -72,14 +68,8 @@ export const ManageAssets = () => {
         <PrivateKeyRoute exact path={ROUTES.searchAsset}>
           <SearchAsset />
         </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.addAsset}>
+        <Route exact path={ROUTES.addAsset}>
           <AddAsset />
-        </PrivateKeyRoute>
-        <Route exact path={ROUTES.trustlineError}>
-          <TrustlineError balances={balances} errorAsset={errorAsset} />
-        </Route>
-        <Route exact path={ROUTES.addToken}>
-          <AddToken />
         </Route>
       </Switch>
     </>
