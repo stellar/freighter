@@ -73,10 +73,9 @@ export const METRIC_NAMES = {
   swapConfirm: "loaded screen: swap confirm",
 
   viewManageAssets: "loaded screen: manage assets",
-  viewAddAsset: "loaded screen: add asset",
   viewSearchAsset: "loaded screen: search asset",
   viewTrustlineError: "loaded screen: trustline error",
-  viewAddToken: "loaded screen: add token",
+  viewAddAsset: "loaded screen: add asset manually",
 
   viewManageNetwork: "loaded screen: manage network",
   viewAddNetwork: "loaded screen: add network",

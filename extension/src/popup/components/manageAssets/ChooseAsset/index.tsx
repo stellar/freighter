@@ -126,7 +126,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   return (
     <React.Fragment>
       <SubviewHeader
-        title="Choose Asset"
+        title={t("Your assets")}
         customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
       />
       <View.Content>
@@ -161,24 +161,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                   variant="secondary"
                   data-testid="ChooseAssetAddAssetButton"
                 >
-                  {t("Add another asset")}
+                  {t("Add an asset")}
                 </Button>
               </Link>
             </div>
-            {isSorobanSuported ? (
-              <div className="ChooseAsset__button">
-                <Link to={ROUTES.addToken}>
-                  <Button
-                    size="md"
-                    isFullWidth
-                    variant="secondary"
-                    data-testid="ChooseAssetAddSorobanTokenButton"
-                  >
-                    {t("Add Soroban token")}
-                  </Button>
-                </Link>
-              </div>
-            ) : null}
           </>
         )}
       </View.Footer>
