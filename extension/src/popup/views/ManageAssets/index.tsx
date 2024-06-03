@@ -13,30 +13,9 @@ import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 export const ManageAssets = () => {
-  const { accountBalances, destinationBalances, assetSelect, error } =
-    useSelector(transactionSubmissionSelector);
-  const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
-  const [errorAsset, setErrorAsset] = useState("");
-
-  useEffect(() => {
-    const xdrEnvelope = error?.response?.extras?.envelope_xdr;
-    if (xdrEnvelope) {
-      const parsedTx = TransactionBuilder.fromXDR(
-        xdrEnvelope,
-        networkPassphrase,
-      );
-
-      if ("operations" in parsedTx) {
-        const op = parsedTx.operations[0];
-
-        if ("line" in op) {
-          const { code, issuer } = op.line as Asset;
-          const asset = `${code}:${issuer}`;
-          setErrorAsset(asset);
-        }
-      }
-    }
-  }, [error, networkPassphrase]);
+  const { accountBalances, destinationBalances, assetSelect } = useSelector(
+    transactionSubmissionSelector,
+  );
 
   let balances;
   // path payment destAsset is the only time we use recipient trustlines
