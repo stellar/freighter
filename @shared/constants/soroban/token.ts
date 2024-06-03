@@ -47,8 +47,7 @@ export const DEFAULT_ASSETS_LISTS: AssetsLists = {
       isEnabled: true,
     },
     {
-      url:
-        "https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json",
+      url: "https://raw.githubusercontent.com/soroswap/token-list/main/tokenList.json",
       isEnabled: true,
     },
     {

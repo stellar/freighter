@@ -603,9 +603,8 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
-      const {
-        message = "Freighter was unable to switch to this account",
-      } = action.error;
+      const { message = "Freighter was unable to switch to this account" } =
+        action.error;
 
       return {
         ...state,
@@ -624,9 +623,8 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(updateAccountName.rejected, (state, action) => {
-      const {
-        message = "Freighter was unable update this account's name",
-      } = action.error;
+      const { message = "Freighter was unable update this account's name" } =
+        action.error;
 
       return {
         ...state,
@@ -783,17 +781,13 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(migrateAccounts.fulfilled, (state, action) => {
-      const {
-        publicKey,
-        allAccounts,
-        migratedAccounts,
-        hasPrivateKey,
-      } = action.payload || {
-        publicKey: "",
-        allAccounts: [],
-        migratedAccounts: [],
-        hasPrivateKey: false,
-      };
+      const { publicKey, allAccounts, migratedAccounts, hasPrivateKey } =
+        action.payload || {
+          publicKey: "",
+          allAccounts: [],
+          migratedAccounts: [],
+          hasPrivateKey: false,
+        };
 
       return {
         ...state,

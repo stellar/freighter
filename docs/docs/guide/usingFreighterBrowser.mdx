@@ -3,6 +3,8 @@ id: usingFreighterBrowser
 title: Using Freighter in the browser
 ---
 
+import { VersionedUrl } from "./basics/VersionedUrl";
+
 We now have an extension installed on our machine and a library to interact with it. This library will provide you methods to send and receive data from a user's extension in your website or application.
 
 ### Importing
@@ -13,11 +15,9 @@ First import the library in the `<head>` tag of your page.
 
 _NOTE:_ You must use version `1.1.2` or above
 
-```html
-<head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-freighter-api/{version}/index.min.js"></script>
-</head>
-```
+For example, include the `script` in your `head` tag using the following code:
+
+<VersionedUrl />
 
 This will expose a global variable called `window.freighterApi` that will contain our library.
 

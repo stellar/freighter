@@ -41,7 +41,7 @@ const unverifiedToken =
   "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
 
 const manageAssetsMockBalances = {
-  balances: ({
+  balances: {
     "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
       token: {
         code: "USDC",
@@ -67,7 +67,7 @@ const manageAssetsMockBalances = {
       total: new BigNumber("0"),
       available: new BigNumber("0"),
     },
-  } as any) as Balances,
+  } as any as Balances,
   isFunded: true,
   subentryCount: 1,
   tokensWithNoBalance: [],

@@ -19,7 +19,7 @@ import { Wrapper, mockAccounts } from "../../__testHelpers__";
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 
 export const swapMockBalances = {
-  balances: ({} as any) as Balances,
+  balances: {} as any as Balances,
   isFunded: true,
   subentryCount: 1,
   tokensWithNoBalance: [],
