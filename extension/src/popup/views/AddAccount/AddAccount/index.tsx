@@ -50,9 +50,10 @@ export const AddAccount = () => {
     }
   };
 
-  useEffect(() => () => (dispatch(clearApiError()) as unknown) as void, [
-    dispatch,
-  ]);
+  useEffect(
+    () => () => dispatch(clearApiError()) as unknown as void,
+    [dispatch],
+  );
 
   return (
     <React.Fragment>

@@ -59,13 +59,8 @@ export const ModifyAssetList = ({
         ({ url }) => url === decodedAssetListUrl,
       );
       if (assetsListsSelection) {
-        const {
-          url,
-          name,
-          description,
-          provider,
-          isEnabled,
-        } = assetsListsSelection;
+        const { url, name, description, provider, isEnabled } =
+          assetsListsSelection;
         setAssetListInfo({
           url,
           name,

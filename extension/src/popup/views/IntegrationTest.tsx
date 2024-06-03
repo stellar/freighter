@@ -69,7 +69,7 @@ const testCustomNetwork = {
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: Networks.TESTNET,
 };
-const testBalances = ({
+const testBalances = {
   native: {
     token: { type: "native", code: "XLM" },
   },
@@ -84,7 +84,7 @@ const testBalances = ({
       },
     },
   },
-} as unknown) as Balances;
+} as unknown as Balances;
 
 export const IntegrationTest = () => {
   const [isDone, setIsDone] = useState(false);
@@ -299,7 +299,6 @@ export const IntegrationTest = () => {
         isMemoValidationEnabled: true,
         isSafetyValidationEnabled: true,
         isValidatingSafeAssetsEnabled: true,
-        isExperimentalModeEnabled: true,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
@@ -309,7 +308,6 @@ export const IntegrationTest = () => {
         assertEq(res.isMemoValidationEnabled, true);
         assertEq(res.isSafetyValidationEnabled, true);
         assertEq(res.isValidatingSafeAssetsEnabled, true);
-        assertEq(res.isExperimentalModeEnabled, true);
       });
 
       res = await loadSettings();

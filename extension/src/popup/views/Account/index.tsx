@@ -69,9 +69,8 @@ export const Account = () => {
     transactionSubmissionSelector,
   );
   const accountStatus = useSelector(accountStatusSelector);
-  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
-    false,
-  );
+  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
+    useState(false);
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);

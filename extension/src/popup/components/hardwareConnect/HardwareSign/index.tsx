@@ -17,7 +17,7 @@ import {
   closeHwOverlay,
   addRecentAddress,
 } from "popup/ducks/transactionSubmission";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { settingsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
 
@@ -39,15 +39,15 @@ export const HardwareSign = ({
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
   const [isDetecting, setIsDetecting] = useState(false);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkDetails, isHashSigningEnabled } =
+    useSelector(settingsSelector);
   const {
     hardwareWalletData: { transactionXDR, shouldSubmit },
     transactionData: { destination },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
-  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] = useState(
-    false,
-  );
+  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
+    useState(false);
   const [connectError, setConnectError] = useState("");
   const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
@@ -83,6 +83,7 @@ export const HardwareSign = ({
           publicKey,
           bipPath,
           walletType,
+          isHashSigningEnabled,
         }),
       );
       if (signWithHardwareWallet.fulfilled.match(res)) {
