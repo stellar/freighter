@@ -225,18 +225,30 @@ export const signWithHardwareWallet = createAsyncThunk<
     publicKey: string;
     bipPath: string;
     walletType: ConfigurableWalletType;
+    isHashSigningEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "signWithHardwareWallet",
   async (
-    { transactionXDR, networkPassphrase, publicKey, bipPath, walletType },
+    {
+      transactionXDR,
+      networkPassphrase,
+      publicKey,
+      bipPath,
+      walletType,
+      isHashSigningEnabled,
+    },
     thunkApi,
   ) => {
     try {
       const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
-      const signature = await hardwareSign[walletType]({ bipPath, tx });
+      const signature = await hardwareSign[walletType]({
+        bipPath,
+        tx,
+        isHashSigningEnabled,
+      });
 
       const keypair = Keypair.fromPublicKey(publicKey);
       const decoratedSignature = new xdr.DecoratedSignature({
