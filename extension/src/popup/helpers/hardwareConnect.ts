@@ -62,6 +62,7 @@ export const getWalletPublicKey: GetWalletPublicKey = {
 interface HardwareSignParams {
   bipPath?: string;
   tx: Transaction<Memo<MemoType>, Operation[]> | FeeBumpTransaction;
+  isHashSigningEnabled?: boolean;
 }
 
 type HardwareSign = {
@@ -78,10 +79,20 @@ type HardwareSign = {
  * @returns {Buffer} A signature that will be added to the Transaction.
  */
 export const hardwareSign: HardwareSign = {
-  [WalletType.LEDGER]: async ({ bipPath = "", tx }: HardwareSignParams) => {
+  [WalletType.LEDGER]: async ({
+    bipPath = "",
+    tx,
+    isHashSigningEnabled,
+  }: HardwareSignParams) => {
     const transport = await TransportWebUSB.create();
     const ledgerApi = new LedgerApi(transport);
-    const result = await ledgerApi.signTransaction(bipPath, tx.signatureBase());
+    let result = { signature: Buffer.from([]) };
+
+    if (isHashSigningEnabled) {
+      result = await ledgerApi.signHash(bipPath, tx.hash());
+    } else {
+      result = await ledgerApi.signTransaction(bipPath, tx.signatureBase());
+    }
     return result.signature;
   },
 };
@@ -158,6 +169,6 @@ export const parseWalletError: ParseWalletError = {
     if (message.indexOf("Transaction approval request was rejected") > -1) {
       return "Transaction Rejected.";
     }
-    return defaultErr;
+    return message;
   },
 };
