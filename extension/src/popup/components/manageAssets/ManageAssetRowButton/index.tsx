@@ -275,6 +275,7 @@ export const ManageAssetRowButton = ({
                 ? `ManageAssetRowButton__ellipsis--is-pending`
                 : ""
             }`}
+            data-testid="ManageAssetRowButton__ellipsis"
             onClick={() => {
               if (!isActionPending) {
                 setRowButtonShowing(

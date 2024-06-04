@@ -152,7 +152,10 @@ export const TrustlineError = () => {
   return isModalShowing
     ? createPortal(
         <div className="TrustlineError">
-          <div className="TrustlineError__inset">
+          <div
+            className="TrustlineError__inset"
+            data-testid="TrutlineError__error"
+          >
             <RenderedError
               errorState={errorState}
               assetBalance={assetBalance}

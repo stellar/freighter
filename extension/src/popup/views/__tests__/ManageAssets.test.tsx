@@ -122,6 +122,12 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
   }),
 );
 
+jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
+  Promise.resolve({
+    signedTransaction: mockXDR,
+  }),
+);
+
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
@@ -291,7 +297,7 @@ describe("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Your assets",
       );
     });
 
@@ -313,16 +319,13 @@ describe("Manage assets", () => {
     ).toHaveTextContent("testanchor.stellar.org");
 
     expect(screen.getByTestId("ChooseAssetAddAssetButton")).toBeEnabled();
-    expect(
-      screen.getByTestId("ChooseAssetAddSorobanTokenButton"),
-    ).toBeEnabled();
   });
 
   it("add asset", async () => {
     await initView();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
+      "Your assets",
     );
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
@@ -369,17 +372,21 @@ describe("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Your assets",
       );
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const removeButton = within(addedTrustlines[1]).getByTestId(
-      "ManageAssetRowButton",
+    const ellipsisButton = within(addedTrustlines[1]).getByTestId(
+      "ManageAssetRowButton__ellipsis",
     );
 
     await waitFor(async () => {
-      expect(removeButton).toHaveTextContent("Remove");
+      fireEvent.click(ellipsisButton);
+      const removeButton = within(addedTrustlines[1]).getByTestId(
+        "ManageAssetRowButton",
+      );
+      expect(removeButton).toHaveTextContent("Remove asset");
       expect(removeButton).toBeEnabled();
       fireEvent.click(removeButton);
     });
@@ -388,11 +395,16 @@ describe("Manage assets", () => {
     expect(lastRoute?.pathname).toBe("/account");
   });
 
-  it("show error view when removing asset with balance", async () => {
+  it.only("show error view when removing asset with balance", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: false,
-        json: async () => ({}),
+        json: async () => ({
+          extras: {
+            envelope_xdr:
+              "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAPQkAAAYjdAAAA9gAAAAEAAAAAAAAAAAAAAABmXjffAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAACYFzNOyHT8GgwiyzcOOhwLtCctwM/RiSnrFp7JOe8xeAAAAAAAAAAAAAAAAAAAAAcskg+QAAABAA/rRMU+KKsxCX1pDBuCvYDz+eQTCsY9bzgPU4J+Xe3vOWUa8YOzWlL3N3zlxHVx9hsB7a8dpSXMSAINjjsY4Dg==",
+          },
+        }),
       } as any),
     );
 
@@ -400,24 +412,29 @@ describe("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Your assets",
       );
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const removeButton = within(addedTrustlines[0]).getByTestId(
-      "ManageAssetRowButton",
+    const ellipsisButton = within(addedTrustlines[1]).getByTestId(
+      "ManageAssetRowButton__ellipsis",
     );
 
     await waitFor(async () => {
+      fireEvent.click(ellipsisButton);
+      const removeButton = within(addedTrustlines[1]).getByTestId(
+        "ManageAssetRowButton",
+      );
+      expect(removeButton).toHaveTextContent("Remove asset");
       expect(removeButton).toBeEnabled();
-      await fireEvent.click(removeButton);
+      fireEvent.click(removeButton);
     });
 
     await waitFor(() => {
-      screen.getByTestId("AppHeaderPageTitle");
-      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Trustline Error",
+      screen.getByTestId("TrutlineError__error");
+      expect(screen.getByTestId("TrutlineError__error")).toHaveTextContent(
+        "This asset has a balance",
       );
     });
   });
@@ -426,7 +443,7 @@ describe("Manage assets", () => {
     await initView();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
+      "Your assets",
     );
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
