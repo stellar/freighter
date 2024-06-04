@@ -45,6 +45,7 @@ const dataStorageAccess = (storageApi: DataStorage.StorageOption) => {
       await store.setItem({ [keyId]: value });
     },
     clear: () => store.clear(),
+    remove: (keys: string | string[]) => store.remove(keys),
   };
 };
 
