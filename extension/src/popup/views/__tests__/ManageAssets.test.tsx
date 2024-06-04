@@ -5,7 +5,6 @@ import {
   fireEvent,
   screen,
   within,
-  getByTestId,
 } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
