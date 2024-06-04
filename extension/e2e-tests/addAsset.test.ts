@@ -69,4 +69,12 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
   });
   await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toBeVisible();
+
+  await page.getByText("Manage Assets").click({ force: true });
+  await page
+    .getByTestId("ManageAssetRowButton__ellipsis")
+    .click({ force: true });
+  await page.getByText("Remove asset").click({ force: true });
+
+  await expect(page.getByTestId("account-view")).toBeVisible();
 });

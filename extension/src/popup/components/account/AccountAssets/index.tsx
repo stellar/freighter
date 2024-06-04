@@ -232,7 +232,6 @@ export const AccountAssets = ({
 
         return (
           <div
-            data-testid="account-assets"
             className={`AccountAssets__asset ${
               setSelectedAsset && !isLP
                 ? "AccountAssets__asset--has-detail"
