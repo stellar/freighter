@@ -22,12 +22,6 @@ jobs:
           file: ./extension/package.json
           field: version
           value: ${{ github.event.inputs.version }}
-      - name: Update manifest-v2.json version_name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-        with:
-          file: ./extension/public/static/manifest/v2.json
-          field: version_name
-          value: ${{ github.event.inputs.version }}
       - name: Update manifest-v3.json version_name
         uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
         with:
@@ -41,12 +35,6 @@ jobs:
           string: ${{ github.event.inputs.version }}
           pattern: \-(.*)
           replace-with: ""
-      - name: Update manifest-v2.json version
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
-        with:
-          file: ./extension/public/static/manifest/v2.json
-          field: version
-          value: ${{ steps.manifest_version.outputs.replaced }}
       - name: Update manifest-v3.json version
         uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
         with:
@@ -63,51 +51,59 @@ jobs:
       - name: Zip extension build
         run: zip -qq -r ./build.zip *
         working-directory: ./extension/build
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
-          git tag ${{ github.event.inputs.version }}
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
+      # - name: Commit files
+      #   run: |
+      #     git config --local user.email "action@github.com"
+      #     git config --local user.name "GitHub Action"
+      #     git add -A
+      #     git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
+      #     git tag ${{ github.event.inputs.version }}
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
+      #   with:
+      #     title: Bump versions to ${{ github.event.inputs.version }}
+      # - name: Create GitHub Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     tag_name: ${{ github.event.inputs.version }}
+      #     release_name: ${{ github.event.inputs.version }}
+      #     body: ${{ github.event.inputs.version }}
+      #     draft: false
+      #     prerelease: false
+      # - name: Upload Release Asset
+      #   id: upload-release-asset
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./extension/build/build.zip
+      #     asset_name: build-${{ github.event.inputs.version }}.zip
+      #     asset_content_type: application/zip
+      # - name: Submit extension to Firefox
+      #   uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
+      #   with:
+      #     cmd: sign
+      #     source: ./extension/build/build.zip
+      #     channel: listed
+      #     apiKey: ${{ secrets.AMO_SIGN_KEY }}
+      #     apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
+      #     timeout: 900000
+      - name: Remove scripts tag
+        uses: restackio/update-json-file-action@617c86c20c3aea91b8438987dcef1e498e45a651 #v2.1
         with:
-          title: Bump versions to ${{ github.event.inputs.version }}
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          release_name: ${{ github.event.inputs.version }}
-          body: ${{ github.event.inputs.version }}
-          draft: false
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./extension/build/build.zip
-          asset_name: build-${{ github.event.inputs.version }}.zip
-          asset_content_type: application/zip
-      - name: Submit extension to Firefox
-        uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
-        with:
-          cmd: sign
-          source: ./extension/build/build.zip
-          channel: listed
-          apiKey: ${{ secrets.AMO_SIGN_KEY }}
-          apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
-          timeout: 900000
+          file: ./extension/build/manifest.json
+          fields: "{'background': {'service_worker': 'background.min.js'}}"
+      - name: Zip Chrome build
+        run: zip -qq -r ./build_chrome.zip *
+        working-directory: ./extension/build
       - name: Submit extension to Chrome
         uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
         with:
-          file-path: ./extension/build/build.zip
+          file-path: ./extension/build/build_chrome.zip
           extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
