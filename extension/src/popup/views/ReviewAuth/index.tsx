@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
+import * as Sentry from "@sentry/browser";
 import {
   MemoType,
   Operation,
@@ -13,7 +14,8 @@ import { useSelector } from "react-redux";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
-import { getTokenDetails } from "@shared/api/internal";
+import { getIsTokenSpec, getTokenDetails } from "@shared/api/internal";
+import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -37,7 +39,6 @@ import {
   buildInvocationTree,
   formatTokenAmount,
   getInvocationDetails,
-  pickTransfers,
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
@@ -330,6 +331,10 @@ const AuthDetail = ({
 }) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [authTransfers, setAuthTransfers] = React.useState(
+    [] as TokenArgsDisplay[],
+  );
+  const [isCheckingTransfers, setCheckingTransfers] = React.useState(true);
 
   const { t } = useTranslation();
   const rootInvocation = authEntry.rootInvocation();
@@ -346,18 +351,72 @@ const AuthDetail = ({
 
   const rootJson = buildInvocationTree(rootInvocation);
   const isInvokeContract = rootInvocation.function().switch().value === 0;
-  const transfers = isInvokeContract ? pickTransfers(rootJson) : [];
+
+  const rootJsonDepKey = JSON.stringify(
+    rootJson,
+    (_, val) => (typeof val === "bigint" ? val.toString() : val),
+    2,
+  );
+  React.useEffect(() => {
+    async function getIsToken() {
+      try {
+        const transfers = [];
+        const isToken = await getIsTokenSpec({
+          contractId: rootJson.args.source,
+          networkDetails,
+        });
+        if (isToken && rootJson.args.function === "transfer") {
+          transfers.push({
+            contractId: rootJson.args.source as string,
+            amount: rootJson.args.args[2].toString() as string,
+            to: rootJson.args.args[1] as string,
+            from: rootJson.args.args[0] as string,
+          });
+        }
+        // check for sub transfers
+        // eslint-disable-next-line no-restricted-syntax
+        for (const subInvocation of rootJson.invocations) {
+          const isSubInvokeToken = await getIsTokenSpec({
+            contractId: subInvocation.args.source,
+            networkDetails,
+          });
+          if (isSubInvokeToken && subInvocation.args.function === "transfer") {
+            transfers.push({
+              contractId: subInvocation.args.source as string,
+              amount: subInvocation.args.args[2].toString() as string,
+              to: subInvocation.args.args[1] as string,
+              from: subInvocation.args.args[0] as string,
+            });
+          }
+        }
+        setAuthTransfers(transfers);
+        setCheckingTransfers(false);
+      } catch (error) {
+        console.error(error);
+        Sentry.captureException(
+          `Failed to check spec for invocation -  ${rootJsonDepKey}`,
+        );
+        setCheckingTransfers(false);
+      }
+    }
+    if (isInvokeContract) {
+      getIsToken();
+    } else {
+      setCheckingTransfers(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInvokeContract, rootJsonDepKey]);
 
   const [tokenDetails, setTokenDetails] = React.useState({} as TokenDetailMap);
 
-  const transfersDepKey = JSON.stringify(transfers);
+  const transfersDepKey = JSON.stringify(authTransfers);
   React.useEffect(() => {
     async function _getTokenDetails() {
       setLoading(true);
       const _tokenDetails = {} as TokenDetailMap;
 
       // eslint-disable-next-line
-      for (const transfer of transfers) {
+      for (const transfer of authTransfers) {
         try {
           // eslint-disable-next-line
           const tokenDetailsResponse = await getTokenDetails({
@@ -395,19 +454,19 @@ const AuthDetail = ({
 
   return (
     <div className="AuthDetail">
-      {isLoading ? (
+      {isLoading || isCheckingTransfers ? (
         <div className="AuthDetail__loader">
           <Loader size="3rem" />
         </div>
       ) : (
         <>
-          <TransferWarning authEntry={authEntry} />
-          <UnverifiedTokenTransferWarning details={invocations} />
+          <TransferWarning transfers={authTransfers} />
+          <UnverifiedTokenTransferWarning transfers={authTransfers} />
           {authEntry.credentials().switch() ===
             xdr.SorobanCredentialsType.sorobanCredentialsSourceAccount() && (
             <InvokerAuthWarning />
           )}
-          {transfers.map((transfer) => (
+          {authTransfers.map((transfer) => (
             <TransferSummary
               key={JSON.stringify(transfer)}
               transfer={transfer}
