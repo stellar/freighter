@@ -12,8 +12,9 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
     page,
     screenshot: "manage-assets-page.png",
   });
-  await expect(page.getByText("Choose Asset")).toBeVisible();
-  await page.getByText("Add Soroban token").click({ force: true });
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await page.getByText("Add an asset").click({ force: true });
+  await page.getByText("Add manually").click({ force: true });
   await page
     .getByTestId("search-token-input")
     .fill("CAEOFUGMYLPQ7EGALPNB65N47EWSXLWMW6OWMRUQSQHBNSEIKQD2NCKV");
@@ -47,8 +48,9 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
   await page.getByPlaceholder("Enter password").fill(PASSWORD);
   await page.getByText("Log In").click({ force: true });
 
-  await expect(page.getByText("Choose Asset")).toBeVisible();
-  await page.getByText("Add Soroban token").click({ force: true });
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await page.getByText("Add an asset").click({ force: true });
+  await page.getByText("Add manually").click({ force: true });
   await page.getByTestId("search-token-input").fill(verifiedToken);
   await expect(page.getByTestId("asset-notification")).toHaveText(
     "On your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
