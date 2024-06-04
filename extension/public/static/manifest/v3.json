@@ -11,9 +11,7 @@
   },
   "background": {
     "service_worker": "background.min.js",
-    "scripts": [
-      "background.min.js"
-    ]
+    "scripts": ["background.min.js"]
   },
   "content_scripts": [
     {
