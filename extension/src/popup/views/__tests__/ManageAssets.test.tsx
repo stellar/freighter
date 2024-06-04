@@ -5,6 +5,7 @@ import {
   fireEvent,
   screen,
   within,
+  getByTestId,
 } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
@@ -223,6 +224,7 @@ jest.mock("stellar-sdk", () => {
       },
     },
     SorobanRpc: original.SorobanRpc,
+    TransactionBuilder: original.TransactionBuilder,
   };
 });
 
@@ -395,7 +397,7 @@ describe("Manage assets", () => {
     expect(lastRoute?.pathname).toBe("/account");
   });
 
-  it.only("show error view when removing asset with balance", async () => {
+  it("show error view when removing asset with balance", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: false,
@@ -403,6 +405,7 @@ describe("Manage assets", () => {
           extras: {
             envelope_xdr:
               "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAPQkAAAYjdAAAA9gAAAAEAAAAAAAAAAAAAAABmXjffAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAACYFzNOyHT8GgwiyzcOOhwLtCctwM/RiSnrFp7JOe8xeAAAAAAAAAAAAAAAAAAAAAcskg+QAAABAA/rRMU+KKsxCX1pDBuCvYDz+eQTCsY9bzgPU4J+Xe3vOWUa8YOzWlL3N3zlxHVx9hsB7a8dpSXMSAINjjsY4Dg==",
+            result_codes: { operations: ["op_invalid_limit"] },
           },
         }),
       } as any),
@@ -502,19 +505,19 @@ describe("Manage assets", () => {
     await initView(false, true);
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Choose Asset",
+      "Your assets",
     );
 
-    const addTokenButton = screen.getByTestId(
-      "ChooseAssetAddSorobanTokenButton",
-    );
+    const addTokenButton = screen.getByTestId("ChooseAssetAddAssetButton");
     expect(addTokenButton).toBeEnabled();
     await fireEvent.click(addTokenButton);
+
+    await fireEvent.click(screen.getByTestId("SearchAsset__add-manually"));
 
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Add a Soroban token by ID",
+        "Add by address",
       );
 
       const searchInput = screen.getByTestId("search-token-input");
@@ -550,16 +553,16 @@ describe("Manage assets", () => {
     // init Mainnet view
     await initView(false, true);
 
-    const addTokenButton = screen.getByTestId(
-      "ChooseAssetAddSorobanTokenButton",
-    );
+    const addTokenButton = screen.getByTestId("ChooseAssetAddAssetButton");
     expect(addTokenButton).toBeEnabled();
     await fireEvent.click(addTokenButton);
+
+    await fireEvent.click(screen.getByTestId("SearchAsset__add-manually"));
 
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Add a Soroban token by ID",
+        "Add by address",
       );
 
       const searchInput = screen.getByTestId("search-token-input");

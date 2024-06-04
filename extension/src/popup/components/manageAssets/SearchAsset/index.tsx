@@ -132,7 +132,12 @@ export const SearchAsset = () => {
               contentFooter={
                 <div>
                   <Link to={ROUTES.addAsset}>
-                    <Button size="md" isFullWidth variant="secondary">
+                    <Button
+                      size="md"
+                      isFullWidth
+                      variant="secondary"
+                      data-testid="SearchAsset__add-manually"
+                    >
                       {t("Add manually")}
                     </Button>
                   </Link>
