@@ -10,13 +10,12 @@ import {
   Operation,
   Horizon,
   TransactionBuilder,
-  Networks,
-  xdr,
 } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
 import { ActionStatus } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
+import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
 import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
 
@@ -36,18 +35,17 @@ import {
   NewAssetFlags,
 } from "popup/components/manageAssets/ManageAssetRows";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
+import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
-  addTokenId,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
-import { pickTransfers, buildInvocationTree } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
@@ -55,10 +53,7 @@ import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
-import {
-  getVerifiedTokens,
-  VerifiedTokenRecord,
-} from "popup/helpers/searchAsset";
+import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -305,6 +300,7 @@ export const ScamAssetWarning = ({
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const closeOverlay = () => {
     if (warningRef.current) {
@@ -371,7 +367,7 @@ export const ScamAssetWarning = ({
           navigateTo(ROUTES.account);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
-          navigateTo(ROUTES.trustlineError);
+          setIsTrustlineErrorShowing(true);
         }
       }
     }
@@ -477,6 +473,12 @@ export const ScamAssetWarning = ({
           </div>
         </div>
       </View.Content>
+      {isTrustlineErrorShowing
+        ? createPortal(
+            <TrustlineError />,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </div>
   );
 };
@@ -504,6 +506,7 @@ export const NewAssetWarning = ({
   const publicKey = useSelector(publicKeySelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
 
@@ -575,7 +578,7 @@ export const NewAssetWarning = ({
           navigateTo(ROUTES.account);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
-          navigateTo(ROUTES.trustlineError);
+          setIsTrustlineErrorShowing(true);
         }
       }
     }
@@ -685,6 +688,12 @@ export const NewAssetWarning = ({
           </div>
         </div>
       </View.Content>
+      {isTrustlineErrorShowing
+        ? createPortal(
+            <TrustlineError />,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </div>
   );
 };
@@ -705,23 +714,20 @@ export const UnverifiedTokenNotification = () => {
 export const TokenWarning = ({
   domain,
   code,
-  issuer,
   onClose,
   isVerifiedToken,
   verifiedLists = [],
+  handleAddToken,
 }: {
   domain: string;
   code: string;
-  issuer: string;
   onClose: () => void;
   isVerifiedToken: boolean;
   verifiedLists?: string[];
+  handleAddToken: null | (() => Promise<void>);
 }) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
   const warningRef = useRef<HTMLDivElement>(null);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const publicKey = useSelector(publicKeySelector);
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -750,14 +756,9 @@ export const TokenWarning = ({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    await dispatch(
-      addTokenId({
-        publicKey,
-        tokenId: issuer,
-        network: networkDetails.network as Networks,
-      }),
-    );
-    navigateTo(ROUTES.account);
+    if (handleAddToken) {
+      await handleAddToken();
+    }
 
     setIsSubmitting(false);
   };
@@ -868,16 +869,11 @@ export const TokenWarning = ({
 };
 
 export const TransferWarning = ({
-  authEntry,
+  transfers,
 }: {
-  authEntry: xdr.SorobanAuthorizationEntry;
+  transfers: TokenArgsDisplay[];
 }) => {
   const { t } = useTranslation();
-
-  const rootInvocation = authEntry.rootInvocation();
-  const rootJson = buildInvocationTree(rootInvocation);
-  const isInvokeContract = rootInvocation.function().switch().value === 0;
-  const transfers = isInvokeContract ? pickTransfers(rootJson) : [];
 
   if (!transfers.length) {
     return null;
@@ -926,9 +922,9 @@ export const InvokerAuthWarning = () => {
 };
 
 export const UnverifiedTokenTransferWarning = ({
-  details,
+  transfers,
 }: {
-  details: { contractId: string }[];
+  transfers: TokenArgsDisplay[];
 }) => {
   const { t } = useTranslation();
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
@@ -939,25 +935,22 @@ export const UnverifiedTokenTransferWarning = ({
       return;
     }
     const fetchVerifiedTokens = async () => {
-      let verifiedTokens = [] as VerifiedTokenRecord[];
-
       // eslint-disable-next-line
-      for (let j = 0; j < details.length; j += 1) {
-        const c = details[j].contractId;
-        verifiedTokens = await getVerifiedTokens({
+      for (let j = 0; j < transfers.length; j += 1) {
+        const c = transfers[j].contractId;
+        const verifiedTokens = await getVerifiedTokens({
           contractId: c,
           networkDetails,
           assetsLists,
         });
-      }
-
-      if (!verifiedTokens.length) {
-        setIsUnverifiedToken(true);
+        if (!verifiedTokens.length) {
+          setIsUnverifiedToken(true);
+        }
       }
     };
 
     fetchVerifiedTokens();
-  }, [networkDetails, details, assetsLists]);
+  }, [networkDetails, transfers, assetsLists]);
 
   return isUnverifiedToken ? (
     <WarningMessage

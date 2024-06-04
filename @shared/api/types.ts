@@ -49,6 +49,7 @@ export interface Response {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
   userNotification: UserNotification;
@@ -56,6 +57,7 @@ export interface Response {
   assetsList: AssetsListItem;
   isDeleteAssetsList: boolean;
   settingsState: SettingsState;
+  experimentalFeaturesState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
@@ -142,7 +144,14 @@ export interface Preferences {
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   error: string;
+}
+
+export interface ExperimentalFeatures {
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  experimentalFeaturesState: SettingsState;
 }
 
 export enum SettingsState {

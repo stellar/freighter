@@ -296,6 +296,14 @@ export const freighterApiMessageListener = (
           }),
         );
       }
+
+      // reject if not b64 encoded
+      try {
+        atob(blob);
+      } catch (error) {
+        resolve({ error: "encoding error: blob should be base64 encoded" });
+      }
+
       const response = (signedBlob: string) => {
         if (signedBlob) {
           if (!isDomainListedAllowed) {

@@ -6,7 +6,12 @@ import {
   TimeoutInfinite,
   xdr,
 } from "stellar-sdk";
+import { buildSorobanServer } from "@shared/helpers/soroban/server";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { INDEXER_URL } from "@shared/constants/mercury";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 import { simulateTx } from "./server";
+import { SorobanRpcNotSupportedError } from "../../constants/errors";
 
 export const transfer = (
   contractId: string,
@@ -90,4 +95,59 @@ export const getSymbol = async (
 
   const result = await simulateTx<string>(tx, server);
   return result;
+};
+
+// TODO: move this to TS Wallet SDK Soroban
+export const isSacContractExecutable = async (
+  contractId: string,
+  networkDetails: NetworkDetails,
+) => {
+  if (isCustomNetwork(networkDetails)) {
+    // verify the contract executable in the instance entry
+    // The SAC has a unique contract executable type
+
+    if (!networkDetails.sorobanRpcUrl) {
+      throw new SorobanRpcNotSupportedError();
+    }
+
+    const server = buildSorobanServer(
+      networkDetails.sorobanRpcUrl || "",
+      networkDetails.networkPassphrase,
+    );
+
+    const instance = new Contract(contractId).getFootprint();
+    const ledgerKeyContractCode = instance.toXDR("base64");
+
+    const { entries } = await server.getLedgerEntries(
+      xdr.LedgerKey.fromXDR(ledgerKeyContractCode, "base64"),
+    );
+
+    if (entries && entries.length) {
+      const parsed = entries[0].val;
+      const executable = parsed.contractData().val().instance().executable();
+
+      return (
+        executable.switch().name ===
+        xdr.ContractExecutableType.contractExecutableStellarAsset().name
+      );
+    }
+    throw new Error("Contract not found in the ledger entries");
+  }
+
+  try {
+    const url = new URL(
+      `${INDEXER_URL}/is-sac-contract/${contractId}?network=${networkDetails.network}`,
+    );
+    const response = await fetch(url.href);
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data);
+    }
+
+    return data.isSacContract;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
 };
