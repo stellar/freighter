@@ -36,6 +36,28 @@ interface RenderedErrorProps {
   buyingLiabilities: number;
 }
 
+const mapErrorToErrorState = (
+  { operations = [] }: MapErrorToErrorState,
+  buyingLiabilities: number,
+) => {
+  if (operations.includes(RESULT_CODES.op_invalid_limit)) {
+    if (buyingLiabilities) {
+      emitMetric(METRIC_NAMES.trustlineErrorBuyingLiability);
+      return TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES;
+    }
+
+    emitMetric(METRIC_NAMES.trustlineErrorHasBalance);
+    return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
+  }
+
+  if (operations.includes(RESULT_CODES.op_low_reserve)) {
+    emitMetric(METRIC_NAMES.trustlineErrorLowReserve);
+    return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
+  }
+
+  return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
+};
+
 const RenderedError = ({
   errorState,
   assetBalance,
@@ -108,28 +130,6 @@ const RenderedError = ({
         </>
       );
   }
-};
-
-const mapErrorToErrorState = (
-  { operations = [] }: MapErrorToErrorState,
-  buyingLiabilities: number,
-) => {
-  if (operations.includes(RESULT_CODES.op_invalid_limit)) {
-    if (buyingLiabilities) {
-      emitMetric(METRIC_NAMES.trustlineErrorBuyingLiability);
-      return TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES;
-    }
-
-    emitMetric(METRIC_NAMES.trustlineErrorHasBalance);
-    return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
-  }
-
-  if (operations.includes(RESULT_CODES.op_low_reserve)) {
-    emitMetric(METRIC_NAMES.trustlineErrorLowReserve);
-    return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
-  }
-
-  return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 };
 
 export const TrustlineError = () => {
