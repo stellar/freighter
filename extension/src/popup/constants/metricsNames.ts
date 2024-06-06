@@ -155,4 +155,11 @@ export const METRIC_NAMES = {
   rejectSigning: "user cancelled signing flow",
   approveSign: "user signed transaction",
   reviewedAuthEntry: "reviewed authorization entry",
+
+  trustlineErrorBuyingLiability:
+    "trustline removal error: asset has buying liabilties",
+  trustlineErrorSellingLiability:
+    "trustline removal error: asset has selling liabilties",
+  trustlineErrorHasBalance: "trustline removal error: asset has balance",
+  trustlineErrorLowReserve: "trustline removal error: asset has low reserve",
 };

@@ -21,6 +21,8 @@ export enum TRUSTLINE_ERROR_STATES {
   UNKNOWN_ERROR = "UNKNOWN_ERROR",
   NOT_ENOUGH_LUMENS = "NOT_ENOUGH_LUMENS",
   ASSET_HAS_BALANCE = "ASSET_HAS_BALANCE",
+  ASSET_HAS_BUYING_LIABILITIES = "ASSET_HAS_BUYING_LIABILITIES",
+  ASSET_HAS_SELLING_LIABILITIES = "ASSET_HAS_SELLING_LIABILITIES",
 }
 
 interface MapErrorToErrorState {
@@ -28,28 +30,20 @@ interface MapErrorToErrorState {
   transaction: string;
 }
 
-const mapErrorToErrorState = ({ operations = [] }: MapErrorToErrorState) => {
-  if (operations.includes(RESULT_CODES.op_invalid_limit)) {
-    return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
-  }
-
-  if (operations.includes(RESULT_CODES.op_low_reserve)) {
-    return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
-  }
-
-  return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
-};
-
 interface RenderedErrorProps {
   errorState: TRUSTLINE_ERROR_STATES;
   assetBalance: string;
   resultCodes: string;
+  buyingLiabilities: number;
+  sellingLiabilties: number;
 }
 
 const RenderedError = ({
   errorState,
   assetBalance,
   resultCodes,
+  buyingLiabilities,
+  sellingLiabilties,
 }: RenderedErrorProps) => {
   const { t } = useTranslation();
 
@@ -85,6 +79,32 @@ const RenderedError = ({
           </div>
         </>
       );
+    case TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES:
+      return (
+        <>
+          <div className="TrustlineError__title">
+            {t("This asset has buying liabilities")}
+          </div>
+          <div className="TrustlineError__body">
+            {t("You still have a buying liability of")} {buyingLiabilities}.{" "}
+            {t("You must have a buying liability of")} 0{" "}
+            {t("in order to remove an asset.")}
+          </div>
+        </>
+      );
+    case TRUSTLINE_ERROR_STATES.ASSET_HAS_SELLING_LIABILITIES:
+      return (
+        <>
+          <div className="TrustlineError__title">
+            {t("This asset has selling liabilities")}
+          </div>
+          <div className="TrustlineError__body">
+            {t("You still have a selling liability of")} {sellingLiabilties}.{" "}
+            {t("You must have a selling liability of")} 0{" "}
+            {t("in order to remove an asset.")}
+          </div>
+        </>
+      );
     case TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR:
     default:
       return (
@@ -100,11 +120,41 @@ const RenderedError = ({
   }
 };
 
+const mapErrorToErrorState = (
+  { operations = [] }: MapErrorToErrorState,
+  buyingLiabilities: number,
+  sellingLiabilities: number,
+) => {
+  if (operations.includes(RESULT_CODES.op_invalid_limit)) {
+    if (buyingLiabilities) {
+      emitMetric(METRIC_NAMES.trustlineErrorBuyingLiability);
+      return TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES;
+    }
+
+    if (sellingLiabilities) {
+      emitMetric(METRIC_NAMES.trustlineErrorSellingLiability);
+      return TRUSTLINE_ERROR_STATES.ASSET_HAS_SELLING_LIABILITIES;
+    }
+    emitMetric(METRIC_NAMES.trustlineErrorHasBalance);
+    return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
+  }
+
+  if (operations.includes(RESULT_CODES.op_low_reserve)) {
+    emitMetric(METRIC_NAMES.trustlineErrorLowReserve);
+    return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
+  }
+
+  return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
+};
+
 export const TrustlineError = () => {
   const { t } = useTranslation();
   const { accountBalances, error } = useSelector(transactionSubmissionSelector);
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [assetBalance, setAssetBalance] = useState("");
+  const [buyingLiabilities, setBuyingLiabilities] = useState(0);
+  const [sellingLiabilities, setSellingLiabilities] = useState(0);
+
   const [isModalShowing, setIsModalShowing] = useState(true);
 
   useEffect(() => {
@@ -130,10 +180,14 @@ export const TrustlineError = () => {
         if ("line" in op) {
           const { code, issuer } = op.line as Asset;
           const asset = `${code}:${issuer}`;
-          const balance = accountBalances?.balances?.[asset] || {
-            available: "",
-            token: { code: "" },
-          };
+          const balance = accountBalances?.balances?.[asset];
+
+          if (!balance) {
+            return;
+          }
+
+          setSellingLiabilities(Number(balance.sellingLiabilities));
+          setBuyingLiabilities(Number(balance.buyingLiabilities));
 
           setAssetBalance(
             `${new BigNumber(balance.available).toString()} ${
@@ -146,7 +200,11 @@ export const TrustlineError = () => {
   }, [accountBalances, error, networkPassphrase]);
 
   const errorState: TRUSTLINE_ERROR_STATES = error
-    ? mapErrorToErrorState(getResultCodes(error))
+    ? mapErrorToErrorState(
+        getResultCodes(error),
+        buyingLiabilities,
+        sellingLiabilities,
+      )
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return isModalShowing
@@ -160,6 +218,8 @@ export const TrustlineError = () => {
               errorState={errorState}
               assetBalance={assetBalance}
               resultCodes={JSON.stringify(getResultCodes(error))}
+              buyingLiabilities={buyingLiabilities}
+              sellingLiabilties={sellingLiabilities}
             />
             <div>
               <Button
