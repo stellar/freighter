@@ -35,7 +35,6 @@ interface RenderedErrorProps {
   assetBalance: string;
   resultCodes: string;
   buyingLiabilities: number;
-  sellingLiabilties: number;
 }
 
 const RenderedError = ({
@@ -43,7 +42,6 @@ const RenderedError = ({
   assetBalance,
   resultCodes,
   buyingLiabilities,
-  sellingLiabilties,
 }: RenderedErrorProps) => {
   const { t } = useTranslation();
 
@@ -72,7 +70,10 @@ const RenderedError = ({
           <div className="TrustlineError__title">
             {t("This asset has a balance")}
           </div>
-          <div className="TrustlineError__body">
+          <div
+            className="TrustlineError__body"
+            data-testid="TrustlineError__body"
+          >
             {t("You still have a balance of")} {assetBalance}.{" "}
             {t("You must have a balance of")} 0{" "}
             {t("in order to remove an asset.")}
@@ -85,22 +86,12 @@ const RenderedError = ({
           <div className="TrustlineError__title">
             {t("This asset has buying liabilities")}
           </div>
-          <div className="TrustlineError__body">
+          <div
+            className="TrustlineError__body"
+            data-testid="TrustlineError__body"
+          >
             {t("You still have a buying liability of")} {buyingLiabilities}.{" "}
             {t("You must have a buying liability of")} 0{" "}
-            {t("in order to remove an asset.")}
-          </div>
-        </>
-      );
-    case TRUSTLINE_ERROR_STATES.ASSET_HAS_SELLING_LIABILITIES:
-      return (
-        <>
-          <div className="TrustlineError__title">
-            {t("This asset has selling liabilities")}
-          </div>
-          <div className="TrustlineError__body">
-            {t("You still have a selling liability of")} {sellingLiabilties}.{" "}
-            {t("You must have a selling liability of")} 0{" "}
             {t("in order to remove an asset.")}
           </div>
         </>
@@ -123,7 +114,6 @@ const RenderedError = ({
 const mapErrorToErrorState = (
   { operations = [] }: MapErrorToErrorState,
   buyingLiabilities: number,
-  sellingLiabilities: number,
 ) => {
   if (operations.includes(RESULT_CODES.op_invalid_limit)) {
     if (buyingLiabilities) {
@@ -131,10 +121,6 @@ const mapErrorToErrorState = (
       return TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES;
     }
 
-    if (sellingLiabilities) {
-      emitMetric(METRIC_NAMES.trustlineErrorSellingLiability);
-      return TRUSTLINE_ERROR_STATES.ASSET_HAS_SELLING_LIABILITIES;
-    }
     emitMetric(METRIC_NAMES.trustlineErrorHasBalance);
     return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
   }
@@ -153,7 +139,6 @@ export const TrustlineError = () => {
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [assetBalance, setAssetBalance] = useState("");
   const [buyingLiabilities, setBuyingLiabilities] = useState(0);
-  const [sellingLiabilities, setSellingLiabilities] = useState(0);
 
   const [isModalShowing, setIsModalShowing] = useState(true);
 
@@ -186,7 +171,6 @@ export const TrustlineError = () => {
             return;
           }
 
-          setSellingLiabilities(Number(balance.sellingLiabilities));
           setBuyingLiabilities(Number(balance.buyingLiabilities));
 
           setAssetBalance(
@@ -200,11 +184,7 @@ export const TrustlineError = () => {
   }, [accountBalances, error, networkPassphrase]);
 
   const errorState: TRUSTLINE_ERROR_STATES = error
-    ? mapErrorToErrorState(
-        getResultCodes(error),
-        buyingLiabilities,
-        sellingLiabilities,
-      )
+    ? mapErrorToErrorState(getResultCodes(error), buyingLiabilities)
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return isModalShowing
@@ -212,14 +192,13 @@ export const TrustlineError = () => {
         <div className="TrustlineError">
           <div
             className="TrustlineError__inset"
-            data-testid="TrutlineError__error"
+            data-testid="TrustlineError__error"
           >
             <RenderedError
               errorState={errorState}
               assetBalance={assetBalance}
               resultCodes={JSON.stringify(getResultCodes(error))}
               buyingLiabilities={buyingLiabilities}
-              sellingLiabilties={sellingLiabilities}
             />
             <div>
               <Button
