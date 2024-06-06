@@ -29,13 +29,6 @@ interface MapErrorToErrorState {
   transaction: string;
 }
 
-interface RenderedErrorProps {
-  errorState: TRUSTLINE_ERROR_STATES;
-  assetBalance: string;
-  resultCodes: string;
-  buyingLiabilities: number;
-}
-
 const mapErrorToErrorState = (
   { operations = [] }: MapErrorToErrorState,
   buyingLiabilities: number,
@@ -57,6 +50,13 @@ const mapErrorToErrorState = (
 
   return TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 };
+
+interface RenderedErrorProps {
+  errorState: TRUSTLINE_ERROR_STATES;
+  assetBalance: string;
+  resultCodes: string;
+  buyingLiabilities: number;
+}
 
 const RenderedError = ({
   errorState,
