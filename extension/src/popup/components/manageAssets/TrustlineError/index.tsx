@@ -21,6 +21,7 @@ export enum TRUSTLINE_ERROR_STATES {
   UNKNOWN_ERROR = "UNKNOWN_ERROR",
   NOT_ENOUGH_LUMENS = "NOT_ENOUGH_LUMENS",
   ASSET_HAS_BALANCE = "ASSET_HAS_BALANCE",
+  ASSET_HAS_BUYING_LIABILITIES = "ASSET_HAS_BUYING_LIABILITIES",
 }
 
 interface MapErrorToErrorState {
@@ -28,12 +29,22 @@ interface MapErrorToErrorState {
   transaction: string;
 }
 
-const mapErrorToErrorState = ({ operations = [] }: MapErrorToErrorState) => {
+const mapErrorToErrorState = (
+  { operations = [] }: MapErrorToErrorState,
+  buyingLiabilities: number,
+) => {
   if (operations.includes(RESULT_CODES.op_invalid_limit)) {
+    if (buyingLiabilities) {
+      emitMetric(METRIC_NAMES.trustlineErrorBuyingLiability);
+      return TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES;
+    }
+
+    emitMetric(METRIC_NAMES.trustlineErrorHasBalance);
     return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
   }
 
   if (operations.includes(RESULT_CODES.op_low_reserve)) {
+    emitMetric(METRIC_NAMES.trustlineErrorLowReserve);
     return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
   }
 
@@ -44,12 +55,14 @@ interface RenderedErrorProps {
   errorState: TRUSTLINE_ERROR_STATES;
   assetBalance: string;
   resultCodes: string;
+  buyingLiabilities: number;
 }
 
 const RenderedError = ({
   errorState,
   assetBalance,
   resultCodes,
+  buyingLiabilities,
 }: RenderedErrorProps) => {
   const { t } = useTranslation();
 
@@ -78,9 +91,28 @@ const RenderedError = ({
           <div className="TrustlineError__title">
             {t("This asset has a balance")}
           </div>
-          <div className="TrustlineError__body">
+          <div
+            className="TrustlineError__body"
+            data-testid="TrustlineError__body"
+          >
             {t("You still have a balance of")} {assetBalance}.{" "}
             {t("You must have a balance of")} 0{" "}
+            {t("in order to remove an asset.")}
+          </div>
+        </>
+      );
+    case TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES:
+      return (
+        <>
+          <div className="TrustlineError__title">
+            {t("This asset has buying liabilities")}
+          </div>
+          <div
+            className="TrustlineError__body"
+            data-testid="TrustlineError__body"
+          >
+            {t("You still have a buying liability of")} {buyingLiabilities}.{" "}
+            {t("You must have a buying liability of")} 0{" "}
             {t("in order to remove an asset.")}
           </div>
         </>
@@ -105,6 +137,8 @@ export const TrustlineError = () => {
   const { accountBalances, error } = useSelector(transactionSubmissionSelector);
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [assetBalance, setAssetBalance] = useState("");
+  const [buyingLiabilities, setBuyingLiabilities] = useState(0);
+
   const [isModalShowing, setIsModalShowing] = useState(true);
 
   useEffect(() => {
@@ -130,10 +164,13 @@ export const TrustlineError = () => {
         if ("line" in op) {
           const { code, issuer } = op.line as Asset;
           const asset = `${code}:${issuer}`;
-          const balance = accountBalances?.balances?.[asset] || {
-            available: "",
-            token: { code: "" },
-          };
+          const balance = accountBalances?.balances?.[asset];
+
+          if (!balance) {
+            return;
+          }
+
+          setBuyingLiabilities(Number(balance.buyingLiabilities));
 
           setAssetBalance(
             `${new BigNumber(balance.available).toString()} ${
@@ -146,7 +183,7 @@ export const TrustlineError = () => {
   }, [accountBalances, error, networkPassphrase]);
 
   const errorState: TRUSTLINE_ERROR_STATES = error
-    ? mapErrorToErrorState(getResultCodes(error))
+    ? mapErrorToErrorState(getResultCodes(error), buyingLiabilities)
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
   return isModalShowing
@@ -154,12 +191,13 @@ export const TrustlineError = () => {
         <div className="TrustlineError">
           <div
             className="TrustlineError__inset"
-            data-testid="TrutlineError__error"
+            data-testid="TrustlineError__error"
           >
             <RenderedError
               errorState={errorState}
               assetBalance={assetBalance}
               resultCodes={JSON.stringify(getResultCodes(error))}
+              buyingLiabilities={buyingLiabilities}
             />
             <div>
               <Button

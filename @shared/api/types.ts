@@ -221,8 +221,8 @@ export interface Balance {
   // for native, it should also subtract the minimumBalance
   available: BigNumber;
   total: BigNumber;
-  buyingLiabilities: BigNumber;
-  sellingLiabilities: BigNumber;
+  buyingLiabilities: string;
+  sellingLiabilities: string;
 }
 
 export interface AssetBalance extends Balance {
