@@ -53,6 +53,8 @@ import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
+import { swap } from "popup/helpers/sorobanSwap";
+
 import "popup/metrics/authServices";
 
 import "./styles.scss";
@@ -132,6 +134,8 @@ export const Account = () => {
       } catch (e) {
         console.error(e);
       }
+
+      await swap();
     };
     fetchAccountHistory();
   }, [publicKey, networkDetails, balances, sortedBalances]);
