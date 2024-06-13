@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Networks, StrKey } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
@@ -29,6 +29,7 @@ import {
   startHwSign,
   removeTokenId,
 } from "popup/ducks/transactionSubmission";
+import { ActionStatus } from "@shared/api/types";
 import { NETWORKS } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 
@@ -85,7 +86,9 @@ export const ManageAssetRowButton = ({
   const { t } = useTranslation();
   const [rowButtonShowing, setRowButtonShowing] = useState("");
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
-  const { blockedDomains } = useSelector(transactionSubmissionSelector);
+  const { blockedDomains, submitStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
   const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -138,10 +141,6 @@ export const ManageAssetRowButton = ({
         trackChangeTrustline();
         dispatch(resetSubmission());
         navigateTo(ROUTES.account);
-      }
-
-      if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setIsTrustlineErrorShowing(true);
       }
     }
   };
@@ -264,6 +263,12 @@ export const ManageAssetRowButton = ({
       navigateTo(ROUTES.account);
     }
   };
+
+  useEffect(() => {
+    if (submitStatus === ActionStatus.ERROR) {
+      setIsTrustlineErrorShowing(true);
+    }
+  }, [submitStatus]);
 
   return (
     <div className="ManageAssetRowButton">

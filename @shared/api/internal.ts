@@ -745,12 +745,12 @@ export const getIsTokenSpec = async ({
     `${INDEXER_URL}/token-spec/${contractId}?network=${networkDetails.network}`,
   );
   const response = await fetch(url.href);
-  const { data, error } = await response.json();
+  const { isSep41Compliant, error } = await response.json();
   if (!response.ok) {
     throw new Error(error);
   }
 
-  return data;
+  return isSep41Compliant;
 };
 
 export const getAccountHistory = async (
