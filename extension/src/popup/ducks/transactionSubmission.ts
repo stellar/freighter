@@ -494,11 +494,13 @@ interface TransactionData {
   memo: string;
   destinationAsset: string;
   destinationAmount: string;
+  destinationIcon: string;
   path: string[];
   allowedSlippage: string;
   isToken: boolean;
   isMergeSelected: boolean;
   balancesToMigrate: BalanceToMigrate[];
+  isSoroswap: boolean;
 }
 
 interface HardwareWalletData {
@@ -558,11 +560,13 @@ export const initialState: InitialState = {
     memo: "",
     destinationAsset: "",
     destinationAmount: "",
+    destinationIcon: "",
     path: [],
     allowedSlippage: "1",
     isToken: false,
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
+    isSoroswap: false,
   },
   transactionSimulation: {
     response: null,
@@ -632,6 +636,12 @@ const transactionSubmissionSlice = createSlice({
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
+    },
+    saveDestinationIcon: (state, action) => {
+      state.transactionData.destinationIcon = action.payload;
+    },
+    saveIsSoroswap: (state, action) => {
+      state.transactionData.isSoroswap = action.payload;
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
@@ -794,6 +804,7 @@ export const {
   saveTransactionTimeout,
   saveMemo,
   saveDestinationAsset,
+  saveDestinationIcon,
   saveAllowedSlippage,
   saveIsToken,
   saveSimulation,

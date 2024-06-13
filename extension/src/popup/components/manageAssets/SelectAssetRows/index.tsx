@@ -7,6 +7,7 @@ import {
   transactionSubmissionSelector,
   saveAsset,
   saveDestinationAsset,
+  saveDestinationIcon,
   saveIsToken,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
@@ -37,6 +38,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     if (!balances) {
       return "";
     }
+    console.log(canonical);
     const bal: Balance = balances[canonical as keyof Balances];
     if (bal) {
       return bal.total.toString();
@@ -63,55 +65,59 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
   return (
     <div className="SelectAssetRows__scrollbar">
       <div className="SelectAssetRows__content">
-        {assetRows.map(({ code = "", domain, image = "", issuer = "" }) => {
-          const isScamAsset = !!blockedDomains.domains[domain];
-          const isContract = isContractId(issuer);
-          const canonical = getCanonicalFromAsset(code, issuer);
+        {assetRows.map(
+          ({ code = "", domain, image = "", issuer = "", icon }) => {
+            const isScamAsset = !!blockedDomains.domains[domain];
+            const isContract = isContractId(issuer);
+            const canonical = getCanonicalFromAsset(code, issuer);
 
-          return (
-            <div
-              className="SelectAssetRows__row selectable"
-              key={canonical}
-              onClick={() => {
-                if (assetSelect.isSource) {
-                  dispatch(saveAsset(canonical));
-                  if (isContract) {
-                    dispatch(saveIsToken(true));
+            return (
+              <div
+                className="SelectAssetRows__row selectable"
+                key={canonical}
+                onClick={() => {
+                  if (assetSelect.isSource) {
+                    dispatch(saveAsset(canonical));
+                    if (isContract) {
+                      dispatch(saveIsToken(true));
+                    } else {
+                      dispatch(saveIsToken(false));
+                    }
+                    history.goBack();
                   } else {
-                    dispatch(saveIsToken(false));
+                    dispatch(saveDestinationAsset(canonical));
+                    dispatch(saveDestinationIcon(icon));
+                    history.goBack();
                   }
-                  history.goBack();
-                } else {
-                  dispatch(saveDestinationAsset(canonical));
-                  history.goBack();
-                }
-              }}
-            >
-              <AssetIcon
-                assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
-                code={code}
-                issuerKey={issuer}
-              />
-              <div className="SelectAssetRows__row__info">
-                <div className="SelectAssetRows__row__info__header">
-                  {code}
-                  <ScamAssetIcon isScamAsset={isScamAsset} />
+                }}
+              >
+                <AssetIcon
+                  assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
+                  code={code}
+                  issuerKey={issuer}
+                  icon={icon}
+                />
+                <div className="SelectAssetRows__row__info">
+                  <div className="SelectAssetRows__row__info__header">
+                    {code}
+                    <ScamAssetIcon isScamAsset={isScamAsset} />
+                  </div>
+                  <div className="SelectAssetRows__domain">
+                    {formatDomain(domain)}
+                  </div>
                 </div>
-                <div className="SelectAssetRows__domain">
-                  {formatDomain(domain)}
-                </div>
+                {!hideBalances && (
+                  <div>
+                    {isContract
+                      ? getTokenBalanceFromCanonical(canonical)
+                      : formatAmount(getAccountBalance(canonical))}{" "}
+                    {code}
+                  </div>
+                )}
               </div>
-              {!hideBalances && (
-                <div>
-                  {isContract
-                    ? getTokenBalanceFromCanonical(canonical)
-                    : formatAmount(getAccountBalance(canonical))}{" "}
-                  {code}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          },
+        )}
       </div>
     </div>
   );

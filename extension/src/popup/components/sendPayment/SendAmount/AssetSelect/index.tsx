@@ -101,11 +101,13 @@ export const PathPayAssetSelect = ({
   assetCode,
   issuerKey,
   balance,
+  icon,
 }: {
   source: boolean;
   assetCode: string;
   issuerKey: string;
   balance: string;
+  icon: string;
 }) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
@@ -147,6 +149,7 @@ export const PathPayAssetSelect = ({
             assetIcons={assetIcons}
             code={assetCode}
             issuerKey={issuerKey}
+            icon={icon}
           />
           <span
             className="AssetSelect__medium-copy"

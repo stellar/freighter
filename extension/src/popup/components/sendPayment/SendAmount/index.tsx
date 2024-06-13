@@ -121,8 +121,14 @@ export const SendAmount = ({
     assetIcons,
   } = useSelector(transactionSubmissionSelector);
 
-  const { amount, asset, destinationAmount, destinationAsset, isToken } =
-    transactionData;
+  const {
+    amount,
+    asset,
+    destinationAmount,
+    destinationAsset,
+    isToken,
+    destinationIcon,
+  } = transactionData;
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
@@ -524,6 +530,7 @@ export const SendAmount = ({
                           assetCode={parsedSourceAsset.code}
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
+                          icon=""
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -534,6 +541,7 @@ export const SendAmount = ({
                               ? new BigNumber(destinationAmount).toFixed()
                               : "0"
                           }
+                          icon={destinationIcon}
                         />
                       </>
                     )}

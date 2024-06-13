@@ -39,6 +39,7 @@ export const AssetIcon = ({
   retryAssetIconFetch,
   isLPShare = false,
   isSorobanToken = false,
+  icon,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -46,6 +47,7 @@ export const AssetIcon = ({
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
   isSorobanToken?: boolean;
+  icon?: string;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -65,7 +67,10 @@ export const AssetIcon = ({
   const [isLoading, setIsLoading] = useState(!isXlm);
 
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
-  const imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+  let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+  if (icon) {
+    imgSrc = icon;
+  }
 
   const _isSorobanToken = !isSorobanToken
     ? issuerKey && isSorobanIssuer(issuerKey)
@@ -81,7 +86,7 @@ export const AssetIcon = ({
   }
 
   // Placeholder for Soroban tokens
-  if (_isSorobanToken) {
+  if (_isSorobanToken && !icon) {
     return <SorobanTokenIcon />;
   }
 
@@ -93,7 +98,7 @@ export const AssetIcon = ({
   }
 
   // if we have an asset path, start loading the path in an `<img>`
-  return canonicalAsset || isXlm ? (
+  return canonicalAsset || isXlm || imgSrc ? (
     <div
       className={`AccountAssets__asset--logo ${
         hasError ? "AccountAssets__asset--error" : ""

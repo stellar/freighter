@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
-import { useIsSwap } from "popup/helpers/useIsSwap";
+import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
+import { getSoroswapTokens } from "popup/helpers/sorobanSwap";
 import {
   transactionSubmissionSelector,
   AssetSelectType,
@@ -45,6 +46,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const isSwap = useIsSwap();
+  const isSoroswapEnabled = useIsSoroswapEnabled();
 
   const managingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
@@ -108,6 +110,22 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         }
       }
 
+      if (isSoroswapEnabled) {
+        const tokenData = await getSoroswapTokens();
+        tokenData.assets.forEach((token) => {
+          const canonical = getCanonicalFromAsset(token.code, token.issuer);
+          if (balances && !balances[canonical]) {
+            collection.push({
+              code: token.code,
+              issuer: token.issuer || token.contract,
+              image: token.icon,
+              domain: token.domain,
+              icon: token.icon,
+            });
+          }
+        });
+      }
+
       setAssetRows(collection);
       setIsLoading(false);
     };
@@ -121,6 +139,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     isSorobanSuported,
     isSwap,
     networkPassphrase,
+    isSoroswapEnabled,
   ]);
 
   return (
