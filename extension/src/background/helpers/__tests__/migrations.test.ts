@@ -15,6 +15,7 @@ import {
   TOKEN_ID_LIST,
 } from "constants/localStorageTypes";
 import * as DataStorage from "../dataStorage";
+import * as DataStorageAccess from "../dataStorageAccess";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
 
 class MockStorage {
@@ -37,8 +38,8 @@ class MockStorage {
   };
 }
 
-const dataStorageAccess = (storageApi: DataStorage.StorageOption) => {
-  const store = DataStorage.dataStorage(storageApi);
+const dataStorageAccess = (storageApi: DataStorageAccess.StorageOption) => {
+  const store = DataStorageAccess.dataStorage(storageApi);
   return {
     getItem: store.getItem,
     setItem: async (keyId: string, value: any) => {
@@ -52,7 +53,7 @@ const dataStorageAccess = (storageApi: DataStorage.StorageOption) => {
 const mockStorage = new MockStorage();
 
 jest
-  .spyOn(DataStorage, "dataStorageAccess")
+  .spyOn(DataStorageAccess, "dataStorageAccess")
   .mockImplementation(() =>
     dataStorageAccess(mockStorage as Storage["StorageArea"]),
   );
