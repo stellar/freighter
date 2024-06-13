@@ -17,7 +17,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByText("Add manually").click({ force: true });
   await page
     .getByTestId("search-token-input")
-    .fill("CAEOFUGMYLPQ7EGALPNB65N47EWSXLWMW6OWMRUQSQHBNSEIKQD2NCKV");
+    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
   await expect(page.getByTestId("asset-notification")).toHaveText(
     "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
