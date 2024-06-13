@@ -1,4 +1,4 @@
-import { dataStorage } from "../dataStorage";
+import { dataStorage } from "../dataStorageAccess";
 
 class MockStorage {
   storage: Record<string, any>;
