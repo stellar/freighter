@@ -94,7 +94,7 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { migrateTrustlines } from "background/helpers/migration";
 import { xlmToStroop } from "helpers/stellar";
 

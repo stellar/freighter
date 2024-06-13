@@ -5,7 +5,7 @@ import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 
 export const isSenderAllowed = async ({
   sender,

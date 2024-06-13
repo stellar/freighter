@@ -39,7 +39,7 @@ import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { publicKeySelector } from "background/ducks/session";
 import { getSdk } from "@shared/helpers/stellar";
 
