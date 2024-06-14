@@ -362,7 +362,12 @@ export const ManageAssetRowButton = ({
           type="button"
           data-testid="ManageAssetRowButton"
         >
-          <div className="ManageAssetRowButton__label">{t("Add")}</div>
+          <div
+            className="ManageAssetRowButton__label"
+            data-testid="ManageAssetRowButtonLabel"
+          >
+            {t("Add")}
+          </div>
           <img src={IconAdd} alt="icon add" />
         </Button>
       )}

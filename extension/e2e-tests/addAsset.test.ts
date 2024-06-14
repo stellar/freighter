@@ -59,7 +59,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
     "On your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
-  await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
+  await expect(page.getByTestId("ManageAssetRowButtonLabel")).toHaveText("Add");
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 
   await expect(page.getByTestId("token-warning-notification")).toHaveText(
