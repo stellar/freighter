@@ -36,10 +36,13 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-view")).toContainText("100 E2E");
 });
 test("Adding Soroban verified token", async ({ page, extensionId }) => {
-  // USDC: The verification status of this contract is subject to change.
-  // taken from: https://api.stellar.expert/explorer/testnet/asset-list/top50
+  const assetsList = await fetch(
+    "https://api.stellar.expert/explorer/testnet/asset-list/top50",
+  );
+  const assetsListData = await assetsList.json();
   const verifiedToken =
-    "CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU";
+    assetsListData?.assets[0]?.contract ||
+    "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
