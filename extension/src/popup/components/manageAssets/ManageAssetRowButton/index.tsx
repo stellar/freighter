@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Networks, StrKey } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
@@ -28,7 +28,9 @@ import {
   transactionSubmissionSelector,
   startHwSign,
   removeTokenId,
+  resetSubmitStatus,
 } from "popup/ducks/transactionSubmission";
+import { ActionStatus } from "@shared/api/types";
 import { NETWORKS } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 
@@ -85,7 +87,11 @@ export const ManageAssetRowButton = ({
   const { t } = useTranslation();
   const [rowButtonShowing, setRowButtonShowing] = useState("");
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
-  const { blockedDomains } = useSelector(transactionSubmissionSelector);
+  const [isSigningWithHardwareWallet, setIsSigningWithHardwareWallet] =
+    useState(false);
+  const { blockedDomains, submitStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
   const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -108,6 +114,7 @@ export const ManageAssetRowButton = ({
   const signAndSubmit = async (
     transactionXDR: string,
     trackChangeTrustline: () => void,
+    successfulCallback?: () => Promise<void>,
   ) => {
     const res = await dispatch(
       signFreighterTransaction({
@@ -137,7 +144,9 @@ export const ManageAssetRowButton = ({
         );
         trackChangeTrustline();
         dispatch(resetSubmission());
-        navigateTo(ROUTES.account);
+        if (successfulCallback) {
+          await successfulCallback();
+        }
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
@@ -146,7 +155,10 @@ export const ManageAssetRowButton = ({
     }
   };
 
-  const changeTrustline = async (addTrustline: boolean) => {
+  const changeTrustline = async (
+    addTrustline: boolean,
+    successfulCallback?: () => Promise<void>,
+  ) => {
     setAssetSubmitting(canonicalAsset);
 
     const transactionXDR: string = await getManageAssetXDR({
@@ -171,9 +183,14 @@ export const ManageAssetRowButton = ({
     if (isHardwareWallet) {
       // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
+      setIsSigningWithHardwareWallet(true);
       trackChangeTrustline();
     } else {
-      await signAndSubmit(transactionXDR, trackChangeTrustline);
+      await signAndSubmit(
+        transactionXDR,
+        trackChangeTrustline,
+        successfulCallback,
+      );
     }
   };
 
@@ -204,7 +221,9 @@ export const ManageAssetRowButton = ({
       setNewAssetFlags(resp);
       setSuspiciousAssetData(assetRowData);
     } else {
-      changeTrustline(!isTrustlineActive);
+      changeTrustline(!isTrustlineActive, () =>
+        Promise.resolve(navigateTo(ROUTES.account)),
+      );
     }
   };
 
@@ -221,17 +240,22 @@ export const ManageAssetRowButton = ({
     setAssetSubmitting(canonicalAsset || contractId);
     if (!isTrustlineActive) {
       const addSac = async () => {
+        const addToken = async () => {
+          await dispatch(
+            addTokenId({
+              publicKey,
+              tokenId: contractId,
+              network: networkDetails.network as Networks,
+            }),
+          );
+
+          navigateTo(ROUTES.account);
+        };
         if (StrKey.isValidEd25519PublicKey(assetRowData.issuer)) {
-          await changeTrustline(true);
+          await changeTrustline(true, addToken);
+        } else {
+          await addToken();
         }
-        await dispatch(
-          addTokenId({
-            publicKey,
-            tokenId: contractId,
-            network: networkDetails.network as Networks,
-          }),
-        );
-        navigateTo(ROUTES.account);
       };
       setHandleAddToken(() => addSac);
 
@@ -264,6 +288,13 @@ export const ManageAssetRowButton = ({
       navigateTo(ROUTES.account);
     }
   };
+
+  useEffect(() => {
+    if (submitStatus === ActionStatus.ERROR && isSigningWithHardwareWallet) {
+      setIsTrustlineErrorShowing(true);
+      setRowButtonShowing("");
+    }
+  }, [submitStatus, isSigningWithHardwareWallet]);
 
   return (
     <div className="ManageAssetRowButton">
@@ -368,7 +399,12 @@ export const ManageAssetRowButton = ({
       )}
       {isTrustlineErrorShowing
         ? createPortal(
-            <TrustlineError />,
+            <TrustlineError
+              handleClose={() => {
+                setIsTrustlineErrorShowing(false);
+                dispatch(resetSubmitStatus());
+              }}
+            />,
             document.querySelector("#modal-root")!,
           )
         : null}
