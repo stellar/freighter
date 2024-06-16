@@ -1,6 +1,7 @@
 .SearchInput {
   .Input__container input {
     padding-left: calc(var(--Input-padding-horizontal) * 2 + 0.5rem);
+    padding-right: 0 !important;
   }
 
   .Input__side-element {

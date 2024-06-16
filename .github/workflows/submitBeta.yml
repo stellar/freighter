@@ -66,6 +66,11 @@ jobs:
         run: |
           rm -rf ./extension/build/images
           mv ./extension/build/beta_images ./extension/build/images
+      - name: Remove scripts tag
+        uses: restackio/update-json-file-action@617c86c20c3aea91b8438987dcef1e498e45a651 #v2.1
+        with:
+          file: ./extension/build/manifest.json
+          fields: '{"background": {"service_worker": "background.min.js"}}'
       - name: Install zip
         uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
       - name: Zip extension build

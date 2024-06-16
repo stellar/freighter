@@ -22,7 +22,7 @@ import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 

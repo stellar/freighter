@@ -1,7 +1,7 @@
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 

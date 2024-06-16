@@ -17,7 +17,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByText("Add manually").click({ force: true });
   await page
     .getByTestId("search-token-input")
-    .fill("CAEOFUGMYLPQ7EGALPNB65N47EWSXLWMW6OWMRUQSQHBNSEIKQD2NCKV");
+    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
   await expect(page.getByTestId("asset-notification")).toHaveText(
     "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
@@ -36,10 +36,13 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-view")).toContainText("100 E2E");
 });
 test("Adding Soroban verified token", async ({ page, extensionId }) => {
-  // USDC: The verification status of this contract is subject to change.
-  // taken from: https://api.stellar.expert/explorer/testnet/asset-list/top50
+  const assetsList = await fetch(
+    "https://api.stellar.expert/explorer/testnet/asset-list/top50",
+  );
+  const assetsListData = await assetsList.json();
   const verifiedToken =
-    "CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU";
+    assetsListData?.assets[0]?.contract ||
+    "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
