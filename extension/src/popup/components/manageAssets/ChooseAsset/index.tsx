@@ -45,6 +45,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [soroswapTokens, setSoroswapTokens] = useState([] as any[]);
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
 
@@ -110,8 +111,9 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         }
       }
 
-      if (isSoroswapEnabled) {
+      if (isSoroswapEnabled && isSwap) {
         const tokenData = await getSoroswapTokens();
+        setSoroswapTokens(tokenData.assets);
         tokenData.assets.forEach((token) => {
           const canonical = getCanonicalFromAsset(token.code, token.issuer);
           if (balances && !balances[canonical]) {
@@ -164,7 +166,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             {managingAssets ? (
               <ManageAssetRows assetRows={assetRows} chooseAsset />
             ) : (
-              <SelectAssetRows assetRows={assetRows} />
+              <SelectAssetRows
+                assetRows={assetRows}
+                soroswapTokens={soroswapTokens}
+              />
             )}
           </div>
         </div>

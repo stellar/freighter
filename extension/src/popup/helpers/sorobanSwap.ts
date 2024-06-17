@@ -20,11 +20,16 @@ import {
   Networks,
   Protocols,
 } from "soroswap-router-sdk";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import axios from "axios";
+
+import {
+  TESTNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/constants/stellar";
 import { getSdk } from "@shared/helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { buildSorobanServer } from "@shared/helpers/soroban/server";
-import axios from "axios";
+import { isTestnet } from "helpers/stellar";
 
 const stubbedData = [
   {
@@ -568,7 +573,91 @@ export const getSoroswapTokens = async (): Promise<{
 }> => {
   const { data } = await axios.get("https://api.soroswap.finance/api/tokens");
 
-  return data[1];
+  return data.find((d: { network: string }) => d.network === "testnet");
+};
+
+interface SoroswapGetBestPathParams {
+  amount: number;
+  sourceContract: string;
+  sourceDecimals: number;
+  destContract: string;
+  destDecimals: number;
+  networkDetails: NetworkDetails;
+}
+
+export const soroswapGetBestPath = async ({
+  amount,
+  sourceContract,
+  sourceDecimals,
+  destContract,
+  destDecimals,
+  networkDetails,
+}: SoroswapGetBestPathParams) => {
+  if (!isTestnet(networkDetails)) {
+    throw "Network not supported";
+  }
+
+  const network = Networks.TESTNET;
+
+  const sourceToken = new Token(network, sourceContract, sourceDecimals);
+
+  const destToken = new Token(network, destContract, destDecimals);
+
+  console.log(sourceContract);
+  console.log(destContract);
+
+  const router = new Router({
+    getPairsFn: async () => {
+      const { data } = await axios.get(
+        "https://info.soroswap.finance/api/pairs?network=TESTNET",
+      );
+
+      if (typeof data[0].tokenA === "object") {
+        console.log(
+          data.map(
+            (d: {
+              tokenA: { contract: string };
+              tokenB: { contract: string };
+            }) => ({
+              ...d,
+              tokenA: d.tokenA.contract,
+              tokenB: d.tokenB.contract,
+            }),
+          ),
+        );
+        return data.map(
+          (d: {
+            tokenA: { contract: string };
+            tokenB: { contract: string };
+          }) => ({
+            ...d,
+            tokenA: d.tokenA.contract,
+            tokenB: d.tokenB.contract,
+          }),
+        );
+      }
+
+      return data;
+    },
+    pairsCacheInSeconds: 60,
+    protocols: [Protocols.SOROSWAP],
+    network: network,
+    maxHops: 5,
+  });
+
+  const currencyAmount = CurrencyAmount.fromRawAmount(sourceToken, amount);
+  const quoteCurrency = destToken;
+
+  const route = await router.route(
+    currencyAmount,
+    quoteCurrency,
+    TradeType.EXACT_INPUT,
+    "CBRR266UONXDUG3W57V2X5XCXT77RDK27LJE4QVKH2UTHYZGXPW5HBCT",
+  );
+
+  console.log(route?.trade);
+
+  return route?.trade || null;
 };
 
 export const swap = async () => {

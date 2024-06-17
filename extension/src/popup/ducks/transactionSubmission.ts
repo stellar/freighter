@@ -46,6 +46,7 @@ import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { soroswapGetBestPath } from "popup/helpers/sorobanSwap";
 import { hardwareSign } from "popup/helpers/hardwareConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
@@ -453,6 +454,45 @@ export const getBestPath = createAsyncThunk<
   },
 );
 
+export const getBestSoroswapPath = createAsyncThunk<
+  {
+    amountIn?: string;
+    amountOut?: string;
+    amountOutMin?: string;
+    amountInMax?: string;
+    path: string[];
+  } | null,
+  {
+    amount: string;
+    sourceContract: string;
+    destContract: string;
+    networkDetails: NetworkDetails;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "getBestSoroswapPath",
+  async (
+    { amount, sourceContract, destContract, networkDetails },
+    thunkApi,
+  ) => {
+    try {
+      return await soroswapGetBestPath({
+        amount: Number(amount),
+        sourceContract,
+        sourceDecimals: 7,
+        destContract,
+        destDecimals: 7,
+        networkDetails,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
+      });
+    }
+  },
+);
+
 export const getBlockedDomains = createAsyncThunk<
   BlockedDomains,
   undefined,
@@ -805,6 +845,7 @@ export const {
   saveMemo,
   saveDestinationAsset,
   saveDestinationIcon,
+  saveIsSoroswap,
   saveAllowedSlippage,
   saveIsToken,
   saveSimulation,

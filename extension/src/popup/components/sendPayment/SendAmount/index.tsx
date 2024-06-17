@@ -39,6 +39,7 @@ import {
   saveDestinationAsset,
   getBestPath,
   resetDestinationAmount,
+  getBestSoroswapPath,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -128,6 +129,7 @@ export const SendAmount = ({
     destinationAsset,
     isToken,
     destinationIcon,
+    isSoroswap,
   } = transactionData;
 
   const isSwap = useIsSwap();
@@ -252,14 +254,30 @@ export const SendAmount = ({
 
   const db = useCallback(
     debounce(async (formikAm, sourceAsset, destAsset) => {
-      await dispatch(
-        getBestPath({
-          amount: formikAm,
-          sourceAsset,
-          destAsset,
-          networkDetails,
-        }),
-      );
+      if (isSoroswap) {
+        const getContract = (formAsset: string) =>
+          formAsset === "native"
+            ? "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+            : formAsset.split(":")[1];
+        await dispatch(
+          getBestSoroswapPath({
+            amount: formikAm,
+            sourceContract: getContract(formik.values.asset),
+            destContract: getContract(formik.values.destinationAsset),
+            networkDetails,
+          }),
+        );
+      } else {
+        await dispatch(
+          getBestPath({
+            amount: formikAm,
+            sourceAsset,
+            destAsset,
+            networkDetails,
+          }),
+        );
+      }
+
       setLoadingRate(false);
     }, 2000),
     [],

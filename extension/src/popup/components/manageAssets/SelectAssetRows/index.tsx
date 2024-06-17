@@ -10,6 +10,7 @@ import {
   saveDestinationIcon,
   saveIsToken,
   AssetSelectType,
+  saveIsSoroswap,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
@@ -23,9 +24,13 @@ import "./styles.scss";
 
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
+  soroswapTokens: { contract: string }[];
 }
 
-export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
+export const SelectAssetRows = ({
+  assetRows,
+  soroswapTokens,
+}: SelectAssetRowsProps) => {
   const {
     accountBalances: { balances = {} },
     assetSelect,
@@ -87,6 +92,11 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                   } else {
                     dispatch(saveDestinationAsset(canonical));
                     dispatch(saveDestinationIcon(icon));
+                    if (
+                      soroswapTokens.find(({ contract }) => contract === issuer)
+                    ) {
+                      dispatch(saveIsSoroswap(true));
+                    }
                     history.goBack();
                   }
                 }}
