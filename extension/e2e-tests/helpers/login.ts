@@ -45,6 +45,8 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("Import Wallet").click();
 
+  // GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY
+
   const TEST_ACCOUNT_WORDS = [
     "card",
     "whip",
