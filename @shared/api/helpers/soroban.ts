@@ -4,7 +4,7 @@ import {
   xdr,
   ScInt,
   SorobanRpc,
-  ContractSpec,
+  contract,
 } from "stellar-sdk";
 import { XdrReader } from "@stellar/js-xdr";
 
@@ -109,7 +109,7 @@ export const parseWasmXdr = async (xdrContents: string) => {
   do {
     specs.push(xdr.ScSpecEntry.read(reader));
   } while (!reader.eof);
-  const contractSpec = new ContractSpec(specs);
+  const contractSpec = new contract.Spec(specs);
   return contractSpec.jsonSchema();
 };
 
