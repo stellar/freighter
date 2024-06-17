@@ -132,7 +132,11 @@ const RenderedError = ({
   }
 };
 
-export const TrustlineError = () => {
+export const TrustlineError = ({
+  handleClose,
+}: {
+  handleClose?: () => void;
+}) => {
   const { t } = useTranslation();
   const { accountBalances, error } = useSelector(transactionSubmissionSelector);
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
@@ -204,7 +208,12 @@ export const TrustlineError = () => {
                 size="md"
                 isFullWidth
                 variant="primary"
-                onClick={() => setIsModalShowing(false)}
+                onClick={() => {
+                  setIsModalShowing(false);
+                  if (handleClose) {
+                    handleClose();
+                  }
+                }}
               >
                 {t("Got it")}
               </Button>

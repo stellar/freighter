@@ -374,7 +374,12 @@ export const ScamAssetWarning = ({
     setIsSubmitting(false);
   };
 
-  return (
+  return isTrustlineErrorShowing ? (
+    createPortal(
+      <TrustlineError handleClose={() => closeOverlay()} />,
+      document.querySelector("#modal-root")!,
+    )
+  ) : (
     <div className="ScamAssetWarning">
       <View.Content>
         <div className="ScamAssetWarning__wrapper" ref={warningRef}>
@@ -473,12 +478,6 @@ export const ScamAssetWarning = ({
           </div>
         </div>
       </View.Content>
-      {isTrustlineErrorShowing
-        ? createPortal(
-            <TrustlineError />,
-            document.querySelector("#modal-root")!,
-          )
-        : null}
     </div>
   );
 };
@@ -585,7 +584,12 @@ export const NewAssetWarning = ({
     setIsSubmitting(false);
   };
 
-  return (
+  return isTrustlineErrorShowing ? (
+    createPortal(
+      <TrustlineError handleClose={() => closeOverlay()} />,
+      document.querySelector("#modal-root")!,
+    )
+  ) : (
     <div className="NewAssetWarning" data-testid="NewAssetWarning">
       <View.Content>
         <div className="NewAssetWarning__wrapper" ref={warningRef}>
@@ -688,12 +692,6 @@ export const NewAssetWarning = ({
           </div>
         </div>
       </View.Content>
-      {isTrustlineErrorShowing
-        ? createPortal(
-            <TrustlineError />,
-            document.querySelector("#modal-root")!,
-          )
-        : null}
     </div>
   );
 };
@@ -761,6 +759,7 @@ export const TokenWarning = ({
     }
 
     setIsSubmitting(false);
+    closeOverlay();
   };
 
   return createPortal(
