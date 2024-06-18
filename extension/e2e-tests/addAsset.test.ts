@@ -38,7 +38,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
   // USDC: The verification status of this contract is subject to change.
   // taken from: https://api.stellar.expert/explorer/testnet/asset-list/top50
   const verifiedToken =
-    "CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU";
+    "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
