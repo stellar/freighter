@@ -1,6 +1,5 @@
 import throttle from "lodash/throttle";
 import { Middleware, AnyAction } from "redux";
-import { createAsyncThunk, createAction } from "@reduxjs/toolkit";
 
 import { store } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
@@ -30,17 +29,6 @@ export function metricsMiddleware<State>(): Middleware<object, State> {
     };
 }
 
-// I can't figure out how to get the properties off a thunk for the ActionType
-// without creating an intermediate value
-// eslint-disable-next-line
-const dummyThunk = createAsyncThunk<any, any>("dummy", () => {});
-const dummyAction = createAction<any>("also dummy");
-type ActionType =
-  | typeof dummyThunk.fulfilled
-  | typeof dummyThunk.rejected
-  | typeof dummyThunk.pending
-  | typeof dummyAction;
-
 /**
  * registerHandler registers a new function to be called any time the specified
  * action has been dispatched. This should be used to emit metrics.
@@ -51,7 +39,7 @@ type ActionType =
  * @returns {void}
  */
 export function registerHandler<State>(
-  actionType: ActionType,
+  actionType: string | { type: string },
   handler: (state: State, action: AnyAction) => void,
 ) {
   const type = typeof actionType === "string" ? actionType : actionType.type;
