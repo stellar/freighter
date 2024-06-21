@@ -390,7 +390,7 @@
   "Same source and destination asset": "Same source and destination asset",
   "Save": "Save",
   "Search for asset name": "Search for asset name",
-  "Search home domains, issuer public key, classic assets, SAC assets, and TI assets": "Search home domains, issuer public key, classic assets, SAC assets, and TI assets",
+  "Search issuer public key, classic assets, SAC assets, and TI assets": "Search issuer public key, classic assets, SAC assets, and TI assets",
   "Secret Recovery phrase": "Secret Recovery phrase",
   "Security": "Security",
   "Seller": "Seller",
@@ -466,6 +466,7 @@
   "them noted to confirm you got them right": "them noted to confirm you got them right",
   "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
+  "This asset has buying liabilities": "This asset has buying liabilities",
   "This asset is not part of an asset list": {
     " Please, double-check the asset you’re interacting with and proceed with care": {
       " Freighter uses asset lists to check assets you interact with": {
@@ -542,7 +543,9 @@
     " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens": "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens."
   },
   "You must have a balance of": "You must have a balance of",
+  "You must have a buying liability of": "You must have a buying liability of",
   "You still have a balance of": "You still have a balance of",
+  "You still have a buying liability of": "You still have a buying liability of",
   "You’re good to go!": "You’re good to go!",
   "Your account balance is not sufficient for this transaction": {
     " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
