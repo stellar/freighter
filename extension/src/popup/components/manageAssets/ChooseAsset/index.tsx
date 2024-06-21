@@ -68,6 +68,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
         const {
           token: { code, issuer },
+          contractId,
         } = sortedBalances[i];
 
         if (isSwap && "decimals" in sortedBalances[i]) {
@@ -99,6 +100,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                 getCanonicalFromAsset(code as string, issuer?.key as string)
               ],
             domain,
+            contract: contractId,
           });
           // include native asset for asset dropdown selection
         } else if (!managingAssets) {

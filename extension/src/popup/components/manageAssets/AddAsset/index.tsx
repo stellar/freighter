@@ -258,7 +258,7 @@ export const AddAsset = () => {
                   </Field>
                   <SearchCopy>
                     {t(
-                      "Search home domains, issuer public key, classic assets, SAC assets, and TI assets",
+                      "Search issuer public key, classic assets, SAC assets, and TI assets",
                     )}
                   </SearchCopy>
                 </div>

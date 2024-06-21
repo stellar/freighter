@@ -295,7 +295,8 @@
     margin-bottom: 0.5rem;
   }
 
-  &__code {
+  &__code,
+  &__domain {
     display: flex;
     justify-content: center;
   }

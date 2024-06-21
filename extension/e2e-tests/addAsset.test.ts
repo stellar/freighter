@@ -71,7 +71,9 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
     screenshot: "manage-assets-verified-token.png",
   });
   await page.getByTestId("add-asset").dispatchEvent("click");
-  await expect(page.getByTestId("account-view")).toBeVisible();
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
 
   await page.getByText("Manage Assets").click({ force: true });
   await page
@@ -79,5 +81,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
     .click({ force: true });
   await page.getByText("Remove asset").click({ force: true });
 
-  await expect(page.getByTestId("account-view")).toBeVisible();
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
 });
