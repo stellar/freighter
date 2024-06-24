@@ -15071,10 +15071,10 @@ sonic-forest@^1.0.0:
   dependencies:
     tree-dump "^1.0.0"
 
-soroswap-router-sdk@^1.2.6:
-  version "1.2.6"
-  resolved "https://registry.yarnpkg.com/soroswap-router-sdk/-/soroswap-router-sdk-1.2.6.tgz#40633e8a9d028263a80a504b325b6ec068dea5b4"
-  integrity sha512-i2IkVoFWlf+gxsoR1egiXWEagKC8UJj0Wj+3Z/tBZvRgvbdyoMVTv2LefB4xWrRoCC4nPiLQxcej4qPLqcrNAQ==
+soroswap-router-sdk@^1.2.8:
+  version "1.2.8"
+  resolved "https://registry.yarnpkg.com/soroswap-router-sdk/-/soroswap-router-sdk-1.2.8.tgz#17d5a6e69b39ce61aa6ca312f4f0f6dd28d8ec73"
+  integrity sha512-m8kHw5EGStNlYyE4eTBP5o5475yCNTAE+zyGUWW3uScQsLWinm7yRxq6U2biWMocMmj5Eo2rDQUmhJyrUpDanw==
   dependencies:
     "@stellar/stellar-sdk" "^11.3.0"
     axios "^1.6.5"

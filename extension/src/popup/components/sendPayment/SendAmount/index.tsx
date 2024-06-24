@@ -27,6 +27,7 @@ import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   cleanAmount,
   formatAmount,
@@ -113,6 +114,7 @@ export const SendAmount = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const runAfterUpdate = useRunAfterUpdate();
 
+  const publicKey = useSelector(publicKeySelector);
   const {
     accountBalances,
     destinationBalances,
@@ -265,6 +267,7 @@ export const SendAmount = ({
             sourceContract: getContract(formik.values.asset),
             destContract: getContract(formik.values.destinationAsset),
             networkDetails,
+            publicKey,
           }),
         );
       } else {

@@ -206,6 +206,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       destinationAmount,
       path,
       isToken,
+      isSoroswap,
     },
     assetIcons,
     hardwareWalletData: { status: hwStatus },
@@ -385,7 +386,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   // handles signing and submitting
   const handleSend = async () => {
-    if (isToken) {
+    if (isToken || isSoroswap) {
       await handleXferTransaction();
     } else {
       await handlePaymentTransaction();

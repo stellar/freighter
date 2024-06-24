@@ -92,11 +92,13 @@ export const SelectAssetRows = ({
                   } else {
                     dispatch(saveDestinationAsset(canonical));
                     dispatch(saveDestinationIcon(icon));
-                    if (
-                      soroswapTokens.find(({ contract }) => contract === issuer)
-                    ) {
-                      dispatch(saveIsSoroswap(true));
-                    }
+                    dispatch(
+                      saveIsSoroswap(
+                        !!soroswapTokens.find(
+                          ({ contract }) => contract === issuer,
+                        ),
+                      ),
+                    );
                     history.goBack();
                   }
                 }}

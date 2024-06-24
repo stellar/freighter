@@ -457,9 +457,9 @@ export const getBestPath = createAsyncThunk<
 export const getBestSoroswapPath = createAsyncThunk<
   {
     amountIn?: string;
-    amountOut?: string;
     amountOutMin?: string;
-    amountInMax?: string;
+    amountInDecimals: number;
+    amountOutDecimals: number;
     path: string[];
   } | null,
   {
@@ -467,22 +467,22 @@ export const getBestSoroswapPath = createAsyncThunk<
     sourceContract: string;
     destContract: string;
     networkDetails: NetworkDetails;
+    publicKey: string;
   },
   { rejectValue: ErrorMessage }
 >(
   "getBestSoroswapPath",
   async (
-    { amount, sourceContract, destContract, networkDetails },
+    { amount, sourceContract, destContract, networkDetails, publicKey },
     thunkApi,
   ) => {
     try {
       return await soroswapGetBestPath({
-        amount: Number(amount),
+        amount,
         sourceContract,
-        sourceDecimals: 7,
         destContract,
-        destDecimals: 7,
         networkDetails,
+        publicKey,
       });
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
@@ -527,12 +527,14 @@ export enum ShowOverlayStatus {
 interface TransactionData {
   amount: string;
   asset: string;
+  decimals?: number;
   destination: string;
   federationAddress: string;
   transactionFee: string;
   transactionTimeout: number;
   memo: string;
   destinationAsset: string;
+  destinationDecimals?: number;
   destinationAmount: string;
   destinationIcon: string;
   path: string[];
@@ -773,6 +775,11 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     });
+    builder.addCase(getBestSoroswapPath.rejected, (state) => {
+      state.transactionData.path = initialState.transactionData.path;
+      state.transactionData.destinationAmount =
+        initialState.transactionData.destinationAmount;
+    });
     builder.addCase(getAccountBalances.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
       state.accountBalances = initialState.accountBalances;
@@ -825,6 +832,20 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.path = path;
       state.transactionData.destinationAmount =
         action.payload.destination_amount;
+    });
+    builder.addCase(getBestSoroswapPath.fulfilled, (state, action) => {
+      if (!action.payload) {
+        state.transactionData.path = [];
+        state.transactionData.destinationAmount = "";
+        return;
+      }
+
+      state.transactionData.path = action.payload.path;
+      state.transactionData.destinationAmount =
+        action.payload.amountOutMin || "";
+      state.transactionData.decimals = action.payload.amountInDecimals;
+      state.transactionData.destinationDecimals =
+        action.payload.amountOutDecimals;
     });
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
       state.blockedDomains.domains = action.payload;
