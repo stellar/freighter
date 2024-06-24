@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
+import { useHistory } from "react-router-dom";
 import { Notification, Button, Toggle, Loader } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 
@@ -9,8 +10,6 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { SettingsState } from "@shared/api/types";
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
@@ -22,6 +21,7 @@ import "./styles.scss";
 export const ExperimentalFeatures = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const history = useHistory();
   const [isUnderstood, setIsUnderstood] = useState(false);
 
   const {
@@ -160,7 +160,7 @@ export const ExperimentalFeatures = () => {
             size="md"
             variant="primary"
             isFullWidth
-            onClick={() => navigateTo(ROUTES.account)}
+            onClick={() => history.goBack()}
           >
             {t("Go back")}
           </Button>
