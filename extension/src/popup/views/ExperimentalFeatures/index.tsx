@@ -9,6 +9,8 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { SettingsState } from "@shared/api/types";
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo } from "popup/helpers/navigate";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
@@ -154,7 +156,12 @@ export const ExperimentalFeatures = () => {
           >
             {t("I understand, continue")}
           </Button>
-          <Button size="md" variant="primary" isFullWidth>
+          <Button
+            size="md"
+            variant="primary"
+            isFullWidth
+            onClick={() => navigateTo(ROUTES.account)}
+          >
             {t("Go back")}
           </Button>
         </div>
