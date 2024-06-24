@@ -66,10 +66,13 @@ export const ExperimentalFeatures = () => {
             <AutoSaveFields />
             <div className="ExperimentalFeatures__feature">
               <div className="ExperimentalFeatures__feature__row">
-                <div className="ExperimentalFeatures__feature__row__icon">
-                  <img src={IconExperimental} alt="icon experimental feature" />
-                </div>
                 <div className="ExperimentalFeatures__feature__row__title">
+                  <div className="ExperimentalFeatures__feature__row__icon">
+                    <img
+                      src={IconExperimental}
+                      alt="icon experimental feature"
+                    />
+                  </div>
                   <span>{t("Use Futurenet")}</span>
                   {isLoading ? (
                     <div className="ExperimentalFeatures__feature__row__loader">
@@ -77,11 +80,13 @@ export const ExperimentalFeatures = () => {
                     </div>
                   ) : null}
                 </div>
-                <Toggle
-                  checked={initialValues.isExperimentalModeEnabledValue}
-                  customInput={<Field />}
-                  id="isExperimentalModeEnabledValue"
-                />
+                <div className="ExperimentalFeatures__feature__row__toggle">
+                  <Toggle
+                    checked={initialValues.isExperimentalModeEnabledValue}
+                    customInput={<Field />}
+                    id="isExperimentalModeEnabledValue"
+                  />
+                </div>
               </div>
               <div className="ExperimentalFeatures__feature__description">
                 {t(
@@ -91,10 +96,13 @@ export const ExperimentalFeatures = () => {
             </div>
             <div className="ExperimentalFeatures__feature">
               <div className="ExperimentalFeatures__feature__row">
-                <div className="ExperimentalFeatures__feature__row__icon">
-                  <img src={IconExperimental} alt="icon experimental feature" />
-                </div>
                 <div className="ExperimentalFeatures__feature__row__title">
+                  <div className="ExperimentalFeatures__feature__row__icon">
+                    <img
+                      src={IconExperimental}
+                      alt="icon experimental feature"
+                    />
+                  </div>
                   <span>{t("Enable Blind Signing on Ledger")}</span>
                   {isLoading ? (
                     <div className="ExperimentalFeatures__feature__row__loader">
@@ -102,11 +110,13 @@ export const ExperimentalFeatures = () => {
                     </div>
                   ) : null}
                 </div>
-                <Toggle
-                  checked={initialValues.isHashSigningEnabledValue}
-                  customInput={<Field />}
-                  id="isHashSigningEnabledValue"
-                />
+                <div className="ExperimentalFeatures__feature__row__toggle">
+                  <Toggle
+                    checked={initialValues.isHashSigningEnabledValue}
+                    customInput={<Field />}
+                    id="isHashSigningEnabledValue"
+                  />
+                </div>
               </div>
               <div className="ExperimentalFeatures__feature__description">
                 {t(
