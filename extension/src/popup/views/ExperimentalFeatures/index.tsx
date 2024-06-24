@@ -85,7 +85,7 @@ export const ExperimentalFeatures = () => {
               </div>
               <div className="ExperimentalFeatures__feature__description">
                 {t(
-                  "Use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+                  "Use experimental API’s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
                 )}
               </div>
             </div>
@@ -95,7 +95,7 @@ export const ExperimentalFeatures = () => {
                   <img src={IconExperimental} alt="icon experimental feature" />
                 </div>
                 <div className="ExperimentalFeatures__feature__row__title">
-                  <span>{t("Allow Ledger to sign arbitrary hashes")}</span>
+                  <span>{t("Enable Blind Signing on Ledger")}</span>
                   {isLoading ? (
                     <div className="ExperimentalFeatures__feature__row__loader">
                       <Loader />
@@ -110,8 +110,15 @@ export const ExperimentalFeatures = () => {
               </div>
               <div className="ExperimentalFeatures__feature__description">
                 {t(
-                  "This can be used to sign arbitrary transaction hashes without having to decode them first.",
-                )}
+                  "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust.",
+                )}{" "}
+                <a
+                  href="https://www.ledger.com/academy/enable-blind-signing-why-when-and-how-to-stay-safe/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("Learn More")}
+                </a>
               </div>
             </div>
           </Form>
@@ -125,11 +132,9 @@ export const ExperimentalFeatures = () => {
         <Notification
           variant="warning"
           title={t(
-            "Experimental features are advised for advanced users only. Enabling these may impact the security of your wallets and result in loss of funds.",
+            "Experimental features are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks.",
           )}
-        >
-          {t("Do not continue if you‘re not sure about what you're doing")}
-        </Notification>
+        />
         <div className="ExperimentalFeatures__understood-buttons">
           <Button
             size="md"
