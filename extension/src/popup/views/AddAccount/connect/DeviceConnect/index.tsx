@@ -61,7 +61,13 @@ export const DeviceConnect = () => {
         }),
       );
     } catch (e) {
-      setConnectError(parseWalletError[walletType](e));
+      if (parseWalletError.hasOwnProperty(walletType)) {
+        const isErrorParserFunction =
+          typeof parseWalletError[walletType] === "function";
+        if (isErrorParserFunction) {
+          setConnectError(parseWalletError[walletType](e));
+        }
+      }
     }
     setIsDetecting(false);
   };

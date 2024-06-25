@@ -116,16 +116,18 @@ const commonConfig = (
       extensions: [".ts", ".tsx"],
       failOnWarning: true,
     }),
-    new CopyWebpackPlugin([
-      {
-        from: path.resolve(__dirname, "./public/static"),
-        to: BUILD_PATH,
-      },
-      {
-        from: path.resolve(__dirname, "./public/static/manifest/v3.json"),
-        to: `${BUILD_PATH}/manifest.json`,
-      },
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: path.resolve(__dirname, "./public/static"),
+          to: BUILD_PATH,
+        },
+        {
+          from: path.resolve(__dirname, "./public/static/manifest/v3.json"),
+          to: `${BUILD_PATH}/manifest.json`,
+        },
+      ],
+    }),
     new HtmlWebPackPlugin({
       template: path.resolve(__dirname, "./public/index.html"),
       chunks: ["index"],

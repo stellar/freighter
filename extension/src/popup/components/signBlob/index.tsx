@@ -1,6 +1,6 @@
 import React from "react";
 import * as Sentry from "@sentry/browser";
-import { Card, Heading } from "@stellar/design-system";
+import { Card } from "@stellar/design-system";
 
 import "./index.scss";
 
@@ -9,22 +9,22 @@ interface BlobProps {
 }
 
 export const Blob = (props: BlobProps) => {
-  let displayBlob = props.blob;
-
-  try {
-    displayBlob = atob(props.blob);
-  } catch (error) {
-    Sentry.captureException(
-      `Failed to convert blob to display - ${props.blob}`,
-    );
+  function renderBlob() {
+    try {
+      const displayBlob = atob(props.blob);
+      return displayBlob;
+    } catch (error) {
+      Sentry.captureException(
+        `Failed to convert blob to display - ${props.blob}`,
+      );
+      return JSON.stringify(props.blob);
+    }
   }
 
   return (
     <Card variant="secondary">
-      <Heading size="md" as="h4">
-        Signing data:
-      </Heading>
-      <div className="Blob">{displayBlob}</div>
+      <p>Signing data:</p>
+      <div className="Blob">{renderBlob()}</div>
     </Card>
   );
 };

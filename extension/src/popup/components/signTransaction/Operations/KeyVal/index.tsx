@@ -421,6 +421,8 @@ export const KeyValueInvokeHostFnArgs = ({
 
     if (contractId && fnName) {
       getSpec(contractId, fnName);
+    } else {
+      setLoading(false);
     }
   }, [contractId, fnName, networkDetails]);
 

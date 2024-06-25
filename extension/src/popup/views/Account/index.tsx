@@ -275,7 +275,10 @@ export const Account = () => {
               )}
 
               {isFunded && !hasError && (
-                <div className="AccountView__assets-wrapper">
+                <div
+                  className="AccountView__assets-wrapper"
+                  data-testid="account-assets"
+                >
                   <AccountAssets
                     sortedBalances={sortedBalances}
                     assetIcons={assetIcons}

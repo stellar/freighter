@@ -33,6 +33,7 @@ export const METRIC_NAMES = {
   viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
   viewManageAssetsLists: "loaded screen: manage assets lists",
+  viewExperimentalFeatures: "loaded screen: experimental features",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
@@ -72,10 +73,9 @@ export const METRIC_NAMES = {
   swapConfirm: "loaded screen: swap confirm",
 
   viewManageAssets: "loaded screen: manage assets",
-  viewAddAsset: "loaded screen: add asset",
   viewSearchAsset: "loaded screen: search asset",
   viewTrustlineError: "loaded screen: trustline error",
-  viewAddToken: "loaded screen: add token",
+  viewAddAsset: "loaded screen: add asset manually",
 
   viewManageNetwork: "loaded screen: manage network",
   viewAddNetwork: "loaded screen: add network",
@@ -155,4 +155,9 @@ export const METRIC_NAMES = {
   rejectSigning: "user cancelled signing flow",
   approveSign: "user signed transaction",
   reviewedAuthEntry: "reviewed authorization entry",
+
+  trustlineErrorBuyingLiability:
+    "trustline removal error: asset has buying liabilties",
+  trustlineErrorHasBalance: "trustline removal error: asset has balance",
+  trustlineErrorLowReserve: "trustline removal error: asset has low reserve",
 };

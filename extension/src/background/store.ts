@@ -3,10 +3,10 @@ import { configureStore } from "@reduxjs/toolkit";
 
 import { sessionSlice } from "background/ducks/session";
 import {
-  SESSION_STORAGE_ENABLED,
   dataStorageAccess,
   browserSessionStorage,
-} from "./helpers/dataStorage";
+} from "./helpers/dataStorageAccess";
+import { SESSION_STORAGE_ENABLED } from "./helpers/dataStorage";
 
 // Session storage can be used to persist redux store in Manifest v3 because service workers go idle after 30 seconds
 // Session storage is not currently supported in Firefox, which blocks our migration to using this by default

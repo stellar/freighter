@@ -80,7 +80,7 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
   });
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Test Net").click();
-  await expect(page.getByTestId("account-assets")).toBeVisible({
+  await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
 };
