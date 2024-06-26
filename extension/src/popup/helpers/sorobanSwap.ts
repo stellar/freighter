@@ -9,7 +9,6 @@ import {
   Networks,
   Protocols,
 } from "soroswap-router-sdk";
-import axios from "axios";
 import BigNumber from "bignumber.js";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -24,9 +23,9 @@ import { parseTokenAmount, formatTokenAmount } from "popup/helpers/soroban";
 export const getSoroswapTokens = async (): Promise<{
   assets: SoroswapToken[];
 }> => {
-  const res = await axios.get("https://api.soroswap.finance/api/tokens");
+  const res = await fetch(new URL("https://api.soroswap.finance/api/tokens"));
 
-  const data = res.data;
+  const data = await res.json();
 
   return data.find((d: { network: string }) => d.network === "testnet");
 };
@@ -80,9 +79,13 @@ export const soroswapGetBestPath = async ({
       {
         protocol: Protocols.SOROSWAP,
         fn: async () => {
-          const { data } = await axios.get(
-            "https://info.soroswap.finance/api/pairs/plain?network=TESTNET",
+          const res = await fetch(
+            new URL(
+              "https://info.soroswap.finance/api/pairs/plain?network=TESTNET",
+            ),
           );
+
+          const data = await res.json();
 
           return data;
         },
@@ -161,14 +164,11 @@ export const buildAndSimulateSoroswapTx = async ({
   );
 
   const account = await server.loadAccount(publicKey);
-  const { data } = await axios.get(
-    "https://api.soroswap.finance/api/testnet/factory",
+  const routerRes = await fetch(
+    new URL("https://api.soroswap.finance/api/testnet/router"),
   );
-  let swapContractAddress = data.address;
-
-  // the above endpoint is returning the wrong contract ID; we'll overwrite with the correct one for now
-  swapContractAddress =
-    "CBHNQTKJD76Q55TINIT3PPP3BKLIKIQEXPTQ32GUUU7I3CHBD5JECZLW";
+  const routerData = await routerRes.json();
+  const routerAddress = routerData.address;
 
   const tx = new Sdk.TransactionBuilder(account, {
     fee: xlmToStroop(transactionFee).toFixed(),
@@ -196,7 +196,7 @@ export const buildAndSimulateSoroswapTx = async ({
     Sdk.nativeToScVal(Date.now() + 3600000, { type: "u64" }),
   ];
 
-  const contractInstance = new Sdk.Contract(swapContractAddress);
+  const contractInstance = new Sdk.Contract(routerAddress);
   const contractOperation = contractInstance.call(
     "swap_exact_tokens_for_tokens",
     ...swapParams,
