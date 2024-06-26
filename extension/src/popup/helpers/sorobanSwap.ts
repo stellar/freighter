@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import { xdr } from "stellar-sdk";
 import {
   Router,
@@ -46,7 +44,7 @@ export const soroswapGetBestPath = async ({
   publicKey,
 }: SoroswapGetBestPathParams) => {
   if (!isTestnet(networkDetails)) {
-    throw "Network not supported";
+    throw Error("Network not supported");
   }
 
   const network = Networks.TESTNET;
@@ -63,7 +61,7 @@ export const soroswapGetBestPath = async ({
   });
 
   if (!sourceTokenDetails || !destTokenDetails) {
-    throw "Source token not found";
+    throw Error("Source token not found");
   }
 
   const sourceToken = new Token(
@@ -93,7 +91,7 @@ export const soroswapGetBestPath = async ({
     ],
     pairsCacheInSeconds: 60,
     protocols: [Protocols.SOROSWAP],
-    network: network,
+    network,
     maxHops: 5,
   });
 
@@ -129,7 +127,7 @@ export const soroswapGetBestPath = async ({
   return null;
 };
 
-interface buildAndSimulateSoroswapTxParams {
+interface BuildAndSimulateSoroswapTxParams {
   amountIn: string;
   amountInDecimals?: number;
   amountOut: string;
@@ -151,7 +149,7 @@ export const buildAndSimulateSoroswapTx = async ({
   publicKey,
   memo,
   transactionFee,
-}: buildAndSimulateSoroswapTxParams) => {
+}: BuildAndSimulateSoroswapTxParams) => {
   const Sdk = getSdk(networkDetails.networkPassphrase);
   const server = stellarSdkServer(
     networkDetails.networkUrl,
@@ -168,7 +166,7 @@ export const buildAndSimulateSoroswapTx = async ({
     new URL("https://api.soroswap.finance/api/testnet/router"),
   );
   const routerData = await routerRes.json();
-  const routerAddress = routerData.address;
+  const routerAddress: string = routerData.address;
 
   const tx = new Sdk.TransactionBuilder(account, {
     fee: xlmToStroop(transactionFee).toFixed(),
