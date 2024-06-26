@@ -87,11 +87,12 @@ export const AssetIcon = ({
     );
   }
 
-  // Placeholder for Soroban tokens
+  // Get icons for Soroban tokens
   if (_isSorobanToken && !icon) {
     const soroswapTokenDetail = soroswapTokens.find(
       (token) => token.contract === issuerKey,
     );
+    // check to see if we have an icon from an external service, like Soroswap
     if (soroswapTokenDetail?.icon) {
       imgSrc = soroswapTokenDetail?.icon;
     } else {

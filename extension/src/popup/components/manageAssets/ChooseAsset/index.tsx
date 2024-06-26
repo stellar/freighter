@@ -128,6 +128,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           const nativeContractDetails =
             getNativeContractDetails(networkDetails);
 
+          // if we have a balance for a token, it will have been handled above.
+          // This is designed to populate tokens available from Soroswap that the user does not already have
           if (
             balances &&
             !balances[canonical] &&

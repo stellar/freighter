@@ -106,7 +106,6 @@ export const ExperimentalFeatures = () => {
                     />
                   </div>
                   <span>{t("Enable Blind Signing on Ledger")}</span>
-
                   {isLoading ? (
                     <div className="ExperimentalFeatures__feature__row__loader">
                       <Loader />

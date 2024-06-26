@@ -375,7 +375,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         );
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          console.log("f");
           if (!isSwap) {
             await dispatch(
               addRecentAddress({ publicKey: federationAddress || destination }),

@@ -79,11 +79,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                 onClick={() => {
                   if (assetSelect.isSource) {
                     dispatch(saveAsset(canonical));
-                    if (isContract) {
-                      dispatch(saveIsToken(true));
-                    } else {
-                      dispatch(saveIsToken(false));
-                    }
+                    dispatch(saveIsToken(isContract));
                     history.goBack();
                   } else {
                     dispatch(saveDestinationAsset(canonical));
