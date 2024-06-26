@@ -105,7 +105,8 @@ export const ExperimentalFeatures = () => {
                       alt="icon experimental feature"
                     />
                   </div>
-                  <span>{t("Enable Blind Signing on Ledger")}</span>\
+                  <span>{t("Enable Blind Signing on Ledger")}</span>
+
                   {isLoading ? (
                     <div className="ExperimentalFeatures__feature__row__loader">
                       <Loader />
