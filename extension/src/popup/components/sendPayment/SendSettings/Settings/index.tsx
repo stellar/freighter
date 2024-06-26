@@ -86,7 +86,7 @@ export const Settings = ({
 
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
-  const showSlippage = isPathPayment || isSwap;
+  const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
 
   async function goToReview() {
     if (isToken) {
@@ -127,7 +127,6 @@ export const Settings = ({
       }
       return;
     }
-    console.log(1);
 
     if (isSoroswap) {
       let simulatedTx;

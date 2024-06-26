@@ -34,6 +34,7 @@ import {
   ActionStatus,
   BlockedAccount,
   BalanceToMigrate,
+  SoroswapToken,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -46,7 +47,10 @@ import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
-import { soroswapGetBestPath } from "popup/helpers/sorobanSwap";
+import {
+  soroswapGetBestPath,
+  getSoroswapTokens as getSoroswapTokensService,
+} from "popup/helpers/sorobanSwap";
 import { hardwareSign } from "popup/helpers/hardwareConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
@@ -425,6 +429,23 @@ export const getAssetDomains = createAsyncThunk<
   }) => getAssetDomainsService({ balances, networkDetails }),
 );
 
+export const getSoroswapTokens = createAsyncThunk<
+  SoroswapToken[],
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getSoroswapTokens", async (_, thunkApi) => {
+  let tokenData = { assets: [] as SoroswapToken[] };
+
+  try {
+    tokenData = await getSoroswapTokensService();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
+  }
+
+  return tokenData.assets;
+});
+
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
   Horizon.ServerApi.PaymentPathRecord,
@@ -576,6 +597,7 @@ interface InitialState {
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
   assetDomains: AssetDomains;
+  soroswapTokens: SoroswapToken[];
   assetSelect: {
     type: AssetSelectType;
     isSource: boolean;
@@ -633,6 +655,7 @@ export const initialState: InitialState = {
   },
   assetIcons: {},
   assetDomains: {},
+  soroswapTokens: [],
   assetSelect: {
     type: AssetSelectType.MANAGE,
     isSource: true,
@@ -810,6 +833,14 @@ const transactionSubmissionSlice = createSlice({
       return {
         ...state,
         assetDomains,
+      };
+    });
+    builder.addCase(getSoroswapTokens.fulfilled, (state, action) => {
+      const soroswapTokens = action.payload || {};
+
+      return {
+        ...state,
+        soroswapTokens,
       };
     });
     builder.addCase(getBestPath.fulfilled, (state, action) => {

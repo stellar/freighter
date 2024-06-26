@@ -20,11 +20,12 @@ import { AppDispatch } from "popup/App";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useIsSwap } from "popup/helpers/useIsSwap";
+import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -41,6 +42,7 @@ import {
   getBestPath,
   resetDestinationAmount,
   getBestSoroswapPath,
+  getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -122,6 +124,7 @@ export const SendAmount = ({
     assetDomains,
     blockedDomains,
     assetIcons,
+    soroswapTokens,
   } = useSelector(transactionSubmissionSelector);
 
   const {
@@ -259,8 +262,9 @@ export const SendAmount = ({
       if (isSoroswap) {
         const getContract = (formAsset: string) =>
           formAsset === "native"
-            ? "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+            ? getNativeContractDetails(networkDetails).contract
             : formAsset.split(":")[1];
+
         await dispatch(
           getBestSoroswapPath({
             amount: formikAm,
@@ -351,6 +355,12 @@ export const SendAmount = ({
     formik.values.asset,
     asset,
   ]);
+
+  useEffect(() => {
+    if (!soroswapTokens.length) {
+      dispatch(getSoroswapTokens());
+    }
+  }, [isSwap, useIsSoroswapEnabled]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;

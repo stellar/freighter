@@ -66,6 +66,8 @@ export const AssetIcon = ({
   // For all non-XLM assets (assets where we need to fetch the icon from elsewhere), start by showing a loading state as there is work to do
   const [isLoading, setIsLoading] = useState(!isXlm);
 
+  const { soroswapTokens } = useSelector(transactionSubmissionSelector);
+
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
   let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
   if (icon) {
@@ -87,7 +89,14 @@ export const AssetIcon = ({
 
   // Placeholder for Soroban tokens
   if (_isSorobanToken && !icon) {
-    return <SorobanTokenIcon />;
+    const soroswapTokenDetail = soroswapTokens.find(
+      (token) => token.contract === issuerKey,
+    );
+    if (soroswapTokenDetail?.icon) {
+      imgSrc = soroswapTokenDetail?.icon;
+    } else {
+      return <SorobanTokenIcon />;
+    }
   }
 
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.

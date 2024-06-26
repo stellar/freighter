@@ -24,17 +24,14 @@ import "./styles.scss";
 
 interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
-  soroswapTokens: { contract: string }[];
 }
 
-export const SelectAssetRows = ({
-  assetRows,
-  soroswapTokens,
-}: SelectAssetRowsProps) => {
+export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
   const {
     accountBalances: { balances = {} },
     assetSelect,
     blockedDomains,
+    soroswapTokens,
   } = useSelector(transactionSubmissionSelector);
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
@@ -43,7 +40,6 @@ export const SelectAssetRows = ({
     if (!balances) {
       return "";
     }
-    console.log(canonical);
     const bal: Balance = balances[canonical as keyof Balances];
     if (bal) {
       return bal.total.toString();
@@ -59,7 +55,7 @@ export const SelectAssetRows = ({
     if (bal) {
       return getTokenBalance(bal);
     }
-    return "";
+    return "0";
   };
 
   // hide balances for path pay dest asset

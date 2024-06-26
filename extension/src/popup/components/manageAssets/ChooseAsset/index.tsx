@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { ROUTES } from "popup/constants/routes";
 import { sortBalances } from "popup/helpers/account";
 import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
-import { getSoroswapTokens } from "popup/helpers/sorobanSwap";
 import {
   transactionSubmissionSelector,
   AssetSelectType,
@@ -20,6 +19,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { getAssetDomain } from "popup/helpers/getAssetDomain";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
 import { Balances } from "@shared/api/types";
 
@@ -34,18 +34,15 @@ interface ChooseAssetProps {
 
 export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { t } = useTranslation();
-  const { assetIcons, assetSelect } = useSelector(
+  const { assetIcons, assetSelect, soroswapTokens } = useSelector(
     transactionSubmissionSelector,
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const { networkUrl, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [soroswapTokens, setSoroswapTokens] = useState([] as any[]);
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
 
@@ -71,7 +68,18 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           contractId,
         } = sortedBalances[i];
 
-        if (isSwap && "decimals" in sortedBalances[i]) {
+        /* slightly twisty logic to determine if we should skip showing tokens in the asset select dropdown:
+          1. We determine if it's a token balance by checking for "decimals"
+          2. If it's a swap, we want to skip this balance UNLESS soroswap is enabled
+          3. If it's a swap AND soroswap is enabled, we only want to show tokens in the source dropdown because soroswap may not have liquidity for a user's custom token
+        */
+
+        if (
+          "decimals" in sortedBalances[i] &&
+          isSwap &&
+          !isSoroswapEnabled &&
+          !assetSelect.isSource
+        ) {
           // eslint-disable-next-line
           continue;
         }
@@ -84,8 +92,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               // eslint-disable-next-line no-await-in-loop
               domain = await getAssetDomain(
                 issuer.key as string,
-                networkUrl,
-                networkPassphrase,
+                networkDetails.networkUrl,
+                networkDetails.networkPassphrase,
               );
             } catch (e) {
               console.error(e);
@@ -113,17 +121,23 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         }
       }
 
-      if (isSoroswapEnabled && isSwap) {
-        const tokenData = await getSoroswapTokens();
-        setSoroswapTokens(tokenData.assets);
-        tokenData.assets.forEach((token) => {
-          const canonical = getCanonicalFromAsset(token.code, token.issuer);
-          if (balances && !balances[canonical]) {
+      if (isSoroswapEnabled && isSwap && !assetSelect.isSource) {
+        soroswapTokens.forEach((token) => {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          const canonical = getCanonicalFromAsset(token.code, token.contract);
+          const nativeContractDetails =
+            getNativeContractDetails(networkDetails);
+
+          if (
+            balances &&
+            !balances[canonical] &&
+            token.contract !== nativeContractDetails.contract
+          ) {
             collection.push({
               code: token.code,
-              issuer: token.issuer || token.contract,
+              issuer: token.contract,
               image: token.icon,
-              domain: token.domain,
+              domain: "",
               icon: token.icon,
             });
           }
@@ -138,12 +152,13 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   }, [
     assetIcons,
     balances,
-    networkUrl,
     managingAssets,
     isSorobanSuported,
     isSwap,
-    networkPassphrase,
     isSoroswapEnabled,
+    assetSelect.isSource,
+    soroswapTokens,
+    networkDetails,
   ]);
 
   return (
@@ -168,10 +183,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             {managingAssets ? (
               <ManageAssetRows assetRows={assetRows} chooseAsset />
             ) : (
-              <SelectAssetRows
-                assetRows={assetRows}
-                soroswapTokens={soroswapTokens}
-              />
+              <SelectAssetRows assetRows={assetRows} />
             )}
           </div>
         </div>
