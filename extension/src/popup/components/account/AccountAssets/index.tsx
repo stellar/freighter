@@ -39,6 +39,7 @@ export const AssetIcon = ({
   retryAssetIconFetch,
   isLPShare = false,
   isSorobanToken = false,
+  icon,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -46,6 +47,7 @@ export const AssetIcon = ({
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
   isSorobanToken?: boolean;
+  icon?: string;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -64,8 +66,13 @@ export const AssetIcon = ({
   // For all non-XLM assets (assets where we need to fetch the icon from elsewhere), start by showing a loading state as there is work to do
   const [isLoading, setIsLoading] = useState(!isXlm);
 
+  const { soroswapTokens } = useSelector(transactionSubmissionSelector);
+
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
-  const imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+  let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+  if (icon) {
+    imgSrc = icon;
+  }
 
   const _isSorobanToken = !isSorobanToken
     ? issuerKey && isSorobanIssuer(issuerKey)
@@ -80,9 +87,17 @@ export const AssetIcon = ({
     );
   }
 
-  // Placeholder for Soroban tokens
-  if (_isSorobanToken) {
-    return <SorobanTokenIcon />;
+  // Get icons for Soroban tokens
+  if (_isSorobanToken && !icon) {
+    const soroswapTokenDetail = soroswapTokens.find(
+      (token) => token.contract === issuerKey,
+    );
+    // check to see if we have an icon from an external service, like Soroswap
+    if (soroswapTokenDetail?.icon) {
+      imgSrc = soroswapTokenDetail?.icon;
+    } else {
+      return <SorobanTokenIcon />;
+    }
   }
 
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
@@ -93,7 +108,7 @@ export const AssetIcon = ({
   }
 
   // if we have an asset path, start loading the path in an `<img>`
-  return canonicalAsset || isXlm ? (
+  return canonicalAsset || isXlm || imgSrc ? (
     <div
       className={`AccountAssets__asset--logo ${
         hasError ? "AccountAssets__asset--error" : ""
