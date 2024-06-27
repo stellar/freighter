@@ -68,18 +68,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           contractId,
         } = sortedBalances[i];
 
-        /* slightly twisty logic to determine if we should skip showing tokens in the asset select dropdown:
-          1. We determine if it's a token balance by checking for "decimals"
-          2. If it's a swap, we want to skip this balance UNLESS soroswap is enabled
-          3. If it's a swap AND soroswap is enabled, we only want to show tokens in the source dropdown because soroswap may not have liquidity for a user's custom token
-        */
-
-        if (
-          "decimals" in sortedBalances[i] &&
-          isSwap &&
-          !isSoroswapEnabled &&
-          !assetSelect.isSource
-        ) {
+        // If we are in the swap flow and the asset has decimals (is a token), we skip it if Soroswap is not enabled
+        if ("decimals" in sortedBalances[i] && isSwap && !isSoroswapEnabled) {
           // eslint-disable-next-line
           continue;
         }
