@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
+import BigNumber from "bignumber.js";
 import {
   MuxedAccount,
   Transaction,
@@ -13,13 +14,19 @@ import {
   Operation,
 } from "stellar-sdk";
 
+import { ActionStatus } from "@shared/api/types";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
   settingsNetworkDetailsSelector,
   settingsExperimentalModeSelector,
 } from "popup/ducks/settings";
 
-import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
+import {
+  ShowOverlayStatus,
+  getAccountBalances,
+  resetAccountBalanceStatus,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
@@ -60,15 +67,18 @@ import "./styles.scss";
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const { accountBalances, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
-  const { networkName, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkName, networkPassphrase } = networkDetails;
 
   const tx = getTransactionInfo(location.search);
 
@@ -174,6 +184,20 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired, isMalicious, isUnsafe]);
 
+  useEffect(() => {
+    if (currentAccount.publicKey) {
+      dispatch(
+        getAccountBalances({
+          publicKey: currentAccount.publicKey,
+          networkDetails,
+        }),
+      );
+    }
+    return () => {
+      dispatch(resetAccountBalanceStatus());
+    };
+  }, [currentAccount.publicKey, dispatch, networkDetails]);
+
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
   if (_networkPassphrase !== networkPassphrase) {
@@ -277,6 +301,32 @@ export const SignTransaction = () => {
         ) : null}
         {renderTabBody()}
       </div>
+    );
+  }
+
+  const hasLoadedBalances =
+    accountBalanceStatus !== ActionStatus.PENDING &&
+    accountBalanceStatus !== ActionStatus.IDLE &&
+    accountBalanceStatus !== ActionStatus.ERROR;
+  // needs a loading state, only show instead of the rest of dom here
+  const hasEnoughXlm = accountBalances.balances?.native.available.lte(
+    new BigNumber(_fee as string),
+  );
+  if (hasLoadedBalances && currentAccount.publicKey && !hasEnoughXlm) {
+    return (
+      <WarningMessage
+        handleCloseClick={() => window.close()}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("INSUFFICIENT FUNDS FOR FEE")}
+      >
+        <p>
+          <Trans domain={domain}>
+            Your available XLM balance is not enough to pay for the transaction
+            fee.
+          </Trans>
+        </p>
+      </WarningMessage>
     );
   }
 
