@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { captureException } from "@sentry/browser";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -22,7 +21,6 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { simulateTokenPayment } from "popup/ducks/token-payment";
-import { buildAndSimulateSoroswapTx } from "popup/helpers/sorobanSwap";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -45,17 +43,12 @@ export const Settings = ({
   const {
     asset,
     amount,
-    decimals,
     destination,
-    destinationAmount,
-    destinationDecimals,
     transactionFee,
     transactionTimeout,
     memo,
     allowedSlippage,
     isToken,
-    isSoroswap,
-    path,
   } = useSelector(transactionDataSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
@@ -86,7 +79,7 @@ export const Settings = ({
 
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
-  const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
+  const showSlippage = isPathPayment || isSwap;
 
   async function goToReview() {
     if (isToken) {
@@ -126,32 +119,6 @@ export const Settings = ({
         navigateTo(next);
       }
       return;
-    }
-
-    if (isSoroswap) {
-      let simulatedTx;
-      try {
-        simulatedTx = await buildAndSimulateSoroswapTx({
-          networkDetails,
-          publicKey,
-          amountIn: amount,
-          amountInDecimals: decimals,
-          amountOut: destinationAmount,
-          amountOutDecimals: destinationDecimals,
-          memo,
-          transactionFee,
-          path,
-        });
-      } catch (e) {
-        console.error(e);
-        captureException(
-          `Unable to simulate soroswap tx ${JSON.stringify(path)}`,
-        );
-        return;
-      }
-
-      dispatch(saveSimulation(simulatedTx));
-      navigateTo(next);
     }
     navigateTo(next);
   }

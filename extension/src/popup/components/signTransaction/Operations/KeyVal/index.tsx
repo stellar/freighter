@@ -1,6 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import * as Sentry from "@sentry/browser";
 import {
   Asset,
   Claimant,
@@ -411,6 +412,9 @@ export const KeyValueInvokeHostFnArgs = ({
         setArgNames(argNamesPositional);
         setLoading(false);
       } catch (error) {
+        Sentry.captureException(
+          `Failed to get contract spec for ${contractId}`,
+        );
         setLoading(false);
       }
     }
