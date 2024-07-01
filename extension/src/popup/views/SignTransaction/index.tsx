@@ -55,6 +55,7 @@ import {
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { Loading } from "popup/components/Loading";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Tabs } from "popup/components/Tabs";
@@ -236,6 +237,37 @@ export const SignTransaction = () => {
     );
   }
 
+  const hasLoadedBalances =
+    accountBalanceStatus !== ActionStatus.PENDING &&
+    accountBalanceStatus !== ActionStatus.IDLE;
+
+  if (!hasLoadedBalances) {
+    return <Loading />;
+  }
+
+  const hasBalance =
+    hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
+  const hasEnoughXlm = accountBalances.balances?.native.available.lte(
+    new BigNumber(_fee as string),
+  );
+  if (hasBalance && currentAccount.publicKey && !hasEnoughXlm) {
+    return (
+      <WarningMessage
+        handleCloseClick={() => window.close()}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("INSUFFICIENT FUNDS FOR FEE")}
+      >
+        <p>
+          <Trans domain={domain}>
+            Your available XLM balance is not enough to pay for the transaction
+            fee.
+          </Trans>
+        </p>
+      </WarningMessage>
+    );
+  }
+
   function renderTab(tab: string) {
     function renderTabBody() {
       const _tx = transaction as Transaction<Memo<MemoType>, Operation[]>;
@@ -301,32 +333,6 @@ export const SignTransaction = () => {
         ) : null}
         {renderTabBody()}
       </div>
-    );
-  }
-
-  const hasLoadedBalances =
-    accountBalanceStatus !== ActionStatus.PENDING &&
-    accountBalanceStatus !== ActionStatus.IDLE &&
-    accountBalanceStatus !== ActionStatus.ERROR;
-  // needs a loading state, only show instead of the rest of dom here
-  const hasEnoughXlm = accountBalances.balances?.native.available.lte(
-    new BigNumber(_fee as string),
-  );
-  if (hasLoadedBalances && currentAccount.publicKey && !hasEnoughXlm) {
-    return (
-      <WarningMessage
-        handleCloseClick={() => window.close()}
-        isActive
-        variant={WarningMessageVariant.warning}
-        header={t("INSUFFICIENT FUNDS FOR FEE")}
-      >
-        <p>
-          <Trans domain={domain}>
-            Your available XLM balance is not enough to pay for the transaction
-            fee.
-          </Trans>
-        </p>
-      </WarningMessage>
     );
   }
 
