@@ -94,7 +94,7 @@
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-webpack-plugin": "^4.2.0",
     "glob": "^9.3.2",
-    "got": "11.8.2",
+    "got": "11.8.5",
     "husky": "^8.0.0",
     "isomorphic-unfetch": "^3.0.0",
     "jest": "^28.1.3",
