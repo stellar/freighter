@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
+import * as Sentry from "@sentry/browser";
 import {
   MemoType,
   Operation,
@@ -392,6 +393,9 @@ const AuthDetail = ({
         setCheckingTransfers(false);
       } catch (error) {
         console.error(error);
+        Sentry.captureException(
+          `Failed to check spec for invocation -  ${rootJsonDepKey}`,
+        );
         setCheckingTransfers(false);
       }
     }

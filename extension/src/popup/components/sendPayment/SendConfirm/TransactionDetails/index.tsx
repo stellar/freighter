@@ -7,7 +7,6 @@ import {
   Memo,
   Operation,
   TransactionBuilder,
-  Networks,
 } from "stellar-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -48,7 +47,6 @@ import {
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
-  addTokenId,
 } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -208,7 +206,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       destinationAmount,
       path,
       isToken,
-      isSoroswap,
     },
     assetIcons,
     hardwareWalletData: { status: hwStatus },
@@ -271,7 +268,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     dispatch(getBlockedAccounts());
   }, [dispatch]);
 
-  const handleSorobanTransaction = async () => {
+  const handleXferTransaction = async () => {
     try {
       const res = await dispatch(
         signFreighterSorobanTransaction({
@@ -292,20 +289,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           }),
         );
 
-        if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
+        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
           emitMetric(METRIC_NAMES.sendPaymentSuccess, {
             sourceAsset: sourceAsset.code,
           });
-
-          if (isSoroswap) {
-            await dispatch(
-              addTokenId({
-                publicKey,
-                tokenId: destAsset.issuer,
-                network: networkDetails.network as Networks,
-              }),
-            );
-          }
         }
       }
     } catch (e) {
@@ -398,8 +385,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   // handles signing and submitting
   const handleSend = async () => {
-    if (isToken || isSoroswap) {
-      await handleSorobanTransaction();
+    if (isToken) {
+      await handleXferTransaction();
     } else {
       await handlePaymentTransaction();
     }
