@@ -14,11 +14,16 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  formatDomain,
+  getAssetFromCanonical,
+} from "helpers/stellar";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { Balance, Balances, SorobanBalance } from "@shared/api/types";
 import { formatAmount } from "popup/helpers/formatters";
+import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 
 import "./styles.scss";
 
@@ -32,9 +37,11 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     assetSelect,
     blockedDomains,
     soroswapTokens,
+    transactionData,
   } = useSelector(transactionSubmissionSelector);
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
+  const isSoroswapEnabled = useIsSoroswapEnabled();
 
   const getAccountBalance = (canonical: string) => {
     if (!balances) {
@@ -71,6 +78,21 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
             const isScamAsset = !!blockedDomains.domains[domain];
             const isContract = isContractId(issuer);
             const canonical = getCanonicalFromAsset(code, issuer);
+            let isSoroswap = false;
+
+            if (isSoroswapEnabled) {
+              // check if either asset is a Soroswap token
+              const otherAsset = getAssetFromCanonical(
+                assetSelect.isSource
+                  ? transactionData.destinationAsset
+                  : transactionData.asset,
+              );
+              isSoroswap =
+                !!soroswapTokens.find(({ contract }) => contract === issuer) ||
+                !!soroswapTokens.find(
+                  ({ contract }) => contract === otherAsset.issuer,
+                );
+            }
 
             return (
               <div
@@ -84,15 +106,9 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                   } else {
                     dispatch(saveDestinationAsset(canonical));
                     dispatch(saveDestinationIcon(icon));
-                    dispatch(
-                      saveIsSoroswap(
-                        !!soroswapTokens.find(
-                          ({ contract }) => contract === issuer,
-                        ),
-                      ),
-                    );
                     history.goBack();
                   }
+                  dispatch(saveIsSoroswap(isSoroswap));
                 }}
               >
                 <AssetIcon
