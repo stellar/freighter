@@ -188,6 +188,14 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
+export interface SoroswapToken {
+  code: string;
+  contract: string;
+  decimals: number;
+  icon: string;
+  name: string;
+}
+
 export interface NativeToken {
   type: SdkAssetType;
   code: string;

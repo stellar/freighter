@@ -38,6 +38,7 @@ import "./styles.scss";
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
   contract?: string;
+  icon?: string;
 };
 
 export interface NewAssetFlags {

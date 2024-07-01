@@ -322,7 +322,7 @@ export const Operations = ({
           <>
             {signer && <KeyValueSigner signer={signer} />}
             {inflationDest && (
-              <KeyValueList
+              <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
                 operationValue={inflationDest}
               />
@@ -519,7 +519,7 @@ export const Operations = ({
         const { trustor, asset, flags } = op;
         return (
           <>
-            <KeyValueList
+            <KeyValueWithPublicKey
               operationKey={t("Trustor")}
               operationValue={trustor}
             />

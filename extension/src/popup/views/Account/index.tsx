@@ -38,6 +38,7 @@ import {
   AssetSelectType,
   getBlockedDomains,
   getAccountBalances,
+  getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -47,6 +48,7 @@ import {
 } from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
+import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
@@ -82,6 +84,7 @@ export const Account = () => {
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
   const [isLoading, setLoading] = useState(true);
+  const isSoroswapEnabled = useIsSoroswapEnabled();
 
   const { balances, isFunded, error } = accountBalances;
 
@@ -108,10 +111,14 @@ export const Account = () => {
       return;
     }
 
+    if (isSoroswapEnabled) {
+      dispatch(getSoroswapTokens());
+    }
+
     setSortedBalances(sortBalances(balances));
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch]);
+  }, [balances, networkDetails, dispatch, isSoroswapEnabled]);
 
   useEffect(() => {
     if (!balances) {
