@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
-import BigNumber from "bignumber.js";
 import {
   MuxedAccount,
   Transaction,
@@ -36,6 +35,7 @@ import {
   getTransactionInfo,
   isFederationAddress,
   isMuxedAccount,
+  stroopToXlm,
   truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
@@ -248,7 +248,7 @@ export const SignTransaction = () => {
   const hasBalance =
     hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
   const hasEnoughXlm = accountBalances.balances?.native.available.gt(
-    new BigNumber(_fee as string),
+    stroopToXlm(_fee as string),
   );
   if (hasBalance && currentAccount.publicKey && !hasEnoughXlm) {
     return (
