@@ -71,6 +71,8 @@ export const SignTransaction = () => {
   const dispatch = useDispatch();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
+    useState(false);
 
   const { accountBalances, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
@@ -250,10 +252,15 @@ export const SignTransaction = () => {
   const hasEnoughXlm = accountBalances.balances?.native.available.gt(
     stroopToXlm(_fee as string),
   );
-  if (hasBalance && currentAccount.publicKey && !hasEnoughXlm) {
+  if (
+    hasBalance &&
+    currentAccount.publicKey &&
+    !hasEnoughXlm &&
+    !hasAcceptedInsufficientFee
+  ) {
     return (
       <WarningMessage
-        handleCloseClick={() => window.close()}
+        handleCloseClick={() => setHasAcceptedInsufficientFee(true)}
         isActive
         variant={WarningMessageVariant.warning}
         header={t("INSUFFICIENT FUNDS FOR FEE")}
