@@ -247,7 +247,7 @@ export const SignTransaction = () => {
 
   const hasBalance =
     hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
-  const hasEnoughXlm = accountBalances.balances?.native.available.lte(
+  const hasEnoughXlm = accountBalances.balances?.native.available.gt(
     new BigNumber(_fee as string),
   );
   if (hasBalance && currentAccount.publicKey && !hasEnoughXlm) {
