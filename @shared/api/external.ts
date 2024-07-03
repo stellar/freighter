@@ -4,7 +4,7 @@ import {
   sendMessageToContentScript,
   FreighterApiInternalError,
 } from "./helpers/extensionMessaging";
-import { UserInfo, FreighterApiError } from "./types";
+import { FreighterApiError } from "./types";
 
 export const requestAccess = async (): Promise<{
   publicKey: string;
