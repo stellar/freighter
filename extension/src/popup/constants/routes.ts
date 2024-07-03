@@ -28,7 +28,7 @@ export enum ROUTES {
   addAccount = "/add-account",
   signTransaction = "/sign-transaction",
   reviewAuthorization = "/review-auth",
-  signBlob = "/sign-blob",
+  signMessage = "/sign-message",
   signAuthEntry = "/sign-auth-entry",
   grantAccess = "/grant-access",
   mnemonicPhrase = "/mnemonic-phrase",

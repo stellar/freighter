@@ -76,3 +76,19 @@ export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
 
   return res;
 };
+
+export const FreighterApiNodeError = {
+  code: -1,
+  message: "Node environment is not supported",
+};
+
+export const FreighterApiInternalError = {
+  code: -1,
+  message:
+    "The wallet encountered an internal error. Please try again or contact the wallet if the problem persists.",
+};
+
+export const FreighterApiDeclinedError = {
+  code: -4,
+  message: "The user rejected this request.",
+};

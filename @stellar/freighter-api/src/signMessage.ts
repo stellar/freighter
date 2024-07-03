@@ -1,27 +1,26 @@
-import { submitTransaction } from "@shared/api/external";
+import { submitBlob } from "@shared/api/external";
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
-export const signTransaction = async (
-  transactionXdr: string,
+export const signMessage = async (
+  blob: string,
   opts?: {
-    networkPassphrase?: string;
-    address?: string;
+    accountToSign?: string;
   }
 ): Promise<
-  | { signedTxXdr: string; signerAddress: string }
+  | { signedMessage: string; signerAddress: string }
   | { error: FreighterApiError | string }
 > => {
   if (isBrowser) {
-    const req = await submitTransaction(transactionXdr, opts);
+    const req = await submitBlob(blob, opts);
 
     if (req.error) {
       return { error: req.error };
     }
 
     return {
-      signedTxXdr: req.signedTransaction,
+      signedMessage: req.signedMessage,
       signerAddress: req.signerAddress,
     };
   }

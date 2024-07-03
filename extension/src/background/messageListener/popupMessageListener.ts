@@ -130,7 +130,9 @@ const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
 // eslint-disable-next-line
-export const responseQueue: Array<(message?: any) => void> = [];
+export const responseQueue: Array<
+  (message?: any, messageAddress?: any) => void
+> = [];
 export const transactionQueue: StellarSdk.Transaction[] = [];
 export const blobQueue: {
   isDomainListedAllowed: boolean;
@@ -1068,7 +1070,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const transactionResponse = responseQueue.pop();
 
       if (typeof transactionResponse === "function") {
-        transactionResponse(response);
+        transactionResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1093,7 +1095,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const blobResponse = responseQueue.pop();
 
       if (typeof blobResponse === "function") {
-        blobResponse(response);
+        blobResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1118,7 +1120,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const entryResponse = responseQueue.pop();
 
       if (typeof entryResponse === "function") {
-        entryResponse(response);
+        entryResponse(response, sourceKeys.publicKey());
         return {};
       }
     }

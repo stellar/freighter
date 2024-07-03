@@ -1,6 +1,7 @@
+import { getAddress } from "./getAddress";
 import { getPublicKey } from "./getPublicKey";
 import { signTransaction } from "./signTransaction";
-import { signBlob } from "./signBlob";
+import { signMessage } from "./signMessage";
 import { signAuthEntry } from "./signAuthEntry";
 import { isConnected } from "./isConnected";
 import { getNetwork } from "./getNetwork";
@@ -13,9 +14,10 @@ import { requestAccess } from "./requestAccess";
 export const isBrowser = typeof window !== "undefined";
 
 export {
+  getAddress,
   getPublicKey,
   signTransaction,
-  signBlob,
+  signMessage,
   signAuthEntry,
   isConnected,
   getNetwork,
@@ -26,9 +28,10 @@ export {
   requestAccess,
 };
 export default {
+  getAddress,
   getPublicKey,
   signTransaction,
-  signBlob,
+  signMessage,
   signAuthEntry,
   isConnected,
   getNetwork,
