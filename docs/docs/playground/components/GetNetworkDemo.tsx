@@ -4,19 +4,18 @@ import { PlaygroundInput } from "./basics/inputs";
 
 export const GetNetworkDemo = () => {
   const [networkResult, setNetworkResult] = useState("");
-  const [networkPassphraseResult, setNetworkPhraseResult] = useState("");
 
   const btnHandler = async () => {
     let network;
+    let error = "";
 
-    network = await getNetwork();
-
-    if ("error" in network) {
-      setNetworkResult(JSON.stringify(network.error));
-    } else {
-      setNetworkResult(network.network);
-      setNetworkPhraseResult(network.networkPassphrase);
+    try {
+      network = await getNetwork();
+    } catch (e) {
+      error = e;
     }
+
+    setNetworkResult(network || error);
   };
 
   return (
@@ -24,10 +23,6 @@ export const GetNetworkDemo = () => {
       <div>
         What network is Freighter using?
         <PlaygroundInput readOnly value={networkResult} />
-      </div>
-      <div>
-        What network passphrase is Freighter using?
-        <PlaygroundInput readOnly value={networkPassphraseResult} />
       </div>
       <button type="button" onClick={btnHandler}>
         Get Network
