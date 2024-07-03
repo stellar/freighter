@@ -312,7 +312,7 @@ export const freighterApiMessageListener = (
         isDomainListedAllowed,
         domain,
         tab,
-        blob,
+        message: blob,
         url: tabUrl,
         accountToSign,
         networkPassphrase,

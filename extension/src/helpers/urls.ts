@@ -6,7 +6,7 @@ export interface MessageToSign {
   isDomainListedAllowed: boolean;
   domain: string;
   tab?: browser.Tabs.Tab;
-  blob: string;
+  message: string;
   url: string;
   accountToSign: string;
   networkPassphrase?: string;

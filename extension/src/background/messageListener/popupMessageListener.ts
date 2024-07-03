@@ -138,7 +138,7 @@ export const blobQueue: {
   isDomainListedAllowed: boolean;
   domain: string;
   tab: browser.Tabs.Tab | undefined;
-  blob: string;
+  message: string;
   url: string;
   accountToSign: string;
 }[] = [];
@@ -1089,7 +1089,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       const blob = blobQueue.pop();
       const response = blob
-        ? sourceKeys.sign(Buffer.from(blob.blob, "base64"))
+        ? sourceKeys.sign(Buffer.from(blob.message, "base64"))
         : null;
 
       const blobResponse = responseQueue.pop();

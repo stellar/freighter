@@ -92,7 +92,7 @@ export const submitTransaction = async (
   return { signedTransaction, signerAddress, error: response?.apiError };
 };
 
-export const submitBlob = async (
+export const submitMessage = async (
   blob: string,
   opts?: {
     accountToSign?: string;

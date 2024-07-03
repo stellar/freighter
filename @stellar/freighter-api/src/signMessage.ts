@@ -1,10 +1,10 @@
-import { submitBlob } from "@shared/api/external";
+import { submitMessage } from "@shared/api/external";
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const signMessage = async (
-  blob: string,
+  message: string,
   opts?: {
     accountToSign?: string;
   }
@@ -13,7 +13,7 @@ export const signMessage = async (
   | { error: FreighterApiError }
 > => {
   if (isBrowser) {
-    const req = await submitBlob(blob, opts);
+    const req = await submitMessage(message, opts);
 
     if (req.error) {
       return { error: req.error };

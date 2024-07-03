@@ -66,7 +66,7 @@ export const SignMessage = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectBlob, signBlob, message.blob, accountToSign);
+  } = useSetupSigningFlow(rejectBlob, signBlob, message.message, accountToSign);
 
   if (isHardwareWallet) {
     return (
@@ -206,7 +206,7 @@ export const SignMessage = () => {
               </div>
             ) : null}
           </div>
-          <Message message={message.blob} />
+          <Message message={message.message} />
         </View.Content>
         <View.Footer isInline>
           <Button
