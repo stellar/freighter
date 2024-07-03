@@ -11,6 +11,7 @@ const playgroundPaths = [
   "signTransaction",
   "signAuthEntry",
   "signBlob",
+  "getAddress",
 ];
 
 const GUIDE_BASE_PATH = "guide";
