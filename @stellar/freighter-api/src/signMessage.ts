@@ -10,7 +10,7 @@ export const signMessage = async (
   }
 ): Promise<
   | { signedMessage: string; signerAddress: string }
-  | { error: FreighterApiError | string }
+  | { error: FreighterApiError }
 > => {
   if (isBrowser) {
     const req = await submitBlob(blob, opts);

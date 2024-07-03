@@ -480,9 +480,15 @@ export const freighterApiMessageListener = (
   const requestConnectionStatus = () => ({ isConnected: true });
 
   const requestAllowedStatus = async () => {
-    const isAllowed = await isSenderAllowed({ sender });
+    try {
+      const isAllowed = await isSenderAllowed({ sender });
 
-    return { isAllowed };
+      return { isAllowed };
+    } catch (e) {
+      return {
+        apiError: FreighterApiInternalError,
+      };
+    }
   };
 
   const setAllowedStatus = async () => {

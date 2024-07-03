@@ -4,8 +4,7 @@ import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const getNetwork = async (): Promise<
-  | { network: string; networkPassphrase: string }
-  | { error: FreighterApiError | string }
+  { network: string; networkPassphrase: string } | { error: FreighterApiError }
 > => {
   if (isBrowser) {
     const req = await requestNetwork();

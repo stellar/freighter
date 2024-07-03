@@ -6,8 +6,11 @@ import {
 } from "./helpers/extensionMessaging";
 import { UserInfo, FreighterApiError } from "./types";
 
-export const requestAccess = async (): Promise<string> => {
-  let response = { publicKey: "", error: "" };
+export const requestAccess = async (): Promise<{
+  publicKey: string;
+  error?: FreighterApiError;
+}> => {
+  let response;
   try {
     response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS,
@@ -16,12 +19,9 @@ export const requestAccess = async (): Promise<string> => {
     console.error(e);
   }
 
-  const { publicKey, error } = response;
+  const { publicKey } = response || { publicKey: "" };
 
-  if (error) {
-    throw error;
-  }
-  return publicKey;
+  return { publicKey, error: response?.apiError };
 };
 
 export const requestPublicKey = async (): Promise<{
@@ -192,17 +192,9 @@ export const requestNetworkDetails = async (): Promise<{
   networkUrl: string;
   networkPassphrase: string;
   sorobanRpcUrl?: string;
+  error?: FreighterApiError;
 }> => {
-  let response = {
-    networkDetails: {
-      network: "",
-      networkName: "",
-      networkUrl: "",
-      networkPassphrase: "",
-      sorobanRpcUrl: undefined,
-    } as NetworkDetails,
-    error: "",
-  };
+  let response;
   try {
     response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS,
@@ -211,17 +203,32 @@ export const requestNetworkDetails = async (): Promise<{
     console.error(e);
   }
 
-  const { networkDetails, error } = response;
+  const { networkDetails, apiError } = response || {
+    networkDetails: {
+      network: "",
+      networkName: "",
+      networkUrl: "",
+      networkPassphrase: "",
+      sorobanRpcUrl: undefined,
+      apiError: "",
+    } as NetworkDetails,
+  };
+
   const { network, networkUrl, networkPassphrase, sorobanRpcUrl } =
     networkDetails;
 
-  if (error) {
-    throw error;
-  }
-  return { network, networkUrl, networkPassphrase, sorobanRpcUrl };
+  return {
+    network,
+    networkUrl,
+    networkPassphrase,
+    sorobanRpcUrl,
+    error: apiError,
+  };
 };
 
-export const requestConnectionStatus = async (): Promise<boolean> => {
+export const requestConnectionStatus = async (): Promise<{
+  isConnected: boolean;
+}> => {
   let response = {
     isConnected: false,
   };
@@ -234,13 +241,14 @@ export const requestConnectionStatus = async (): Promise<boolean> => {
     console.error(e);
   }
 
-  return response.isConnected;
+  return { isConnected: response.isConnected };
 };
 
-export const requestAllowedStatus = async (): Promise<boolean> => {
-  let response = {
-    isAllowed: false,
-  };
+export const requestAllowedStatus = async (): Promise<{
+  isAllowed: boolean;
+  error?: FreighterApiError;
+}> => {
+  let response;
 
   try {
     response = await sendMessageToContentScript({
@@ -250,14 +258,16 @@ export const requestAllowedStatus = async (): Promise<boolean> => {
     console.error(e);
   }
 
-  return response.isAllowed;
+  const { isAllowed } = response || { isAllowed: false };
+
+  return { isAllowed, error: response?.apiError };
 };
 
-export const setAllowedStatus = async (): Promise<boolean> => {
-  let response = {
-    isAllowed: false,
-    error: "",
-  };
+export const setAllowedStatus = async (): Promise<{
+  isAllowed: boolean;
+  error?: FreighterApiError;
+}> => {
+  let response;
 
   try {
     response = await sendMessageToContentScript({
@@ -267,28 +277,9 @@ export const setAllowedStatus = async (): Promise<boolean> => {
     console.error(e);
   }
 
-  const { isAllowed, error } = response;
+  const { isAllowed } = response || {
+    isAllowed: false,
+  };
 
-  if (error) {
-    throw error;
-  }
-  return isAllowed;
-};
-
-export const requestUserInfo = async (): Promise<UserInfo> => {
-  let response = { userInfo: { publicKey: "" }, error: "" };
-  try {
-    response = await sendMessageToContentScript({
-      type: EXTERNAL_SERVICE_TYPES.REQUEST_USER_INFO,
-    });
-  } catch (e) {
-    console.error(e);
-  }
-
-  const { userInfo, error } = response;
-
-  if (error) {
-    throw error;
-  }
-  return userInfo;
+  return { isAllowed, error: response?.apiError };
 };

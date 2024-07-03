@@ -10,8 +10,7 @@ export const signTransaction = async (
     address?: string;
   }
 ): Promise<
-  | { signedTxXdr: string; signerAddress: string }
-  | { error: FreighterApiError | string }
+  { signedTxXdr: string; signerAddress: string } | { error: FreighterApiError }
 > => {
   if (isBrowser) {
     const req = await submitTransaction(transactionXdr, opts);

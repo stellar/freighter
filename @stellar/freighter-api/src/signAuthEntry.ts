@@ -10,7 +10,7 @@ export const signAuthEntry = async (
   }
 ): Promise<
   | { signedAuthEntry: string; signerAddress: string }
-  | { error: FreighterApiError | string }
+  | { error: FreighterApiError }
 > => {
   if (isBrowser) {
     const req = await submitAuthEntry(entryXdr, opts);
