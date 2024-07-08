@@ -85,6 +85,7 @@ export const freighterApiMessageListener = (
     browser.windows.create({
       url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
       ...WINDOW_SETTINGS,
+      width: 400,
     });
 
     return new Promise((resolve) => {
@@ -427,6 +428,7 @@ export const freighterApiMessageListener = (
     browser.windows.create({
       url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
       ...WINDOW_SETTINGS,
+      width: 400,
     });
 
     return new Promise((resolve) => {

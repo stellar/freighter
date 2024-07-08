@@ -24,10 +24,7 @@ export const GrantAccess = () => {
   const dispatch = useDispatch();
   const [isGranting, setIsGranting] = useState(false);
 
-  const { tab, url } = parsedSearchParam(location.search);
-
-  const title = tab && tab.title ? tab.title : "";
-
+  const { url } = parsedSearchParam(location.search);
   const domain = getUrlHostname(url);
   const publicKey = useSelector(publicKeySelector);
 
@@ -43,12 +40,13 @@ export const GrantAccess = () => {
     window.close();
   };
 
+  const tempVariant = "malicious";
   return (
     <>
       <ModalWrapper>
         <ModalInfo
           domain={domain}
-          domainTitle={title}
+          variant={tempVariant}
           subject={t(
             `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
           )}
@@ -59,25 +57,47 @@ export const GrantAccess = () => {
               <KeyIdenticon publicKey={publicKey} />
             </div>
           </div>
-          <ButtonsContainer>
-            <Button
-              size="md"
-              isFullWidth
-              variant="secondary"
-              onClick={rejectAndClose}
-            >
-              {t("Cancel")}
-            </Button>
-            <Button
-              size="md"
-              isFullWidth
-              variant="tertiary"
-              isLoading={isGranting}
-              onClick={() => grantAndClose()}
-            >
-              {t("Connect")}
-            </Button>
-          </ButtonsContainer>
+          {tempVariant === "malicious" ? (
+            <ButtonsContainer>
+              <Button
+                size="md"
+                isFullWidth
+                variant="error"
+                isLoading={isGranting}
+                onClick={() => grantAndClose()}
+              >
+                {t("Connect anyway")}
+              </Button>
+              <Button
+                size="md"
+                isFullWidth
+                variant="destructive"
+                onClick={rejectAndClose}
+              >
+                {t("Cancel")}
+              </Button>
+            </ButtonsContainer>
+          ) : (
+            <ButtonsContainer>
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                onClick={rejectAndClose}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                size="md"
+                isFullWidth
+                variant="tertiary"
+                isLoading={isGranting}
+                onClick={() => grantAndClose()}
+              >
+                {t("Connect")}
+              </Button>
+            </ButtonsContainer>
+          )}
         </ModalInfo>
       </ModalWrapper>
     </>
