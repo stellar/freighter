@@ -1,18 +1,28 @@
-import * as apiExternal from "@shared/api/external";
+import * as extensionMessaging from "@shared/api/helpers/extensionMessaging";
+
 import { signTransaction } from "../signTransaction";
 
 describe("signTransaction", () => {
   it("returns a transaction", async () => {
     const TEST_TRANSACTION = "AAA";
-    apiExternal.submitTransaction = jest.fn().mockReturnValue(TEST_TRANSACTION);
+    extensionMessaging.sendMessageToContentScript = jest
+      .fn()
+      .mockReturnValue({
+        signedTransaction: TEST_TRANSACTION,
+        signerAddress: "baz",
+      });
     const transaction = await signTransaction();
-    expect(transaction).toBe(TEST_TRANSACTION);
-  });
-  it("throws a generic error", () => {
-    const TEST_ERROR = "Error!";
-    apiExternal.submitTransaction = jest.fn().mockImplementation(() => {
-      throw TEST_ERROR;
+    expect(transaction).toEqual({
+      signedTxXdr: TEST_TRANSACTION,
+      signerAddress: "baz",
     });
-    expect(signTransaction).toThrowError(TEST_ERROR);
+  });
+  it("returns a generic error", async () => {
+    extensionMessaging.sendMessageToContentScript = jest
+      .fn()
+      .mockReturnValue({ apiError: "baz" });
+    const transaction = await signTransaction();
+
+    expect(transaction).toEqual({ error: "baz" });
   });
 });

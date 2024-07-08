@@ -178,11 +178,10 @@ export const requestNetwork = async (): Promise<{
   const { networkDetails } = response || {
     networkDetails: { network: "", networkPassphrase: "" },
   };
-  const { network, networkPassphrase } = networkDetails;
 
   return {
-    network,
-    networkPassphrase: networkPassphrase,
+    network: networkDetails?.network,
+    networkPassphrase: networkDetails?.networkPassphrase,
     error: response?.apiError,
   };
 };
