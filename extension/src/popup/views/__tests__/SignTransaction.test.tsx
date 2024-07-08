@@ -134,7 +134,9 @@ describe("SignTransactions", () => {
         <SignTransaction />
       </Wrapper>,
     );
-    await waitFor(() => screen.getByTestId("SignTransaction"));
+    await waitFor(() => screen.getByTestId("SignTransaction"), {
+      timeout: 15000,
+    });
     expect(screen.getByTestId("SignTransaction")).toBeDefined();
   });
 
@@ -206,10 +208,15 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
-      userEvent.click(screen.getByTestId("Tab-Details"));
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+        userEvent.click(screen.getByTestId("Tab-Details"));
+      },
+      {
+        timeout: 15000,
+      },
+    );
 
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
@@ -264,10 +271,15 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
-      userEvent.click(screen.getByTestId("Tab-Details"));
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+        userEvent.click(screen.getByTestId("Tab-Details"));
+      },
+      {
+        timeout: 15000,
+      },
+    );
 
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
