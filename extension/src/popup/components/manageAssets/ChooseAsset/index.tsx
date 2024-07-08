@@ -180,24 +180,22 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           </div>
         </div>
       </View.Content>
-      <View.Footer isInline allowWrap>
-        {managingAssets && (
-          <>
-            <div className="ChooseAsset__button">
-              <Link to={ROUTES.searchAsset}>
-                <Button
-                  size="md"
-                  isFullWidth
-                  variant="secondary"
-                  data-testid="ChooseAssetAddAssetButton"
-                >
-                  {t("Add an asset")}
-                </Button>
-              </Link>
-            </div>
-          </>
-        )}
-      </View.Footer>
+      {managingAssets && (
+        <View.Footer isInline allowWrap>
+          <div className="ChooseAsset__button">
+            <Link to={ROUTES.searchAsset}>
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                data-testid="ChooseAssetAddAssetButton"
+              >
+                {t("Add an asset")}
+              </Button>
+            </Link>
+          </div>
+        </View.Footer>
+      )}
     </React.Fragment>
   );
 };
