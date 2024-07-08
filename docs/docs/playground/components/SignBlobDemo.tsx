@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { signBlob } from "@stellar/freighter-api";
+import { signMessage } from "@stellar/freighter-api";
 import { PlaygroundTextarea } from "./basics/inputs";
 
 export const SignBlobDemo = () => {
@@ -12,14 +12,16 @@ export const SignBlobDemo = () => {
 
   const btnHandler = async () => {
     let signedBlob;
-    let error = "";
 
-    try {
-      signedBlob = await signBlob(b64blob);
-    } catch (e) {
-      error = e;
+    signedBlob = await signMessage(b64blob);
+
+    if ("error" in signedBlob) {
+      setResult(JSON.stringify(signedBlob.error));
+    } else {
+      console.log(signedBlob.signedMessage.toString());
+      setResult(signedBlob.signedMessage);
+      // setSignerAddressResult(signedTransaction.signerAddress);
     }
-    setResult(JSON.stringify(signedBlob) || error);
   };
   return (
     <section>
