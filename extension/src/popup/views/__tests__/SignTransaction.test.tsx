@@ -18,6 +18,7 @@ import { SignTransaction } from "../SignTransaction";
 import { Wrapper } from "../../__testHelpers__";
 
 jest.mock("stellar-identicon-js");
+jest.setTimeout(20000);
 
 const defaultSettingsState = {
   networkDetails: {
@@ -134,9 +135,7 @@ describe("SignTransactions", () => {
         <SignTransaction />
       </Wrapper>,
     );
-    await waitFor(() => screen.getByTestId("SignTransaction"), {
-      timeout: 15000,
-    });
+    await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("SignTransaction")).toBeDefined();
   });
 
@@ -208,15 +207,10 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(
-      () => {
-        expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
-        userEvent.click(screen.getByTestId("Tab-Details"));
-      },
-      {
-        timeout: 15000,
-      },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
 
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
@@ -271,15 +265,10 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(
-      () => {
-        expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
-        userEvent.click(screen.getByTestId("Tab-Details"));
-      },
-      {
-        timeout: 15000,
-      },
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
 
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
