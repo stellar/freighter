@@ -435,7 +435,23 @@ export const SendAmount = ({
       )}
       <React.Fragment>
         <SubviewHeader
-          title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
+          title={
+            <span>
+              {isSwap ? "Swap" : "Send"} {parsedSourceAsset.code}{" "}
+              {isSoroswap ? (
+                <span>
+                  on{" "}
+                  <a
+                    href="https://soroswap.finance/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Soroswap
+                  </a>
+                </span>
+              ) : null}
+            </span>
+          }
           subtitle={
             <>
               <span>{formatAmount(availBalance)}</span>{" "}

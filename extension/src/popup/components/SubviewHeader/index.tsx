@@ -7,7 +7,7 @@ import "./styles.scss";
 interface SubviewHeaderProps {
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
-  title: string;
+  title: string | React.ReactNode;
   subtitle?: React.ReactNode;
   hasBackButton?: boolean;
   rightButton?: React.ReactNode;
