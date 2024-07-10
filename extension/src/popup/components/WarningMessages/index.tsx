@@ -1053,12 +1053,3 @@ const WarningMessageTokenDetails = ({
     </div>
   );
 };
-
-export const MaliciousDomainWarning = ({ message }: { message: string }) => (
-  <div className="MaliciousDomainWarning">
-    <div className="Icon">
-      <Icon.Warning className="WarningMessage__icon" />
-    </div>
-    <p className="Message">{message}</p>
-  </div>
-);

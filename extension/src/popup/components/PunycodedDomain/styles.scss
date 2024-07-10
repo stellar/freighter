@@ -19,6 +19,12 @@
     color: var(--color-gray-90);
   }
 
+  &__title {
+    color: var(--color-gray-60);
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+  }
+
   div {
     margin-bottom: 0.25rem;
   }

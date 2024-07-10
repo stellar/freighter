@@ -1,14 +1,4 @@
 .ModalInfo {
-  &--card.Malicious {
-    .Card {
-      .PunycodedDomain {
-        .PunycodedDomain__domain {
-          color: var(--color-red-50);
-        }
-      }
-    }
-  }
-
   &--connection-request {
     display: flex;
     justify-content: center;
@@ -34,10 +24,10 @@
 
   &--subject {
     font-size: 0.75rem;
-    color: #a0a0a0;
-    background-color: #1c1c1c;
+    color: var(--color-gray-70);
+    background-color: var(--color-gray-30);
     border-radius: 6px;
-    line-height: 1rem;
+    line-height: 1.5rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
     padding: 0.5rem;

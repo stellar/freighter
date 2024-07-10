@@ -363,7 +363,7 @@ export const SignTransaction = () => {
       <div data-testid="SignTransaction" className="SignTransaction">
         <div className="SignTransaction__Body">
           <div className="SignTransaction__Title">
-            <PunycodedDomain domain={domain} />
+            <PunycodedDomain domain={domain} domainTitle="" />
             <div className="SignTransaction--connection-request">
               <div className="SignTransaction--connection-request-pill">
                 <Icon.Link />
