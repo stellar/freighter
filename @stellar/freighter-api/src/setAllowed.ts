@@ -4,7 +4,7 @@ import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const setAllowed = async (): Promise<
-  { isAllowed: boolean } | { error: FreighterApiError }
+  Partial<{ isAllowed: boolean }> & { error?: FreighterApiError }
 > => {
   if (isBrowser) {
     const req = await setAllowedStatus();

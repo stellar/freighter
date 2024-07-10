@@ -5,7 +5,10 @@ import { PlaygroundInput } from "./basics/inputs";
 export const IsAllowedDemo = () => {
   const [isAllowedState, setIsAllowedState] = useState(" ");
   const btnHandler = async () => {
-    setIsAllowedState((await isAllowed()).toString());
+    const isAllowedRes = await isAllowed();
+    if ("isAllowed" in isAllowedRes) {
+      setIsAllowedState(isAllowedRes.isAllowed.toString());
+    }
   };
   return (
     <section>

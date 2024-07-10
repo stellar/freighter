@@ -6,11 +6,13 @@ import { isBrowser } from ".";
 export const signAuthEntry = async (
   entryXdr: string,
   opts?: {
+    networkPassphrase?: string;
     address?: string;
   }
 ): Promise<
-  | { signedAuthEntry: string; signerAddress: string }
-  | { error: FreighterApiError }
+  Partial<{ signedAuthEntry: string; signerAddress: string }> & {
+    error?: FreighterApiError;
+  }
 > => {
   if (isBrowser) {
     const req = await submitAuthEntry(entryXdr, opts);

@@ -5,7 +5,10 @@ import { PlaygroundInput } from "./basics/inputs";
 export const IsConnectedDemo = () => {
   const [isConnectedState, setIsConnectedState] = useState(" ");
   const btnHandler = async () => {
-    setIsConnectedState((await isConnected()).toString());
+    const isConnectedRes = await isConnected();
+    if ("isConnected" in isConnectedRes) {
+      setIsConnectedState(isConnectedRes.isConnected.toString());
+    }
   };
   return (
     <section>

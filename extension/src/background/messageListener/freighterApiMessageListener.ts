@@ -136,6 +136,7 @@ export const freighterApiMessageListener = (
         network: _network,
         networkPassphrase,
         accountToSign,
+        address: addressToSign,
       } = request as ExternalRequestTx;
 
       const network =
@@ -238,7 +239,7 @@ export const freighterApiMessageListener = (
         isDomainListedAllowed,
         url: tabUrl,
         flaggedKeys,
-        accountToSign,
+        accountToSign: accountToSign || addressToSign,
       } as TransactionInfo;
 
       transactionQueue.push(transaction as StellarSdk.Transaction);
@@ -297,7 +298,7 @@ export const freighterApiMessageListener = (
 
   const submitBlob = async () => {
     try {
-      const { blob, accountToSign, networkPassphrase } =
+      const { blob, accountToSign, address, networkPassphrase } =
         request as ExternalRequestBlob;
 
       const { tab, url: tabUrl = "" } = sender;
@@ -314,7 +315,7 @@ export const freighterApiMessageListener = (
         tab,
         message: blob,
         url: tabUrl,
-        accountToSign,
+        accountToSign: accountToSign || address,
         networkPassphrase,
       };
 
@@ -342,13 +343,13 @@ export const freighterApiMessageListener = (
           );
         }
 
-        const response = (signedBlob: string) => {
+        const response = (signedBlob: string, signerAddress: string) => {
           if (signedBlob) {
             if (!isDomainListedAllowed) {
               allowList.push(punycodedDomain);
               localStore.setItem(ALLOWLIST_ID, allowList.join());
             }
-            resolve({ signedBlob });
+            resolve({ signedBlob, signerAddress });
           }
 
           resolve({
@@ -371,7 +372,7 @@ export const freighterApiMessageListener = (
 
   const submitAuthEntry = async () => {
     try {
-      const { entryXdr, accountToSign, networkPassphrase } =
+      const { entryXdr, accountToSign, address, networkPassphrase } =
         request as ExternalRequestAuthEntry;
 
       const { tab, url: tabUrl = "" } = sender;
@@ -384,7 +385,7 @@ export const freighterApiMessageListener = (
 
       const authEntry = {
         entry: entryXdr,
-        accountToSign,
+        accountToSign: accountToSign || address,
         tab,
         url: tabUrl,
         networkPassphrase,

@@ -6,11 +6,13 @@ import { isBrowser } from ".";
 export const signMessage = async (
   message: string,
   opts?: {
-    accountToSign?: string;
+    networkPassphrase?: string;
+    address?: string;
   }
 ): Promise<
-  | { signedMessage: string; signerAddress: string }
-  | { error: FreighterApiError }
+  Partial<{ signedMessage: string; signerAddress: string }> & {
+    error?: FreighterApiError;
+  }
 > => {
   if (isBrowser) {
     const req = await submitMessage(message, opts);

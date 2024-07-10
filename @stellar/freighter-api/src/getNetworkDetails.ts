@@ -4,13 +4,12 @@ import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const getNetworkDetails = async (): Promise<
-  | {
-      network: string;
-      networkUrl: string;
-      networkPassphrase: string;
-      sorobanRpcUrl?: string;
-    }
-  | { error: FreighterApiError }
+  Partial<{
+    network: string;
+    networkUrl: string;
+    networkPassphrase: string;
+    sorobanRpcUrl?: string;
+  }> & { error?: FreighterApiError }
 > => {
   if (isBrowser) {
     const req = await requestNetworkDetails();

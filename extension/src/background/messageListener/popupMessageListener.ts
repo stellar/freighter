@@ -140,11 +140,13 @@ export const blobQueue: {
   tab: browser.Tabs.Tab | undefined;
   message: string;
   url: string;
-  accountToSign: string;
+  accountToSign?: string;
+  address?: string;
 }[] = [];
 
 export const authEntryQueue: {
-  accountToSign: string;
+  accountToSign?: string;
+  address?: string;
   tab: browser.Tabs.Tab | undefined;
   entry: string; // xdr.SorobanAuthorizationEntry
   url: string;
@@ -1095,7 +1097,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const blobResponse = responseQueue.pop();
 
       if (typeof blobResponse === "function") {
-        blobResponse(response, sourceKeys.publicKey());
+        blobResponse(response?.toString("hex"), sourceKeys.publicKey());
         return {};
       }
     }

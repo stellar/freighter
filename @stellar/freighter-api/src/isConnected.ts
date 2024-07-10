@@ -4,7 +4,7 @@ import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const isConnected = async (): Promise<
-  { isConnected: boolean } | { error: FreighterApiError }
+  Partial<{ isConnected: boolean }> & { error?: FreighterApiError }
 > => {
   if (isBrowser) {
     if (window.freighter) {

@@ -1,17 +1,13 @@
 import React, { useState } from "react";
-import { signAuthEntry } from "@stellar/freighter-api";
+import { signMessage } from "@stellar/freighter-api";
 import { PlaygroundTextarea, PlaygroundInput } from "./basics/inputs";
 
-export const SignAuthEntryDemo = () => {
-  const [entryXdr, setEntryXdr] = useState("");
+export const SignMessageDemo = () => {
+  const [message, setMessage] = useState("");
   const [networkPassphrase, setNetworkPassphrase] = useState("");
   const [publicKey, setPublicKey] = useState("");
   const [result, setResult] = useState("");
   const [signerAddressResult, setSignerAddressResult] = useState("");
-
-  const xdrOnChangeHandler = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEntryXdr(e.currentTarget.value);
-  };
   const networkPassphraseOnChangeHandler = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -21,25 +17,29 @@ export const SignAuthEntryDemo = () => {
     setPublicKey(e.currentTarget.value);
   };
 
+  const blobOnChangeHandler = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.currentTarget.value);
+  };
+
   const btnHandler = async () => {
-    const signedAuthEntryObj = await signAuthEntry(entryXdr, {
+    const signedMessageObj = await signMessage(message, {
       address: publicKey,
       networkPassphrase,
     });
 
-    if ("error" in signedAuthEntryObj) {
-      setResult(JSON.stringify(signedAuthEntryObj.error));
+    if ("error" in signedMessageObj) {
+      setResult(JSON.stringify(signedMessageObj.error));
     } else {
-      setResult(signedAuthEntryObj.signedAuthEntry);
-      setSignerAddressResult(signedAuthEntryObj.signerAddress);
+      console.log(signedMessageObj);
+      setResult(signedMessageObj.signedMessage);
+      setSignerAddressResult(signedMessageObj.signerAddress);
     }
   };
-
   return (
     <section>
       <div>
-        Enter entry preimage XDR:
-        <PlaygroundTextarea onChange={xdrOnChangeHandler} />
+        Enter message to sign:
+        <PlaygroundTextarea onChange={blobOnChangeHandler} />
       </div>
       <div>
         Enter network passphrase (optional):
@@ -56,7 +56,7 @@ export const SignAuthEntryDemo = () => {
         <PlaygroundInput readOnly value={signerAddressResult} />
       </div>
       <button type="button" onClick={btnHandler}>
-        Sign Authorization Entry XDR
+        Sign message
       </button>
     </section>
   );

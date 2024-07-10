@@ -6,14 +6,12 @@ export const GetAddressDemo = () => {
   const [publicKeyResult, setPublicKeyResult] = useState("");
 
   const btnHandler = async () => {
-    let address;
+    const address = await getAddress();
 
-    address = await getAddress();
-
-    if ("error" in address) {
+    if (address.error) {
       setPublicKeyResult(JSON.stringify(address.error));
     } else {
-      setPublicKeyResult(address.address);
+      setPublicKeyResult(address.address || "");
     }
   };
 

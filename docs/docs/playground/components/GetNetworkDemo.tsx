@@ -7,9 +7,7 @@ export const GetNetworkDemo = () => {
   const [networkPassphraseResult, setNetworkPhraseResult] = useState("");
 
   const btnHandler = async () => {
-    let network;
-
-    network = await getNetwork();
+    const network = await getNetwork();
 
     if ("error" in network) {
       setNetworkResult(JSON.stringify(network.error));
