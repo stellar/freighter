@@ -453,10 +453,10 @@ export const SendAmount = ({
             </span>
           }
           subtitle={
-            <>
+            <div className="SendAmount__subtitle">
               <span>{formatAmount(availBalance)}</span>{" "}
               <span>{parsedSourceAsset.code}</span> {t("available")}
-            </>
+            </div>
           }
           hasBackButton={!isSwap}
           customBackAction={() => navigateTo(previous)}
