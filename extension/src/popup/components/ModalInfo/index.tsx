@@ -1,44 +1,38 @@
 import React from "react";
-import classNames from "classnames";
-import { Card, Icon } from "@stellar/design-system";
 
+import { Card, Icon } from "@stellar/design-system";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
-import { MaliciousDomainWarning } from "../WarningMessages";
+import { FirstTimeWarningMessage } from "popup/components/WarningMessages";
 
 import "./styles.scss";
 
 interface ModalInfoProps {
   children: React.ReactNode;
   domain: string;
+  domainTitle: string;
   subject: string;
-  variant?: "default" | "malicious";
 }
 
 export const ModalInfo = ({
   children,
   domain,
+  domainTitle,
   subject,
-  variant = "default",
-}: ModalInfoProps) => {
-  const cardClasses = classNames("ModalInfo--card", {
-    Malicious: variant === "malicious",
-  });
-  return (
-    <div className={cardClasses}>
+}: ModalInfoProps) => (
+  <>
+    <div className="ModalInfo--card">
       <Card variant="secondary">
-        <PunycodedDomain domain={domain} />
+        <PunycodedDomain domain={domain} domainTitle={domainTitle} />
         <div className="ModalInfo--connection-request">
           <div className="ModalInfo--connection-request-pill">
             <Icon.Link />
             <p>Connection Request</p>
           </div>
         </div>
-        {variant === "malicious" && (
-          <MaliciousDomainWarning message="This app is likely malicious. Signing messages or transactions from this app could result in losing your assets." />
-        )}
+        <FirstTimeWarningMessage />
         <div className="ModalInfo--subject">{subject}</div>
         {children}
       </Card>
     </div>
-  );
-};
+  </>
+);
