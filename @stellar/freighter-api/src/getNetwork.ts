@@ -4,7 +4,7 @@ import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const getNetwork = async (): Promise<
-  Partial<{ network: string; networkPassphrase: string }> & {
+  { network: string; networkPassphrase: string } & {
     error?: FreighterApiError;
   }
 > => {
@@ -12,11 +12,11 @@ export const getNetwork = async (): Promise<
     const req = await requestNetwork();
 
     if (req.error) {
-      return { error: req.error };
+      return { network: "", networkPassphrase: "", error: req.error };
     }
 
     return { network: req.network, networkPassphrase: req.networkPassphrase };
   }
 
-  return { error: FreighterApiNodeError };
+  return { network: "", networkPassphrase: "", error: FreighterApiNodeError };
 };

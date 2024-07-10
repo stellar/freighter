@@ -10,7 +10,7 @@ export const signTransaction = async (
     address?: string;
   }
 ): Promise<
-  Partial<{ signedTxXdr: string; signerAddress: string }> & {
+  { signedTxXdr: string; signerAddress: string } & {
     error?: FreighterApiError;
   }
 > => {
@@ -18,7 +18,7 @@ export const signTransaction = async (
     const req = await submitTransaction(transactionXdr, opts);
 
     if (req.error) {
-      return { error: req.error };
+      return { signedTxXdr: "", signerAddress: "", error: req.error };
     }
 
     return {
@@ -27,5 +27,5 @@ export const signTransaction = async (
     };
   }
 
-  return { error: FreighterApiNodeError };
+  return { signedTxXdr: "", signerAddress: "", error: FreighterApiNodeError };
 };
