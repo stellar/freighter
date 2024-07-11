@@ -20,13 +20,15 @@ import { AppDispatch } from "popup/App";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useIsSwap } from "popup/helpers/useIsSwap";
+import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   cleanAmount,
   formatAmount,
@@ -39,6 +41,8 @@ import {
   saveDestinationAsset,
   getBestPath,
   resetDestinationAmount,
+  getBestSoroswapPath,
+  getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
@@ -112,6 +116,7 @@ export const SendAmount = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const runAfterUpdate = useRunAfterUpdate();
 
+  const publicKey = useSelector(publicKeySelector);
   const {
     accountBalances,
     destinationBalances,
@@ -119,10 +124,18 @@ export const SendAmount = ({
     assetDomains,
     blockedDomains,
     assetIcons,
+    soroswapTokens,
   } = useSelector(transactionSubmissionSelector);
 
-  const { amount, asset, destinationAmount, destinationAsset, isToken } =
-    transactionData;
+  const {
+    amount,
+    asset,
+    destinationAmount,
+    destinationAsset,
+    isToken,
+    destinationIcon,
+    isSoroswap,
+  } = transactionData;
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
@@ -246,14 +259,32 @@ export const SendAmount = ({
 
   const db = useCallback(
     debounce(async (formikAm, sourceAsset, destAsset) => {
-      await dispatch(
-        getBestPath({
-          amount: formikAm,
-          sourceAsset,
-          destAsset,
-          networkDetails,
-        }),
-      );
+      if (isSoroswap) {
+        const getContract = (formAsset: string) =>
+          formAsset === "native"
+            ? getNativeContractDetails(networkDetails).contract
+            : formAsset.split(":")[1];
+
+        await dispatch(
+          getBestSoroswapPath({
+            amount: formikAm,
+            sourceContract: getContract(formik.values.asset),
+            destContract: getContract(formik.values.destinationAsset),
+            networkDetails,
+            publicKey,
+          }),
+        );
+      } else {
+        await dispatch(
+          getBestPath({
+            amount: formikAm,
+            sourceAsset,
+            destAsset,
+            networkDetails,
+          }),
+        );
+      }
+
       setLoadingRate(false);
     }, 2000),
     [],
@@ -324,6 +355,12 @@ export const SendAmount = ({
     formik.values.asset,
     asset,
   ]);
+
+  useEffect(() => {
+    if (!soroswapTokens.length) {
+      dispatch(getSoroswapTokens());
+    }
+  }, [isSwap, useIsSoroswapEnabled]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -398,12 +435,28 @@ export const SendAmount = ({
       )}
       <React.Fragment>
         <SubviewHeader
-          title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
+          title={
+            <span>
+              {isSwap ? "Swap" : "Send"} {parsedSourceAsset.code}{" "}
+              {isSoroswap ? (
+                <span>
+                  on{" "}
+                  <a
+                    href="https://soroswap.finance/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Soroswap
+                  </a>
+                </span>
+              ) : null}
+            </span>
+          }
           subtitle={
-            <>
+            <div className="SendAmount__subtitle">
               <span>{formatAmount(availBalance)}</span>{" "}
               <span>{parsedSourceAsset.code}</span> {t("available")}
-            </>
+            </div>
           }
           hasBackButton={!isSwap}
           customBackAction={() => navigateTo(previous)}
@@ -524,6 +577,7 @@ export const SendAmount = ({
                           assetCode={parsedSourceAsset.code}
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
+                          icon=""
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -534,6 +588,7 @@ export const SendAmount = ({
                               ? new BigNumber(destinationAmount).toFixed()
                               : "0"
                           }
+                          icon={destinationIcon}
                         />
                       </>
                     )}

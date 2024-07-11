@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import {
@@ -13,13 +13,19 @@ import {
   Operation,
 } from "stellar-sdk";
 
+import { ActionStatus } from "@shared/api/types";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
   settingsNetworkDetailsSelector,
   settingsExperimentalModeSelector,
 } from "popup/ducks/settings";
 
-import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
+import {
+  ShowOverlayStatus,
+  getAccountBalances,
+  resetAccountBalanceStatus,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
@@ -29,6 +35,7 @@ import {
   getTransactionInfo,
   isFederationAddress,
   isMuxedAccount,
+  stroopToXlm,
   truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
@@ -48,6 +55,7 @@ import {
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { Loading } from "popup/components/Loading";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Tabs } from "popup/components/Tabs";
@@ -60,15 +68,20 @@ import "./styles.scss";
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
+    useState(false);
 
+  const { accountBalances, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
-  const { networkName, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkName, networkPassphrase } = networkDetails;
 
   const tx = getTransactionInfo(location.search);
 
@@ -174,6 +187,20 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired, isMalicious, isUnsafe]);
 
+  useEffect(() => {
+    if (currentAccount.publicKey) {
+      dispatch(
+        getAccountBalances({
+          publicKey: currentAccount.publicKey,
+          networkDetails,
+        }),
+      );
+    }
+    return () => {
+      dispatch(resetAccountBalanceStatus());
+    };
+  }, [currentAccount.publicKey, dispatch, networkDetails]);
+
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
   if (_networkPassphrase !== networkPassphrase) {
@@ -206,6 +233,42 @@ export const SignTransaction = () => {
             The website <strong>{domain}</strong> does not use an SSL
             certificate. For additional safety Freighter only works with
             websites that provide an SSL certificate.
+          </Trans>
+        </p>
+      </WarningMessage>
+    );
+  }
+
+  const hasLoadedBalances =
+    accountBalanceStatus !== ActionStatus.PENDING &&
+    accountBalanceStatus !== ActionStatus.IDLE;
+
+  if (!hasLoadedBalances) {
+    return <Loading />;
+  }
+
+  const hasBalance =
+    hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
+  const hasEnoughXlm = accountBalances.balances?.native.available.gt(
+    stroopToXlm(_fee as string),
+  );
+  if (
+    hasBalance &&
+    currentAccount.publicKey &&
+    !hasEnoughXlm &&
+    !hasAcceptedInsufficientFee
+  ) {
+    return (
+      <WarningMessage
+        handleCloseClick={() => setHasAcceptedInsufficientFee(true)}
+        isActive
+        variant={WarningMessageVariant.warning}
+        header={t("INSUFFICIENT FUNDS FOR FEE")}
+      >
+        <p>
+          <Trans domain={domain}>
+            Your available XLM balance is not enough to pay for the transaction
+            fee.
           </Trans>
         </p>
       </WarningMessage>
