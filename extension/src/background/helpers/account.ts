@@ -11,6 +11,7 @@ import {
   IS_EXPERIMENTAL_MODE_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
   ASSETS_LISTS_ID,
+  IS_HASH_SIGNING_ENABLED_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
@@ -21,7 +22,7 @@ import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
@@ -98,6 +99,9 @@ export const getIsValidatingSafeAssetsEnabled = async () =>
 
 export const getIsExperimentalModeEnabled = async () =>
   (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;
+
+export const getIsHashSigningEnabled = async () =>
+  (await localStore.getItem(IS_HASH_SIGNING_ENABLED_ID)) ?? false;
 
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";

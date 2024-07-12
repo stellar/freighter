@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useHistory, Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Asset, TransactionBuilder } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { Button, Icon, Notification } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 
-import {
-  resetSubmission,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
 import { emitMetric } from "helpers/metrics";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
-import { View } from "popup/basics/layout/View";
-import { SubviewHeader } from "popup/components/SubviewHeader";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { Balances } from "@shared/api/types";
 
 import "./styles.scss";
 
@@ -24,6 +21,7 @@ export enum TRUSTLINE_ERROR_STATES {
   UNKNOWN_ERROR = "UNKNOWN_ERROR",
   NOT_ENOUGH_LUMENS = "NOT_ENOUGH_LUMENS",
   ASSET_HAS_BALANCE = "ASSET_HAS_BALANCE",
+  ASSET_HAS_BUYING_LIABILITIES = "ASSET_HAS_BUYING_LIABILITIES",
 }
 
 interface MapErrorToErrorState {
@@ -31,12 +29,22 @@ interface MapErrorToErrorState {
   transaction: string;
 }
 
-const mapErrorToErrorState = ({ operations = [] }: MapErrorToErrorState) => {
+const mapErrorToErrorState = (
+  { operations = [] }: MapErrorToErrorState,
+  buyingLiabilities: number,
+) => {
   if (operations.includes(RESULT_CODES.op_invalid_limit)) {
+    if (buyingLiabilities) {
+      emitMetric(METRIC_NAMES.trustlineErrorBuyingLiability);
+      return TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES;
+    }
+
+    emitMetric(METRIC_NAMES.trustlineErrorHasBalance);
     return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
   }
 
   if (operations.includes(RESULT_CODES.op_low_reserve)) {
+    emitMetric(METRIC_NAMES.trustlineErrorLowReserve);
     return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
   }
 
@@ -47,21 +55,23 @@ interface RenderedErrorProps {
   errorState: TRUSTLINE_ERROR_STATES;
   assetBalance: string;
   resultCodes: string;
+  buyingLiabilities: number;
 }
 
 const RenderedError = ({
   errorState,
   assetBalance,
   resultCodes,
+  buyingLiabilities,
 }: RenderedErrorProps) => {
   const { t } = useTranslation();
 
   switch (errorState) {
     case TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS:
       return (
-        <Notification variant="error" title={t("Error")}>
-          <div>
-            <p className="TrustlineError__title">{t("Not enough lumens")}</p>
+        <>
+          <div className="TrustlineError__title">{t("Not enough lumens")}</div>
+          <div className="TrustlineError__body">
             <p>0.500001 XLM {t("are required to add a new asset.")}</p>
             <p className="TrustlineError__links">
               <Link to="https://developers.stellar.org/docs/glossary/minimum-balance/#changes-to-transaction-fees-and-minimum-balances">
@@ -73,106 +83,144 @@ const RenderedError = ({
               </Link>
             </p>
           </div>
-        </Notification>
+        </>
       );
     case TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE:
       return (
         <>
-          <Notification
-            variant="warning"
-            title={t("This asset has a balance")}
-            icon={<Icon.Warning />}
-          />
-          <p
-            className="TrustlineError__subtitle"
-            data-testid="TrustlineErrorMessage"
+          <div className="TrustlineError__title">
+            {t("This asset has a balance")}
+          </div>
+          <div
+            className="TrustlineError__body"
+            data-testid="TrustlineError__body"
           >
-            {t("This asset has a balance of")} <strong>{assetBalance}</strong>.{" "}
-            {t("You must have a balance of")} <strong>0</strong>{" "}
+            {t("You still have a balance of")} {assetBalance}.{" "}
+            {t("You must have a balance of")} 0{" "}
             {t("in order to remove an asset.")}
-          </p>
+          </div>
+        </>
+      );
+    case TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES:
+      return (
+        <>
+          <div className="TrustlineError__title">
+            {t("This asset has buying liabilities")}
+          </div>
+          <div
+            className="TrustlineError__body"
+            data-testid="TrustlineError__body"
+          >
+            {t("You still have a buying liability of")} {buyingLiabilities}.{" "}
+            {t("You must have a buying liability of")} 0{" "}
+            {t("in order to remove an asset.")}
+          </div>
         </>
       );
     case TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR:
     default:
       return (
         <>
-          <Notification
-            variant="error"
-            title={t("This transaction could not be completed.")}
-          >
-            {resultCodes ? (
-              <p className="TrustlineError__subtitle">
-                {t("Error code")}: {resultCodes}
-              </p>
-            ) : null}
-          </Notification>
+          <div className="TrustlineError__title">
+            {t("This transaction could not be completed.")}
+          </div>
+          <div className="TrustlineError__body">
+            {t("Error code")}: {resultCodes}
+          </div>
         </>
       );
   }
 };
 
-interface TrustlineErrorProps {
-  balances: Balances;
-  errorAsset: string;
-}
-
 export const TrustlineError = ({
-  balances,
-  errorAsset,
-}: TrustlineErrorProps) => {
+  handleClose,
+}: {
+  handleClose?: () => void;
+}) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const history = useHistory();
-  const { error } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, error } = useSelector(transactionSubmissionSelector);
+  const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [assetBalance, setAssetBalance] = useState("");
+  const [buyingLiabilities, setBuyingLiabilities] = useState(0);
+
+  const [isModalShowing, setIsModalShowing] = useState(true);
 
   useEffect(() => {
     emitMetric(METRIC_NAMES.manageAssetError, { error });
   }, [error]);
 
   useEffect(() => {
-    if (!balances) {
-      return;
-    }
-    const balance = balances[errorAsset];
+    // emit general metric on view load
+    emitMetric(METRIC_NAMES.viewTrustlineError);
+  });
 
-    if (balance) {
-      setAssetBalance(
-        `${new BigNumber(balance.available).toString()} ${balance.token.code}`,
+  useEffect(() => {
+    const xdrEnvelope = error?.response?.extras?.envelope_xdr;
+    if (xdrEnvelope) {
+      const parsedTx = TransactionBuilder.fromXDR(
+        xdrEnvelope,
+        networkPassphrase,
       );
+
+      if ("operations" in parsedTx) {
+        const op = parsedTx.operations[0];
+
+        if ("line" in op) {
+          const { code, issuer } = op.line as Asset;
+          const asset = `${code}:${issuer}`;
+          const balance = accountBalances?.balances?.[asset];
+
+          if (!balance) {
+            return;
+          }
+
+          setBuyingLiabilities(Number(balance.buyingLiabilities));
+
+          setAssetBalance(
+            `${new BigNumber(balance.available).toString()} ${
+              balance?.token?.code
+            }`,
+          );
+        }
+      }
     }
-  }, [balances, errorAsset]);
+  }, [accountBalances, error, networkPassphrase]);
 
   const errorState: TRUSTLINE_ERROR_STATES = error
-    ? mapErrorToErrorState(getResultCodes(error))
+    ? mapErrorToErrorState(getResultCodes(error), buyingLiabilities)
     : TRUSTLINE_ERROR_STATES.UNKNOWN_ERROR;
 
-  return (
-    <React.Fragment>
-      <SubviewHeader title={t("Trustline Error")} hasBackButton={false} />
-      <View.Content>
-        <div className="TrustlineError__inset">
-          <RenderedError
-            errorState={errorState}
-            assetBalance={assetBalance}
-            resultCodes={JSON.stringify(getResultCodes(error))}
-          />
-        </div>
-      </View.Content>
-      <View.Footer>
-        <Button
-          size="md"
-          isFullWidth
-          variant="primary"
-          onClick={() => {
-            dispatch(resetSubmission());
-            history.goBack();
-          }}
-        >
-          {t("Got it")}
-        </Button>
-      </View.Footer>
-    </React.Fragment>
-  );
+  return isModalShowing
+    ? createPortal(
+        <div className="TrustlineError">
+          <div
+            className="TrustlineError__inset"
+            data-testid="TrustlineError__error"
+          >
+            <RenderedError
+              errorState={errorState}
+              assetBalance={assetBalance}
+              resultCodes={JSON.stringify(getResultCodes(error))}
+              buyingLiabilities={buyingLiabilities}
+            />
+            <div>
+              <Button
+                size="md"
+                isFullWidth
+                variant="primary"
+                onClick={() => {
+                  setIsModalShowing(false);
+                  if (handleClose) {
+                    handleClose();
+                  }
+                }}
+              >
+                {t("Got it")}
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.querySelector("#modal-root")!,
+      )
+    : null;
 };

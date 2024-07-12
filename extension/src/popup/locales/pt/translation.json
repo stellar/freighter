@@ -14,22 +14,19 @@
   "Account not available": "Account not available",
   "Action": "Action",
   "Add": "Add",
-  "Add a Soroban token by ID": "Add a Soroban token by ID",
   "Add address": "Add address",
-  "Add another asset": "Add another asset",
-  "Add Another Asset": "Add Another Asset",
+  "Add an asset": "Add an asset",
   "Add anyway": "Add anyway",
   "Add asset": "Add asset",
-  "Add asset manually": "Add asset manually",
   "Add Asset Trustline": "Add Asset Trustline",
+  "Add by address": "Add by address",
   "Add custom network": "Add custom network",
   "Add Custom Network": "Add Custom Network",
-  "Add it manually": "Add it manually",
   "Add list": "Add list",
+  "Add manually": "Add manually",
   "Add network": "Add network",
   "Add New Address": "Add New Address",
   "Add new list": "Add new list",
-  "Add Soroban token": "Add Soroban token",
   "Address": "Address",
   "Addresses are uppercase and begin with letters “G“ or “M“": "Addresses are uppercase and begin with letters “G“ or “M“.",
   "ALL": "TUDO",
@@ -61,12 +58,10 @@
   "Asset A": "Asset A",
   "Asset B": "Asset B",
   "Asset Code": "Asset Code",
-  "Asset domain": "Asset domain",
   "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
   "Asset Info": "Asset Info",
   "Asset lists": "Asset lists",
   "Asset not found": "Asset not found",
-  "Assets found in this domain": "Assets found in this domain",
   "At least one uppercase letter": "At least one uppercase letter",
   "At the end of this process, Freighter will only display accounts related to the new backup phrase": {
     " You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts": "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts."
@@ -89,7 +84,7 @@
   "Buy Amount": "Buy Amount",
   "Buying": "Buying",
   "by": "by",
-  "Can’t find the asset you’re looking for?": "Can’t find the asset you’re looking for?",
+  "Can’t find the asset you’re looking for? Add it manually": "Can’t find the asset you’re looking for? Add it manually",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
   "Check your account details by clicking on the Freighter icon on your browser": "Check your account details by clicking on the Freighter icon on your browser.",
@@ -116,6 +111,7 @@
   "Conversion rate": "Conversion rate",
   "Conversion rate changed": "Conversion rate changed",
   "COPY": "COPY",
+  "Copy address": "Copy address",
   "Create a new Stellar address": "Create a new Stellar address",
   "Create a password": "Create a password",
   "Create Account": "Create Account",
@@ -143,11 +139,12 @@
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
   },
   "enable": "enable",
-  "Enable experimental mode": "Enable experimental mode",
+  "Enable Blind Signing on Ledger": "Enable Blind Signing on Ledger",
   "Enable this list": "Enable this list",
   "Enabled": "Enabled",
   "Enter a Stellar Asset List compatible URL": "Enter a Stellar Asset List compatible URL",
   "Enter Friendbot URL": "Enter Friendbot URL",
+  "Enter issuer public key or contract ID": "Enter issuer public key or contract ID",
   "Enter network name": "Enter network name",
   "Enter network URL": "Enter network URL",
   "Enter passphrase": "Enter passphrase",
@@ -164,6 +161,13 @@
   "Error code": "Error code",
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
+  "Experimental features": "Experimental features",
+  "Experimental Features": "Experimental Features",
+  "Experimental features are not recommended for new or unexperienced users": {
+    " Enabling these may impact the security of your wallets and result in loss of funds": {
+      " Only utilize these features if you can understand and manage the potential security risks": "Experimental features are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks."
+    }
+  },
   "Extend To": "Extend To",
   "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
@@ -192,13 +196,11 @@
     " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   },
   "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website": "Freighter will never ask for your recovery phrase unless you’re actively importing your account using the browser extension - never on an external website.",
-  "Freighter will use experimental API‘s and connect to the Futurenet, a test network": {
-    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
-  },
   "Friendbot URL": "Friendbot URL",
   "From": "From",
   "Function Name": "Function Name",
   "Fund with Friendbot": "Fund with Friendbot",
+  "Go back": "Go back",
   "Got it": "Got it",
   "Hash": "Hash",
   "Help": "Help",
@@ -211,6 +213,7 @@
   "I have my 12 word seed phrase": "I have my 12 word seed phrase",
   "I have my recovery phrase safe": "I have my recovery phrase safe",
   "I have read and agree to": "I have read and agree to",
+  "I understand, continue": "I understand, continue",
   "I understand, start migration": "I understand, start migration",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
   "I’m going to need a seed phrase": "I’m going to need a seed phrase",
@@ -375,6 +378,7 @@
     }
   },
   "Remove": "Remove",
+  "Remove asset": "Remove asset",
   "Remove trustline": "Remove trustline",
   "Report issue on Github": "Report issue on Github",
   "Reserved Balance*": "Reserved Balance*",
@@ -386,8 +390,8 @@
   "Salt": "Salt",
   "Same source and destination asset": "Same source and destination asset",
   "Save": "Save",
-  "Search": "Search",
-  "Search for an asset": "Search for an asset",
+  "Search for asset name": "Search for asset name",
+  "Search issuer public key, classic assets, SAC assets, and TI assets": "Search issuer public key, classic assets, SAC assets, and TI assets",
   "Secret Recovery phrase": "Secret Recovery phrase",
   "Security": "Security",
   "Seller": "Seller",
@@ -463,7 +467,7 @@
   "them noted to confirm you got them right": "them noted to confirm you got them right",
   "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
-  "This asset has a balance of": "This asset has a balance of",
+  "This asset has buying liabilities": "This asset has buying liabilities",
   "This asset is not part of an asset list": {
     " Please, double-check the asset you’re interacting with and proceed with care": {
       " Freighter uses asset lists to check assets you interact with": {
@@ -476,6 +480,9 @@
     "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
   },
   "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction": "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
+  "This can be used to sign arbitrary transaction hashes without having to decode them first": {
+    " Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust": "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust."
+  },
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
@@ -483,7 +490,6 @@
   "To": "To",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
-  "Token ID": "Token ID",
   "Token List URL": "Token List URL",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
@@ -496,7 +502,6 @@
   "Transaction fee": "Transaction fee",
   "Transaction timeout": "Transaction timeout",
   "Transactions": "Transactions",
-  "Trustline Error": "Trustline Error",
   "trustlines": "trustlines",
   "Trustor": "Trustor",
   "Type": "Type",
@@ -507,6 +512,10 @@
   "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
   "Unverified asset": "Unverified asset",
+  "Use experimental API’s and connect to the Futurenet, a test network": {
+    " Please proceed at your own risk as you may be interacting with schemas that are untested and still changing": "Use experimental API’s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
+  },
+  "Use Futurenet": "Use Futurenet",
   "Validate addresses that require a memo": "Validate addresses that require a memo",
   "Value": "Value",
   "Verification": "Verification",
@@ -537,11 +546,15 @@
     " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens": "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens."
   },
   "You must have a balance of": "You must have a balance of",
+  "You must have a buying liability of": "You must have a buying liability of",
+  "You still have a balance of": "You still have a balance of",
+  "You still have a buying liability of": "You still have a buying liability of",
   "You’re good to go!": "You’re good to go!",
   "Your account balance is not sufficient for this transaction": {
     " Please review the transaction and try again": "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
   },
   "Your account balances could not be fetched at this time": "Your account balances could not be fetched at this time.",
+  "Your assets": "Your assets",
   "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"

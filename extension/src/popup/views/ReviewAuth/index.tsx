@@ -13,11 +13,13 @@ import { useSelector } from "react-redux";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { decodeString } from "helpers/urls";
-import { getTokenDetails } from "@shared/api/internal";
+import { getIsTokenSpec, getTokenDetails } from "@shared/api/internal";
+import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -36,7 +38,6 @@ import {
   buildInvocationTree,
   formatTokenAmount,
   getInvocationDetails,
-  pickTransfers,
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
@@ -51,6 +52,7 @@ import {
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { CopyValue } from "popup/components/CopyValue";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { OPERATION_TYPES } from "constants/transaction";
 import { Summary } from "../SignTransaction/Preview/Summary";
 import { Details } from "../SignTransaction/Preview/Details";
@@ -72,6 +74,7 @@ export const ReviewAuth = () => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
+
   const transaction = TransactionBuilder.fromXDR(
     params.transactionXdr as string,
     networkPassphrase,
@@ -87,6 +90,8 @@ export const ReviewAuth = () => {
     isConfirming,
     publicKey,
     handleApprove,
+    hardwareWalletType,
+    hwStatus,
     rejectAndClose,
     isPasswordRequired,
     setIsPasswordRequired,
@@ -116,107 +121,112 @@ export const ReviewAuth = () => {
       customSubmit={verifyPasswordThenSign}
     />
   ) : (
-    <div className="ReviewAuth">
-      <div className="ReviewAuth__Body">
-        <div className="ReviewAuth__Title">
-          <PunycodedDomain domain={params.domain} domainTitle="" />
-          <div className="ReviewAuth--connection-request">
-            <div className="ReviewAuth--connection-request-pill">
-              <Icon.Link />
-              <p>Transaction Request</p>
+    <>
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} />
+      )}
+      <div className="ReviewAuth">
+        <div className="ReviewAuth__Body">
+          <div className="ReviewAuth__Title">
+            <PunycodedDomain domain={params.domain} domainTitle="" />
+            <div className="ReviewAuth--connection-request">
+              <div className="ReviewAuth--connection-request-pill">
+                <Icon.Link />
+                <p>Transaction Request</p>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="ReviewAuth__Details">
-          {!hasConfirmedAuth && op.auth ? (
-            <>
-              <h5>
-                {activeAuthEntryIndex + 1}/{authCount} Authorizations
-              </h5>
-              <AuthDetail
-                authEntry={op.auth[activeAuthEntryIndex]}
-                isLoading={isLoadingAuth}
-                setLoading={setLoadingAuth}
-              />
-            </>
-          ) : (
-            <SignTransaction
-              tx={
-                isFeeBump
-                  ? ((transaction as any).innerTransaction as Transaction)
-                  : transaction
-              }
-              flaggedKeys={params.flaggedKeys}
-              isMemoRequired={params.isMemoRequired}
-              memo={params.memo}
-            />
-          )}
-        </div>
-        <div className="ReviewAuth__Actions">
-          {hasConfirmedAuth && (
-            <div className="ReviewAuth__Actions__SigningWith">
-              <h5>Signing with</h5>
-              <button
-                className="ReviewAuth__Actions__PublicKey"
-                onClick={() => setIsDropdownOpen(true)}
-              >
-                <KeyIdenticon
-                  publicKey={currentAccount.publicKey}
-                  keyTruncationAmount={10}
+          <div className="ReviewAuth__Details">
+            {!hasConfirmedAuth && op.auth ? (
+              <>
+                <h5>
+                  {activeAuthEntryIndex + 1}/{authCount} Authorizations
+                </h5>
+                <AuthDetail
+                  authEntry={op.auth[activeAuthEntryIndex]}
+                  isLoading={isLoadingAuth}
+                  setLoading={setLoadingAuth}
                 />
-                <Icon.ChevronDown />
-              </button>
-            </div>
-          )}
-          <div className="ReviewAuth__Actions__BtnRow">
-            {hasConfirmedAuth ? (
-              <Button
-                variant="tertiary"
-                isFullWidth
-                size="md"
-                isLoading={isConfirming}
-                onClick={() => handleApprove()}
-              >
-                {t("Sign Transaction")}
-              </Button>
+              </>
             ) : (
+              <SignTransaction
+                tx={
+                  isFeeBump
+                    ? ((transaction as any).innerTransaction as Transaction)
+                    : transaction
+                }
+                flaggedKeys={params.flaggedKeys}
+                isMemoRequired={params.isMemoRequired}
+                memo={params.memo}
+              />
+            )}
+          </div>
+          <div className="ReviewAuth__Actions">
+            {hasConfirmedAuth && (
+              <div className="ReviewAuth__Actions__SigningWith">
+                <h5>Signing with</h5>
+                <button
+                  className="ReviewAuth__Actions__PublicKey"
+                  onClick={() => setIsDropdownOpen(true)}
+                >
+                  <KeyIdenticon
+                    publicKey={currentAccount.publicKey}
+                    keyTruncationAmount={10}
+                  />
+                  <Icon.ChevronDown />
+                </button>
+              </div>
+            )}
+            <div className="ReviewAuth__Actions__BtnRow">
+              {hasConfirmedAuth ? (
+                <Button
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Sign Transaction")}
+                </Button>
+              ) : (
+                <Button
+                  variant="tertiary"
+                  isFullWidth
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={reviewAuthEntry}
+                >
+                  {isLastEntry
+                    ? t("Approve and continue")
+                    : t("Approve and review next")}
+                </Button>
+              )}
+
               <Button
-                variant="tertiary"
                 isFullWidth
                 size="md"
-                isLoading={isConfirming}
-                onClick={reviewAuthEntry}
+                variant="secondary"
+                onClick={() => rejectAndClose()}
               >
-                {isLastEntry
-                  ? t("Approve and continue")
-                  : t("Approve and review next")}
+                {t("Reject")}
               </Button>
-            )}
-
-            <Button
-              isFullWidth
-              size="md"
-              variant="secondary"
-              onClick={() => rejectAndClose()}
-            >
-              {t("Reject")}
-            </Button>
+            </div>
           </div>
         </div>
+        <SlideupModal
+          isModalOpen={isDropdownOpen}
+          setIsModalOpen={setIsDropdownOpen}
+        >
+          <div className="SignTransaction__modal">
+            <AccountList
+              allAccounts={allAccounts}
+              publicKey={publicKey}
+              setIsDropdownOpen={setIsDropdownOpen}
+            />
+          </div>
+        </SlideupModal>
       </div>
-      <SlideupModal
-        isModalOpen={isDropdownOpen}
-        setIsModalOpen={setIsDropdownOpen}
-      >
-        <div className="SignTransaction__modal">
-          <AccountList
-            allAccounts={allAccounts}
-            publicKey={publicKey}
-            setIsDropdownOpen={setIsDropdownOpen}
-          />
-        </div>
-      </SlideupModal>
-    </div>
+    </>
   );
 };
 
@@ -246,8 +256,8 @@ const TransferSummary = ({
     <div className="AuthDetail__InfoBlock TransferSummary">
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
-          <Icon.ArrowCircleRight />
-          <p>Receiver</p>
+          <Icon.ArrowCircleRight width="18" height="18" />
+          <p className="FieldTitle">Receiver</p>
         </div>
         <KeyIdenticon
           isCopyAllowed
@@ -258,8 +268,8 @@ const TransferSummary = ({
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
-          <Icon.ArrowCircleLeft />
-          <p>Sender</p>
+          <Icon.ArrowCircleLeft width="18" height="18" />
+          <p className="FieldTitle">Sender</p>
         </div>
         <KeyIdenticon
           isCopyAllowed
@@ -270,8 +280,8 @@ const TransferSummary = ({
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
-          <Icon.Toll />
-          <p>Amount</p>
+          <Icon.Toll width="18" height="18" />
+          <p className="FieldTitle">Amount</p>
         </div>
         <div className="SummaryBlock__Title">
           {hasTokenDetails ? (
@@ -320,6 +330,10 @@ const AuthDetail = ({
 }) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [authTransfers, setAuthTransfers] = React.useState(
+    [] as TokenArgsDisplay[],
+  );
+  const [isCheckingTransfers, setCheckingTransfers] = React.useState(true);
 
   const { t } = useTranslation();
   const rootInvocation = authEntry.rootInvocation();
@@ -336,18 +350,69 @@ const AuthDetail = ({
 
   const rootJson = buildInvocationTree(rootInvocation);
   const isInvokeContract = rootInvocation.function().switch().value === 0;
-  const transfers = isInvokeContract ? pickTransfers(rootJson) : [];
+
+  const rootJsonDepKey = JSON.stringify(
+    rootJson,
+    (_, val) => (typeof val === "bigint" ? val.toString() : val),
+    2,
+  );
+  React.useEffect(() => {
+    async function getIsToken() {
+      try {
+        const transfers = [];
+        const isToken = await getIsTokenSpec({
+          contractId: rootJson.args.source,
+          networkDetails,
+        });
+        if (isToken && rootJson.args.function === "transfer") {
+          transfers.push({
+            contractId: rootJson.args.source as string,
+            amount: rootJson.args.args[2].toString() as string,
+            to: rootJson.args.args[1] as string,
+            from: rootJson.args.args[0] as string,
+          });
+        }
+        // check for sub transfers
+        // eslint-disable-next-line no-restricted-syntax
+        for (const subInvocation of rootJson.invocations) {
+          const isSubInvokeToken = await getIsTokenSpec({
+            contractId: subInvocation.args.source,
+            networkDetails,
+          });
+          if (isSubInvokeToken && subInvocation.args.function === "transfer") {
+            transfers.push({
+              contractId: subInvocation.args.source as string,
+              amount: subInvocation.args.args[2].toString() as string,
+              to: subInvocation.args.args[1] as string,
+              from: subInvocation.args.args[0] as string,
+            });
+          }
+        }
+        setAuthTransfers(transfers);
+        setCheckingTransfers(false);
+      } catch (error) {
+        console.error(error);
+        setCheckingTransfers(false);
+      }
+    }
+    if (isInvokeContract) {
+      getIsToken();
+    } else {
+      setCheckingTransfers(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInvokeContract, rootJsonDepKey]);
 
   const [tokenDetails, setTokenDetails] = React.useState({} as TokenDetailMap);
 
-  const transfersDepKey = JSON.stringify(transfers);
+  const transfersDepKey = JSON.stringify(authTransfers);
   React.useEffect(() => {
     async function _getTokenDetails() {
       setLoading(true);
       const _tokenDetails = {} as TokenDetailMap;
 
       // eslint-disable-next-line
-      for (const transfer of transfers) {
+      for (const transfer of authTransfers) {
         try {
           // eslint-disable-next-line
           const tokenDetailsResponse = await getTokenDetails({
@@ -385,19 +450,19 @@ const AuthDetail = ({
 
   return (
     <div className="AuthDetail">
-      {isLoading ? (
+      {isLoading || isCheckingTransfers ? (
         <div className="AuthDetail__loader">
           <Loader size="3rem" />
         </div>
       ) : (
         <>
-          <TransferWarning authEntry={authEntry} />
-          <UnverifiedTokenTransferWarning details={invocations} />
+          <TransferWarning transfers={authTransfers} />
+          <UnverifiedTokenTransferWarning transfers={authTransfers} />
           {authEntry.credentials().switch() ===
             xdr.SorobanCredentialsType.sorobanCredentialsSourceAccount() && (
             <InvokerAuthWarning />
           )}
-          {transfers.map((transfer) => (
+          {authTransfers.map((transfer) => (
             <TransferSummary
               key={JSON.stringify(transfer)}
               transfer={transfer}

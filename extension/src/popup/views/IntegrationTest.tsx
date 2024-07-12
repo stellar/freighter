@@ -299,7 +299,6 @@ export const IntegrationTest = () => {
         isMemoValidationEnabled: true,
         isSafetyValidationEnabled: true,
         isValidatingSafeAssetsEnabled: true,
-        isExperimentalModeEnabled: true,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
@@ -309,7 +308,6 @@ export const IntegrationTest = () => {
         assertEq(res.isMemoValidationEnabled, true);
         assertEq(res.isSafetyValidationEnabled, true);
         assertEq(res.isValidatingSafeAssetsEnabled, true);
-        assertEq(res.isExperimentalModeEnabled, true);
       });
 
       res = await loadSettings();

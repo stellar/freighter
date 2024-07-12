@@ -1,0 +1,38 @@
+.SearchInput {
+  .Input__container input {
+    padding-left: calc(var(--Input-padding-horizontal) * 2 + 0.5rem);
+    padding-right: 0 !important;
+  }
+
+  .Input__side-element {
+    left: var(--Input-padding-horizontal);
+    right: auto;
+
+    svg {
+      color: var(--color-gray-60);
+    }
+  }
+}
+
+.SearchCopy {
+  color: var(--color-gray-70);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  margin-top: 0.375rem;
+
+  a {
+    color: var(--color-purple-60);
+  }
+}
+
+.SearchResults {
+  &__loader {
+    position: absolute;
+    left: calc(50% - var(--SearchAsset--loader--dimension));
+    width: var(--SearchAsset--loader--dimension);
+  }
+
+  &__results {
+    flex-grow: 1;
+  }
+}

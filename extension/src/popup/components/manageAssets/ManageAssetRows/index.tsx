@@ -1,42 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { StellarToml, Networks } from "stellar-sdk";
+import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import { Button } from "@stellar/design-system";
 import { ActionStatus } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-
-import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   formatDomain,
   getCanonicalFromAsset,
   truncateString,
 } from "helpers/stellar";
+import { isContractId } from "popup/helpers/soroban";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
-
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
+import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import {
-  publicKeySelector,
-  hardwareWalletTypeSelector,
-  addTokenId,
-} from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import {
-  getAccountBalances,
   resetSubmission,
-  signFreighterTransaction,
-  submitFreighterTransaction,
   transactionSubmissionSelector,
-  startHwSign,
   ShowOverlayStatus,
-  removeTokenId,
   tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -48,16 +31,14 @@ import {
 } from "popup/components/WarningMessages";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
+import { ManageAssetRowButton } from "../ManageAssetRowButton";
+
 import "./styles.scss";
-import { NETWORKS } from "@shared/constants/stellar";
-import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
-import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
-import { isContractId } from "popup/helpers/soroban";
-import IconAdd from "popup/assets/icon-add.svg";
-import IconRemove from "popup/assets/icon-remove.svg";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
+  contract?: string;
+  icon?: string;
 };
 
 export interface NewAssetFlags {
@@ -93,21 +74,15 @@ export const ManageAssetRows = ({
   isVerificationInfoShowing,
   verifiedLists,
 }: ManageAssetRowsProps) => {
-  const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
     accountBalances,
     submitStatus,
     hardwareWalletData: { status: hwStatus },
-    blockedDomains,
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch: AppDispatch = useDispatch();
-  const { recommendedFee } = useNetworkFees();
   const { accountBalanceStatus } = useSelector(tokensSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
-  const isHardwareWallet = !!walletType;
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -125,86 +100,9 @@ export const ManageAssetRows = ({
     image: "",
     isVerifiedToken: false,
   } as SuspiciousAssetData);
-
-  const server = stellarSdkServer(
-    networkDetails.networkUrl,
-    networkDetails.networkPassphrase,
+  const [handleAddToken, setHandleAddToken] = useState(
+    null as null | (() => () => Promise<void>),
   );
-
-  const changeTrustline = async (
-    assetCode: string,
-    assetIssuer: string,
-    addTrustline: boolean,
-  ) => {
-    const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
-    setAssetSubmitting(canonicalAsset);
-
-    const transactionXDR: string = await getManageAssetXDR({
-      publicKey,
-      assetCode,
-      assetIssuer,
-      addTrustline,
-      server,
-      recommendedFee,
-      networkDetails,
-    });
-
-    const trackChangeTrustline = () => {
-      emitMetric(
-        addTrustline
-          ? METRIC_NAMES.manageAssetAddAsset
-          : METRIC_NAMES.manageAssetRemoveAsset,
-        { assetCode, assetIssuer },
-      );
-    };
-
-    if (isHardwareWallet) {
-      // eslint-disable-next-line
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
-      trackChangeTrustline();
-    } else {
-      await signAndSubmit(transactionXDR, trackChangeTrustline);
-    }
-  };
-
-  const signAndSubmit = async (
-    transactionXDR: string,
-    trackChangeTrustline: () => void,
-  ) => {
-    const res = await dispatch(
-      signFreighterTransaction({
-        transactionXDR,
-        network: networkDetails.networkPassphrase,
-      }),
-    );
-
-    if (signFreighterTransaction.fulfilled.match(res)) {
-      const submitResp = await dispatch(
-        submitFreighterTransaction({
-          publicKey,
-          signedXDR: res.payload.signedTransaction,
-          networkDetails,
-        }),
-      );
-
-      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        setAssetSubmitting("");
-        dispatch(
-          getAccountBalances({
-            publicKey,
-            networkDetails,
-          }),
-        );
-        trackChangeTrustline();
-        dispatch(resetSubmission());
-        navigateTo(ROUTES.account);
-      }
-
-      if (submitFreighterTransaction.rejected.match(submitResp)) {
-        navigateTo(ROUTES.trustlineError);
-      }
-    }
-  };
 
   useEffect(
     () => () => {
@@ -215,94 +113,11 @@ export const ManageAssetRows = ({
 
   // watch submitStatus if used ledger to send transaction
   useEffect(() => {
-    if (submitStatus === ActionStatus.ERROR) {
-      navigateTo(ROUTES.trustlineError);
-    } else if (submitStatus === ActionStatus.SUCCESS) {
+    if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
       navigateTo(ROUTES.account);
     }
   }, [submitStatus, dispatch]);
-
-  const isBlockedDomain = (domain: string) => blockedDomains.domains[domain];
-
-  const handleRowClick = async (
-    assetRowData = {
-      code: "",
-      issuer: "",
-      domain: "",
-      image: "",
-    },
-    isTrustlineActive: boolean,
-  ) => {
-    const resp = await checkForSuspiciousAsset({
-      code: assetRowData.code,
-      issuer: assetRowData.issuer,
-      domain: assetRowData.domain,
-      server,
-      networkDetails,
-    });
-
-    if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
-      setShowBlockedDomainWarning(true);
-      setSuspiciousAssetData(assetRowData);
-    } else if (
-      !isTrustlineActive &&
-      (resp.isInvalidDomain || resp.isRevocable || resp.isNewAsset)
-    ) {
-      setShowNewAssetWarning(true);
-      setNewAssetFlags(resp);
-      setSuspiciousAssetData(assetRowData);
-    } else {
-      changeTrustline(
-        assetRowData.code,
-        assetRowData.issuer,
-        !isTrustlineActive,
-      );
-    }
-  };
-
-  const handleTokenRowClick = async (
-    assetRowData = {
-      code: "",
-      issuer: "",
-      domain: "",
-      image: "",
-    },
-    isTrustlineActive: boolean,
-    canonicalAsset?: string,
-  ) => {
-    const contractId = assetRowData.issuer;
-    setAssetSubmitting(canonicalAsset || contractId);
-    if (!isTrustlineActive) {
-      if (isVerificationInfoShowing) {
-        setSuspiciousAssetData({
-          domain: assetRowData.domain,
-          code: assetRowData.code,
-          issuer: assetRowData.issuer,
-          image: assetRowData.image,
-          isVerifiedToken: !!isVerifiedToken,
-        });
-        setShowUnverifiedWarning(true);
-      } else {
-        await dispatch(
-          addTokenId({
-            publicKey,
-            tokenId: contractId,
-            network: networkDetails.network as Networks,
-          }),
-        );
-        navigateTo(ROUTES.account);
-      }
-    } else {
-      await dispatch(
-        removeTokenId({
-          contractId,
-          network: networkDetails.network as NETWORKS,
-        }),
-      );
-      navigateTo(ROUTES.account);
-    }
-  };
 
   return (
     <>
@@ -334,9 +149,9 @@ export const ManageAssetRows = ({
       )}
       {showUnverifiedWarning && (
         <TokenWarning
+          handleAddToken={handleAddToken}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
-          issuer={suspiciousAssetData.issuer}
           onClose={() => {
             setShowUnverifiedWarning(false);
           }}
@@ -348,11 +163,18 @@ export const ManageAssetRows = ({
         {header}
         <div className="ManageAssetRows__content">
           {assetRows.map(
-            ({ code = "", domain, image = "", issuer = "", name = "" }) => {
+            ({
+              code = "",
+              domain,
+              image = "",
+              issuer = "",
+              name = "",
+              contract = "",
+            }) => {
               if (!accountBalances.balances) {
                 return null;
               }
-              const isContract = isContractId(issuer);
+              const isContract = isContractId(contract);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               const isTrustlineActive =
                 Object.keys(accountBalances.balances).some(
@@ -374,48 +196,26 @@ export const ManageAssetRows = ({
                     domain={domain}
                     name={name}
                   />
-                  <div className="ManageAssetRows__button">
-                    <Button
-                      size="md"
-                      variant="secondary"
-                      disabled={isActionPending}
-                      isLoading={
-                        isActionPending && assetSubmitting === canonicalAsset
-                      }
-                      onClick={() => {
-                        if (isContract) {
-                          handleTokenRowClick(
-                            { code, issuer, image, domain },
-                            isTrustlineActive,
-                            canonicalAsset,
-                          );
-                        } else {
-                          handleRowClick(
-                            { code, issuer, image, domain },
-                            isTrustlineActive,
-                          );
-                        }
-                      }}
-                      type="button"
-                      data-testid="ManageAssetRowButton"
-                    >
-                      {isTrustlineActive ? (
-                        <>
-                          <div className="ManageAssetRows__button__label">
-                            {t("Remove")}
-                          </div>
-                          <img src={IconRemove} alt="icon remove" />
-                        </>
-                      ) : (
-                        <>
-                          <div className="ManageAssetRows__button__label">
-                            {t("Add")}
-                          </div>
-                          <img src={IconAdd} alt="icon add" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <ManageAssetRowButton
+                    code={code}
+                    contract={contract}
+                    issuer={issuer}
+                    image={image}
+                    domain={domain}
+                    isTrustlineActive={isTrustlineActive}
+                    isActionPending={isActionPending}
+                    isContract={isContract}
+                    isVerifiedToken={!!isVerifiedToken}
+                    isVerificationInfoShowing={!!isVerificationInfoShowing}
+                    setNewAssetFlags={setNewAssetFlags}
+                    setSuspiciousAssetData={setSuspiciousAssetData}
+                    setHandleAddToken={setHandleAddToken}
+                    setShowBlockedDomainWarning={setShowBlockedDomainWarning}
+                    assetSubmitting={assetSubmitting}
+                    setAssetSubmitting={setAssetSubmitting}
+                    setShowNewAssetWarning={setShowNewAssetWarning}
+                    setShowUnverifiedWarning={setShowUnverifiedWarning}
+                  />
                 </div>
               );
             },
@@ -429,28 +229,28 @@ export const ManageAssetRows = ({
               return (
                 <div className="ManageAssetRows__row" key={contract}>
                   <ManageAssetRow domain={truncateString(contract)} />
-                  <div className="ManageAssetRows__button">
-                    <Button
-                      size="md"
-                      variant="secondary"
-                      disabled={isActionPending}
-                      isLoading={
-                        isActionPending && assetSubmitting === contract
-                      }
-                      onClick={() =>
-                        handleTokenRowClick(
-                          { code: "", issuer: contract, image: "", domain: "" },
-                          true,
-                        )
-                      }
-                      type="button"
-                    >
-                      <div className="ManageAssetRows__button__label">
-                        {t("Remove")}
-                      </div>
-                      <img src={IconRemove} alt="icon remove" />
-                    </Button>
-                  </div>
+                  <ManageAssetRowButton
+                    code=""
+                    contract={contract}
+                    issuer={contract}
+                    image=""
+                    domain=""
+                    isTrustlineActive
+                    isActionPending={
+                      isActionPending && assetSubmitting === contract
+                    }
+                    isContract
+                    isVerifiedToken={!!isVerifiedToken}
+                    isVerificationInfoShowing={!!isVerificationInfoShowing}
+                    setNewAssetFlags={setNewAssetFlags}
+                    setSuspiciousAssetData={setSuspiciousAssetData}
+                    setHandleAddToken={setHandleAddToken}
+                    setShowBlockedDomainWarning={setShowBlockedDomainWarning}
+                    assetSubmitting={assetSubmitting}
+                    setAssetSubmitting={setAssetSubmitting}
+                    setShowNewAssetWarning={setShowNewAssetWarning}
+                    setShowUnverifiedWarning={setShowUnverifiedWarning}
+                  />
                 </div>
               );
             })}

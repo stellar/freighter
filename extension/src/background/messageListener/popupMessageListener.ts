@@ -53,6 +53,7 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
+  IS_HASH_SIGNING_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -72,6 +73,7 @@ import {
   getIsSafetyValidationEnabled,
   getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
+  getIsHashSigningEnabled,
   getIsHardwareWalletActive,
   getIsRpcHealthy,
   getUserNotification,
@@ -92,7 +94,7 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { migrateTrustlines } from "background/helpers/migration";
 import { xlmToStroop } from "helpers/stellar";
 
@@ -1209,11 +1211,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
-      isExperimentalModeEnabled,
     } = request;
-
-    const currentIsExperimentalModeEnabled =
-      await getIsExperimentalModeEnabled();
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
@@ -1226,9 +1224,34 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isValidatingSafeAssetsEnabled,
     );
 
+    const networkDetails = await getNetworkDetails();
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const featureFlags = await getFeatureFlags();
+
+    return {
+      allowList: await getAllowList(),
+      isDataSharingAllowed,
+      isMemoValidationEnabled: await getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
+      networkDetails,
+      networksList: await getNetworksList(),
+      isRpcHealthy,
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
+    };
+  };
+
+  const saveExperimentalFeatures = async () => {
+    const { isExperimentalModeEnabled, isHashSigningEnabled } = request;
+
+    await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, isHashSigningEnabled);
+
+    const currentIsExperimentalModeEnabled =
+      await getIsExperimentalModeEnabled();
+
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
       /* Disable Mainnet access and automatically switch the user to Futurenet
-      if user is enabling experimental mode and vice-versa */
+        if user is enabling experimental mode and vice-versa */
       const currentNetworksList = await getNetworksList();
 
       const defaultNetworkDetails = isExperimentalModeEnabled
@@ -1246,21 +1269,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     );
 
-    const networkDetails = await getNetworkDetails();
-    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
-    const featureFlags = await getFeatureFlags();
-
     return {
-      allowList: await getAllowList(),
-      isDataSharingAllowed,
-      isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
-      networkDetails,
+      isHashSigningEnabled: await getIsHashSigningEnabled(),
+      networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
-      isRpcHealthy,
-      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
     };
   };
 
@@ -1273,6 +1286,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const featureFlags = await getFeatureFlags();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
     const userNotification = await getUserNotification();
+    const isHashSigningEnabled = await getIsHashSigningEnabled();
     const assetsLists = await getAssetsLists();
 
     return {
@@ -1282,6 +1296,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
       isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
+      isHashSigningEnabled,
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
       isSorobanPublicEnabled: featureFlags.useSorobanPublic,
@@ -1778,6 +1793,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_ALLOWLIST]: saveAllowList,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,
+    [SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES]: saveExperimentalFeatures,
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
     [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,

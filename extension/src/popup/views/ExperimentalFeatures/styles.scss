@@ -1,0 +1,48 @@
+.ExperimentalFeatures {
+  &__understood-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 3.5625rem;
+  }
+
+  &__feature {
+    margin-bottom: 1.5rem;
+
+    &__row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 0.5rem;
+
+      &__title {
+        line-height: 1.5rem;
+        font-weight: var(--font-weight-medium);
+        display: flex;
+        position: relative;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      &__icon {
+        display: flex;
+      }
+
+      &__loader {
+        position: absolute;
+        right: -2rem;
+      }
+
+      &__toggle {
+        margin-top: 0.25rem;
+      }
+    }
+    &__description {
+      border-radius: 0.5rem;
+      border: 1px solid var(--color-gray-30);
+      color: var(--color-gray-70);
+      padding: 0.75rem;
+    }
+  }
+}

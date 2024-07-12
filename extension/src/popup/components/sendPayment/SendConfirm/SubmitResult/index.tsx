@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { createPortal } from "react-dom";
 import get from "lodash/get";
 import { Button, Icon, Link, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,7 @@ import {
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import IconFail from "popup/assets/icon-fail.svg";
 
 import "./styles.scss";
@@ -87,6 +89,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { recommendedFee } = useNetworkFees();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const server = stellarSdkServer(
     networkDetails.networkUrl,
@@ -154,7 +157,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
-        navigateTo(ROUTES.trustlineError);
+        setIsTrustlineErrorShowing(true);
       }
     }
   };
@@ -239,6 +242,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           {t("Done")}
         </Button>
       </View.Footer>
+      {isTrustlineErrorShowing
+        ? createPortal(
+            <TrustlineError />,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </React.Fragment>
   );
 };

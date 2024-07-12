@@ -3,32 +3,12 @@
 }
 
 .SearchAsset {
-  &__search-copy {
-    font-size: 0.8125rem;
-    line-height: 1.5rem;
-    text-align: right;
-
-    a {
-      color: #00b2ff;
-    }
-  }
-
   &__InfoBlock {
     padding-bottom: 1.625rem;
     a {
       color: var(--color-white);
       text-decoration: underline;
     }
-  }
-
-  &__loader {
-    position: absolute;
-    left: calc(50% - var(--SearchAsset--loader--dimension));
-    width: var(--SearchAsset--loader--dimension);
-  }
-
-  &__results {
-    flex-grow: 1;
   }
 
   &__copy {

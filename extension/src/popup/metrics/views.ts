@@ -51,10 +51,8 @@ const routeToEventName = {
   [ROUTES.sendPaymentSettingsTimeout]: METRIC_NAMES.sendPaymentSettingsTimeout,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
-  [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
   [ROUTES.searchAsset]: METRIC_NAMES.viewSearchAsset,
-  [ROUTES.trustlineError]: METRIC_NAMES.viewTrustlineError,
-  [ROUTES.addToken]: METRIC_NAMES.viewAddToken,
+  [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
   [ROUTES.swap]: METRIC_NAMES.viewSwap,
   [ROUTES.swapAmount]: METRIC_NAMES.swapAmount,
   [ROUTES.swapSettings]: METRIC_NAMES.swapSettings,
@@ -79,6 +77,7 @@ const routeToEventName = {
     METRIC_NAMES.viewAccountMigrationConfirmMigration,
   [ROUTES.accountMigrationMigrationComplete]:
     METRIC_NAMES.viewAccountMigrationMigrationComplete,
+  [ROUTES.experimentalFeatures]: METRIC_NAMES.viewExperimentalFeatures,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

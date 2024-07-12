@@ -20,7 +20,6 @@ export const Preferences = () => {
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
     isValidatingSafeAssetsEnabled,
-    isExperimentalModeEnabled,
   } = useSelector(settingsSelector);
 
   interface SettingValues {
@@ -28,7 +27,6 @@ export const Preferences = () => {
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
     isValidatingSafeAssetsValue: boolean;
-    isExperimentalModeEnabledValue: boolean;
   }
 
   const initialValues: SettingValues = {
@@ -36,7 +34,6 @@ export const Preferences = () => {
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
     isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
-    isExperimentalModeEnabledValue: isExperimentalModeEnabled,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -45,7 +42,6 @@ export const Preferences = () => {
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
       isValidatingSafeAssetsValue,
-      isExperimentalModeEnabledValue,
     } = formValue;
 
     // eslint-disable-next-line
@@ -55,7 +51,6 @@ export const Preferences = () => {
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
         isValidatingSafeAssetsEnabled: isValidatingSafeAssetsValue,
-        isExperimentalModeEnabled: isExperimentalModeEnabledValue,
       }),
     );
   };
@@ -136,27 +131,6 @@ export const Preferences = () => {
                     checked={initialValues.isDataSharingAllowedValue}
                     customInput={<Field />}
                     id="isDataSharingAllowedValue"
-                  />
-                </div>
-              </div>
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  {t("Enable experimental mode")}{" "}
-                </div>
-
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isExperimentalModeEnabledValue"
-                    className="Preferences--label"
-                  >
-                    {t(
-                      "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
-                    )}
-                  </label>
-                  <Toggle
-                    checked={initialValues.isExperimentalModeEnabledValue}
-                    customInput={<Field />}
-                    id="isExperimentalModeEnabledValue"
                   />
                 </div>
               </div>

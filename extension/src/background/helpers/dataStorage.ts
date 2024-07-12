@@ -1,4 +1,3 @@
-import browser from "webextension-polyfill";
 import semver from "semver";
 
 import {
@@ -9,6 +8,7 @@ import {
   STORAGE_VERSION,
   TOKEN_ID_LIST,
   ASSETS_LISTS_ID,
+  IS_HASH_SIGNING_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -20,66 +20,10 @@ import {
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
-
-interface SetItemParams {
-  [key: string]: any;
-}
-
-// https://github.com/mozilla/webextension-polyfill/issues/424
-interface BrowserStorage extends browser.Storage.Static {
-  session: browser.Storage.LocalStorageArea;
-}
-
-const storage = browser.storage as BrowserStorage;
-
-// browser storage uses local storage which stores values on disk and persists data across sessions
-// session storage uses session storage which stores data in memory and clears data after every "session"
-// only use session storage for secrets or sensitive values
-export const browserLocalStorage = storage?.local;
-export const browserSessionStorage = storage?.session;
+import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
 
 // Session Storage Feature Flag - turn on when storage.session is supported
 export const SESSION_STORAGE_ENABLED = true;
-
-export type StorageOption =
-  | typeof browserLocalStorage
-  | typeof browserSessionStorage;
-
-export const dataStorage = (
-  storageApi: StorageOption = browserLocalStorage,
-) => ({
-  getItem: async (key: string) => {
-    // TODO: re-enable defaults by passing an object. The value of the key-value pair will be the default
-
-    const storageResult = await storageApi.get(key);
-
-    return storageResult[key];
-  },
-  setItem: async (setItemParams: SetItemParams) => {
-    await storageApi.set(setItemParams);
-  },
-
-  clear: async () => {
-    await storageApi.clear();
-  },
-  remove: async (keys: string | string[]) => {
-    await storageApi.remove(keys);
-  },
-});
-
-export const dataStorageAccess = (
-  storageApi: StorageOption = browserLocalStorage,
-) => {
-  const store = dataStorage(storageApi);
-  return {
-    getItem: store.getItem,
-    setItem: async (keyId: string, value: any) => {
-      await store.setItem({ [keyId]: value });
-    },
-    clear: () => store.clear(),
-    remove: store.remove,
-  };
-};
 
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
@@ -150,7 +94,7 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 };
 
 // This migration migrates the storage for custom tokens IDs to be keyed by network
-const migrateTokenIdList = async () => {
+export const migrateTokenIdList = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
@@ -167,7 +111,7 @@ const migrateTokenIdList = async () => {
   }
 };
 
-const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
+export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
@@ -208,7 +152,7 @@ export const migrateToAccountSubscriptions = async () => {
   }
 };
 
-const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
+export const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
@@ -238,7 +182,7 @@ const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   }
 };
 
-const migrateSorobanRpcUrlNetwork = async () => {
+export const migrateSorobanRpcUrlNetwork = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
@@ -283,6 +227,17 @@ export const addAssetsLists = async () => {
   }
 };
 
+export const addIsHashSigningEnabled = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.1.1")) {
+    // add the base asset lists
+    await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, false);
+    await migrateDataStorageVersion("4.1.1");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -293,6 +248,7 @@ export const versionedMigration = async () => {
   await migrateSorobanRpcUrlNetwork();
   await resetAccountSubscriptions();
   await addAssetsLists();
+  await addIsHashSigningEnabled();
 };
 
 // Updates storage version

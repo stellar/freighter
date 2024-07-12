@@ -145,7 +145,7 @@ describe("Account view", () => {
       </Wrapper>,
     );
     await waitFor(() => {
-      const assetNodes = screen.getAllByTestId("account-assets");
+      const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
       expect(screen.getAllByText("USDC")).toBeDefined();
     });

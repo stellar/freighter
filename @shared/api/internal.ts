@@ -27,7 +27,10 @@ import {
   buildSorobanServer,
   getNewTxBuilder,
 } from "@shared/helpers/soroban/server";
-import { getContractSpec as getContractSpecHelper } from "./helpers/soroban";
+import {
+  getContractSpec as getContractSpecHelper,
+  getIsTokenSpec as getIsTokenSpecHelper,
+} from "./helpers/soroban";
 import {
   Account,
   AccountBalancesInterface,
@@ -38,6 +41,7 @@ import {
   Settings,
   IndexerSettings,
   SettingsState,
+  ExperimentalFeatures,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -723,6 +727,32 @@ export const getContractSpec = async ({
   return data;
 };
 
+export const getIsTokenSpec = async ({
+  contractId,
+  networkDetails,
+}: {
+  contractId: string;
+  networkDetails: NetworkDetails;
+}): Promise<boolean> => {
+  if (isCustomNetwork(networkDetails)) {
+    const data = await getIsTokenSpecHelper(
+      contractId,
+      networkDetails.networkUrl,
+    );
+    return data;
+  }
+  const url = new URL(
+    `${INDEXER_URL}/token-spec/${contractId}?network=${networkDetails.network}`,
+  );
+  const response = await fetch(url.href);
+  const { data, error } = await response.json();
+  if (!response.ok) {
+    throw new Error(error);
+  }
+
+  return data;
+};
+
 export const getAccountHistory = async (
   publicKey: string,
   networkDetails: NetworkDetails,
@@ -1146,13 +1176,11 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
   isValidatingSafeAssetsEnabled,
-  isExperimentalModeEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
-  isExperimentalModeEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
@@ -1162,7 +1190,6 @@ export const saveSettings = async ({
     isMemoValidationEnabled: true,
     isSafetyValidationEnabled: true,
     isValidatingSafeAssetsEnabled: true,
-    isExperimentalModeEnabled: false,
     isRpcHealthy: false,
     userNotification: { enabled: false, message: "" },
     settingsState: SettingsState.IDLE,
@@ -1176,8 +1203,36 @@ export const saveSettings = async ({
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
-      isExperimentalModeEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const saveExperimentalFeatures = async ({
+  isExperimentalModeEnabled,
+  isHashSigningEnabled,
+}: {
+  isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
+}): Promise<ExperimentalFeatures> => {
+  let response = {
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    experimentalFeaturesState: SettingsState.IDLE,
+    error: "",
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      isExperimentalModeEnabled,
+      isHashSigningEnabled,
+      type: SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES,
     });
   } catch (e) {
     console.error(e);
@@ -1282,7 +1337,9 @@ export const editCustomNetwork = async ({
 };
 
 export const loadSettings = (): Promise<
-  Settings & IndexerSettings & { assetsLists: AssetsLists }
+  Settings &
+    IndexerSettings &
+    ExperimentalFeatures & { assetsLists: AssetsLists }
 > =>
   sendMessageToBackground({
     type: SERVICE_TYPES.LOAD_SETTINGS,

@@ -9,6 +9,10 @@
   flex-direction: column;
   height: 100%;
 
+  &__subtitle {
+    text-align: center;
+  }
+
   &__content {
     display: flex;
     flex-direction: column;

@@ -34,6 +34,7 @@ import {
   ActionStatus,
   BlockedAccount,
   BalanceToMigrate,
+  SoroswapToken,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -46,6 +47,10 @@ import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import {
+  soroswapGetBestPath,
+  getSoroswapTokens as getSoroswapTokensService,
+} from "popup/helpers/sorobanSwap";
 import { hardwareSign } from "popup/helpers/hardwareConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
@@ -225,18 +230,30 @@ export const signWithHardwareWallet = createAsyncThunk<
     publicKey: string;
     bipPath: string;
     walletType: ConfigurableWalletType;
+    isHashSigningEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "signWithHardwareWallet",
   async (
-    { transactionXDR, networkPassphrase, publicKey, bipPath, walletType },
+    {
+      transactionXDR,
+      networkPassphrase,
+      publicKey,
+      bipPath,
+      walletType,
+      isHashSigningEnabled,
+    },
     thunkApi,
   ) => {
     try {
       const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
-      const signature = await hardwareSign[walletType]({ bipPath, tx });
+      const signature = await hardwareSign[walletType]({
+        bipPath,
+        tx,
+        isHashSigningEnabled,
+      });
 
       const keypair = Keypair.fromPublicKey(publicKey);
       const decoratedSignature = new xdr.DecoratedSignature({
@@ -412,6 +429,23 @@ export const getAssetDomains = createAsyncThunk<
   }) => getAssetDomainsService({ balances, networkDetails }),
 );
 
+export const getSoroswapTokens = createAsyncThunk<
+  SoroswapToken[],
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getSoroswapTokens", async (_, thunkApi) => {
+  let tokenData = { assets: [] as SoroswapToken[] };
+
+  try {
+    tokenData = await getSoroswapTokensService();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
+  }
+
+  return tokenData.assets;
+});
+
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
   Horizon.ServerApi.PaymentPathRecord,
@@ -431,6 +465,45 @@ export const getBestPath = createAsyncThunk<
         sourceAsset,
         destAsset,
         networkDetails,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
+      });
+    }
+  },
+);
+
+export const getBestSoroswapPath = createAsyncThunk<
+  {
+    amountIn?: string;
+    amountOutMin?: string;
+    amountInDecimals: number;
+    amountOutDecimals: number;
+    path: string[];
+  } | null,
+  {
+    amount: string;
+    sourceContract: string;
+    destContract: string;
+    networkDetails: NetworkDetails;
+    publicKey: string;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "getBestSoroswapPath",
+  async (
+    { amount, sourceContract, destContract, networkDetails, publicKey },
+    thunkApi,
+  ) => {
+    try {
+      return await soroswapGetBestPath({
+        amount,
+        sourceContract,
+        destContract,
+        networkDetails,
+        publicKey,
       });
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
@@ -475,18 +548,22 @@ export enum ShowOverlayStatus {
 interface TransactionData {
   amount: string;
   asset: string;
+  decimals?: number;
   destination: string;
   federationAddress: string;
   transactionFee: string;
   transactionTimeout: number;
   memo: string;
   destinationAsset: string;
+  destinationDecimals?: number;
   destinationAmount: string;
+  destinationIcon: string;
   path: string[];
   allowedSlippage: string;
   isToken: boolean;
   isMergeSelected: boolean;
   balancesToMigrate: BalanceToMigrate[];
+  isSoroswap: boolean;
 }
 
 interface HardwareWalletData {
@@ -520,6 +597,7 @@ interface InitialState {
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
   assetDomains: AssetDomains;
+  soroswapTokens: SoroswapToken[];
   assetSelect: {
     type: AssetSelectType;
     isSource: boolean;
@@ -546,11 +624,13 @@ export const initialState: InitialState = {
     memo: "",
     destinationAsset: "",
     destinationAmount: "",
+    destinationIcon: "",
     path: [],
     allowedSlippage: "1",
     isToken: false,
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
+    isSoroswap: false,
   },
   transactionSimulation: {
     response: null,
@@ -575,6 +655,7 @@ export const initialState: InitialState = {
   },
   assetIcons: {},
   assetDomains: {},
+  soroswapTokens: [],
   assetSelect: {
     type: AssetSelectType.MANAGE,
     isSource: true,
@@ -596,6 +677,9 @@ const transactionSubmissionSlice = createSlice({
     resetDestinationAmount: (state) => {
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
+    },
+    resetSubmitStatus: (state) => {
+      state.submitStatus = initialState.submitStatus;
     },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
@@ -620,6 +704,12 @@ const transactionSubmissionSlice = createSlice({
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
+    },
+    saveDestinationIcon: (state, action) => {
+      state.transactionData.destinationIcon = action.payload;
+    },
+    saveIsSoroswap: (state, action) => {
+      state.transactionData.isSoroswap = action.payload;
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
@@ -708,6 +798,11 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     });
+    builder.addCase(getBestSoroswapPath.rejected, (state) => {
+      state.transactionData.path = initialState.transactionData.path;
+      state.transactionData.destinationAmount =
+        initialState.transactionData.destinationAmount;
+    });
     builder.addCase(getAccountBalances.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
       state.accountBalances = initialState.accountBalances;
@@ -740,6 +835,14 @@ const transactionSubmissionSlice = createSlice({
         assetDomains,
       };
     });
+    builder.addCase(getSoroswapTokens.fulfilled, (state, action) => {
+      const soroswapTokens = action.payload || {};
+
+      return {
+        ...state,
+        soroswapTokens,
+      };
+    });
     builder.addCase(getBestPath.fulfilled, (state, action) => {
       if (!action.payload) {
         state.transactionData.path = [];
@@ -761,6 +864,20 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         action.payload.destination_amount;
     });
+    builder.addCase(getBestSoroswapPath.fulfilled, (state, action) => {
+      if (!action.payload) {
+        state.transactionData.path = [];
+        state.transactionData.destinationAmount = "";
+        return;
+      }
+
+      state.transactionData.path = action.payload.path;
+      state.transactionData.destinationAmount =
+        action.payload.amountOutMin || "";
+      state.transactionData.decimals = action.payload.amountInDecimals;
+      state.transactionData.destinationDecimals =
+        action.payload.amountOutDecimals;
+    });
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
       state.blockedDomains.domains = action.payload;
     });
@@ -774,6 +891,7 @@ export const {
   resetSubmission,
   resetAccountBalanceStatus,
   resetDestinationAmount,
+  resetSubmitStatus,
   saveDestination,
   saveFederationAddress,
   saveAmount,
@@ -782,6 +900,8 @@ export const {
   saveTransactionTimeout,
   saveMemo,
   saveDestinationAsset,
+  saveDestinationIcon,
+  saveIsSoroswap,
   saveAllowedSlippage,
   saveIsToken,
   saveSimulation,

@@ -49,6 +49,7 @@ export interface Response {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
   userNotification: UserNotification;
@@ -56,6 +57,7 @@ export interface Response {
   assetsList: AssetsListItem;
   isDeleteAssetsList: boolean;
   settingsState: SettingsState;
+  experimentalFeaturesState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
@@ -142,7 +144,14 @@ export interface Preferences {
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   error: string;
+}
+
+export interface ExperimentalFeatures {
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  experimentalFeaturesState: SettingsState;
 }
 
 export enum SettingsState {
@@ -179,6 +188,14 @@ export interface AssetDomains {
   [code: string]: string;
 }
 
+export interface SoroswapToken {
+  code: string;
+  contract: string;
+  decimals: number;
+  icon: string;
+  name: string;
+}
+
 export interface NativeToken {
   type: SdkAssetType;
   code: string;
@@ -212,8 +229,8 @@ export interface Balance {
   // for native, it should also subtract the minimumBalance
   available: BigNumber;
   total: BigNumber;
-  buyingLiabilities: BigNumber;
-  sellingLiabilities: BigNumber;
+  buyingLiabilities: string;
+  sellingLiabilities: string;
 }
 
 export interface AssetBalance extends Balance {

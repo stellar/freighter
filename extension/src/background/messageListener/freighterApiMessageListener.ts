@@ -39,7 +39,7 @@ import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { publicKeySelector } from "background/ducks/session";
 import { getSdk } from "@shared/helpers/stellar";
 
@@ -296,6 +296,14 @@ export const freighterApiMessageListener = (
           }),
         );
       }
+
+      // reject if not b64 encoded
+      try {
+        atob(blob);
+      } catch (error) {
+        resolve({ error: "encoding error: blob should be base64 encoded" });
+      }
+
       const response = (signedBlob: string) => {
         if (signedBlob) {
           if (!isDomainListedAllowed) {

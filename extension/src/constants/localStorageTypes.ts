@@ -21,3 +21,4 @@ export const TOKEN_ID_LIST = "tokenIdList";
 export const STORAGE_VERSION = "storageVersion";
 export const HAS_ACCOUNT_SUBSCRIPTION = "hasAccountSubscription";
 export const ASSETS_LISTS_ID = "assetsLists";
+export const IS_HASH_SIGNING_ENABLED_ID = "isHashSigningEnabled";
