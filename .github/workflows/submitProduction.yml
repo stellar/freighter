@@ -51,38 +51,38 @@ jobs:
       - name: Zip extension build
         run: zip -qq -r ./build.zip *
         working-directory: ./extension/build
-      # - name: Commit files
-      #   run: |
-      #     git config --local user.email "action@github.com"
-      #     git config --local user.name "GitHub Action"
-      #     git add -A
-      #     git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
-      #     git tag ${{ github.event.inputs.version }}
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
-      #   with:
-      #     title: Bump versions to ${{ github.event.inputs.version }}
-      # - name: Create GitHub Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #   with:
-      #     tag_name: ${{ github.event.inputs.version }}
-      #     release_name: ${{ github.event.inputs.version }}
-      #     body: ${{ github.event.inputs.version }}
-      #     draft: false
-      #     prerelease: false
-      # - name: Upload Release Asset
-      #   id: upload-release-asset
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./extension/build/build.zip
-      #     asset_name: build-${{ github.event.inputs.version }}.zip
-      #     asset_content_type: application/zip
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
+          git tag ${{ github.event.inputs.version }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
+        with:
+          title: Bump versions to ${{ github.event.inputs.version }}
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          release_name: ${{ github.event.inputs.version }}
+          body: ${{ github.event.inputs.version }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./extension/build/build.zip
+          asset_name: build-${{ github.event.inputs.version }}.zip
+          asset_content_type: application/zip
       - name: Submit extension to Firefox
         uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
         with:
@@ -92,22 +92,22 @@ jobs:
           apiKey: ${{ secrets.AMO_SIGN_KEY }}
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
-      # - name: Remove scripts tag
-      #   uses: restackio/update-json-file-action@617c86c20c3aea91b8438987dcef1e498e45a651 #v2.1
-      #   with:
-      #     file: ./extension/build/manifest.json
-      #     fields: '{"background": {"service_worker": "background.min.js"}}'
-      # - name: Zip Chrome build
-      #   run: zip -qq -r ./build_chrome.zip *
-      #   working-directory: ./extension/build
-      # - name: Submit extension to Chrome
-      #   uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
-      #   with:
-      #     file-path: ./extension/build/build_chrome.zip
-      #     extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
-      #     client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
-      #     client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
-      #     refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+      - name: Remove scripts tag
+        uses: restackio/update-json-file-action@617c86c20c3aea91b8438987dcef1e498e45a651 #v2.1
+        with:
+          file: ./extension/build/manifest.json
+          fields: '{"background": {"service_worker": "background.min.js"}}'
+      - name: Zip Chrome build
+        run: zip -qq -r ./build_chrome.zip *
+        working-directory: ./extension/build
+      - name: Submit extension to Chrome
+        uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
+        with:
+          file-path: ./extension/build/build_chrome.zip
+          extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
+          client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
+          client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
       # - name: Submit extension to Edge
       #   uses: wdzeng/edge-addon@v1
       #   with:
@@ -116,14 +116,14 @@ jobs:
       #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
       #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
       #     access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
-      # - name: Slack Notification
-      #   uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
-      #   env:
-      #     MSG_MINIMAL: true
-      #     SLACK_CHANNEL: proj-freighter
-      #     SLACK_COLOR: "#391EDA"
-      #     SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-      #     SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
-      #     SLACK_TITLE: Freighter v${{ github.event.inputs.version }} has been submitted to app stores for review!
-      #     SLACK_USERNAME: Freighter Administrative Assistant
-      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
+        env:
+          MSG_MINIMAL: true
+          SLACK_CHANNEL: proj-freighter
+          SLACK_COLOR: "#391EDA"
+          SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
+          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
+          SLACK_TITLE: Freighter v${{ github.event.inputs.version }} has been submitted to app stores for review!
+          SLACK_USERNAME: Freighter Administrative Assistant
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
