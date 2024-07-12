@@ -27,7 +27,7 @@ export const SignMessageDemo = () => {
       networkPassphrase,
     });
 
-    if ("error" in signedMessageObj) {
+    if (signedMessageObj.error) {
       setResult(JSON.stringify(signedMessageObj.error));
     } else {
       console.log(signedMessageObj);

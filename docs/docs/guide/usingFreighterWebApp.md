@@ -38,7 +38,7 @@ import { isConnected } from "@stellar/freighter-api";
 
 const isAppConnected = await isConnected();
 
-if ("isConnected" in isAppConnected && isAppConnected.isConnected) {
+if (isAppConnected.isConnected) {
   alert("User has Freighter!");
 }
 ```
@@ -54,7 +54,7 @@ import { isAllowed } from "@stellar/freighter-api";
 
 const isAppAllowed = await isAllowed();
 
-if ("isAllowed" in isAppAllowed && isAppAllowed.isAllowed) {
+if (isAppAllowed.isAllowed) {
   alert("User has allowed your app!");
 }
 ```
@@ -70,7 +70,7 @@ import { setAllowed } from "@stellar/freighter-api";
 
 const isAppAllowed = await setAllowed();
 
-if ("isAllowed" in isAppAllowed && isAppAllowed.isAllowed) {
+if (isAppAllowed.isAllowed) {
   alert("Successfully added the app to Freighter's Allow List");
 }
 ```
@@ -101,7 +101,7 @@ if ("isConnected" in isAppConnected && isAppConnected.isConnected) {
 const retrievePublicKey = async () => {
   const accessObj = await requestAccess();
 
-  if ("error" in accessObj) {
+  if (accessObj.error) {
     return accessObj.error;
   } else {
     return accessObj.address;
@@ -125,7 +125,7 @@ import { getAddress } from "@stellar/freighter-api";
 const retrievePublicKey = async () => {
   const addressObj = await getAddress();
 
-  if ("error" in addressObj) {
+  if (addressObj.error) {
     return addressObj.error;
   } else {
     return addressObj.address;
@@ -152,14 +152,14 @@ import {
 
 const isAppConnected = await isConnected();
 
-if ("isConnected" in isAppConnected && isAppConnected.isConnected) {
+if (isAppConnected.isConnected) {
   alert("User has Freighter!");
 }
 
 const retrieveNetwork = async () => {
   const networkObj = await getNetwork();
 
-  if ("error" in networkObj) {
+  if (networkObj.error) {
     return networkObj.error;
   } else {
     return {
@@ -216,14 +216,14 @@ import {
 
 const isAppConnected = await isConnected();
 
-if ("isConnected" in isAppConnected && isAppConnected.isConnected) {
+if (isAppConnected.isConnected) {
   alert("User has Freighter!");
 }
 
 const retrievePublicKey = async () => {
   const accessObj = await requestAccess();
 
-  if ("error" in accessObj) {
+  if (accessObj.error) {
     throw new Error(accessObj.error.message);
   } else {
     return accessObj.address;
@@ -242,7 +242,7 @@ const userSignTransaction = async (
     address: signWith,
   });
 
-  if ("error" in signedTransactionRes) {
+  if (signedTransactionRes.error) {
     throw new Error(signedTransactionRes.error.message);
   } else {
     return signedTransactionRes.signedTxXdr;
@@ -268,7 +268,7 @@ const userSignTransaction = async (
     address: signWith,
   });
 
-  if ("error" in signedTransactionRes) {
+  if (signedTransactionRes.error) {
     throw new Error(signedTransactionRes.error.message);
   } else {
     return signedTransactionRes.signedTxXdr;

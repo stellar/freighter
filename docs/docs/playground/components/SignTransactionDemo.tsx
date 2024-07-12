@@ -29,7 +29,7 @@ export const SignTransactionDemo = () => {
       networkPassphrase,
     });
 
-    if ("error" in signedTransaction) {
+    if (signedTransaction.error) {
       setTransactionResult(JSON.stringify(signedTransaction.error));
     } else {
       setTransactionResult(signedTransaction.signedTxXdr);

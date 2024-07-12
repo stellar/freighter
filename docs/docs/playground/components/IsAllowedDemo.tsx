@@ -6,7 +6,9 @@ export const IsAllowedDemo = () => {
   const [isAllowedState, setIsAllowedState] = useState(" ");
   const btnHandler = async () => {
     const isAllowedRes = await isAllowed();
-    if ("isAllowed" in isAllowedRes) {
+    if (isAllowedRes.error) {
+      setIsAllowedState(JSON.stringify(isAllowedRes.error));
+    } else {
       setIsAllowedState(isAllowedRes.isAllowed.toString());
     }
   };

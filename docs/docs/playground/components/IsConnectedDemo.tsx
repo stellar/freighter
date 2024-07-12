@@ -6,7 +6,9 @@ export const IsConnectedDemo = () => {
   const [isConnectedState, setIsConnectedState] = useState(" ");
   const btnHandler = async () => {
     const isConnectedRes = await isConnected();
-    if ("isConnected" in isConnectedRes) {
+    if (isConnectedRes.error) {
+      setIsConnectedState(JSON.stringify(isConnectedRes.error));
+    } else {
       setIsConnectedState(isConnectedRes.isConnected.toString());
     }
   };

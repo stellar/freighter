@@ -11,7 +11,7 @@ export const GetAddressDemo = () => {
     if (address.error) {
       setPublicKeyResult(JSON.stringify(address.error));
     } else {
-      setPublicKeyResult(address.address || "");
+      setPublicKeyResult(address.address);
     }
   };
 

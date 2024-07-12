@@ -9,7 +9,7 @@ export const GetNetworkDemo = () => {
   const btnHandler = async () => {
     const network = await getNetwork();
 
-    if ("error" in network) {
+    if (network.error) {
       setNetworkResult(JSON.stringify(network.error));
     } else {
       setNetworkResult(network.network);

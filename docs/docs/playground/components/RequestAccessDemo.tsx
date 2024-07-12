@@ -6,12 +6,12 @@ export const RequestAccessDemo = () => {
   const [publicKeyResult, setPublicKeyResult] = useState("");
 
   const btnHandler = async () => {
-    const address = await requestAccess();
+    const access = await requestAccess();
 
-    if ("error" in address) {
-      setPublicKeyResult(JSON.stringify(address.error));
+    if (access.error) {
+      setPublicKeyResult(JSON.stringify(access.error));
     } else {
-      setPublicKeyResult(address.address);
+      setPublicKeyResult(access.address);
     }
   };
 

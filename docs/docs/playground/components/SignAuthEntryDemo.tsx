@@ -27,7 +27,7 @@ export const SignAuthEntryDemo = () => {
       networkPassphrase,
     });
 
-    if ("error" in signedAuthEntryObj) {
+    if (signedAuthEntryObj.error) {
       setResult(JSON.stringify(signedAuthEntryObj.error));
     } else {
       setResult(signedAuthEntryObj.signedAuthEntry);
