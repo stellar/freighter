@@ -313,8 +313,8 @@ declare global {
   }
 }
 
-export type FreighterApiError = {
+export interface FreighterApiError {
   code: number;
   message: string;
   ext?: string[];
-};
+}
