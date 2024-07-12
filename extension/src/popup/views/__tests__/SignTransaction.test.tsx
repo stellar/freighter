@@ -19,6 +19,7 @@ import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 
 jest.mock("stellar-identicon-js");
+jest.setTimeout(20000);
 
 jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")

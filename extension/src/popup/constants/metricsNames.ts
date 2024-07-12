@@ -20,7 +20,7 @@ export const METRIC_NAMES = {
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
   viewReviewAuthorization: "loaded screen: review authorization",
-  viewSignBlob: "loaded screen: sign blob",
+  viewSignMessage: "loaded screen: sign message",
   viewSignAuthEntry: "loaded screen: sign auth entry",
   viewUnlockAccount: "loaded screen: unlock account",
   viewVerifyAccount: "loaded screen: verify account",

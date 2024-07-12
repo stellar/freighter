@@ -1,26 +1,26 @@
-import { submitAuthEntry } from "@shared/api/external";
+import { submitMessage } from "@shared/api/external";
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
-export const signAuthEntry = async (
-  entryXdr: string,
+export const signMessage = async (
+  message: string,
   opts?: {
-    address?: string;
+    accountToSign?: string;
   }
 ): Promise<
-  | { signedAuthEntry: string; signerAddress: string }
+  | { signedMessage: string; signerAddress: string }
   | { error: FreighterApiError }
 > => {
   if (isBrowser) {
-    const req = await submitAuthEntry(entryXdr, opts);
+    const req = await submitMessage(message, opts);
 
     if (req.error) {
       return { error: req.error };
     }
 
     return {
-      signedAuthEntry: req.signedAuthEntry,
+      signedMessage: req.signedMessage,
       signerAddress: req.signerAddress,
     };
   }

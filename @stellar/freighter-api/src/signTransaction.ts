@@ -1,12 +1,29 @@
 import { submitTransaction } from "@shared/api/external";
+import { FreighterApiError } from "@shared/api/types";
+import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
-export const signTransaction = (
+export const signTransaction = async (
   transactionXdr: string,
   opts?: {
-    network?: string;
     networkPassphrase?: string;
-    accountToSign?: string;
+    address?: string;
   }
-): Promise<string> =>
-  isBrowser ? submitTransaction(transactionXdr, opts) : Promise.resolve("");
+): Promise<
+  { signedTxXdr: string; signerAddress: string } | { error: FreighterApiError }
+> => {
+  if (isBrowser) {
+    const req = await submitTransaction(transactionXdr, opts);
+
+    if (req.error) {
+      return { error: req.error };
+    }
+
+    return {
+      signedTxXdr: req.signedTransaction,
+      signerAddress: req.signerAddress,
+    };
+  }
+
+  return { error: FreighterApiNodeError };
+};

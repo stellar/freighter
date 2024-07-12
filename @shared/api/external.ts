@@ -1,10 +1,16 @@
 import { EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { NetworkDetails } from "../constants/stellar";
-import { sendMessageToContentScript } from "./helpers/extensionMessaging";
-import { UserInfo } from "./types";
+import {
+  sendMessageToContentScript,
+  FreighterApiInternalError,
+} from "./helpers/extensionMessaging";
+import { FreighterApiError } from "./types";
 
-export const requestAccess = async (): Promise<string> => {
-  let response = { publicKey: "", error: "" };
+export const requestAccess = async (): Promise<{
+  publicKey: string;
+  error?: FreighterApiError;
+}> => {
+  let response;
   try {
     response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS,
@@ -13,16 +19,16 @@ export const requestAccess = async (): Promise<string> => {
     console.error(e);
   }
 
-  const { publicKey, error } = response;
+  const { publicKey } = response || { publicKey: "" };
 
-  if (error) {
-    throw error;
-  }
-  return publicKey;
+  return { publicKey, error: response?.apiError };
 };
 
-export const requestPublicKey = async (): Promise<string> => {
-  let response = { publicKey: "", error: "" };
+export const requestPublicKey = async (): Promise<{
+  publicKey: string;
+  error?: FreighterApiError;
+}> => {
+  let response;
   try {
     response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY,
@@ -31,12 +37,7 @@ export const requestPublicKey = async (): Promise<string> => {
     console.error(e);
   }
 
-  const { publicKey, error } = response;
-
-  if (error) {
-    throw error;
-  }
-  return publicKey;
+  return { publicKey: response?.publicKey || "", error: response?.apiError };
 };
 
 export const submitTransaction = async (
@@ -44,12 +45,15 @@ export const submitTransaction = async (
   opts?:
     | string
     | {
-        network?: string;
         accountToSign?: string;
         networkPassphrase?: string;
       },
   accountToSign?: string,
-): Promise<string> => {
+): Promise<{
+  signedTransaction: string;
+  signerAddress: string;
+  error?: FreighterApiError;
+}> => {
   let network = "";
   let _accountToSign = "";
   let networkPassphrase = "";
@@ -60,7 +64,6 @@ export const submitTransaction = async (
   This logic maintains backwards compatibility for older versions
   */
   if (typeof opts === "object") {
-    network = opts.network || "";
     _accountToSign = opts.accountToSign || "";
     networkPassphrase = opts.networkPassphrase || "";
   } else {
@@ -68,7 +71,7 @@ export const submitTransaction = async (
     _accountToSign = accountToSign || "";
   }
 
-  let response = { signedTransaction: "", error: "" };
+  let response;
   try {
     response = await sendMessageToContentScript({
       transactionXdr,
@@ -78,24 +81,28 @@ export const submitTransaction = async (
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION,
     });
   } catch (e) {
-    console.error(e);
-    throw e;
+    return {
+      signedTransaction: "",
+      signerAddress: "",
+      error: FreighterApiInternalError,
+    };
   }
-  const { signedTransaction, error } = response;
+  const { signedTransaction, signerAddress } = response;
 
-  if (error) {
-    throw error;
-  }
-  return signedTransaction;
+  return { signedTransaction, signerAddress, error: response?.apiError };
 };
 
-export const submitBlob = async (
+export const submitMessage = async (
   blob: string,
   opts?: {
     accountToSign?: string;
   },
-): Promise<string> => {
-  let response = { signedBlob: "", error: "" };
+): Promise<{
+  signedMessage: string;
+  signerAddress: string;
+  error?: FreighterApiError;
+}> => {
+  let response;
   const _opts = opts || {};
   const accountToSign = _opts.accountToSign || "";
   try {
@@ -105,77 +112,61 @@ export const submitBlob = async (
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB,
     });
   } catch (e) {
-    console.error(e);
-    throw e;
+    return {
+      signedMessage: "",
+      signerAddress: "",
+      error: FreighterApiInternalError,
+    };
   }
-  const { signedBlob, error } = response;
+  const { signedBlob, signerAddress } = response;
 
-  if (error) {
-    throw error;
-  }
-  return signedBlob;
+  return {
+    signedMessage: signedBlob,
+    signerAddress,
+    error: response?.apiError,
+  };
 };
 
 export const submitAuthEntry = async (
   entryXdr: string,
   opts?: {
-    accountToSign?: string;
+    address?: string;
+    networkPassphrase?: string;
   },
-): Promise<string> => {
-  let response = { signedAuthEntry: "", error: "" };
+): Promise<{
+  signedAuthEntry: string;
+  signerAddress: string;
+  error?: FreighterApiError;
+}> => {
   const _opts = opts || {};
-  const accountToSign = _opts.accountToSign || "";
+  const accountToSign = _opts.address || "";
+  let response;
   try {
     response = await sendMessageToContentScript({
       entryXdr,
       accountToSign,
+      networkPassphrase: opts?.networkPassphrase,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_AUTH_ENTRY,
     });
   } catch (e) {
     console.error(e);
+    return {
+      signedAuthEntry: "",
+      signerAddress: "",
+      error: FreighterApiInternalError,
+    };
   }
-  const { signedAuthEntry, error } = response;
+  const { signedAuthEntry, signerAddress } = response;
 
-  if (error) {
-    throw error;
-  }
-  return signedAuthEntry;
+  return { signedAuthEntry, signerAddress, error: response?.apiError };
 };
 
-export const requestNetwork = async (): Promise<string> => {
-  let response = { network: "", error: "" };
-  try {
-    response = await sendMessageToContentScript({
-      type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK,
-    });
-  } catch (e) {
-    console.error(e);
-  }
-
-  const { network, error } = response;
-
-  if (error) {
-    throw error;
-  }
-  return network;
-};
-
-export const requestNetworkDetails = async (): Promise<{
+export const requestNetwork = async (): Promise<{
   network: string;
-  networkUrl: string;
   networkPassphrase: string;
-  sorobanRpcUrl?: string;
+  error?: FreighterApiError;
 }> => {
-  let response = {
-    networkDetails: {
-      network: "",
-      networkName: "",
-      networkUrl: "",
-      networkPassphrase: "",
-      sorobanRpcUrl: undefined,
-    } as NetworkDetails,
-    error: "",
-  };
+  let response;
   try {
     response = await sendMessageToContentScript({
       type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS,
@@ -184,21 +175,59 @@ export const requestNetworkDetails = async (): Promise<{
     console.error(e);
   }
 
-  const { networkDetails, error } = response;
-  const {
+  const { networkDetails } = response || {
+    networkDetails: { network: "", networkPassphrase: "" },
+  };
+
+  return {
+    network: networkDetails?.network,
+    networkPassphrase: networkDetails?.networkPassphrase,
+    error: response?.apiError,
+  };
+};
+
+export const requestNetworkDetails = async (): Promise<{
+  network: string;
+  networkUrl: string;
+  networkPassphrase: string;
+  sorobanRpcUrl?: string;
+  error?: FreighterApiError;
+}> => {
+  let response;
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.REQUEST_NETWORK_DETAILS,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const { networkDetails, apiError } = response || {
+    networkDetails: {
+      network: "",
+      networkName: "",
+      networkUrl: "",
+      networkPassphrase: "",
+      sorobanRpcUrl: undefined,
+      apiError: "",
+    } as NetworkDetails,
+  };
+
+  const { network, networkUrl, networkPassphrase, sorobanRpcUrl } =
+    networkDetails;
+
+  return {
     network,
     networkUrl,
     networkPassphrase,
     sorobanRpcUrl,
-  } = networkDetails;
-
-  if (error) {
-    throw error;
-  }
-  return { network, networkUrl, networkPassphrase, sorobanRpcUrl };
+    error: apiError,
+  };
 };
 
-export const requestConnectionStatus = async (): Promise<boolean> => {
+export const requestConnectionStatus = async (): Promise<{
+  isConnected: boolean;
+}> => {
   let response = {
     isConnected: false,
   };
@@ -211,13 +240,14 @@ export const requestConnectionStatus = async (): Promise<boolean> => {
     console.error(e);
   }
 
-  return response.isConnected;
+  return { isConnected: response.isConnected };
 };
 
-export const requestAllowedStatus = async (): Promise<boolean> => {
-  let response = {
-    isAllowed: false,
-  };
+export const requestAllowedStatus = async (): Promise<{
+  isAllowed: boolean;
+  error?: FreighterApiError;
+}> => {
+  let response;
 
   try {
     response = await sendMessageToContentScript({
@@ -227,14 +257,16 @@ export const requestAllowedStatus = async (): Promise<boolean> => {
     console.error(e);
   }
 
-  return response.isAllowed;
+  const { isAllowed } = response || { isAllowed: false };
+
+  return { isAllowed, error: response?.apiError };
 };
 
-export const setAllowedStatus = async (): Promise<boolean> => {
-  let response = {
-    isAllowed: false,
-    error: "",
-  };
+export const setAllowedStatus = async (): Promise<{
+  isAllowed: boolean;
+  error?: FreighterApiError;
+}> => {
+  let response;
 
   try {
     response = await sendMessageToContentScript({
@@ -244,28 +276,9 @@ export const setAllowedStatus = async (): Promise<boolean> => {
     console.error(e);
   }
 
-  const { isAllowed, error } = response;
+  const { isAllowed } = response || {
+    isAllowed: false,
+  };
 
-  if (error) {
-    throw error;
-  }
-  return isAllowed;
-};
-
-export const requestUserInfo = async (): Promise<UserInfo> => {
-  let response = { userInfo: { publicKey: "" }, error: "" };
-  try {
-    response = await sendMessageToContentScript({
-      type: EXTERNAL_SERVICE_TYPES.REQUEST_USER_INFO,
-    });
-  } catch (e) {
-    console.error(e);
-  }
-
-  const { userInfo, error } = response;
-
-  if (error) {
-    throw error;
-  }
-  return userInfo;
+  return { isAllowed, error: response?.apiError };
 };

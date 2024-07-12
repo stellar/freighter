@@ -73,7 +73,7 @@ import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 import { SettingsState } from "@shared/api/types";
 
-import { SignBlob } from "./views/SignBlob";
+import { SignMessage } from "./views/SignMessage";
 import { ReviewAuth } from "./views/ReviewAuth";
 
 import { View } from "./basics/layout/View";
@@ -330,8 +330,8 @@ const Outlet = () => {
           <PublicKeyRoute path={ROUTES.signAuthEntry}>
             <SignAuthEntry />
           </PublicKeyRoute>
-          <PublicKeyRoute path={ROUTES.signBlob}>
-            <SignBlob />
+          <PublicKeyRoute path={ROUTES.signMessage}>
+            <SignMessage />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
             <DisplayBackupPhrase />

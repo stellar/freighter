@@ -7,8 +7,11 @@ import { signBlob, rejectBlob } from "popup/ducks/access";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
-import { Blob } from "popup/components/signBlob";
-import { settingsExperimentalModeSelector } from "popup/ducks/settings";
+import { Message } from "popup/components/signMessage";
+import {
+  settingsExperimentalModeSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import {
   WarningMessageVariant,
   WarningMessage,
@@ -22,13 +25,13 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { BlobToSign, parsedSearchParam } from "helpers/urls";
+import { MessageToSign, parsedSearchParam } from "helpers/urls";
 import { truncatedPublicKey } from "helpers/stellar";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
 import "./styles.scss";
 
-export const SignBlob = () => {
+export const SignMessage = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const location = useLocation();
@@ -36,9 +39,18 @@ export const SignBlob = () => {
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
+  const { networkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
 
-  const blob = parsedSearchParam(location.search) as BlobToSign;
-  const { accountToSign, domain, isDomainListedAllowed, url } = blob;
+  const message = parsedSearchParam(location.search) as MessageToSign;
+  const {
+    accountToSign,
+    domain,
+    isDomainListedAllowed,
+    url,
+    networkPassphrase: blobNetworkPassphrase,
+  } = message;
 
   const {
     allAccounts,
@@ -54,7 +66,7 @@ export const SignBlob = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectBlob, signBlob, blob.blob, accountToSign);
+  } = useSetupSigningFlow(rejectBlob, signBlob, message.message, accountToSign);
 
   if (isHardwareWallet) {
     return (
@@ -69,6 +81,23 @@ export const SignBlob = () => {
             "Signing arbitrary data with a hardware wallet is currently not supported.",
           )}
         </p>
+      </WarningMessage>
+    );
+  }
+
+  if (blobNetworkPassphrase && blobNetworkPassphrase !== networkPassphrase) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={`${t("Freighter is set to")} ${networkName}`}
+      >
+        <p>
+          {t("The requester expects you to sign this message on")}{" "}
+          {blobNetworkPassphrase}.
+        </p>
+        <p>{t("Signing this transaction is not possible at the moment.")}</p>
       </WarningMessage>
     );
   }
@@ -124,23 +153,23 @@ export const SignBlob = () => {
           >
             <p>
               {t(
-                "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data.",
+                "You are attempting to sign an arbitrary message. Please use extreme caution and understand the implications of signing this data.",
               )}
             </p>
           </WarningMessage>
           {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
-          <div className="SignBlob__info">
+          <div className="SignMessage__info">
             <Card variant="secondary">
               <PunycodedDomain domain={domain} isRow />
-              <div className="SignBlob__subject">
-                {t("is requesting approval to sign a blob of data")}
+              <div className="SignMessage__subject">
+                {t("is requesting approval to sign a message")}
               </div>
-              <div className="SignBlob__approval">
-                <div className="SignBlob__approval__title">
+              <div className="SignMessage__approval">
+                <div className="SignMessage__approval__title">
                   {t("Approve using")}:
                 </div>
                 <div
-                  className="SignBlob__current-account"
+                  className="SignMessage__current-account"
                   onClick={() => setIsDropdownOpen(true)}
                 >
                   <AccountListIdenticon
@@ -155,14 +184,14 @@ export const SignBlob = () => {
                       imported={currentAccount.imported}
                     />
                   </AccountListIdenticon>
-                  <div className="SignBlob__current-account__chevron">
+                  <div className="SignMessage__current-account__chevron">
                     <Icon.ChevronDown />
                   </div>
                 </div>
               </div>
             </Card>
             {accountNotFound && accountToSign ? (
-              <div className="SignBlob__account-not-found">
+              <div className="SignMessage__account-not-found">
                 <Notification
                   variant="warning"
                   icon={<Icon.Warning />}
@@ -177,7 +206,7 @@ export const SignBlob = () => {
               </div>
             ) : null}
           </div>
-          <Blob blob={blob.blob} />
+          <Message message={message.message} />
         </View.Content>
         <View.Footer isInline>
           <Button
@@ -202,7 +231,7 @@ export const SignBlob = () => {
           isModalOpen={isDropdownOpen}
           setIsModalOpen={setIsDropdownOpen}
         >
-          <div className="SignBlob__modal">
+          <div className="SignMessage__modal">
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}

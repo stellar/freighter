@@ -18,7 +18,10 @@ import {
 import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 import { View } from "popup/basics/layout/View";
 import { signEntry, rejectAuthEntry } from "popup/ducks/access";
-import { settingsExperimentalModeSelector } from "popup/ducks/settings";
+import {
+  settingsExperimentalModeSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
@@ -35,9 +38,12 @@ export const SignAuthEntry = () => {
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
+  const { networkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
 
   const params = parsedSearchParam(location.search) as EntryToSign;
-  const { accountToSign } = params;
+  const { accountToSign, networkPassphrase: entryNetworkPassphrase } = params;
 
   const {
     allAccounts,
@@ -73,6 +79,23 @@ export const SignAuthEntry = () => {
             "Signing arbitrary data with a hardware wallet is currently not supported.",
           )}
         </p>
+      </WarningMessage>
+    );
+  }
+
+  if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={`${t("Freighter is set to")} ${networkName}`}
+      >
+        <p>
+          {t("The requester expects you to sign this auth entry on")}{" "}
+          {entryNetworkPassphrase}.
+        </p>
+        <p>{t("Signing this transaction is not possible at the moment.")}</p>
       </WarningMessage>
     );
   }

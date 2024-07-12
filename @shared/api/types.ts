@@ -22,6 +22,7 @@ export type MigratableAccount = Account & { keyIdIndex: number };
 
 export interface Response {
   error: string;
+  apiError: FreighterApiError;
   messagedId: number;
   applicationState: APPLICATION_STATE;
   publicKey: string;
@@ -37,6 +38,7 @@ export interface Response {
     sign: (sourceKeys: {}) => void;
   };
   transactionXDR: string;
+  signerAddress: string;
   signedTransaction: string;
   signedBlob: string;
   signedAuthEntry: string;
@@ -308,4 +310,10 @@ declare global {
     freighter: boolean;
     freighterApi: { [key: string]: any };
   }
+}
+
+export interface FreighterApiError {
+  code: number;
+  message: string;
+  ext?: string[];
 }
