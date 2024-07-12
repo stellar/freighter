@@ -29,7 +29,7 @@ Now let's dig into what functionality is available to you:
 
 ### isConnected
 
-#### `isConnected() -> <Promise<{ isConnected: boolean } | { error: string; }>>`
+#### `isConnected() -> <Promise<{ isConnected: boolean } & { error?: string; }>>`
 
 This function is useful for determining if a user in your application has Freighter installed.
 
@@ -45,7 +45,7 @@ if (isAppConnected.isConnected) {
 
 ### isAllowed
 
-#### `isAllowed() -> <Promise<{ isAllowed: boolean } | { error: string; }>>`
+#### `isAllowed() -> <Promise<{ isAllowed: boolean } & { error?: string; }>>`
 
 This function is useful for determining if a user has previously authorized your app to receive data from Freighter.
 
@@ -61,7 +61,7 @@ if (isAppAllowed.isAllowed) {
 
 ### setAllowed
 
-#### `setAllowed() -> <Promise<{ isAllowed: boolean } | { error: string; }>>`
+#### `setAllowed() -> <Promise<{ isAllowed: boolean } & { error?: string; }>>`
 
 If a user has never interacted with your app before, this function will prompt the user to provide your app privileges to receive user data. If and when the user accepts, this function will resolve with a boolean of `true` indicating the app is now on the extension's "Allow list". This means the extension can immediately provide user data without any user action.
 
@@ -77,7 +77,7 @@ if (isAppAllowed.isAllowed) {
 
 ### requestAccess
 
-#### `requestAccess() -> <Promise<{ address: string }  | { error: string; }>>`
+#### `requestAccess() -> <Promise<{ address: string }  & { error?: string; }>>`
 
 If a user has never interacted with your app before, this function will prompt the user to provide your app privileges to receive the user's public key. If and when the user accepts, this function will resolve with an object containing the public key. Otherwise, it will provide an error.
 
@@ -113,7 +113,7 @@ const result = retrievePublicKey();
 
 ### getAddress
 
-#### `getAddress() -> <Promise<{ address: string } | { error: string; }>>`
+#### `getAddress() -> <Promise<{ address: string } & { error?: string; }>>`
 
 This is a more lightweight version of `requestAccess` above.
 
@@ -137,7 +137,7 @@ const result = retrievePublicKey();
 
 ### getNetwork
 
-#### `getNetwork() -> <Promise<{ network: string; networkPassphrase: string } | { error: string; }>>`
+#### `getNetwork() -> <Promise<{ network: string; networkPassphrase: string } & { error?: string; }>>`
 
 This function is useful for determining what network the user has configured Freighter to use. Freighter will be configured to either `PUBLIC`, `TESTNET`, `FUTURENET`, or `STANDALONE` (for custom networks).
 
@@ -174,7 +174,7 @@ const result = retrieveNetwork();
 
 ### signTransaction
 
-#### `signTransaction(xdr: string, opts?: { network?: string, networkPassphrase?: string, address?: string }) -> <Promise<{ signedTxXdr: string; signerAddress: string; } | { error: string; }>>`
+#### `signTransaction(xdr: string, opts?: { network?: string, networkPassphrase?: string, address?: string }) -> <Promise<{ signedTxXdr: string; signerAddress: string; } & { error?: string; }>>`
 
 This function accepts a transaction XDR string as the first parameter, which it will decode, sign as the user, and then return the signed transaction to your application.
 
@@ -192,7 +192,7 @@ You can also use this `opts` to specify which account's signature you’re reque
 
 ### signAuthEntry
 
-#### `signAuthEntry(authEntryXdr: string, opts: { address: string }) -> <Promise<{ signedAuthEntry: string; signerAddress: string } | { error: string; }>>`
+#### `signAuthEntry(authEntryXdr: string, opts: { address: string }) -> <Promise<{ signedAuthEntry: string; signerAddress: string } & { error?: string; }>>`
 
 This function accepts an [authorization entry preimage](https://github.com/stellar/js-stellar-base/blob/a9567e5843760bfb6a8b786592046aee4c9d38b2/types/next.d.ts#L6895) as the first parameter and it returns a signed hash of the same authorization entry, which can be added to the [address credentials](https://github.com/stellar/js-stellar-base/blob/a9567e5843760bfb6a8b786592046aee4c9d38b2/types/next.d.ts#L6614) of the same entry. The [`authorizeEntry` helper](https://github.com/stellar/js-stellar-base/blob/e3d6fc3351e7d242b374c7c6057668366364a279/src/auth.js#L97) in stellar base is a good example of how this works.
 
@@ -200,7 +200,7 @@ The second parameter is an optional `opts` object where you can specify which ac
 
 ### signMessage
 
-#### `signMessage(message: string, opts: { address: string }) -> <Promise<{ signedMessage: string; signerAddress: string; } | { error: string; }>>`
+#### `signMessage(message: string, opts: { address: string }) -> <Promise<{ signedMessage: string; signerAddress: string; } & { error?: string; }>>`
 
 This function accepts a base64 encoded blob of arbitrary data as the first parameter, which it will decode, sign as the user, and return a Buffer of the signed contents.
 
