@@ -17,6 +17,6 @@ describe("getPublicKey", () => {
       .fn()
       .mockReturnValue({ apiError: TEST_ERROR });
     const publicKey = await getAddress();
-    expect(publicKey).toEqual({ error: TEST_ERROR });
+    expect(publicKey).toEqual({ address: "", error: TEST_ERROR });
   });
 });

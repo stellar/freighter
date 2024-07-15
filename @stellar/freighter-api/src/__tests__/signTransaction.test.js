@@ -5,12 +5,10 @@ import { signTransaction } from "../signTransaction";
 describe("signTransaction", () => {
   it("returns a transaction", async () => {
     const TEST_TRANSACTION = "AAA";
-    extensionMessaging.sendMessageToContentScript = jest
-      .fn()
-      .mockReturnValue({
-        signedTransaction: TEST_TRANSACTION,
-        signerAddress: "baz",
-      });
+    extensionMessaging.sendMessageToContentScript = jest.fn().mockReturnValue({
+      signedTransaction: TEST_TRANSACTION,
+      signerAddress: "baz",
+    });
     const transaction = await signTransaction();
     expect(transaction).toEqual({
       signedTxXdr: TEST_TRANSACTION,
@@ -23,6 +21,10 @@ describe("signTransaction", () => {
       .mockReturnValue({ apiError: "baz" });
     const transaction = await signTransaction();
 
-    expect(transaction).toEqual({ error: "baz" });
+    expect(transaction).toEqual({
+      signedTxXdr: "",
+      signerAddress: "",
+      error: "baz",
+    });
   });
 });

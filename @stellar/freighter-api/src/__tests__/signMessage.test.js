@@ -18,6 +18,10 @@ describe("signMessage", () => {
         apiError: "error",
       }));
     const msg = await signMessage();
-    expect(msg).toEqual({ error: "error" });
+    expect(msg).toEqual({
+      signedMessage: "",
+      signerAddress: "",
+      error: "error",
+    });
   });
 });
