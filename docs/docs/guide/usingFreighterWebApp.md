@@ -299,7 +299,7 @@ The class `WatchWalletChanges` provides methods to watch changes from Freighter.
 
 ##### `WatchWalletChanges.watch(callback: ({ address: string; network: string; networkPassphrase; string }) => void)`
 
-The `watch()` method starts polling the extension for updates. By passing a callback into the method, you can access Freighter's `address`, `network`, and `networkPassphrase`
+The `watch()` method starts polling the extension for updates. By passing a callback into the method, you can access Freighter's `address`, `network`, and `networkPassphrase`. This method will only emit results when something has changed.
 
 ##### `WatchWalletChanges.stop()`
 
