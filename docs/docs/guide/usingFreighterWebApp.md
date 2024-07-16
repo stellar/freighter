@@ -49,7 +49,7 @@ if (isAppConnected.isConnected) {
 
 This function is useful for determining if a user has previously authorized your app to receive data from Freighter.
 
-```javascript
+```typescript
 import { isAllowed } from "@stellar/freighter-api";
 
 const isAppAllowed = await isAllowed();
@@ -65,7 +65,7 @@ if (isAppAllowed.isAllowed) {
 
 If a user has never interacted with your app before, this function will prompt the user to provide your app privileges to receive user data. If and when the user accepts, this function will resolve with a boolean of `true` indicating the app is now on the extension's "Allow list". This means the extension can immediately provide user data without any user action.
 
-```javascript
+```typescript
 import { setAllowed } from "@stellar/freighter-api";
 
 const isAppAllowed = await setAllowed();
@@ -83,7 +83,7 @@ If a user has never interacted with your app before, this function will prompt t
 
 If the user has authorized your application previously, it will be on the extension's "Allow list", meaning the extension can immediately provide the public key without any user action.
 
-```javascript
+```typescript
 import {
   isConnected,
   requestAccess,
@@ -119,7 +119,7 @@ This is a more lightweight version of `requestAccess` above.
 
 If the user has authorized your application previously and Freighter is connected, Freighter will simply return the public key. If either one of the above is not true, it will return an empty string.
 
-```javascript
+```typescript
 import { getAddress } from "@stellar/freighter-api";
 
 const retrievePublicKey = async () => {
@@ -141,7 +141,7 @@ const result = retrievePublicKey();
 
 This function is useful for determining what network the user has configured Freighter to use. Freighter will be configured to either `PUBLIC`, `TESTNET`, `FUTURENET`, or `STANDALONE` (for custom networks).
 
-```javascript
+```typescript
 import {
   isConnected,
   getNetwork,
@@ -206,7 +206,7 @@ This function accepts a base64 encoded blob of arbitrary data as the first param
 
 The second parameter is an optional `opts` object where you can specify which account's signature you’re requesting. If Freighter has the public key requested, it will switch to that account. If not, it will alert the user that they do not have the requested account.
 
-```javascript
+```typescript
 import {
   isConnected,
   getPublicKey,
@@ -255,7 +255,7 @@ const userSignedTransaction = userSignTransaction(xdr, "TESTNET");
 
 freighter-api will return a signed transaction xdr. Below is an example of how you might submit this signed transaction to Horizon using `stellar-sdk` (https://github.com/stellar/js-stellar-sdk):
 
-```javascript
+```typescript
 import { Server, TransactionBuilder } from "stellar-sdk";
 
 const userSignTransaction = async (
@@ -289,4 +289,36 @@ const transactionToSubmit = TransactionBuilder.fromXDR(
 );
 
 const response = await server.submitTransaction(transactionToSubmit);
+```
+
+### WatchWalletChanges
+
+#### `WatchWalletChanges -> new WatchWalletChanges(timeout?: number)`
+
+The class `WatchWalletChanges` provides methods to watch changes from Freighter. To use this class, first instantiate with with an optional `timeout` param to determine how often you want to check for changes in the wallet. The default is `3000` ms.
+
+##### `WatchWalletChanges.watch(callback: ({ address: string; network: string; networkPassphrase; string }) => void)`
+
+The `watch()` method starts polling the extension for updates. By passing a callback into the method, you can access Freighter's `address`, `network`, and `networkPassphrase`
+
+##### `WatchWalletChanges.stop()`
+
+The `stop()` method will stop polling Freighter for changes:
+
+```typescript
+import { WatchWalletChanges } from "@stellar/freighter-api";
+
+const Watcher = new WatchWalletChanges(1000);
+
+Watcher.watch((watcherResults) => {
+  document.querySelector("#address").innerHTML = watcherResults.address;
+  document.querySelector("#network").innerHTML = watcherResults.network;
+  document.querySelector("#networkPassphrase").innerHTML =
+    watcherResults.networkPassphrase;
+});
+
+setTimeout(() => {
+  // after 30 seconds, stop watching
+  Watcher.stop();
+}, 30000);
 ```
