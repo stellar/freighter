@@ -4,13 +4,12 @@ const playgroundPaths = [
   "isAllowed",
   "setAllowed",
   "requestAccess",
-  "getPublicKey",
-  "getUserInfo",
+  "getAddress",
   "getNetwork",
   "getNetworkDetails",
   "signTransaction",
   "signAuthEntry",
-  "signBlob",
+  "signMessage",
 ];
 
 const GUIDE_BASE_PATH = "guide";

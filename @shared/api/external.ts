@@ -95,7 +95,8 @@ export const submitTransaction = async (
 export const submitMessage = async (
   blob: string,
   opts?: {
-    accountToSign?: string;
+    address?: string;
+    networkPassphrase?: string;
   },
 ): Promise<{
   signedMessage: string;
@@ -104,7 +105,7 @@ export const submitMessage = async (
 }> => {
   let response;
   const _opts = opts || {};
-  const accountToSign = _opts.accountToSign || "";
+  const accountToSign = _opts.address || "";
   try {
     response = await sendMessageToContentScript({
       blob,

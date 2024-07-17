@@ -3149,7 +3149,7 @@
   resolved "https://registry.yarnpkg.com/@stellar/eslint-config/-/eslint-config-2.1.2.tgz#95c223d10a5dfc2c89486e76cc7c9f1b56df3564"
   integrity sha512-5aUkncDMmx0SvVlZD4rld5snGKt3mc0Gno1Jik3Pp31HUmpgrkRUD3ZZekEOqB9mDKadZhQZNNsS0jhyuXaayw==
 
-"@stellar/freighter-api@latest":
+"@stellar/freighter-api@^2.0.0", "@stellar/freighter-api@latest":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@stellar/freighter-api/-/freighter-api-2.0.0.tgz#488915a4aa0cec8c9a3fc84ef31e21cd5ec41343"
   integrity sha512-j/R7MLPL8S3QhwOEdAxSl7MgWBTXWlOXQKQyXR8mPk1JMKKR4tF8e4U+Fs9TPQH0HZoYqfVDvLOOUrTMMY058Q==

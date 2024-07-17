@@ -4,19 +4,23 @@ import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const getNetworkDetails = async (): Promise<
-  | {
-      network: string;
-      networkUrl: string;
-      networkPassphrase: string;
-      sorobanRpcUrl?: string;
-    }
-  | { error: FreighterApiError }
+  {
+    network: string;
+    networkUrl: string;
+    networkPassphrase: string;
+    sorobanRpcUrl?: string;
+  } & { error?: FreighterApiError }
 > => {
   if (isBrowser) {
     const req = await requestNetworkDetails();
 
     if (req.error) {
-      return { error: req.error };
+      return {
+        network: "",
+        networkUrl: "",
+        networkPassphrase: "",
+        error: req.error,
+      };
     }
 
     return {
@@ -27,5 +31,10 @@ export const getNetworkDetails = async (): Promise<
     };
   }
 
-  return { error: FreighterApiNodeError };
+  return {
+    network: "",
+    networkUrl: "",
+    networkPassphrase: "",
+    error: FreighterApiNodeError,
+  };
 };

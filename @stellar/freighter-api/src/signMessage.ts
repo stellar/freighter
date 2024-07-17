@@ -6,17 +6,19 @@ import { isBrowser } from ".";
 export const signMessage = async (
   message: string,
   opts?: {
-    accountToSign?: string;
+    networkPassphrase?: string;
+    address?: string;
   }
 ): Promise<
-  | { signedMessage: string; signerAddress: string }
-  | { error: FreighterApiError }
+  { signedMessage: string; signerAddress: string } & {
+    error?: FreighterApiError;
+  }
 > => {
   if (isBrowser) {
     const req = await submitMessage(message, opts);
 
     if (req.error) {
-      return { error: req.error };
+      return { signedMessage: "", signerAddress: "", error: req.error };
     }
 
     return {
@@ -25,5 +27,5 @@ export const signMessage = async (
     };
   }
 
-  return { error: FreighterApiNodeError };
+  return { signedMessage: "", signerAddress: "", error: FreighterApiNodeError };
 };

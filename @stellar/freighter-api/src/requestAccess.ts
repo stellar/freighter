@@ -4,17 +4,19 @@ import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
 export const requestAccess = async (): Promise<
-  { address: string } | { error: FreighterApiError }
+  { address: string } & { error?: FreighterApiError }
 > => {
+  let address = "";
   if (isBrowser) {
     const req = await requestAccessApi();
+    address = req.publicKey;
 
     if (req.error) {
-      return { error: req.error };
+      return { address, error: req.error };
     }
 
-    return { address: req.publicKey };
+    return { address };
   }
 
-  return { error: FreighterApiNodeError };
+  return { address, error: FreighterApiNodeError };
 };

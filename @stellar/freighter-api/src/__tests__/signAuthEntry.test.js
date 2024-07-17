@@ -16,6 +16,10 @@ describe("signAuthEntry", () => {
       .mockReturnValue({ apiError: "baz" });
     const authEntry = await signAuthEntry();
 
-    expect(authEntry).toEqual({ error: "baz" });
+    expect(authEntry).toEqual({
+      signedAuthEntry: "",
+      signerAddress: "",
+      error: "baz",
+    });
   });
 });

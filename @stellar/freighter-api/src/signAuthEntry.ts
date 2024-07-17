@@ -6,17 +6,19 @@ import { isBrowser } from ".";
 export const signAuthEntry = async (
   entryXdr: string,
   opts?: {
+    networkPassphrase?: string;
     address?: string;
   }
 ): Promise<
-  | { signedAuthEntry: string; signerAddress: string }
-  | { error: FreighterApiError }
+  { signedAuthEntry: string; signerAddress: string } & {
+    error?: FreighterApiError;
+  }
 > => {
   if (isBrowser) {
     const req = await submitAuthEntry(entryXdr, opts);
 
     if (req.error) {
-      return { error: req.error };
+      return { signedAuthEntry: "", signerAddress: "", error: req.error };
     }
 
     return {
@@ -25,5 +27,9 @@ export const signAuthEntry = async (
     };
   }
 
-  return { error: FreighterApiNodeError };
+  return {
+    signedAuthEntry: "",
+    signerAddress: "",
+    error: FreighterApiNodeError,
+  };
 };

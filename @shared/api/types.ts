@@ -105,7 +105,8 @@ export interface BlockedAccount {
 export interface ExternalRequestBase {
   network: string;
   networkPassphrase: string;
-  accountToSign: string;
+  accountToSign?: string;
+  address?: string;
   type: EXTERNAL_SERVICE_TYPES;
 }
 

@@ -240,7 +240,7 @@
   "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Invocation Type": "Invocation Type",
-  "is requesting approval to sign a blob of data": "is requesting approval to sign a blob of data",
+  "is requesting approval to sign a message": "is requesting approval to sign a message",
   "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
   "Join community Discord": "Join community Discord",
@@ -422,6 +422,7 @@
   "Signer Sha256 Hash": "Signer Sha256 Hash",
   "Signer Weight": "Signer Weight",
   "Signing arbitrary data with a hardware wallet is currently not supported": "Signing arbitrary data with a hardware wallet is currently not supported.",
+  "Signing message": "Signing message",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
   "Signs for external accounts": "Signs for external accounts",
   "Some features may be disabled at this time": "Some features may be disabled at this time.",
@@ -452,6 +453,8 @@
   "The destination account must opt to accept this asset before receiving it": "The destination account must opt to accept this asset before receiving it.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
+  "The requester expects you to sign this auth entry on": "The requester expects you to sign this auth entry on",
+  "The requester expects you to sign this message on": "The requester expects you to sign this message on",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
   "The website <1>{domain}</1> does not use an SSL certificate": {
     " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{domain}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
@@ -532,8 +535,8 @@
     " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
   "XLM": "XLM",
-  "You are attempting to sign arbitrary data": {
-    " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data."
+  "You are attempting to sign an arbitrary message": {
+    " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign an arbitrary message. Please use extreme caution and understand the implications of signing this data."
   },
   "You are interacting with data that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."

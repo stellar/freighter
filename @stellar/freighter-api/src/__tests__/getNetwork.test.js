@@ -3,11 +3,9 @@ import { getNetwork } from "../getNetwork";
 
 describe("getNetwork", () => {
   it("returns a network", async () => {
-    extensionMessaging.sendMessageToContentScript = jest
-      .fn()
-      .mockReturnValue({
-        networkDetails: { network: "foo", networkPassphrase: "baz" },
-      });
+    extensionMessaging.sendMessageToContentScript = jest.fn().mockReturnValue({
+      networkDetails: { network: "foo", networkPassphrase: "baz" },
+    });
     const network = await getNetwork();
     expect(network).toEqual({ network: "foo", networkPassphrase: "baz" });
   });
@@ -17,6 +15,10 @@ describe("getNetwork", () => {
       .mockReturnValue({ apiError: "error" });
     const network = await getNetwork();
 
-    expect(network).toEqual({ error: "error" });
+    expect(network).toEqual({
+      network: "",
+      networkPassphrase: "",
+      error: "error",
+    });
   });
 });
