@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "@stellar/design-system";
+import { Button, Loader } from "@stellar/design-system";
 
 import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
@@ -11,7 +11,6 @@ import { ButtonsContainer, ModalWrapper } from "popup/basics/Modal";
 import { ModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { Loading } from "popup/components/Loading";
 import { useScanSite } from "popup/helpers/blockaid";
 
 import "popup/metrics/access";
@@ -53,7 +52,9 @@ export const GrantAccess = () => {
     <>
       <ModalWrapper>
         {isLoading ? (
-          <Loading />
+          <div className="GrantAccess__loader">
+            <Loader size="5rem" />
+          </div>
         ) : (
           <ModalInfo
             domain={domain}
