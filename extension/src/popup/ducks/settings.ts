@@ -36,6 +36,8 @@ import {
   ExperimentalFeatures,
 } from "@shared/api/types";
 
+import { isMainnet } from "helpers/stellar";
+
 interface ErrorMessage {
   errorMessage: string;
 }
@@ -54,6 +56,7 @@ const settingsInitialState: Settings = {
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
   isValidatingSafeAssetsEnabled: true,
+  isNonSSLEnabled: false,
   error: "",
 };
 
@@ -112,6 +115,7 @@ export const saveSettings = createAsyncThunk<
     isMemoValidationEnabled: boolean;
     isSafetyValidationEnabled: boolean;
     isValidatingSafeAssetsEnabled: boolean;
+    isNonSSLEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -122,6 +126,7 @@ export const saveSettings = createAsyncThunk<
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isNonSSLEnabled,
     },
     thunkApi,
   ) => {
@@ -131,6 +136,7 @@ export const saveSettings = createAsyncThunk<
       isRpcHealthy: false,
       userNotification: { enabled: false, message: "" },
       settingsState: SettingsState.IDLE,
+      isNonSSLEnabled: false,
     };
 
     try {
@@ -139,6 +145,7 @@ export const saveSettings = createAsyncThunk<
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
         isValidatingSafeAssetsEnabled,
+        isNonSSLEnabled,
       });
     } catch (e) {
       console.error(e);
@@ -371,6 +378,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          isNonSSLEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -390,6 +398,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          isNonSSLEnabled,
           settingsState: SettingsState.SUCCESS,
         };
       },
@@ -598,4 +607,9 @@ export const settingsErrorSelector = createSelector(
 export const settingsStateSelector = createSelector(
   settingsSelector,
   (settings) => settings.settingsState,
+);
+
+export const isNonSSLEnabledSelector = createSelector(
+  settingsSelector,
+  (settings) => !isMainnet(settings.networkDetails) || settings.isNonSSLEnabled,
 );

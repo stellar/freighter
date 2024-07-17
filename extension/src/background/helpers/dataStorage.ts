@@ -9,6 +9,7 @@ import {
   TOKEN_ID_LIST,
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
+  IS_NON_SSL_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -238,6 +239,17 @@ export const addIsHashSigningEnabled = async () => {
   }
 };
 
+export const addIsNonSSLEnabled = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.2.0")) {
+    // add the base asset lists
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
+    await migrateDataStorageVersion("4.2.0)");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -249,6 +261,7 @@ export const versionedMigration = async () => {
   await resetAccountSubscriptions();
   await addAssetsLists();
   await addIsHashSigningEnabled();
+  await addIsNonSSLEnabled();
 };
 
 // Updates storage version
