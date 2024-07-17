@@ -10,6 +10,7 @@ const playgroundPaths = [
   "signTransaction",
   "signAuthEntry",
   "signMessage",
+  "watchWalletChanges",
 ];
 
 const GUIDE_BASE_PATH = "guide";

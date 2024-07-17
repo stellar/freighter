@@ -8,6 +8,7 @@ import { getNetworkDetails } from "./getNetworkDetails";
 import { isAllowed } from "./isAllowed";
 import { setAllowed } from "./setAllowed";
 import { requestAccess } from "./requestAccess";
+import { WatchWalletChanges } from "./watchWalletChanges";
 
 export const isBrowser = typeof window !== "undefined";
 
@@ -22,6 +23,7 @@ export {
   isAllowed,
   setAllowed,
   requestAccess,
+  WatchWalletChanges,
 };
 export default {
   getAddress,
@@ -34,4 +36,5 @@ export default {
   isAllowed,
   setAllowed,
   requestAccess,
+  WatchWalletChanges,
 };
