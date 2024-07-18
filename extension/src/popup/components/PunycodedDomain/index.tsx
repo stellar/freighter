@@ -7,12 +7,10 @@ import "./styles.scss";
 
 export const PunycodedDomain = ({
   domain,
-  domainTitle,
   isRow,
   ...props
 }: {
   domain: string;
-  domainTitle?: string;
   isRow?: boolean;
 }) => {
   const punycodedDomain = getPunycodedDomain(domain);
@@ -37,7 +35,6 @@ export const PunycodedDomain = ({
           {isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`}
         </strong>
       </div>
-      <div className="PunycodedDomain__title">{domainTitle}</div>
     </div>
   );
 };

@@ -1075,3 +1075,31 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
     </WarningMessage>
   );
 };
+
+export const MaliciousDomainWarning = ({ message }: { message: string }) => (
+  <div className="MaliciousDomainWarning">
+    <div className="Icon">
+      <Icon.Warning className="WarningMessage__icon" />
+    </div>
+    <p className="Message">{message}</p>
+  </div>
+);
+
+export const BlockAidMissWarning = () => {
+  const { t } = useTranslation();
+
+  return (
+    <WarningMessage
+      header="Blockaid has not seen this domain"
+      variant={WarningMessageVariant.default}
+    >
+      <div>
+        <p>
+          {t(
+            "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time.",
+          )}
+        </p>
+      </div>
+    </WarningMessage>
+  );
+};
