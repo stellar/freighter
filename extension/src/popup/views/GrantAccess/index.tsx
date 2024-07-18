@@ -12,6 +12,7 @@ import { ModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { useScanSite } from "popup/helpers/blockaid";
+import { BlockAidMissWarning } from "popup/components/WarningMessages";
 
 import "popup/metrics/access";
 import "./styles.scss";
@@ -63,6 +64,7 @@ export const GrantAccess = () => {
               `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
             )}
           >
+            {!isLoading && data.status === "miss" && <BlockAidMissWarning />}
             <div className="GrantAccess__SigningWith">
               <h5>Connecting with</h5>
               <div className="GrantAccess__PublicKey">
