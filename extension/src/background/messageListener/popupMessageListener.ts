@@ -1246,9 +1246,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const saveExperimentalFeatures = async () => {
-    const { isExperimentalModeEnabled, isHashSigningEnabled } = request;
+    const { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled } =
+      request;
 
     await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, isHashSigningEnabled);
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
     const currentIsExperimentalModeEnabled =
       await getIsExperimentalModeEnabled();
@@ -1276,6 +1278,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       isHashSigningEnabled: await getIsHashSigningEnabled(),
+      isNonSSLEnabled: await getIsNonSSLEnabled(),
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
     };

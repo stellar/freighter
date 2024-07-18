@@ -152,6 +152,7 @@ export interface Preferences {
 export interface ExperimentalFeatures {
   isExperimentalModeEnabled: boolean;
   isHashSigningEnabled: boolean;
+  isNonSSLEnabled: boolean;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   experimentalFeaturesState: SettingsState;

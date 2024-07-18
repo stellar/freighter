@@ -1215,13 +1215,16 @@ export const saveSettings = async ({
 export const saveExperimentalFeatures = async ({
   isExperimentalModeEnabled,
   isHashSigningEnabled,
+  isNonSSLEnabled,
 }: {
   isExperimentalModeEnabled: boolean;
   isHashSigningEnabled: boolean;
+  isNonSSLEnabled: boolean;
 }): Promise<ExperimentalFeatures> => {
   let response = {
     isExperimentalModeEnabled: false,
     isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     experimentalFeaturesState: SettingsState.IDLE,
@@ -1232,6 +1235,7 @@ export const saveExperimentalFeatures = async ({
     response = await sendMessageToBackground({
       isExperimentalModeEnabled,
       isHashSigningEnabled,
+      isNonSSLEnabled,
       type: SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES,
     });
   } catch (e) {
