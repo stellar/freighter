@@ -47,10 +47,10 @@ export const Security = () => {
             {t("Show recovery phrase")}
           </ListNavLink>
           <ListNavLink
-            href={ROUTES.experimentalFeatures}
+            href={ROUTES.advancedSettings}
             icon={<IconExperimentalLink />}
           >
-            {t("Experimental features")}
+            {t("Advanced settings")}
           </ListNavLink>
           {/* <ListNavButtonLink
             handleClick={() => {

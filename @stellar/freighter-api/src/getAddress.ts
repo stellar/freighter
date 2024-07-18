@@ -1,14 +1,14 @@
-import { requestAccess as requestAccessApi } from "@shared/api/external";
+import { requestPublicKey } from "@shared/api/external";
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
-export const requestAccess = async (): Promise<
+export const getAddress = async (): Promise<
   { address: string } & { error?: FreighterApiError }
 > => {
   let address = "";
   if (isBrowser) {
-    const req = await requestAccessApi();
+    const req = await requestPublicKey();
     address = req.publicKey;
 
     if (req.error) {

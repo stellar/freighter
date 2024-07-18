@@ -1,10 +1,35 @@
 import { submitAuthEntry } from "@shared/api/external";
+import { FreighterApiError } from "@shared/api/types";
+import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
-export const signAuthEntry = (
+export const signAuthEntry = async (
   entryXdr: string,
   opts?: {
-    accountToSign?: string;
+    networkPassphrase?: string;
+    address?: string;
   }
-): Promise<string> =>
-  isBrowser ? submitAuthEntry(entryXdr, opts) : Promise.resolve("");
+): Promise<
+  { signedAuthEntry: string; signerAddress: string } & {
+    error?: FreighterApiError;
+  }
+> => {
+  if (isBrowser) {
+    const req = await submitAuthEntry(entryXdr, opts);
+
+    if (req.error) {
+      return { signedAuthEntry: "", signerAddress: "", error: req.error };
+    }
+
+    return {
+      signedAuthEntry: req.signedAuthEntry,
+      signerAddress: req.signerAddress,
+    };
+  }
+
+  return {
+    signedAuthEntry: "",
+    signerAddress: "",
+    error: FreighterApiNodeError,
+  };
+};

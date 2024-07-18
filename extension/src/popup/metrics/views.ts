@@ -17,7 +17,7 @@ const routeToEventName = {
   [ROUTES.connectWallet]: METRIC_NAMES.viewConnectWallet,
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
   [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
-  [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
+  [ROUTES.signMessage]: METRIC_NAMES.viewSignMessage,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.reviewAuthorization]: METRIC_NAMES.viewReviewAuthorization,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
@@ -77,7 +77,7 @@ const routeToEventName = {
     METRIC_NAMES.viewAccountMigrationConfirmMigration,
   [ROUTES.accountMigrationMigrationComplete]:
     METRIC_NAMES.viewAccountMigrationMigrationComplete,
-  [ROUTES.experimentalFeatures]: METRIC_NAMES.viewExperimentalFeatures,
+  [ROUTES.advancedSettings]: METRIC_NAMES.viewAdvancedSettings,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {
@@ -116,7 +116,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     emitMetric(eventName, METRIC_OPTIONS);
   } else if (
     pathname === ROUTES.signAuthEntry ||
-    pathname === ROUTES.signBlob
+    pathname === ROUTES.signMessage
   ) {
     const { url } = parsedSearchParam(search);
 

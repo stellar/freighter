@@ -20,7 +20,7 @@ export const METRIC_NAMES = {
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
   viewReviewAuthorization: "loaded screen: review authorization",
-  viewSignBlob: "loaded screen: sign blob",
+  viewSignMessage: "loaded screen: sign message",
   viewSignAuthEntry: "loaded screen: sign auth entry",
   viewUnlockAccount: "loaded screen: unlock account",
   viewVerifyAccount: "loaded screen: verify account",
@@ -33,7 +33,7 @@ export const METRIC_NAMES = {
   viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
   viewManageAssetsLists: "loaded screen: manage assets lists",
-  viewExperimentalFeatures: "loaded screen: experimental features",
+  viewAdvancedSettings: "loaded screen: advanced settings",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",

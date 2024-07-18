@@ -19,6 +19,7 @@ import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 
 jest.mock("stellar-identicon-js");
+jest.setTimeout(20000);
 
 jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
@@ -150,7 +151,50 @@ describe("SignTransactions", () => {
     expect(screen.getByTestId("SignTransaction")).toBeDefined();
   });
 
-  it("shows non-https domain error", async () => {
+  it("shows non-https domain error on Mainnet", async () => {
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.PUBLIC,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.PUBLIC,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+    }));
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase:
+                "Public Global Stellar Network ; September 2015",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("WarningMessage"));
+    expect(screen.queryByTestId("SignTransaction")).toBeNull();
+    expect(screen.getByTestId("WarningMessage")).toHaveTextContent(
+      "WEBSITE CONNECTION IS NOT SECURE",
+    );
+  });
+
+  it("does not show non-https domain error on Testnet", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
@@ -185,11 +229,8 @@ describe("SignTransactions", () => {
         <SignTransaction />
       </Wrapper>,
     );
-    await waitFor(() => screen.getByTestId("WarningMessage"));
-    expect(screen.queryByTestId("SignTransaction")).toBeNull();
-    expect(screen.getByTestId("WarningMessage")).toHaveTextContent(
-      "WEBSITE CONNECTION IS NOT SECURE",
-    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    expect(screen.queryByTestId("WarningMessage")).toBeNull();
   });
 
   it("displays token payment parameters for Soroban token payment operations", async () => {

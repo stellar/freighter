@@ -16,8 +16,8 @@ import {
 import { ActionStatus } from "@shared/api/types";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
+  isNonSSLEnabledSelector,
   settingsNetworkDetailsSelector,
-  settingsExperimentalModeSelector,
 } from "popup/ducks/settings";
 
 import {
@@ -51,6 +51,7 @@ import {
   WarningMessage,
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
+  SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -77,9 +78,7 @@ export const SignTransaction = () => {
   const { accountBalances, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const isExperimentalModeEnabled = useSelector(
-    settingsExperimentalModeSelector,
-  );
+  const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName, networkPassphrase } = networkDetails;
 
@@ -220,23 +219,8 @@ export const SignTransaction = () => {
     );
   }
 
-  if (!isHttpsDomain && !isExperimentalModeEnabled) {
-    return (
-      <WarningMessage
-        handleCloseClick={() => window.close()}
-        isActive
-        variant={WarningMessageVariant.warning}
-        header={t("WEBSITE CONNECTION IS NOT SECURE")}
-      >
-        <p>
-          <Trans domain={domain}>
-            The website <strong>{domain}</strong> does not use an SSL
-            certificate. For additional safety Freighter only works with
-            websites that provide an SSL certificate.
-          </Trans>
-        </p>
-      </WarningMessage>
-    );
+  if (!isHttpsDomain && !isNonSSLEnabled) {
+    return <SSLWarningMessage url={domain} />;
   }
 
   const hasLoadedBalances =
