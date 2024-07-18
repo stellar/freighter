@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { signBlob, rejectBlob } from "popup/ducks/access";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { Message } from "popup/components/signMessage";
 import {
+  isNonSSLEnabledSelector,
   settingsExperimentalModeSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
@@ -16,6 +17,7 @@ import {
   WarningMessageVariant,
   WarningMessage,
   FirstTimeWarningMessage,
+  SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
 
@@ -39,6 +41,7 @@ export const SignMessage = () => {
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
+  const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
@@ -102,23 +105,8 @@ export const SignMessage = () => {
     );
   }
 
-  if (!url.startsWith("https") && !isExperimentalModeEnabled) {
-    return (
-      <WarningMessage
-        handleCloseClick={() => window.close()}
-        isActive
-        variant={WarningMessageVariant.warning}
-        header={t("WEBSITE CONNECTION IS NOT SECURE")}
-      >
-        <p>
-          <Trans domain={url}>
-            The website <strong>{url}</strong> does not use an SSL certificate.
-            For additional safety Freighter only works with websites that
-            provide an SSL certificate.
-          </Trans>
-        </p>
-      </WarningMessage>
-    );
+  if (!url.startsWith("https") && !isNonSSLEnabled) {
+    return <SSLWarningMessage url={domain} />;
   }
 
   return isPasswordRequired ? (
