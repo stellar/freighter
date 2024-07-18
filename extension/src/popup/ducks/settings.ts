@@ -63,6 +63,7 @@ const settingsInitialState: Settings = {
 const experimentalFeaturesInitialState = {
   isExperimentalModeEnabled: false,
   isHashSigningEnabled: false,
+  isNonSSLEnabled: false,
   experimentalFeaturesState: SettingsState.IDLE,
 };
 
@@ -164,11 +165,15 @@ export const saveExperimentalFeatures = createAsyncThunk<
   {
     isExperimentalModeEnabled: boolean;
     isHashSigningEnabled: boolean;
+    isNonSSLEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveExperimentalFeaturss",
-  async ({ isExperimentalModeEnabled, isHashSigningEnabled }, thunkApi) => {
+  async (
+    { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled },
+    thunkApi,
+  ) => {
     let res = {
       ...experimentalFeaturesInitialState,
       networkDetails: settingsInitialState.networkDetails,
@@ -179,6 +184,7 @@ export const saveExperimentalFeatures = createAsyncThunk<
       res = await saveExperimentalFeaturesService({
         isExperimentalModeEnabled,
         isHashSigningEnabled,
+        isNonSSLEnabled,
       });
     } catch (e) {
       console.error(e);
@@ -339,6 +345,7 @@ const settingsSlice = createSlice({
       const {
         isExperimentalModeEnabled,
         isHashSigningEnabled,
+        isNonSSLEnabled,
         networkDetails,
         networksList,
       } = action?.payload || {
@@ -349,6 +356,7 @@ const settingsSlice = createSlice({
         ...state,
         isExperimentalModeEnabled,
         isHashSigningEnabled,
+        isNonSSLEnabled,
         networkDetails,
         networksList,
         experimentalFeaturesState: SettingsState.SUCCESS,

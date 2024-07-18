@@ -58,7 +58,7 @@ import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
-import { ExperimentalFeatures } from "popup/views/ExperimentalFeatures";
+import { AdvancedSettings } from "popup/views/AdvancedSettings";
 import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
@@ -399,8 +399,8 @@ const Outlet = () => {
           <PublicKeyRoute path={ROUTES.accountMigration}>
             <AccountMigration />
           </PublicKeyRoute>
-          <PublicKeyRoute path={ROUTES.experimentalFeatures}>
-            <ExperimentalFeatures />
+          <PublicKeyRoute path={ROUTES.advancedSettings}>
+            <AdvancedSettings />
           </PublicKeyRoute>
 
           {DEV_SERVER && (
