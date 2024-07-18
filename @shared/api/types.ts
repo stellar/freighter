@@ -89,6 +89,7 @@ export interface Response {
   balancesToMigrate: BalanceToMigrate[];
   isMergeSelected: boolean;
   recommendedFee: string;
+  isNonSSLEnabled: boolean;
 }
 
 export interface BlockedDomains {
@@ -146,6 +147,7 @@ export interface Preferences {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
+  isNonSSLEnabled: boolean;
   error: string;
 }
 

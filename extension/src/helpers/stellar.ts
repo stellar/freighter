@@ -128,11 +128,9 @@ export const isMuxedAccount = (publicKey: string) => publicKey.startsWith("M");
 export const isFederationAddress = (address: string) => address.includes("*");
 
 export const isMainnet = (networkDetails: NetworkDetails) => {
-  const { networkPassphrase, networkUrl } = networkDetails;
+  const { networkPassphrase } = networkDetails;
 
-  return (
-    networkPassphrase === Networks.PUBLIC && networkUrl === NETWORK_URLS.PUBLIC
-  );
+  return networkPassphrase === Networks.PUBLIC;
 };
 
 export const isTestnet = (networkDetails: NetworkDetails) => {

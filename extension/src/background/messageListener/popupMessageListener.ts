@@ -54,6 +54,7 @@ import {
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
   IS_HASH_SIGNING_ENABLED_ID,
+  IS_NON_SSL_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -81,6 +82,7 @@ import {
   getNetworkDetails,
   getNetworksList,
   getAssetsLists,
+  getIsNonSSLEnabled,
   HW_PREFIX,
   getBipPath,
   subscribeTokenBalance,
@@ -1215,6 +1217,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isNonSSLEnabled,
     } = request;
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
@@ -1227,6 +1230,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       IS_VALIDATING_SAFE_ASSETS_ID,
       isValidatingSafeAssetsEnabled,
     );
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
     const networkDetails = await getNetworkDetails();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
@@ -1242,6 +1246,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       networksList: await getNetworksList(),
       isRpcHealthy,
       isSorobanPublicEnabled: featureFlags.useSorobanPublic,
+      isNonSSLEnabled: await getIsNonSSLEnabled(),
     };
   };
 
@@ -1295,6 +1300,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const userNotification = await getUserNotification();
     const isHashSigningEnabled = await getIsHashSigningEnabled();
     const assetsLists = await getAssetsLists();
+    const isNonSSLEnabled = await getIsNonSSLEnabled();
 
     return {
       allowList: await getAllowList(),
@@ -1310,6 +1316,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isRpcHealthy,
       userNotification,
       assetsLists,
+      isNonSSLEnabled,
     };
   };
 
