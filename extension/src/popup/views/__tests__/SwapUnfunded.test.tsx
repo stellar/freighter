@@ -22,7 +22,6 @@ export const swapMockBalances = {
   balances: {} as any as Balances,
   isFunded: true,
   subentryCount: 1,
-  tokensWithNoBalance: [],
 };
 
 jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
