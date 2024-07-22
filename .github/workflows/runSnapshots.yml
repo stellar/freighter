@@ -34,17 +34,7 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
       - run: npm install -g yarn && yarn
       - run: npx playwright install --with-deps chromium
-      - name: Set up cache
-        id: cache
-        uses: actions/cache@v4
-        with:
-          key: cache/${{github.repository}}/${{github.ref}}
-          restore-keys: cache/${{github.repository}}/refs/heads/master
-          path: .extension/e2e-tests/**
       - run: yarn setup
       - run: yarn build:freighter-api
       - run: yarn build:extension
-      - name: Initialize snapshots
-        if: ${{steps.cache.outputs.cache-hit != 'true' || inputs.update-snapshots == 'true'}}
-        run: yarn test:e2e --update-snapshots
       - run: yarn test:e2e
