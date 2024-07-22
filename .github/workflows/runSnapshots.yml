@@ -39,5 +39,12 @@ jobs:
       - run: yarn build:extension
       - name: Update snapshots
         if: ${{inputs.update-snapshots == 'true'}}
-        run: yarn test:e2e --update-snapshots
+        run: |
+          yarn test:e2e --update-snapshots
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "chore: updating snapshot tests"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
       - run: yarn test:e2e
