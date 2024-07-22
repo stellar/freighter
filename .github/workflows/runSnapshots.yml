@@ -37,4 +37,7 @@ jobs:
       - run: yarn setup
       - run: yarn build:freighter-api
       - run: yarn build:extension
+      - name: Update snapshots
+        if: ${{inputs.update-snapshots == 'true'}}
+        run: yarn test:e2e --update-snapshots
       - run: yarn test:e2e
