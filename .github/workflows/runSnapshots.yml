@@ -2,12 +2,10 @@ name: Run Snapshots
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: Branch name
-        default: ""
-        required: true
+  workflow_run:
+    workflows: ["Run Tests"]
+    types:
+      - in_progress
 jobs:
   test-ci:
     name: test snapshots
