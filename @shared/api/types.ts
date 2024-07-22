@@ -280,7 +280,6 @@ export type HorizonOperation = Horizon.ServerApi.OperationRecord;
 
 export interface AccountBalancesInterface {
   balances: Balances;
-  tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
   error?: { horizon: any; soroban: any };

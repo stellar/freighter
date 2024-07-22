@@ -476,7 +476,6 @@ export const getAccountIndexerBalances = async (
   return {
     ...data,
     balances: formattedBalances,
-    tokensWithNoBalance: contractIds.filter((id) => !balanceIds.includes(id)),
   };
 };
 
@@ -577,7 +576,6 @@ export const getAccountBalancesStandalone = async ({
       balances,
       isFunded: false,
       subentryCount,
-      tokensWithNoBalance: [],
     };
   }
 
@@ -585,7 +583,6 @@ export const getAccountBalancesStandalone = async ({
   const tokenIdList = await getTokenIds(network as NETWORKS);
 
   const tokenBalances = {} as any;
-  const tokensWithNoBalance = [];
 
   if (tokenIdList.length) {
     if (!networkDetails.sorobanRpcUrl) {
@@ -633,7 +630,6 @@ export const getAccountBalancesStandalone = async ({
         };
       } catch (e) {
         console.error(`Token "${tokenId}" missing data on RPC server`);
-        tokensWithNoBalance.push(tokenId);
       }
     }
   }
@@ -642,7 +638,6 @@ export const getAccountBalancesStandalone = async ({
     balances: { ...balances, ...tokenBalances },
     isFunded,
     subentryCount,
-    tokensWithNoBalance: [],
   };
 };
 

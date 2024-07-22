@@ -51,7 +51,6 @@ interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
   assetRows: ManageAssetCurrency[];
-  chooseAsset?: boolean;
   isVerifiedToken?: boolean;
   isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
@@ -69,7 +68,6 @@ export const ManageAssetRows = ({
   children,
   header,
   assetRows,
-  chooseAsset,
   isVerifiedToken,
   isVerificationInfoShowing,
   verifiedLists,
@@ -176,10 +174,9 @@ export const ManageAssetRows = ({
               }
               const isContract = isContractId(contract);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive =
-                Object.keys(accountBalances.balances).some(
-                  (balance) => balance === canonicalAsset,
-                ) || accountBalances.tokensWithNoBalance.includes(issuer);
+              const isTrustlineActive = Object.keys(
+                accountBalances.balances,
+              ).some((balance) => balance === canonicalAsset);
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
                 accountBalanceStatus === ActionStatus.PENDING;
@@ -220,40 +217,6 @@ export const ManageAssetRows = ({
               );
             },
           )}
-
-          {chooseAsset &&
-            accountBalances.tokensWithNoBalance.map((contract) => {
-              const isActionPending =
-                accountBalanceStatus === ActionStatus.PENDING;
-
-              return (
-                <div className="ManageAssetRows__row" key={contract}>
-                  <ManageAssetRow domain={truncateString(contract)} />
-                  <ManageAssetRowButton
-                    code=""
-                    contract={contract}
-                    issuer={contract}
-                    image=""
-                    domain=""
-                    isTrustlineActive
-                    isActionPending={
-                      isActionPending && assetSubmitting === contract
-                    }
-                    isContract
-                    isVerifiedToken={!!isVerifiedToken}
-                    isVerificationInfoShowing={!!isVerificationInfoShowing}
-                    setNewAssetFlags={setNewAssetFlags}
-                    setSuspiciousAssetData={setSuspiciousAssetData}
-                    setHandleAddToken={setHandleAddToken}
-                    setShowBlockedDomainWarning={setShowBlockedDomainWarning}
-                    assetSubmitting={assetSubmitting}
-                    setAssetSubmitting={setAssetSubmitting}
-                    setShowNewAssetWarning={setShowNewAssetWarning}
-                    setShowUnverifiedWarning={setShowUnverifiedWarning}
-                  />
-                </div>
-              );
-            })}
         </div>
         {children}
       </div>
