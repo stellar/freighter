@@ -64,7 +64,7 @@ export const GrantAccess = () => {
               `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
             )}
           >
-            {!isLoading && data.status === "miss" && <BlockAidMissWarning />}
+            {!isLoading && data?.status === "miss" && <BlockAidMissWarning />}
             <div className="GrantAccess__SigningWith">
               <h5>Connecting with</h5>
               <div className="GrantAccess__PublicKey">
