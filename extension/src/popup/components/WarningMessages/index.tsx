@@ -1069,7 +1069,8 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
           The website <strong>{url}</strong> does not use an SSL certificate.
           For additional safety Freighter only works with websites that provide
           an SSL certificate by default. You may enable connection to domains
-          that do not use an SSL certificate in Preferences.
+          that do not use an SSL certificate in Settings &gt; Security &gt;
+          Advanced Settings.
         </Trans>
       </p>
     </WarningMessage>
