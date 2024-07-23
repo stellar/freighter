@@ -1,4 +1,4 @@
 [context.development]
   command = "yarn build:netlify-preview"
 [context.production]
-  command = "yarn build:netlify
+  command = "yarn build:netlify"
