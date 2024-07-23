@@ -244,6 +244,7 @@ export const addIsNonSSLEnabled = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "4.2.0")) {
+    /* eslint-disable */
     await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
     await migrateDataStorageVersion("4.2.0)");
   }

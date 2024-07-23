@@ -468,7 +468,7 @@
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
   "The website <1>{url}</1> does not use an SSL certificate": {
     " For additional safety Freighter only works with websites that provide an SSL certificate by default": {
-      " You may enable connection to domains that do not use an SSL certificate in Preferences": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate by default. You may enable connection to domains that do not use an SSL certificate in Preferences."
+      " You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate by default. You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings."
     }
   },
   "them noted to confirm you got them right": "them noted to confirm you got them right",

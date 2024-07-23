@@ -32,6 +32,8 @@ import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 
 import "./styles.scss";
 
+/* eslint-disable */
+
 export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 

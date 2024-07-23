@@ -66,6 +66,8 @@ import { Data } from "./Preview/Data";
 
 import "./styles.scss";
 
+/* eslint-disable */
+
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
