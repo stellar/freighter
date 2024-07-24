@@ -23,7 +23,7 @@ import { getTokenBalance, isContractId } from "popup/helpers/soroban";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { Balance, Balances, SorobanBalance } from "@shared/api/types";
 import { formatAmount } from "popup/helpers/formatters";
-import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
+import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
 
 import "./styles.scss";
 
@@ -42,6 +42,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
   const isSoroswapEnabled = useIsSoroswapEnabled();
+  const isSwap = useIsSwap();
 
   const getAccountBalance = (canonical: string) => {
     if (!balances) {
@@ -80,7 +81,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
             const canonical = getCanonicalFromAsset(code, issuer);
             let isSoroswap = false;
 
-            if (isSoroswapEnabled) {
+            if (isSoroswapEnabled && isSwap) {
               // check if either asset is a Soroswap token
               const otherAsset = getAssetFromCanonical(
                 assetSelect.isSource
