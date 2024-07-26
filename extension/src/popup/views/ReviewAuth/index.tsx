@@ -233,13 +233,13 @@ export const ReviewAuth = () => {
 interface TokenDetails {
   name: string;
   symbol: string;
-  decimals: number;
+  decimals: number | null;
 }
 type TokenDetailMap = Record<string, TokenDetails>;
 
 const TransferSummary = ({
   transfer,
-  tokenDetails = { name: "", symbol: "", decimals: 0 },
+  tokenDetails = { name: "", symbol: "", decimals: null },
 }: {
   transfer: {
     amount: string;
@@ -249,7 +249,7 @@ const TransferSummary = ({
   };
   tokenDetails: TokenDetails;
 }) => {
-  const hasTokenDetails = tokenDetails.symbol && tokenDetails.decimals;
+  const hasTokenDetails = tokenDetails.symbol && tokenDetails.decimals !== null;
   const isNative = tokenDetails.symbol === "native";
   const symbol = isNative ? "XLM" : tokenDetails.symbol;
   return (
@@ -289,7 +289,7 @@ const TransferSummary = ({
               <p>
                 {formatTokenAmount(
                   new BigNumber(transfer.amount),
-                  tokenDetails.decimals,
+                  Number(tokenDetails.decimals),
                 )}{" "}
                 {symbol}
               </p>
@@ -426,7 +426,7 @@ const AuthDetail = ({
             _tokenDetails[transfer.contractId] = {
               name: "",
               symbol: "",
-              decimals: 0,
+              decimals: null,
             };
             setTokenDetails(_tokenDetails);
             throw new Error("failed to fetch token details");
