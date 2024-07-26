@@ -235,6 +235,7 @@
   "Inflation Destination": "Inflation Destination",
   "Insufficient Balance": "Insufficient Balance",
   "Insufficient Fee": "Insufficient Fee",
+  "INSUFFICIENT FUNDS FOR FEE": "INSUFFICIENT FUNDS FOR FEE",
   "invalid federation address": "invalid federation address",
   "Invalid Format Asset": "Invalid Format Asset",
   "invalid public key": "invalid public key",
@@ -555,6 +556,7 @@
   },
   "Your account balances could not be fetched at this time": "Your account balances could not be fetched at this time.",
   "Your assets": "Your assets",
+  "Your available XLM balance is not enough to pay for the transaction fee": "Your available XLM balance is not enough to pay for the transaction fee.",
   "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"
