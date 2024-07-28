@@ -41,6 +41,12 @@ $loader-light-color: #444961;
 
     &--soroban-token {
       border: none;
+
+      svg {
+        margin: 0 !important;
+        height: auto !important;
+        width: auto !important;
+      }
     }
 
     &--error {
