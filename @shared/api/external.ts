@@ -99,7 +99,7 @@ export const submitMessage = async (
     networkPassphrase?: string;
   },
 ): Promise<{
-  signedMessage: string;
+  signedMessage: Buffer | null;
   signerAddress: string;
   error?: FreighterApiError;
 }> => {
@@ -114,7 +114,7 @@ export const submitMessage = async (
     });
   } catch (e) {
     return {
-      signedMessage: "",
+      signedMessage: null,
       signerAddress: "",
       error: FreighterApiInternalError,
     };
@@ -122,7 +122,7 @@ export const submitMessage = async (
   const { signedBlob, signerAddress } = response;
 
   return {
-    signedMessage: signedBlob,
+    signedMessage: signedBlob || null,
     signerAddress,
     error: response?.apiError,
   };
@@ -135,7 +135,7 @@ export const submitAuthEntry = async (
     networkPassphrase?: string;
   },
 ): Promise<{
-  signedAuthEntry: string;
+  signedAuthEntry: Buffer | null;
   signerAddress: string;
   error?: FreighterApiError;
 }> => {
@@ -152,14 +152,18 @@ export const submitAuthEntry = async (
   } catch (e) {
     console.error(e);
     return {
-      signedAuthEntry: "",
+      signedAuthEntry: null,
       signerAddress: "",
       error: FreighterApiInternalError,
     };
   }
   const { signedAuthEntry, signerAddress } = response;
 
-  return { signedAuthEntry, signerAddress, error: response?.apiError };
+  return {
+    signedAuthEntry: signedAuthEntry || null,
+    signerAddress,
+    error: response?.apiError,
+  };
 };
 
 export const requestNetwork = async (): Promise<{

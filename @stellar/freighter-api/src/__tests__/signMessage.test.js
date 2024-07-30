@@ -19,7 +19,7 @@ describe("signMessage", () => {
       }));
     const msg = await signMessage();
     expect(msg).toEqual({
-      signedMessage: "",
+      signedMessage: null,
       signerAddress: "",
       error: "error",
     });
