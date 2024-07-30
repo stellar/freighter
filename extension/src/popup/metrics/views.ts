@@ -8,8 +8,6 @@ import { navigate } from "popup/ducks/views";
 import { AppState } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 
-/* eslint-disable */
-
 const routeToEventName = {
   [ROUTES.welcome]: METRIC_NAMES.viewWelcome,
   [ROUTES.account]: METRIC_NAMES.viewAccount,
