@@ -30,7 +30,7 @@ export const SignAuthEntryDemo = () => {
     if (signedAuthEntryObj.error) {
       setResult(JSON.stringify(signedAuthEntryObj.error));
     } else {
-      setResult(signedAuthEntryObj.signedAuthEntry);
+      setResult(JSON.stringify(signedAuthEntryObj.signedAuthEntry));
       setSignerAddressResult(signedAuthEntryObj.signerAddress);
     }
   };

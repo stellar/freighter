@@ -31,7 +31,7 @@ export const SignMessageDemo = () => {
       setResult(JSON.stringify(signedMessageObj.error));
     } else {
       console.log(signedMessageObj);
-      setResult(signedMessageObj.signedMessage);
+      setResult(JSON.stringify(signedMessageObj.signedMessage));
       setSignerAddressResult(signedMessageObj.signerAddress);
     }
   };

@@ -17,7 +17,7 @@ describe("signAuthEntry", () => {
     const authEntry = await signAuthEntry();
 
     expect(authEntry).toEqual({
-      signedAuthEntry: "",
+      signedAuthEntry: null,
       signerAddress: "",
       error: "baz",
     });
