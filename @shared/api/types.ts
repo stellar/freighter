@@ -40,8 +40,8 @@ export interface Response {
   transactionXDR: string;
   signerAddress: string;
   signedTransaction: string;
-  signedBlob: string;
-  signedAuthEntry: string;
+  signedBlob: Buffer | null;
+  signedAuthEntry: Buffer | null;
   source: string;
   type: SERVICE_TYPES;
   url: string;

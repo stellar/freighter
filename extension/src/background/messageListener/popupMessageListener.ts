@@ -1099,7 +1099,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const blobResponse = responseQueue.pop();
 
       if (typeof blobResponse === "function") {
-        blobResponse(response?.toString("hex"), sourceKeys.publicKey());
+        blobResponse(response, sourceKeys.publicKey());
         return {};
       }
     }

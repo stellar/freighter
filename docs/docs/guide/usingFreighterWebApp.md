@@ -192,7 +192,7 @@ You can also use this `opts` to specify which account's signature you’re reque
 
 ### signAuthEntry
 
-#### `signAuthEntry(authEntryXdr: string, opts: { address: string }) -> <Promise<{ signedAuthEntry: string; signerAddress: string } & { error?: string; }>>`
+#### `signAuthEntry(authEntryXdr: string, opts: { address: string }) -> <Promise<{ signedAuthEntry: Buffer | null; signerAddress: string } & { error?: string; }>>`
 
 This function accepts an [authorization entry preimage](https://github.com/stellar/js-stellar-base/blob/a9567e5843760bfb6a8b786592046aee4c9d38b2/types/next.d.ts#L6895) as the first parameter and it returns a signed hash of the same authorization entry, which can be added to the [address credentials](https://github.com/stellar/js-stellar-base/blob/a9567e5843760bfb6a8b786592046aee4c9d38b2/types/next.d.ts#L6614) of the same entry. The [`authorizeEntry` helper](https://github.com/stellar/js-stellar-base/blob/e3d6fc3351e7d242b374c7c6057668366364a279/src/auth.js#L97) in stellar base is a good example of how this works.
 
@@ -200,9 +200,9 @@ The second parameter is an optional `opts` object where you can specify which ac
 
 ### signMessage
 
-#### `signMessage(message: string, opts: { address: string }) -> <Promise<{ signedMessage: string; signerAddress: string; } & { error?: string; }>>`
+#### `signMessage(message: string, opts: { address: string }) -> <Promise<{ signedMessage: Buffer | null; signerAddress: string; } & { error?: string; }>>`
 
-This function accepts a base64 encoded blob of arbitrary data as the first parameter, which it will decode, sign as the user, and return a Buffer of the signed contents.
+This function accepts a string as the first parameter, which it will decode, sign as the user, and return a Buffer of the signed contents.
 
 The second parameter is an optional `opts` object where you can specify which account's signature you’re requesting. If Freighter has the public key requested, it will switch to that account. If not, it will alert the user that they do not have the requested account.
 

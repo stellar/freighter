@@ -10,7 +10,7 @@ export const signMessage = async (
     address?: string;
   }
 ): Promise<
-  { signedMessage: string; signerAddress: string } & {
+  { signedMessage: Buffer | null; signerAddress: string } & {
     error?: FreighterApiError;
   }
 > => {
@@ -18,7 +18,7 @@ export const signMessage = async (
     const req = await submitMessage(message, opts);
 
     if (req.error) {
-      return { signedMessage: "", signerAddress: "", error: req.error };
+      return { signedMessage: null, signerAddress: "", error: req.error };
     }
 
     return {
@@ -27,5 +27,9 @@ export const signMessage = async (
     };
   }
 
-  return { signedMessage: "", signerAddress: "", error: FreighterApiNodeError };
+  return {
+    signedMessage: null,
+    signerAddress: "",
+    error: FreighterApiNodeError,
+  };
 };
