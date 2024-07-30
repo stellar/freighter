@@ -14,12 +14,12 @@ jobs:
     timeout-minutes: 20
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
       - name: Install docker # Taken from https://github.com/actions/virtual-environments/issues/1143#issuecomment-652264388
