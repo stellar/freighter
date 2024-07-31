@@ -170,7 +170,7 @@
 
   &__inset--scroll-shadows {
     // https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
-    --bgRGB: 0, 0, 0;
+    --bgRGB: 22, 22, 24;
     --bg: rgb(var(--bgRGB));
     --bgTrans: rgba(var(--bgRGB), 0);
     --shadow: rgba(255, 255, 255, 0.2);
