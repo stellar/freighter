@@ -17,6 +17,11 @@ interface BlockAidScanSiteResult {
   // ...
 }
 
+interface BlockAidScanTxResult {
+  simulation: object;
+  validation: object;
+}
+
 export const useScanSite = () => {
   const [data, setData] = useState({} as BlockAidScanSiteResult);
   const [error, setError] = useState(null as string | null);
@@ -25,7 +30,6 @@ export const useScanSite = () => {
   const scanSite = async (url: string, networkDetails: NetworkDetails) => {
     setLoading(true);
     try {
-      // Will we have testnet as well?
       if (isCustomNetwork(networkDetails)) {
         setError("Scanning sites is not supported on custom networks");
         setLoading(false);
@@ -56,5 +60,52 @@ export const useScanSite = () => {
     error,
     isLoading,
     scanSite,
+  };
+};
+
+export const useScanTx = () => {
+  const [data, setData] = useState({} as BlockAidScanTxResult);
+  const [error, setError] = useState(null as string | null);
+  const [isLoading, setLoading] = useState(true);
+
+  const scanTx = async (
+    xdr: string,
+    url: string,
+    networkDetails: NetworkDetails,
+  ) => {
+    setLoading(true);
+    try {
+      if (isCustomNetwork(networkDetails)) {
+        setError("Scanning transactions is not supported on custom networks");
+        setLoading(false);
+        return;
+      }
+      const res = await fetch(
+        `${INDEXER_URL}/scan-tx?url=${encodeURIComponent(
+          url,
+        )}&tx_xdr=${xdr}&network=${networkDetails.network}`,
+      );
+      const response = (await res.json()) as {
+        data: BlockAidScanTxResult;
+        error: string | null;
+      };
+
+      if (!res.ok) {
+        setError(response.error || "Failed to scan transaction");
+      }
+      setData(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError("Failed to scan transaction");
+      Sentry.captureException(err);
+      setLoading(false);
+    }
+  };
+
+  return {
+    data,
+    error,
+    isLoading,
+    scanTx,
   };
 };
