@@ -29,7 +29,7 @@ export const ModalInfo = ({
         <PunycodedDomain domain={domain} />
         <div className="ModalInfo--connection-request">
           <div className="ModalInfo--connection-request-pill">
-            <Icon.Link />
+            <Icon.Link01 />
             <p>Connection Request</p>
           </div>
         </div>

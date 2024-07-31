@@ -19,7 +19,7 @@ export const SearchInput = ({
       autoFocus
       autoComplete="off"
       id={id}
-      rightElement={<Icon.Search />}
+      rightElement={<Icon.SearchLg />}
       placeholder={placeholder}
       {...props}
     />

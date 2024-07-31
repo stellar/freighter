@@ -211,7 +211,7 @@ export const Account = () => {
                   <CopyText textToCopy={publicKey} tooltipPlacement="right">
                     <div className="AccountView__account-num">
                       {truncatedPublicKey(publicKey)}
-                      <Icon.ContentCopy />
+                      <Icon.Copy01 />
                     </div>
                   </CopyText>
                 </div>
@@ -221,7 +221,7 @@ export const Account = () => {
                       showBorder
                       title={t("View public key")}
                       id="nav-btn-qr"
-                      icon={<Icon.QrCode />}
+                      icon={<Icon.QrCode01 />}
                       onClick={() => navigateTo(ROUTES.viewPublicKey)}
                     />
                   </div>
@@ -230,7 +230,7 @@ export const Account = () => {
                       showBorder
                       title={t("Send Payment")}
                       id="nav-btn-send"
-                      icon={<Icon.Send />}
+                      icon={<Icon.Send01 />}
                       onClick={() => navigateTo(ROUTES.sendPayment)}
                     />
                   </div>

@@ -47,7 +47,12 @@ const AdvancedSettingFeature = ({
         ) : null}
       </div>
       <div className="AdvancedSettings__feature__row__toggle">
-        <Toggle checked={isToggled} customInput={<Field />} id={toggleId} />
+        <Toggle
+          fieldSize="md"
+          checked={isToggled}
+          customInput={<Field />}
+          id={toggleId}
+        />
       </div>
     </div>
     <div className="AdvancedSettings__feature__description">{description}</div>

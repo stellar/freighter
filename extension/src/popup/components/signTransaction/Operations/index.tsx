@@ -42,7 +42,7 @@ const UnsafeMaliciousWarning = ({
             "account",
           )}`}
           altText="Error"
-          icon={<Icon.Info />}
+          icon={<Icon.InfoCircle />}
           variant="error"
         />
       }
@@ -64,7 +64,7 @@ const MemoRequiredWarning = ({
         <IconButton
           label={t("Memo required")}
           altText="Error"
-          icon={<Icon.Info />}
+          icon={<Icon.InfoCircle />}
           variant="error"
         />
       }
@@ -725,7 +725,7 @@ export const Operations = ({
             data-testid="OperationsWrapper"
           >
             <div className="Operations--header">
-              <Icon.DeployedCode />
+              <Icon.Code01 />
               <strong className="OpType">
                 {OPERATION_TYPES[type] || type}
               </strong>

@@ -301,7 +301,7 @@ export const SignTransaction = () => {
           <div className="SignTransaction__account-not-found">
             <Notification
               variant="warning"
-              icon={<Icon.Warning />}
+              icon={<Icon.InfoOctagon />}
               title={t("Account not available")}
             >
               {t("The application is requesting a specific account")} (
@@ -350,7 +350,7 @@ export const SignTransaction = () => {
             <PunycodedDomain domain={domain} />
             <div className="SignTransaction--connection-request">
               <div className="SignTransaction--connection-request-pill">
-                <Icon.Link />
+                <Icon.Link01 />
                 <p>Transaction Request</p>
               </div>
             </div>

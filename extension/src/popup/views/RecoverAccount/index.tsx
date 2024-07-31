@@ -209,6 +209,7 @@ export const RecoverAccount = () => {
                         <div className="RecoverAccount__phrase-toggle">
                           <div>{SHORT_PHRASE} word</div>
                           <Toggle
+                            fieldSize="md"
                             checked={isLongPhrase}
                             id="RecoverAccount__toggle"
                             onChange={() => setIsLongPhrase(!isLongPhrase)}
@@ -219,11 +220,15 @@ export const RecoverAccount = () => {
                           <Button
                             variant="secondary"
                             onClick={() => setIsTextShowing(!isTextShowing)}
-                            size="xs"
+                            size="sm"
                             type="button"
                           >
                             <span> {isTextShowing ? "Hide" : "Show"}</span>
-                            {isTextShowing ? <Icon.Hide /> : <Icon.Show />}
+                            {isTextShowing ? (
+                              <Icon.HelpCircle />
+                            ) : (
+                              <Icon.HelpHexagon />
+                            )}
                           </Button>
                         </div>
                       </div>

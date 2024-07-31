@@ -56,9 +56,7 @@ export const Settings = () => {
               <div className="Settings__row">
                 <ListNavLink
                   href={ROUTES.preferences}
-                  icon={
-                    <Icon.AccountCircle className="Settings__icon__preferences" />
-                  }
+                  icon={<Icon.User01 className="Settings__icon__preferences" />}
                 >
                   {t("Preferences")}
                 </ListNavLink>

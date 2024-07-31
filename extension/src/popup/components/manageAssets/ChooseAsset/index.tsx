@@ -157,7 +157,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     <React.Fragment>
       <SubviewHeader
         title={t("Your assets")}
-        customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
+        customBackIcon={!managingAssets ? <Icon.XClose /> : undefined}
       />
       <View.Content>
         {isLoading && (

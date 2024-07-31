@@ -95,7 +95,7 @@ export const AssetLists = ({
             {sortedAssetsListsData.disabled.length ? (
               <div className="ManageAssetsLists__list">
                 <div className="ManageAssetsLists__badge">
-                  <Badge variant="pending">{t("Disabled")}</Badge>
+                  <Badge variant="tertiary">{t("Disabled")}</Badge>
                 </div>
                 <ListNavLinkWrapper>
                   {sortedAssetsListsData.disabled.map((assetList) => (

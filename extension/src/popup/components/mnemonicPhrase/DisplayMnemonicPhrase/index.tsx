@@ -59,7 +59,7 @@ export const DisplayMnemonicPhrase = ({
         <Notification
           variant="warning"
           title={t("Important Warning")}
-          icon={<Icon.Warning />}
+          icon={<Icon.InfoOctagon />}
         >
           {t("Never disclose your recovery phrase")}!
         </Notification>

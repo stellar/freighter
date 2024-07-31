@@ -17,13 +17,13 @@ export const LeaveFeedback = () => {
       <View.Content hasNoTopPadding>
         <ListNavLinkWrapper>
           <ListNavLink
-            icon={<Icon.Discord />}
+            icon={<Icon.Link01 />}
             href="https://discord.com/channels/897514728459468821/1019346446014759013"
           >
             {t("Join community Discord")}
           </ListNavLink>
           <ListNavLink
-            icon={<Icon.Github />}
+            icon={<Icon.Link01 />}
             href="https://github.com/stellar/freighter/issues"
           >
             {t("Report issue on Github")}

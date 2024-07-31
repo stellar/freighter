@@ -328,7 +328,7 @@ export const ManageAssetRowButton = ({
                     <div className="ManageAssetRowButton__label">
                       {t("Copy address")}
                     </div>
-                    <Icon.ContentCopy />
+                    <Icon.Copy01 />
                   </>
                 </CopyText>
               </div>
