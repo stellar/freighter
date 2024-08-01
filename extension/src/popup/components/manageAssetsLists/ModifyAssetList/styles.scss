@@ -1,12 +1,13 @@
 .ModifyAssetList {
   &__label {
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
     font-size: 0.75rem;
     line-height: 1.125rem;
     margin-bottom: 0.375rem;
   }
 
   &__input {
+    margin-bottom: 0.25rem;
     margin-bottom: 0.5rem;
   }
 
@@ -34,31 +35,31 @@
   }
 
   &__not-found {
-    color: var(--color-red-70);
+    color: var(--sds-clr-red-07);
     font-size: 0.75rem;
     line-height: 1.125rem;
     margin: 0 0 1.25rem 0;
   }
 
   &__info {
-    background: var(--color-gray-20);
+    background: var(--sds-clr-gray-02);
     border-radius: 0.5rem;
     padding: 0.75rem 1rem;
 
     &__title {
-      color: var(--color-gray-80);
+      color: var(--sds-clr-gray-12);
       font-size: 0.875rem;
       line-height: 1.25rem;
     }
 
     &__provider {
-      color: var(--color-gray-70);
+      color: var(--sds-clr-gray-12);
       font-size: 0.75rem;
       line-height: 1.125rem;
     }
 
     &__description {
-      color: var(--color-gray-70);
+      color: var(--sds-clr-gray-12);
       font-size: 0.75rem;
       line-height: 1.125rem;
       margin-top: 0.75rem;

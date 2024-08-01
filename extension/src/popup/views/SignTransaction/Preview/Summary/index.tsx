@@ -27,7 +27,7 @@ export const Summary = (props: SummaryProps) => (
     <div className="Operations">
       {props.operationNames.map((opName) => (
         <div key={opName} className="OpName">
-          <Icon.Code01 />
+          <Icon.CodeCircle01 />
           <p>{opName}</p>
         </div>
       ))}
@@ -36,14 +36,14 @@ export const Summary = (props: SummaryProps) => (
     <div className="TxInfo">
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <Icon.Key01 />
+          <Icon.ParagraphSpacing />
           <p>Operations</p>
         </div>
         <p className="TxInfoBlock__value">{props.operationNames.length}</p>
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <Icon.BankNote01 />
+          <Icon.Percent03 />
           <p>Fees</p>
         </div>
         <p className="TxInfoBlock__value">
@@ -52,7 +52,7 @@ export const Summary = (props: SummaryProps) => (
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <Icon.Toggle01Left />
+          <Icon.ArrowSquareRight />
           <p>Sequence #</p>
         </div>
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>

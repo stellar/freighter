@@ -21,9 +21,8 @@
   }
 
   &__dropdown {
-    background: var(--bg);
+    background: var(--sds-clr-gray-03);
     border-radius: 6px;
-    border: 1px solid var(--color-gray-30);
     margin-top: 0.25rem;
     padding: 0.25rem;
     position: absolute;
@@ -41,7 +40,7 @@
       padding: 0.375rem 0.5rem;
 
       &:first-child {
-        background: var(--color-gray-30);
+        background: var(--sds-clr-gray-03);
         border-radius: 0.25rem;
       }
     }
@@ -56,13 +55,13 @@
       justify-content: space-between;
 
       svg {
-        color: var(--color-gray-50);
+        color: var(--sds-clr-gray-07);
       }
     }
   }
 
   &__remove {
-    color: var(--color-red-70);
+    color: var(--sds-clr-red-07);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -73,7 +72,7 @@
     width: 100%;
 
     &:disabled {
-      color: var(--color-red-80);
+      color: var(--sds-clr-red-08);
       cursor: not-allowed;
     }
   }

@@ -6,7 +6,7 @@
   &__Selectors {
     display: flex;
     height: 25px;
-    border: 1px solid var(--color-gray-40);
+    border: 1px solid var(--sds-clr-gray-04);
     border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 600;
@@ -21,15 +21,15 @@
       cursor: pointer;
 
       &.Active {
-        background-color: var(--color-gray-40);
+        background-color: var(--sds-clr-gray-04);
       }
 
       &:first-child {
-        border-right: 1px solid var(--color-gray-40);
+        border-right: 1px solid var(--sds-clr-gray-04);
       }
 
       &:last-child {
-        border-left: 1px solid var(--color-gray-40);
+        border-left: 1px solid var(--sds-clr-gray-04);
       }
     }
   }

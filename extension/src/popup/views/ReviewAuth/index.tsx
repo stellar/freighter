@@ -131,7 +131,7 @@ export const ReviewAuth = () => {
             <PunycodedDomain domain={params.domain} />
             <div className="ReviewAuth--connection-request">
               <div className="ReviewAuth--connection-request-pill">
-                <Icon.Link01 />
+                <Icon.ArrowsRight />
                 <p>Transaction Request</p>
               </div>
             </div>

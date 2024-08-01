@@ -725,7 +725,7 @@ export const Operations = ({
             data-testid="OperationsWrapper"
           >
             <div className="Operations--header">
-              <Icon.Code01 />
+              <Icon.ParagraphSpacing />
               <strong className="OpType">
                 {OPERATION_TYPES[type] || type}
               </strong>

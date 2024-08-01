@@ -8,7 +8,7 @@
   a,
   span {
     align-items: center;
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -35,6 +35,6 @@
 
   &__arrow {
     height: 1.25rem;
-    fill: var(--color-gray-50);
+    fill: var(--sds-clr-gray-05);
   }
 }

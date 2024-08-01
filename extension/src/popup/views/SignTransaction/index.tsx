@@ -350,7 +350,7 @@ export const SignTransaction = () => {
             <PunycodedDomain domain={domain} />
             <div className="SignTransaction--connection-request">
               <div className="SignTransaction--connection-request-pill">
-                <Icon.Link01 />
+                <Icon.ArrowsRight />
                 <p>Transaction Request</p>
               </div>
             </div>

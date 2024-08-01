@@ -38,7 +38,7 @@ export const Settings = () => {
         <nav className="Settings">
           <div>
             <div className="Settings__header">
-              <Heading as="h5" size="md">
+              <Heading as="h2" size="lg">
                 Settings
               </Heading>
               <div className="Settings__version">{packageJson.version}</div>
@@ -56,7 +56,7 @@ export const Settings = () => {
               <div className="Settings__row">
                 <ListNavLink
                   href={ROUTES.preferences}
-                  icon={<Icon.User01 className="Settings__icon__preferences" />}
+                  icon={<Icon.User02 className="Settings__icon__preferences" />}
                 >
                   {t("Preferences")}
                 </ListNavLink>
