@@ -1,4 +1,24 @@
 .ManageAssetRows {
+  &__empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+
+    .EmptyMessage {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-09);
+
+      svg {
+        margin-right: 0.25rem;
+        stroke: var(--sds-clr-gray-09);
+      }
+    }
+  }
+  &__scrollbar {
+    height: 100%;
+  }
   &__content {
     display: flex;
     flex-direction: column;

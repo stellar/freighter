@@ -187,7 +187,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               <Button
                 size="md"
                 isFullWidth
-                variant="secondary"
+                variant="tertiary"
                 data-testid="ChooseAssetAddAssetButton"
               >
                 {t("Add an asset")}
