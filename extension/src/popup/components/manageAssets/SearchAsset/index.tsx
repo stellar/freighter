@@ -117,32 +117,32 @@ export const SearchAsset = () => {
   }
 
   return (
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    <Formik initialValues={initialValues} onSubmit={() => {}}>
-      {({ dirty }) => (
-        <Form
-          onChange={(e) => {
-            handleSearch(e);
-            setHasNoResults(false);
-          }}
-        >
-          <View>
-            <SubviewHeader title={t("Choose Asset")} />
-            <View.Content
-              contentFooter={
-                <div>
-                  <Link to={ROUTES.addAsset}>
-                    <Button
-                      size="md"
-                      isFullWidth
-                      variant="secondary"
-                      data-testid="SearchAsset__add-manually"
-                    >
-                      {t("Add manually")}
-                    </Button>
-                  </Link>
-                </div>
-              }
+    <View>
+      <SubviewHeader title={t("Choose Asset")} />
+      <View.Content
+        contentFooter={
+          <div>
+            <Link to={ROUTES.addAsset}>
+              <Button
+                size="md"
+                isFullWidth
+                variant="secondary"
+                data-testid="SearchAsset__add-manually"
+              >
+                {t("Add manually")}
+              </Button>
+            </Link>
+          </div>
+        }
+      >
+        {/* eslint-disable-next-line @typescript-eslint/no-empty-function */}
+        <Formik initialValues={initialValues} onSubmit={() => {}}>
+          {({ dirty }) => (
+            <Form
+              onChange={(e) => {
+                handleSearch(e);
+                setHasNoResults(false);
+              }}
             >
               <FormRows>
                 <div className="SearchAsset__search-input">
@@ -186,10 +186,10 @@ export const SearchAsset = () => {
                   </div>
                 ) : null}
               </FormRows>
-            </View.Content>
-          </View>
-        </Form>
-      )}
-    </Formik>
+            </Form>
+          )}
+        </Formik>
+      </View.Content>
+    </View>
   );
 };

@@ -379,7 +379,7 @@ export const ManageAssetRowButton = ({
       ) : (
         <Button
           size="md"
-          variant="secondary"
+          variant="tertiary"
           disabled={isActionPending}
           isLoading={isActionPending && assetSubmitting === canonicalAsset}
           onClick={() => {
