@@ -160,25 +160,26 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         customBackIcon={!managingAssets ? <Icon.XClose /> : undefined}
       />
       <View.Content>
-        {isLoading && (
+        {isLoading ? (
           <div className="ChooseAsset__loader">
             <Loader size="2rem" />
           </div>
-        )}
-        <div className="ChooseAsset__wrapper">
-          <div
-            className={`ChooseAsset__assets${
-              managingAssets && isSorobanSuported ? "--short" : ""
-            }`}
-            ref={ManageAssetRowsWrapperRef}
-          >
-            {managingAssets ? (
-              <ManageAssetRows assetRows={assetRows} />
-            ) : (
-              <SelectAssetRows assetRows={assetRows} />
-            )}
+        ) : (
+          <div className="ChooseAsset__wrapper">
+            <div
+              className={`ChooseAsset__assets${
+                managingAssets && isSorobanSuported ? "--short" : ""
+              }`}
+              ref={ManageAssetRowsWrapperRef}
+            >
+              {managingAssets ? (
+                <ManageAssetRows assetRows={assetRows} />
+              ) : (
+                <SelectAssetRows assetRows={assetRows} />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </View.Content>
       {managingAssets && (
         <View.Footer isInline allowWrap>
