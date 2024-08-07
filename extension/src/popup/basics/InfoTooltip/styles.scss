@@ -10,8 +10,6 @@
   }
 
   &__button {
-    width: 0.875rem;
-    height: 1.5rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -19,8 +17,7 @@
 
     svg {
       display: block;
-      width: 0.75rem;
-      height: 0.75rem;
+      stroke: var(--sds-clr-gray-09);
     }
 
     @media (hover: hover) {
