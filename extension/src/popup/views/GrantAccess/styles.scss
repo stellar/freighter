@@ -12,4 +12,13 @@
     margin-top: 10px;
     border-color: var(--color-gray-40);
   }
+
+  &__loader {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
 }

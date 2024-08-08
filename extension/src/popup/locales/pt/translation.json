@@ -29,11 +29,23 @@
   "Add new list": "Add new list",
   "Address": "Address",
   "Addresses are uppercase and begin with letters “G“ or “M“": "Addresses are uppercase and begin with letters “G“ or “M“.",
+  "Advanced settings": "Advanced settings",
+  "Advanced Settings": "Advanced Settings",
+  "Advanced settings are not recommended for new or unexperienced users": {
+    " Enabling these may impact the security of your wallets and result in loss of funds": {
+      " Only utilize these features if you can understand and manage the potential security risks": "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks."
+    }
+  },
   "ALL": "TUDO",
   "All Done": "All Done",
   "Allow connecting to non-HTTPS networks": "Allow connecting to non-HTTPS networks",
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
+  },
+  "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet": {
+    " SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain": {
+      " Use caution when connecting to domains without an SSL certificate": "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet. SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain. Use caution when connecting to domains without an SSL certificate."
+    }
   },
   "Allowed downward variation in the destination amount": "Allowed downward variation in the destination amount",
   "Allowed slippage": "Allowed slippage",
@@ -103,7 +115,9 @@
   "Confirm your recovery phrase": "Confirm your recovery phrase",
   "congestion": "congestion",
   "Connect": "Connect",
+  "Connect anyway": "Connect anyway",
   "Connect device to computer": "Connect device to computer",
+  "Connect to domain without SSL certificate": "Connect to domain without SSL certificate",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Continue": "Continue",
   "Contract Address": "Contract Address",
@@ -161,13 +175,6 @@
   "Error code": "Error code",
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
-  "Experimental features": "Experimental features",
-  "Experimental Features": "Experimental Features",
-  "Experimental features are not recommended for new or unexperienced users": {
-    " Enabling these may impact the security of your wallets and result in loss of funds": {
-      " Only utilize these features if you can understand and manage the potential security risks": "Experimental features are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks."
-    }
-  },
   "Extend To": "Extend To",
   "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
@@ -235,12 +242,13 @@
   "Inflation Destination": "Inflation Destination",
   "Insufficient Balance": "Insufficient Balance",
   "Insufficient Fee": "Insufficient Fee",
+  "INSUFFICIENT FUNDS FOR FEE": "INSUFFICIENT FUNDS FOR FEE",
   "invalid federation address": "invalid federation address",
   "Invalid Format Asset": "Invalid Format Asset",
   "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Invocation Type": "Invocation Type",
-  "is requesting approval to sign a blob of data": "is requesting approval to sign a blob of data",
+  "is requesting approval to sign a message": "is requesting approval to sign a message",
   "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
   "Join community Discord": "Join community Discord",
@@ -360,7 +368,9 @@
   "Preferences": "Preferences",
   "Price": "Price",
   "Privacy Policy": "Privacy Policy",
-  "Proceed with caution": "Proceed with caution",
+  "Proceed with caution": {
+    " Blockaid is unable to provide a risk assesment for this domain at this time": "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time."
+  },
   "Processing": "Processing",
   "Projects related to this asset may be fraudulent even if the creators say otherwise": {
     " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
@@ -422,6 +432,7 @@
   "Signer Sha256 Hash": "Signer Sha256 Hash",
   "Signer Weight": "Signer Weight",
   "Signing arbitrary data with a hardware wallet is currently not supported": "Signing arbitrary data with a hardware wallet is currently not supported.",
+  "Signing message": "Signing message",
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
   "Signs for external accounts": "Signs for external accounts",
   "Some features may be disabled at this time": "Some features may be disabled at this time.",
@@ -452,17 +463,13 @@
   "The destination account must opt to accept this asset before receiving it": "The destination account must opt to accept this asset before receiving it.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
+  "The requester expects you to sign this auth entry on": "The requester expects you to sign this auth entry on",
+  "The requester expects you to sign this message on": "The requester expects you to sign this message on",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
-  "The website <1>{domain}</1> does not use an SSL certificate": {
-    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{domain}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
-  },
-  "The website <1>{params": {
-    "url}</1> does not use an SSL certificate": {
-      " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{params.url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
-    }
-  },
   "The website <1>{url}</1> does not use an SSL certificate": {
-    " For additional safety Freighter only works with websites that provide an SSL certificate": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate."
+    " For additional safety Freighter only works with websites that provide an SSL certificate by default": {
+      " You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate by default. You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings."
+    }
   },
   "them noted to confirm you got them right": "them noted to confirm you got them right",
   "this alert by going to": "this alert by going to",
@@ -532,8 +539,8 @@
     " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
   "XLM": "XLM",
-  "You are attempting to sign arbitrary data": {
-    " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign arbitrary data. Please use extreme caution and understand the implications of signing this data."
+  "You are attempting to sign an arbitrary message": {
+    " Please use extreme caution and understand the implications of signing this data": "You are attempting to sign an arbitrary message. Please use extreme caution and understand the implications of signing this data."
   },
   "You are interacting with data that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."
@@ -555,6 +562,7 @@
   },
   "Your account balances could not be fetched at this time": "Your account balances could not be fetched at this time.",
   "Your assets": "Your assets",
+  "Your available XLM balance is not enough to pay for the transaction fee": "Your available XLM balance is not enough to pay for the transaction fee.",
   "Your Freighter install is complete": "Your Freighter install is complete",
   "Your recovery phrase gives you access to your account and is the": "Your recovery phrase gives you access to your account and is the",
   "Your Stellar secret key": "Your Stellar secret key"

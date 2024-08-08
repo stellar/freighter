@@ -28,7 +28,7 @@ export enum ROUTES {
   addAccount = "/add-account",
   signTransaction = "/sign-transaction",
   reviewAuthorization = "/review-auth",
-  signBlob = "/sign-blob",
+  signMessage = "/sign-message",
   signAuthEntry = "/sign-auth-entry",
   grantAccess = "/grant-access",
   mnemonicPhrase = "/mnemonic-phrase",
@@ -49,7 +49,7 @@ export enum ROUTES {
   leaveFeedback = "/settings/leave-feedback",
   manageAssetsLists = "/settings/manage-assets-lists",
   manageAssetsListsModifyAssetList = "/settings/manage-assets-lists/modify-asset-list",
-  experimentalFeatures = "/settings/experimental-features",
+  advancedSettings = "/settings/advanced-settings",
 
   manageAssets = "/manage-assets",
   searchAsset = "/manage-assets/search-asset",

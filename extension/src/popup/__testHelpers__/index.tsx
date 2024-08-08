@@ -71,7 +71,6 @@ export const Wrapper: React.FunctionComponent<any> = ({
 };
 
 export const mockBalances = {
-  tokensWithNoBalance: [],
   balances: {
     ["DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ"]: {
       token: {

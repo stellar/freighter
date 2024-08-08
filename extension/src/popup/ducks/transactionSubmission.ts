@@ -642,13 +642,11 @@ export const initialState: InitialState = {
     shouldSubmit: true,
   },
   accountBalances: {
-    tokensWithNoBalance: [],
     balances: null,
     isFunded: false,
     subentryCount: 0,
   },
   destinationBalances: {
-    tokensWithNoBalance: [],
     balances: null,
     isFunded: true,
     subentryCount: 0,
@@ -929,8 +927,6 @@ export const isPathPaymentSelector = (state: {
 
 export const tokensSelector = (state: {
   accountBalanceStatus: ActionStatus;
-  tokensWithNoBalance: string[];
 }) => ({
   accountBalanceStatus: state.accountBalanceStatus,
-  tokensWithNoBalance: state.tokensWithNoBalance || [],
 });

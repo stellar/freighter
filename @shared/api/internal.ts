@@ -476,7 +476,6 @@ export const getAccountIndexerBalances = async (
   return {
     ...data,
     balances: formattedBalances,
-    tokensWithNoBalance: contractIds.filter((id) => !balanceIds.includes(id)),
   };
 };
 
@@ -577,7 +576,6 @@ export const getAccountBalancesStandalone = async ({
       balances,
       isFunded: false,
       subentryCount,
-      tokensWithNoBalance: [],
     };
   }
 
@@ -585,7 +583,6 @@ export const getAccountBalancesStandalone = async ({
   const tokenIdList = await getTokenIds(network as NETWORKS);
 
   const tokenBalances = {} as any;
-  const tokensWithNoBalance = [];
 
   if (tokenIdList.length) {
     if (!networkDetails.sorobanRpcUrl) {
@@ -633,7 +630,6 @@ export const getAccountBalancesStandalone = async ({
         };
       } catch (e) {
         console.error(`Token "${tokenId}" missing data on RPC server`);
-        tokensWithNoBalance.push(tokenId);
       }
     }
   }
@@ -642,7 +638,6 @@ export const getAccountBalancesStandalone = async ({
     balances: { ...balances, ...tokenBalances },
     isFunded,
     subentryCount,
-    tokensWithNoBalance: [],
   };
 };
 
@@ -1176,11 +1171,13 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
   isValidatingSafeAssetsEnabled,
+  isNonSSLEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
+  isNonSSLEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
@@ -1194,6 +1191,7 @@ export const saveSettings = async ({
     userNotification: { enabled: false, message: "" },
     settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
+    isNonSSLEnabled: false,
     error: "",
   };
 
@@ -1203,6 +1201,7 @@ export const saveSettings = async ({
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isNonSSLEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -1215,13 +1214,16 @@ export const saveSettings = async ({
 export const saveExperimentalFeatures = async ({
   isExperimentalModeEnabled,
   isHashSigningEnabled,
+  isNonSSLEnabled,
 }: {
   isExperimentalModeEnabled: boolean;
   isHashSigningEnabled: boolean;
+  isNonSSLEnabled: boolean;
 }): Promise<ExperimentalFeatures> => {
   let response = {
     isExperimentalModeEnabled: false,
     isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     experimentalFeaturesState: SettingsState.IDLE,
@@ -1232,6 +1234,7 @@ export const saveExperimentalFeatures = async ({
     response = await sendMessageToBackground({
       isExperimentalModeEnabled,
       isHashSigningEnabled,
+      isNonSSLEnabled,
       type: SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES,
     });
   } catch (e) {

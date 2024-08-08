@@ -6,16 +6,13 @@ export const GetNetworkDetailsDemo = () => {
   const [networkDetailsResult, setNetworkDetailsResult] = useState("");
 
   const btnHandler = async () => {
-    let networkDetails;
-    let error = "";
+    const networkDetailsObj = await getNetworkDetails();
 
-    try {
-      networkDetails = await getNetworkDetails();
-    } catch (e) {
-      error = e;
+    if (networkDetailsObj.error) {
+      setNetworkDetailsResult(JSON.stringify(networkDetailsObj.error));
+    } else {
+      setNetworkDetailsResult(JSON.stringify(networkDetailsObj));
     }
-
-    setNetworkDetailsResult(JSON.stringify(networkDetails) || error);
   };
 
   return (

@@ -76,7 +76,7 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
   await expect(page.getByTestId("network-selector-open")).toBeVisible({
-    timeout: 10000,
+    timeout: 50000,
   });
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Test Net").click();

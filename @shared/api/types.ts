@@ -22,6 +22,7 @@ export type MigratableAccount = Account & { keyIdIndex: number };
 
 export interface Response {
   error: string;
+  apiError: FreighterApiError;
   messagedId: number;
   applicationState: APPLICATION_STATE;
   publicKey: string;
@@ -37,9 +38,10 @@ export interface Response {
     sign: (sourceKeys: {}) => void;
   };
   transactionXDR: string;
+  signerAddress: string;
   signedTransaction: string;
-  signedBlob: string;
-  signedAuthEntry: string;
+  signedBlob: Buffer | null;
+  signedAuthEntry: Buffer | null;
   source: string;
   type: SERVICE_TYPES;
   url: string;
@@ -87,6 +89,7 @@ export interface Response {
   balancesToMigrate: BalanceToMigrate[];
   isMergeSelected: boolean;
   recommendedFee: string;
+  isNonSSLEnabled: boolean;
 }
 
 export interface BlockedDomains {
@@ -103,7 +106,8 @@ export interface BlockedAccount {
 export interface ExternalRequestBase {
   network: string;
   networkPassphrase: string;
-  accountToSign: string;
+  accountToSign?: string;
+  address?: string;
   type: EXTERNAL_SERVICE_TYPES;
 }
 
@@ -143,12 +147,14 @@ export interface Preferences {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
+  isNonSSLEnabled: boolean;
   error: string;
 }
 
 export interface ExperimentalFeatures {
   isExperimentalModeEnabled: boolean;
   isHashSigningEnabled: boolean;
+  isNonSSLEnabled: boolean;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   experimentalFeaturesState: SettingsState;
@@ -274,7 +280,6 @@ export type HorizonOperation = Horizon.ServerApi.OperationRecord;
 
 export interface AccountBalancesInterface {
   balances: Balances;
-  tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
   error?: { horizon: any; soroban: any };
@@ -308,4 +313,10 @@ declare global {
     freighter: boolean;
     freighterApi: { [key: string]: any };
   }
+}
+
+export interface FreighterApiError {
+  code: number;
+  message: string;
+  ext?: string[];
 }

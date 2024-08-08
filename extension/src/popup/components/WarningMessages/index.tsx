@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { POPUP_HEIGHT } from "constants/dimensions";
 import {
   Account,
@@ -1051,5 +1051,56 @@ const WarningMessageTokenDetails = ({
         <CopyValue value={transfer.to} displayValue={transfer.to} />
       </p>
     </div>
+  );
+};
+
+export const SSLWarningMessage = ({ url }: { url: string }) => {
+  const { t } = useTranslation();
+
+  return (
+    <WarningMessage
+      handleCloseClick={() => window.close()}
+      isActive
+      variant={WarningMessageVariant.warning}
+      header={t("WEBSITE CONNECTION IS NOT SECURE")}
+    >
+      <p>
+        <Trans domain={url}>
+          The website <strong>{url}</strong> does not use an SSL certificate.
+          For additional safety Freighter only works with websites that provide
+          an SSL certificate by default. You may enable connection to domains
+          that do not use an SSL certificate in Settings &gt; Security &gt;
+          Advanced Settings.
+        </Trans>
+      </p>
+    </WarningMessage>
+  );
+};
+
+export const MaliciousDomainWarning = ({ message }: { message: string }) => (
+  <div className="MaliciousDomainWarning">
+    <div className="Icon">
+      <Icon.Warning className="WarningMessage__icon" />
+    </div>
+    <p className="Message">{message}</p>
+  </div>
+);
+
+export const BlockAidMissWarning = () => {
+  const { t } = useTranslation();
+
+  return (
+    <WarningMessage
+      header="Blockaid has not seen this domain"
+      variant={WarningMessageVariant.default}
+    >
+      <div>
+        <p>
+          {t(
+            "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time.",
+          )}
+        </p>
+      </div>
+    </WarningMessage>
   );
 };

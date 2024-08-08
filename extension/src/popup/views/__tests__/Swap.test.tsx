@@ -54,7 +54,6 @@ export const swapMockBalances = {
   } as any as Balances,
   isFunded: true,
   subentryCount: 1,
-  tokensWithNoBalance: [],
 };
 
 jest

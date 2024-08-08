@@ -12,6 +12,7 @@ import {
   HAS_ACCOUNT_SUBSCRIPTION,
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
+  IS_NON_SSL_ENABLED_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
@@ -148,6 +149,16 @@ export const getAssetsLists = async () => {
     (await localStore.getItem(ASSETS_LISTS_ID)) ?? DEFAULT_ASSETS_LISTS;
 
   return assetLists;
+};
+
+export const getIsNonSSLEnabled = async () => {
+  if (!(await localStore.getItem(IS_NON_SSL_ENABLED_ID))) {
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
+  }
+  const isNonSSLEnabled =
+    (await localStore.getItem(IS_NON_SSL_ENABLED_ID)) ?? false;
+
+  return isNonSSLEnabled;
 };
 
 export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {

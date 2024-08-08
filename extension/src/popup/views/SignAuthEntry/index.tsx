@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 import { truncatedPublicKey } from "helpers/stellar";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -14,11 +14,16 @@ import {
   FirstTimeWarningMessage,
   WarningMessageVariant,
   WarningMessage,
+  SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 import { View } from "popup/basics/layout/View";
 import { signEntry, rejectAuthEntry } from "popup/ducks/access";
-import { settingsExperimentalModeSelector } from "popup/ducks/settings";
+import {
+  isNonSSLEnabledSelector,
+  settingsExperimentalModeSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
@@ -35,9 +40,13 @@ export const SignAuthEntry = () => {
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
+  const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
+  const { networkName, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
 
   const params = parsedSearchParam(location.search) as EntryToSign;
-  const { accountToSign } = params;
+  const { accountToSign, networkPassphrase: entryNetworkPassphrase } = params;
 
   const {
     allAccounts,
@@ -77,23 +86,25 @@ export const SignAuthEntry = () => {
     );
   }
 
-  if (!params.url.startsWith("https") && !isExperimentalModeEnabled) {
+  if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
+        variant={WarningMessageVariant.warning}
         handleCloseClick={() => window.close()}
         isActive
-        variant={WarningMessageVariant.warning}
-        header={t("WEBSITE CONNECTION IS NOT SECURE")}
+        header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          <Trans domain={params.url}>
-            The website <strong>{params.url}</strong> does not use an SSL
-            certificate. For additional safety Freighter only works with
-            websites that provide an SSL certificate.
-          </Trans>
+          {t("The requester expects you to sign this auth entry on")}{" "}
+          {entryNetworkPassphrase}.
         </p>
+        <p>{t("Signing this transaction is not possible at the moment.")}</p>
       </WarningMessage>
     );
+  }
+
+  if (!params.url.startsWith("https") && !isNonSSLEnabled) {
+    return <SSLWarningMessage url={params.url} />;
   }
 
   return isPasswordRequired ? (

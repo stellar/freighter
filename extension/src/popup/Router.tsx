@@ -58,7 +58,7 @@ import { ViewPublicKey } from "popup/views/ViewPublicKey";
 import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
-import { ExperimentalFeatures } from "popup/views/ExperimentalFeatures";
+import { AdvancedSettings } from "popup/views/AdvancedSettings";
 import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
@@ -73,7 +73,7 @@ import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 import { SettingsState } from "@shared/api/types";
 
-import { SignBlob } from "./views/SignBlob";
+import { SignMessage } from "./views/SignMessage";
 import { ReviewAuth } from "./views/ReviewAuth";
 
 import { View } from "./basics/layout/View";
@@ -330,8 +330,8 @@ const Outlet = () => {
           <PublicKeyRoute path={ROUTES.signAuthEntry}>
             <SignAuthEntry />
           </PublicKeyRoute>
-          <PublicKeyRoute path={ROUTES.signBlob}>
-            <SignBlob />
+          <PublicKeyRoute path={ROUTES.signMessage}>
+            <SignMessage />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.displayBackupPhrase}>
             <DisplayBackupPhrase />
@@ -399,8 +399,8 @@ const Outlet = () => {
           <PublicKeyRoute path={ROUTES.accountMigration}>
             <AccountMigration />
           </PublicKeyRoute>
-          <PublicKeyRoute path={ROUTES.experimentalFeatures}>
-            <ExperimentalFeatures />
+          <PublicKeyRoute path={ROUTES.advancedSettings}>
+            <AdvancedSettings />
           </PublicKeyRoute>
 
           {DEV_SERVER && (
