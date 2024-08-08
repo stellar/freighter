@@ -3,6 +3,8 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
 const webpack = require("webpack");
 
@@ -13,6 +15,11 @@ const BUILD_PATH = path.resolve(__dirname, "./build");
 const commonConfig = (
   env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
 ) => ({
+  cache: true,
+  optimization: {
+    minimize: true,
+    minimizer: [new TerserPlugin()],
+  },
   entry: {
     background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],
@@ -21,6 +28,7 @@ const commonConfig = (
   watchOptions: {
     ignored: ["node_modules/**/*", "build/**/*"],
   },
+  devtool: "source-map",
   output: {
     path: BUILD_PATH,
     filename: (pathData) => {
@@ -66,8 +74,16 @@ const commonConfig = (
       },
       {
         test: /\.(ts|tsx)$/,
-        use: ["ts-loader"],
         exclude: /node-modules/,
+        use: [
+          {
+            loader: "ts-loader",
+            options: {
+              transpileOnly: true,
+            },
+          },
+          "thread-loader",
+        ],
       },
       {
         test: /\.(js)$/,
@@ -148,6 +164,7 @@ const commonConfig = (
     new webpack.ProvidePlugin({
       process: "process/browser",
     }),
+    new ForkTsCheckerWebpackPlugin(),
   ],
   stats: DEFAULT_STATS,
 });
