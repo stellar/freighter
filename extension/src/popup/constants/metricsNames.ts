@@ -160,4 +160,8 @@ export const METRIC_NAMES = {
     "trustline removal error: asset has buying liabilties",
   trustlineErrorHasBalance: "trustline removal error: asset has balance",
   trustlineErrorLowReserve: "trustline removal error: asset has low reserve",
+
+  blockaidDomainScan: "blockaid: scanned domain",
+  blockaidTxScan: "blockaid: scanned transaction",
+  blockaidAssetScan: "blockaid: scanned asset",
 };

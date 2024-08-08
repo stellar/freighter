@@ -4,6 +4,9 @@ import * as Sentry from "@sentry/browser";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { isMainnet } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 interface BlockAidScanSiteResult {
   status: "hit" | "miss";
@@ -47,6 +50,7 @@ export const useScanSite = () => {
         setError(response.error || "Failed to scan site");
       }
       setData(response.data);
+      emitMetric(METRIC_NAMES.blockaidDomainScan, { response: response.data });
       setLoading(false);
     } catch (err) {
       setError("Failed to scan site");
@@ -94,6 +98,7 @@ export const useScanTx = () => {
         setError(response.error || "Failed to scan transaction");
       }
       setData(response.data);
+      emitMetric(METRIC_NAMES.blockaidTxScan, { response: response.data });
       setLoading(false);
     } catch (err) {
       setError("Failed to scan transaction");
@@ -108,4 +113,32 @@ export const useScanTx = () => {
     isLoading,
     scanTx,
   };
+};
+
+export const scanAsset = async (
+  address: string,
+  networkDetails: NetworkDetails,
+) => {
+  try {
+    if (!isMainnet(networkDetails)) {
+      console.error("Scanning assets is only supported on Mainnet");
+      return {};
+    }
+    const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`);
+    const response = (await res.json()) as {
+      data: BlockAidScanTxResult;
+      error: string | null;
+    };
+
+    if (!res.ok) {
+      Sentry.captureException(response.error || "Failed to scan asset");
+    }
+
+    emitMetric(METRIC_NAMES.blockaidAssetScan, { response: response.data });
+    return response.data;
+  } catch (err) {
+    console.error("Failed to scan asset");
+    Sentry.captureException(err);
+  }
+  return {};
 };
