@@ -1,6 +1,6 @@
 .BodyWrapper {
   h5 {
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
   }
 
   .Operations {
@@ -15,10 +15,6 @@
 
       &:first-child {
         margin-top: 0.5rem;
-      }
-
-      svg {
-        fill: var(--color-gray-60);
       }
 
       p {
@@ -41,10 +37,6 @@
         display: flex;
         align-items: center;
 
-        svg {
-          fill: var(--color-gray-60);
-        }
-
         p {
           font-size: 0.75rem;
           margin-left: 0.5rem;
@@ -54,7 +46,7 @@
       &__value {
         font-size: 0.75rem;
         color: var(
-          --color-gray-70
+          --sds-clr-gray-12
         ) !important; //sds rule does not allwo changing colors on p tags
       }
     }

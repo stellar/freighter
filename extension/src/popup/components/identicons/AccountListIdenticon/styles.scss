@@ -7,7 +7,7 @@
     border-radius: 2rem;
     border-width: 1.5px;
     border-style: solid;
-    border-color: var(--color-gray-30);
+    border-color: var(--sds-clr-gray-03);
 
     &.active {
       border-color: rgba(61, 204, 152, 1);
@@ -37,7 +37,7 @@
   }
 
   &__account-name {
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     margin: 0 0 0.1875rem 0;
     max-height: 1.2rem;
     overflow: hidden;
@@ -47,7 +47,7 @@
   }
 
   &__account-num {
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
     width: 100%;
   }
 }

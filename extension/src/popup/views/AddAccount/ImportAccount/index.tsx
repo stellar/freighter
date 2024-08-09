@@ -81,7 +81,7 @@ export const ImportAccount = () => {
               <div className="ImportAccount__warning-block">
                 <Notification
                   variant="warning"
-                  icon={<Icon.Warning />}
+                  icon={<Icon.InfoOctagon />}
                   title={t("Read before importing your key")}
                 >
                   {t(

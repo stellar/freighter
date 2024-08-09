@@ -1,5 +1,5 @@
 import React from "react";
-import { Heading, Paragraph } from "@stellar/design-system";
+import { Heading, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
@@ -32,15 +32,15 @@ export const MigrationBody = ({ children, hasWarning }: MigrationBodyProps) => (
 );
 
 export const MigrationParagraph = ({ children }: MigrationBasicProps) => (
-  <Paragraph size="md" className="MigrationParagraph">
+  <Text as="p" size="md" className="MigrationParagraph">
     {children}
-  </Paragraph>
+  </Text>
 );
 
 export const MigrationButton = ({ children }: MigrationBasicProps) => (
-  <Paragraph size="md" className="MigrationButton">
+  <Text as="p" size="md" className="MigrationButton">
     {children}
-  </Paragraph>
+  </Text>
 );
 
 export const MigrationReviewHeader = ({ children }: MigrationBasicProps) => (

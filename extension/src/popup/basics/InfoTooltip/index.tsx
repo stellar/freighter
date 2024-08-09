@@ -18,7 +18,7 @@ export const InfoTooltip = ({
     <Tooltip
       triggerEl={
         <div className="InfoTooltip__button">
-          <Icon.Info />
+          <Icon.InfoCircle />
         </div>
       }
       placement={placement}

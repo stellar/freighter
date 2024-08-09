@@ -31,7 +31,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
       <SubviewHeader
         title="Transaction Fee"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
             infoText={

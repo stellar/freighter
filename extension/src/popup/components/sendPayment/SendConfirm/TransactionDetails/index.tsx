@@ -457,7 +457,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           customBackAction={goBack}
           customBackIcon={
             submission.submitStatus === ActionStatus.SUCCESS ? (
-              <Icon.Close />
+              <Icon.XClose />
             ) : null
           }
         />

@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import { Title } from "@stellar/design-system";
+import { Text } from "@stellar/design-system";
 
 import FreighterLogo from "popup/assets/logo-freighter.svg";
 import { BackButton } from "popup/basics/buttons/BackButton";
@@ -91,14 +91,15 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
       ) : (
         <div>
           <div className="View__header__box View__header__box--center">
-            <Title
+            <Text
+              as="h2"
               size="md"
               role="heading"
               aria-level={2}
               data-testid="AppHeaderPageTitle"
             >
               {pageTitle}
-            </Title>
+            </Text>
           </div>
           {pageSubtitle ? (
             <div

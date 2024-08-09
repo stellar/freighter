@@ -12,7 +12,7 @@ export const CopyValue = ({
 }) => (
   <CopyText textToCopy={value}>
     <div className="CopyValue">
-      <Icon.ContentCopy />
+      <Icon.Copy01 />
       <span className="Value">{displayValue}</span>
     </div>
   </CopyText>

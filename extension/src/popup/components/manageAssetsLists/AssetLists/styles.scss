@@ -5,7 +5,7 @@
 
   &__network {
     position: absolute;
-    top: 0.875rem;
+    top: 0.65rem;
     left: 1.6875rem;
   }
 
@@ -32,7 +32,7 @@
 
   &__subtitle {
     font-size: 0.75rem;
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
     line-height: 1.125rem;
   }
 }

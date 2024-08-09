@@ -1,9 +1,9 @@
 @use "../../../styles/utils.scss" as *;
 
 .ButtonLabel {
-  border: 1px solid var(--color-gray-10);
+  border: 1px solid var(--sds-clr-gray-01);
   border-radius: 6.25rem;
-  color: var(--color-gray-90);
+  color: var(--sds-clr-gray-12);
   cursor: pointer;
   display: inline-block;
   font-weight: var(--font-weight-medium);
@@ -21,7 +21,7 @@
   }
 
   &:checked + label {
-    background: var(--color-gray-10);
+    background: var(--sds-clr-gray-01);
     color: white;
   }
 }
