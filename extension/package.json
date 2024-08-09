@@ -15,8 +15,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@ledgerhq/hw-app-str": "^6.27.1",
-    "@ledgerhq/hw-transport-webusb": "^6.27.1",
+    "@ledgerhq/hw-app-str": "^7.0.2",
+    "@ledgerhq/hw-transport-webusb": "^6.29.2",
     "@reduxjs/toolkit": "1.6.0",
     "@sentry/browser": "^6.0.0",
     "@sentry/tracing": "^6.0.0",

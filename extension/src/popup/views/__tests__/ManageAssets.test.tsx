@@ -70,7 +70,6 @@ const manageAssetsMockBalances = {
   } as any as Balances,
   isFunded: true,
   subentryCount: 1,
-  tokensWithNoBalance: [],
 };
 
 jest
@@ -487,7 +486,6 @@ describe("Manage assets", () => {
       } as any as Balances,
       isFunded: true,
       subentryCount: 1,
-      tokensWithNoBalance: [],
     });
 
     await waitFor(() => {
@@ -567,7 +565,6 @@ describe("Manage assets", () => {
       } as any as Balances,
       isFunded: true,
       subentryCount: 1,
-      tokensWithNoBalance: [],
     });
 
     await waitFor(() => {

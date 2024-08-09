@@ -1,12 +1,18 @@
 import { requestConnectionStatus } from "@shared/api/external";
+import { FreighterApiError } from "@shared/api/types";
+import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
 
-export const isConnected = (): Promise<boolean> => {
-  if (!isBrowser) return Promise.resolve(false);
+export const isConnected = async (): Promise<
+  { isConnected: boolean } & { error?: FreighterApiError }
+> => {
+  if (isBrowser) {
+    if (window.freighter) {
+      return Promise.resolve({ isConnected: window.freighter });
+    }
 
-  if (window.freighter) {
-    return Promise.resolve(window.freighter);
+    return requestConnectionStatus();
   }
 
-  return requestConnectionStatus();
+  return { isConnected: false, error: FreighterApiNodeError };
 };

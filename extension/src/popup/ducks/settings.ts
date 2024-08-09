@@ -36,6 +36,8 @@ import {
   ExperimentalFeatures,
 } from "@shared/api/types";
 
+import { isMainnet } from "helpers/stellar";
+
 interface ErrorMessage {
   errorMessage: string;
 }
@@ -54,12 +56,14 @@ const settingsInitialState: Settings = {
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
   isValidatingSafeAssetsEnabled: true,
+  isNonSSLEnabled: false,
   error: "",
 };
 
 const experimentalFeaturesInitialState = {
   isExperimentalModeEnabled: false,
   isHashSigningEnabled: false,
+  isNonSSLEnabled: false,
   experimentalFeaturesState: SettingsState.IDLE,
 };
 
@@ -131,6 +135,7 @@ export const saveSettings = createAsyncThunk<
       isRpcHealthy: false,
       userNotification: { enabled: false, message: "" },
       settingsState: SettingsState.IDLE,
+      isNonSSLEnabled: false,
     };
 
     try {
@@ -157,11 +162,15 @@ export const saveExperimentalFeatures = createAsyncThunk<
   {
     isExperimentalModeEnabled: boolean;
     isHashSigningEnabled: boolean;
+    isNonSSLEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveExperimentalFeaturss",
-  async ({ isExperimentalModeEnabled, isHashSigningEnabled }, thunkApi) => {
+  async (
+    { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled },
+    thunkApi,
+  ) => {
     let res = {
       ...experimentalFeaturesInitialState,
       networkDetails: settingsInitialState.networkDetails,
@@ -172,6 +181,7 @@ export const saveExperimentalFeatures = createAsyncThunk<
       res = await saveExperimentalFeaturesService({
         isExperimentalModeEnabled,
         isHashSigningEnabled,
+        isNonSSLEnabled,
       });
     } catch (e) {
       console.error(e);
@@ -332,6 +342,7 @@ const settingsSlice = createSlice({
       const {
         isExperimentalModeEnabled,
         isHashSigningEnabled,
+        isNonSSLEnabled,
         networkDetails,
         networksList,
       } = action?.payload || {
@@ -342,6 +353,7 @@ const settingsSlice = createSlice({
         ...state,
         isExperimentalModeEnabled,
         isHashSigningEnabled,
+        isNonSSLEnabled,
         networkDetails,
         networksList,
         experimentalFeaturesState: SettingsState.SUCCESS,
@@ -371,6 +383,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          isNonSSLEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -390,6 +403,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          isNonSSLEnabled,
           settingsState: SettingsState.SUCCESS,
         };
       },
@@ -598,4 +612,9 @@ export const settingsErrorSelector = createSelector(
 export const settingsStateSelector = createSelector(
   settingsSelector,
   (settings) => settings.settingsState,
+);
+
+export const isNonSSLEnabledSelector = createSelector(
+  settingsSelector,
+  (settings) => !isMainnet(settings.networkDetails) || settings.isNonSSLEnabled,
 );
