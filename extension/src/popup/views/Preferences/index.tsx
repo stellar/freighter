@@ -20,7 +20,6 @@ export const Preferences = () => {
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
     isValidatingSafeAssetsEnabled,
-    isNonSSLEnabled,
   } = useSelector(settingsSelector);
 
   interface SettingValues {
@@ -28,7 +27,6 @@ export const Preferences = () => {
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
     isValidatingSafeAssetsValue: boolean;
-    isNonSSLEnabledValue: boolean;
   }
 
   const initialValues: SettingValues = {
@@ -36,7 +34,6 @@ export const Preferences = () => {
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
     isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
-    isNonSSLEnabledValue: isNonSSLEnabled,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -45,7 +42,6 @@ export const Preferences = () => {
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
       isValidatingSafeAssetsValue,
-      isNonSSLEnabledValue,
     } = formValue;
 
     // eslint-disable-next-line
@@ -55,7 +51,6 @@ export const Preferences = () => {
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
         isValidatingSafeAssetsEnabled: isValidatingSafeAssetsValue,
-        isNonSSLEnabled: isNonSSLEnabledValue,
       }),
     );
   };
@@ -136,28 +131,6 @@ export const Preferences = () => {
                     checked={initialValues.isDataSharingAllowedValue}
                     customInput={<Field />}
                     id="isDataSharingAllowedValue"
-                  />
-                </div>
-              </div>
-
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  {t("Connect to domain without SSL certificate")}{" "}
-                </div>
-
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isNonSSLEnabledValue"
-                    className="Preferences--label"
-                  >
-                    {t(
-                      "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet. SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain. Use caution when connecting to domains without an SSL certificate.",
-                    )}
-                  </label>
-                  <Toggle
-                    checked={initialValues.isNonSSLEnabledValue}
-                    customInput={<Field />}
-                    id="isNonSSLEnabledValue"
                   />
                 </div>
               </div>

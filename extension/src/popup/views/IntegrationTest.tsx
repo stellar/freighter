@@ -299,7 +299,6 @@ export const IntegrationTest = () => {
         isMemoValidationEnabled: true,
         isSafetyValidationEnabled: true,
         isValidatingSafeAssetsEnabled: true,
-        isNonSSLEnabled: true,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
