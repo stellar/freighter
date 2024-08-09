@@ -15,39 +15,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Update package.json version
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/package.json
           field: version
           value: ${{ github.event.inputs.version }}
       - name: Update manifest-v3.json version_name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
           field: version_name
           value: ${{ github.event.inputs.version }}
       - name: Get manifest.json version
         id: manifest_version
-        uses: frabert/replace-string-action@4ec615c8a75164a61d8fb333ad5e2e86ff038af1 #v1.2
+        uses: frabert/replace-string-action@b6828c5a4cb6371753ff873b0d1c4c4fbd9a63cb #v2.5
         with:
           string: ${{ github.event.inputs.version }}
           pattern: \-(.*)
           replace-with: ""
       - name: Update manifest-v3.json version
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
           field: version
           value: ${{ steps.manifest_version.outputs.replaced }}
       - name: Build extension
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
       - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Install zip
-        uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
+        uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Zip extension build
         run: zip -qq -r ./build.zip *
         working-directory: ./extension/build
@@ -59,7 +59,7 @@ jobs:
           git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
           git tag ${{ github.event.inputs.version }}
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c #v6.1.0
         with:
           title: Bump versions to ${{ github.event.inputs.version }}
       - name: Create GitHub Release
@@ -84,7 +84,7 @@ jobs:
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
       - name: Submit extension to Firefox
-        uses: kewisch/action-web-ext@a28b4ba2f491cc36c67a714a716ca54218440056 #v1
+        uses: kewisch/action-web-ext@2c96cb8d05464c1dd52b96229a9f33388ba1bfad #v1
         with:
           cmd: sign
           source: ./extension/build/build.zip
@@ -93,7 +93,7 @@ jobs:
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
       - name: Remove scripts tag
-        uses: restackio/update-json-file-action@617c86c20c3aea91b8438987dcef1e498e45a651 #v2.1
+        uses: restackio/update-json-file-action@a3a75ee5960338f5bcc83bfb81947f283fca90eb #v2.1
         with:
           file: ./extension/build/manifest.json
           fields: '{"background": {"service_worker": "background.min.js"}}'
@@ -101,7 +101,7 @@ jobs:
         run: zip -qq -r ./build_chrome.zip *
         working-directory: ./extension/build
       - name: Submit extension to Chrome
-        uses: mnao305/chrome-extension-upload@cf3c0991d2106541415f20bec91619ff72d03293 #v1.1.1
+        uses: mnao305/chrome-extension-upload@4008e29e13c144d0f6725462cbd49b7c291b4928 #v5.0.0
         with:
           file-path: ./extension/build/build_chrome.zip
           extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
@@ -117,7 +117,7 @@ jobs:
       #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
       #     access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
+        uses: rtCamp/action-slack-notify@4e5fb42d249be6a45a298f3c9543b111b02f7907 #v2.3.0
         env:
           MSG_MINIMAL: true
           SLACK_CHANNEL: proj-freighter
