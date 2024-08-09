@@ -224,11 +224,7 @@ export const RecoverAccount = () => {
                             type="button"
                           >
                             <span> {isTextShowing ? "Hide" : "Show"}</span>
-                            {isTextShowing ? (
-                              <Icon.HelpCircle />
-                            ) : (
-                              <Icon.HelpHexagon />
-                            )}
+                            {isTextShowing ? <Icon.EyeOff /> : <Icon.Eye />}
                           </Button>
                         </div>
                       </div>
@@ -287,9 +283,9 @@ export const RecoverAccount = () => {
                           }}
                           label={
                             <>
-                              {t("I have read and agree to")}{" "}
+                              {t("I have read and agree to the")}{" "}
                               <Link
-                                variant="secondary"
+                                variant="primary"
                                 href="https://stellar.org/terms-of-service"
                               >
                                 {t("Terms of Use")}
