@@ -57,7 +57,7 @@ const prodConfig = (
       sentryWebpackPlugin({
         org: env.SENTRY_ORG,
         project: env.SENTRY_PROJECT,
-        authToken: env.SENTRY_AUTH_TOKEN,
+        authToken: env.SENTRY_KEY,
       }),
     ],
     // This if to fine tune logged output. Since this is an extension, not a
