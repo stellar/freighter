@@ -83,12 +83,12 @@
     "stellar-hd-wallet": "^0.0.10",
     "stellar-identicon-js": "^1.0.0",
     "stellar-sdk": "yarn:stellar-sdk@^12.1.0",
-    "stellar-sdk-next": "yarn:stellar-sdk@12.1.0",
+    "stellar-sdk-next": "yarn:stellar-sdk@^12.1.0",
     "svg-url-loader": "^8.0.0",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
     "tslib": "2.6.3",
     "webextension-polyfill": "^0.12.0",
-    "yup": "^0.29.1"
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.3.1",
