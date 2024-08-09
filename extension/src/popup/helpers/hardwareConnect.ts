@@ -4,6 +4,7 @@ import {
   MemoType,
   Operation,
   Transaction,
+  StrKey,
 } from "stellar-sdk";
 import {
   ConfigurableWalletType,
@@ -36,7 +37,7 @@ export const createWalletConnection: CreateWalletConnection = {
     const ledgerApi = new LedgerApi(transport);
     const response = await ledgerApi.getPublicKey(bipPath);
 
-    return response.publicKey;
+    return StrKey.encodeEd25519PublicKey(response.rawPublicKey);
   },
 };
 
@@ -55,7 +56,7 @@ export const getWalletPublicKey: GetWalletPublicKey = {
     const ledgerApi = new LedgerApi(transport);
     const response = await ledgerApi.getPublicKey(bipPath);
 
-    return response.publicKey;
+    return StrKey.encodeEd25519PublicKey(response.rawPublicKey);
   },
 };
 
