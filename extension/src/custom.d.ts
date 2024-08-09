@@ -10,5 +10,3 @@ declare module "react-identicons";
 declare module "stellar-identicon-js";
 
 declare module "@stellar-asset-lists/sdk";
-
-declare module "yup";
