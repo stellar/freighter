@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { captureException } from "@sentry/browser";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -21,8 +20,7 @@ import {
   saveSimulation,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { simulateTokenPayment } from "popup/ducks/token-payment";
-import { buildAndSimulateSoroswapTx } from "popup/helpers/sorobanSwap";
+import { simulateTokenPayment, simulateSwap } from "popup/ducks/token-payment";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -129,29 +127,25 @@ export const Settings = ({
     }
 
     if (isSoroswap) {
-      let simulatedTx;
-      try {
-        simulatedTx = await buildAndSimulateSoroswapTx({
+      const simulatedTx = await dispatch(
+        simulateSwap({
           networkDetails,
           publicKey,
           amountIn: amount,
-          amountInDecimals: decimals,
+          amountInDecimals: decimals || 0,
           amountOut: destinationAmount,
-          amountOutDecimals: destinationDecimals,
+          amountOutDecimals: destinationDecimals || 0,
           memo,
           transactionFee,
           path,
-        });
-      } catch (e) {
-        console.error(e);
-        captureException(
-          `Unable to simulate soroswap tx ${JSON.stringify(path)}`,
-        );
-        return;
-      }
+        }),
+      );
 
-      dispatch(saveSimulation(simulatedTx));
-      navigateTo(next);
+      if (simulateSwap.fulfilled.match(simulatedTx)) {
+        dispatch(saveSimulation(simulatedTx.payload));
+        navigateTo(next);
+      }
+      return;
     }
     navigateTo(next);
   }
