@@ -15,7 +15,7 @@ export const useNetworkFees = () => {
   const { networkUrl, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
-  const [recommendedFee, setRecommendedFee] = useState("100");
+  const [recommendedFee, setRecommendedFee] = useState("");
   const [networkCongestion, setNetworkCongestion] = useState(
     "" as NetworkCongestion,
   );
