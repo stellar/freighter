@@ -87,6 +87,28 @@ export const Settings = ({
   const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
 
   async function goToReview() {
+    if (isSoroswap) {
+      const simulatedTx = await dispatch(
+        simulateSwap({
+          networkDetails,
+          publicKey,
+          amountIn: amount,
+          amountInDecimals: decimals || 0,
+          amountOut: destinationAmount,
+          amountOutDecimals: destinationDecimals || 0,
+          memo,
+          transactionFee,
+          path,
+        }),
+      );
+
+      if (simulateSwap.fulfilled.match(simulatedTx)) {
+        dispatch(saveSimulation(simulatedTx.payload));
+        navigateTo(next);
+      }
+      return;
+    }
+
     if (isToken) {
       const assetAddress = asset.split(":")[1];
       const balances =
@@ -126,27 +148,6 @@ export const Settings = ({
       return;
     }
 
-    if (isSoroswap) {
-      const simulatedTx = await dispatch(
-        simulateSwap({
-          networkDetails,
-          publicKey,
-          amountIn: amount,
-          amountInDecimals: decimals || 0,
-          amountOut: destinationAmount,
-          amountOutDecimals: destinationDecimals || 0,
-          memo,
-          transactionFee,
-          path,
-        }),
-      );
-
-      if (simulateSwap.fulfilled.match(simulatedTx)) {
-        dispatch(saveSimulation(simulatedTx.payload));
-        navigateTo(next);
-      }
-      return;
-    }
     navigateTo(next);
   }
 
@@ -345,6 +346,7 @@ export const Settings = ({
             </View.Content>
             <View.Footer>
               <Button
+                disabled={!transactionFee}
                 size="md"
                 isFullWidth
                 onClick={goToReview}
