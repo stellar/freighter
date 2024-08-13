@@ -346,6 +346,7 @@ export const Settings = ({
             </View.Content>
             <View.Footer>
               <Button
+                disabled={!transactionFee}
                 size="md"
                 isFullWidth
                 onClick={goToReview}
