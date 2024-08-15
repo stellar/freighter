@@ -155,29 +155,31 @@ export const AdvancedSettings = () => {
     <>
       <SubviewHeader title={t("Important")} />
       <View.Content hasNoTopPadding>
-        <Notification
-          variant="warning"
-          title={t(
-            "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks.",
-          )}
-        />
-        <div className="AdvancedSettings__understood-buttons">
-          <Button
-            size="md"
-            variant="error"
-            isFullWidth
-            onClick={() => setIsUnderstood(true)}
-          >
-            {t("I understand, continue")}
-          </Button>
-          <Button
-            size="md"
-            variant="secondary"
-            isFullWidth
-            onClick={() => history.goBack()}
-          >
-            {t("Go back")}
-          </Button>
+        <div className="AdvancedSettings__column">
+          <Notification
+            variant="warning"
+            title={t(
+              "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks.",
+            )}
+          />
+          <div className="AdvancedSettings__understood-buttons">
+            <Button
+              size="md"
+              variant="error"
+              isFullWidth
+              onClick={() => setIsUnderstood(true)}
+            >
+              {t("I understand, continue")}
+            </Button>
+            <Button
+              size="md"
+              variant="secondary"
+              isFullWidth
+              onClick={() => history.goBack()}
+            >
+              {t("Go back")}
+            </Button>
+          </div>
         </div>
       </View.Content>
     </>
