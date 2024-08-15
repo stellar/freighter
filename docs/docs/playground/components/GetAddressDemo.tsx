@@ -1,31 +1,28 @@
 import React, { useState } from "react";
-import { getPublicKey } from "@stellar/freighter-api";
+import { getAddress } from "@stellar/freighter-api";
 import { PlaygroundInput } from "./basics/inputs";
 
-export const GetPublicKeyDemo = () => {
+export const GetAddressDemo = () => {
   const [publicKeyResult, setPublicKeyResult] = useState("");
 
   const btnHandler = async () => {
-    let publicKey;
-    let error = "";
+    const address = await getAddress();
 
-    try {
-      publicKey = await getPublicKey();
-    } catch (e) {
-      error = e;
+    if (address.error) {
+      setPublicKeyResult(JSON.stringify(address.error));
+    } else {
+      setPublicKeyResult(address.address);
     }
-
-    setPublicKeyResult(publicKey || error);
   };
 
   return (
     <section>
       <div>
-        What is your public key?
+        What is your wallet address?
         <PlaygroundInput readOnly value={publicKeyResult} />
       </div>
       <button type="button" onClick={btnHandler}>
-        Get Public Key
+        Get Address
       </button>
     </section>
   );

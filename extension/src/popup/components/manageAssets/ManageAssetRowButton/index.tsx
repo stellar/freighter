@@ -9,10 +9,10 @@ import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { emitMetric } from "helpers/metrics";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
+import { scanAsset } from "popup/helpers/blockaid";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   publicKeySelector,
@@ -61,6 +61,7 @@ interface ManageAssetRowButtonProps {
   setNewAssetFlags: (flags: any) => void;
   setShowUnverifiedWarning: (rowButtonShowing: boolean) => void;
   setHandleAddToken: (func: any) => void;
+  recommendedFee: string;
 }
 
 export const ManageAssetRowButton = ({
@@ -82,6 +83,7 @@ export const ManageAssetRowButton = ({
   setNewAssetFlags,
   setShowUnverifiedWarning,
   setHandleAddToken,
+  recommendedFee,
 }: ManageAssetRowButtonProps) => {
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
@@ -95,7 +97,6 @@ export const ManageAssetRowButton = ({
   const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { recommendedFee } = useNetworkFees();
 
   const isHardwareWallet = !!walletType;
   const ManageAssetRowDropdownRef = useRef<HTMLDivElement>(null);
@@ -209,6 +210,11 @@ export const ManageAssetRowButton = ({
       server,
       networkDetails,
     });
+
+    await scanAsset(
+      `${assetRowData.code}-${assetRowData.issuer}`,
+      networkDetails,
+    );
 
     if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
       setShowBlockedDomainWarning(true);

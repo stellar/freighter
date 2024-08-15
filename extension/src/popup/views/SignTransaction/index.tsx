@@ -16,8 +16,8 @@ import {
 import { ActionStatus } from "@shared/api/types";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
+  isNonSSLEnabledSelector,
   settingsNetworkDetailsSelector,
-  settingsExperimentalModeSelector,
 } from "popup/ducks/settings";
 
 import {
@@ -29,7 +29,7 @@ import {
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
-import { encodeObject } from "helpers/urls";
+import { encodeObject, parsedSearchParam } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
@@ -41,6 +41,7 @@ import {
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { navigateTo } from "popup/helpers/navigate";
+import { useScanTx } from "popup/helpers/blockaid";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -51,6 +52,7 @@ import {
   WarningMessage,
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
+  SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -77,13 +79,13 @@ export const SignTransaction = () => {
   const { accountBalances, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
-  const isExperimentalModeEnabled = useSelector(
-    settingsExperimentalModeSelector,
-  );
+  const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName, networkPassphrase } = networkDetails;
+  const { scanTx } = useScanTx();
 
   const tx = getTransactionInfo(location.search);
+  const { url } = parsedSearchParam(location.search);
 
   const {
     accountToSign: _accountToSign,
@@ -176,6 +178,14 @@ export const SignTransaction = () => {
   decodeAccountToSign();
 
   useEffect(() => {
+    const fetchData = async () => {
+      await scanTx(transactionXdr, url, networkDetails);
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
@@ -220,23 +230,8 @@ export const SignTransaction = () => {
     );
   }
 
-  if (!isHttpsDomain && !isExperimentalModeEnabled) {
-    return (
-      <WarningMessage
-        handleCloseClick={() => window.close()}
-        isActive
-        variant={WarningMessageVariant.warning}
-        header={t("WEBSITE CONNECTION IS NOT SECURE")}
-      >
-        <p>
-          <Trans domain={domain}>
-            The website <strong>{domain}</strong> does not use an SSL
-            certificate. For additional safety Freighter only works with
-            websites that provide an SSL certificate.
-          </Trans>
-        </p>
-      </WarningMessage>
-    );
+  if (!isHttpsDomain && !isNonSSLEnabled) {
+    return <SSLWarningMessage url={domain} />;
   }
 
   const hasLoadedBalances =
@@ -363,7 +358,7 @@ export const SignTransaction = () => {
       <div data-testid="SignTransaction" className="SignTransaction">
         <div className="SignTransaction__Body">
           <div className="SignTransaction__Title">
-            <PunycodedDomain domain={domain} domainTitle="" />
+            <PunycodedDomain domain={domain} />
             <div className="SignTransaction--connection-request">
               <div className="SignTransaction--connection-request-pill">
                 <Icon.Link />

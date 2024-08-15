@@ -38,6 +38,7 @@ export const useNetworkFees = () => {
         }
       } catch (e) {
         // use default values
+        setRecommendedFee("100");
         console.error(e);
       }
     })();

@@ -8,7 +8,7 @@ jobs:
     timeout-minutes: 20
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.41.0-jammy
+      image: mcr.microsoft.com/playwright:v1.45.3-jammy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -308,6 +308,7 @@ export const IntegrationTest = () => {
         assertEq(res.isMemoValidationEnabled, true);
         assertEq(res.isSafetyValidationEnabled, true);
         assertEq(res.isValidatingSafeAssetsEnabled, true);
+        assertEq(res.isNonSSLEnabled, true);
       });
 
       res = await loadSettings();
@@ -320,6 +321,7 @@ export const IntegrationTest = () => {
         assertEq(res.isSafetyValidationEnabled, true);
         assertEq(res.isValidatingSafeAssetsEnabled, true);
         assertEq(res.isExperimentalModeEnabled, true);
+        assertEq(res.isNonSSLEnabled, true);
       });
 
       res = await showBackupPhrase(testPassword);

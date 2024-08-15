@@ -1,4 +1,11 @@
-.ExperimentalFeatures {
+.AdvancedSettings {
+  &__column {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
   &__understood-buttons {
     display: flex;
     flex-direction: column;

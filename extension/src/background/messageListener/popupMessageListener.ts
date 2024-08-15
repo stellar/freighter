@@ -54,6 +54,7 @@ import {
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
   IS_HASH_SIGNING_ENABLED_ID,
+  IS_NON_SSL_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -81,6 +82,7 @@ import {
   getNetworkDetails,
   getNetworksList,
   getAssetsLists,
+  getIsNonSSLEnabled,
   HW_PREFIX,
   getBipPath,
   subscribeTokenBalance,
@@ -130,19 +132,23 @@ const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
 // eslint-disable-next-line
-export const responseQueue: Array<(message?: any) => void> = [];
+export const responseQueue: Array<
+  (message?: any, messageAddress?: any) => void
+> = [];
 export const transactionQueue: StellarSdk.Transaction[] = [];
 export const blobQueue: {
   isDomainListedAllowed: boolean;
   domain: string;
   tab: browser.Tabs.Tab | undefined;
-  blob: string;
+  message: string;
   url: string;
-  accountToSign: string;
+  accountToSign?: string;
+  address?: string;
 }[] = [];
 
 export const authEntryQueue: {
-  accountToSign: string;
+  accountToSign?: string;
+  address?: string;
   tab: browser.Tabs.Tab | undefined;
   entry: string; // xdr.SorobanAuthorizationEntry
   url: string;
@@ -1068,7 +1074,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const transactionResponse = responseQueue.pop();
 
       if (typeof transactionResponse === "function") {
-        transactionResponse(response);
+        transactionResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1087,13 +1093,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       const blob = blobQueue.pop();
       const response = blob
-        ? sourceKeys.sign(Buffer.from(blob.blob, "base64"))
+        ? sourceKeys.sign(Buffer.from(blob.message, "base64"))
         : null;
 
       const blobResponse = responseQueue.pop();
 
       if (typeof blobResponse === "function") {
-        blobResponse(response);
+        blobResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1118,7 +1124,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const entryResponse = responseQueue.pop();
 
       if (typeof entryResponse === "function") {
-        entryResponse(response);
+        entryResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1211,6 +1217,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isNonSSLEnabled,
     } = request;
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
@@ -1223,6 +1230,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       IS_VALIDATING_SAFE_ASSETS_ID,
       isValidatingSafeAssetsEnabled,
     );
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
     const networkDetails = await getNetworkDetails();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
@@ -1238,13 +1246,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       networksList: await getNetworksList(),
       isRpcHealthy,
       isSorobanPublicEnabled: featureFlags.useSorobanPublic,
+      isNonSSLEnabled: await getIsNonSSLEnabled(),
     };
   };
 
   const saveExperimentalFeatures = async () => {
-    const { isExperimentalModeEnabled, isHashSigningEnabled } = request;
+    const { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled } =
+      request;
 
     await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, isHashSigningEnabled);
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
     const currentIsExperimentalModeEnabled =
       await getIsExperimentalModeEnabled();
@@ -1272,6 +1283,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return {
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       isHashSigningEnabled: await getIsHashSigningEnabled(),
+      isNonSSLEnabled: await getIsNonSSLEnabled(),
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
     };
@@ -1288,6 +1300,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const userNotification = await getUserNotification();
     const isHashSigningEnabled = await getIsHashSigningEnabled();
     const assetsLists = await getAssetsLists();
+    const isNonSSLEnabled = await getIsNonSSLEnabled();
 
     return {
       allowList: await getAllowList(),
@@ -1303,6 +1316,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isRpcHealthy,
       userNotification,
       assetsLists,
+      isNonSSLEnabled,
     };
   };
 
