@@ -98,3 +98,9 @@ export const formatAmount = (val: string) => {
 
 export const formattedBuffer = (data: Buffer) =>
   truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
+
+export const scrubPathGkey = (route: string, url: string) => {
+  const start = url.indexOf(route);
+  const end = url.indexOf("?");
+  return url.substring(start + route.length) + "REDACTED" + url.substring(end);
+};
