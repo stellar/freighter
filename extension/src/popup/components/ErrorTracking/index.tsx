@@ -4,7 +4,9 @@ import { Integrations } from "@sentry/tracing";
 
 import { SENTRY_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
+import { scrubPathGkey } from "popup/helpers/formatters";
 import packageJson from "../../../../package.json";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 export const ErrorTracking = () => {
   const isDataSharingAllowed = useSelector(settingsDataSharingSelector);
@@ -19,6 +21,26 @@ export const ErrorTracking = () => {
         // Amplitude 4xx's on too many Posts, which is expected behavior
         /api\.amplitude\.com\/2\/httpapi/i,
       ],
+      beforeSend(event) {
+        if (!event.request) {
+          return event;
+        }
+
+        const url = event.request?.url;
+        if (url?.includes(`${INDEXER_URL}/account-history`)) {
+          const route = "account-history/";
+          const scrubbedUrl = scrubPathGkey(route, url);
+          event.request.url = scrubbedUrl;
+        }
+
+        if (url?.includes(`${INDEXER_URL}/account-balances`)) {
+          const route = "account-balances/";
+          const scrubbedUrl = scrubPathGkey(route, url);
+          event.request.url = scrubbedUrl;
+        }
+
+        return event;
+      },
     });
   }
 
