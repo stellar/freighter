@@ -46,7 +46,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
 
-  const managingAssets = assetSelect.type === AssetSelectType.MANAGE;
+  const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   useEffect(() => {
     const fetchDomains = async () => {
@@ -101,7 +101,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             contract: contractId,
           });
           // include native asset for asset dropdown selection
-        } else if (!managingAssets) {
+        } else if (!isManagingAssets) {
           collection.push({
             code,
             issuer: "",
@@ -144,7 +144,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   }, [
     assetIcons,
     balances,
-    managingAssets,
+    isManagingAssets,
     isSorobanSuported,
     isSwap,
     isSoroswapEnabled,
@@ -157,7 +157,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     <React.Fragment>
       <SubviewHeader
         title={t("Your assets")}
-        customBackIcon={!managingAssets ? <Icon.Close /> : undefined}
+        customBackIcon={!isManagingAssets ? <Icon.Close /> : undefined}
       />
       <View.Content>
         {isLoading && (
@@ -168,11 +168,11 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         <div className="ChooseAsset__wrapper">
           <div
             className={`ChooseAsset__assets${
-              managingAssets && isSorobanSuported ? "--short" : ""
+              isManagingAssets && isSorobanSuported ? "--short" : ""
             }`}
             ref={ManageAssetRowsWrapperRef}
           >
-            {managingAssets ? (
+            {isManagingAssets ? (
               <ManageAssetRows assetRows={assetRows} />
             ) : (
               <SelectAssetRows assetRows={assetRows} />
@@ -180,7 +180,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           </div>
         </div>
       </View.Content>
-      {managingAssets && (
+      {isManagingAssets && (
         <View.Footer isInline allowWrap>
           <div className="ChooseAsset__button">
             <Link to={ROUTES.searchAsset}>
