@@ -453,7 +453,6 @@ export const getAccountIndexerBalances = async (
   }
 
   if ("error" in data && (data?.error?.horizon || data?.error?.soroban)) {
-    const _err = JSON.stringify(data.error);
     captureException(
       `Failed to fetch account balances - ${response.status}: ${response.statusText}`,
     );
