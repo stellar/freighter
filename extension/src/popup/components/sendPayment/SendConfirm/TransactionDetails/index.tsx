@@ -297,7 +297,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             sourceAsset: sourceAsset.code,
           });
 
-          if (isSoroswap) {
+          if (isSoroswap && destAsset.issuer) {
             await dispatch(
               addTokenId({
                 publicKey,

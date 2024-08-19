@@ -116,6 +116,7 @@ export const saveSettings = createAsyncThunk<
     isMemoValidationEnabled: boolean;
     isSafetyValidationEnabled: boolean;
     isValidatingSafeAssetsEnabled: boolean;
+    isNonSSLEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -126,6 +127,7 @@ export const saveSettings = createAsyncThunk<
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isNonSSLEnabled,
     },
     thunkApi,
   ) => {
@@ -144,6 +146,7 @@ export const saveSettings = createAsyncThunk<
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
         isValidatingSafeAssetsEnabled,
+        isNonSSLEnabled,
       });
     } catch (e) {
       console.error(e);
