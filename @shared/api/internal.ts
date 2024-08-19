@@ -1171,11 +1171,13 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
   isValidatingSafeAssetsEnabled,
+  isNonSSLEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
+  isNonSSLEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
@@ -1199,6 +1201,7 @@ export const saveSettings = async ({
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isNonSSLEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
