@@ -103,7 +103,7 @@ export const scrubPathGkey = (route: string, url: string) => {
   try {
     const [base, slug] = url.split(route);
     const end = slug.indexOf("?") === -1 ? slug.length : slug.indexOf("?");
-    return `${base}${route}` + "REDACTED" + slug.substring(end);
+    return `${base}${route}${"REDACTED"}${slug.substring(end)}`;
   } catch (error) {
     return url;
   }
