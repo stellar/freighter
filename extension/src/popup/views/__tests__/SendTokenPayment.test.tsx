@@ -215,6 +215,7 @@ describe("SendTokenPayment", () => {
 
     await waitFor(async () => {
       const continueBtn = screen.getByTestId("send-settings-btn-continue");
+      expect(continueBtn).not.toBeDisabled();
       await fireEvent.click(continueBtn);
     });
 

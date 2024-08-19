@@ -37,8 +37,15 @@ export const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
-    <div className="Operations__pair--key">{operationKey}</div>
-    <div className="Operations__pair--value">{operationValue}</div>
+    <div className="Operations__pair--key" data-testid="OperationKeyVal__key">
+      {operationKey}
+    </div>
+    <div
+      className="Operations__pair--value"
+      data-testid="OperationKeyVal__value"
+    >
+      {operationValue}
+    </div>
   </div>
 );
 
@@ -429,10 +436,16 @@ export const KeyValueInvokeHostFnArgs = ({
   ) : (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
       <div>Parameters</div>
-      <div className="OperationParameters">
+      <div className="OperationParameters" data-testid="OperationParameters">
         {args.map((arg, ind) => (
-          <div className="Parameter" key={arg.toXDR().toString()}>
-            {argNames[ind] && <div>{argNames[ind]}</div>}
+          <div
+            className="Parameter"
+            key={arg.toXDR().toString()}
+            data-testid="Parameter"
+          >
+            {argNames[ind] && (
+              <div data-testid="ParameterName">{argNames[ind]}</div>
+            )}
             {arg.switch() === xdr.ScValType.scvAddress() ? (
               <CopyValue
                 value={scValByType(arg)}

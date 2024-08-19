@@ -7,10 +7,12 @@ import { SorobanRpcNotSupportedError } from "@shared/constants/errors";
 import { transfer } from "@shared/helpers/soroban/token";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { xlmToStroop } from "helpers/stellar";
+
 import {
   buildSorobanServer,
   getNewTxBuilder,
 } from "@shared/helpers/soroban/server";
+import { buildAndSimulateSoroswapTx } from "popup/helpers/sorobanSwap";
 
 export const simulateTokenPayment = createAsyncThunk<
   {
@@ -115,6 +117,64 @@ export const simulateTokenPayment = createAsyncThunk<
   },
 );
 
+export const simulateSwap = createAsyncThunk<
+  {
+    preparedTransaction: string;
+    simulationTransaction: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+  },
+  {
+    networkDetails: NetworkDetails;
+    publicKey: string;
+    amountIn: string;
+    amountInDecimals: number;
+    amountOut: string;
+    amountOutDecimals: number;
+    memo: string;
+    transactionFee: string;
+    path: string[];
+  },
+  {
+    rejectValue: ErrorMessage;
+  }
+>(
+  "simulateSwap",
+  async (
+    {
+      networkDetails,
+      publicKey,
+      amountIn,
+      amountInDecimals,
+      amountOut,
+      amountOutDecimals,
+      memo,
+      transactionFee,
+      path,
+    },
+    thunkApi,
+  ) => {
+    try {
+      const sim = await buildAndSimulateSoroswapTx({
+        networkDetails,
+        publicKey,
+        amountIn,
+        amountInDecimals,
+        amountOut,
+        amountOutDecimals,
+        memo,
+        transactionFee,
+        path,
+      });
+
+      return sim;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
+      });
+    }
+  },
+);
+
 interface InitialState {
   error: ErrorMessage | undefined;
   simulation: {
@@ -148,6 +208,17 @@ const tokenPaymentsSimulationSlice = createSlice({
       state.error = action.payload;
     });
     builder.addCase(simulateTokenPayment.fulfilled, (state, action) => {
+      state.simStatus = ActionStatus.SUCCESS;
+      state.simulation = action.payload;
+    });
+    builder.addCase(simulateSwap.pending, (state) => {
+      state.simStatus = ActionStatus.PENDING;
+    });
+    builder.addCase(simulateSwap.rejected, (state, action) => {
+      state.simStatus = ActionStatus.ERROR;
+      state.error = action.payload;
+    });
+    builder.addCase(simulateSwap.fulfilled, (state, action) => {
       state.simStatus = ActionStatus.SUCCESS;
       state.simulation = action.payload;
     });
