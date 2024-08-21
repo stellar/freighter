@@ -446,13 +446,16 @@ export const getAccountIndexerBalances = async (
   const data = (await response.json()) as AccountBalancesInterface;
   if (!response.ok) {
     const _err = JSON.stringify(data);
-    captureException(`Failed to fetch account balances - ${_err}`);
+    captureException(
+      `Failed to fetch account balances - ${response.status}: ${response.statusText}`,
+    );
     throw new Error(_err);
   }
 
   if ("error" in data && (data?.error?.horizon || data?.error?.soroban)) {
-    const _err = JSON.stringify(data.error);
-    captureException(`Failed to fetch account balances - ${_err}`);
+    captureException(
+      `Failed to fetch account balances - ${response.status}: ${response.statusText}`,
+    );
   }
 
   const formattedBalances = {} as NonNullable<
@@ -1171,11 +1174,13 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isSafetyValidationEnabled,
   isValidatingSafeAssetsEnabled,
+  isNonSSLEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
+  isNonSSLEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
@@ -1199,6 +1204,7 @@ export const saveSettings = async ({
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
+      isNonSSLEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
