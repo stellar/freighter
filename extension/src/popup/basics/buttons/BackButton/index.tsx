@@ -34,6 +34,7 @@ export const BackButton = ({
   return (
     <div
       className={`BackButton ${hasBackCopy ? "BackButton--has-copy" : ""}`}
+      data-testid="BackButton"
       onClick={handleClick}
     >
       {customBackIcon || <Icon.ArrowLeft />}

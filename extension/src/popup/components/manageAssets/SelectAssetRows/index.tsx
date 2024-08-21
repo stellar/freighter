@@ -98,6 +98,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
             return (
               <div
                 className="SelectAssetRows__row selectable"
+                data-testid={`Select-assets-row-${code}`}
                 key={canonical}
                 onClick={() => {
                   if (assetSelect.isSource) {
