@@ -71,7 +71,7 @@ export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
     // treat this as an external call because we're making the call from the browser, not the popup
     res = await sendMessageToContentScript(msg);
   } else {
-    res = await browser.runtime.sendMessage(msg);
+    res = (await browser.runtime.sendMessage(msg)) as Response;
   }
 
   return res;
