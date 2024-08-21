@@ -4,12 +4,7 @@ export interface SetItemParams {
   [key: string]: any;
 }
 
-// https://github.com/mozilla/webextension-polyfill/issues/424
-interface BrowserStorage extends browser.Storage.Static {
-  session: browser.Storage.StorageArea;
-}
-
-const storage = browser.storage as BrowserStorage;
+const storage = browser.storage;
 
 // browser storage uses local storage which stores values on disk and persists data across sessions
 // session storage uses session storage which stores data in memory and clears data after every "session"
@@ -27,7 +22,7 @@ export const dataStorage = (
   getItem: async (key: string) => {
     // TODO: re-enable defaults by passing an object. The value of the key-value pair will be the default
 
-    const storageResult = await storageApi.get(key);
+    const storageResult: Record<string, any> = await storageApi.get(key);
 
     return storageResult[key];
   },

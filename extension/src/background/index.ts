@@ -4,6 +4,7 @@ import {
   EXTERNAL_SERVICE_TYPES,
   SERVICE_TYPES,
 } from "@shared/constants/services";
+import { ExternalRequest, Response } from "@shared/api/types";
 import { buildStore } from "background/store";
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
@@ -16,7 +17,6 @@ import {
   migrateSorobanRpcUrlNetworkDetails,
   versionedMigration,
 } from "./helpers/dataStorage";
-import { ExternalRequest, Response } from "@shared/api/types";
 import { isExternalMessage, isResponse } from "./helpers/message";
 
 export const initContentScriptMessageListener = () => {
@@ -45,11 +45,7 @@ export const initExtensionMessageListener = () => {
       Object.values(EXTERNAL_SERVICE_TYPES).includes(req.type)
     ) {
       // eslint-disable-next-line
-      res = await freighterApiMessageListener(
-        req as ExternalRequest,
-        sender,
-        sessionStore,
-      );
+      res = await freighterApiMessageListener(req, sender, sessionStore);
     }
 
     return res;
