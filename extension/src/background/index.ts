@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import browser from "webextension-polyfill";
 import { ROUTES } from "popup/constants/routes";
 import {
