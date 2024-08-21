@@ -17,7 +17,6 @@ import {
   migrateSorobanRpcUrlNetworkDetails,
   versionedMigration,
 } from "./helpers/dataStorage";
-import { isExternalMessage, isResponse } from "./helpers/message";
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -36,16 +35,22 @@ export const initExtensionMessageListener = () => {
     // todo this is kinda ugly
     const req = request as ExternalRequest | Response;
     let res;
-    if (isResponse(req) && Object.values(SERVICE_TYPES).includes(req.type)) {
+
+    if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
       // eslint-disable-next-line
-      res = await popupMessageListener(req, sessionStore);
+      res = await popupMessageListener(req as Response, sessionStore);
     }
     if (
-      isExternalMessage(req) &&
-      Object.values(EXTERNAL_SERVICE_TYPES).includes(req.type)
+      Object.values(EXTERNAL_SERVICE_TYPES).includes(
+        req.type as EXTERNAL_SERVICE_TYPES,
+      )
     ) {
       // eslint-disable-next-line
-      res = await freighterApiMessageListener(req, sender, sessionStore);
+      res = await freighterApiMessageListener(
+        req as ExternalRequest,
+        sender,
+        sessionStore,
+      );
     }
 
     return res;
