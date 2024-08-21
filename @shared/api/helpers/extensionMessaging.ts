@@ -74,7 +74,7 @@ export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
     res = await browser.runtime.sendMessage(msg);
   }
 
-  return res;
+  return res as Response;
 };
 
 export const FreighterApiNodeError = {

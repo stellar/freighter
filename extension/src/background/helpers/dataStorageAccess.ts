@@ -6,7 +6,7 @@ export interface SetItemParams {
 
 // https://github.com/mozilla/webextension-polyfill/issues/424
 interface BrowserStorage extends browser.Storage.Static {
-  session: browser.Storage.LocalStorageArea;
+  session: browser.Storage.StorageArea;
 }
 
 const storage = browser.storage as BrowserStorage;

@@ -16,6 +16,8 @@ import {
   migrateSorobanRpcUrlNetworkDetails,
   versionedMigration,
 } from "./helpers/dataStorage";
+import { ExternalRequest, Response } from "@shared/api/types";
+import { isExternalMessage, isResponse } from "./helpers/message";
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -24,6 +26,7 @@ export const initContentScriptMessageListener = () => {
         file: "contentScript.min.js",
       });
     }
+    return undefined;
   });
 };
 
@@ -31,18 +34,22 @@ export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     const sessionStore = await buildStore();
     // todo this is kinda ugly
+    const req = request as ExternalRequest | Response;
     let res;
-    if (Object.values(SERVICE_TYPES).includes(request.type as SERVICE_TYPES)) {
+    if (isResponse(req) && Object.values(SERVICE_TYPES).includes(req.type)) {
       // eslint-disable-next-line
-      res = await popupMessageListener(request, sessionStore);
+      res = await popupMessageListener(req, sessionStore);
     }
     if (
-      Object.values(EXTERNAL_SERVICE_TYPES).includes(
-        request.type as EXTERNAL_SERVICE_TYPES,
-      )
+      isExternalMessage(req) &&
+      Object.values(EXTERNAL_SERVICE_TYPES).includes(req.type)
     ) {
       // eslint-disable-next-line
-      res = await freighterApiMessageListener(request, sender, sessionStore);
+      res = await freighterApiMessageListener(
+        req as ExternalRequest,
+        sender,
+        sessionStore,
+      );
     }
 
     return res;
