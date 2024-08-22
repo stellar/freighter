@@ -359,7 +359,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         publicKey,
         privateKey,
       },
-
       password,
       encrypterName: ScryptEncrypter.name,
     };
@@ -775,6 +774,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
+
+      // resets accounts list
+      sessionStore.dispatch(reset());
 
       const keyIdList = await getKeyIdList();
 

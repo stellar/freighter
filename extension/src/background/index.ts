@@ -4,6 +4,7 @@ import {
   EXTERNAL_SERVICE_TYPES,
   SERVICE_TYPES,
 } from "@shared/constants/services";
+import { ExternalRequest, Response } from "@shared/api/types";
 import { buildStore } from "background/store";
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
@@ -24,6 +25,7 @@ export const initContentScriptMessageListener = () => {
         file: "contentScript.min.js",
       });
     }
+    return undefined;
   });
 };
 
@@ -31,18 +33,24 @@ export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
     const sessionStore = await buildStore();
     // todo this is kinda ugly
+    const req = request as ExternalRequest | Response;
     let res;
-    if (Object.values(SERVICE_TYPES).includes(request.type as SERVICE_TYPES)) {
+
+    if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
       // eslint-disable-next-line
-      res = await popupMessageListener(request, sessionStore);
+      res = await popupMessageListener(req as Response, sessionStore);
     }
     if (
       Object.values(EXTERNAL_SERVICE_TYPES).includes(
-        request.type as EXTERNAL_SERVICE_TYPES,
+        req.type as EXTERNAL_SERVICE_TYPES,
       )
     ) {
       // eslint-disable-next-line
-      res = await freighterApiMessageListener(request, sender, sessionStore);
+      res = await freighterApiMessageListener(
+        req as ExternalRequest,
+        sender,
+        sessionStore,
+      );
     }
 
     return res;

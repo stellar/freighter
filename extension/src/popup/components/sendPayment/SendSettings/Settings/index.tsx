@@ -3,11 +3,13 @@ import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { Asset } from "stellar-sdk";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { isMuxedAccount } from "helpers/stellar";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { isMuxedAccount, getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
@@ -19,13 +21,14 @@ import {
   saveTransactionFee,
   saveSimulation,
   transactionSubmissionSelector,
+  saveIsToken,
 } from "popup/ducks/transactionSubmission";
 import { simulateTokenPayment, simulateSwap } from "popup/ducks/token-payment";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { parseTokenAmount } from "popup/helpers/soroban";
+import { parseTokenAmount, isContractId } from "popup/helpers/soroban";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 
@@ -85,6 +88,24 @@ export const Settings = ({
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
+  const isSendSacToContract =
+    isContractId(destination) &&
+    !isContractId(getAssetFromCanonical(asset).issuer);
+  const getSacContractAddress = () => {
+    if (asset === "native") {
+      return getNativeContractDetails(networkDetails).contract;
+    }
+
+    const assetFromCanonical = new Asset(
+      getAssetFromCanonical(asset).code,
+      getAssetFromCanonical(asset).issuer,
+    );
+    const contractAddress = assetFromCanonical.contractId(
+      networkDetails.networkPassphrase,
+    );
+
+    return contractAddress;
+  };
 
   async function goToReview() {
     if (isSoroswap) {
@@ -109,8 +130,10 @@ export const Settings = ({
       return;
     }
 
-    if (isToken) {
-      const assetAddress = asset.split(":")[1];
+    if (isToken || isSendSacToContract) {
+      const assetAddress = isSendSacToContract
+        ? getSacContractAddress()
+        : asset.split(":")[1];
       const balances =
         accountBalances.balances || ({} as NonNullable<Balances>);
       const assetBalance = balances[asset] as TokenBalance;
@@ -119,10 +142,9 @@ export const Settings = ({
         throw new Error("Asset Balance not available");
       }
 
-      const parsedAmount = parseTokenAmount(
-        amount,
-        Number(assetBalance.decimals),
-      );
+      const parsedAmount = isSendSacToContract
+        ? parseTokenAmount(amount, 7)
+        : parseTokenAmount(amount, Number(assetBalance.decimals));
 
       const params = {
         publicKey,
@@ -143,6 +165,7 @@ export const Settings = ({
 
       if (simulateTokenPayment.fulfilled.match(simulation)) {
         dispatch(saveSimulation(simulation.payload));
+        dispatch(saveIsToken(true));
         navigateTo(next);
       }
       return;

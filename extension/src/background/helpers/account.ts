@@ -256,10 +256,6 @@ export const subscribeAccount = async (publicKey: string) => {
     }
   } catch (e) {
     console.error(e);
-    // Turn on when Mercury is enabled
-    // captureException(
-    //   `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
-    // );
   }
 
   return { publicKey };
@@ -296,9 +292,7 @@ export const subscribeTokenBalance = async (
     }
   } catch (e) {
     console.error(e);
-    captureException(
-      `Failed to subscribe token balance - ${JSON.stringify(e)}`,
-    );
+    captureException(`Failed to subscribe token balance - ${contractId}`);
   }
 };
 
@@ -324,9 +318,7 @@ export const subscribeTokenHistory = async (
     }
   } catch (e) {
     console.error(e);
-    captureException(
-      `Failed to subscribe token history - ${JSON.stringify(e)}`,
-    );
+    captureException(`Failed to subscribe token history - ${contractId}`);
   }
 };
 

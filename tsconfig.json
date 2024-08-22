@@ -1,6 +1,7 @@
 {
   "extends": "@stellar/tsconfig",
   "compilerOptions": {
+    "sourceMap": true,
     "importHelpers": true,
     "target": "ES2019",
     "lib": ["dom", "dom.iterable", "esnext"],

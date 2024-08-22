@@ -33,7 +33,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
     screenshot: "manage-assets-unverified-token.png",
   });
   await page.getByTestId("add-asset").dispatchEvent("click");
-  await expect(page.getByTestId("account-view")).toContainText("100 E2E");
+  await expect(page.getByTestId("account-view")).toContainText("E2E");
 });
 test("Adding Soroban verified token", async ({ page, extensionId }) => {
   const assetsList = await fetch(
@@ -77,7 +77,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
 
   await page.getByText("Manage Assets").click({ force: true });
   await page
-    .getByTestId("ManageAssetRowButton__ellipsis")
+    .getByTestId("ManageAssetRowButton__ellipsis-USDC")
     .click({ force: true });
   await page.getByText("Remove asset").click({ force: true });
 

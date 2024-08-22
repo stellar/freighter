@@ -32,9 +32,6 @@ import { truncateString } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { FlaggedKeys } from "types/transactions";
 import {
-  FnArgsCreateSac,
-  FnArgsCreateWasm,
-  FnArgsInvoke,
   buildInvocationTree,
   formatTokenAmount,
   getInvocationDetails,
@@ -338,15 +335,9 @@ const AuthDetail = ({
   const { t } = useTranslation();
   const rootInvocation = authEntry.rootInvocation();
   const details = getInvocationDetails(rootInvocation);
-  const invocations = details.filter(
-    (detail) => detail.type === "invoke",
-  ) as FnArgsInvoke[];
-  const createWasms = details.filter(
-    (detail) => detail.type === "wasm",
-  ) as FnArgsCreateWasm[];
-  const createSacs = details.filter(
-    (detail) => detail.type === "sac",
-  ) as FnArgsCreateSac[];
+  const invocations = details.filter((detail) => detail.type === "invoke");
+  const createWasms = details.filter((detail) => detail.type === "wasm");
+  const createSacs = details.filter((detail) => detail.type === "sac");
 
   const rootJson = buildInvocationTree(rootInvocation);
   const isInvokeContract = rootInvocation.function().switch().value === 0;

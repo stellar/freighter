@@ -27,6 +27,7 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
+import { isContractId } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
@@ -88,7 +89,7 @@ const InvalidAddressWarning = () => {
         icon={<Icon.Warning />}
         title={t("INVALID STELLAR ADDRESS")}
       >
-        {t("Addresses are uppercase and begin with letters “G“ or “M“.")}
+        {t("Addresses are uppercase and begin with letters “G“, “M“, or “C“.")}
       </Notification>
     </div>
   );
@@ -106,7 +107,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   );
 
   const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
-  const [validatedPubKey, setValidatedPubKey] = useState("");
+  const [validatedAddress, setValidatedAddress] = useState("");
   const [fedAddress, setFedAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -122,14 +123,17 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const formik = useFormik({
     initialValues: { destination: federationAddress || destination },
     onSubmit: () => {
-      handleContinue(validatedPubKey, fedAddress);
+      handleContinue(validatedAddress, fedAddress);
     },
     validateOnChange: false,
     validate: (values) => {
-      if (isValidPublicKey(values.destination)) {
+      if (
+        isValidPublicKey(values.destination) ||
+        isContractId(values.destination)
+      ) {
         return {};
       }
-      return { destination: t("invalid public key") };
+      return { destination: t("invalid destination address") };
     },
   });
 
@@ -157,19 +161,19 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       }
       // muxed account
       if (isMuxedAccount(inputDest)) {
-        setValidatedPubKey(inputDest);
+        setValidatedAddress(inputDest);
       } else if (isFederationAddress(inputDest)) {
         // federation address
         try {
           const fedResp = await Federation.Server.resolve(inputDest);
-          setValidatedPubKey(fedResp.account_id);
+          setValidatedAddress(fedResp.account_id);
           setFedAddress(inputDest);
         } catch (e) {
           formik.setErrors({ destination: t("invalid federation address") });
         }
       } else {
         // else, a regular account
-        setValidatedPubKey(inputDest);
+        setValidatedAddress(inputDest);
       }
       setIsLoading(false);
     }, 2000),
@@ -192,30 +196,35 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       setIsLoading(true);
     }
     // reset
-    setValidatedPubKey("");
+    setValidatedAddress("");
     setFedAddress("");
     db(formik.values.destination);
   }, [db, formik.values.destination]);
 
   // on valid input get destination balances
   useEffect(() => {
-    if (!validatedPubKey) {
+    if (!validatedAddress) {
       return;
     }
 
     // TODO - remove once wallet-sdk can handle muxed
-    let publicKey = validatedPubKey;
-    if (isMuxedAccount(validatedPubKey)) {
-      const mAccount = MuxedAccount.fromAddress(validatedPubKey, "0");
-      publicKey = mAccount.baseAccount().accountId();
+    let address = validatedAddress;
+
+    if (isContractId(validatedAddress)) {
+      return;
+    }
+
+    if (isMuxedAccount(validatedAddress)) {
+      const mAccount = MuxedAccount.fromAddress(validatedAddress, "0");
+      address = mAccount.baseAccount().accountId();
     }
     dispatch(
       getDestinationBalances({
-        publicKey,
+        publicKey: address,
         networkDetails,
       }),
     );
-  }, [dispatch, validatedPubKey, networkDetails]);
+  }, [dispatch, validatedAddress, networkDetails]);
 
   return (
     <React.Fragment>
@@ -262,10 +271,10 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                                   address,
                                 );
                                 const publicKey = fedResp.account_id;
-                                setValidatedPubKey(publicKey);
+                                setValidatedAddress(publicKey);
                                 handleContinue(publicKey, address);
                               } else {
-                                setValidatedPubKey(address);
+                                setValidatedAddress(address);
                                 handleContinue(address);
                               }
                             }}
@@ -305,8 +314,8 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                           )}
                           <div className="SendTo__subheading">Address</div>
                           <div className="SendTo__subheading-identicon">
-                            <IdenticonImg publicKey={validatedPubKey} />
-                            <span>{truncatedPublicKey(validatedPubKey)}</span>
+                            <IdenticonImg publicKey={validatedAddress} />
+                            <span>{truncatedPublicKey(validatedAddress)}</span>
                           </div>
                         </>
                       ) : null}

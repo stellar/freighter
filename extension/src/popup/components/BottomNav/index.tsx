@@ -22,6 +22,7 @@ const BottomNavLink = ({ children, to }: NavLinkProps) => (
     to={to}
     activeClassName="BottomNav--link--active"
     className="BottomNav--link"
+    data-testid={`BottomNav-link-${to.replace("/", "")}`}
   >
     {children}
   </NavLink>
