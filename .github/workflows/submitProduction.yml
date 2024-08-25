@@ -93,7 +93,7 @@ jobs:
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
       - name: Remove scripts tag
-        uses: restackio/update-json-file-action@a3a75ee5960338f5bcc83bfb81947f283fca90eb #v2.1
+        uses: restackio/update-json-file-action@36b1f6009a0611cc89b70bb0403dbd6c194dc3d0 #v2.1
         with:
           file: ./extension/build/manifest.json
           fields: '{"background": {"service_worker": "background.min.js"}}'
