@@ -5,7 +5,7 @@ import {
   Heading,
   Notification,
   Loader,
-  Paragraph,
+  Text,
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Formik, Form } from "formik";
@@ -63,9 +63,9 @@ export const ConfirmMigration = () => {
                 <Heading as="h1" size="xl">
                   <div>{t("Migrating...")}</div>
                 </Heading>
-                <Paragraph asDiv size="md" className="MigrationParagraph">
+                <Text as="div" size="md" className="MigrationParagraph">
                   {t("Please don’t close this window.")}
-                </Paragraph>
+                </Text>
               </div>
             ) : (
               <>

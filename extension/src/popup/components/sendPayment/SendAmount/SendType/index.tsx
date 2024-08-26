@@ -96,7 +96,7 @@ export const SendType = () => {
       <SubviewHeader
         title={t("Send Type")}
         customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
       />
       <Formik
         initialValues={{

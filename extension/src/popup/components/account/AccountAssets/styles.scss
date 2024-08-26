@@ -5,7 +5,7 @@ $loader-light-color: #444961;
   &__asset {
     align-items: center;
     display: flex;
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     font-size: 1rem;
     line-height: 1.5rem;
 
@@ -26,7 +26,7 @@ $loader-light-color: #444961;
 
     &--lp-share,
     &--soroban-token {
-      border: 1px solid var(--color-gray-20);
+      border: 1px solid var(--sds-clr-gray-02);
       height: 32px;
       width: 32px;
       border-radius: 2rem;
@@ -36,7 +36,7 @@ $loader-light-color: #444961;
       font-size: 0.875rem;
       font-weight: var(--font-weight-semi-bold);
       line-height: 1.5rem;
-      color: var(--color-gray-70);
+      color: var(--sds-clr-gray-12);
     }
 
     &--soroban-token {

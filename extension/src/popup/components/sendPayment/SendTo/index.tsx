@@ -86,7 +86,7 @@ const InvalidAddressWarning = () => {
     <div className="SendTo__info-block">
       <Notification
         variant="warning"
-        icon={<Icon.Warning />}
+        icon={<Icon.InfoOctagon />}
         title={t("INVALID STELLAR ADDRESS")}
       >
         {t("Addresses are uppercase and begin with letters “G“, “M“, or “C“.")}

@@ -18,13 +18,13 @@
   }
 
   &__selector {
-    border-bottom: 1px solid var(--color-gray-40);
+    border-bottom: 1px solid var(--sds-clr-gray-04);
     display: flex;
     gap: 1rem;
     margin: 0.5rem 0 1.5rem;
 
     &__item {
-      color: var(--color-gray-70);
+      color: var(--sds-clr-gray-12);
       cursor: pointer;
       font-size: 0.875rem;
       font-weight: var(--font-weight-medium);

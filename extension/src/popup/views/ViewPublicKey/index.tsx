@@ -40,7 +40,7 @@ export const ViewPublicKey = () => {
       </button>
     ) : (
       <button onClick={() => setIsEditingName(true)}>
-        <Icon.Edit />
+        <Icon.Edit01 />
       </button>
     );
   };

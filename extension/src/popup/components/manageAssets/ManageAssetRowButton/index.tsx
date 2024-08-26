@@ -334,7 +334,7 @@ export const ManageAssetRowButton = ({
                     <div className="ManageAssetRowButton__label">
                       {t("Copy address")}
                     </div>
-                    <Icon.ContentCopy />
+                    <Icon.Copy01 />
                   </>
                 </CopyText>
               </div>
@@ -385,7 +385,7 @@ export const ManageAssetRowButton = ({
       ) : (
         <Button
           size="md"
-          variant="secondary"
+          variant="tertiary"
           disabled={isActionPending}
           isLoading={isActionPending && assetSubmitting === canonicalAsset}
           onClick={() => {

@@ -37,7 +37,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
       <SubviewHeader
         title="Allowed Slippage"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
             // TODO - add link to FAQ when added

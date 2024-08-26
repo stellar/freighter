@@ -128,7 +128,7 @@ export const ReviewAuth = () => {
             <PunycodedDomain domain={params.domain} />
             <div className="ReviewAuth--connection-request">
               <div className="ReviewAuth--connection-request-pill">
-                <Icon.Link />
+                <Icon.ArrowsRight />
                 <p>Transaction Request</p>
               </div>
             </div>
@@ -277,7 +277,7 @@ const TransferSummary = ({
       </div>
       <div className="SummaryBlock">
         <div className="SummaryBlock__Title">
-          <Icon.Toll width="18" height="18" />
+          <Icon.CurrencyDollarCircle width="18" height="18" />
           <p className="FieldTitle">Amount</p>
         </div>
         <div className="SummaryBlock__Title">
@@ -466,7 +466,7 @@ const AuthDetail = ({
                 className="AuthDetail__TitleRow"
                 data-testid="AuthDetail__invocation"
               >
-                <Icon.Code />
+                <Icon.CodeSnippet01 />
                 <h5>Invocation</h5>
               </div>
               <div className="AuthDetail__InfoBlock">
@@ -494,7 +494,7 @@ const AuthDetail = ({
           {createWasms.map((detail) => (
             <React.Fragment key={detail.hash}>
               <div className="AuthDetail__TitleRow">
-                <Icon.Code />
+                <Icon.CodeSnippet01 />
                 <h5>Contract Creation</h5>
               </div>
               <div className="AuthDetail__InfoBlock">
@@ -521,7 +521,7 @@ const AuthDetail = ({
           {createSacs.map((detail) => (
             <React.Fragment key={detail.asset}>
               <div className="AuthDetail__TitleRow">
-                <Icon.Code />
+                <Icon.CodeSnippet01 />
                 <h5>Contract Creation</h5>
               </div>
               <div className="AuthDetail__InfoBlock">

@@ -29,7 +29,7 @@ export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
       <SubviewHeader
         title="Transaction Timeout"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
             infoText={

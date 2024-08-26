@@ -20,7 +20,6 @@ export const PillButton = ({
       disabled={disabled}
       isLoading={isLoading}
       variant="secondary"
-      isPill
       {...props}
     >
       {children}

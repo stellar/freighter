@@ -7,9 +7,9 @@
   justify-content: center;
 
   &__inset {
-    background: var(--color-gray-10);
+    background: var(--sds-clr-gray-01);
     border-radius: 0.5rem;
-    border: 1px solid var(--color-gray-30);
+    border: 1px solid var(--sds-clr-gray-03);
     margin: 0 auto;
     max-width: 19.5rem;
     padding: 1rem;
@@ -22,7 +22,7 @@
   }
 
   &__body {
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
     font-size: 0.875rem;
     line-height: 1.25rem;
     margin-bottom: 1rem;

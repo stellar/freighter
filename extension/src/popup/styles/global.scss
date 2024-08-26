@@ -22,10 +22,13 @@
   --dropdown-animation: 0.3s ease-out;
 
   --color-shadow-rgb: 0, 0, 0;
+
+  --z-index-tooltip: 20;
+  --z-index-modal: 30;
 }
 
 body {
-  color: var(--color-gray-80);
+  color: var(--sds-clr-gray-12);
   overscroll-behavior: none;
   margin: 0;
   padding: 0;
@@ -109,4 +112,9 @@ a {
 .sds-theme-dark ul,
 .sds-theme-dark ol {
   color: inherit !important;
+}
+
+// SDS overrides
+.Heading--lg {
+  line-height: normal;
 }

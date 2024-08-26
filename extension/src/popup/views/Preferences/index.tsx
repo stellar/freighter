@@ -84,6 +84,7 @@ export const Preferences = () => {
                     {t("Validate addresses that require a memo")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isValidatingMemoValue}
                     customInput={<Field />}
                     id="isValidatingMemoValue"
@@ -97,6 +98,7 @@ export const Preferences = () => {
                     {t("Block malicious or unsafe addresses and domains")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isValidatingSafetyValue}
                     customInput={<Field />}
                     id="isValidatingSafetyValue"
@@ -111,6 +113,7 @@ export const Preferences = () => {
                     {t("Block trustlines to malicious or fraudulent assets")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isValidatingSafeAssetsValue}
                     customInput={<Field />}
                     id="isValidatingSafeAssetsValue"
@@ -133,6 +136,7 @@ export const Preferences = () => {
                     )}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isDataSharingAllowedValue}
                     customInput={<Field />}
                     id="isDataSharingAllowedValue"
@@ -155,6 +159,7 @@ export const Preferences = () => {
                     )}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isNonSSLEnabledValue}
                     customInput={<Field />}
                     id="isNonSSLEnabledValue"
