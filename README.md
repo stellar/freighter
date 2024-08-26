@@ -77,7 +77,7 @@ Next, run the Safari Extension Converter locally to convert Freighter to an xcod
 Example from the project root -
 `xcrun safari-web-extension-converter freighter/extension/build --project-location freighter-safari`
 
-That should launch your project in xcode. If you have not allowed unsigned extensions, you will see a related warning but otherwise you should see Freighter launched on your Safari instance.
+That should launch your project in xcode. You should run the project, with a target of macos. If you have not allowed unsigned extensions, you will see a related warning but otherwise you should see Freighter launched on your Safari instance.
 
 ### Useful URLs:
 
