@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import { Store } from "redux";
+import * as StellarSdk from "stellar-sdk";
 import {
-  Keypair,
-  Networks,
-  Operation,
-  Transaction,
-  TransactionBuilder,
-  hash,
-} from "stellar-sdk";
-import { KeyManager, KeyManagerPlugins, KeyType } from "@stellar/wallet-sdk";
+  KeyManager,
+  BrowserStorageKeyStore,
+  ScryptEncrypter,
+  KeyType,
+} from "@stellar/typescript-wallet-sdk-km";
+import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
 import browser from "webextension-polyfill";
 // @ts-ignore
 import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
@@ -33,7 +34,9 @@ import { MessageResponder } from "background/types";
 
 import {
   ALLOWLIST_ID,
+  ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
+  ASSETS_LISTS_ID,
   CACHED_ASSET_ICONS_ID,
   CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
@@ -50,6 +53,8 @@ import {
   NETWORK_ID,
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
+  IS_HASH_SIGNING_ENABLED_ID,
+  IS_NON_SSL_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -69,11 +74,15 @@ import {
   getIsSafetyValidationEnabled,
   getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
+  getIsHashSigningEnabled,
   getIsHardwareWalletActive,
   getIsRpcHealthy,
+  getUserNotification,
   getSavedNetworks,
   getNetworkDetails,
   getNetworksList,
+  getAssetsLists,
+  getIsNonSSLEnabled,
   HW_PREFIX,
   getBipPath,
   subscribeTokenBalance,
@@ -87,7 +96,7 @@ import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { migrateTrustlines } from "background/helpers/migration";
 import { xlmToStroop } from "helpers/stellar";
 
@@ -112,28 +121,38 @@ import {
   STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
   STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
 } from "background/constants/apiUrls";
+import {
+  AssetsListKey,
+  DEFAULT_ASSETS_LISTS,
+} from "@shared/constants/soroban/token";
+import { getSdk } from "@shared/helpers/stellar";
 
 // number of public keys to auto-import
 const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
-export const responseQueue: Array<(message?: any) => void> = [];
-export const transactionQueue: Array<Transaction> = [];
-export const blobQueue: Array<{
+// eslint-disable-next-line
+export const responseQueue: Array<
+  (message?: any, messageAddress?: any) => void
+> = [];
+export const transactionQueue: StellarSdk.Transaction[] = [];
+export const blobQueue: {
   isDomainListedAllowed: boolean;
   domain: string;
   tab: browser.Tabs.Tab | undefined;
-  blob: string;
+  message: string;
   url: string;
-  accountToSign: string;
-}> = [];
+  accountToSign?: string;
+  address?: string;
+}[] = [];
 
-export const authEntryQueue: Array<{
-  accountToSign: string;
+export const authEntryQueue: {
+  accountToSign?: string;
+  address?: string;
   tab: browser.Tabs.Tab | undefined;
   entry: string; // xdr.SorobanAuthorizationEntry
   url: string;
-}> = [];
+}[] = [];
 
 interface KeyPair {
   publicKey: string;
@@ -142,12 +161,16 @@ interface KeyPair {
 
 export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const localKeyStore = new KeyManagerPlugins.BrowserStorageKeyStore();
-  localKeyStore.configure({ storage: browserLocalStorage });
+  const localKeyStore = new BrowserStorageKeyStore();
+  // ts-wallet-sdk storage area definition clashes with webkit polyfills
+  localKeyStore.configure({
+    storage:
+      browserLocalStorage as any as BrowserStorageConfigParams["storage"],
+  });
   const keyManager = new KeyManager({
     keyStore: localKeyStore,
   });
-  keyManager.registerEncrypter(KeyManagerPlugins.ScryptEncrypter);
+  keyManager.registerEncrypter(ScryptEncrypter);
 
   const _unlockKeystore = ({
     password,
@@ -270,7 +293,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       },
 
       password,
-      encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
+      encrypterName: ScryptEncrypter.name,
     };
 
     let keyStore = { id: "" };
@@ -336,9 +359,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         publicKey,
         privateKey,
       },
-
       password,
-      encrypterName: KeyManagerPlugins.ScryptEncrypter.name,
+      encrypterName: ScryptEncrypter.name,
     };
 
     let keyStore = { id: "" };
@@ -490,7 +512,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     try {
       await _unlockKeystore({ keyID, password });
-      sourceKeys = Keypair.fromSecret(privateKey);
+      sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
       return { error: "Please enter a valid secret key/password combination" };
@@ -752,7 +774,24 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         publicKey: wallet.getPublicKey(0),
         privateKey: wallet.getSecret(0),
       };
-      localStore.clear();
+
+      // resets accounts list
+      sessionStore.dispatch(reset());
+
+      const keyIdList = await getKeyIdList();
+
+      if (keyIdList.length) {
+        /* Clear any existing account data while maintaining app settings */
+
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let i = 0; i < keyIdList.length; i += 1) {
+          await localStore.remove(`stellarkeys:${keyIdList[i]}`);
+        }
+
+        await localStore.setItem(KEY_ID_LIST, []);
+        await localStore.remove(ACCOUNT_NAME_LIST_ID);
+      }
+
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
       await _storeAccount({
@@ -843,10 +882,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const _getLocalStorageAccounts = async (password: string) => {
     const keyIdList = await getKeyIdList();
     const accountNameList = await getAccountNameList();
-    const unlockedAccounts = [] as Array<Account>;
+    const unlockedAccounts = [] as Account[];
 
     // for loop to preserve order of accounts
-    // eslint-disable-next-line no-plusplus
+    // eslint-disable-next-line
     for (let i = 0; i < keyIdList.length; i++) {
       const keyId = keyIdList[i];
       let keyStore;
@@ -1011,11 +1050,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signTransaction = () => {
+  const signTransaction = async () => {
     const privateKey = privateKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+
+    const Sdk = getSdk(networkDetails.networkPassphrase);
 
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
 
       let response;
 
@@ -1034,7 +1076,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const transactionResponse = responseQueue.pop();
 
       if (typeof transactionResponse === "function") {
-        transactionResponse(response);
+        transactionResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1044,19 +1086,22 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signBlob = async () => {
     const privateKey = privateKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+
+    const Sdk = getSdk(networkDetails.networkPassphrase);
 
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
 
       const blob = blobQueue.pop();
       const response = blob
-        ? await sourceKeys.sign(Buffer.from(blob.blob, "base64"))
+        ? sourceKeys.sign(Buffer.from(blob.message, "base64"))
         : null;
 
       const blobResponse = responseQueue.pop();
 
       if (typeof blobResponse === "function") {
-        blobResponse(response);
+        blobResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1066,19 +1111,22 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signAuthEntry = async () => {
     const privateKey = privateKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+
+    const Sdk = getSdk(networkDetails.networkPassphrase);
 
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       const authEntry = authEntryQueue.pop();
 
       const response = authEntry
-        ? await sourceKeys.sign(hash(Buffer.from(authEntry.entry, "base64")))
+        ? sourceKeys.sign(Sdk.hash(Buffer.from(authEntry.entry, "base64")))
         : null;
 
       const entryResponse = responseQueue.pop();
 
       if (typeof entryResponse === "function") {
-        entryResponse(response);
+        entryResponse(response, sourceKeys.publicKey());
         return {};
       }
     }
@@ -1096,11 +1144,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signFreighterTransaction = () => {
     const { transactionXDR, network } = request;
-    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
+
+    const Sdk = getSdk(network);
+
+    const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -1111,11 +1162,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const signFreighterSorobanTransaction = () => {
     const { transactionXDR, network } = request;
 
-    const transaction = TransactionBuilder.fromXDR(transactionXDR, network);
+    const Sdk = getSdk(network);
+
+    const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
 
     const privateKey = privateKeySelector(sessionStore.getState());
     if (privateKey.length) {
-      const sourceKeys = Keypair.fromSecret(privateKey);
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
       return { signedTransaction: transaction.toXDR() };
     }
@@ -1166,10 +1219,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
-      isExperimentalModeEnabled,
+      isNonSSLEnabled,
     } = request;
-
-    const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
@@ -1181,10 +1232,39 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       IS_VALIDATING_SAFE_ASSETS_ID,
       isValidatingSafeAssetsEnabled,
     );
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
+
+    const networkDetails = await getNetworkDetails();
+    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const featureFlags = await getFeatureFlags();
+
+    return {
+      allowList: await getAllowList(),
+      isDataSharingAllowed,
+      isMemoValidationEnabled: await getIsMemoValidationEnabled(),
+      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
+      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
+      networkDetails,
+      networksList: await getNetworksList(),
+      isRpcHealthy,
+      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
+      isNonSSLEnabled: await getIsNonSSLEnabled(),
+    };
+  };
+
+  const saveExperimentalFeatures = async () => {
+    const { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled } =
+      request;
+
+    await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, isHashSigningEnabled);
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
+
+    const currentIsExperimentalModeEnabled =
+      await getIsExperimentalModeEnabled();
 
     if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
       /* Disable Mainnet access and automatically switch the user to Futurenet
-      if user is enabling experimental mode and vice-versa */
+        if user is enabling experimental mode and vice-versa */
       const currentNetworksList = await getNetworksList();
 
       const defaultNetworkDetails = isExperimentalModeEnabled
@@ -1202,21 +1282,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isExperimentalModeEnabled,
     );
 
-    const networkDetails = await getNetworkDetails();
-    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
-    const featureFlags = await getFeatureFlags();
-
     return {
-      allowList: await getAllowList(),
-      isDataSharingAllowed,
-      isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
-      networkDetails,
+      isHashSigningEnabled: await getIsHashSigningEnabled(),
+      isNonSSLEnabled: await getIsNonSSLEnabled(),
+      networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
-      isRpcHealthy,
-      isSorobanPublicEnabled: featureFlags.useSorobanPublic,
     };
   };
 
@@ -1228,6 +1299,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const networkDetails = await getNetworkDetails();
     const featureFlags = await getFeatureFlags();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const userNotification = await getUserNotification();
+    const isHashSigningEnabled = await getIsHashSigningEnabled();
+    const assetsLists = await getAssetsLists();
+    const isNonSSLEnabled = await getIsNonSSLEnabled();
 
     return {
       allowList: await getAllowList(),
@@ -1236,10 +1311,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
       isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
+      isHashSigningEnabled,
       networkDetails: await getNetworkDetails(),
       networksList: await getNetworksList(),
       isSorobanPublicEnabled: featureFlags.useSorobanPublic,
       isRpcHealthy,
+      userNotification,
+      assetsLists,
+      isNonSSLEnabled,
     };
   };
 
@@ -1402,7 +1481,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const getMigratableAccounts = async () => {
-    const keyIdList = await getKeyIdList();
+    const keyIdList = (await getKeyIdList()) as string[];
 
     const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
     const allAccounts = allAccountsSelector(sessionStore.getState());
@@ -1450,16 +1529,20 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const migratedAccounts = [];
 
     const password = passwordSelector(sessionStore.getState());
-    if (!password || !migratedMnemonicPhrase)
+    if (!password || !migratedMnemonicPhrase) {
       return { error: "Authentication error" };
+    }
 
     const newWallet = fromMnemonic(migratedMnemonicPhrase);
     const keyIdList: string = await getKeyIdList();
     const fee = xlmToStroop(recommendedFee).toFixed();
 
     // we expect all migrations to be done on MAINNET
-    const server = stellarSdkServer(NETWORK_URLS.PUBLIC);
-    const networkPassphrase = Networks.PUBLIC;
+    const server = stellarSdkServer(
+      NETWORK_URLS.PUBLIC,
+      MAINNET_NETWORK_DETAILS.networkPassphrase,
+    );
+    const networkPassphrase = StellarSdk.Networks.PUBLIC;
 
     /*
       For each migratable balance, we'll go through the following steps:
@@ -1472,6 +1555,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account
     */
 
+    // eslint-disable-next-line
     for (let i = 0; i < balancesToMigrate.length; i += 1) {
       const {
         publicKey,
@@ -1501,7 +1585,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       };
 
       // eslint-disable-next-line no-await-in-loop
-      const transaction = await new TransactionBuilder(sourceAccount, {
+      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
         fee,
         networkPassphrase,
       });
@@ -1519,13 +1603,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         .toString();
 
       transaction.addOperation(
-        Operation.createAccount({
+        StellarSdk.Operation.createAccount({
           destination: newKeyPair.publicKey,
           startingBalance,
         }),
       );
 
-      const sourceKeys = Keypair.fromSecret(store.privateKey);
+      const sourceKeys = StellarSdk.Keypair.fromSecret(store.privateKey);
       const builtTransaction = transaction.setTimeout(180).build();
 
       try {
@@ -1567,12 +1651,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
         // eslint-disable-next-line no-await-in-loop
-        const mergeTransaction = await new TransactionBuilder(sourceAccount, {
-          fee,
-          networkPassphrase,
-        });
+        const mergeTransaction = new StellarSdk.TransactionBuilder(
+          sourceAccount,
+          {
+            fee,
+            networkPassphrase,
+          },
+        );
         mergeTransaction.addOperation(
-          Operation.accountMerge({
+          StellarSdk.Operation.accountMerge({
             destination: newKeyPair.publicKey,
           }),
         );
@@ -1636,6 +1723,57 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     };
   };
 
+  const addAssetsList = async () => {
+    const { assetsList, network } = request;
+
+    const currentAssetsLists = await getAssetsLists();
+
+    if (
+      currentAssetsLists[network].some(
+        (list: { url: string }) => list.url === assetsList.url,
+      )
+    ) {
+      return {
+        error: "Asset list already exists",
+      };
+    }
+
+    currentAssetsLists[network].push(assetsList);
+
+    await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
+
+    return { assetsLists: await getAssetsLists() };
+  };
+
+  const modifyAssetsList = async () => {
+    const { assetsList, network, isDeleteAssetsList } = request;
+
+    const currentAssetsLists = await getAssetsLists();
+    const networkAssetsLists = currentAssetsLists[network];
+
+    const index = networkAssetsLists.findIndex(
+      ({ url }: { url: string }) => url === assetsList.url,
+    );
+
+    if (
+      index < DEFAULT_ASSETS_LISTS[network as AssetsListKey].length &&
+      isDeleteAssetsList
+    ) {
+      // if a user is somehow able to trigger a delete on a default asset list, return an error
+      return { error: "Unable to delete asset list" };
+    }
+
+    if (isDeleteAssetsList) {
+      networkAssetsLists.splice(index, 1);
+    } else {
+      networkAssetsLists.splice(index, 1, assetsList);
+    }
+
+    await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
+
+    return { assetsLists: await getAssetsLists() };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1651,7 +1789,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CHANGE_NETWORK]: changeNetwork,
     [SERVICE_TYPES.GET_MNEMONIC_PHRASE]: getMnemonicPhrase,
     [SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE]: confirmMnemonicPhrase,
-    [SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE]: confirmMigratedMnemonicPhrase,
+    [SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE]:
+      confirmMigratedMnemonicPhrase,
     [SERVICE_TYPES.RECOVER_ACCOUNT]: recoverAccount,
     [SERVICE_TYPES.CONFIRM_PASSWORD]: confirmPassword,
     [SERVICE_TYPES.GRANT_ACCESS]: grantAccess,
@@ -1662,13 +1801,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
-    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]: signFreighterSorobanTransaction,
+    [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]:
+      signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_ALLOWLIST]: saveAllowList,
     [SERVICE_TYPES.SAVE_SETTINGS]: saveSettings,
+    [SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES]: saveExperimentalFeatures,
     [SERVICE_TYPES.LOAD_SETTINGS]: loadSettings,
     [SERVICE_TYPES.GET_CACHED_ASSET_ICON]: getCachedAssetIcon,
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
@@ -1683,7 +1824,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS]: getMigratableAccounts,
     [SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE]: getMigratedMnemonicPhrase,
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
+    [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
+    [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
   };
 
   return messageResponder[request.type]();
 };
+
+/* eslint-enable @typescript-eslint/no-unsafe-argument */

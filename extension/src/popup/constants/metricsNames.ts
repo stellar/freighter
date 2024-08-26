@@ -20,7 +20,7 @@ export const METRIC_NAMES = {
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",
   viewReviewAuthorization: "loaded screen: review authorization",
-  viewSignBlob: "loaded screen: sign blob",
+  viewSignMessage: "loaded screen: sign message",
   viewSignAuthEntry: "loaded screen: sign auth entry",
   viewUnlockAccount: "loaded screen: unlock account",
   viewVerifyAccount: "loaded screen: verify account",
@@ -32,6 +32,8 @@ export const METRIC_NAMES = {
   viewSecurity: "loaded screen: security",
   viewManageConnectedApps: "loaded screen: manage connected apps",
   viewAbout: "loaded screen: about",
+  viewManageAssetsLists: "loaded screen: manage assets lists",
+  viewAdvancedSettings: "loaded screen: advanced settings",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
@@ -40,6 +42,7 @@ export const METRIC_NAMES = {
   sendPaymentSettings: "loaded screen: send payment settings",
   sendPaymentSettingsFee: "loaded screen: send payment settings fee",
   sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
+  sendPaymentSettingsTimeout: "loaded screen: send payment settings timeout",
   sendPaymentConfirm: "loaded screen: send payment confirm",
 
   viewAccountMigration: "loaded screen: account migration",
@@ -66,13 +69,13 @@ export const METRIC_NAMES = {
   swapSettings: "loaded screen: swap settings",
   swapSettingsFee: "loaded screen: swap settings fee",
   swapSettingsSlippage: "loaded screen: swap settings slippage",
+  swapSettingsTimeout: "loaded screen: swap settings timeout",
   swapConfirm: "loaded screen: swap confirm",
 
   viewManageAssets: "loaded screen: manage assets",
-  viewAddAsset: "loaded screen: add asset",
   viewSearchAsset: "loaded screen: search asset",
   viewTrustlineError: "loaded screen: trustline error",
-  viewAddToken: "loaded screen: add token",
+  viewAddAsset: "loaded screen: add asset manually",
 
   viewManageNetwork: "loaded screen: manage network",
   viewAddNetwork: "loaded screen: add network",
@@ -84,6 +87,8 @@ export const METRIC_NAMES = {
   manageAssetAddUnsafeAsset: "manage asset: add unsafe asset",
   manageAssetRemoveAsset: "manage asset: remove asset",
   manageAssetError: "manage asset: error",
+
+  manageAssetListsModifyAssetList: "manage asset list: modify asset list",
 
   accountCreatorSuccess: "account creator: create password: success",
   accountCreatorReject: "account creator: create password: error",
@@ -150,4 +155,13 @@ export const METRIC_NAMES = {
   rejectSigning: "user cancelled signing flow",
   approveSign: "user signed transaction",
   reviewedAuthEntry: "reviewed authorization entry",
+
+  trustlineErrorBuyingLiability:
+    "trustline removal error: asset has buying liabilties",
+  trustlineErrorHasBalance: "trustline removal error: asset has balance",
+  trustlineErrorLowReserve: "trustline removal error: asset has low reserve",
+
+  blockaidDomainScan: "blockaid: scanned domain",
+  blockaidTxScan: "blockaid: scanned transaction",
+  blockaidAssetScan: "blockaid: scanned asset",
 };

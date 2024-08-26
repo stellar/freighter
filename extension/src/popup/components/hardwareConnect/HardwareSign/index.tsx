@@ -1,7 +1,7 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Button, Icon } from "@stellar/design-system";
+import { Button, Icon, Loader } from "@stellar/design-system";
 import { handleSignedHwTransaction } from "@shared/api/internal";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
@@ -17,7 +17,7 @@ import {
   closeHwOverlay,
   addRecentAddress,
 } from "popup/ducks/transactionSubmission";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { settingsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
 
@@ -28,7 +28,6 @@ import {
 } from "popup/helpers/hardwareConnect";
 import LedgerSigning from "popup/assets/ledger-signing.png";
 import Ledger from "popup/assets/ledger.png";
-import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -40,19 +39,19 @@ export const HardwareSign = ({
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
   const [isDetecting, setIsDetecting] = useState(false);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkDetails, isHashSigningEnabled } =
+    useSelector(settingsSelector);
   const {
     hardwareWalletData: { transactionXDR, shouldSubmit },
     transactionData: { destination },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
-  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] = useState(
-    false,
-  );
+  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
+    useState(false);
+  const [hardwareWalletIsSigning, setHardwareWalletIsSigning] = useState(false);
   const [connectError, setConnectError] = useState("");
   const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
-  const sorobanClient = useContext(SorobanContext);
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
@@ -77,14 +76,16 @@ export const HardwareSign = ({
     try {
       const publicKey = await getWalletPublicKey[walletType](bipPath);
       setHardwareConnectSuccessful(true);
+      setHardwareWalletIsSigning(true);
 
       const res = await dispatch(
         signWithHardwareWallet({
-          transactionXDR: transactionXDR as string,
+          transactionXDR,
           networkPassphrase: networkDetails.networkPassphrase,
           publicKey,
           bipPath,
           walletType,
+          isHashSigningEnabled,
         }),
       );
       if (signWithHardwareWallet.fulfilled.match(res)) {
@@ -94,7 +95,6 @@ export const HardwareSign = ({
               publicKey,
               signedXDR: res.payload,
               networkDetails,
-              sorobanClient,
             }),
           );
           if (
@@ -115,7 +115,9 @@ export const HardwareSign = ({
           parseWalletError[walletType](res.payload?.errorMessage || ""),
         );
       }
+      setHardwareWalletIsSigning(false);
     } catch (e) {
+      setHardwareWalletIsSigning(false);
       setConnectError(parseWalletError[walletType](e));
     }
     setIsDetecting(false);
@@ -132,7 +134,7 @@ export const HardwareSign = ({
       <div className="HardwareSign__wrapper" ref={hardwareConnectRef}>
         <SubviewHeader
           customBackAction={closeOverlay}
-          customBackIcon={<Icon.Close />}
+          customBackIcon={<Icon.XClose />}
           title={`Connect ${walletType}`}
         />
         <div className="HardwareSign__content">
@@ -150,6 +152,11 @@ export const HardwareSign = ({
                 ? t("Review transaction on device")
                 : t("Connect device to computer")}
             </span>
+            {hardwareWalletIsSigning && (
+              <div className="HardwareSign__loader">
+                <Loader size="2rem" />
+              </div>
+            )}
           </div>
         </div>
         <div className="HardwareSign__bottom">

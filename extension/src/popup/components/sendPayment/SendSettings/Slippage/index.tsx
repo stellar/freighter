@@ -33,11 +33,11 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
   }
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title="Allowed Slippage"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
             // TODO - add link to FAQ when added
@@ -153,6 +153,6 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

@@ -20,13 +20,15 @@ import { AppDispatch } from "popup/App";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useIsSwap } from "popup/helpers/useIsSwap";
+import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   cleanAmount,
   formatAmount,
@@ -39,17 +41,18 @@ import {
   saveDestinationAsset,
   getBestPath,
   resetDestinationAmount,
+  getBestSoroswapPath,
+  getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
-import { BottomNav } from "popup/components/BottomNav";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 
-import { BalanceMap } from "@shared/api/types";
+import { BalanceMap, SorobanBalance } from "@shared/api/types";
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
@@ -113,6 +116,7 @@ export const SendAmount = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const runAfterUpdate = useRunAfterUpdate();
 
+  const publicKey = useSelector(publicKeySelector);
   const {
     accountBalances,
     destinationBalances,
@@ -120,6 +124,7 @@ export const SendAmount = ({
     assetDomains,
     blockedDomains,
     assetIcons,
+    soroswapTokens,
   } = useSelector(transactionSubmissionSelector);
 
   const {
@@ -128,14 +133,15 @@ export const SendAmount = ({
     destinationAmount,
     destinationAsset,
     isToken,
+    destinationIcon,
+    isSoroswap,
   } = transactionData;
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
   const [loadingRate, setLoadingRate] = useState(false);
-  const [showBlockedDomainWarning, setShowBlockedDomainWarning] = useState(
-    false,
-  );
+  const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
+    useState(false);
   const [suspiciousAssetData, setSuspiciousAssetData] = useState({
     domain: "",
     code: "",
@@ -143,11 +149,15 @@ export const SendAmount = ({
     image: "",
   });
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let availBalance = new BigNumber("0");
+      let _availBalance = new BigNumber("0");
       if (isToken) {
-        const tokenBalance = accountBalances?.balances?.[selectedAsset] as any;
+        // TODO: balances is incorrectly typed and does not include SorobanBalance
+        const tokenBalance = accountBalances?.balances?.[
+          selectedAsset
+        ] as any as SorobanBalance;
         return getTokenBalance(tokenBalance);
       }
       if (accountBalances.balances) {
@@ -161,20 +171,20 @@ export const SendAmount = ({
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(balance.toFixed());
-          availBalance = currentBal
+          _availBalance = currentBal
             .minus(minBalance)
             .minus(new BigNumber(Number(recommendedFee)));
 
-          if (availBalance.lt(minBalance)) {
+          if (_availBalance.lt(minBalance)) {
             return "0";
           }
         } else {
           // needed for different wallet-sdk bignumber.js version
-          availBalance = new BigNumber(balance);
+          _availBalance = new BigNumber(balance);
         }
       }
 
-      return availBalance.toFixed().toString();
+      return _availBalance.toFixed().toString();
     },
     [
       accountBalances.balances,
@@ -249,14 +259,32 @@ export const SendAmount = ({
 
   const db = useCallback(
     debounce(async (formikAm, sourceAsset, destAsset) => {
-      await dispatch(
-        getBestPath({
-          amount: formikAm,
-          sourceAsset,
-          destAsset,
-          networkDetails,
-        }),
-      );
+      if (isSoroswap) {
+        const getContract = (formAsset: string) =>
+          formAsset === "native"
+            ? getNativeContractDetails(networkDetails).contract
+            : formAsset.split(":")[1];
+
+        await dispatch(
+          getBestSoroswapPath({
+            amount: formikAm,
+            sourceContract: getContract(formik.values.asset),
+            destContract: getContract(formik.values.destinationAsset),
+            networkDetails,
+            publicKey,
+          }),
+        );
+      } else {
+        await dispatch(
+          getBestPath({
+            amount: formikAm,
+            sourceAsset,
+            destAsset,
+            networkDetails,
+          }),
+        );
+      }
+
       setLoadingRate(false);
     }, 2000),
     [],
@@ -268,8 +296,9 @@ export const SendAmount = ({
 
   // on asset select get conversion rate
   useEffect(() => {
-    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0)
+    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
       return;
+    }
     setLoadingRate(true);
     // clear dest amount before re-calculating for UI
     dispatch(resetDestinationAmount());
@@ -326,6 +355,12 @@ export const SendAmount = ({
     formik.values.asset,
     asset,
   ]);
+
+  useEffect(() => {
+    if (!soroswapTokens.length) {
+      dispatch(getSoroswapTokens());
+    }
+  }, [isSwap, useIsSoroswapEnabled]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -398,14 +433,30 @@ export const SendAmount = ({
           onContinue={() => navigateTo(next)}
         />
       )}
-      <View data-testid="send-amount-view">
+      <React.Fragment>
         <SubviewHeader
-          title={`${isSwap ? "Swap" : "Send"} ${parsedSourceAsset.code}`}
+          title={
+            <span>
+              {isSwap ? "Swap" : "Send"} {parsedSourceAsset.code}{" "}
+              {isSoroswap ? (
+                <span>
+                  on{" "}
+                  <a
+                    href="https://soroswap.finance/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Soroswap
+                  </a>
+                </span>
+              ) : null}
+            </span>
+          }
           subtitle={
-            <>
+            <div className="SendAmount__subtitle">
               <span>{formatAmount(availBalance)}</span>{" "}
               <span>{parsedSourceAsset.code}</span> {t("available")}
-            </>
+            </div>
           }
           hasBackButton={!isSwap}
           customBackAction={() => navigateTo(previous)}
@@ -415,7 +466,7 @@ export const SendAmount = ({
                 onClick={() => navigateTo(ROUTES.sendPaymentType)}
                 className="SendAmount__icon-slider"
               >
-                <Icon.MoreHoriz />
+                <Icon.Expand01 />
               </button>
             )
           }
@@ -475,15 +526,13 @@ export const SendAmount = ({
                     value={formik.values.amount}
                     onChange={(e) => {
                       const input = e.target;
-                      const {
-                        amount: newAmount,
-                        newCursor,
-                      } = formatAmountPreserveCursor(
-                        e.target.value,
-                        formik.values.amount,
-                        getAssetDecimals(asset, accountBalances, isToken),
-                        e.target.selectionStart || 1,
-                      );
+                      const { amount: newAmount, newCursor } =
+                        formatAmountPreserveCursor(
+                          e.target.value,
+                          formik.values.amount,
+                          getAssetDecimals(asset, accountBalances, isToken),
+                          e.target.selectionStart || 1,
+                        );
                       formik.setFieldValue("amount", newAmount);
                       runAfterUpdate(() => {
                         input.selectionStart = newCursor;
@@ -500,7 +549,9 @@ export const SendAmount = ({
                     <ConversionRate
                       loading={loadingRate}
                       source={parsedSourceAsset.code}
-                      sourceAmount={formik.values.amount || defaultSourceAmount}
+                      sourceAmount={
+                        cleanAmount(formik.values.amount) || defaultSourceAmount
+                      }
                       dest={parsedDestAsset.code}
                       destAmount={destinationAmount}
                     />
@@ -526,6 +577,7 @@ export const SendAmount = ({
                           assetCode={parsedSourceAsset.code}
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
+                          icon=""
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -536,6 +588,7 @@ export const SendAmount = ({
                               ? new BigNumber(destinationAmount).toFixed()
                               : "0"
                           }
+                          icon={destinationIcon}
                         />
                       </>
                     )}
@@ -545,9 +598,9 @@ export const SendAmount = ({
             </div>
           </div>
         </View.Content>
-        {isSwap && <BottomNav />}
-      </View>
+      </React.Fragment>
       <LoadingBackground
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />

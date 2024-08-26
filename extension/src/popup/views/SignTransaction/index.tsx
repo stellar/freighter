@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import {
-  FeeBumpTransaction,
   MuxedAccount,
   Transaction,
   TransactionBuilder,
@@ -14,27 +13,35 @@ import {
   Operation,
 } from "stellar-sdk";
 
+import { ActionStatus } from "@shared/api/types";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
+  isNonSSLEnabledSelector,
   settingsNetworkDetailsSelector,
-  settingsExperimentalModeSelector,
 } from "popup/ducks/settings";
 
-import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
+import {
+  ShowOverlayStatus,
+  getAccountBalances,
+  resetAccountBalanceStatus,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
-import { encodeObject } from "helpers/urls";
+import { encodeObject, parsedSearchParam } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
   isFederationAddress,
   isMuxedAccount,
+  stroopToXlm,
   truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { navigateTo } from "popup/helpers/navigate";
+import { useScanTx } from "popup/helpers/blockaid";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -45,11 +52,12 @@ import {
   WarningMessage,
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
+  SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SlideupModal } from "popup/components/SlideupModal";
-import { FlaggedKeys } from "types/transactions";
+import { Loading } from "popup/components/Loading";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Tabs } from "popup/components/Tabs";
@@ -62,17 +70,22 @@ import "./styles.scss";
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
+    useState(false);
 
-  const isExperimentalModeEnabled = useSelector(
-    settingsExperimentalModeSelector,
+  const { accountBalances, accountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
   );
-  const { networkName, networkPassphrase } = useSelector(
-    settingsNetworkDetailsSelector,
-  );
+  const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { networkName, networkPassphrase } = networkDetails;
+  const { scanTx } = useScanTx();
 
   const tx = getTransactionInfo(location.search);
+  const { url } = parsedSearchParam(location.search);
 
   const {
     accountToSign: _accountToSign,
@@ -87,8 +100,8 @@ export const SignTransaction = () => {
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
     transactionXdr,
-    _networkPassphrase,
-  ) as Transaction | FeeBumpTransaction;
+    _networkPassphrase as string,
+  );
 
   let isFeeBump = false;
   let _memo = {};
@@ -126,7 +139,7 @@ export const SignTransaction = () => {
     accountToSign,
   );
 
-  const flaggedKeyValues = Object.values(flaggedKeys as FlaggedKeys);
+  const flaggedKeyValues = Object.values(flaggedKeys);
   const isUnsafe = flaggedKeyValues.some(({ tags }) =>
     tags.includes(TRANSACTION_WARNING.unsafe),
   );
@@ -137,7 +150,7 @@ export const SignTransaction = () => {
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
-  const resolveFederatedAddress = useCallback(async (inputDest) => {
+  const resolveFederatedAddress = useCallback(async (inputDest: string) => {
     let resolvedPublicKey;
     try {
       const fedResp = await Federation.Server.resolve(inputDest);
@@ -157,12 +170,20 @@ export const SignTransaction = () => {
       }
       if (isFederationAddress(_accountToSign)) {
         accountToSign = (await resolveFederatedAddress(
-          accountToSign,
+          accountToSign!,
         )) as string;
       }
     }
   };
   decodeAccountToSign();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await scanTx(transactionXdr, url, networkDetails);
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isMemoRequired) {
@@ -175,6 +196,20 @@ export const SignTransaction = () => {
       emitMetric(METRIC_NAMES.signTransactionMalicious);
     }
   }, [isMemoRequired, isMalicious, isUnsafe]);
+
+  useEffect(() => {
+    if (currentAccount.publicKey) {
+      dispatch(
+        getAccountBalances({
+          publicKey: currentAccount.publicKey,
+          networkDetails,
+        }),
+      );
+    }
+    return () => {
+      dispatch(resetAccountBalanceStatus());
+    };
+  }, [currentAccount.publicKey, dispatch, networkDetails]);
 
   const isSubmitDisabled = isMemoRequired || isMalicious;
 
@@ -195,19 +230,40 @@ export const SignTransaction = () => {
     );
   }
 
-  if (!isHttpsDomain && !isExperimentalModeEnabled) {
+  if (!isHttpsDomain && !isNonSSLEnabled) {
+    return <SSLWarningMessage url={domain} />;
+  }
+
+  const hasLoadedBalances =
+    accountBalanceStatus !== ActionStatus.PENDING &&
+    accountBalanceStatus !== ActionStatus.IDLE;
+
+  if (!hasLoadedBalances) {
+    return <Loading />;
+  }
+
+  const hasBalance =
+    hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
+  const hasEnoughXlm = accountBalances.balances?.native.available.gt(
+    stroopToXlm(_fee as string),
+  );
+  if (
+    hasBalance &&
+    currentAccount.publicKey &&
+    !hasEnoughXlm &&
+    !hasAcceptedInsufficientFee
+  ) {
     return (
       <WarningMessage
-        handleCloseClick={() => window.close()}
+        handleCloseClick={() => setHasAcceptedInsufficientFee(true)}
         isActive
         variant={WarningMessageVariant.warning}
-        header={t("WEBSITE CONNECTION IS NOT SECURE")}
+        header={t("INSUFFICIENT FUNDS FOR FEE")}
       >
         <p>
           <Trans domain={domain}>
-            The website <strong>{{ domain }}</strong> does not use an SSL
-            certificate. For additional safety Freighter only works with
-            websites that provide an SSL certificate.
+            Your available XLM balance is not enough to pay for the transaction
+            fee.
           </Trans>
         </p>
       </WarningMessage>
@@ -256,11 +312,11 @@ export const SignTransaction = () => {
           <div className="SignTransaction__account-not-found">
             <Notification
               variant="warning"
-              icon={<Icon.Warning />}
+              icon={<Icon.InfoOctagon />}
               title={t("Account not available")}
             >
               {t("The application is requesting a specific account")} (
-              {truncatedPublicKey(accountToSign!)}),{" "}
+              {truncatedPublicKey(accountToSign)}),{" "}
               {t(
                 "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
               )}
@@ -302,10 +358,10 @@ export const SignTransaction = () => {
       <div data-testid="SignTransaction" className="SignTransaction">
         <div className="SignTransaction__Body">
           <div className="SignTransaction__Title">
-            <PunycodedDomain domain={domain} domainTitle="" />
+            <PunycodedDomain domain={domain} />
             <div className="SignTransaction--connection-request">
               <div className="SignTransaction--connection-request-pill">
-                <Icon.Link />
+                <Icon.ArrowsRight />
                 <p>Transaction Request</p>
               </div>
             </div>
@@ -318,7 +374,10 @@ export const SignTransaction = () => {
                 className="SignTransaction__Actions__PublicKey"
                 onClick={() => setIsDropdownOpen(true)}
               >
-                <KeyIdenticon publicKey={currentAccount.publicKey} />
+                <KeyIdenticon
+                  publicKey={currentAccount.publicKey}
+                  keyTruncationAmount={10}
+                />
                 <Icon.ChevronDown />
               </button>
             </div>

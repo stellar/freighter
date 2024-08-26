@@ -3,5 +3,9 @@
   "compilerOptions": {
     "baseUrl": "."
   },
-  "include": ["."]
+  "include": [
+    ".",
+    "../helpers/stellar.ts",
+    "../../extension/src/types/js-xdr.d.ts"
+  ]
 }

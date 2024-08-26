@@ -12,8 +12,10 @@ export enum NetworkCongestion {
 }
 
 export const useNetworkFees = () => {
-  const { networkUrl } = useSelector(settingsNetworkDetailsSelector);
-  const [recommendedFee, setRecommendedFee] = useState("");
+  const { networkUrl, networkPassphrase } = useSelector(
+    settingsNetworkDetailsSelector,
+  );
+  const [recommendedFee, setRecommendedFee] = useState("100");
   const [networkCongestion, setNetworkCongestion] = useState(
     "" as NetworkCongestion,
   );
@@ -21,11 +23,9 @@ export const useNetworkFees = () => {
   useEffect(() => {
     (async () => {
       try {
-        const server = stellarSdkServer(networkUrl);
-        const {
-          max_fee: maxFee,
-          ledger_capacity_usage: ledgerCapacityUsage,
-        } = await server.feeStats();
+        const server = stellarSdkServer(networkUrl, networkPassphrase);
+        const { max_fee: maxFee, ledger_capacity_usage: ledgerCapacityUsage } =
+          await server.feeStats();
         const ledgerCapacityUsageNum = Number(ledgerCapacityUsage);
 
         setRecommendedFee(stroopToXlm(maxFee.mode).toFixed());
@@ -38,10 +38,11 @@ export const useNetworkFees = () => {
         }
       } catch (e) {
         // use default values
+        setRecommendedFee("100");
         console.error(e);
       }
     })();
-  }, [networkUrl]);
+  }, [networkUrl, networkPassphrase]);
 
   return { recommendedFee, networkCongestion };
 };

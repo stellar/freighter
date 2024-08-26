@@ -69,10 +69,11 @@ const testCustomNetwork = {
   networkUrl: NETWORK_URLS.TESTNET,
   networkPassphrase: Networks.TESTNET,
 };
-const testBalances = ({
+const testBalances = {
   native: {
     token: { type: "native", code: "XLM" },
   },
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
     token: {
       type: "credit_alphanum4",
@@ -83,7 +84,7 @@ const testBalances = ({
       },
     },
   },
-} as unknown) as Balances;
+} as unknown as Balances;
 
 export const IntegrationTest = () => {
   const [isDone, setIsDone] = useState(false);
@@ -117,6 +118,7 @@ export const IntegrationTest = () => {
       });
 
       await fundAccount(testPublicKey);
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("fundAccount", () => {});
 
       res = await addAccount(testPassword);
@@ -170,7 +172,7 @@ export const IntegrationTest = () => {
       runAsserts("getMnemonicPhrase", () => {
         assertString(res.mnemonicPhrase);
       });
-      const mnemonicPhrase = res.mnemonicPhrase;
+      const mnemonicPhrase = res.mnemonicPhrase as string;
 
       res = await confirmMnemonicPhrase(mnemonicPhrase);
       runAsserts("confirmMnemonicPhrase", () => {
@@ -180,6 +182,7 @@ export const IntegrationTest = () => {
       });
 
       await resetDevData();
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("resetDevData", () => {});
 
       res = await recoverAccount(testPassword, mnemonicPhrase);
@@ -205,9 +208,9 @@ export const IntegrationTest = () => {
         TESTNET_NETWORK_DETAILS,
       );
       runAsserts("getAccountBalances", () => {
-        assertEq(Object.keys(res.balances).length > 0, true);
-        assertBoolean(res.isFunded);
-        assertNumber(res.subentryCount);
+        assertEq(Object.keys(res.balances as object).length > 0, true);
+        assertBoolean(res.isFunded as boolean);
+        assertNumber(res.subentryCount as number);
       });
 
       res = await getAccountHistoryStandalone({
@@ -215,7 +218,7 @@ export const IntegrationTest = () => {
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
       runAsserts("getAccountHistory", () => {
-        assertArray(res.operations);
+        assertArray(res.operations as any[]);
       });
 
       res = await getAssetIcons({
@@ -223,7 +226,7 @@ export const IntegrationTest = () => {
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
       runAsserts("getAssetIcons", () => {
-        assertEq(Object.keys(res).length > 0, true);
+        assertEq(Object.keys(res as object).length > 0, true);
       });
 
       res = await retryAssetIcon({
@@ -233,7 +236,7 @@ export const IntegrationTest = () => {
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
       runAsserts("retryAssetIcon", () => {
-        assertEq(Object.keys(res).length > 0, true);
+        assertEq(Object.keys(res as object).length > 0, true);
       });
 
       res = await getAssetDomains({
@@ -241,19 +244,23 @@ export const IntegrationTest = () => {
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
       runAsserts("getAssetDomains", () => {
-        assertEq(Object.keys(res).length > 0, true);
+        assertEq(Object.keys(res as object).length > 0, true);
       });
 
       await rejectAccess();
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("rejectAccess", () => {});
 
       await grantAccess("https://laboratory.stellar.org");
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("grantAccess", () => {});
 
       await handleSignedHwTransaction({ signedTransaction: "" });
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("handleSignedHwTransaction", () => {});
 
       await signTransaction();
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("signTransaction", () => {});
 
       res = await signFreighterTransaction({
@@ -292,7 +299,7 @@ export const IntegrationTest = () => {
         isMemoValidationEnabled: true,
         isSafetyValidationEnabled: true,
         isValidatingSafeAssetsEnabled: true,
-        isExperimentalModeEnabled: true,
+        isNonSSLEnabled: true,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
@@ -302,7 +309,7 @@ export const IntegrationTest = () => {
         assertEq(res.isMemoValidationEnabled, true);
         assertEq(res.isSafetyValidationEnabled, true);
         assertEq(res.isValidatingSafeAssetsEnabled, true);
-        assertEq(res.isExperimentalModeEnabled, true);
+        assertEq(res.isNonSSLEnabled, true);
       });
 
       res = await loadSettings();
@@ -315,6 +322,7 @@ export const IntegrationTest = () => {
         assertEq(res.isSafetyValidationEnabled, true);
         assertEq(res.isValidatingSafeAssetsEnabled, true);
         assertEq(res.isExperimentalModeEnabled, true);
+        assertEq(res.isNonSSLEnabled, true);
       });
 
       res = await showBackupPhrase(testPassword);
@@ -356,30 +364,30 @@ export const IntegrationTest = () => {
 
       res = await getBlockedDomains();
       runAsserts("getBlockedDomains", () => {
-        assertEq(Object.keys(res.blockedDomains).length > 0, true);
+        assertEq(Object.keys(res.blockedDomains as object).length > 0, true);
       });
 
       await changeNetwork(NETWORK_NAMES.PUBNET);
       res = await requestPublicKey();
       runAsserts("requestPublicKey", () => {
-        assertString(res);
+        assertString(res as string);
       });
 
       res = await submitTransaction(testTxXDR);
       runAsserts("submitTransaction", () => {
-        assertString(res);
+        assertString(res as string);
       });
 
       res = await requestNetwork();
       runAsserts("requestNetwork", () => {
-        assertString(res);
+        assertString(res as string);
       });
 
       res = await requestNetworkDetails();
       runAsserts("requestNetworkDetails", () => {
-        assertString(res.network);
-        assertString(res.networkPassphrase);
-        assertString(res.networkUrl);
+        assertString(res.network as string);
+        assertString(res.networkPassphrase as string);
+        assertString(res.networkUrl as string);
       });
 
       console.log("👍 Done 👍");
@@ -396,6 +404,7 @@ export const IntegrationTest = () => {
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 const runAsserts = (func: string, asserts = () => {}) => {
   try {
     asserts();

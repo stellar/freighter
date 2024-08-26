@@ -43,7 +43,7 @@ export const Wrapper: React.FunctionComponent<any> = ({
   state,
   history,
 }: {
-  children: React.ReactChildren;
+  children: React.ReactNode;
   state: {};
   history?: any;
 }) => {
@@ -71,8 +71,7 @@ export const Wrapper: React.FunctionComponent<any> = ({
 };
 
 export const mockBalances = {
-  tokensWithNoBalance: [],
-  balances: ({
+  balances: {
     ["DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ"]: {
       token: {
         code: "DT",
@@ -99,7 +98,7 @@ export const mockBalances = {
       total: new BigNumber("50"),
       available: new BigNumber("50"),
     },
-  } as any) as Balances,
+  } as any as Balances,
   isFunded: true,
   subentryCount: 1,
 };

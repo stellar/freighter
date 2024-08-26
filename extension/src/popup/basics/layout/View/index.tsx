@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import { Title } from "@stellar/design-system";
+import { Text } from "@stellar/design-system";
 
 import FreighterLogo from "popup/assets/logo-freighter.svg";
 import { BackButton } from "popup/basics/buttons/BackButton";
@@ -91,14 +91,15 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
       ) : (
         <div>
           <div className="View__header__box View__header__box--center">
-            <Title
+            <Text
+              as="h2"
               size="md"
               role="heading"
               aria-level={2}
               data-testid="AppHeaderPageTitle"
             >
               {pageTitle}
-            </Title>
+            </Text>
           </div>
           {pageSubtitle ? (
             <div
@@ -186,10 +187,13 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   ...props
 }: ViewFooterProps) => {
   const customStyle = {
+    // eslint-disable-next-line
     ...(customHeight ? { "--View-footer-height": customHeight } : {}),
     ...(hasExtraPaddingBottom
-      ? { "--View-footer-padding-bottom": "1.5rem" }
+      ? // eslint-disable-next-line
+        { "--View-footer-padding-bottom": "1.5rem" }
       : {}),
+    // eslint-disable-next-line
     ...(customGap ? { "--View-footer-gap": customGap } : {}),
   } as React.CSSProperties;
 
@@ -241,6 +245,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   ...props
 }: ViewInsetProps) => {
   const customStyle = {
+    // eslint-disable-next-line
     ...(hasNoTopPadding ? { "--View-inset-padding-top": "0" } : {}),
   } as React.CSSProperties;
 

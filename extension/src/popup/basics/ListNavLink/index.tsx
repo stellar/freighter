@@ -10,24 +10,30 @@ interface ListNavLinkProps {
   children: string | React.ReactNode;
   href: string | ROUTES;
   searchParams?: string;
+  icon?: React.ReactNode;
 }
+
+const renderListNavLinkIcon = (icon: React.ReactNode) => (
+  <div className="ListNavLink__icon">{icon}</div>
+);
 
 export const ListNavLink = ({
   children,
   href,
   searchParams = "",
+  icon,
 }: ListNavLinkProps) => {
   const fullHref = `${href}${searchParams}`;
-
   return (
     <div className="ListNavLink">
+      {icon ? renderListNavLinkIcon(icon) : null}
       {Object.values(ROUTES).includes(href as ROUTES) ? (
         <Link to={fullHref}>
-          {children} <Icon.ChevronRight className="ListNavLink__icon" />
+          {children} <Icon.ChevronRight className="ListNavLink__arrow" />
         </Link>
       ) : (
         <a rel="noreferrer" target="_blank" href={fullHref}>
-          {children} <Icon.ChevronRight className="ListNavLink__icon" />
+          {children} <Icon.ChevronRight className="ListNavLink__arrow" />
         </a>
       )}
     </div>
@@ -50,7 +56,7 @@ export const ListNavButtonLink = ({
         handleClick();
       }}
     >
-      {children} <Icon.ChevronRight className="ListNavLink__icon" />
+      {children} <Icon.ChevronRight className="ListNavLink__arrow" />
     </span>
   </div>
 );

@@ -14,8 +14,8 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
-import ImageMissingIcon from "popup/assets/image-missing.svg";
-import IconSoroban from "popup/assets/icon-soroban.svg";
+import ImageMissingIcon from "popup/assets/image-missing.svg?react";
+import IconSoroban from "popup/assets/icon-soroban.svg?react";
 
 import "./styles.scss";
 import { formatAmount } from "popup/helpers/formatters";
@@ -28,7 +28,7 @@ export const SorobanTokenIcon = ({ noMargin }: { noMargin?: boolean }) => (
       noMargin ? "AccountAssets__asset--no-margin" : ""
     }`}
   >
-    <img src={IconSoroban} alt="icon soroban" />
+    <IconSoroban />
   </div>
 );
 
@@ -39,6 +39,7 @@ export const AssetIcon = ({
   retryAssetIconFetch,
   isLPShare = false,
   isSorobanToken = false,
+  icon,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -46,6 +47,7 @@ export const AssetIcon = ({
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
   isSorobanToken?: boolean;
+  icon?: string;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -64,8 +66,13 @@ export const AssetIcon = ({
   // For all non-XLM assets (assets where we need to fetch the icon from elsewhere), start by showing a loading state as there is work to do
   const [isLoading, setIsLoading] = useState(!isXlm);
 
+  const { soroswapTokens } = useSelector(transactionSubmissionSelector);
+
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
-  const imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+  let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+  if (icon) {
+    imgSrc = icon;
+  }
 
   const _isSorobanToken = !isSorobanToken
     ? issuerKey && isSorobanIssuer(issuerKey)
@@ -80,9 +87,17 @@ export const AssetIcon = ({
     );
   }
 
-  // Placeholder for Soroban tokens
-  if (_isSorobanToken) {
-    return <SorobanTokenIcon />;
+  // Get icons for Soroban tokens
+  if (_isSorobanToken && !icon) {
+    const soroswapTokenDetail = soroswapTokens.find(
+      (token) => token.contract === issuerKey,
+    );
+    // check to see if we have an icon from an external service, like Soroswap
+    if (soroswapTokenDetail?.icon) {
+      imgSrc = soroswapTokenDetail?.icon;
+    } else {
+      return <SorobanTokenIcon />;
+    }
   }
 
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
@@ -93,7 +108,7 @@ export const AssetIcon = ({
   }
 
   // if we have an asset path, start loading the path in an `<img>`
-  return canonicalAsset || isXlm ? (
+  return canonicalAsset || isXlm || imgSrc ? (
     <div
       className={`AccountAssets__asset--logo ${
         hasError ? "AccountAssets__asset--error" : ""
@@ -118,14 +133,14 @@ export const AssetIcon = ({
   ) : (
     // the image path wasn't found, show a default broken image icon
     <div className="AccountAssets__asset--logo AccountAssets__asset--error">
-      <img src={ImageMissingIcon} alt="Asset icon missing" />
+      <ImageMissingIcon />
     </div>
   );
 };
 
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
-  sortedBalances: Array<any>;
+  sortedBalances: any[];
   setSelectedAsset?: (selectedAsset: string) => void;
 }
 
@@ -153,7 +168,9 @@ export const AccountAssets = ({
     code: string;
   }) => {
     /* if we retried the toml and their link is still bad, just give up here */
-    if (hasIconFetchRetried) return;
+    if (hasIconFetchRetried) {
+      return;
+    }
     try {
       const res = await retryAssetIcon({
         key,
@@ -200,7 +217,7 @@ export const AccountAssets = ({
         let amountUnit;
         if (rb.liquidityPoolId) {
           issuer = "lp";
-          code = getLPShareCode(rb.reserves);
+          code = getLPShareCode(rb.reserves as Horizon.HorizonApi.Reserve[]);
           amountUnit = "shares";
         } else if (rb.contractId) {
           issuer = {
@@ -215,19 +232,22 @@ export const AccountAssets = ({
         }
 
         const isLP = issuer === "lp";
-        const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+        const canonicalAsset = getCanonicalFromAsset(
+          code,
+          issuer?.key as string,
+        );
 
         const assetDomain = assetDomains[canonicalAsset];
         const isScamAsset = !!blockedDomains.domains[assetDomain];
 
-        const bigTotal = new BigNumber(rb.total);
+        const bigTotal = new BigNumber(rb.total as string);
         const amountVal = rb.contractId
-          ? formatTokenAmount(bigTotal, rb.decimals)
+          ? formatTokenAmount(bigTotal, rb.decimals as number)
           : bigTotal.toFixed();
 
         return (
           <div
-            data-testid="account-assets"
+            data-testid="account-assets-item"
             className={`AccountAssets__asset ${
               setSelectedAsset && !isLP
                 ? "AccountAssets__asset--has-detail"

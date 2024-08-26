@@ -10,6 +10,7 @@ import {
   TransactionBuilder,
   scValToNative,
   xdr,
+  walkInvocationTree,
 } from "stellar-sdk";
 
 import {
@@ -19,7 +20,11 @@ import {
   SorobanBalance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import {
+  ArgsForTokenInvocation,
+  SorobanTokenInterface,
+  TokenInvocationArgs,
+} from "@shared/constants/soroban/token";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -109,8 +114,8 @@ export const parseTokenAmount = (value: string, decimals: number) => {
 export const getArgsForTokenInvocation = (
   fnName: string,
   args: xdr.ScVal[],
-) => {
-  let amount: BigNumber;
+): ArgsForTokenInvocation => {
+  let amount: bigint | number;
   let from = "";
   let to = "";
 
@@ -131,7 +136,7 @@ export const getArgsForTokenInvocation = (
       amount = scValToNative(args[1]);
       break;
     default:
-      amount = new BigNumber(0);
+      amount = BigInt(0);
   }
 
   return { from, to, amount };
@@ -142,12 +147,12 @@ const isSorobanOp = (operation: HorizonOperation) =>
 
 export const getTokenInvocationArgs = (
   hostFn: Operation.InvokeHostFunction,
-) => {
+): TokenInvocationArgs | null => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
 
-  let invokedContract;
+  let invokedContract: xdr.InvokeContractArgs;
 
   try {
     invokedContract = hostFn.func.invokeContract();
@@ -168,7 +173,7 @@ export const getTokenInvocationArgs = (
     return null;
   }
 
-  let opArgs;
+  let opArgs: ArgsForTokenInvocation;
 
   try {
     opArgs = getArgsForTokenInvocation(fnName, args);
@@ -192,16 +197,18 @@ export const getAttrsFromSorobanHorizonOp = (
   }
 
   // operation record from Mercury
-  if (operation.transaction_attr.contractId) {
+  // why does transaction_attr not exist on any horizon types?
+  const _op = operation as any;
+  if (_op.transaction_attr.contractId) {
     return {
-      contractId: operation.transaction_attr.contractId,
-      fnName: operation.transaction_attr.fnName,
-      ...operation.transaction_attr.args,
+      contractId: _op.transaction_attr.contractId,
+      fnName: _op.transaction_attr.fnName,
+      ..._op.transaction_attr.args,
     };
   }
 
   const txEnvelope = TransactionBuilder.fromXDR(
-    operation.transaction_attr.envelope_xdr,
+    _op.transaction_attr.envelope_xdr as string,
     networkDetails.networkPassphrase,
   ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
 
@@ -311,26 +318,6 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
   return output;
 }
 
-export function pickTransfers(invocationTree: InvocationTree) {
-  const transfers = [];
-  // the transfer sig is (from, to, amount)
-  if (invocationTree.args.function === "transfer") {
-    transfers.push({
-      contractId: invocationTree.args.source,
-      amount: invocationTree.args.args[2].toString(),
-      to: invocationTree.args.args[1],
-    });
-  }
-  const subTransfers = invocationTree.invocations
-    .filter((i) => i.args.function === "transfer")
-    .map((i) => ({
-      contractId: i.args.source,
-      amount: i.args.args[2].toString(),
-      to: i.args.args[1],
-    }));
-  return [...transfers, ...subTransfers];
-}
-
 export const scValByType = (scVal: xdr.ScVal) => {
   switch (scVal.switch()) {
     case xdr.ScValType.scvAddress(): {
@@ -347,7 +334,11 @@ export const scValByType = (scVal: xdr.ScVal) => {
     }
 
     case xdr.ScValType.scvBytes(): {
-      return JSON.stringify(scVal.bytes().toJSON().data);
+      return scVal
+        .bytes()
+        .toJSON()
+        .data.map((d) => d.toString(16).padStart(2, "0"))
+        .join("");
     }
 
     case xdr.ScValType.scvContractInstance(): {
@@ -412,10 +403,17 @@ export const scValByType = (scVal: xdr.ScVal) => {
 export function getInvocationDetails(
   invocation: xdr.SorobanAuthorizedInvocation,
 ) {
-  const invocations = [
-    getInvocationArgs(invocation),
-    ...invocation.subInvocations().map(getInvocationArgs),
-  ];
+  const invocations = [] as InvocationArgs[];
+
+  walkInvocationTree(invocation, (inv) => {
+    const args = getInvocationArgs(inv);
+    if (args) {
+      invocations.push(args);
+    }
+
+    return null;
+  });
+
   return invocations.filter(isInvocationArg);
 }
 

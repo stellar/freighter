@@ -10,20 +10,20 @@ import {
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
+  ASSETS_LISTS_ID,
+  IS_HASH_SIGNING_ENABLED_ID,
+  IS_NON_SSL_ENABLED_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
 import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
-import {
-  isMainnet,
-  isTestnet,
-  isFuturenet,
-  isCustomNetwork,
-} from "helpers/stellar";
+import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
-} from "background/helpers/dataStorage";
+} from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
@@ -34,8 +34,10 @@ export const getKeyIdList = async () =>
 
 export const getAccountNameList = async () => {
   const encodedaccountNameList =
-    (await localStore.getItem(ACCOUNT_NAME_LIST_ID)) || encodeObject({});
+    ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
+    encodeObject({});
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return JSON.parse(decodeString(encodedaccountNameList));
 };
 
@@ -46,7 +48,10 @@ export const addAccountName = async ({
   keyId: string;
   accountName: string;
 }) => {
-  const accountNameList = await getAccountNameList();
+  const accountNameList = (await getAccountNameList()) as Record<
+    string,
+    string
+  >;
 
   accountNameList[keyId] = accountName;
 
@@ -96,6 +101,9 @@ export const getIsValidatingSafeAssetsEnabled = async () =>
 export const getIsExperimentalModeEnabled = async () =>
   (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;
 
+export const getIsHashSigningEnabled = async () =>
+  (await localStore.getItem(IS_HASH_SIGNING_ENABLED_ID)) ?? false;
+
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";
 
@@ -103,7 +111,7 @@ export const getIsHardwareWalletActive = async () =>
   ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
 export const getBipPath = async () => {
-  const keyId = (await localStore.getItem(KEY_ID)) || "";
+  const keyId = ((await localStore.getItem(KEY_ID)) as string) || "";
   const hwData = (await localStore.getItem(keyId)) || {};
   return hwData.bipPath || "";
 };
@@ -133,6 +141,26 @@ export const getNetworksList = async () => {
   return networksList;
 };
 
+export const getAssetsLists = async () => {
+  if (!(await localStore.getItem(ASSETS_LISTS_ID))) {
+    await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
+  }
+  const assetLists =
+    (await localStore.getItem(ASSETS_LISTS_ID)) ?? DEFAULT_ASSETS_LISTS;
+
+  return assetLists;
+};
+
+export const getIsNonSSLEnabled = async () => {
+  if (!(await localStore.getItem(IS_NON_SSL_ENABLED_ID))) {
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
+  }
+  const isNonSSLEnabled =
+    (await localStore.getItem(IS_NON_SSL_ENABLED_ID)) ?? false;
+
+  return isNonSSLEnabled;
+};
+
 export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
   let rpcHealth = { status: "" };
   if (isCustomNetwork(networkDetails)) {
@@ -143,6 +171,10 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
       const res = await fetch(
         `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
       );
+
+      if (!res.ok) {
+        captureException(`Failed to load rpc health for Soroban`);
+      }
       rpcHealth = await res.json();
     } catch (e) {
       captureException(
@@ -152,7 +184,25 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
     }
   }
 
+  if (rpcHealth.status !== "healthy") {
+    captureException(`Soroban RPC is not healthy - ${rpcHealth.status}`);
+  }
+
   return rpcHealth.status === "healthy";
+};
+
+export const getUserNotification = async () => {
+  let response = { enabled: false, message: "" };
+
+  try {
+    const res = await fetch(`${INDEXER_URL}/user-notification`);
+    response = await res.json();
+  } catch (e) {
+    captureException(`Failed to load user notification - ${JSON.stringify(e)}`);
+    console.error(e);
+  }
+
+  return response;
 };
 
 export const getFeatureFlags = async () => {
@@ -162,9 +212,7 @@ export const getFeatureFlags = async () => {
     const res = await fetch(`${INDEXER_URL}/feature-flags`);
     featureFlags = await res.json();
   } catch (e) {
-    captureException(
-      `Failed to load feature flag for Soroban mainnet - ${JSON.stringify(e)}`,
-    );
+    captureException(`Failed to load feature flag - ${JSON.stringify(e)}`);
     console.error(e);
   }
 
@@ -185,25 +233,29 @@ export const subscribeAccount = async (publicKey: string) => {
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        // eslint-disable-next-line
         pub_key: publicKey,
         network: networkDetails.network,
       }),
     };
-    await fetch(`${INDEXER_URL}/subscription/account`, options);
+    const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
       ...hasAccountSubByKeyId,
       [keyId]: true,
     };
-    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+
+    if (res.ok) {
+      await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, subsByKeyId);
+    } else {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
-    captureException(
-      `Failed to subscribe account with Mercury - ${JSON.stringify(e)}`,
-    );
-    throw new Error("Error subscribing account");
   }
 
   return { publicKey };
@@ -218,21 +270,29 @@ export const subscribeTokenBalance = async (
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        // eslint-disable-next-line
         pub_key: publicKey,
+        // eslint-disable-next-line
         contract_id: contractId,
         network: networkDetails.network,
       }),
     };
-    await fetch(`${INDEXER_URL}/subscription/token-balance`, options);
+    const res = await fetch(
+      `${INDEXER_URL}/subscription/token-balance`,
+      options,
+    );
+
+    if (!res.ok) {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
-    captureException(
-      `Failed to subscribe token balance - ${JSON.stringify(e)}`,
-    );
-    throw new Error(`Error subscribing to token: ${contractId}`);
+    captureException(`Failed to subscribe token balance - ${contractId}`);
   }
 };
 
@@ -244,17 +304,21 @@ export const subscribeTokenHistory = async (
     const options = {
       method: "POST",
       headers: {
+        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
+      // eslint-disable-next-line
       body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
     };
-    await fetch(`${INDEXER_URL}/subscription/token`, options);
+    const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
+
+    if (!res.ok) {
+      const resJson = (await res.json()) as string;
+      throw new Error(resJson);
+    }
   } catch (e) {
     console.error(e);
-    captureException(
-      `Failed to subscribe token history - ${JSON.stringify(e)}`,
-    );
-    throw new Error(`Error subscribing to token: ${contractId}`);
+    captureException(`Failed to subscribe token history - ${contractId}`);
   }
 };
 
@@ -269,6 +333,7 @@ export const verifySorobanRpcUrls = async () => {
 
   const networksList: NetworkDetails[] = await getNetworksList();
 
+  // eslint-disable-next-line
   for (let i = 0; i < networksList.length; i += 1) {
     const networksListDetails = networksList[i];
 

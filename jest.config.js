@@ -1,4 +1,4 @@
-const esModules = ["@stellar/wallet-sdk", "@stellar/design-system"];
+const esModules = ["@stellar/design-system"];
 
 const jsdomTests = {
   rootDir: __dirname,
@@ -22,6 +22,7 @@ const jsdomTests = {
   moduleNameMapper: {
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
       "<rootDir>/config/jest/__mocks__/fileMock.ts",
+    "^.+\\.svg\\?(react)(.+)?$": "<rootDir>/config/jest/__mocks__/fileMock.ts",
     "\\.(scss|css)$": "<rootDir>/config/jest/__mocks__/styleMock.ts",
   },
   moduleFileExtensions: ["js", "jsx", "json", "node", "mjs", "ts", "tsx"],

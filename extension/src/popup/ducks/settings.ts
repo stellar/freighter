@@ -8,19 +8,35 @@ import {
 import {
   saveAllowList as saveAllowListService,
   saveSettings as saveSettingsService,
+  saveExperimentalFeatures as saveExperimentalFeaturesService,
   loadSettings as loadSettingsService,
   changeNetwork as changeNetworkService,
   addCustomNetwork as addCustomNetworkService,
   removeCustomNetwork as removeCustomNetworkService,
   editCustomNetwork as editCustomNetworkService,
+  addAssetsList as addAssetsListService,
+  modifyAssetsList as modifyAssetsListService,
 } from "@shared/api/internal";
 import {
+  NETWORKS,
   NetworkDetails,
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
+import {
+  AssetsListItem,
+  AssetsLists,
+  DEFAULT_ASSETS_LISTS,
+} from "@shared/constants/soroban/token";
 
-import { Settings, IndexerSettings, SettingsState } from "@shared/api/types";
+import {
+  Settings,
+  IndexerSettings,
+  SettingsState,
+  ExperimentalFeatures,
+} from "@shared/api/types";
+
+import { isMainnet } from "helpers/stellar";
 
 interface ErrorMessage {
   errorMessage: string;
@@ -40,19 +56,29 @@ const settingsInitialState: Settings = {
   isMemoValidationEnabled: true,
   isSafetyValidationEnabled: true,
   isValidatingSafeAssetsEnabled: true,
-  isExperimentalModeEnabled: false,
+  isNonSSLEnabled: false,
   error: "",
+};
+
+const experimentalFeaturesInitialState = {
+  isExperimentalModeEnabled: false,
+  isHashSigningEnabled: false,
+  isNonSSLEnabled: false,
+  experimentalFeaturesState: SettingsState.IDLE,
 };
 
 const indexerInitialState: IndexerSettings = {
   settingsState: SettingsState.IDLE,
   isSorobanPublicEnabled: false,
   isRpcHealthy: false,
+  userNotification: { enabled: false, message: "" },
 };
 
 const initialState = {
   ...settingsInitialState,
   ...indexerInitialState,
+  ...experimentalFeaturesInitialState,
+  assetsLists: DEFAULT_ASSETS_LISTS,
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
@@ -74,8 +100,9 @@ export const saveAllowList = createAsyncThunk<
     });
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
 
@@ -89,7 +116,7 @@ export const saveSettings = createAsyncThunk<
     isMemoValidationEnabled: boolean;
     isSafetyValidationEnabled: boolean;
     isValidatingSafeAssetsEnabled: boolean;
-    isExperimentalModeEnabled: boolean;
+    isNonSSLEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -100,7 +127,7 @@ export const saveSettings = createAsyncThunk<
       isMemoValidationEnabled,
       isSafetyValidationEnabled,
       isValidatingSafeAssetsEnabled,
-      isExperimentalModeEnabled,
+      isNonSSLEnabled,
     },
     thunkApi,
   ) => {
@@ -108,7 +135,9 @@ export const saveSettings = createAsyncThunk<
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
+      userNotification: { enabled: false, message: "" },
       settingsState: SettingsState.IDLE,
+      isNonSSLEnabled: false,
     };
 
     try {
@@ -117,12 +146,51 @@ export const saveSettings = createAsyncThunk<
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
         isValidatingSafeAssetsEnabled,
-        isExperimentalModeEnabled,
+        isNonSSLEnabled,
       });
     } catch (e) {
       console.error(e);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message,
+        errorMessage: message,
+      });
+    }
+
+    return res;
+  },
+);
+
+export const saveExperimentalFeatures = createAsyncThunk<
+  ExperimentalFeatures,
+  {
+    isExperimentalModeEnabled: boolean;
+    isHashSigningEnabled: boolean;
+    isNonSSLEnabled: boolean;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/saveExperimentalFeaturss",
+  async (
+    { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled },
+    thunkApi,
+  ) => {
+    let res = {
+      ...experimentalFeaturesInitialState,
+      networkDetails: settingsInitialState.networkDetails,
+      networksList: settingsInitialState.networksList,
+    };
+
+    try {
+      res = await saveExperimentalFeaturesService({
+        isExperimentalModeEnabled,
+        isHashSigningEnabled,
+        isNonSSLEnabled,
+      });
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
       });
     }
 
@@ -148,8 +216,9 @@ export const addCustomNetwork = createAsyncThunk<
     res = await addCustomNetworkService(networkDetails);
   } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
 
@@ -170,6 +239,49 @@ export const editCustomNetwork = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("settings/editCustomNetwork", ({ networkDetails, networkIndex }) =>
   editCustomNetworkService({ networkDetails, networkIndex }),
+);
+
+export const addAssetsList = createAsyncThunk<
+  { assetsLists: AssetsLists; error: string },
+  { assetsList: AssetsListItem; network: NETWORKS },
+  { rejectValue: ErrorMessage }
+>("settings/addAssetsList", async ({ assetsList, network }, thunkApi) => {
+  const res = await addAssetsListService({ assetsList, network });
+
+  if (res.error) {
+    return thunkApi.rejectWithValue({
+      errorMessage: res.error || "Unable to add asset list",
+    });
+  }
+
+  return res;
+});
+
+export const modifyAssetsList = createAsyncThunk<
+  { assetsLists: AssetsLists; error: string },
+  {
+    assetsList: AssetsListItem;
+    network: NETWORKS;
+    isDeleteAssetsList: boolean;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/modifyAssetsList",
+  async ({ assetsList, network, isDeleteAssetsList }, thunkApi) => {
+    const res = await modifyAssetsListService({
+      assetsList,
+      network,
+      isDeleteAssetsList,
+    });
+
+    if (res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Unable to modify asset list",
+      });
+    }
+
+    return res;
+  },
 );
 
 const settingsSlice = createSlice({
@@ -207,7 +319,6 @@ const settingsSlice = createSlice({
         isSafetyValidationEnabled,
         networksList,
         isValidatingSafeAssetsEnabled,
-        isExperimentalModeEnabled,
         isRpcHealthy,
         isSorobanPublicEnabled,
       } = action?.payload || {
@@ -220,16 +331,47 @@ const settingsSlice = createSlice({
         isMemoValidationEnabled,
         isSafetyValidationEnabled,
         isValidatingSafeAssetsEnabled,
-        isExperimentalModeEnabled,
         networkDetails,
         networksList,
         isRpcHealthy,
         isSorobanPublicEnabled,
       };
     });
+    builder.addCase(saveExperimentalFeatures.pending, (state) => ({
+      ...state,
+      experimentalFeaturesState: SettingsState.LOADING,
+    }));
+    builder.addCase(saveExperimentalFeatures.fulfilled, (state, action) => {
+      const {
+        isExperimentalModeEnabled,
+        isHashSigningEnabled,
+        isNonSSLEnabled,
+        networkDetails,
+        networksList,
+      } = action?.payload || {
+        ...initialState,
+      };
+
+      return {
+        ...state,
+        isExperimentalModeEnabled,
+        isHashSigningEnabled,
+        isNonSSLEnabled,
+        networkDetails,
+        networksList,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+      };
+    });
     builder.addCase(
       loadSettings.fulfilled,
-      (state, action: PayloadAction<Settings & IndexerSettings>) => {
+      (
+        state,
+        action: PayloadAction<
+          Settings &
+            IndexerSettings &
+            ExperimentalFeatures & { assetsLists: AssetsLists }
+        >,
+      ) => {
         const {
           allowList,
           isDataSharingAllowed,
@@ -239,8 +381,12 @@ const settingsSlice = createSlice({
           isSafetyValidationEnabled,
           isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
+          isHashSigningEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          userNotification,
+          assetsLists,
+          isNonSSLEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -255,8 +401,12 @@ const settingsSlice = createSlice({
           isSafetyValidationEnabled,
           isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
+          isHashSigningEnabled,
           isSorobanPublicEnabled,
           isRpcHealthy,
+          userNotification,
+          assetsLists,
+          isNonSSLEnabled,
           settingsState: SettingsState.SUCCESS,
         };
       },
@@ -365,6 +515,42 @@ const settingsSlice = createSlice({
         };
       },
     );
+    builder.addCase(
+      addAssetsList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          assetsLists: AssetsLists;
+        }>,
+      ) => {
+        const { assetsLists } = action?.payload || {
+          assetsLists: initialState.assetsLists,
+        };
+
+        return {
+          ...state,
+          assetsLists,
+        };
+      },
+    );
+    builder.addCase(
+      modifyAssetsList.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          assetsLists: AssetsLists;
+        }>,
+      ) => {
+        const { assetsLists } = action?.payload || {
+          assetsLists: initialState.assetsLists,
+        };
+
+        return {
+          ...state,
+          assetsLists,
+        };
+      },
+    );
   },
 });
 
@@ -373,7 +559,9 @@ export const { reducer } = settingsSlice;
 export const { clearSettingsError } = settingsSlice.actions;
 
 export const settingsSelector = (state: {
-  settings: Settings & IndexerSettings;
+  settings: Settings &
+    IndexerSettings &
+    ExperimentalFeatures & { assetsLists: AssetsLists };
 }) => state.settings;
 
 export const settingsDataSharingSelector = createSelector(
@@ -427,4 +615,9 @@ export const settingsErrorSelector = createSelector(
 export const settingsStateSelector = createSelector(
   settingsSelector,
   (settings) => settings.settingsState,
+);
+
+export const isNonSSLEnabledSelector = createSelector(
+  settingsSelector,
+  (settings) => !isMainnet(settings.networkDetails) || settings.isNonSSLEnabled,
 );

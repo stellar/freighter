@@ -26,7 +26,7 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
     window.location.origin,
   );
   return new Promise((resolve) => {
-    let requestTimeout = 0;
+    let requestTimeout = 0 as any;
 
     /* 
       In the case that Freighter is not installed at all, any messages to 
@@ -71,8 +71,24 @@ export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
     // treat this as an external call because we're making the call from the browser, not the popup
     res = await sendMessageToContentScript(msg);
   } else {
-    res = await browser.runtime.sendMessage(msg);
+    res = (await browser.runtime.sendMessage(msg)) as Response;
   }
 
-  return res;
+  return res as Response;
+};
+
+export const FreighterApiNodeError = {
+  code: -1,
+  message: "Node environment is not supported",
+};
+
+export const FreighterApiInternalError = {
+  code: -1,
+  message:
+    "The wallet encountered an internal error. Please try again or contact the wallet if the problem persists.",
+};
+
+export const FreighterApiDeclinedError = {
+  code: -4,
+  message: "The user rejected this request.",
 };

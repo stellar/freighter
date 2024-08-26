@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
@@ -9,10 +9,7 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import {
-  getAccountHistoryStandalone,
-  getIndexerAccountHistory,
-} from "@shared/api/internal";
+import { getAccountHistory } from "@shared/api/internal";
 import {
   AccountBalancesInterface,
   ActionStatus,
@@ -22,6 +19,7 @@ import {
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
+  settingsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
@@ -40,6 +38,7 @@ import {
   AssetSelectType,
   getBlockedDomains,
   getAccountBalances,
+  getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -47,18 +46,16 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { isCustomNetwork, truncatedPublicKey } from "helpers/stellar";
+import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
+import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { BottomNav } from "popup/components/BottomNav";
 
 import "popup/metrics/authServices";
-
-import { SorobanContext } from "../../SorobanContext";
 
 import "./styles.scss";
 
@@ -74,31 +71,32 @@ export const Account = () => {
     transactionSubmissionSelector,
   );
   const accountStatus = useSelector(accountStatusSelector);
-  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] = useState(
-    false,
-  );
+  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
+    useState(false);
 
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
+  const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as Array<AssetType>);
+  const [sortedBalances, setSortedBalances] = useState([] as AssetType[]);
   const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
+  const [isLoading, setLoading] = useState(true);
+  const isSoroswapEnabled = useIsSoroswapEnabled();
 
-  const sorobanClient = useContext(SorobanContext);
+  const { balances, isFunded, error } = accountBalances;
 
-  const { balances, isFunded } = accountBalances;
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
+    setLoading(true);
     dispatch(resetSubmission());
     dispatch(
       getAccountBalances({
         publicKey,
         networkDetails,
-        sorobanClient,
       }),
     );
     dispatch(getBlockedDomains());
@@ -106,39 +104,30 @@ export const Account = () => {
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [
-    publicKey,
-    networkDetails,
-    isAccountFriendbotFunded,
-    sorobanClient,
-    dispatch,
-  ]);
+  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
+
+    if (isSoroswapEnabled) {
+      dispatch(getSoroswapTokens());
+    }
 
     setSortedBalances(sortBalances(balances));
     dispatch(getAssetIcons({ balances, networkDetails }));
     dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch]);
+  }, [balances, networkDetails, dispatch, isSoroswapEnabled]);
 
   useEffect(() => {
-    if (!balances) return;
+    if (!balances) {
+      return;
+    }
 
     const fetchAccountHistory = async () => {
       try {
-        let operations = [];
-        if (isCustomNetwork(networkDetails)) {
-          operations = await getAccountHistoryStandalone({
-            publicKey,
-            networkDetails,
-          });
-        } else {
-          operations = await getIndexerAccountHistory({
-            publicKey,
-            networkDetails,
-          });
-        }
+        const operations = await getAccountHistory(publicKey, networkDetails);
         setAssetOperations(
           sortOperationsByAsset({
             operations,
@@ -155,10 +144,18 @@ export const Account = () => {
   }, [publicKey, networkDetails, balances, sortedBalances]);
 
   const hasError = accountBalanceStatus === ActionStatus.ERROR;
-  const isLoading =
-    accountBalanceStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.IDLE ||
-    accountStatus === ActionStatus.PENDING;
+
+  useEffect(() => {
+    if (
+      !(
+        accountBalanceStatus === ActionStatus.PENDING ||
+        accountBalanceStatus === ActionStatus.IDLE ||
+        accountStatus === ActionStatus.PENDING
+      )
+    ) {
+      setLoading(false);
+    }
+  }, [accountBalanceStatus, accountStatus]);
 
   return selectedAsset ? (
     <AssetDetail
@@ -171,7 +168,7 @@ export const Account = () => {
       subentryCount={accountBalances.subentryCount}
     />
   ) : (
-    <View>
+    <>
       {isLoading ? (
         <Loading />
       ) : (
@@ -181,6 +178,7 @@ export const Account = () => {
             allAccounts={allAccounts}
             currentAccountName={currentAccountName}
             publicKey={publicKey}
+            setLoading={setLoading}
           />
           <View.Content
             hasNoTopPadding
@@ -213,7 +211,7 @@ export const Account = () => {
                   <CopyText textToCopy={publicKey} tooltipPlacement="right">
                     <div className="AccountView__account-num">
                       {truncatedPublicKey(publicKey)}
-                      <Icon.ContentCopy />
+                      <Icon.Copy01 />
                     </div>
                   </CopyText>
                 </div>
@@ -223,7 +221,7 @@ export const Account = () => {
                       showBorder
                       title={t("View public key")}
                       id="nav-btn-qr"
-                      icon={<Icon.QrCode />}
+                      icon={<Icon.QrCode01 />}
                       onClick={() => navigateTo(ROUTES.viewPublicKey)}
                     />
                   </div>
@@ -232,7 +230,7 @@ export const Account = () => {
                       showBorder
                       title={t("Send Payment")}
                       id="nav-btn-send"
-                      icon={<Icon.Send />}
+                      icon={<Icon.Send01 />}
                       onClick={() => navigateTo(ROUTES.sendPayment)}
                     />
                   </div>
@@ -260,9 +258,34 @@ export const Account = () => {
                   </Notification>
                 </div>
               )}
+              {error?.horizon && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Horizon is temporarily experiencing issues")}
+                    variant="primary"
+                  >
+                    {t(
+                      "Some of your assets may not appear, but they are still safe on the network!",
+                    )}
+                  </Notification>
+                </div>
+              )}
+              {userNotification?.enabled && (
+                <div className="AccountView__fetch-fail">
+                  <Notification
+                    title={t("Please note the following message")}
+                    variant="primary"
+                  >
+                    {userNotification.message}
+                  </Notification>
+                </div>
+              )}
 
               {isFunded && !hasError && (
-                <div className="AccountView__assets-wrapper">
+                <div
+                  className="AccountView__assets-wrapper"
+                  data-testid="account-assets"
+                >
                   <AccountAssets
                     sortedBalances={sortedBalances}
                     assetIcons={assetIcons}
@@ -270,7 +293,7 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {!isFunded && !hasError && (
+              {!isFunded && !hasError && !error?.horizon && (
                 <NotFundedMessage
                   canUseFriendbot={!!networkDetails.friendbotUrl}
                   setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
@@ -281,7 +304,6 @@ export const Account = () => {
           </View.Content>
         </>
       )}
-      <BottomNav />
-    </View>
+    </>
   );
 };

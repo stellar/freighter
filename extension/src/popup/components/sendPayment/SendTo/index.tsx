@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
 import { Asset, StrKey, MuxedAccount, Federation } from "stellar-sdk";
@@ -20,12 +20,14 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 
+import { ActionStatus } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
 import { navigateTo } from "popup/helpers/navigate";
+import { isContractId } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
@@ -38,7 +40,6 @@ import {
   transactionSubmissionSelector,
   getDestinationBalances,
 } from "popup/ducks/transactionSubmission";
-import { SorobanContext } from "popup/SorobanContext";
 
 import "../styles.scss";
 
@@ -85,10 +86,10 @@ const InvalidAddressWarning = () => {
     <div className="SendTo__info-block">
       <Notification
         variant="warning"
-        icon={<Icon.Warning />}
+        icon={<Icon.InfoOctagon />}
         title={t("INVALID STELLAR ADDRESS")}
       >
-        {t("Addresses are uppercase and begin with letters “G“ or “M“.")}
+        {t("Addresses are uppercase and begin with letters “G“, “M“, or “C“.")}
       </Notification>
     </div>
   );
@@ -97,15 +98,16 @@ const InvalidAddressWarning = () => {
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
   const { destination, federationAddress } = useSelector(
     transactionDataSelector,
   );
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { destinationBalances } = useSelector(transactionSubmissionSelector);
+  const { destinationBalances, destinationAccountBalanceStatus } = useSelector(
+    transactionSubmissionSelector,
+  );
 
-  const [recentAddresses, setRecentAddresses] = useState<Array<string>>([]);
-  const [validatedPubKey, setValidatedPubKey] = useState("");
+  const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
+  const [validatedAddress, setValidatedAddress] = useState("");
   const [fedAddress, setFedAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -121,14 +123,17 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const formik = useFormik({
     initialValues: { destination: federationAddress || destination },
     onSubmit: () => {
-      handleContinue(validatedPubKey, fedAddress);
+      handleContinue(validatedAddress, fedAddress);
     },
     validateOnChange: false,
     validate: (values) => {
-      if (isValidPublicKey(values.destination)) {
+      if (
+        isValidPublicKey(values.destination) ||
+        isContractId(values.destination)
+      ) {
         return {};
       }
-      return { destination: t("invalid public key") };
+      return { destination: t("invalid destination address") };
     },
   });
 
@@ -146,8 +151,9 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   };
 
   // calls form validation and then saves destination
+  /* eslint-disable react-hooks/exhaustive-deps */
   const db = useCallback(
-    debounce(async (inputDest) => {
+    debounce(async (inputDest: string) => {
       const errors = await formik.validateForm();
       if (Object.keys(errors).length !== 0) {
         setIsLoading(false);
@@ -155,21 +161,19 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       }
       // muxed account
       if (isMuxedAccount(inputDest)) {
-        setValidatedPubKey(inputDest);
-      }
-      // federation address
-      else if (isFederationAddress(inputDest)) {
+        setValidatedAddress(inputDest);
+      } else if (isFederationAddress(inputDest)) {
+        // federation address
         try {
           const fedResp = await Federation.Server.resolve(inputDest);
-          setValidatedPubKey(fedResp.account_id);
+          setValidatedAddress(fedResp.account_id);
           setFedAddress(inputDest);
         } catch (e) {
           formik.setErrors({ destination: t("invalid federation address") });
         }
-      }
-      // else, a regular account
-      else {
-        setValidatedPubKey(inputDest);
+      } else {
+        // else, a regular account
+        setValidatedAddress(inputDest);
       }
       setIsLoading(false);
     }, 2000),
@@ -192,32 +196,38 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       setIsLoading(true);
     }
     // reset
-    setValidatedPubKey("");
+    setValidatedAddress("");
     setFedAddress("");
     db(formik.values.destination);
   }, [db, formik.values.destination]);
 
   // on valid input get destination balances
   useEffect(() => {
-    if (!validatedPubKey) return;
+    if (!validatedAddress) {
+      return;
+    }
 
     // TODO - remove once wallet-sdk can handle muxed
-    let publicKey = validatedPubKey;
-    if (isMuxedAccount(validatedPubKey)) {
-      const mAccount = MuxedAccount.fromAddress(validatedPubKey, "0");
-      publicKey = mAccount.baseAccount().accountId();
+    let address = validatedAddress;
+
+    if (isContractId(validatedAddress)) {
+      return;
+    }
+
+    if (isMuxedAccount(validatedAddress)) {
+      const mAccount = MuxedAccount.fromAddress(validatedAddress, "0");
+      address = mAccount.baseAccount().accountId();
     }
     dispatch(
       getDestinationBalances({
-        publicKey,
+        publicKey: address,
         networkDetails,
-        sorobanClient,
       }),
     );
-  }, [dispatch, validatedPubKey, networkDetails, sorobanClient]);
+  }, [dispatch, validatedAddress, networkDetails]);
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title="Send To"
         customBackAction={() => navigateTo(previous)}
@@ -261,10 +271,10 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                                   address,
                                 );
                                 const publicKey = fedResp.account_id;
-                                setValidatedPubKey(publicKey);
+                                setValidatedAddress(publicKey);
                                 handleContinue(publicKey, address);
                               } else {
-                                setValidatedPubKey(address);
+                                setValidatedAddress(address);
                                 handleContinue(address);
                               }
                             }}
@@ -286,24 +296,29 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                 <div>
                   {formik.isValid ? (
                     <>
-                      {!destinationBalances.isFunded && (
-                        <AccountDoesntExistWarning />
-                      )}
-                      {isFederationAddress(formik.values.destination) && (
+                      {destinationAccountBalanceStatus ===
+                      ActionStatus.SUCCESS ? (
                         <>
-                          <div className="SendTo__subheading">
-                            {t("FEDERATION ADDRESS")}
-                          </div>
-                          <div className="SendTo__subsection-copy">
-                            {formik.values.destination}
+                          {!destinationBalances.isFunded && (
+                            <AccountDoesntExistWarning />
+                          )}
+                          {isFederationAddress(formik.values.destination) && (
+                            <>
+                              <div className="SendTo__subheading">
+                                {t("FEDERATION ADDRESS")}
+                              </div>
+                              <div className="SendTo__subsection-copy">
+                                {formik.values.destination}
+                              </div>
+                            </>
+                          )}
+                          <div className="SendTo__subheading">Address</div>
+                          <div className="SendTo__subheading-identicon">
+                            <IdenticonImg publicKey={validatedAddress} />
+                            <span>{truncatedPublicKey(validatedAddress)}</span>
                           </div>
                         </>
-                      )}
-                      <div className="SendTo__subheading">Address</div>
-                      <div className="SendTo__subheading-identicon">
-                        <IdenticonImg publicKey={validatedPubKey} />
-                        <span>{truncatedPublicKey(validatedPubKey)}</span>
-                      </div>
+                      ) : null}
                     </>
                   ) : (
                     <InvalidAddressWarning />
@@ -327,6 +342,6 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
           </Button>
         ) : null}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

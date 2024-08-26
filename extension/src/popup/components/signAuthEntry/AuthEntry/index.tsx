@@ -68,7 +68,7 @@ const InvalidAuthEntry = ({
 
   return (
     <div className="InvalidAuthEntry">
-      <View>
+      <React.Fragment>
         <View.AppHeader pageTitle={t("Error")} />
         <View.Content>
           <div className="InvalidAuthEntryBody__content">
@@ -94,7 +94,7 @@ const InvalidAuthEntry = ({
             {t("Got it")}
           </Button>
         </View.Footer>
-      </View>
+      </React.Fragment>
     </div>
   );
 };

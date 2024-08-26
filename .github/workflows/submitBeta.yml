@@ -18,47 +18,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: release/${{ github.event.inputs.release }}
       - name: Update manifest-v2.json name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v2.json
           field: name
           value: Freighter BETA
       - name: Update manifest-v3.json name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
           field: name
           value: Freighter BETA
       - name: Update manifest-v2.json version_name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v2.json
           field: version_name
           value: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
       - name: Update manifest-v3.json version_name
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
           field: version_name
           value: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
       - name: Update manifest-v2.json version for Chrome
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v2.json
           field: version
           value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
       - name: Update manifest-v3.json version for Chrome
-        uses: jossef/action-set-json-field@6e6d7e639f24b3955ef682815317b5613ac6ca12 #v1
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
           field: version
           value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
       - name: Build extension
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
       - run: yarn setup && yarn build:freighter-api && yarn build:extension:production
@@ -66,8 +66,13 @@ jobs:
         run: |
           rm -rf ./extension/build/images
           mv ./extension/build/beta_images ./extension/build/images
+      - name: Remove scripts tag
+        uses: restackio/update-json-file-action@36b1f6009a0611cc89b70bb0403dbd6c194dc3d0 #v2.1
+        with:
+          file: ./extension/build/manifest.json
+          fields: '{"background": {"service_worker": "background.min.js"}}'
       - name: Install zip
-        uses: montudor/action-zip@c25e01d7489d0274569440a2f0281b4569df16bc #v0.1.1
+        uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Zip extension build
         run: zip -qq -r ./build.zip *
         working-directory: ./extension/build
@@ -104,7 +109,7 @@ jobs:
           publish: true
           publish-target: trustedTesters
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 #v2.2.0
+        uses: rtCamp/action-slack-notify@4e5fb42d249be6a45a298f3c9543b111b02f7907 #v2.3.0
         env:
           MSG_MINIMAL: true
           SLACK_CHANNEL: proj-freighter

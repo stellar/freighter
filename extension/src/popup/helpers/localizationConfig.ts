@@ -1,4 +1,4 @@
-import i18n from "i18next";
+import i18n, { CallbackError, ResourceKey } from "i18next";
 import resourcesToBackend from "i18next-resources-to-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
@@ -8,10 +8,16 @@ i18n
     resourcesToBackend((language, namespace, callback) => {
       import(`../locales/${language}/${namespace}.json`)
         .then((resources) => {
-          callback(null, resources);
+          callback(
+            null as CallbackError,
+            resources as boolean | ResourceKey | null | undefined,
+          );
         })
         .catch((error) => {
-          callback(error, null);
+          callback(
+            error as CallbackError,
+            null as boolean | ResourceKey | null | undefined,
+          );
         });
     }),
   )

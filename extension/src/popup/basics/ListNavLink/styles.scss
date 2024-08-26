@@ -1,22 +1,40 @@
 .ListNavLink {
+  align-items: center;
   line-height: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
 
   a,
   span {
     align-items: center;
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
+    width: 100%;
   }
 
   &__wrapper {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1rem;
   }
 
   &__icon {
+    display: flex;
+    align-items: center;
+    width: 1.25rem;
     height: 1.25rem;
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  &__arrow {
+    height: 1.25rem;
+    fill: var(--sds-clr-gray-05);
   }
 }

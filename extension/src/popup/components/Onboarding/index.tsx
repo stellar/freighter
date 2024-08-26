@@ -21,8 +21,10 @@ export const Onboarding = ({
 }: OnboardingProps) => {
   const customStyle = {
     ...(!customWidth && layout === "full"
-      ? { "--Onboarding-layout-width": "100%" }
+      ? // eslint-disable-next-line
+        { "--Onboarding-layout-width": "100%" }
       : {}),
+    // eslint-disable-next-line
     ...(customWidth ? { "--Onboarding-layout-width": customWidth } : {}),
   } as React.CSSProperties;
 
@@ -95,7 +97,7 @@ export const OnboardingButtons = ({
           {showBackButton ? (
             <BackButton
               customButtonComponent={
-                <Button variant="secondary" size="md">
+                <Button variant="secondary" size="md" type="button">
                   {t("Back")}
                 </Button>
               }

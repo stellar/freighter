@@ -1,4 +1,5 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import {
   Asset,
@@ -11,9 +12,12 @@ import {
   StrKey,
   xdr,
 } from "stellar-sdk";
+import { Loader } from "@stellar/design-system";
+import { getContractSpec } from "@shared/api/internal";
 
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { CopyValue } from "popup/components/CopyValue";
 import { truncateString } from "helpers/stellar";
 import { formattedBuffer } from "popup/helpers/formatters";
 
@@ -22,6 +26,7 @@ import {
   InvocationTree,
   scValByType,
 } from "popup/helpers/soroban";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import "./styles.scss";
 
 export const KeyValueList = ({
@@ -32,8 +37,15 @@ export const KeyValueList = ({
   operationValue: string | number | React.ReactNode;
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
-    <div>{operationKey}</div>
-    <div>{operationValue}</div>
+    <div className="Operations__pair--key" data-testid="OperationKeyVal__key">
+      {operationKey}
+    </div>
+    <div
+      className="Operations__pair--value"
+      data-testid="OperationKeyVal__value"
+    >
+      {operationValue}
+    </div>
   </div>
 );
 
@@ -66,6 +78,8 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
           />
           <KeyValueInvokeHostFnArgs
             args={_invocation.args.args.map(nativeToScVal)}
+            fnName={_invocation.args.function}
+            contractId={_invocation.args.source}
           />
         </>
       );
@@ -82,7 +96,9 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
             <>
               <KeyValueList
                 operationKey={t("Salt")}
-                operationValue={truncateString(_invocation.args.wasm.salt)}
+                operationValue={truncateString(
+                  _invocation.args.wasm.salt as string,
+                )}
               />
               <KeyValueList
                 operationKey={t("Hash")}
@@ -209,11 +225,11 @@ export const KeyValueLine = ({
       <>
         <KeyValueList
           operationKey={t("Asset A")}
-          operationValue={line.assetA}
+          operationValue={line.assetA.getCode()}
         />
         <KeyValueList
           operationKey={t("Asset B")}
-          operationValue={line.assetB}
+          operationValue={line.assetB.getCode()}
         />
         <KeyValueList operationKey={t("Fee")} operationValue={line.fee} />
       </>
@@ -378,18 +394,72 @@ export const KeyValueSignerKeyOptions = ({
   return <></>;
 };
 
-export const KeyValueInvokeHostFnArgs = ({ args }: { args: xdr.ScVal[] }) => (
-  <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
-    <div>Parameters</div>
-    <div className="OperationParameters">
-      {args.map((arg) => (
-        <div className="Parameter" key={arg.toXDR().toString()}>
-          {scValByType(arg)}
-        </div>
-      ))}
+export const KeyValueInvokeHostFnArgs = ({
+  args,
+  contractId,
+  fnName,
+}: {
+  args: xdr.ScVal[];
+  contractId?: string;
+  fnName?: string;
+}) => {
+  const [isLoading, setLoading] = React.useState(true);
+  const [argNames, setArgNames] = React.useState([] as string[]);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  React.useEffect(() => {
+    async function getSpec(id: string, name: string) {
+      try {
+        const spec = await getContractSpec({ contractId: id, networkDetails });
+        const { definitions } = spec;
+        const invocationSpec = definitions[name];
+        const argNamesPositional = invocationSpec.properties?.args
+          ?.required as string[];
+        setArgNames(argNamesPositional);
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
+      }
+    }
+
+    if (contractId && fnName) {
+      getSpec(contractId, fnName);
+    } else {
+      setLoading(false);
+    }
+  }, [contractId, fnName, networkDetails]);
+
+  return isLoading ? (
+    <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
+      <Loader size="1rem" />
     </div>
-  </div>
-);
+  ) : (
+    <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
+      <div>Parameters</div>
+      <div className="OperationParameters" data-testid="OperationParameters">
+        {args.map((arg, ind) => (
+          <div
+            className="Parameter"
+            key={arg.toXDR().toString()}
+            data-testid="Parameter"
+          >
+            {argNames[ind] && (
+              <div data-testid="ParameterName">{argNames[ind]}</div>
+            )}
+            {arg.switch() === xdr.ScValType.scvAddress() ? (
+              <CopyValue
+                value={scValByType(arg)}
+                displayValue={scValByType(arg)}
+              />
+            ) : (
+              scValByType(arg)
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const KeyValueInvokeHostFn = ({
   op,
@@ -532,13 +602,22 @@ export const KeyValueInvokeHostFn = ({
             />
             <KeyValueList
               operationKey={t("Contract ID")}
-              operationValue={truncateString(contractId)}
+              operationValue={
+                <CopyValue
+                  value={contractId}
+                  displayValue={truncateString(contractId, 6)}
+                />
+              }
             />
             <KeyValueList
               operationKey={t("Function Name")}
               operationValue={fnName}
             />
-            <KeyValueInvokeHostFnArgs args={args} />
+            <KeyValueInvokeHostFnArgs
+              args={args}
+              contractId={contractId}
+              fnName={fnName}
+            />
           </>
         );
       }

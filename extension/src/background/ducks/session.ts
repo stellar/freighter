@@ -23,7 +23,8 @@ export const logIn = createAsyncThunk<
       allAccounts,
     };
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -39,7 +40,8 @@ export const setActivePublicKey = createAsyncThunk<
       privateKey: "",
     };
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -47,14 +49,14 @@ const initialState = {
   publicKey: "",
   privateKey: "",
   mnemonicPhrase: "",
-  allAccounts: [] as Array<Account>,
+  allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
 };
 
 interface UiData {
   publicKey: string;
   mnemonicPhrase?: string;
-  allAccounts?: Array<Account>;
+  allAccounts?: Account[];
   migratedMnemonicPhrase?: string;
 }
 

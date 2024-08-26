@@ -1,3 +1,99 @@
+# Release notes - Wallets - FE Freighter 5.18.3
+
+### Bug
+
+Cannot find paths for swaps
+
+# Release notes - Wallets - FE Freighter 5.18.2
+
+### Bug
+
+browser storage overrides by local storage
+
+# Release notes - Wallets - FE-Freighter-5.18.1
+
+### Feature
+
+Upgrade stellar-sdk
+
+# Release notes - Wallets - FE-Freighter-5.18.0
+
+### Bug
+
+Asset icons load late
+
+### Story
+
+Contract ID truncation does not adapt
+
+Add Soroswap and Lobstr token allowlists
+
+Add token allowlist management UI
+
+Better usability of contract id in ReviewAuth
+
+Redesign Settings views
+
+# Release notes - Wallets - FE-Freighter-5.17.7
+
+### Bug
+
+Use indexer to fetch token details for Futurenet
+
+# Release notes - Wallets - FE-Freighter-5.17.6
+
+### Bug
+
+Unable to Add Token when stellar.expert API is down
+
+# Release notes - Wallets - FE-Freighter-5.17.5
+
+### Bug
+
+Standalone token transfer summary throws error
+
+# Release notes - Wallets - FE-Freighter-5.17.4
+
+### Bug
+
+Check contract against allowList \+ native contract
+
+Account sub 400 level errors not properly handled
+
+Add an option to send from the select asset detail screen for Soroban tokens
+
+Fix missing loading state glitch during switch accounts
+
+Fix scrolling issue on search/add asset screens
+
+Show Horizon errors in extension UI
+
+### Story
+
+Upgrade Typescript to v5
+
+Address dependabot alerts
+
+Special case token transfers in sign tx details overview
+
+Upgrade React to v18
+
+\[FE\] Generic extension notification from Freighter BE
+
+\[FE\] Add degraded service notification for Horizon outage
+
+# Release notes - Wallets - Freighter-5.17.3
+
+### Bug
+
+Improve alerting for Soroban RPC issues
+
+### Story
+
+Move bottom nav out of pages to improve loading UX
+
+Streamline Sentry error tracking
+
 # Release notes - Wallets - Freighter-5.17.2
 
 ### Bug

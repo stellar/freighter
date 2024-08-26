@@ -13,11 +13,17 @@ import {
 
 import * as Stellar from "helpers/stellar";
 import { getTokenInvocationArgs } from "popup/helpers/soroban";
+import * as ApiInternal from "@shared/api/internal";
 
 import { SignTransaction } from "../SignTransaction";
-import { Wrapper } from "../../__testHelpers__";
+import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 
 jest.mock("stellar-identicon-js");
+jest.setTimeout(20000);
+
+jest
+  .spyOn(ApiInternal, "getAccountIndexerBalances")
+  .mockImplementation(() => Promise.resolve(mockBalances));
 
 const defaultSettingsState = {
   networkDetails: {
@@ -43,6 +49,7 @@ const mockTransactionInfo = {
         },
       },
     ],
+    _fee: 0.001,
   },
   transactionXdr: "",
   domain: "",
@@ -68,6 +75,7 @@ describe("SignTransactions", () => {
     transaction: {
       _networkPassphrase: Networks.FUTURENET,
       _operations: [op],
+      _fee: 0.001,
     },
     transactionXdr: xdr,
     accountToSign: "",
@@ -114,6 +122,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
+        ...mockTransactionInfo.transaction,
         _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
@@ -122,6 +131,10 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: true,
             networkDetails: {
@@ -138,17 +151,18 @@ describe("SignTransactions", () => {
     expect(screen.getByTestId("SignTransaction")).toBeDefined();
   });
 
-  it("shows non-https domain error", async () => {
+  it("shows non-https domain error on Mainnet", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
-      Networks.TESTNET,
+      Networks.PUBLIC,
     ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
       transactionXdr: transactions.classic,
       transaction: {
-        _networkPassphrase: Networks.TESTNET,
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.PUBLIC,
         _operations: [op],
       },
       isHttpsDomain: false,
@@ -156,11 +170,16 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: false,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Network ; September 2015",
+              networkPassphrase:
+                "Public Global Stellar Network ; September 2015",
             },
           },
         }}
@@ -175,6 +194,45 @@ describe("SignTransactions", () => {
     );
   });
 
+  it("does not show non-https domain error on Testnet", async () => {
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+    }));
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    expect(screen.queryByTestId("WarningMessage")).toBeNull();
+  });
+
   it("displays token payment parameters for Soroban token payment operations", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
@@ -185,6 +243,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanTransfer,
       transaction: {
+        ...mockTransactionInfo.transaction,
         _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
@@ -193,6 +252,10 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: true,
             networkDetails: {
@@ -206,28 +269,31 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    userEvent.click(screen.getByTestId("Tab-Details"));
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
 
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);
 
-    expect(opDetails.includes(`Amount:${args?.amount.toString()}`));
     expect(
       opDetails.includes(
-        `Contract ID:${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Parameters${args?.from.toString()}Copied${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
-    );
+    ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Destination:${Stellar.truncatedPublicKey(args?.to!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
-    );
-    expect(
-      opDetails.includes(`Source:${Stellar.truncatedPublicKey(args?.from!)}`),
-    );
-    expect(opDetails.includes(`Function Name:${args?.fnName}`));
+    ).toBeTruthy();
+    expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("displays mint parameters for Soroban mint operations", async () => {
@@ -240,6 +306,7 @@ describe("SignTransactions", () => {
       ...mockTransactionInfo,
       transactionXdr: transactions.sorobanMint,
       transaction: {
+        ...mockTransactionInfo.transaction,
         _networkPassphrase: Networks.FUTURENET,
         _operations: [op],
       },
@@ -248,6 +315,10 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: true,
             networkDetails: {
@@ -261,27 +332,31 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    userEvent.click(screen.getByTestId("Tab-Details"));
+    await waitFor(() => {
+      expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
+      userEvent.click(screen.getByTestId("Tab-Details"));
+    });
+
     const args = getTokenInvocationArgs(op);
     const opDetails = screen
       .getAllByTestId("OperationKeyVal")
       .map((node) => node.textContent);
 
-    expect(opDetails.includes(`Amount:${args?.amount.toString()}`));
     expect(
       opDetails.includes(
-        `Contract ID:${Stellar.truncatedPublicKey(args?.contractId!)}`,
+        `Parameters${args?.to.toString()}Copied${args?.amount.toString()}`,
       ),
-    );
+    ).toBeTruthy();
     expect(
       opDetails.includes(
-        `Destination:${Stellar.truncatedPublicKey(args?.to!)}`,
+        `Contract ID${Stellar.truncatedPublicKey(
+          args?.contractId || "",
+          6,
+        )}Copied`,
       ),
-    );
-    expect(
-      opDetails.includes(`Source:${Stellar.truncatedPublicKey(args?.from!)}`),
-    );
-    expect(opDetails.includes(`Function Name:${args?.fnName}`));
+    ).toBeTruthy();
+    expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
+    expect(args?.amount === BigInt(5)).toBeTruthy();
   });
 
   it("memo: doesn't render memo if there is no memo", async () => {
@@ -307,7 +382,7 @@ describe("SignTransactions", () => {
   it("memo: render memo text", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_TEXT,
-      Networks.TESTNET,
+      Networks.FUTURENET,
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -318,6 +393,10 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: true,
             networkDetails: {
@@ -331,6 +410,7 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
+    await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "text memo (MEMO_TEXT)",
     );
@@ -350,6 +430,10 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: true,
             networkDetails: {
@@ -362,7 +446,7 @@ describe("SignTransactions", () => {
         <SignTransaction />
       </Wrapper>,
     );
-
+    await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "123456 (MEMO_ID)",
     );
@@ -382,6 +466,10 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: true,
             networkDetails: {
@@ -395,6 +483,7 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
+    await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_HASH)",
     );
@@ -414,6 +503,10 @@ describe("SignTransactions", () => {
     render(
       <Wrapper
         state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
           settings: {
             isExperimentalModeEnabled: true,
             networkDetails: {
@@ -427,6 +520,7 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
+    await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_RETURN)",
     );

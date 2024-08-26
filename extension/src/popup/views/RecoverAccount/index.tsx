@@ -117,6 +117,7 @@ export const RecoverAccount = () => {
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
 
+    // eslint-disable-next-line
     await dispatch(
       recoverAccount({
         password,
@@ -160,7 +161,7 @@ export const RecoverAccount = () => {
   };
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Formik
@@ -208,6 +209,7 @@ export const RecoverAccount = () => {
                         <div className="RecoverAccount__phrase-toggle">
                           <div>{SHORT_PHRASE} word</div>
                           <Toggle
+                            fieldSize="md"
                             checked={isLongPhrase}
                             id="RecoverAccount__toggle"
                             onChange={() => setIsLongPhrase(!isLongPhrase)}
@@ -218,11 +220,11 @@ export const RecoverAccount = () => {
                           <Button
                             variant="secondary"
                             onClick={() => setIsTextShowing(!isTextShowing)}
-                            size="xs"
+                            size="sm"
                             type="button"
                           >
                             <span> {isTextShowing ? "Hide" : "Show"}</span>
-                            {isTextShowing ? <Icon.Hide /> : <Icon.Show />}
+                            {isTextShowing ? <Icon.EyeOff /> : <Icon.Eye />}
                           </Button>
                         </div>
                       </div>
@@ -263,7 +265,7 @@ export const RecoverAccount = () => {
                     </FormRows>
 
                     <Field name="termsOfUse">
-                      {({ field }: FieldProps) => (
+                      {({ field, form }: FieldProps) => (
                         <Checkbox
                           fieldSize="md"
                           autoComplete="off"
@@ -273,11 +275,17 @@ export const RecoverAccount = () => {
                               ? errors.termsOfUse
                               : null
                           }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              form.setFieldValue("termsOfUse", !field.value);
+                              e.currentTarget.checked = !field.value;
+                            }
+                          }}
                           label={
                             <>
-                              {t("I have read and agree to")}{" "}
+                              {t("I have read and agree to the")}{" "}
                               <Link
-                                variant="secondary"
+                                variant="primary"
                                 href="https://stellar.org/terms-of-service"
                               >
                                 {t("Terms of Use")}
@@ -312,6 +320,6 @@ export const RecoverAccount = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

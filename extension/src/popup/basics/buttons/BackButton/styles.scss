@@ -7,6 +7,10 @@
   width: var(--back--button-dimension);
   z-index: var(--back--button-z-index);
 
+  svg {
+    fill: var(--sds-clr-gray-05);
+  }
+
   &--has-copy {
     width: 3.75rem;
   }

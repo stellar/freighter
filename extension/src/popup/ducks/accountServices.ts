@@ -39,18 +39,19 @@ import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData } from "helpers/metrics";
 
 export const createAccount = createAsyncThunk<
-  { allAccounts: Array<Account>; publicKey: string },
+  { allAccounts: Account[]; publicKey: string },
   string,
   { rejectValue: ErrorMessage }
 >("auth/createAccount", async (password, thunkApi) => {
-  let res = { allAccounts: [] as Array<Account>, publicKey: "" };
+  let res = { allAccounts: [] as Account[], publicKey: "" };
 
   try {
     res = await createAccountService(password);
   } catch (e) {
-    console.error("Failed when creating an account: ", e.message);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed when creating an account: ", message);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
   return res;
@@ -62,41 +63,43 @@ export const fundAccount = createAsyncThunk(
     try {
       await fundAccountService(publicKey);
     } catch (e) {
-      console.error("Failed when funding an account: ", e.message);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when funding an account: ", message);
     }
   },
 );
 
 export const addAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<Account>; hasPrivateKey: boolean },
+  { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
   string,
   { rejectValue: ErrorMessage }
 >("auth/addAccount", async (password, thunkApi) => {
   let res = {
     publicKey: "",
-    allAccounts: [] as Array<Account>,
+    allAccounts: [] as Account[],
     hasPrivateKey: false,
   };
 
   try {
     res = await addAccountService(password);
   } catch (e) {
-    console.error("Failed when creating an account: ", e.message);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed when creating an account: ", message);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
   return res;
 });
 
 export const importAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Array<Account>; hasPrivateKey: boolean },
+  { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
   { password: string; privateKey: string },
   { rejectValue: ErrorMessage }
 >("auth/importAccount", async ({ password, privateKey }, thunkApi) => {
   let res = {
     publicKey: "",
-    allAccounts: [] as Array<Account>,
+    allAccounts: [] as Account[],
     hasPrivateKey: false,
   };
 
@@ -104,8 +107,9 @@ export const importAccount = createAsyncThunk<
     res = await importAccountService(password, privateKey);
   } catch (e) {
     console.error("Failed when importing an account: ", e);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
   return res;
@@ -114,7 +118,7 @@ export const importAccount = createAsyncThunk<
 export const importHardwareWallet = createAsyncThunk<
   {
     publicKey: string;
-    allAccounts: Array<Account>;
+    allAccounts: Account[];
     hasPrivateKey: boolean;
     bipPath: string;
   },
@@ -125,7 +129,7 @@ export const importHardwareWallet = createAsyncThunk<
   async ({ publicKey, hardwareWalletType, bipPath }, thunkApi) => {
     let res = {
       publicKey: "",
-      allAccounts: [] as Array<Account>,
+      allAccounts: [] as Account[],
       hasPrivateKey: false,
       bipPath: "",
     };
@@ -137,7 +141,8 @@ export const importHardwareWallet = createAsyncThunk<
       );
     } catch (e) {
       console.error("Failed when importing hardware wallet: ", e);
-      return thunkApi.rejectWithValue({ errorMessage: e.message });
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({ errorMessage: message });
     }
     return res;
   },
@@ -154,7 +159,7 @@ export const makeAccountActive = createAsyncThunk<
     storeAccountMetricsData(publicKey, allAccounts);
     return res;
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -165,7 +170,7 @@ export const updateAccountName = createAsyncThunk(
 
 export const recoverAccount = createAsyncThunk<
   {
-    allAccounts: Array<Account>;
+    allAccounts: Account[];
     hasPrivateKey: boolean;
     publicKey: string;
     error: string;
@@ -177,7 +182,7 @@ export const recoverAccount = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >("auth/recoverAccount", async ({ password, mnemonicPhrase }, thunkApi) => {
   let res = {
-    allAccounts: [] as Array<Account>,
+    allAccounts: [] as Account[],
     publicKey: "",
     hasPrivateKey: false,
     error: "",
@@ -186,9 +191,10 @@ export const recoverAccount = createAsyncThunk<
   try {
     res = await recoverAccountService(password, mnemonicPhrase);
   } catch (e) {
-    console.error("Failed when recovering an account: ", e.message);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed when recovering an account: ", message);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
 
@@ -216,10 +222,11 @@ export const confirmMnemonicPhrase = createAsyncThunk<
     try {
       res = await confirmMnemonicPhraseService(phrase);
     } catch (e) {
-      console.error("Failed when confirming Mnemonic Phrase: ", e.message);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when confirming Mnemonic Phrase: ", message);
       return thunkApi.rejectWithValue({
         applicationState: res.applicationState,
-        errorMessage: e.message,
+        errorMessage: message,
       });
     }
 
@@ -253,9 +260,10 @@ export const confirmMigratedMnemonicPhrase = createAsyncThunk<
     try {
       res = await confirmMigratedMnemonicPhraseService(phrase);
     } catch (e) {
-      console.error("Failed when confirming Mnemonic Phrase: ", e.message);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when confirming Mnemonic Phrase: ", message);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message,
+        errorMessage: message,
       });
     }
 
@@ -278,7 +286,7 @@ export const confirmPassword = createAsyncThunk<
     publicKey: string;
     hasPrivateKey: boolean;
     applicationState: APPLICATION_STATE;
-    allAccounts: Array<Account>;
+    allAccounts: Account[];
     bipPath: string;
   },
   string,
@@ -288,15 +296,16 @@ export const confirmPassword = createAsyncThunk<
     publicKey: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-    allAccounts: [] as Array<Account>,
+    allAccounts: [] as Account[],
     bipPath: "",
   };
   try {
     res = await confirmPasswordService(phrase);
   } catch (e) {
-    console.error("Failed when confirming a password: ", e.message);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed when confirming a password: ", message);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
   if (!res.publicKey) {
@@ -308,10 +317,7 @@ export const confirmPassword = createAsyncThunk<
   return res;
 });
 
-const storeAccountMetricsData = (
-  publicKey: string,
-  allAccounts: Array<Account>,
-) => {
+const storeAccountMetricsData = (publicKey: string, allAccounts: Account[]) => {
   const metricsData: MetricsData = JSON.parse(
     localStorage.getItem(METRICS_DATA) || "{}",
   );
@@ -397,9 +403,10 @@ export const addTokenId = createAsyncThunk<
   try {
     res = await addTokenIdService(publicKey, tokenId, network);
   } catch (e) {
-    console.error("Failed when adding a token: ", e.message);
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed when adding a token: ", message);
     return thunkApi.rejectWithValue({
-      errorMessage: e.message,
+      errorMessage: message,
     });
   }
   return res;
@@ -407,8 +414,8 @@ export const addTokenId = createAsyncThunk<
 
 export const migrateAccounts = createAsyncThunk<
   {
-    allAccounts: Array<Account>;
-    migratedAccounts: Array<MigratedAccount>;
+    allAccounts: Account[];
+    migratedAccounts: MigratedAccount[];
     hasPrivateKey: boolean;
     publicKey: string;
     error: string;
@@ -423,8 +430,8 @@ export const migrateAccounts = createAsyncThunk<
   "auth/migrateAccounts",
   async ({ balancesToMigrate, isMergeSelected, recommendedFee }, thunkApi) => {
     let res = {
-      migratedAccounts: [] as Array<MigratedAccount>,
-      allAccounts: [] as Array<Account>,
+      migratedAccounts: [] as MigratedAccount[],
+      allAccounts: [] as Account[],
       publicKey: "",
       hasPrivateKey: false,
       error: "",
@@ -437,9 +444,10 @@ export const migrateAccounts = createAsyncThunk<
         recommendedFee,
       });
     } catch (e) {
-      console.error("Failed when migrating an account: ", e.message);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when migrating an account: ", message);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message,
+        errorMessage: message,
       });
     }
 
@@ -448,8 +456,8 @@ export const migrateAccounts = createAsyncThunk<
 );
 
 interface InitialState {
-  allAccounts: Array<Account>;
-  migratedAccounts: Array<MigratedAccount>;
+  allAccounts: Account[];
+  migratedAccounts: MigratedAccount[];
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
@@ -595,9 +603,8 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
-      const {
-        message = "Freighter was unable to switch to this account",
-      } = action.error;
+      const { message = "Freighter was unable to switch to this account" } =
+        action.error;
 
       return {
         ...state,
@@ -616,9 +623,8 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(updateAccountName.rejected, (state, action) => {
-      const {
-        message = "Freighter was unable update this account's name",
-      } = action.error;
+      const { message = "Freighter was unable update this account's name" } =
+        action.error;
 
       return {
         ...state,
@@ -775,17 +781,13 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(migrateAccounts.fulfilled, (state, action) => {
-      const {
-        publicKey,
-        allAccounts,
-        migratedAccounts,
-        hasPrivateKey,
-      } = action.payload || {
-        publicKey: "",
-        allAccounts: [],
-        migratedAccounts: [],
-        hasPrivateKey: false,
-      };
+      const { publicKey, allAccounts, migratedAccounts, hasPrivateKey } =
+        action.payload || {
+          publicKey: "",
+          allAccounts: [],
+          migratedAccounts: [],
+          hasPrivateKey: false,
+        };
 
       return {
         ...state,

@@ -13,7 +13,7 @@ export const PinExtension = () => {
   const { t } = useTranslation();
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Onboarding layout="full" customWidth="31rem">
@@ -56,6 +56,6 @@ export const PinExtension = () => {
           </div>
         </Onboarding>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

@@ -21,15 +21,16 @@ export const NotFundedMessage = ({
   const dispatch = useDispatch();
 
   const handleFundAccount = async () => {
+    // eslint-disable-next-line
     await dispatch(fundAccount(publicKey));
     setIsAccountFriendbotFunded(true);
   };
 
   return (
     <>
-      <div className="NotFunded">
+      <div className="NotFunded" data-testid="not-funded">
         <div className="NotFunded__header">
-          <Icon.Info />
+          <Icon.InfoCircle />
           {t("Stellar address is not funded")}
         </div>
         <div className="NotFunded__copy">

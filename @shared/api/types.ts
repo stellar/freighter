@@ -1,12 +1,11 @@
 import BigNumber from "bignumber.js";
-import { Horizon } from "stellar-sdk";
-import { Types } from "@stellar/wallet-sdk";
+import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
-import { AssetBalance, NativeBalance } from "@stellar/wallet-sdk/dist/types";
+import { AssetsLists, AssetsListItem } from "../constants/soroban/token";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -23,6 +22,7 @@ export type MigratableAccount = Account & { keyIdIndex: number };
 
 export interface Response {
   error: string;
+  apiError: FreighterApiError;
   messagedId: number;
   applicationState: APPLICATION_STATE;
   publicKey: string;
@@ -38,9 +38,10 @@ export interface Response {
     sign: (sourceKeys: {}) => void;
   };
   transactionXDR: string;
+  signerAddress: string;
   signedTransaction: string;
-  signedBlob: string;
-  signedAuthEntry: string;
+  signedBlob: Buffer | null;
+  signedAuthEntry: Buffer | null;
   source: string;
   type: SERVICE_TYPES;
   url: string;
@@ -50,13 +51,19 @@ export interface Response {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
+  userNotification: UserNotification;
+  assetsLists: AssetsLists;
+  assetsList: AssetsListItem;
+  isDeleteAssetsList: boolean;
   settingsState: SettingsState;
+  experimentalFeaturesState: SettingsState;
   networkDetails: NetworkDetails;
   sorobanRpcUrl: string;
   networksList: NetworkDetails[];
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   migratedAccounts: MigratedAccount[];
   accountName: string;
   assetCode: string;
@@ -65,7 +72,7 @@ export interface Response {
   network: string;
   networkIndex: number;
   networkName: string;
-  recentAddresses: Array<string>;
+  recentAddresses: string[];
   hardwareWalletType: WalletType;
   bipPath: string;
   blockedDomains: BlockedDomains;
@@ -82,6 +89,7 @@ export interface Response {
   balancesToMigrate: BalanceToMigrate[];
   isMergeSelected: boolean;
   recommendedFee: string;
+  isNonSSLEnabled: boolean;
 }
 
 export interface BlockedDomains {
@@ -98,7 +106,8 @@ export interface BlockedAccount {
 export interface ExternalRequestBase {
   network: string;
   networkPassphrase: string;
-  accountToSign: string;
+  accountToSign?: string;
+  address?: string;
   type: EXTERNAL_SERVICE_TYPES;
 }
 
@@ -138,8 +147,17 @@ export interface Preferences {
   isSafetyValidationEnabled: boolean;
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
+  isNonSSLEnabled: boolean;
   error: string;
+}
+
+export interface ExperimentalFeatures {
   isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
+  isNonSSLEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  experimentalFeaturesState: SettingsState;
 }
 
 export enum SettingsState {
@@ -149,10 +167,16 @@ export enum SettingsState {
   SUCCESS = "SUCCESS",
 }
 
+export interface UserNotification {
+  enabled: boolean;
+  message: string;
+}
+
 export interface IndexerSettings {
   settingsState: SettingsState;
   isSorobanPublicEnabled: boolean;
   isRpcHealthy: boolean;
+  userNotification: UserNotification;
 }
 
 export type Settings = {
@@ -168,6 +192,61 @@ export interface AssetIcons {
 
 export interface AssetDomains {
   [code: string]: string;
+}
+
+export interface SoroswapToken {
+  code: string;
+  contract: string;
+  decimals: number;
+  icon: string;
+  name: string;
+}
+
+export interface NativeToken {
+  type: SdkAssetType;
+  code: string;
+}
+
+export interface Issuer {
+  key: string;
+  name?: string;
+  url?: string;
+  hostName?: string;
+}
+
+export interface AssetToken {
+  type: SdkAssetType;
+  code: string;
+  issuer: Issuer;
+  anchorAsset?: string;
+  numAccounts?: BigNumber;
+  amount?: BigNumber;
+  bidCount?: BigNumber;
+  askCount?: BigNumber;
+  spread?: BigNumber;
+}
+
+export type Token = NativeToken | AssetToken;
+
+export interface Balance {
+  token: Token;
+
+  // for non-native tokens, this should be total - sellingLiabilities
+  // for native, it should also subtract the minimumBalance
+  available: BigNumber;
+  total: BigNumber;
+  buyingLiabilities: string;
+  sellingLiabilities: string;
+}
+
+export interface AssetBalance extends Balance {
+  token: AssetToken;
+  sponsor?: string;
+}
+
+export interface NativeBalance extends Balance {
+  token: NativeToken;
+  minimumBalance: BigNumber;
 }
 
 export interface TokenBalance extends AssetBalance {
@@ -191,19 +270,19 @@ export interface SorobanBalance {
   token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType = Types.AssetBalance | Types.NativeBalance | TokenBalance;
+export type AssetType = AssetBalance | NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 
 /* eslint-disable camelcase */
-export type HorizonOperation = any;
+export type HorizonOperation = Horizon.ServerApi.OperationRecord;
 /* eslint-enable camelcase */
 
 export interface AccountBalancesInterface {
   balances: Balances;
-  tokensWithNoBalance: string[];
   isFunded: boolean | null;
   subentryCount: number;
+  error?: { horizon: any; soroban: any };
 }
 
 export interface AccountHistoryInterface {
@@ -234,4 +313,10 @@ declare global {
     freighter: boolean;
     freighterApi: { [key: string]: any };
   }
+}
+
+export interface FreighterApiError {
+  code: number;
+  message: string;
+  ext?: string[];
 }

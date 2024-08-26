@@ -26,7 +26,7 @@ export const SettingsFail = () => {
   }, [error]);
 
   return (
-    <View>
+    <React.Fragment>
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="SettingsFail__content">
@@ -51,6 +51,6 @@ export const SettingsFail = () => {
           {t("Got it")}
         </Button>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

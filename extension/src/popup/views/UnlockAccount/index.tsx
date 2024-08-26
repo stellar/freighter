@@ -38,13 +38,14 @@ export const UnlockAccount = () => {
 
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
+    // eslint-disable-next-line
     await dispatch(confirmPassword(password));
     // skip this location in history, we won't need to come back here after unlocking account
     history.replace(`${destination}${queryParams}`);
   };
 
   return (
-    <View>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <div className="UnlockAccount">
@@ -108,6 +109,6 @@ export const UnlockAccount = () => {
           </Link>
         </div>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

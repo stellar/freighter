@@ -14,7 +14,9 @@ export const OptionTag = ({
   hardwareWalletType?: WalletType;
   imported: boolean;
 }) => {
-  if (!hardwareWalletType && !imported) return null;
+  if (!hardwareWalletType && !imported) {
+    return null;
+  }
   return (
     <span className="AccountList__option-tag">
       &bull; {hardwareWalletType || "Imported"}
@@ -29,6 +31,7 @@ interface AccountListItemProps {
   setIsDropdownOpen: (isDropdownOpen: boolean) => void;
   imported: boolean;
   hardwareWalletType?: WalletType;
+  setLoading?: (isLoading: boolean) => void;
 }
 
 export const AccountListItem = ({
@@ -38,6 +41,7 @@ export const AccountListItem = ({
   setIsDropdownOpen,
   imported,
   hardwareWalletType = WalletType.NONE,
+  setLoading,
 }: AccountListItemProps) => (
   <li
     className="AccountList__item"
@@ -50,6 +54,7 @@ export const AccountListItem = ({
       active={isSelected}
       publicKey={accountPublicKey}
       setIsDropdownOpen={setIsDropdownOpen}
+      setLoading={setLoading}
     >
       <OptionTag imported={imported} hardwareWalletType={hardwareWalletType} />
     </AccountListIdenticon>
@@ -60,15 +65,17 @@ export const AccountListItem = ({
 );
 
 interface AccounsListProps {
-  allAccounts: Array<Account>;
+  allAccounts: Account[];
   publicKey: string;
   setIsDropdownOpen: (isDropdownOpen: boolean) => void;
+  setLoading?: (isLoading: boolean) => void;
 }
 
 export const AccountList = ({
   allAccounts,
   publicKey,
   setIsDropdownOpen,
+  setLoading,
 }: AccounsListProps) => (
   <div className="AccountList__accountsWrapper View__inset--scroll-shadows">
     {allAccounts.map(
@@ -89,6 +96,7 @@ export const AccountList = ({
             imported={imported}
             hardwareWalletType={hardwareWalletType}
             key={`${accountPublicKey}-${accountName}`}
+            setLoading={setLoading}
           />
         );
       },

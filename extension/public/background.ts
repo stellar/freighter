@@ -5,14 +5,11 @@ import {
   initAlarmListener,
 } from "background";
 
-import { buildStore } from "background/store";
-
-async function main() {
-  const store = await buildStore();
+function main() {
   initContentScriptMessageListener();
-  initExtensionMessageListener(store);
+  initExtensionMessageListener();
   initInstalledListener();
-  initAlarmListener(store);
+  initAlarmListener();
 }
 
 main();

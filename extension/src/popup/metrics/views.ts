@@ -17,9 +17,9 @@ const routeToEventName = {
   [ROUTES.connectWallet]: METRIC_NAMES.viewConnectWallet,
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
   [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
-  [ROUTES.signBlob]: METRIC_NAMES.viewSignBlob,
+  [ROUTES.signMessage]: METRIC_NAMES.viewSignMessage,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
-  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewSignTransaction,
+  [ROUTES.reviewAuthorization]: METRIC_NAMES.viewReviewAuthorization,
   [ROUTES.signAuthEntry]: METRIC_NAMES.viewSignAuthEntry,
   [ROUTES.grantAccess]: METRIC_NAMES.viewGrantAccess,
   [ROUTES.mnemonicPhrase]: METRIC_NAMES.viewMnemonicPhrase,
@@ -48,23 +48,26 @@ const routeToEventName = {
   [ROUTES.sendPaymentSettingsFee]: METRIC_NAMES.sendPaymentSettingsFee,
   [ROUTES.sendPaymentSettingsSlippage]:
     METRIC_NAMES.sendPaymentSettingsSlippage,
+  [ROUTES.sendPaymentSettingsTimeout]: METRIC_NAMES.sendPaymentSettingsTimeout,
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
-  [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
   [ROUTES.searchAsset]: METRIC_NAMES.viewSearchAsset,
-  [ROUTES.trustlineError]: METRIC_NAMES.viewTrustlineError,
-  [ROUTES.addToken]: METRIC_NAMES.viewAddToken,
+  [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
   [ROUTES.swap]: METRIC_NAMES.viewSwap,
   [ROUTES.swapAmount]: METRIC_NAMES.swapAmount,
   [ROUTES.swapSettings]: METRIC_NAMES.swapSettings,
   [ROUTES.swapSettingsFee]: METRIC_NAMES.swapSettingsFee,
   [ROUTES.swapSettingsSlippage]: METRIC_NAMES.swapSettingsSlippage,
+  [ROUTES.swapSettingsTimeout]: METRIC_NAMES.swapSettingsTimeout,
   [ROUTES.swapConfirm]: METRIC_NAMES.swapConfirm,
   [ROUTES.manageNetwork]: METRIC_NAMES.viewManageNetwork,
   [ROUTES.addNetwork]: METRIC_NAMES.viewAddNetwork,
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
   [ROUTES.networkSettings]: METRIC_NAMES.viewNetworkSettings,
   [ROUTES.leaveFeedback]: METRIC_NAMES.viewLeaveFeedback,
+  [ROUTES.manageAssetsLists]: METRIC_NAMES.viewManageAssetsLists,
+  [ROUTES.manageAssetsListsModifyAssetList]:
+    METRIC_NAMES.manageAssetListsModifyAssetList,
   [ROUTES.accountMigration]: METRIC_NAMES.viewAccountMigration,
   [ROUTES.accountMigrationReviewMigration]:
     METRIC_NAMES.viewAccountMigrationReviewMigration,
@@ -74,6 +77,7 @@ const routeToEventName = {
     METRIC_NAMES.viewAccountMigrationConfirmMigration,
   [ROUTES.accountMigrationMigrationComplete]:
     METRIC_NAMES.viewAccountMigrationMigrationComplete,
+  [ROUTES.advancedSettings]: METRIC_NAMES.viewAdvancedSettings,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {
@@ -104,6 +108,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       number_of_operations: operations.length,
       operationTypes,
     };
@@ -111,7 +116,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     emitMetric(eventName, METRIC_OPTIONS);
   } else if (
     pathname === ROUTES.signAuthEntry ||
-    pathname === ROUTES.signBlob
+    pathname === ROUTES.signMessage
   ) {
     const { url } = parsedSearchParam(search);
 

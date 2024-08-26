@@ -3,7 +3,7 @@
   overflow: hidden;
   position: relative;
   padding: 1rem;
-  background-color: var(--color-gray-10);
+  background-color: var(--sds-clr-gray-01);
   display: flex;
   justify-content: center;
 
@@ -31,9 +31,9 @@
     display: flex;
     align-items: center;
     padding: 0 0.5rem;
-    background-color: var(--color-gray-20);
-    color: var(--color-gray-70);
-    border: 1px solid var(--color-gray-30);
+    background-color: var(--sds-clr-gray-02);
+    color: var(--sds-clr-gray-12);
+    border: 1px solid var(--sds-clr-gray-03);
     border-radius: 6px;
     margin-bottom: 0.5rem;
     line-height: 1.25rem;
@@ -56,9 +56,18 @@
       height: 230px;
       overflow-y: auto;
       border-radius: 4px;
-      background-color: var(--color-gray-20);
+      background-color: var(--sds-clr-gray-02);
       padding: 1rem;
       margin-top: 0.5rem;
+
+      &__loader {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
 
       &__TitleRow {
         display: flex;
@@ -76,9 +85,47 @@
         margin-top: 1rem;
         font-size: 0.75rem;
 
+        &.TransferSummary {
+          border-bottom: 1px solid var(--sds-clr-gray-04);
+          margin-bottom: 1rem;
+          padding-bottom: 0.5rem;
+        }
+
+        .SummaryBlock {
+          display: flex;
+          justify-content: space-between;
+
+          .MissingDetailWarning {
+            width: 100%;
+            font-style: italic;
+            font-size: 0.75rem;
+          }
+
+          &__Title {
+            display: flex;
+            align-items: center;
+
+            .AccountAssets__asset--soroban-token {
+              height: 24px;
+              width: 24px;
+              margin-left: 0.5rem;
+              margin-right: 0;
+            }
+
+            p {
+              font-size: 0.75rem;
+              margin-bottom: 0 !important; // sds rule override
+            }
+
+            .FieldTitle {
+              margin-left: 0.2rem;
+            }
+          }
+        }
+
         & > .Operations__pair {
           align-items: center;
-          color: var(--color-gray-90);
+          color: var(--sds-clr-gray-12);
           display: flex;
           justify-content: space-between;
           line-height: 1.5rem;
@@ -86,7 +133,7 @@
           &--invoke {
             flex-direction: column;
             align-items: baseline;
-            color: var(--color-gray-90);
+            color: var(--sds-clr-gray-12);
             display: flex;
             justify-content: space-between;
             line-height: 1.5rem;
@@ -101,7 +148,7 @@
           }
 
           & > :nth-child(2) {
-            color: var(--color-gray-60);
+            color: var(--sds-clr-gray-12);
           }
         }
       }
@@ -116,7 +163,7 @@
       display: flex;
       flex-direction: column;
       border-radius: 4px;
-      background-color: var(--color-gray-20);
+      background-color: var(--sds-clr-gray-02);
       padding: 1rem;
       overflow-y: scroll;
     }
@@ -144,7 +191,7 @@
       border-radius: 7px;
       border: 1px solid;
       margin-top: 10px;
-      border-color: var(--color-gray-40);
+      border-color: var(--sds-clr-gray-04);
     }
 
     &__BtnRow {

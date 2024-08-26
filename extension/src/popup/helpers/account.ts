@@ -23,10 +23,12 @@ export const sortBalances = (
   balances: Balances,
   sorobanBalances?: TokenBalances,
 ) => {
-  const collection = [] as Array<any>;
-  const lpBalances = [] as Array<any>;
+  const collection = [] as any[];
+  const lpBalances = [] as any[];
   const _sorobanBalances = sorobanBalances || [];
-  if (!balances) return collection;
+  if (!balances) {
+    return collection;
+  }
 
   // put XLM at the top of the balance list, LP shares last
   Object.entries(balances).forEach(([k, v]) => {
@@ -53,21 +55,26 @@ export const getIsSupportedSorobanOp = (
   networkDetails: NetworkDetails,
 ) => {
   const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-  return !!attrs && Object.values(SorobanTokenInterface).includes(attrs.fnName);
+  return (
+    !!attrs &&
+    Object.values(SorobanTokenInterface).includes(
+      attrs.fnName as SorobanTokenInterface,
+    )
+  );
 };
 
 export const getIsSwap = (operation: HorizonOperation) =>
   operation.type_i === 13 && operation.source_account === operation.to;
 
 interface SortOperationsByAsset {
-  operations: Array<HorizonOperation>;
-  balances: Array<AssetType>;
+  operations: HorizonOperation[];
+  balances: AssetType[] | SorobanBalance[];
   networkDetails: NetworkDetails;
   publicKey: string;
 }
 
 export interface AssetOperations {
-  [key: string]: Array<HorizonOperation>;
+  [key: string]: HorizonOperation[];
 }
 
 export const sortOperationsByAsset = ({
@@ -80,14 +87,16 @@ export const sortOperationsByAsset = ({
 
   balances.forEach((bal) => {
     if ("token" in bal) {
-      const issuer = "issuer" in bal.token ? bal.token.issuer.key : "";
-      assetOperationMap[getCanonicalFromAsset(bal.token.code, issuer)] = [];
+      const issuer =
+        bal.token !== undefined && "issuer" in bal.token
+          ? bal.token.issuer.key
+          : "";
+      const code =
+        bal.token !== undefined && "code" in bal.token ? bal.token.code : "";
+      assetOperationMap[getCanonicalFromAsset(code, issuer)] = [];
     }
     if ("contractId" in bal) {
-      const _bal = bal as SorobanBalance;
-      assetOperationMap[
-        getCanonicalFromAsset(_bal.symbol, _bal.contractId)
-      ] = [];
+      assetOperationMap[getCanonicalFromAsset(bal.symbol, bal.contractId)] = [];
     }
   });
 
@@ -99,14 +108,18 @@ export const sortOperationsByAsset = ({
         const assetIssuer = asset.issuer;
 
         if (
-          (op.asset_code === assetCode && op.asset_issuer === assetIssuer) ||
-          op.asset_type === assetCode
+          ("asset_code" in op &&
+            "asset_issuer" in op &&
+            op.asset_code === assetCode &&
+            op.asset_issuer === assetIssuer) ||
+          ("asset_type" in op && op.asset_type === assetCode)
         ) {
           assetOperationMap[assetKey].push(op);
         } else if ("source_asset_type" in op || "source_asset_code" in op) {
           if (
-            op.source_asset_type === assetCode ||
+            ("source_asset_type" in op && op.source_asset_type === assetCode) ||
             (op.source_asset_code === assetCode &&
+              "source_asset_issuer" in op &&
               op.source_asset_issuer === assetIssuer)
           ) {
             assetOperationMap[assetKey].push(op);
@@ -144,7 +157,7 @@ export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
   }`;
 
 interface GetAvailableBalance {
-  accountBalances: Array<AssetType>;
+  accountBalances: AssetType[];
   selectedAsset: string;
   recommendedFee?: string;
   subentryCount: number;
@@ -183,10 +196,7 @@ export const getAvailableBalance = ({
   return availBalance;
 };
 
-export const getRawBalance = (
-  accountBalances: Array<AssetType>,
-  asset: string,
-) =>
+export const getRawBalance = (accountBalances: AssetType[], asset: string) =>
   accountBalances.find((balance) => {
     if ("token" in balance) {
       if (balance.token.type === "native") {
@@ -229,7 +239,9 @@ export const displaySorobanId = (
   strLen: number,
   separator = "...",
 ) => {
-  if (fullStr.length <= strLen) return fullStr;
+  if (fullStr.length <= strLen) {
+    return fullStr;
+  }
 
   const sepLen = separator.length;
   const charsToShow = strLen - sepLen;

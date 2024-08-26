@@ -1,0 +1,50 @@
+name: Run Snapshots
+env:
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch name
+        default: ""
+        required: true
+  # Allow updating snapshots during manual runs
+  workflow_call:
+    inputs:
+      update-snapshots:
+        description: "Update snapshots?"
+        type: boolean
+  workflow_run:
+    workflows: ["Run Tests"]
+    types:
+      - in_progress
+jobs:
+  test-ci:
+    name: test snapshots
+    timeout-minutes: 20
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - run: npm install -g yarn && yarn
+      - run: npx playwright install --with-deps chromium
+      - run: yarn setup
+      - run: yarn build:freighter-api
+      - run: yarn build:extension
+      - name: Update snapshots
+        if: ${{inputs.update-snapshots == 'true'}}
+        run: |
+          yarn test:e2e --update-snapshots
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "chore: updating snapshot tests"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c #v6.1.0
+      - run: yarn test:e2e

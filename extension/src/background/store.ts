@@ -1,12 +1,12 @@
-import { combineReducers } from "redux";
+import { CombinedState, combineReducers } from "redux";
 import { configureStore } from "@reduxjs/toolkit";
 
 import { sessionSlice } from "background/ducks/session";
 import {
-  SESSION_STORAGE_ENABLED,
   dataStorageAccess,
   browserSessionStorage,
-} from "./helpers/dataStorage";
+} from "./helpers/dataStorageAccess";
+import { SESSION_STORAGE_ENABLED } from "./helpers/dataStorage";
 
 // Session storage can be used to persist redux store in Manifest v3 because service workers go idle after 30 seconds
 // Session storage is not currently supported in Firefox, which blocks our migration to using this by default
@@ -16,14 +16,16 @@ const sessionStore = dataStorageAccess(browserSessionStorage);
 export async function loadState() {
   try {
     const state = await sessionStore.getItem(REDUX_STORE_KEY);
-    if (!state) return undefined;
-    return JSON.parse(state);
+    if (!state) {
+      return undefined;
+    }
+    return JSON.parse(state as string);
   } catch (_error) {
     return undefined;
   }
 }
 
-function saveStore(state: Record<string, unknown>) {
+function saveStore(state: CombinedState<any>) {
   const serializedState = JSON.stringify(state);
   sessionStore.setItem(REDUX_STORE_KEY, serializedState);
 }

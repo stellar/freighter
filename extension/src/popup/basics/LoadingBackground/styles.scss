@@ -14,4 +14,9 @@
     opacity: 1;
     z-index: 1;
   }
+  &--isOpaque {
+    background-color: rgba(var(--color-shadow-rgb), 1);
+    height: 100vh;
+    width: 100vw;
+  }
 }

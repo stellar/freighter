@@ -9,6 +9,10 @@
   flex-direction: column;
   height: 100%;
 
+  &__subtitle {
+    text-align: center;
+  }
+
   &__content {
     display: flex;
     flex-direction: column;
@@ -47,7 +51,7 @@
   &__asset-copy {
     font-size: 0.875rem;
     line-height: 1.375rem;
-    color: var(--color-gray-60);
+    color: var(--sds-clr-gray-12);
     margin-bottom: 1rem;
   }
 
@@ -69,7 +73,7 @@
     font-size: 2.5rem;
     line-height: 4.5rem;
     font-weight: var(--font-weight-light);
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     background: none;
     border: none;
     text-align: center;
@@ -112,7 +116,7 @@
       font-size: 0.875rem;
       line-height: 1.375rem;
       height: 1.375rem;
-      color: var(--color-gray-60);
+      color: var(--sds-clr-gray-12);
     }
   }
 
@@ -142,14 +146,14 @@
     font-size: 0.875rem;
     line-height: 1.375rem;
     font-weight: var(--font-weight-medium);
-    color: var(--color-gray-60);
+    color: var(--sds-clr-gray-12);
   }
 
   &__subsection-copy {
     font-size: 0.875rem;
     line-height: 1.375rem;
     margin-top: 0.75rem;
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
   }
 
   &__recent-accts-ul {
@@ -167,7 +171,7 @@
   &__subheading-identicon {
     font-size: 0.875rem;
     line-height: 1.375rem;
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     font-weight: var(--font-weight-medium);
     background: none;
     border: 0;
@@ -205,7 +209,7 @@
     width: 100%;
 
     &__title {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
     }
 
     &__right {

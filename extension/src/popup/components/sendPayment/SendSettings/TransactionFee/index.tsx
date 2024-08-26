@@ -27,11 +27,11 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
   const { networkCongestion, recommendedFee } = useNetworkFees();
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title="Transaction Fee"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
             infoText={
@@ -118,6 +118,6 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

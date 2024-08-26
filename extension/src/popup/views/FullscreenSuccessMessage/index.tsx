@@ -144,7 +144,7 @@ export const FullscreenSuccessMessage = () => {
     location.pathname === ROUTES.mnemonicPhraseConfirmed;
 
   return (
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Onboarding layout="full" customWidth="31rem">
@@ -160,6 +160,6 @@ export const FullscreenSuccessMessage = () => {
           </div>
         </Onboarding>
       </View.Content>
-    </View>
+    </React.Fragment>
   );
 };

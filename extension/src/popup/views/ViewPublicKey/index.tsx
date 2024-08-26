@@ -6,10 +6,11 @@ import { object as YupObject, string as YupString } from "yup";
 import { Icon, Input, CopyText, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { PillButton } from "popup/basics/buttons/PillButton";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
+import { PillButton } from "popup/basics/buttons/PillButton";
 import { emitMetric } from "helpers/metrics";
-import { truncatedPublicKey, isCustomNetwork } from "helpers/stellar";
+import { truncatedPublicKey } from "helpers/stellar";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
@@ -39,7 +40,7 @@ export const ViewPublicKey = () => {
       </button>
     ) : (
       <button onClick={() => setIsEditingName(true)}>
-        <Icon.Edit />
+        <Icon.Edit01 />
       </button>
     );
   };
@@ -57,6 +58,7 @@ export const ViewPublicKey = () => {
   const handleSubmit = async (values: FormValue) => {
     const { accountName: newAccountName } = values;
     if (accountName !== newAccountName) {
+      // eslint-disable-next-line
       await dispatch(updateAccountName(newAccountName));
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
     }
@@ -64,7 +66,7 @@ export const ViewPublicKey = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
@@ -150,6 +152,6 @@ export const ViewPublicKey = () => {
           ) : null}
         </div>
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

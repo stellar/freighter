@@ -1,12 +1,15 @@
-import browser from "webextension-polyfill";
 import semver from "semver";
 
 import {
+  APPLICATION_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
   TOKEN_ID_LIST,
+  ASSETS_LISTS_ID,
+  IS_HASH_SIGNING_ENABLED_ID,
+  IS_NON_SSL_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -17,68 +20,26 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
-
-interface SetItemParams {
-  [key: string]: any;
-}
-
-// https://github.com/mozilla/webextension-polyfill/issues/424
-interface BrowserStorage extends browser.Storage.Static {
-  session: browser.Storage.LocalStorageArea;
-}
-
-const storage = browser.storage as BrowserStorage;
-
-// browser storage uses local storage which stores values on disk and persists data across sessions
-// session storage uses session storage which stores data in memory and clears data after every "session"
-// only use session storage for secrets or sensitive values
-export const browserLocalStorage = storage?.local;
-export const browserSessionStorage = storage?.session;
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
+import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
 
 // Session Storage Feature Flag - turn on when storage.session is supported
-export const SESSION_STORAGE_ENABLED = false;
-
-export type StorageOption =
-  | typeof browserLocalStorage
-  | typeof browserSessionStorage;
-
-export const dataStorage = (
-  storageApi: StorageOption = browserLocalStorage,
-) => ({
-  getItem: async (key: string) => {
-    // TODO: re-enable defaults by passing an object. The value of the key-value pair will be the default
-
-    const storageResult = await storageApi.get(key);
-
-    return storageResult[key];
-  },
-  setItem: async (setItemParams: SetItemParams) => {
-    await storageApi.set(setItemParams);
-  },
-
-  clear: async () => {
-    await storageApi.clear();
-  },
-});
-
-export const dataStorageAccess = (
-  storageApi: StorageOption = browserLocalStorage,
-) => {
-  const store = dataStorage(storageApi);
-  return {
-    getItem: store.getItem,
-    setItem: async (keyId: string, value: any) => {
-      await store.setItem({ [keyId]: value });
-    },
-    clear: () => store.clear(),
-  };
-};
+export const SESSION_STORAGE_ENABLED = true;
 
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const localStorageEntries = Object.entries(localStorage);
+  const localStorageEntries = Object.entries(
+    await browserLocalStorage.get(null),
+  );
 
-  // eslint-disable-next-line no-plusplus
+  const applicationState = await localStore.getItem(APPLICATION_ID);
+  const isLocalStoreSetup = !!applicationState?.length;
+
+  if (isLocalStoreSetup) {
+    return;
+  }
+
+  // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
     const [key, value] = localStorageEntries[i];
     try {
@@ -136,24 +97,24 @@ export const migrateSorobanRpcUrlNetworkDetails = async () => {
 };
 
 // This migration migrates the storage for custom tokens IDs to be keyed by network
-const migrateTokenIdList = async () => {
+export const migrateTokenIdList = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
-  const tokenIdsByKey = (await localStore.getItem(TOKEN_ID_LIST)) as Record<
-    string,
-    object
-  >;
+  const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
-    const newTokenList = {
-      [NETWORKS.FUTURENET]: tokenIdsByKey,
-    };
-    await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    if (Array.isArray(tokenIdsByKey)) {
+      const newTokenList = {
+        [NETWORKS.FUTURENET]: tokenIdsByKey,
+      };
+      await localStore.setItem(TOKEN_ID_LIST, newTokenList);
+    }
+
+    await migrateDataStorageVersion("1.0.0");
   }
-  await migrateDataStorageVersion("1.0.0");
 };
 
-const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
+export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
@@ -194,7 +155,7 @@ export const migrateToAccountSubscriptions = async () => {
   }
 };
 
-const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
+export const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
@@ -224,7 +185,7 @@ const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   }
 };
 
-const migrateSorobanRpcUrlNetwork = async () => {
+export const migrateSorobanRpcUrlNetwork = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
@@ -237,12 +198,56 @@ const migrateSorobanRpcUrlNetwork = async () => {
       NETWORK_ID,
     );
     if (
+      migratedNetwork &&
       migratedNetwork.network === NETWORKS.FUTURENET &&
       !migratedNetwork.sorobanRpcUrl
     ) {
       await localStore.setItem(NETWORK_ID, FUTURENET_NETWORK_DETAILS);
     }
     await migrateDataStorageVersion("4.0.1");
+  }
+};
+
+export const resetAccountSubscriptions = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
+    // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
+    await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
+    await migrateDataStorageVersion("4.0.2");
+  }
+};
+
+export const addAssetsLists = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.1.0")) {
+    // add the base asset lists
+    await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
+    await migrateDataStorageVersion("4.1.0");
+  }
+};
+
+export const addIsHashSigningEnabled = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.1.1")) {
+    // add the base asset lists
+    await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, false);
+    await migrateDataStorageVersion("4.1.1");
+  }
+};
+
+export const addIsNonSSLEnabled = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.2.0")) {
+    await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
+    await migrateDataStorageVersion("4.2.0");
   }
 };
 
@@ -254,6 +259,10 @@ export const versionedMigration = async () => {
   await migrateToAccountSubscriptions();
   await migrateMainnetSorobanRpcUrlNetworkDetails();
   await migrateSorobanRpcUrlNetwork();
+  await resetAccountSubscriptions();
+  await addAssetsLists();
+  await addIsHashSigningEnabled();
+  await addIsNonSSLEnabled();
 };
 
 // Updates storage version

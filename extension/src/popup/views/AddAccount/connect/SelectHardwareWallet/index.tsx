@@ -4,7 +4,6 @@ import { useDispatch } from "react-redux";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { BottomNav } from "popup/components/BottomNav";
 import { setConnectingWalletType } from "popup/ducks/accountServices";
 import { walletAssets } from "popup/helpers/hardwareConnect";
 import {
@@ -38,7 +37,7 @@ const WalletOption = ({
 };
 
 export const SelectHardwareWallet = () => (
-  <View>
+  <>
     <SubviewHeader
       title="Connect a hardware wallet"
       hasBackButton={true}
@@ -56,6 +55,5 @@ export const SelectHardwareWallet = () => (
         </ul>
       </div>
     </View.Content>
-    <BottomNav />
-  </View>
+  </>
 );

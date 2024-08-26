@@ -1,0 +1,36 @@
+.SearchInput {
+  .Input__container input {
+    padding-right: 0 !important;
+  }
+
+  .Input__side-element {
+    right: auto;
+
+    svg {
+      color: var(--sds-clr-gray-12);
+    }
+  }
+}
+
+.SearchCopy {
+  color: var(--sds-clr-gray-12);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  margin-top: 0.375rem;
+
+  a {
+    color: var(--color-purple-60);
+  }
+}
+
+.SearchResults {
+  &__loader {
+    position: absolute;
+    left: calc(50% - var(--SearchAsset--loader--dimension));
+    width: var(--SearchAsset--loader--dimension);
+  }
+
+  &__results {
+    flex-grow: 1;
+  }
+}

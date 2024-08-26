@@ -1,0 +1,38 @@
+.DeleteModal {
+  align-items: center;
+  z-index: var(--z-index--scam-warning);
+  display: flex;
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  left: 0;
+  top: 0;
+  padding-top: 1.5rem;
+
+  &__content {
+    background: var(--sds-clr-gray-01);
+    border-radius: 0.5rem;
+    border: 1px solid var(--sds-clr-gray-03);
+    padding: 1rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  &__title {
+    line-height: 1.5rem;
+  }
+
+  &__body {
+    color: --font-weight-medium --font-weight-medium;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  &__button-row {
+    margin-top: 1rem;
+    display: flex;
+    direction: row;
+    gap: 0.5rem;
+  }
+}

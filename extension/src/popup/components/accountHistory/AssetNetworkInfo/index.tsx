@@ -6,6 +6,7 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
+import { CopyValue } from "popup/components/CopyValue";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { displaySorobanId, isSorobanIssuer } from "popup/helpers/account";
 
@@ -60,6 +61,10 @@ export const AssetNetworkInfo = ({
     if (networkIconUrl || assetType === "native") {
       return <img src={networkIconUrl || StellarLogo} alt="Network icon" />;
     }
+    if (!assetDomain) {
+      return null;
+    }
+
     return <div className="AssetNetworkInfo__network__icon" />;
   };
 
@@ -68,7 +73,10 @@ export const AssetNetworkInfo = ({
       <>
         {decideNetworkIcon()}
         {contractId ? (
-          <span>{displaySorobanId(contractId, 32)}</span>
+          <CopyValue
+            value={contractId}
+            displayValue={displaySorobanId(contractId, 28)}
+          />
         ) : (
           <span>{assetDomain || "Stellar Lumens"}</span>
         )}

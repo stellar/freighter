@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Operation } from "stellar-sdk";
 
@@ -11,7 +12,10 @@ import {
 
 import { FlaggedKeys } from "types/transactions";
 
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
+import { scanAsset } from "popup/helpers/blockaid";
+
 import {
   KeyValueClaimants,
   KeyValueInvokeHostFn,
@@ -42,7 +46,7 @@ const UnsafeMaliciousWarning = ({
             "account",
           )}`}
           altText="Error"
-          icon={<Icon.Info />}
+          icon={<Icon.InfoCircle />}
           variant="error"
         />
       }
@@ -64,7 +68,7 @@ const MemoRequiredWarning = ({
         <IconButton
           label={t("Memo required")}
           altText="Error"
-          icon={<Icon.Info />}
+          icon={<Icon.InfoCircle />}
           variant="error"
         />
       }
@@ -113,13 +117,54 @@ export const Operations = ({
   const { t } = useTranslation();
 
   const AuthorizationMapToDisplay: { [index: string]: string } = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "1": "Authorization Required",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "2": "Authorization Revocable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "4": "Authorization Immutable",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     "8": "Authorization Clawback Enabled",
   };
 
-  function renderOpByType(op: Operation) {
+  const RenderOpByType = ({ op }: { op: Operation }) => {
+    const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+    useEffect(() => {
+      const scan = async () => {
+        let sendAsset;
+        let destAsset;
+
+        if (op.type === "payment") {
+          sendAsset = op.asset;
+        }
+
+        if (
+          op.type === "pathPaymentStrictReceive" ||
+          op.type === "pathPaymentStrictSend"
+        ) {
+          sendAsset = op.sendAsset;
+          destAsset = op.destAsset;
+        }
+
+        if (sendAsset) {
+          await scanAsset(
+            `${sendAsset.code}-${sendAsset.issuer}`,
+            networkDetails,
+          );
+        }
+
+        if (destAsset) {
+          await scanAsset(
+            `${destAsset.code}-${destAsset.issuer}`,
+            networkDetails,
+          );
+        }
+      };
+
+      scan();
+    }, [networkDetails, op]);
+
     switch (op.type) {
       case "createAccount": {
         const destination = op.destination;
@@ -168,14 +213,8 @@ export const Operations = ({
       }
 
       case "pathPaymentStrictReceive": {
-        const {
-          sendAsset,
-          sendMax,
-          destination,
-          destAsset,
-          destAmount,
-          path,
-        } = op;
+        const { sendAsset, sendMax, destination, destAsset, destAmount, path } =
+          op;
         return (
           <>
             <KeyValueList
@@ -209,14 +248,8 @@ export const Operations = ({
       }
 
       case "pathPaymentStrictSend": {
-        const {
-          sendAsset,
-          sendAmount,
-          destination,
-          destAsset,
-          destMin,
-          path,
-        } = op;
+        const { sendAsset, sendAmount, destination, destAsset, destMin, path } =
+          op;
         return (
           <>
             <KeyValueList
@@ -330,7 +363,7 @@ export const Operations = ({
           <>
             {signer && <KeyValueSigner signer={signer} />}
             {inflationDest && (
-              <KeyValueList
+              <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
                 operationValue={inflationDest}
               />
@@ -527,7 +560,7 @@ export const Operations = ({
         const { trustor, asset, flags } = op;
         return (
           <>
-            <KeyValueList
+            <KeyValueWithPublicKey
               operationKey={t("Trustor")}
               operationValue={trustor}
             />
@@ -558,13 +591,8 @@ export const Operations = ({
       }
 
       case "liquidityPoolDeposit": {
-        const {
-          liquidityPoolId,
-          maxAmountA,
-          maxAmountB,
-          maxPrice,
-          minPrice,
-        } = op;
+        const { liquidityPoolId, maxAmountA, maxAmountB, maxPrice, minPrice } =
+          op;
         return (
           <>
             <KeyValueList
@@ -633,7 +661,7 @@ export const Operations = ({
         // Issue: https://github.com/stellar/js-stellar-base/issues/728
         const type = op.type as string;
         if (type === "revokeTrustlineSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeTrustlineSponsorship;
+          const _op = op as unknown as Operation.RevokeTrustlineSponsorship;
           const { account, asset } = _op;
           return (
             <>
@@ -657,7 +685,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeAccountSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeAccountSponsorship;
+          const _op = op as unknown as Operation.RevokeAccountSponsorship;
           const { account } = _op;
           return (
             <KeyValueWithPublicKey
@@ -667,7 +695,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeOfferSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeOfferSponsorship;
+          const _op = op as unknown as Operation.RevokeOfferSponsorship;
           const { seller, offerId } = _op;
           return (
             <>
@@ -683,7 +711,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeDataSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeDataSponsorship;
+          const _op = op as unknown as Operation.RevokeDataSponsorship;
           const { account, name } = _op;
           return (
             <>
@@ -696,7 +724,8 @@ export const Operations = ({
           );
         }
         if (type === "revokeClaimableBalanceSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeClaimableBalanceSponsorship;
+          const _op =
+            op as unknown as Operation.RevokeClaimableBalanceSponsorship;
           const { balanceId } = _op;
           return (
             <KeyValueList
@@ -706,7 +735,7 @@ export const Operations = ({
           );
         }
         if (type === "revokeSignerSponsorship") {
-          const _op = (op as unknown) as Operation.RevokeSignerSponsorship;
+          const _op = op as unknown as Operation.RevokeSignerSponsorship;
           const { account, signer } = _op;
           return (
             <>
@@ -721,7 +750,7 @@ export const Operations = ({
         return <></>;
       }
     }
-  }
+  };
 
   return (
     <div className="Operations">
@@ -731,9 +760,13 @@ export const Operations = ({
         const type = op.type;
 
         return (
-          <div className="Operations--wrapper" key={operationIndex}>
+          <div
+            className="Operations--wrapper"
+            key={operationIndex}
+            data-testid="OperationsWrapper"
+          >
             <div className="Operations--header">
-              <Icon.DeployedCode />
+              <Icon.ParagraphSpacing />
               <strong className="OpType">
                 {OPERATION_TYPES[type] || type}
               </strong>
@@ -745,7 +778,7 @@ export const Operations = ({
                   operationValue={sourceVal || ""}
                 />
               )}
-              {renderOpByType(op)}
+              <RenderOpByType op={op} />
             </div>
           </div>
         );

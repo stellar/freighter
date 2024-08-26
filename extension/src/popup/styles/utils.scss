@@ -10,3 +10,10 @@ $base-font-size: 16px;
 @function pxToRem($pxValue) {
   @return #{math.div(removePxUnit($pxValue), removePxUnit($base-font-size))}rem;
 }
+
+@mixin native-like-outline {
+  outline-color: rgb(153, 200, 255);
+  outline-offset: 1px;
+  outline-style: auto;
+  outline-width: 1px;
+}

@@ -7,12 +7,29 @@
   }
 
   &__version {
-    color: var(--color-gray-60);
+    color: var(--sds-clr-gray-12);
     font-size: 0.875rem;
   }
 
-  &__logout {
+  &__row {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+
+    &__preferences {
+      stroke: var(--sds-clr-gray-09);
+    }
+  }
+
+  &__logout {
+    color: var(--sds-clr-red-09);
+    cursor: pointer;
   }
 }

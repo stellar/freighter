@@ -1,13 +1,15 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { Asset } from "stellar-sdk";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { isMuxedAccount } from "helpers/stellar";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { isMuxedAccount, getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
@@ -19,17 +21,18 @@ import {
   saveTransactionFee,
   saveSimulation,
   transactionSubmissionSelector,
+  saveIsToken,
 } from "popup/ducks/transactionSubmission";
-import { simulateTokenPayment } from "popup/ducks/token-payment";
+import { simulateTokenPayment, simulateSwap } from "popup/ducks/token-payment";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { parseTokenAmount } from "popup/helpers/soroban";
-import "../../styles.scss";
+import { parseTokenAmount, isContractId } from "popup/helpers/soroban";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
-import { SorobanContext } from "popup/SorobanContext";
+
+import "../../styles.scss";
 
 export const Settings = ({
   previous,
@@ -40,15 +43,20 @@ export const Settings = ({
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
   const {
     asset,
     amount,
+    decimals,
     destination,
+    destinationAmount,
+    destinationDecimals,
     transactionFee,
+    transactionTimeout,
     memo,
     allowedSlippage,
     isToken,
+    isSoroswap,
+    path,
   } = useSelector(transactionDataSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
@@ -72,13 +80,60 @@ export const Settings = ({
       isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
     );
 
+  const handleTimeoutNav = () =>
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsTimeout : ROUTES.sendPaymentSettingsTimeout,
+    );
+
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
-  const showSlippage = isPathPayment || isSwap;
+  const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
+  const isSendSacToContract =
+    isContractId(destination) &&
+    !isContractId(getAssetFromCanonical(asset).issuer);
+  const getSacContractAddress = () => {
+    if (asset === "native") {
+      return getNativeContractDetails(networkDetails).contract;
+    }
+
+    const assetFromCanonical = new Asset(
+      getAssetFromCanonical(asset).code,
+      getAssetFromCanonical(asset).issuer,
+    );
+    const contractAddress = assetFromCanonical.contractId(
+      networkDetails.networkPassphrase,
+    );
+
+    return contractAddress;
+  };
 
   async function goToReview() {
-    if (isToken) {
-      const assetAddress = asset.split(":")[1];
+    if (isSoroswap) {
+      const simulatedTx = await dispatch(
+        simulateSwap({
+          networkDetails,
+          publicKey,
+          amountIn: amount,
+          amountInDecimals: decimals || 0,
+          amountOut: destinationAmount,
+          amountOutDecimals: destinationDecimals || 0,
+          memo,
+          transactionFee,
+          path,
+        }),
+      );
+
+      if (simulateSwap.fulfilled.match(simulatedTx)) {
+        dispatch(saveSimulation(simulatedTx.payload));
+        navigateTo(next);
+      }
+      return;
+    }
+
+    if (isToken || isSendSacToContract) {
+      const assetAddress = isSendSacToContract
+        ? getSacContractAddress()
+        : asset.split(":")[1];
       const balances =
         accountBalances.balances || ({} as NonNullable<Balances>);
       const assetBalance = balances[asset] as TokenBalance;
@@ -87,10 +142,9 @@ export const Settings = ({
         throw new Error("Asset Balance not available");
       }
 
-      const parsedAmount = parseTokenAmount(
-        amount,
-        Number(assetBalance.decimals),
-      );
+      const parsedAmount = isSendSacToContract
+        ? parseTokenAmount(amount, 7)
+        : parseTokenAmount(amount, Number(assetBalance.decimals));
 
       const params = {
         publicKey,
@@ -105,22 +159,23 @@ export const Settings = ({
           memo,
           params,
           networkDetails,
-          sorobanClient,
           transactionFee,
         }),
       );
 
       if (simulateTokenPayment.fulfilled.match(simulation)) {
         dispatch(saveSimulation(simulation.payload));
+        dispatch(saveIsToken(true));
         navigateTo(next);
       }
       return;
     }
+
     navigateTo(next);
   }
 
   return (
-    <View data-testid="send-settings-view">
+    <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
         customBackAction={() => navigateTo(previous)}
@@ -181,6 +236,45 @@ export const Settings = ({
                     </div>
                   </div>
                 ) : null}
+
+                <div className="SendSettings__row">
+                  <div className="SendSettings__row__left">
+                    <InfoTooltip
+                      infoText={
+                        <span>
+                          {t(
+                            "Number of seconds that can pass before this transaction can no longer be accepted by the network",
+                          )}{" "}
+                        </span>
+                      }
+                      placement="bottom"
+                    >
+                      <span
+                        className="SendSettings__row__title SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleTimeoutNav();
+                        }}
+                      >
+                        {t("Transaction timeout")}
+                      </span>
+                    </InfoTooltip>
+                  </div>
+                  <div
+                    className="SendSettings__row__right SendSettings__clickable"
+                    onClick={() => {
+                      submitForm();
+                      handleTimeoutNav();
+                    }}
+                  >
+                    <span data-testid="SendSettingsTransactionTimeout">
+                      {transactionTimeout}(s)
+                    </span>
+                    <div>
+                      <Icon.ChevronRight />
+                    </div>
+                  </div>
+                </div>
 
                 {showSlippage && (
                   <div className="SendSettings__row">
@@ -275,6 +369,7 @@ export const Settings = ({
             </View.Content>
             <View.Footer>
               <Button
+                disabled={!transactionFee}
                 size="md"
                 isFullWidth
                 onClick={goToReview}
@@ -288,6 +383,6 @@ export const Settings = ({
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

@@ -29,6 +29,17 @@ module.exports = {
     "@typescript-eslint/no-unused-vars": ["error"],
     "no-console": "off",
     "react/jsx-filename-extension": ["error", { extensions: [".tsx", ".jsx"] }],
+    "jsdoc/newline-after-description": "off",
+    "max-len": "off",
+    "no-await-in-loop": "off",
+    "import/no-unresolved": [
+      "error",
+      {
+        // Ignore Webpack query parameters, not supported by eslint-plugin-import
+        // https://github.com/import-js/eslint-plugin-import/issues/2562
+        ignore: ["\\?react$"],
+      },
+    ],
   },
   settings: {
     "import/resolver": {

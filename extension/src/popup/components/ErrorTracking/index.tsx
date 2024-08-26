@@ -4,6 +4,8 @@ import { Integrations } from "@sentry/tracing";
 
 import { SENTRY_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
+import { scrubPathGkey } from "popup/helpers/formatters";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import packageJson from "../../../../package.json";
 
 export const ErrorTracking = () => {
@@ -15,6 +17,32 @@ export const ErrorTracking = () => {
       release: `freighter@${packageJson.version}`,
       integrations: [new Integrations.BrowserTracing()],
       tracesSampleRate: 1.0,
+      denyUrls: [
+        // Amplitude 4xx's on too many Posts, which is expected behavior
+        /api\.amplitude\.com\/2\/httpapi/i,
+      ],
+      beforeSend(event) {
+        if (!event.request) {
+          return event;
+        }
+
+        const url = event.request?.url;
+        if (url?.includes(`${INDEXER_URL}/account-history`)) {
+          const route = "account-history/";
+          const scrubbedUrl = scrubPathGkey(route, url);
+          // eslint-disable-next-line no-param-reassign
+          event.request.url = scrubbedUrl;
+        }
+
+        if (url?.includes(`${INDEXER_URL}/account-balances`)) {
+          const route = "account-balances/";
+          const scrubbedUrl = scrubPathGkey(route, url);
+          // eslint-disable-next-line no-param-reassign
+          event.request.url = scrubbedUrl;
+        }
+
+        return event;
+      },
     });
   }
 

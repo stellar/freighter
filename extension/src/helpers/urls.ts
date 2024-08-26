@@ -2,13 +2,14 @@ import punycode from "punycode";
 import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
 
-export interface BlobToSign {
+export interface MessageToSign {
   isDomainListedAllowed: boolean;
   domain: string;
   tab?: browser.Tabs.Tab;
-  blob: string;
+  message: string;
   url: string;
   accountToSign: string;
+  networkPassphrase?: string;
 }
 
 export interface EntryToSign {
@@ -18,9 +19,10 @@ export interface EntryToSign {
   entry: string;
   url: string;
   accountToSign: string;
+  networkPassphrase?: string;
 }
 
-export const encodeObject = (obj: {}) =>
+export const encodeObject = (obj: object) =>
   btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
 
 export const decodeString = (str: string) =>
@@ -33,7 +35,7 @@ export const removeQueryParam = (url = "") => url.replace(/\?(.*)/, "");
 
 export const parsedSearchParam = (
   param: string,
-): TransactionInfo | BlobToSign | EntryToSign => {
+): TransactionInfo | MessageToSign | EntryToSign => {
   const decodedSearchParam = decodeString(param.replace("?", ""));
   return decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
 };

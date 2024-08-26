@@ -20,7 +20,7 @@ export const Preferences = () => {
     isMemoValidationEnabled,
     isSafetyValidationEnabled,
     isValidatingSafeAssetsEnabled,
-    isExperimentalModeEnabled,
+    isNonSSLEnabled,
   } = useSelector(settingsSelector);
 
   interface SettingValues {
@@ -28,7 +28,7 @@ export const Preferences = () => {
     isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
     isValidatingSafeAssetsValue: boolean;
-    isExperimentalModeEnabledValue: boolean;
+    isNonSSLEnabledValue: boolean;
   }
 
   const initialValues: SettingValues = {
@@ -36,7 +36,7 @@ export const Preferences = () => {
     isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
     isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
-    isExperimentalModeEnabledValue: isExperimentalModeEnabled,
+    isNonSSLEnabledValue: isNonSSLEnabled,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -45,22 +45,23 @@ export const Preferences = () => {
       isValidatingSafetyValue,
       isDataSharingAllowedValue,
       isValidatingSafeAssetsValue,
-      isExperimentalModeEnabledValue,
+      isNonSSLEnabledValue,
     } = formValue;
 
+    // eslint-disable-next-line
     await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
         isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
         isValidatingSafeAssetsEnabled: isValidatingSafeAssetsValue,
-        isExperimentalModeEnabled: isExperimentalModeEnabledValue,
+        isNonSSLEnabled: isNonSSLEnabledValue,
       }),
     );
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader title={t("Preferences")} />
       <Formik
         initialValues={initialValues}
@@ -83,6 +84,7 @@ export const Preferences = () => {
                     {t("Validate addresses that require a memo")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isValidatingMemoValue}
                     customInput={<Field />}
                     id="isValidatingMemoValue"
@@ -96,6 +98,7 @@ export const Preferences = () => {
                     {t("Block malicious or unsafe addresses and domains")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isValidatingSafetyValue}
                     customInput={<Field />}
                     id="isValidatingSafetyValue"
@@ -110,6 +113,7 @@ export const Preferences = () => {
                     {t("Block trustlines to malicious or fraudulent assets")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isValidatingSafeAssetsValue}
                     customInput={<Field />}
                     id="isValidatingSafeAssetsValue"
@@ -132,30 +136,33 @@ export const Preferences = () => {
                     )}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isDataSharingAllowedValue}
                     customInput={<Field />}
                     id="isDataSharingAllowedValue"
                   />
                 </div>
               </div>
+
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  {t("Enable experimental mode")}{" "}
+                  {t("Connect to domain without SSL certificate")}{" "}
                 </div>
 
                 <div className="Preferences--toggle">
                   <label
-                    htmlFor="isExperimentalModeEnabledValue"
+                    htmlFor="isNonSSLEnabledValue"
                     className="Preferences--label"
                   >
                     {t(
-                      "Freighter will use experimental API‘s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+                      "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet. SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain. Use caution when connecting to domains without an SSL certificate.",
                     )}
                   </label>
                   <Toggle
-                    checked={initialValues.isExperimentalModeEnabledValue}
+                    fieldSize="md"
+                    checked={initialValues.isNonSSLEnabledValue}
                     customInput={<Field />}
-                    id="isExperimentalModeEnabledValue"
+                    id="isNonSSLEnabledValue"
                   />
                 </div>
               </div>
@@ -163,6 +170,6 @@ export const Preferences = () => {
           </div>
         </View.Content>
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

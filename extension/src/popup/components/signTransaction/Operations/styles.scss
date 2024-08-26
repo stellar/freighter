@@ -10,7 +10,7 @@
   &--header {
     display: flex;
     align-items: center;
-    color: var(--color-gray-60);
+    color: var(--sds-clr-gray-12);
     line-height: 1.5rem;
     margin-bottom: 0.5rem;
 
@@ -27,15 +27,26 @@
 
     & > .Operations__pair {
       align-items: center;
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       display: flex;
-      justify-content: space-between;
       line-height: 1.5rem;
+
+      & > .Operations__pair--key {
+        width: 200px;
+        text-overflow: ellipsis;
+      }
+
+      & > .Operations__pair--value {
+        width: 200px;
+        flex-grow: 1;
+        display: flex;
+        justify-content: flex-end;
+      }
 
       &--invoke {
         flex-direction: column;
         align-items: baseline;
-        color: var(--color-gray-90);
+        color: var(--sds-clr-gray-12);
         display: flex;
         justify-content: space-between;
         line-height: 1.5rem;
@@ -50,13 +61,13 @@
       }
 
       & > :nth-child(2) {
-        color: var(--color-gray-60);
+        color: var(--sds-clr-gray-12);
       }
     }
   }
 
   &__scValue {
-    background: var(--color-gray-40);
+    background: var(--sds-clr-gray-04);
     border-radius: 0.5rem;
     font-size: 0.875rem;
     margin: 0.5rem 0;
@@ -70,7 +81,7 @@
     gap: 0.5rem;
 
     &--item {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       font-size: 0.75rem;
       line-height: 1.5rem;
       flex-direction: column;

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -7,6 +7,7 @@ import {
   Memo,
   Operation,
   TransactionBuilder,
+  Networks,
 } from "stellar-sdk";
 import { Card, Loader, Icon, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -19,12 +20,12 @@ import {
   xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
-  isCustomNetwork,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -47,6 +48,7 @@ import {
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
+  addTokenId,
 } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -66,7 +68,6 @@ import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
-import { SorobanContext } from "popup/SorobanContext";
 
 import "./styles.scss";
 
@@ -191,7 +192,6 @@ const getOperation = (
 
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
-  const sorobanClient = useContext(SorobanContext);
   const submission = useSelector(transactionSubmissionSelector);
   const {
     destinationBalances,
@@ -202,11 +202,13 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       asset,
       memo,
       transactionFee,
+      transactionTimeout,
       allowedSlippage,
       destinationAsset,
       destinationAmount,
       path,
       isToken,
+      isSoroswap,
     },
     assetIcons,
     hardwareWalletData: { status: hwStatus },
@@ -216,9 +218,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const { isMemoValidationEnabled, isSafetyValidationEnabled } = useSelector(
-    settingsSelector,
-  );
+  const { isMemoValidationEnabled, isSafetyValidationEnabled } =
+    useSelector(settingsSelector);
   const isSwap = useIsSwap();
 
   const { t } = useTranslation();
@@ -270,7 +271,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     dispatch(getBlockedAccounts());
   }, [dispatch]);
 
-  const handleXferTransaction = async () => {
+  const handleSorobanTransaction = async () => {
     try {
       const res = await dispatch(
         signFreighterSorobanTransaction({
@@ -288,14 +289,23 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
           }),
         );
 
-        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
           emitMetric(METRIC_NAMES.sendPaymentSuccess, {
             sourceAsset: sourceAsset.code,
           });
+
+          if (isSoroswap && destAsset.issuer) {
+            await dispatch(
+              addTokenId({
+                publicKey,
+                tokenId: destAsset.issuer,
+                network: networkDetails.network as Networks,
+              }),
+            );
+          }
         }
       }
     } catch (e) {
@@ -305,7 +315,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handlePaymentTransaction = async () => {
     try {
-      const server = stellarSdkServer(networkDetails.networkUrl);
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
       const sourceAccount: Account = await server.loadAccount(publicKey);
 
       const operation = getOperation(
@@ -322,12 +335,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         publicKey,
       );
 
-      const transactionXDR = await new TransactionBuilder(sourceAccount, {
+      const transactionXDR = new TransactionBuilder(sourceAccount, {
         fee: xlmToStroop(transactionFee).toFixed(),
         networkPassphrase: networkDetails.networkPassphrase,
       })
         .addOperation(operation)
-        .setTimeout(180);
+        .setTimeout(transactionTimeout);
 
       if (memo) {
         transactionXDR.addMemo(Memo.text(memo));
@@ -358,7 +371,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-            sorobanClient,
           }),
         );
 
@@ -386,8 +398,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   // handles signing and submitting
   const handleSend = async () => {
-    if (isToken) {
-      await handleXferTransaction();
+    if (isToken || isSoroswap) {
+      await handleSorobanTransaction();
     } else {
       await handlePaymentTransaction();
     }
@@ -424,7 +436,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <View data-testid="transaction-details-view">
+      <React.Fragment>
         {submission.submitStatus === ActionStatus.PENDING && (
           <div className="TransactionDetails__processing">
             <div className="TransactionDetails__processing__header">
@@ -445,7 +457,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           customBackAction={goBack}
           customBackIcon={
             submission.submitStatus === ActionStatus.SUCCESS ? (
-              <Icon.Close />
+              <Icon.XClose />
             ) : null
           }
         />
@@ -603,7 +615,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             </>
           )}
         </View.Footer>
-      </View>
+      </React.Fragment>
     </>
   );
 };

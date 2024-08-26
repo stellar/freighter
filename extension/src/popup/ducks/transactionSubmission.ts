@@ -34,19 +34,24 @@ import {
   ActionStatus,
   BlockedAccount,
   BalanceToMigrate,
+  SoroswapToken,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
-import { getCanonicalFromAsset, isCustomNetwork } from "helpers/stellar";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import {
+  soroswapGetBestPath,
+  getSoroswapTokens as getSoroswapTokensService,
+} from "popup/helpers/sorobanSwap";
 import { hardwareSign } from "popup/helpers/hardwareConnect";
-import { SorobanContextInterface } from "popup/SorobanContext";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -59,7 +64,8 @@ export const signFreighterTransaction = createAsyncThunk<
       network,
     });
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -76,7 +82,8 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
         network,
       });
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({ errorMessage: message });
     }
   },
 );
@@ -87,14 +94,13 @@ export const submitFreighterTransaction = createAsyncThunk<
     publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterTransaction",
-  async ({ publicKey, signedXDR, networkDetails, sorobanClient }, thunkApi) => {
+  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
     if (isCustomNetwork(networkDetails)) {
       try {
         const txRes = await internalSubmitFreighterTransaction({
@@ -102,15 +108,13 @@ export const submitFreighterTransaction = createAsyncThunk<
           networkDetails,
         });
 
-        thunkApi.dispatch(
-          getAccountBalances({ publicKey, networkDetails, sorobanClient }),
-        );
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
 
         return txRes;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
         });
       }
     } else {
@@ -118,11 +122,15 @@ export const submitFreighterTransaction = createAsyncThunk<
         const options = {
           method: "POST",
           headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             signed_xdr: signedXDR,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_url: networkDetails.networkUrl,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
@@ -132,13 +140,15 @@ export const submitFreighterTransaction = createAsyncThunk<
         if (!res.ok) {
           return thunkApi.rejectWithValue({
             errorMessage: response,
+            response,
           });
         }
         return response;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
+          response: e as any,
         });
       }
     }
@@ -151,14 +161,13 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
     publicKey: string;
     signedXDR: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   {
     rejectValue: ErrorMessage;
   }
 >(
   "submitFreighterSorobanTransaction",
-  async ({ publicKey, signedXDR, networkDetails, sorobanClient }, thunkApi) => {
+  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
     if (isCustomNetwork(networkDetails)) {
       try {
         const txRes = await internalSubmitFreighterSorobanTransaction({
@@ -166,15 +175,13 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
           networkDetails,
         });
 
-        thunkApi.dispatch(
-          getAccountBalances({ publicKey, networkDetails, sorobanClient }),
-        );
+        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
 
         return txRes;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
         });
       }
     } else {
@@ -182,11 +189,15 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         const options = {
           method: "POST",
           headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             signed_xdr: signedXDR,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_url: networkDetails.networkUrl,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
@@ -196,13 +207,15 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         if (!res.ok) {
           return thunkApi.rejectWithValue({
             errorMessage: response,
+            response,
           });
         }
         return response;
       } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({
-          errorMessage: e.message || e,
-          response: e.response?.data,
+          errorMessage: message,
+          response: e as any,
         });
       }
     }
@@ -217,18 +230,30 @@ export const signWithHardwareWallet = createAsyncThunk<
     publicKey: string;
     bipPath: string;
     walletType: ConfigurableWalletType;
+    isHashSigningEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "signWithHardwareWallet",
   async (
-    { transactionXDR, networkPassphrase, publicKey, bipPath, walletType },
+    {
+      transactionXDR,
+      networkPassphrase,
+      publicKey,
+      bipPath,
+      walletType,
+      isHashSigningEnabled,
+    },
     thunkApi,
   ) => {
     try {
       const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
-      const signature = await hardwareSign[walletType]({ bipPath, tx });
+      const signature = await hardwareSign[walletType]({
+        bipPath,
+        tx,
+        isHashSigningEnabled,
+      });
 
       const keypair = Keypair.fromPublicKey(publicKey);
       const decoratedSignature = new xdr.DecoratedSignature({
@@ -240,32 +265,35 @@ export const signWithHardwareWallet = createAsyncThunk<
 
       return tx.toXDR();
     } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e.message || e });
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({ errorMessage: message });
     }
   },
 );
 
 export const addRecentAddress = createAsyncThunk<
-  { recentAddresses: Array<string> },
+  { recentAddresses: string[] },
   { publicKey: string },
   { rejectValue: ErrorMessage }
 >("addRecentAddress", async ({ publicKey }, thunkApi) => {
   try {
     return await internalAddRecentAddress({ publicKey });
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
 export const loadRecentAddresses = createAsyncThunk<
-  { recentAddresses: Array<string> },
+  { recentAddresses: string[] },
   undefined,
   { rejectValue: ErrorMessage }
 >("loadRecentAddresses", async (_: any, thunkApi) => {
   try {
     return await internalLoadRecentAddresses();
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -325,63 +353,51 @@ export const getAccountBalances = createAsyncThunk<
   {
     publicKey: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
->(
-  "getAccountBalances",
-  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
-    try {
-      let balances;
+>("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    let balances;
 
-      if (isCustomNetwork(networkDetails)) {
-        balances = await internalGetAccountBalancesStandalone({
-          publicKey,
-          networkDetails,
-          sorobanClientServer: sorobanClient.server,
-          sorobanClientTxBuilder: sorobanClient.newTxBuilder,
-        });
-      } else {
-        balances = await internalgetAccountIndexerBalances(
-          publicKey,
-          networkDetails,
-        );
-      }
-
-      storeBalanceMetricData(publicKey, balances.isFunded || false);
-      return balances;
-    } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+    if (isCustomNetwork(networkDetails)) {
+      balances = await internalGetAccountBalancesStandalone({
+        publicKey,
+        networkDetails,
+      });
+    } else {
+      balances = await internalgetAccountIndexerBalances(
+        publicKey,
+        networkDetails,
+      );
     }
-  },
-);
+
+    storeBalanceMetricData(publicKey, balances.isFunded || false);
+    return balances;
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
   {
     publicKey: string;
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
   },
   { rejectValue: ErrorMessage }
->(
-  "getDestinationBalances",
-  async ({ publicKey, networkDetails, sorobanClient }, thunkApi) => {
-    try {
-      if (isCustomNetwork(networkDetails)) {
-        return await internalGetAccountBalancesStandalone({
-          publicKey,
-          networkDetails,
-          sorobanClientServer: sorobanClient.server,
-          sorobanClientTxBuilder: sorobanClient.newTxBuilder,
-        });
-      }
-      return await internalgetAccountIndexerBalances(publicKey, networkDetails);
-    } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e });
+>("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
+  try {
+    if (isCustomNetwork(networkDetails)) {
+      return await internalGetAccountBalancesStandalone({
+        publicKey,
+        networkDetails,
+      });
     }
-  },
-);
+    return await internalgetAccountIndexerBalances(publicKey, networkDetails);
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
 
 export const getAssetIcons = createAsyncThunk<
   AssetIcons,
@@ -413,6 +429,23 @@ export const getAssetDomains = createAsyncThunk<
   }) => getAssetDomainsService({ balances, networkDetails }),
 );
 
+export const getSoroswapTokens = createAsyncThunk<
+  SoroswapToken[],
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getSoroswapTokens", async (_, thunkApi) => {
+  let tokenData = { assets: [] as SoroswapToken[] };
+
+  try {
+    tokenData = await getSoroswapTokensService();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
+  }
+
+  return tokenData.assets;
+});
+
 // returns the full record so can save the best path and its rate
 export const getBestPath = createAsyncThunk<
   Horizon.ServerApi.PaymentPathRecord,
@@ -434,9 +467,48 @@ export const getBestPath = createAsyncThunk<
         networkDetails,
       });
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
+        errorMessage: message,
+      });
+    }
+  },
+);
+
+export const getBestSoroswapPath = createAsyncThunk<
+  {
+    amountIn?: string;
+    amountOutMin?: string;
+    amountInDecimals: number;
+    amountOutDecimals: number;
+    path: string[];
+  } | null,
+  {
+    amount: string;
+    sourceContract: string;
+    destContract: string;
+    networkDetails: NetworkDetails;
+    publicKey: string;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "getBestSoroswapPath",
+  async (
+    { amount, sourceContract, destContract, networkDetails, publicKey },
+    thunkApi,
+  ) => {
+    try {
+      return await soroswapGetBestPath({
+        amount,
+        sourceContract,
+        destContract,
+        networkDetails,
+        publicKey,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
       });
     }
   },
@@ -451,7 +523,7 @@ export const getBlockedDomains = createAsyncThunk<
     const resp = await internalGetBlockedDomains();
     return resp.blockedDomains || [];
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -464,7 +536,7 @@ export const getBlockedAccounts = createAsyncThunk<
     const resp = await internalGetBlockedAccounts();
     return resp.blockedAccounts || [];
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e });
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -476,17 +548,22 @@ export enum ShowOverlayStatus {
 interface TransactionData {
   amount: string;
   asset: string;
+  decimals?: number;
   destination: string;
   federationAddress: string;
   transactionFee: string;
+  transactionTimeout: number;
   memo: string;
   destinationAsset: string;
+  destinationDecimals?: number;
   destinationAmount: string;
-  path: Array<string>;
+  destinationIcon: string;
+  path: string[];
   allowedSlippage: string;
   isToken: boolean;
   isMergeSelected: boolean;
   balancesToMigrate: BalanceToMigrate[];
+  isSoroswap: boolean;
 }
 
 interface HardwareWalletData {
@@ -504,6 +581,7 @@ export enum AssetSelectType {
 interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
+  destinationAccountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
   response:
     | Horizon.HorizonApi.TransactionResponse
@@ -519,6 +597,7 @@ interface InitialState {
   destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
   assetDomains: AssetDomains;
+  soroswapTokens: SoroswapToken[];
   assetSelect: {
     type: AssetSelectType;
     isSource: boolean;
@@ -532,6 +611,7 @@ interface InitialState {
 export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
+  destinationAccountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
@@ -540,14 +620,17 @@ export const initialState: InitialState = {
     destination: "",
     federationAddress: "",
     transactionFee: "",
+    transactionTimeout: 180,
     memo: "",
     destinationAsset: "",
     destinationAmount: "",
+    destinationIcon: "",
     path: [],
     allowedSlippage: "1",
     isToken: false,
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
+    isSoroswap: false,
   },
   transactionSimulation: {
     response: null,
@@ -559,19 +642,18 @@ export const initialState: InitialState = {
     shouldSubmit: true,
   },
   accountBalances: {
-    tokensWithNoBalance: [],
     balances: null,
     isFunded: false,
     subentryCount: 0,
   },
   destinationBalances: {
-    tokensWithNoBalance: [],
     balances: null,
-    isFunded: false,
+    isFunded: true,
     subentryCount: 0,
   },
   assetIcons: {},
   assetDomains: {},
+  soroswapTokens: [],
   assetSelect: {
     type: AssetSelectType.MANAGE,
     isSource: true,
@@ -594,6 +676,9 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     },
+    resetSubmitStatus: (state) => {
+      state.submitStatus = initialState.submitStatus;
+    },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
@@ -609,11 +694,20 @@ const transactionSubmissionSlice = createSlice({
     saveTransactionFee: (state, action) => {
       state.transactionData.transactionFee = action.payload;
     },
+    saveTransactionTimeout: (state, action) => {
+      state.transactionData.transactionTimeout = action.payload;
+    },
     saveMemo: (state, action) => {
       state.transactionData.memo = action.payload;
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
+    },
+    saveDestinationIcon: (state, action) => {
+      state.transactionData.destinationIcon = action.payload;
+    },
+    saveIsSoroswap: (state, action) => {
+      state.transactionData.isSoroswap = action.payload;
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
@@ -702,8 +796,14 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     });
+    builder.addCase(getBestSoroswapPath.rejected, (state) => {
+      state.transactionData.path = initialState.transactionData.path;
+      state.transactionData.destinationAmount =
+        initialState.transactionData.destinationAmount;
+    });
     builder.addCase(getAccountBalances.pending, (state) => {
       state.accountBalanceStatus = ActionStatus.PENDING;
+      state.accountBalances = initialState.accountBalances;
     });
     builder.addCase(getAccountBalances.rejected, (state, action) => {
       state.error = action.payload;
@@ -715,6 +815,7 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
+      state.destinationAccountBalanceStatus = ActionStatus.SUCCESS;
     });
     builder.addCase(getAssetIcons.fulfilled, (state, action) => {
       const assetIcons = action.payload || {};
@@ -732,6 +833,14 @@ const transactionSubmissionSlice = createSlice({
         assetDomains,
       };
     });
+    builder.addCase(getSoroswapTokens.fulfilled, (state, action) => {
+      const soroswapTokens = action.payload || {};
+
+      return {
+        ...state,
+        soroswapTokens,
+      };
+    });
     builder.addCase(getBestPath.fulfilled, (state, action) => {
       if (!action.payload) {
         state.transactionData.path = [];
@@ -740,7 +849,7 @@ const transactionSubmissionSlice = createSlice({
       }
 
       // store in canonical form for easier use
-      const path: Array<string> = [];
+      const path: string[] = [];
       action.payload.path.forEach((p) => {
         if (!p.asset_code && !p.asset_issuer) {
           path.push(p.asset_type);
@@ -752,6 +861,20 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.path = path;
       state.transactionData.destinationAmount =
         action.payload.destination_amount;
+    });
+    builder.addCase(getBestSoroswapPath.fulfilled, (state, action) => {
+      if (!action.payload) {
+        state.transactionData.path = [];
+        state.transactionData.destinationAmount = "";
+        return;
+      }
+
+      state.transactionData.path = action.payload.path;
+      state.transactionData.destinationAmount =
+        action.payload.amountOutMin || "";
+      state.transactionData.decimals = action.payload.amountInDecimals;
+      state.transactionData.destinationDecimals =
+        action.payload.amountOutDecimals;
     });
     builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
       state.blockedDomains.domains = action.payload;
@@ -766,13 +889,17 @@ export const {
   resetSubmission,
   resetAccountBalanceStatus,
   resetDestinationAmount,
+  resetSubmitStatus,
   saveDestination,
   saveFederationAddress,
   saveAmount,
   saveAsset,
   saveTransactionFee,
+  saveTransactionTimeout,
   saveMemo,
   saveDestinationAsset,
+  saveDestinationIcon,
+  saveIsSoroswap,
   saveAllowedSlippage,
   saveIsToken,
   saveSimulation,
@@ -800,8 +927,6 @@ export const isPathPaymentSelector = (state: {
 
 export const tokensSelector = (state: {
   accountBalanceStatus: ActionStatus;
-  tokensWithNoBalance: string[];
 }) => ({
   accountBalanceStatus: state.accountBalanceStatus,
-  tokensWithNoBalance: state.tokensWithNoBalance || [],
 });

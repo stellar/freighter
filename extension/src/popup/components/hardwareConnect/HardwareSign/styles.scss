@@ -6,6 +6,13 @@
   top: 0;
   left: 0;
 
+  &__loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
   &__success {
     color: var(--color-green-60);
     font-size: 0.875rem;
@@ -25,7 +32,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: var(--color-gray-10);
+    background: var(--sds-clr-gray-01);
 
     // TODO - make a single reusable var when removing PopupWrapper
     padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
@@ -50,7 +57,7 @@
       span {
         font-size: 0.875rem;
         line-height: 1.5rem;
-        color: var(--color-gray-90);
+        color: var(--sds-clr-gray-12);
       }
       img {
         width: 16.875rem;

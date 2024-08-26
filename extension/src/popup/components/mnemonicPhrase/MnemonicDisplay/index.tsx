@@ -6,13 +6,13 @@ import random from "lodash/random";
 
 import "./styles.scss";
 
-interface generateMnemonicPhraseDisplayProps {
+interface GenerateMnemonicPhraseDisplayProps {
   mnemonicPhrase: string;
 }
 
 export const generateMnemonicPhraseDisplay = ({
   mnemonicPhrase = "",
-}: generateMnemonicPhraseDisplayProps) =>
+}: GenerateMnemonicPhraseDisplayProps) =>
   mnemonicPhrase.split(" ").map((word: string) => {
     /*
       As a security measure, we want to prevent writing the mnemonic phrase to the DOM.

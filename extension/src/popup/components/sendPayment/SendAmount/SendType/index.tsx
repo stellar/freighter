@@ -92,11 +92,11 @@ export const SendType = () => {
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title={t("Send Type")}
         customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
       />
       <Formik
         initialValues={{
@@ -105,6 +105,7 @@ export const SendType = () => {
               ? PAYMENT_TYPES.REGULAR
               : PAYMENT_TYPES.PATH_PAYMENT,
         }}
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onSubmit={() => {}}
       >
         {({ values }) => (
@@ -162,6 +163,6 @@ export const SendType = () => {
           </>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

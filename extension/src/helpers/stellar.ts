@@ -12,11 +12,11 @@ import {
 import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
-export const truncateString = (str: string) =>
-  str ? `${str.slice(0, 4)}…${str.slice(-4)}` : "";
+export const truncateString = (str: string, charCount = 4) =>
+  str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
-export const truncatedPublicKey = (publicKey: string) =>
-  truncateString(publicKey);
+export const truncatedPublicKey = (publicKey: string, charCount = 4) =>
+  truncateString(publicKey, charCount);
 
 export const truncatedFedAddress = (addr: string) => {
   if (!addr || addr.indexOf("*") === -1) {
@@ -128,11 +128,9 @@ export const isMuxedAccount = (publicKey: string) => publicKey.startsWith("M");
 export const isFederationAddress = (address: string) => address.includes("*");
 
 export const isMainnet = (networkDetails: NetworkDetails) => {
-  const { networkPassphrase, networkUrl } = networkDetails;
+  const { networkPassphrase } = networkDetails;
 
-  return (
-    networkPassphrase === Networks.PUBLIC && networkUrl === NETWORK_URLS.PUBLIC
-  );
+  return networkPassphrase === Networks.PUBLIC;
 };
 
 export const isTestnet = (networkDetails: NetworkDetails) => {
@@ -157,11 +155,3 @@ export const isActiveNetwork = (
   networkA: NetworkDetails,
   networkB: NetworkDetails,
 ) => isEqual(networkA, networkB);
-
-export const CUSTOM_NETWORK = "STANDALONE";
-
-export const isCustomNetwork = (networkDetails: NetworkDetails) => {
-  const { network } = networkDetails;
-
-  return network === CUSTOM_NETWORK;
-};

@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Notification } from "@stellar/design-system";
 
-import { HorizonOperation, AssetType, TokenBalance } from "@shared/api/types";
+import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAvailableBalance,
@@ -17,7 +17,7 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
-import { formatTokenAmount } from "popup/helpers/soroban";
+import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 
@@ -39,18 +39,20 @@ import { View } from "popup/basics/layout/View";
 import {
   saveAsset,
   saveDestinationAsset,
+  saveIsToken,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import StellarLogo from "popup/assets/stellar-logo.png";
+import { formatAmount } from "popup/helpers/formatters";
+import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
-import { formatAmount } from "popup/helpers/formatters";
 
 interface AssetDetailProps {
-  assetOperations: Array<HorizonOperation>;
-  accountBalances: Array<AssetType>;
+  assetOperations: HorizonOperation[];
+  accountBalances: AssetType[];
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
@@ -116,23 +118,25 @@ export const AssetDetail = ({
     defaultDetailViewProps,
   );
 
-  const { assetDomain } = useAssetDomain({
+  const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
+
+  const isContract = isContractId(assetIssuer);
 
   if (!assetOperations && !isSorobanAsset) {
     return null;
   }
 
-  if (assetIssuer && !assetDomain && !isSorobanAsset) {
+  if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
-    return null;
+    return <Loading />;
   }
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title={canonical.code}
         subtitle={
@@ -145,7 +149,10 @@ export const AssetDetail = ({
                 className="AssetDetail__available__icon"
                 onClick={() => setIsModalOpen(true)}
               >
-                <IconButton altText="Available Info" icon={<Icon.Info />} />{" "}
+                <IconButton
+                  altText="Available Info"
+                  icon={<Icon.InfoCircle />}
+                />{" "}
               </span>
             </div>
           ) : null
@@ -174,7 +181,7 @@ export const AssetDetail = ({
                 assetDomain={assetDomain}
                 contractId={
                   balance && "decimals" in balance
-                    ? (balance as TokenBalance).token.issuer.key
+                    ? balance.token.issuer.key
                     : undefined
                 }
               />
@@ -183,17 +190,19 @@ export const AssetDetail = ({
           <div className="AssetDetail__actions">
             {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
               <>
-                {/* Hide send for Soroban until send work is ready for Soroban tokens */}
-                {!isSorobanAsset && (
-                  <PillButton
-                    onClick={() => {
-                      dispatch(saveAsset(selectedAsset));
-                      navigateTo(ROUTES.sendPayment);
-                    }}
-                  >
-                    {t("SEND")}
-                  </PillButton>
-                )}
+                <PillButton
+                  onClick={() => {
+                    dispatch(saveAsset(selectedAsset));
+                    if (isContract) {
+                      dispatch(saveIsToken(true));
+                    } else {
+                      dispatch(saveIsToken(false));
+                    }
+                    navigateTo(ROUTES.sendPayment);
+                  }}
+                >
+                  {t("SEND")}
+                </PillButton>
                 {!isSorobanAsset && (
                   <PillButton
                     onClick={() => {
@@ -242,7 +251,7 @@ export const AssetDetail = ({
                     ...operation,
                     isPayment: getIsPayment(operation.type),
                     isSwap: getIsSwap(operation),
-                  };
+                  } as any; // TODO: isPayment/isSwap overload op type
                   return (
                     <HistoryItem
                       key={operation.id}
@@ -317,6 +326,6 @@ export const AssetDetail = ({
           </div>
         </SlideupModal>
       )}
-    </View>
+    </React.Fragment>
   );
 };

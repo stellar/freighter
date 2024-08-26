@@ -1,4 +1,14 @@
 .ModalInfo {
+  &--card.Malicious {
+    .Card {
+      .PunycodedDomain {
+        .PunycodedDomain__domain {
+          color: var(--sds-clr-red-09);
+        }
+      }
+    }
+  }
+
   &--connection-request {
     display: flex;
     justify-content: center;
@@ -9,9 +19,9 @@
     display: flex;
     align-items: center;
     padding: 0 0.5rem;
-    background-color: var(--color-gray-20);
-    color: var(--color-gray-70);
-    border: 1px solid var(--color-gray-30);
+    background-color: var(--sds-clr-gray-02);
+    color: var(--sds-clr-gray-12);
+    border: 1px solid var(--sds-clr-gray-03);
     border-radius: 6px;
     margin-bottom: 0.5rem;
     line-height: 1.25rem;
@@ -24,10 +34,10 @@
 
   &--subject {
     font-size: 0.75rem;
-    color: var(--color-gray-70);
-    background-color: var(--color-gray-30);
+    color: #a0a0a0;
+    background-color: #1c1c1c;
     border-radius: 6px;
-    line-height: 1.5rem;
+    line-height: 1rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
     padding: 0.5rem;

@@ -4,7 +4,7 @@
 
 .TransactionDetail {
   &__header {
-    border-bottom: 1px solid var(--color-gray-40);
+    border-bottom: 1px solid var(--sds-clr-gray-04);
     color: var(--color-white);
     font-size: 2rem;
     font-weight: var(--font-weight-light);
@@ -26,7 +26,6 @@
     &__row {
       color: rgba(255, 255, 255, 0.6);
       display: flex;
-      height: 1.5rem;
       justify-content: space-between;
 
       div:nth-child(2) {
@@ -35,6 +34,12 @@
 
       &:empty {
         display: none;
+      }
+
+      .InfoRow {
+        &__right {
+          width: 50%;
+        }
       }
     }
   }

@@ -1,4 +1,5 @@
-import { Horizon } from "stellar-sdk";
+import { StrKey } from "stellar-sdk";
+import { getSdk } from "@shared/helpers/stellar";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
@@ -31,9 +32,13 @@ export const getDomainFromIssuer = async ({
 
   try {
     /* Otherwise, 1. load their account from the API */
-    const { networkUrl } = networkDetails;
+    const { networkUrl, networkPassphrase } = networkDetails;
+    const Sdk = getSdk(networkPassphrase);
 
-    const server = new Horizon.Server(networkUrl);
+    const server = new Sdk.Horizon.Server(networkUrl);
+    if (!StrKey.isValidEd25519PublicKey(key)) {
+      return assetDomain;
+    }
     response = await server.loadAccount(key);
   } catch (e) {
     return assetDomain;

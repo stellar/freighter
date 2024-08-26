@@ -39,13 +39,14 @@ export const VerifyAccount = ({
     if (customSubmit) {
       await customSubmit(values.password);
     } else {
+      // eslint-disable-next-line
       await dispatch(confirmPassword(values.password));
       navigateTo(from || ROUTES.account);
     }
   };
 
   return (
-    <View>
+    <React.Fragment>
       <SubviewHeader
         title={t("Verification")}
         customBackAction={customBackAction}
@@ -95,6 +96,6 @@ export const VerifyAccount = ({
           </Form>
         )}
       </Formik>
-    </View>
+    </React.Fragment>
   );
 };

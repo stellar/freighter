@@ -10,18 +10,18 @@ import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
 
-interface ErrorBoundaryProps {}
-
 export class ErrorBoundary extends Component<
-  ErrorBoundaryProps,
+  React.PropsWithChildren,
   { hasError: boolean; errorString: string }
 > {
   static getDerivedStateFromError() {
     return { hasError: true };
   }
 
-  constructor(props: ErrorBoundaryProps) {
+  // eslint-disable-next-line @typescript-eslint/member-ordering
+  constructor(props: React.PropsWithChildren) {
     super(props);
+    // eslint-disable-next-line
     this.state = { hasError: false, errorString: "" };
   }
 
@@ -54,7 +54,7 @@ export const UnhandledError = ({
   // expected to work outside of <Router />
   const isOnAccount = window.location.hash === "#/account";
   return (
-    <View>
+    <React.Fragment>
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="UnexpectedError__content">
@@ -89,6 +89,6 @@ export const UnhandledError = ({
           </Button>
         )}
       </View.Footer>
-    </View>
+    </React.Fragment>
   );
 };

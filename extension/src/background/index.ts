@@ -1,10 +1,11 @@
 import browser from "webextension-polyfill";
-import { Store } from "redux";
 import { ROUTES } from "popup/constants/routes";
 import {
   EXTERNAL_SERVICE_TYPES,
   SERVICE_TYPES,
 } from "@shared/constants/services";
+import { ExternalRequest, Response } from "@shared/api/types";
+import { buildStore } from "background/store";
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
@@ -24,18 +25,32 @@ export const initContentScriptMessageListener = () => {
         file: "contentScript.min.js",
       });
     }
+    return undefined;
   });
 };
 
-export const initExtensionMessageListener = (sessionStore: Store) => {
+export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
+    const sessionStore = await buildStore();
     // todo this is kinda ugly
+    const req = request as ExternalRequest | Response;
     let res;
-    if (Object.values(SERVICE_TYPES).includes(request.type)) {
-      res = await popupMessageListener(request, sessionStore);
+
+    if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
+      // eslint-disable-next-line
+      res = await popupMessageListener(req as Response, sessionStore);
     }
-    if (Object.values(EXTERNAL_SERVICE_TYPES).includes(request.type)) {
-      res = await freighterApiMessageListener(request, sender, sessionStore);
+    if (
+      Object.values(EXTERNAL_SERVICE_TYPES).includes(
+        req.type as EXTERNAL_SERVICE_TYPES,
+      )
+    ) {
+      // eslint-disable-next-line
+      res = await freighterApiMessageListener(
+        req as ExternalRequest,
+        sender,
+        sessionStore,
+      );
     }
 
     return res;
@@ -44,7 +59,9 @@ export const initExtensionMessageListener = (sessionStore: Store) => {
 
 export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(async ({ reason, temporary }) => {
-    if (temporary) return; // skip during development
+    if (temporary) {
+      return; // skip during development
+    }
     switch (reason) {
       case "install":
         await browser.tabs.create({
@@ -62,8 +79,9 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(versionedMigration);
 };
 
-export const initAlarmListener = (sessionStore: Store) => {
-  browser?.alarms?.onAlarm.addListener(({ name }: { name: string }) => {
+export const initAlarmListener = () => {
+  browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
+    const sessionStore = await buildStore();
     if (name === SESSION_ALARM_NAME) {
       sessionStore.dispatch(timeoutAccountAccess());
     }

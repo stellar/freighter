@@ -8,13 +8,6 @@
     line-height: 1.375rem;
     margin-top: 0.75rem;
 
-    &__icon {
-      background: var(--color-purple-60);
-      border-radius: 10rem;
-      height: var(--TransactionDetail--icon-dimension);
-      width: var(--TransactionDetail--icon-dimension);
-    }
-
     img {
       height: var(--TransactionDetail--icon-dimension);
       width: var(--TransactionDetail--icon-dimension);

@@ -15,7 +15,7 @@ import "./styles.scss";
 
 export const AccountMigration = () => (
   <>
-    <View isAppLayout={false}>
+    <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Switch>
@@ -50,6 +50,6 @@ export const AccountMigration = () => (
           </PublicKeyRoute>
         </Switch>
       </View.Content>
-    </View>
+    </React.Fragment>
   </>
 );

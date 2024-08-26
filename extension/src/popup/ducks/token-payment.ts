@@ -3,9 +3,16 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ActionStatus, ErrorMessage } from "@shared/api/types";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { SorobanRpcNotSupportedError } from "@shared/constants/errors";
 import { transfer } from "@shared/helpers/soroban/token";
-import { isCustomNetwork, xlmToStroop } from "helpers/stellar";
-import { SorobanContextInterface } from "popup/SorobanContext";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+import { xlmToStroop } from "helpers/stellar";
+
+import {
+  buildSorobanServer,
+  getNewTxBuilder,
+} from "@shared/helpers/soroban/server";
+import { buildAndSimulateSoroswapTx } from "popup/helpers/sorobanSwap";
 
 export const simulateTokenPayment = createAsyncThunk<
   {
@@ -22,7 +29,6 @@ export const simulateTokenPayment = createAsyncThunk<
       amount: number;
     };
     networkDetails: NetworkDetails;
-    sorobanClient: SorobanContextInterface;
     transactionFee: string;
   },
   {
@@ -31,20 +37,22 @@ export const simulateTokenPayment = createAsyncThunk<
 >(
   "simulateTokenPayment",
   async (
-    {
-      address,
-      publicKey,
-      memo,
-      params,
-      networkDetails,
-      sorobanClient,
-      transactionFee,
-    },
+    { address, publicKey, memo, params, networkDetails, transactionFee },
     thunkApi,
   ) => {
     try {
       if (isCustomNetwork(networkDetails)) {
-        const builder = await sorobanClient.newTxBuilder(
+        if (!networkDetails.sorobanRpcUrl) {
+          throw new SorobanRpcNotSupportedError();
+        }
+        const server = buildSorobanServer(
+          networkDetails.sorobanRpcUrl,
+          networkDetails.networkPassphrase,
+        );
+        const builder = await getNewTxBuilder(
+          publicKey,
+          networkDetails,
+          server,
           xlmToStroop(transactionFee).toFixed(),
         );
 
@@ -54,7 +62,7 @@ export const simulateTokenPayment = createAsyncThunk<
           new XdrLargeInt("i128", params.amount).toI128(), // amount
         ];
         const transaction = transfer(address, transferParams, memo, builder);
-        const simulationResponse = await sorobanClient.server.simulateTransaction(
+        const simulationResponse = await server.simulateTransaction(
           transaction,
         );
 
@@ -73,14 +81,18 @@ export const simulateTokenPayment = createAsyncThunk<
       const options = {
         method: "POST",
         headers: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           address,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           pub_key: publicKey,
           memo,
           params,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           network_url: networkDetails.sorobanRpcUrl,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           network_passphrase: networkDetails.networkPassphrase,
         }),
       };
@@ -97,9 +109,67 @@ export const simulateTokenPayment = createAsyncThunk<
       }
       return response;
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
-        errorMessage: e.message || e,
-        response: e.response?.data,
+        errorMessage: message,
+      });
+    }
+  },
+);
+
+export const simulateSwap = createAsyncThunk<
+  {
+    preparedTransaction: string;
+    simulationTransaction: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+  },
+  {
+    networkDetails: NetworkDetails;
+    publicKey: string;
+    amountIn: string;
+    amountInDecimals: number;
+    amountOut: string;
+    amountOutDecimals: number;
+    memo: string;
+    transactionFee: string;
+    path: string[];
+  },
+  {
+    rejectValue: ErrorMessage;
+  }
+>(
+  "simulateSwap",
+  async (
+    {
+      networkDetails,
+      publicKey,
+      amountIn,
+      amountInDecimals,
+      amountOut,
+      amountOutDecimals,
+      memo,
+      transactionFee,
+      path,
+    },
+    thunkApi,
+  ) => {
+    try {
+      const sim = await buildAndSimulateSoroswapTx({
+        networkDetails,
+        publicKey,
+        amountIn,
+        amountInDecimals,
+        amountOut,
+        amountOutDecimals,
+        memo,
+        transactionFee,
+        path,
+      });
+
+      return sim;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
       });
     }
   },
@@ -138,6 +208,17 @@ const tokenPaymentsSimulationSlice = createSlice({
       state.error = action.payload;
     });
     builder.addCase(simulateTokenPayment.fulfilled, (state, action) => {
+      state.simStatus = ActionStatus.SUCCESS;
+      state.simulation = action.payload;
+    });
+    builder.addCase(simulateSwap.pending, (state) => {
+      state.simStatus = ActionStatus.PENDING;
+    });
+    builder.addCase(simulateSwap.rejected, (state, action) => {
+      state.simStatus = ActionStatus.ERROR;
+      state.error = action.payload;
+    });
+    builder.addCase(simulateSwap.fulfilled, (state, action) => {
       state.simStatus = ActionStatus.SUCCESS;
       state.simulation = action.payload;
     });

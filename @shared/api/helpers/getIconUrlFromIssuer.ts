@@ -1,4 +1,4 @@
-import { StellarToml } from "stellar-sdk";
+import { StellarToml, StrKey } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { stellarSdkServer } from "./stellarSdkServer";
 import { SERVICE_TYPES } from "../../constants/services";
@@ -56,8 +56,11 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* Otherwise, 1. load their account from the API */
-    const { networkUrl } = networkDetails;
-    const server = stellarSdkServer(networkUrl);
+    const { networkUrl, networkPassphrase } = networkDetails;
+    const server = stellarSdkServer(networkUrl, networkPassphrase);
+    if (!StrKey.isValidEd25519PublicKey(key)) {
+      return iconUrl;
+    }
 
     response = await server.loadAccount(key);
   } catch (e) {
@@ -69,7 +72,10 @@ export const getIconUrlFromIssuer = async ({
 
   try {
     /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-    toml = await StellarToml.Resolver.resolve(homeDomain || "");
+    if (!homeDomain) {
+      return iconUrl;
+    }
+    toml = await StellarToml.Resolver.resolve(homeDomain);
   } catch (e) {
     console.error(e);
     return iconUrl;
