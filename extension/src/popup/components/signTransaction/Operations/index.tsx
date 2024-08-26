@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Operation } from "stellar-sdk";
 
@@ -11,7 +12,10 @@ import {
 
 import { FlaggedKeys } from "types/transactions";
 
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
+import { scanAsset } from "popup/helpers/blockaid";
+
 import {
   KeyValueClaimants,
   KeyValueInvokeHostFn,
@@ -123,7 +127,44 @@ export const Operations = ({
     "8": "Authorization Clawback Enabled",
   };
 
-  function renderOpByType(op: Operation) {
+  const RenderOpByType = ({ op }: { op: Operation }) => {
+    const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+    useEffect(() => {
+      const scan = async () => {
+        let sendAsset;
+        let destAsset;
+
+        if (op.type === "payment") {
+          sendAsset = op.asset;
+        }
+
+        if (
+          op.type === "pathPaymentStrictReceive" ||
+          op.type === "pathPaymentStrictSend"
+        ) {
+          sendAsset = op.sendAsset;
+          destAsset = op.destAsset;
+        }
+
+        if (sendAsset) {
+          await scanAsset(
+            `${sendAsset.code}-${sendAsset.issuer}`,
+            networkDetails,
+          );
+        }
+
+        if (destAsset) {
+          await scanAsset(
+            `${destAsset.code}-${destAsset.issuer}`,
+            networkDetails,
+          );
+        }
+      };
+
+      scan();
+    }, [networkDetails, op]);
+
     switch (op.type) {
       case "createAccount": {
         const destination = op.destination;
@@ -709,7 +750,7 @@ export const Operations = ({
         return <></>;
       }
     }
-  }
+  };
 
   return (
     <div className="Operations">
@@ -737,7 +778,7 @@ export const Operations = ({
                   operationValue={sourceVal || ""}
                 />
               )}
-              {renderOpByType(op)}
+              <RenderOpByType op={op} />
             </div>
           </div>
         );

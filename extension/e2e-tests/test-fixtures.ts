@@ -36,9 +36,6 @@ export const expectPageToHaveScreenshot = async (
   { page, screenshot }: { page: any; screenshot: string },
   options?: any,
 ) => {
-  if (process.env.CI) {
-    return true;
-  }
   await expect(page).toHaveScreenshot(screenshot, {
     maxDiffPixelRatio: 0.02,
     ...options,

@@ -13,6 +13,7 @@ import {
   truncateString,
 } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
@@ -82,6 +83,7 @@ export const ManageAssetRows = ({
   const dispatch: AppDispatch = useDispatch();
   const { accountBalanceStatus } = useSelector(tokensSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
+  const { recommendedFee } = useNetworkFees();
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -214,6 +216,7 @@ export const ManageAssetRows = ({
                       setAssetSubmitting={setAssetSubmitting}
                       setShowNewAssetWarning={setShowNewAssetWarning}
                       setShowUnverifiedWarning={setShowUnverifiedWarning}
+                      recommendedFee={recommendedFee}
                     />
                   </div>
                 );

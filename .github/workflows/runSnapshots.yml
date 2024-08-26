@@ -8,30 +8,43 @@ on:
         description: Branch name
         default: ""
         required: true
+  # Allow updating snapshots during manual runs
+  workflow_call:
+    inputs:
+      update-snapshots:
+        description: "Update snapshots?"
+        type: boolean
+  workflow_run:
+    workflows: ["Run Tests"]
+    types:
+      - in_progress
 jobs:
   test-ci:
     name: test snapshots
     timeout-minutes: 20
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
-      - name: Install docker # Taken from https://github.com/actions/virtual-environments/issues/1143#issuecomment-652264388
-        run: |
-          mkdir -p ~/.docker/machine/cache
-          curl -Lo ~/.docker/machine/cache/boot2docker.iso https://github.com/boot2docker/boot2docker/releases/download/v19.03.12/boot2docker.iso
-          brew install docker docker-machine
-          docker-machine create --driver virtualbox default
-          docker-machine env default
       - run: npm install -g yarn && yarn
       - run: npx playwright install --with-deps chromium
       - run: yarn setup
       - run: yarn build:freighter-api
       - run: yarn build:extension
+      - name: Update snapshots
+        if: ${{inputs.update-snapshots == 'true'}}
+        run: |
+          yarn test:e2e --update-snapshots
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "chore: updating snapshot tests"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
       - run: yarn test:e2e

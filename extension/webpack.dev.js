@@ -7,7 +7,7 @@ const { BUILD_PATH, commonConfig } = require("./webpack.common.js");
 
 const devConfig = {
   mode: "development",
-  devtool: "inline-source-map",
+  devtool: "cheap-source-map",
   devServer: {
     static: BUILD_PATH,
     port: 9000,

@@ -29,7 +29,7 @@ import {
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
-import { encodeObject } from "helpers/urls";
+import { encodeObject, parsedSearchParam } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
@@ -41,6 +41,7 @@ import {
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { navigateTo } from "popup/helpers/navigate";
+import { useScanTx } from "popup/helpers/blockaid";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -81,8 +82,10 @@ export const SignTransaction = () => {
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName, networkPassphrase } = networkDetails;
+  const { scanTx } = useScanTx();
 
   const tx = getTransactionInfo(location.search);
+  const { url } = parsedSearchParam(location.search);
 
   const {
     accountToSign: _accountToSign,
@@ -173,6 +176,14 @@ export const SignTransaction = () => {
     }
   };
   decodeAccountToSign();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await scanTx(transactionXdr, url, networkDetails);
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isMemoRequired) {

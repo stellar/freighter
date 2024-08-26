@@ -10,6 +10,7 @@ import {
   TransactionBuilder,
   scValToNative,
   xdr,
+  walkInvocationTree,
 } from "stellar-sdk";
 
 import {
@@ -402,10 +403,17 @@ export const scValByType = (scVal: xdr.ScVal) => {
 export function getInvocationDetails(
   invocation: xdr.SorobanAuthorizedInvocation,
 ) {
-  const invocations = [
-    getInvocationArgs(invocation),
-    ...invocation.subInvocations().map(getInvocationArgs),
-  ];
+  const invocations = [] as InvocationArgs[];
+
+  walkInvocationTree(invocation, (inv) => {
+    const args = getInvocationArgs(inv);
+    if (args) {
+      invocations.push(args);
+    }
+
+    return null;
+  });
+
   return invocations.filter(isInvocationArg);
 }
 

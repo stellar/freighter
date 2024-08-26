@@ -378,8 +378,8 @@ describe("Manage assets", () => {
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const ellipsisButton = within(addedTrustlines[1]).getByTestId(
-      "ManageAssetRowButton__ellipsis",
+    const ellipsisButton = screen.getByTestId(
+      "ManageAssetRowButton__ellipsis-SRT",
     );
 
     await waitFor(async () => {
@@ -419,8 +419,8 @@ describe("Manage assets", () => {
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const ellipsisButton = within(addedTrustlines[1]).getByTestId(
-      "ManageAssetRowButton__ellipsis",
+    const ellipsisButton = screen.getByTestId(
+      "ManageAssetRowButton__ellipsis-SRT",
     );
 
     await waitFor(async () => {
@@ -495,8 +495,8 @@ describe("Manage assets", () => {
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const ellipsisButton = within(addedTrustlines[1]).getByTestId(
-      "ManageAssetRowButton__ellipsis",
+    const ellipsisButton = screen.getByTestId(
+      "ManageAssetRowButton__ellipsis-SRT",
     );
 
     await waitFor(async () => {
@@ -574,8 +574,8 @@ describe("Manage assets", () => {
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const ellipsisButton = within(addedTrustlines[1]).getByTestId(
-      "ManageAssetRowButton__ellipsis",
+    const ellipsisButton = screen.getByTestId(
+      "ManageAssetRowButton__ellipsis-SRT",
     );
 
     await waitFor(async () => {
