@@ -334,8 +334,10 @@ export const SignTransaction = () => {
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
-        {scanResult && scanResult.validation.result_type === "Malicious" && (
-          <BlockaidMaliciousTxWarning />
+        {scanResult && scanResult.validation.result_type !== "Benign" && (
+          <BlockaidMaliciousTxWarning
+            type={scanResult.validation.result_type}
+          />
         )}
         {renderTabBody()}
       </div>
