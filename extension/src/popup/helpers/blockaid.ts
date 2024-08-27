@@ -71,7 +71,7 @@ export const useScanSite = () => {
 };
 
 export const useScanTx = () => {
-  const [data, setData] = useState({} as BlockAidScanTxResult);
+  const [data, setData] = useState(null as BlockAidScanTxResult | null);
   const [error, setError] = useState(null as string | null);
   const [isLoading, setLoading] = useState(true);
 
