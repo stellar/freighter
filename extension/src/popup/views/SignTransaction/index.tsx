@@ -41,7 +41,7 @@ import {
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { navigateTo } from "popup/helpers/navigate";
-import { BlockAidScanTxResult, useScanTx } from "popup/helpers/blockaid";
+import { useScanTx } from "popup/helpers/blockaid";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -76,10 +76,6 @@ export const SignTransaction = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
-  const [isScanningTx, setScanningTx] = React.useState(true);
-  const [txScanResult, setTxScanResult] = React.useState(
-    null as BlockAidScanTxResult | null,
-  );
 
   const { accountBalances, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
@@ -87,7 +83,7 @@ export const SignTransaction = () => {
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName, networkPassphrase } = networkDetails;
-  const { scanTx } = useScanTx();
+  const { scanTx, isLoading: isLoadingScan, data: scanResult } = useScanTx();
 
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
@@ -184,10 +180,7 @@ export const SignTransaction = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setScanningTx(true);
-      const scan = await scanTx(transactionXdr, url, networkDetails);
-      setTxScanResult(scan);
-      setScanningTx(false);
+      await scanTx(transactionXdr, url, networkDetails);
     };
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,7 +239,7 @@ export const SignTransaction = () => {
     accountBalanceStatus !== ActionStatus.PENDING &&
     accountBalanceStatus !== ActionStatus.IDLE;
 
-  if (!hasLoadedBalances || isScanningTx) {
+  if (!hasLoadedBalances || isLoadingScan) {
     return <Loading />;
   }
 
@@ -341,10 +334,9 @@ export const SignTransaction = () => {
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
-        {txScanResult &&
-          txScanResult.validation.result_type === "Malicious" && (
-            <BlockaidMaliciousTxWarning />
-          )}
+        {scanResult && scanResult.validation.result_type === "Malicious" && (
+          <BlockaidMaliciousTxWarning />
+        )}
         {renderTabBody()}
       </div>
     );
