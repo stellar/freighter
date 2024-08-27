@@ -7,6 +7,7 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { fetchJson } from "./fetch";
 
 interface BlockAidScanSiteResult {
   status: "hit" | "miss";
@@ -84,25 +85,26 @@ export const useScanTx = () => {
         setLoading(false);
         return;
       }
-      const res = await fetch(
+      const response = await fetchJson<{
+        data: BlockAidScanTxResult;
+        error: string | null;
+      }>(
         `${INDEXER_URL}/scan-tx?url=${encodeURIComponent(
           url,
         )}&tx_xdr=${xdr}&network=${networkDetails.network}`,
       );
-      const response = (await res.json()) as {
-        data: BlockAidScanTxResult;
-        error: string | null;
-      };
 
-      if (!res.ok) {
-        setError(response.error || "Failed to scan transaction");
-      }
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidTxScan, { response: response.data });
       setLoading(false);
     } catch (err) {
       setError("Failed to scan transaction");
-      Sentry.captureException(err);
+      Sentry.captureException({
+        error: err,
+        xdr,
+        url,
+        networkDetails,
+      });
       setLoading(false);
     }
   };
