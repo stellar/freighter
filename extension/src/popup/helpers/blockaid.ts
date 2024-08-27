@@ -91,7 +91,7 @@ export const useScanTx = () => {
       }>(
         `${INDEXER_URL}/scan-tx?url=${encodeURIComponent(
           url,
-        )}&tx_xdr=${xdr}&network=${networkDetails.network}`,
+        )}&tx_xdr=${encodeURIComponent(xdr)}&network=${networkDetails.network}`,
       );
 
       setData(response.data);
