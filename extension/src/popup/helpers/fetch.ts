@@ -9,6 +9,6 @@ export const fetchJson = async <T>(url: string, options?: RequestInit) => {
     throw new Error(content);
   }
 
-  const data = res.json() as T;
+  const data = (await res.json()) as T;
   return data;
 };
