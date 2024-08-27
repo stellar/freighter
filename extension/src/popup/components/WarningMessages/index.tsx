@@ -1104,3 +1104,12 @@ export const BlockAidMissWarning = () => {
     </WarningMessage>
   );
 };
+
+export const BlockaidMaliciousTxWarning = () => (
+  <WarningMessage
+    header="This contract was flagged as malicious"
+    variant={WarningMessageVariant.default}
+  >
+    <div></div>
+  </WarningMessage>
+);

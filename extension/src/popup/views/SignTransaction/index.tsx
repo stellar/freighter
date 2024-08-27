@@ -41,7 +41,7 @@ import {
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { navigateTo } from "popup/helpers/navigate";
-import { useScanTx } from "popup/helpers/blockaid";
+import { BlockAidScanTxResult, useScanTx } from "popup/helpers/blockaid";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -53,6 +53,7 @@ import {
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
   SSLWarningMessage,
+  BlockaidMaliciousTxWarning,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -75,6 +76,10 @@ export const SignTransaction = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
+  const [isScanningTx, setScanningTx] = React.useState(true);
+  const [txScanResult, setTxScanResult] = React.useState(
+    null as BlockAidScanTxResult | null,
+  );
 
   const { accountBalances, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
@@ -179,7 +184,10 @@ export const SignTransaction = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      await scanTx(transactionXdr, url, networkDetails);
+      setScanningTx(true);
+      const scan = await scanTx(transactionXdr, url, networkDetails);
+      setTxScanResult(scan);
+      setScanningTx(false);
     };
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,7 +246,7 @@ export const SignTransaction = () => {
     accountBalanceStatus !== ActionStatus.PENDING &&
     accountBalanceStatus !== ActionStatus.IDLE;
 
-  if (!hasLoadedBalances) {
+  if (!hasLoadedBalances || isScanningTx) {
     return <Loading />;
   }
 
@@ -333,6 +341,10 @@ export const SignTransaction = () => {
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
+        {txScanResult &&
+          txScanResult.validation.result_type === "Malicious" && (
+            <BlockaidMaliciousTxWarning />
+          )}
         {renderTabBody()}
       </div>
     );

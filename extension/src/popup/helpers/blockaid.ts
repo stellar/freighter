@@ -20,9 +20,11 @@ interface BlockAidScanSiteResult {
   // ...
 }
 
-interface BlockAidScanTxResult {
+export interface BlockAidScanTxResult {
   simulation: object;
-  validation: object;
+  validation: {
+    result_type: "Benign" | "Warning" | "Malicious";
+  };
 }
 
 export const useScanSite = () => {
@@ -82,7 +84,7 @@ export const useScanTx = () => {
       if (isCustomNetwork(networkDetails)) {
         setError("Scanning transactions is not supported on custom networks");
         setLoading(false);
-        return;
+        return null;
       }
       const res = await fetch(
         `${INDEXER_URL}/scan-tx?url=${encodeURIComponent(
@@ -96,15 +98,18 @@ export const useScanTx = () => {
 
       if (!res.ok) {
         setError(response.error || "Failed to scan transaction");
+        return null;
       }
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidTxScan, { response: response.data });
       setLoading(false);
+      return response.data;
     } catch (err) {
       setError("Failed to scan transaction");
       Sentry.captureException(err);
       setLoading(false);
     }
+    return null;
   };
 
   return {
@@ -114,6 +119,18 @@ export const useScanTx = () => {
     scanTx,
   };
 };
+
+interface ScanAssetResponseSuccess {
+  data: {
+    result_type: "Benign" | "Warning" | "Malicious" | "Spam";
+  };
+  error: null;
+}
+interface ScanAssetResponseError {
+  data: null;
+  error: string;
+}
+type ScanAssetResponse = ScanAssetResponseSuccess | ScanAssetResponseError;
 
 export const scanAsset = async (
   address: string,
@@ -125,12 +142,9 @@ export const scanAsset = async (
       return {};
     }
     const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`);
-    const response = (await res.json()) as {
-      data: BlockAidScanTxResult;
-      error: string | null;
-    };
+    const response = (await res.json()) as ScanAssetResponse;
 
-    if (!res.ok) {
+    if (!res.ok || response.error) {
       Sentry.captureException(response.error || "Failed to scan asset");
     }
 
