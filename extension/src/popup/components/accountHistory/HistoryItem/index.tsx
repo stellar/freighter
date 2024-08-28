@@ -7,6 +7,7 @@ import camelCase from "lodash/camelCase";
 import { Icon, Loader } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { Asset } from "stellar-sdk";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -16,6 +17,7 @@ import { emitMetric } from "helpers/metrics";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
+  isContractId,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
 
@@ -166,7 +168,7 @@ export const HistoryItem = ({
         setBodyComponent(
           <>
             {paymentDifference}
-            {formatAmount(new BigNumber(amount).toFixed(2, 1))} {destAssetCode}
+            {formatAmount(new BigNumber(amount).toString())} {destAssetCode}
           </>,
         );
         setIconComponent(
@@ -214,9 +216,22 @@ export const HistoryItem = ({
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
         const balances =
           accountBalances.balances || ({} as NonNullable<Balances>);
-        const tokenKey = Object.keys(balances).find(
-          (balanceKey) => attrs?.contractId === balanceKey.split(":")[1],
-        );
+
+        const tokenKey = Object.keys(balances).find((balanceKey) => {
+          const [code, issuer] =
+            balanceKey === "native" ? ["XLM"] : balanceKey.split(":");
+          const matchesIssuer = attrs?.contractId === issuer;
+
+          // if issuer if a G address or xlm, check for a SAC match
+          if ((issuer && !isContractId(issuer)) || code === "XLM") {
+            const sacAddress = new Asset(code, issuer).contractId(
+              networkDetails.networkPassphrase,
+            );
+            const matchesSac = attrs?.contractId === sacAddress;
+            return matchesSac;
+          }
+          return matchesIssuer;
+        });
 
         if (!attrs) {
           setRowText(operationString);
@@ -378,25 +393,34 @@ export const HistoryItem = ({
               new BigNumber(attrs.amount),
               decimals,
             );
+            const _isRecipient =
+              attrs.to === publicKey && attrs.from !== publicKey;
+            const paymentDifference = _isRecipient ? "+" : "-";
             setBodyComponent(
               <>
-                - {formattedTokenAmount} {token.code}
+                {paymentDifference}
+                {formattedTokenAmount} {token.code}
               </>,
             );
-
-            setDateText((_dateText) => `${t("Sent")} \u2022 ${date}`);
-            setRowText(t(capitalize(attrs.fnName)));
+            setIconComponent(
+              _isRecipient ? (
+                <Icon.ArrowDown className="HistoryItem__icon--received" />
+              ) : (
+                <Icon.ArrowUp className="HistoryItem__icon--sent" />
+              ),
+            );
+            setRowText(token.code);
+            setDateText(
+              (_dateText) =>
+                `${_isRecipient ? t("Received") : t("Sent")} \u2022 ${date}`,
+            );
             setTxDetails((_state) => ({
               ..._state,
-              operation: {
-                ..._state.operation,
-                from: attrs.from,
-                to: attrs.to,
-              },
-              headerTitle: `${t(capitalize(attrs.fnName))} ${token.code}`,
-              isPayment: false,
-              isRecipient: false,
-              operationText: `${formattedTokenAmount} ${token.code}`,
+              isRecipient: _isRecipient,
+              headerTitle: `${_isRecipient ? t("Received") : t("Sent")} ${
+                token.code
+              }`,
+              operationText: `${paymentDifference}${formattedTokenAmount} ${token.code}`,
             }));
           }
         } else {
