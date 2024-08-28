@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Sentry from "@sentry/browser";
+import { useSelector } from "react-redux";
 
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -7,6 +8,7 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 interface BlockAidScanSiteResult {
   status: "hit" | "miss";
@@ -23,6 +25,10 @@ interface BlockAidScanSiteResult {
 interface BlockAidScanTxResult {
   simulation: object;
   validation: object;
+}
+
+interface BlockAidScanAssetResult {
+  result_type: string;
 }
 
 export const useScanSite = () => {
@@ -121,12 +127,12 @@ export const scanAsset = async (
 ) => {
   try {
     if (!isMainnet(networkDetails)) {
-      console.error("Scanning assets is only supported on Mainnet");
-      return {};
+      /* Scanning assets is only supported on Mainnet */
+      return {} as BlockAidScanAssetResult;
     }
     const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`);
     const response = (await res.json()) as {
-      data: BlockAidScanTxResult;
+      data: BlockAidScanAssetResult;
       error: string | null;
     };
 
@@ -140,5 +146,27 @@ export const scanAsset = async (
     console.error("Failed to scan asset");
     Sentry.captureException(err);
   }
-  return {};
+  return {} as BlockAidScanAssetResult;
+};
+
+export const useScanAsset = (address: string) => {
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [scannedAssetStatus, setScannedAssetStatus] = useState(
+    {} as BlockAidScanAssetResult,
+  );
+
+  useEffect(() => {
+    const fetchScanAssetStatus = async () => {
+      const scannedAsset = await scanAsset(address, networkDetails);
+      setScannedAssetStatus(scannedAsset);
+    };
+
+    if (address) {
+      fetchScanAssetStatus();
+    }
+  }, [networkDetails, address]);
+
+  return {
+    scannedAsset: scannedAssetStatus,
+  };
 };

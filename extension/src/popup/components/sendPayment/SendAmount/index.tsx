@@ -122,7 +122,6 @@ export const SendAmount = ({
     destinationBalances,
     transactionData,
     assetDomains,
-    blockedDomains,
     assetIcons,
     soroswapTokens,
   } = useSelector(transactionSubmissionSelector);
@@ -205,11 +204,17 @@ export const SendAmount = ({
   }) => {
     dispatch(saveAmount(cleanAmount(values.amount)));
     dispatch(saveAsset(values.asset));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    let isDestAssetScam = false;
+
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
+      isDestAssetScam =
+        accountBalances.balances?.[destinationAsset].isMalicious || false;
     }
     // check for scam asset
-    if (blockedDomains.domains[assetDomains[values.asset]]) {
+    const isSourceAssetScam = accountBalances.balances?.[asset].isMalicious;
+    if (isSourceAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.asset).code,
@@ -217,7 +222,7 @@ export const SendAmount = ({
         domain: assetDomains[values.asset],
         image: assetIcons[values.asset],
       });
-    } else if (blockedDomains.domains[assetDomains[values.destinationAsset]]) {
+    } else if (isDestAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.destinationAsset).code,
@@ -428,9 +433,10 @@ export const SendAmount = ({
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
-          image={suspiciousAssetData.image}
           onClose={() => setShowBlockedDomainWarning(false)}
           onContinue={() => navigateTo(next)}
+          blockaidWarning=""
+          isNewAsset={false}
         />
       )}
       <React.Fragment>
@@ -568,6 +574,9 @@ export const SendAmount = ({
                       <AssetSelect
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
+                        isMalicious={
+                          accountBalances.balances?.[asset].isMalicious || false
+                        }
                       />
                     )}
                     {showSourceAndDestAsset && (
@@ -578,6 +587,10 @@ export const SendAmount = ({
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
                           icon=""
+                          isMalicious={
+                            accountBalances.balances?.[asset].isMalicious ||
+                            false
+                          }
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -589,6 +602,11 @@ export const SendAmount = ({
                               : "0"
                           }
                           icon={destinationIcon}
+                          isMalicious={
+                            accountBalances.balances?.[
+                              formik.values.destinationAsset
+                            ].isMalicious || false
+                          }
                         />
                       </>
                     )}

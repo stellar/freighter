@@ -2,10 +2,13 @@ const { merge } = require("webpack-merge");
 const webpack = require("webpack");
 const path = require("path");
 const Dotenv = require("dotenv-webpack");
+const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 
 const { BUILD_PATH, commonConfig } = require("./webpack.common.js");
 
-const devConfig = {
+const smp = new SpeedMeasurePlugin();
+
+const devConfig = smp.wrap({
   mode: "development",
   devtool: "cheap-source-map",
   devServer: {
@@ -23,6 +26,6 @@ const devConfig = {
     ),
     new Dotenv(),
   ],
-};
+});
 
 module.exports = (env) => merge(devConfig, commonConfig(env));

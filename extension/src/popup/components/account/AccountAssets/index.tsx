@@ -152,9 +152,6 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
-  const { assetDomains, blockedDomains } = useSelector(
-    transactionSubmissionSelector,
-  );
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);
@@ -237,8 +234,7 @@ export const AccountAssets = ({
           issuer?.key as string,
         );
 
-        const assetDomain = assetDomains[canonicalAsset];
-        const isScamAsset = !!blockedDomains.domains[assetDomain];
+        const isScamAsset = rb.isMalicious || false;
 
         const bigTotal = new BigNumber(rb.total as string);
         const amountVal = rb.contractId

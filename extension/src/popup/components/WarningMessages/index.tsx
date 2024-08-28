@@ -30,6 +30,7 @@ import {
   settingsSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
+import { ModalInfo } from "popup/components/ModalInfo";
 import {
   ManageAssetRow,
   NewAssetFlags,
@@ -53,6 +54,8 @@ import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
+import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
+import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { CopyValue } from "../CopyValue";
 
@@ -277,18 +280,20 @@ export const ScamAssetWarning = ({
   domain,
   code,
   issuer,
-  image,
   onClose,
   // eslint-disable-next-line
   onContinue = () => {},
+  blockaidWarning,
+  isNewAsset,
 }: {
   isSendWarning?: boolean;
   domain: string;
   code: string;
   issuer: string;
-  image: string;
   onClose: () => void;
   onContinue?: () => void;
+  blockaidWarning: string;
+  isNewAsset: boolean;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -382,22 +387,13 @@ export const ScamAssetWarning = ({
   ) : (
     <div className="ScamAssetWarning">
       <View.Content>
-        <div className="ScamAssetWarning__wrapper" ref={warningRef}>
-          <div className="ScamAssetWarning__header">Warning</div>
-          <div className="ScamAssetWarning__description">
-            {t(
-              "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
-            )}
-          </div>
-          <div className="ScamAssetWarning__row">
-            <ManageAssetRow
-              code={code}
-              issuer={issuer}
-              image={image}
-              domain={domain}
-            />
-          </div>
-          <div className="ScamAssetWarning__bottom-content">
+        <ModalInfo
+          domain={domain}
+          variant={blockaidWarning === "Malicious" ? "malicious" : "default"}
+          subject=""
+          isTrustline={!isSendWarning}
+        >
+          <div className="ScamAssetWarning__wrapper" ref={warningRef}>
             <div>
               {isSendWarning ? (
                 <Notification
@@ -411,32 +407,63 @@ export const ScamAssetWarning = ({
                   </p>
                 </Notification>
               ) : (
-                <Notification variant="error" title={t("Blocked asset")}>
-                  <div>
-                    <p>
-                      {isValidatingSafeAssetsEnabled
-                        ? t(
-                            "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                          )
-                        : t(
-                            "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
-                          )}
-                    </p>
-                    <p>
-                      {t("You can")}{" "}
-                      {`${
-                        isValidatingSafeAssetsEnabled
-                          ? t("disable")
-                          : t("enable")
-                      }`}{" "}
-                      {t("this alert by going to")}{" "}
-                      <strong>{t("Settings > Preferences")}</strong>
-                    </p>
+                <div className="ScamAssetWarning__box">
+                  <div className="Icon">
+                    <img
+                      className="ScamAssetWarning__box__icon"
+                      src={IconWarningBlockaid}
+                      alt="icon warning blockaid"
+                    />
                   </div>
-                </Notification>
+                  <div>
+                    <div className="ScamAssetWarning__description">
+                      {t("This token was flagged as ")}
+                      {blockaidWarning}
+                      {t(
+                        " by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:",
+                      )}
+                      <ul className="ScamAssetWarning__list">
+                        {blockaidWarning === "Benign" ? (
+                          <li>{t("Identified as a scam")}</li>
+                        ) : (
+                          ""
+                        )}
+                        {isNewAsset ? <li>{t("New asset")}</li> : ""}
+                      </ul>
+                    </div>
+                    <div className="ScamAssetWarning__footer">
+                      <img
+                        src={IconShieldBlockaid}
+                        alt="icon shield blockaid"
+                      />
+                      {t("Powered by ")}
+                      <a
+                        rel="noreferrer"
+                        href="https://www.blockaid.io/"
+                        target="_blank"
+                      >
+                        Blockaid
+                      </a>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             <div className="ScamAssetWarning__btns">
+              {!isValidatingSafeAssetsEnabled && !isSendWarning && (
+                <Button
+                  size="md"
+                  isFullWidth
+                  onClick={handleSubmit}
+                  type="button"
+                  variant="error"
+                  isLoading={
+                    isSubmitting || submitStatus === ActionStatus.PENDING
+                  }
+                >
+                  {t("Sign anyway")}
+                </Button>
+              )}
               <Button
                 size="md"
                 isFullWidth
@@ -460,23 +487,9 @@ export const ScamAssetWarning = ({
                   {t("Continue")}
                 </Button>
               )}
-              {!isValidatingSafeAssetsEnabled && !isSendWarning && (
-                <Button
-                  size="md"
-                  isFullWidth
-                  onClick={handleSubmit}
-                  type="button"
-                  variant="primary"
-                  isLoading={
-                    isSubmitting || submitStatus === ActionStatus.PENDING
-                  }
-                >
-                  {t("Add anyway")}
-                </Button>
-              )}
             </div>{" "}
           </div>
-        </div>
+        </ModalInfo>
       </View.Content>
     </div>
   );

@@ -1351,13 +1351,6 @@ export const loadSettings = (): Promise<
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
 
-export const getBlockedDomains = async () => {
-  const resp = await sendMessageToBackground({
-    type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
-  });
-  return resp;
-};
-
 export const getBlockedAccounts = async () => {
   const resp = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_BLOCKED_ACCOUNTS,

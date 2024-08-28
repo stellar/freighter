@@ -91,9 +91,7 @@ export const ManageAssetRowButton = ({
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
   const [isSigningWithHardwareWallet, setIsSigningWithHardwareWallet] =
     useState(false);
-  const { blockedDomains, submitStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const { submitStatus } = useSelector(transactionSubmissionSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -104,8 +102,6 @@ export const ManageAssetRowButton = ({
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
-
-  const isBlockedDomain = (d: string) => blockedDomains.domains[d];
 
   const handleBackgroundClick = () => {
     setRowButtonShowing("");
@@ -211,14 +207,18 @@ export const ManageAssetRowButton = ({
       networkDetails,
     });
 
-    await scanAsset(
+    const scannedAsset = await scanAsset(
       `${assetRowData.code}-${assetRowData.issuer}`,
       networkDetails,
     );
 
-    if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
+    if (scannedAsset.result_type === "Malicious" && !isTrustlineActive) {
       setShowBlockedDomainWarning(true);
-      setSuspiciousAssetData(assetRowData);
+      setSuspiciousAssetData({
+        ...assetRowData,
+        blockaidWarning: scannedAsset.result_type,
+        isNewAsset: resp.isNewAsset,
+      });
     } else if (
       !isTrustlineActive &&
       (resp.isInvalidDomain || resp.isRevocable || resp.isNewAsset)

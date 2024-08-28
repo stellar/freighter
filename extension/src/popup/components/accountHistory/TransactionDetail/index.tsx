@@ -14,6 +14,7 @@ import { openTab } from "popup/helpers/navigate";
 import { stroopToXlm } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { useScanAsset } from "popup/helpers/blockaid";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -78,6 +79,7 @@ export const TransactionDetail = ({
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
+  const { scannedAsset } = useScanAsset(`${assetCode}-${assetIssuer}`);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const showContent = assetIssuer && !assetDomain && !assetError;
 
@@ -99,6 +101,7 @@ export const TransactionDetail = ({
                 assetType={assetType}
                 assetIssuer={assetIssuer || ""}
                 assetDomain={assetDomain}
+                isMalicious={scannedAsset.result_type === "Malicious"}
               />
             </div>
           ) : null}

@@ -35,7 +35,6 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
   const {
     accountBalances: { balances = {} },
     assetSelect,
-    blockedDomains,
     soroswapTokens,
     transactionData,
   } = useSelector(transactionSubmissionSelector);
@@ -75,8 +74,15 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     <div className="SelectAssetRows__scrollbar">
       <div className="SelectAssetRows__content">
         {assetRows.map(
-          ({ code = "", domain, image = "", issuer = "", icon }) => {
-            const isScamAsset = !!blockedDomains.domains[domain];
+          ({
+            code = "",
+            domain,
+            image = "",
+            issuer = "",
+            icon,
+            isMalicious,
+          }) => {
+            const isScamAsset = isMalicious || false;
             const isContract = isContractId(issuer);
             const canonical = getCanonicalFromAsset(code, issuer);
             let isSoroswap = false;

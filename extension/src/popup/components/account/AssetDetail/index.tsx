@@ -43,7 +43,6 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
-import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
 import { Loading } from "popup/components/Loading";
@@ -74,10 +73,6 @@ export const AssetDetail = ({
 
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
-  const isOwnedScamAsset = useIsOwnedScamAsset(
-    canonical.code,
-    canonical.issuer,
-  );
 
   const { accountBalances: balances } = useSelector(
     transactionSubmissionSelector,
@@ -181,6 +176,7 @@ export const AssetDetail = ({
                     ? balance.token.issuer.key
                     : undefined
                 }
+                isMalicious={balance.isMalicious}
               />
             </div>
           </div>
@@ -223,7 +219,7 @@ export const AssetDetail = ({
             )}
           </div>
           <div className="AssetDetail__scam-warning">
-            {isOwnedScamAsset && (
+            {balance.isMalicious && (
               <Notification variant="error" title={t("Error")}>
                 <div>
                   <p>

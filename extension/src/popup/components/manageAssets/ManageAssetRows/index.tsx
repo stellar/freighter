@@ -40,6 +40,7 @@ export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
   contract?: string;
   icon?: string;
+  isMalicious?: boolean;
 };
 
 export interface NewAssetFlags {
@@ -63,6 +64,8 @@ interface SuspiciousAssetData {
   issuer: string;
   image: string;
   isVerifiedToken?: boolean;
+  blockaidWarning: string;
+  isNewAsset: boolean;
 }
 
 export const ManageAssetRows = ({
@@ -99,6 +102,8 @@ export const ManageAssetRows = ({
     issuer: "",
     image: "",
     isVerifiedToken: false,
+    blockaidWarning: "",
+    isNewAsset: false,
   } as SuspiciousAssetData);
   const [handleAddToken, setHandleAddToken] = useState(
     null as null | (() => () => Promise<void>),
@@ -129,7 +134,8 @@ export const ManageAssetRows = ({
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
-          image={suspiciousAssetData.image}
+          blockaidWarning={suspiciousAssetData.blockaidWarning}
+          isNewAsset={suspiciousAssetData.isNewAsset}
           onClose={() => {
             setShowBlockedDomainWarning(false);
           }}
@@ -238,6 +244,7 @@ interface AssetRowData {
   image?: string;
   domain: string;
   name?: string;
+  isMalicious?: boolean;
 }
 
 export const ManageAssetRow = ({
@@ -246,10 +253,10 @@ export const ManageAssetRow = ({
   image = "",
   domain,
   name,
+  isMalicious,
 }: AssetRowData) => {
-  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  const isScamAsset = !!blockedDomains.domains[domain];
+  const isScamAsset = isMalicious || false;
   const assetCode = name || code;
   const truncatedAssetCode =
     assetCode.length > 20 ? truncateString(assetCode) : assetCode;

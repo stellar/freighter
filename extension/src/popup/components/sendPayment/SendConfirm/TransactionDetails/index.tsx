@@ -61,7 +61,7 @@ import {
   AssetIcon,
 } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
+import { useScanAsset } from "popup/helpers/blockaid";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
@@ -89,11 +89,14 @@ const TwoAssetCard = ({
   const sourceAsset = getAssetFromCanonical(sourceCanon);
   const destAsset = getAssetFromCanonical(destCanon);
 
-  const isSourceAssetScam = useIsOwnedScamAsset(
-    sourceAsset.code,
-    sourceAsset.issuer,
+  const { scannedAsset: scannedSourceAsset } = useScanAsset(
+    `${sourceAsset.code}-${sourceAsset.issuer}`,
   );
-  const isDestAssetScam = useIsOwnedScamAsset(destAsset.code, destAsset.issuer);
+  const isSourceAssetScam = scannedSourceAsset.result_type === "Malicious";
+  const { scannedAsset: scannedDestAsset } = useScanAsset(
+    `${destAsset.code}-${destAsset.issuer}`,
+  );
+  const isDestAssetScam = scannedDestAsset.result_type === "Malicious";
 
   return (
     <div className="TwoAssetCard">

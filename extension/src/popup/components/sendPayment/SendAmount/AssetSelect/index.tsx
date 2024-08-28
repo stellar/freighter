@@ -16,7 +16,6 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 
@@ -25,14 +24,15 @@ import "./styles.scss";
 export const AssetSelect = ({
   assetCode,
   issuerKey,
+  isMalicious,
 }: {
   assetCode: string;
   issuerKey: string;
+  isMalicious: boolean;
 }) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
-  const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export const AssetSelect = ({
               issuerKey={issuerKey}
             />
             <span className="AssetSelect__medium-copy">{assetCode}</span>
-            <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
+            <ScamAssetIcon isScamAsset={isMalicious} />
           </div>
           <div className="AssetSelect__content__right">
             <Icon.ChevronDown />
@@ -102,17 +102,18 @@ export const PathPayAssetSelect = ({
   issuerKey,
   balance,
   icon,
+  isMalicious,
 }: {
   source: boolean;
   assetCode: string;
   issuerKey: string;
   balance: string;
   icon: string;
+  isMalicious: boolean;
 }) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
-  const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
 
   const handleSelectAsset = () => {
     dispatch(
@@ -157,7 +158,7 @@ export const PathPayAssetSelect = ({
           >
             {truncateLongAssetCode(assetCode)}
           </span>{" "}
-          <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
+          <ScamAssetIcon isScamAsset={isMalicious} />
           <Icon.ChevronDown />
         </div>
         <div className="AssetSelect__content__right">

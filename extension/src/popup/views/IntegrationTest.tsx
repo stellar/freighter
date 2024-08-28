@@ -35,7 +35,6 @@ import {
   addCustomNetwork,
   removeCustomNetwork,
   editCustomNetwork,
-  getBlockedDomains,
 } from "@shared/api/internal";
 import {
   requestPublicKey,
@@ -360,11 +359,6 @@ export const IntegrationTest = () => {
       runAsserts("removeCustomNetwork", () => {
         assertArray(res.networksList);
         assertEq(res.networksList.length, networksListLength - 1);
-      });
-
-      res = await getBlockedDomains();
-      runAsserts("getBlockedDomains", () => {
-        assertEq(Object.keys(res.blockedDomains as object).length > 0, true);
       });
 
       await changeNetwork(NETWORK_NAMES.PUBNET);
