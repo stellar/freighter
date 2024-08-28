@@ -1,14 +1,4 @@
 .ModalInfo {
-  &--card.Malicious {
-    .Card {
-      .PunycodedDomain {
-        .PunycodedDomain__domain {
-          color: var(--color-red-50);
-        }
-      }
-    }
-  }
-
   &--connection-request {
     display: flex;
     justify-content: center;
