@@ -368,9 +368,7 @@
   "Preferences": "Preferences",
   "Price": "Price",
   "Privacy Policy": "Privacy Policy",
-  "Proceed with caution": {
-    " Blockaid is unable to provide a risk assesment for this domain at this time": "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time."
-  },
+  "Proceed with caution": "Proceed with caution",
   "Processing": "Processing",
   "Projects related to this asset may be fraudulent even if the creators say otherwise": {
     " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
@@ -493,6 +491,8 @@
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
+  "This site has been scanned and verified": "This site has been scanned and verified",
+  "This site was flagged as malicious": "This site was flagged as malicious",
   "This transaction could not be completed": "This transaction could not be completed.",
   "To": "To",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
@@ -515,6 +515,7 @@
   "Unable to connect to": "Unable to connect to",
   "Unable to migrate": "Unable to migrate",
   "Unable to parse assets lists": "Unable to parse assets lists",
+  "Unable to scan site for malicious behavior": "Unable to scan site for malicious behavior",
   "Unable to search for assets": "Unable to search for assets",
   "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
