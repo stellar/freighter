@@ -16,6 +16,7 @@ import {
   getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
+  getBlockedDomains as internalGetBlockedDomains,
   getBlockedAccounts as internalGetBlockedAccounts,
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
@@ -28,6 +29,7 @@ import {
   AssetDomains,
   Balances,
   ErrorMessage,
+  BlockedDomains,
   AccountType,
   ActionStatus,
   BlockedAccount,
@@ -512,6 +514,19 @@ export const getBestSoroswapPath = createAsyncThunk<
   },
 );
 
+export const getBlockedDomains = createAsyncThunk<
+  BlockedDomains,
+  undefined,
+  { rejectValue: ErrorMessage }
+>("getBlockedDomains", async (_, thunkApi) => {
+  try {
+    const resp = await internalGetBlockedDomains();
+    return resp.blockedDomains || [];
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
+
 export const getBlockedAccounts = createAsyncThunk<
   BlockedAccount[],
   undefined,
@@ -587,6 +602,9 @@ interface InitialState {
     type: AssetSelectType;
     isSource: boolean;
   };
+  blockedDomains: {
+    domains: BlockedDomains;
+  };
   blockedAccounts: BlockedAccount[];
 }
 
@@ -639,6 +657,9 @@ export const initialState: InitialState = {
   assetSelect: {
     type: AssetSelectType.MANAGE,
     isSource: true,
+  },
+  blockedDomains: {
+    domains: {},
   },
   blockedAccounts: [],
 };
@@ -854,6 +875,9 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.decimals = action.payload.amountInDecimals;
       state.transactionData.destinationDecimals =
         action.payload.amountOutDecimals;
+    });
+    builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
+      state.blockedDomains.domains = action.payload;
     });
     builder.addCase(getBlockedAccounts.fulfilled, (state, action) => {
       state.blockedAccounts = action.payload;

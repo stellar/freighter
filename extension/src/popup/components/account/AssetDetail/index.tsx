@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { IconButton, Icon, Notification } from "@stellar/design-system";
+import { IconButton, Icon } from "@stellar/design-system";
 
 import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
   getAvailableBalance,
   getIsPayment,
@@ -19,6 +20,7 @@ import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { ROUTES } from "popup/constants/routes";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -45,7 +47,9 @@ import {
 import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
+import { useScanAsset } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
+import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 
 import "./styles.scss";
 
@@ -69,6 +73,7 @@ export const AssetDetail = ({
   subentryCount,
 }: AssetDetailProps) => {
   const dispatch: AppDispatch = useDispatch();
+  const [isNewAsset, setIsNewAsset] = useState(false);
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
@@ -77,6 +82,31 @@ export const AssetDetail = ({
   const { accountBalances: balances } = useSelector(
     transactionSubmissionSelector,
   );
+  const { scannedAsset } = useScanAsset(
+    `${canonical.code}-${canonical.issuer}`,
+  );
+  const isMalicious = scannedAsset.result_type === "Malicious";
+
+  useEffect(() => {
+    const fetchSuspiciousAsset = async () => {
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
+
+      const resp = await checkForSuspiciousAsset({
+        code: canonical.code,
+        issuer: canonical.issuer,
+        domain: "",
+        server,
+        networkDetails,
+      });
+
+      setIsNewAsset(resp.isNewAsset);
+    };
+
+    fetchSuspiciousAsset();
+  }, [canonical.code, canonical.issuer, networkDetails]);
 
   const balance = getRawBalance(accountBalances, selectedAsset)!;
 
@@ -158,7 +188,9 @@ export const AssetDetail = ({
           )}
           <div className="AssetDetail__total">
             <div
-              className="AssetDetail__total__copy"
+              className={`AssetDetail__total__copy ${
+                isMalicious ? "AssetDetail__total__copy--isMalicious" : ""
+              }`}
               data-testid="asset-detail-available-copy"
             >
               {displayTotal}
@@ -176,7 +208,6 @@ export const AssetDetail = ({
                     ? balance.token.issuer.key
                     : undefined
                 }
-                isMalicious={balance.isMalicious}
               />
             </div>
           </div>
@@ -219,20 +250,12 @@ export const AssetDetail = ({
             )}
           </div>
           <div className="AssetDetail__scam-warning">
-            {balance.isMalicious && (
-              <Notification variant="error" title={t("Error")}>
-                <div>
-                  <p>
-                    This asset was tagged as fraudulent by stellar.expert, a
-                    reliable community-maintained directory.
-                  </p>
-                  <p>
-                    Trading or sending this asset is not recommended. Projects
-                    related to this asset may be fraudulent even if the creators
-                    say otherwise.
-                  </p>
-                </div>
-              </Notification>
+            {isMalicious && (
+              <BlockaidAssetWarning
+                isNewAsset={isNewAsset}
+                code={canonical.code}
+                issuer={canonical.issuer}
+              />
             )}
           </div>
 

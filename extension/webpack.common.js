@@ -15,7 +15,7 @@ const BUILD_PATH = path.resolve(__dirname, "./build");
 const commonConfig = (
   env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
 ) => ({
-  cache: true,
+  cache: false,
   entry: {
     background: path.resolve(__dirname, "./public/background.ts"),
     index: ["babel-polyfill", path.resolve(__dirname, "./src/popup/index.tsx")],

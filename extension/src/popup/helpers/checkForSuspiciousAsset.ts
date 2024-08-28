@@ -47,20 +47,23 @@ export const checkForSuspiciousAsset = async ({
 
   // check domain
   let isInvalidDomain = false;
-  try {
-    const resp = await StellarToml.Resolver.resolve(domain);
-    let found = false;
-    (resp?.CURRENCIES || []).forEach(
-      (c: { code?: string; issuer?: string }) => {
-        if (c.code === code && c.issuer === issuer) {
-          found = true;
-        }
-      },
-    );
-    isInvalidDomain = !found;
-  } catch (e) {
-    console.error(e);
-    isInvalidDomain = true;
+
+  if (domain) {
+    try {
+      const resp = await StellarToml.Resolver.resolve(domain);
+      let found = false;
+      (resp?.CURRENCIES || []).forEach(
+        (c: { code?: string; issuer?: string }) => {
+          if (c.code === code && c.issuer === issuer) {
+            found = true;
+          }
+        },
+      );
+      isInvalidDomain = !found;
+    } catch (e) {
+      console.error(e);
+      isInvalidDomain = true;
+    }
   }
 
   return { isRevocable, isNewAsset, isInvalidDomain };

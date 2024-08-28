@@ -4,7 +4,6 @@ import { Card, Icon } from "@stellar/design-system";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
-import { MaliciousDomainWarning } from "../WarningMessages";
 
 import "./styles.scss";
 
@@ -37,14 +36,9 @@ export const ModalInfo = ({
             ) : (
               <Icon.Link />
             )}
-            <div>
-              {isTrustline ? "Add asset trustline" : "Connection Request"}
-            </div>
+            <div>{isTrustline ? "Asset trustline" : "Connection Request"}</div>
           </div>
         </div>
-        {variant === "malicious" && (
-          <MaliciousDomainWarning message="This app is likely malicious. Signing messages or transactions from this app could result in losing your assets." />
-        )}
         {subject && <div className="ModalInfo--subject">{subject}</div>}
         {children}
       </Card>

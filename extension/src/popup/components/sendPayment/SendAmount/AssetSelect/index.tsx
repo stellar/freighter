@@ -6,7 +6,6 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { UnverifiedTokenNotification } from "popup/components/WarningMessages";
 import {
   transactionSubmissionSelector,
@@ -83,9 +82,9 @@ export const AssetSelect = ({
               assetIcons={assetIcons}
               code={assetCode}
               issuerKey={issuerKey}
+              isMalicious={isMalicious}
             />
             <span className="AssetSelect__medium-copy">{assetCode}</span>
-            <ScamAssetIcon isScamAsset={isMalicious} />
           </div>
           <div className="AssetSelect__content__right">
             <Icon.ChevronDown />
@@ -151,6 +150,7 @@ export const PathPayAssetSelect = ({
             code={assetCode}
             issuerKey={issuerKey}
             icon={icon}
+            isMalicious={isMalicious}
           />
           <span
             className="AssetSelect__medium-copy"
@@ -158,7 +158,6 @@ export const PathPayAssetSelect = ({
           >
             {truncateLongAssetCode(assetCode)}
           </span>{" "}
-          <ScamAssetIcon isScamAsset={isMalicious} />
           <Icon.ChevronDown />
         </div>
         <div className="AssetSelect__content__right">

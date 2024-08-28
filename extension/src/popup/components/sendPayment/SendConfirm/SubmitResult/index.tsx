@@ -32,29 +32,35 @@ import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import IconFail from "popup/assets/icon-fail.svg";
-
-import "./styles.scss";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { formatAmount } from "popup/helpers/formatters";
+
+import "./styles.scss";
 
 const SwapAssetsIcon = ({
   sourceCanon,
   destCanon,
   assetIcons,
+  isSourceMalicious,
+  isDestMalicious,
 }: {
   sourceCanon: string;
   destCanon: string;
   assetIcons: AssetIcons;
+  isSourceMalicious: boolean;
+  isDestMalicious: boolean;
 }) => {
   const source = getAssetFromCanonical(sourceCanon);
   const dest = getAssetFromCanonical(destCanon);
+
   return (
     <div className="SwapAssetsIcon">
       <AssetIcon
         assetIcons={assetIcons}
         code={source.code}
         issuerKey={source.issuer}
+        isMalicious={isSourceMalicious}
       />
       <span data-testid="SubmitResultSource">{source.code}</span>
       <Icon.ArrowRight />
@@ -62,6 +68,7 @@ const SwapAssetsIcon = ({
         assetIcons={assetIcons}
         code={dest.code}
         issuerKey={dest.issuer}
+        isMalicious={isDestMalicious}
       />
       <span data-testid="SubmitResultDestination">{dest.code}</span>
     </div>
@@ -96,6 +103,11 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     networkDetails.networkPassphrase,
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const isSourceAssetMalicious =
+    accountBalances.balances?.[asset].isMalicious || false;
+  const isDestAssetMalicious = destinationAsset
+    ? accountBalances.balances?.[destinationAsset].isMalicious || false
+    : false;
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
     const changeParams = { limit: "0" };
@@ -213,6 +225,8 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
                 sourceCanon={asset}
                 destCanon={destinationAsset}
                 assetIcons={assetIcons}
+                isSourceMalicious={isSourceAssetMalicious}
+                isDestMalicious={isDestAssetMalicious}
               />
             ) : (
               <FedOrGAddress

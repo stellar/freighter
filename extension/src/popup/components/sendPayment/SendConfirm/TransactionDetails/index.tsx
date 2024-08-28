@@ -62,7 +62,6 @@ import {
 } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { useScanAsset } from "popup/helpers/blockaid";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { FlaggedWarningMessage } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
 
@@ -78,6 +77,8 @@ const TwoAssetCard = ({
   destAssetIcons,
   destCanon,
   destAmount,
+  isSourceAssetMalicious,
+  isDestAssetMalicious,
 }: {
   sourceAssetIcons: AssetIcons;
   sourceCanon: string;
@@ -85,18 +86,11 @@ const TwoAssetCard = ({
   destAssetIcons: AssetIcons;
   destCanon: string;
   destAmount: string;
+  isSourceAssetMalicious: boolean;
+  isDestAssetMalicious: boolean;
 }) => {
   const sourceAsset = getAssetFromCanonical(sourceCanon);
   const destAsset = getAssetFromCanonical(destCanon);
-
-  const { scannedAsset: scannedSourceAsset } = useScanAsset(
-    `${sourceAsset.code}-${sourceAsset.issuer}`,
-  );
-  const isSourceAssetScam = scannedSourceAsset.result_type === "Malicious";
-  const { scannedAsset: scannedDestAsset } = useScanAsset(
-    `${destAsset.code}-${destAsset.issuer}`,
-  );
-  const isDestAssetScam = scannedDestAsset.result_type === "Malicious";
 
   return (
     <div className="TwoAssetCard">
@@ -106,9 +100,9 @@ const TwoAssetCard = ({
             assetIcons={sourceAssetIcons}
             code={sourceAsset.code}
             issuerKey={sourceAsset.issuer}
+            isMalicious={isSourceAssetMalicious}
           />
           {sourceAsset.code}
-          <ScamAssetIcon isScamAsset={isSourceAssetScam} />
         </div>
         <div
           className="TwoAssetCard__row__right"
@@ -126,9 +120,9 @@ const TwoAssetCard = ({
             assetIcons={destAssetIcons}
             code={destAsset.code}
             issuerKey={destAsset.issuer}
+            isMalicious={isDestAssetMalicious}
           />
           {destAsset.code}
-          <ScamAssetIcon isScamAsset={isDestAssetScam} />
         </div>
         <div
           className="TwoAssetCard__row__right"
@@ -197,6 +191,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
+    accountBalances,
     destinationBalances,
     transactionData: {
       destination,
@@ -248,13 +243,21 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     matchingBlockedTags.some(
       (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
     );
-  const isMalicious =
-    isValidatingSafety &&
-    matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.malicious);
+
+  const isAssetMalicious =
+    accountBalances.balances?.[asset].isMalicious || false;
+  const isTxMalicious = (isValidatingSafety && isAssetMalicious) || false;
   const isUnsafe =
     isValidatingSafety &&
     matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.unsafe);
-  const isSubmitDisabled = isMemoRequired || isMalicious || isUnsafe;
+  const isSubmitDisabled = isMemoRequired || isTxMalicious || isUnsafe;
+
+  const destAssetToScan = destinationAsset
+    ? `${destAsset.code}-${destAsset.issuer}`
+    : "";
+
+  const { scannedAsset: scannedDestAsset } = useScanAsset(destAssetToScan);
+  const isDestAssetMalicious = scannedDestAsset.result_type === "Malicious";
 
   // load destination asset icons
   useEffect(() => {
@@ -485,6 +488,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                         code: sourceAsset.code,
                       },
                       total: amount || "0",
+                      isMalicious: isAssetMalicious,
                     },
                   ]}
                 />
@@ -500,6 +504,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               destAssetIcons={destAssetIcons}
               destCanon={destinationAsset || "native"}
               destAmount={destinationAmount}
+              isSourceAssetMalicious={isAssetMalicious || false}
+              isDestAssetMalicious={isDestAssetMalicious}
             />
           )}
 
@@ -585,9 +591,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           )}
           {submission.submitStatus === ActionStatus.IDLE && (
             <FlaggedWarningMessage
-              isUnsafe={isUnsafe}
-              isMalicious={isMalicious}
               isMemoRequired={isMemoRequired}
+              code={sourceAsset.code}
+              issuer={sourceAsset.issuer}
+              isMalicious={isAssetMalicious || isDestAssetMalicious}
             />
           )}
         </View.Content>

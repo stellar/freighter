@@ -16,6 +16,7 @@ import { captureException } from "@sentry/browser";
 import { ActionStatus } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
 
@@ -47,6 +48,7 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
+import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
@@ -60,15 +62,6 @@ import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
-
-const DirectoryLink = () => {
-  const { t } = useTranslation();
-  return (
-    <a href="https://stellar.expert/directory" target="_blank" rel="noreferrer">
-      stellar.expert's {t("directory")}
-    </a>
-  );
-};
 
 export enum WarningMessageVariant {
   default = "",
@@ -148,47 +141,7 @@ export const WarningMessage = ({
   );
 };
 
-const DangerousAccountWarning = ({
-  isUnsafe,
-  isMalicious,
-}: {
-  isUnsafe: boolean;
-  isMalicious: boolean;
-}) => {
-  const { t } = useTranslation();
-
-  if (isMalicious) {
-    return (
-      <WarningMessage
-        header="Malicious account detected"
-        variant={WarningMessageVariant.highAlert}
-      >
-        <p>
-          {t("An account you’re interacting with is tagged as malicious on")}{" "}
-          <DirectoryLink />.
-        </p>
-        <p>{t("For your safety, signing this transaction is disabled")}</p>
-      </WarningMessage>
-    );
-  }
-  if (isUnsafe) {
-    return (
-      <WarningMessage
-        header="Unsafe account"
-        variant={WarningMessageVariant.warning}
-      >
-        <p>
-          {t("An account you’re interacting with is tagged as unsafe on")}{" "}
-          <DirectoryLink />. {t("Please proceed with caution.")}
-        </p>
-      </WarningMessage>
-    );
-  }
-
-  return null;
-};
-
-const MemoWarningMessage = ({
+export const MemoWarningMessage = ({
   isMemoRequired,
 }: {
   isMemoRequired: boolean;
@@ -216,18 +169,20 @@ const MemoWarningMessage = ({
 };
 
 interface FlaggedWarningMessageProps {
-  isUnsafe: boolean;
+  code: string;
+  issuer: string;
   isMemoRequired: boolean;
   isMalicious: boolean;
 }
 
 export const FlaggedWarningMessage = ({
-  isUnsafe,
+  code,
+  issuer,
   isMemoRequired,
   isMalicious,
 }: FlaggedWarningMessageProps) => (
   <>
-    <DangerousAccountWarning isUnsafe={isUnsafe} isMalicious={isMalicious} />
+    {isMalicious ? <BlockaidAssetWarning code={code} issuer={issuer} /> : null}
     <MemoWarningMessage isMemoRequired={isMemoRequired} />
   </>
 );
@@ -270,6 +225,78 @@ export const BackupPhraseWarningMessage = () => {
             "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
           )}
         </p>
+      </div>
+    </div>
+  );
+};
+
+interface BlockaidAssetWarningProps {
+  code?: string;
+  issuer?: string;
+  isNewAsset?: boolean;
+}
+
+export const BlockaidAssetWarning = ({
+  isNewAsset,
+  code,
+  issuer,
+}: BlockaidAssetWarningProps) => {
+  const { t } = useTranslation();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [isNewAssetState, setIsNewAssetState] = useState(false);
+
+  useEffect(() => {
+    const fetchSuspiciousAsset = async (
+      assetCode: string,
+      assetIssuer: string,
+    ) => {
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
+      const resp = await checkForSuspiciousAsset({
+        code: assetCode,
+        issuer: assetIssuer,
+        domain: "",
+        server,
+        networkDetails,
+      });
+
+      setIsNewAssetState(resp.isNewAsset);
+    };
+
+    if (isNewAsset === undefined && code && issuer) {
+      fetchSuspiciousAsset(code, issuer);
+    }
+  }, [code, issuer, isNewAsset, networkDetails]);
+
+  return (
+    <div className="ScamAssetWarning__box">
+      <div className="Icon">
+        <img
+          className="ScamAssetWarning__box__icon"
+          src={IconWarningBlockaid}
+          alt="icon warning blockaid"
+        />
+      </div>
+      <div>
+        <div className="ScamAssetWarning__description">
+          {t(
+            "This token was flagged as malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:",
+          )}
+          <ul className="ScamAssetWarning__list">
+            <li>{t("Identified as a scam")}</li>
+
+            {isNewAssetState ? <li>{t("New asset")}</li> : ""}
+          </ul>
+        </div>
+        <div className="ScamAssetWarning__footer">
+          <img src={IconShieldBlockaid} alt="icon shield blockaid" />
+          {t("Powered by ")}
+          <a rel="noreferrer" href="https://www.blockaid.io/" target="_blank">
+            Blockaid
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -407,46 +434,11 @@ export const ScamAssetWarning = ({
                   </p>
                 </Notification>
               ) : (
-                <div className="ScamAssetWarning__box">
-                  <div className="Icon">
-                    <img
-                      className="ScamAssetWarning__box__icon"
-                      src={IconWarningBlockaid}
-                      alt="icon warning blockaid"
-                    />
-                  </div>
-                  <div>
-                    <div className="ScamAssetWarning__description">
-                      {t("This token was flagged as ")}
-                      {blockaidWarning}
-                      {t(
-                        " by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:",
-                      )}
-                      <ul className="ScamAssetWarning__list">
-                        {blockaidWarning === "Benign" ? (
-                          <li>{t("Identified as a scam")}</li>
-                        ) : (
-                          ""
-                        )}
-                        {isNewAsset ? <li>{t("New asset")}</li> : ""}
-                      </ul>
-                    </div>
-                    <div className="ScamAssetWarning__footer">
-                      <img
-                        src={IconShieldBlockaid}
-                        alt="icon shield blockaid"
-                      />
-                      {t("Powered by ")}
-                      <a
-                        rel="noreferrer"
-                        href="https://www.blockaid.io/"
-                        target="_blank"
-                      >
-                        Blockaid
-                      </a>
-                    </div>
-                  </div>
-                </div>
+                <BlockaidAssetWarning
+                  isNewAsset={isNewAsset}
+                  code={code}
+                  issuer={issuer}
+                />
               )}
             </div>
             <div className="ScamAssetWarning__btns">
@@ -1089,15 +1081,6 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
     </WarningMessage>
   );
 };
-
-export const MaliciousDomainWarning = ({ message }: { message: string }) => (
-  <div className="MaliciousDomainWarning">
-    <div className="Icon">
-      <Icon.Warning className="WarningMessage__icon" />
-    </div>
-    <p className="Message">{message}</p>
-  </div>
-);
 
 export const BlockAidMissWarning = () => {
   const { t } = useTranslation();

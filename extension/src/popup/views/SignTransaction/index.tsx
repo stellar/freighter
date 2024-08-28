@@ -51,7 +51,7 @@ import {
   WarningMessageVariant,
   WarningMessage,
   FirstTimeWarningMessage,
-  FlaggedWarningMessage,
+  MemoWarningMessage,
   SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -140,12 +140,6 @@ export const SignTransaction = () => {
   );
 
   const flaggedKeyValues = Object.values(flaggedKeys);
-  const isUnsafe = flaggedKeyValues.some(({ tags }) =>
-    tags.includes(TRANSACTION_WARNING.unsafe),
-  );
-  const isMalicious = flaggedKeyValues.some(({ tags }) =>
-    tags.includes(TRANSACTION_WARNING.malicious),
-  );
   const isMemoRequired = flaggedKeyValues.some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
@@ -189,13 +183,7 @@ export const SignTransaction = () => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
-    if (isUnsafe) {
-      emitMetric(METRIC_NAMES.signTransactionUnsafe);
-    }
-    if (isMalicious) {
-      emitMetric(METRIC_NAMES.signTransactionMalicious);
-    }
-  }, [isMemoRequired, isMalicious, isUnsafe]);
+  }, [isMemoRequired]);
 
   useEffect(() => {
     if (currentAccount.publicKey) {
@@ -211,7 +199,7 @@ export const SignTransaction = () => {
     };
   }, [currentAccount.publicKey, dispatch, networkDetails]);
 
-  const isSubmitDisabled = isMemoRequired || isMalicious;
+  const isSubmitDisabled = isMemoRequired;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -323,13 +311,7 @@ export const SignTransaction = () => {
             </Notification>
           </div>
         ) : null}
-        {flaggedKeyValues.length ? (
-          <FlaggedWarningMessage
-            isUnsafe={isUnsafe}
-            isMalicious={isMalicious}
-            isMemoRequired={isMemoRequired}
-          />
-        ) : null}
+        <MemoWarningMessage isMemoRequired={isMemoRequired} />
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}

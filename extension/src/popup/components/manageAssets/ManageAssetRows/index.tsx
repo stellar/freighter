@@ -30,7 +30,6 @@ import {
   NewAssetWarning,
   TokenWarning,
 } from "popup/components/WarningMessages";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
@@ -176,6 +175,7 @@ export const ManageAssetRows = ({
               issuer = "",
               name = "",
               contract = "",
+              isMalicious,
             }) => {
               if (!accountBalances.balances) {
                 return null;
@@ -200,6 +200,7 @@ export const ManageAssetRows = ({
                     image={image}
                     domain={domain}
                     name={name}
+                    isMalicious={isMalicious}
                   />
                   <ManageAssetRowButton
                     code={code}
@@ -253,10 +254,9 @@ export const ManageAssetRow = ({
   image = "",
   domain,
   name,
-  isMalicious,
+  isMalicious = false,
 }: AssetRowData) => {
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  const isScamAsset = isMalicious || false;
   const assetCode = name || code;
   const truncatedAssetCode =
     assetCode.length > 20 ? truncateString(assetCode) : assetCode;
@@ -267,11 +267,11 @@ export const ManageAssetRow = ({
         assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
         code={code}
         issuerKey={issuer}
+        isMalicious={isMalicious}
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
           <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
-          <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div
           className="ManageAssetRows__domain"

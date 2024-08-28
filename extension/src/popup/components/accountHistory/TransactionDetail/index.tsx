@@ -13,8 +13,8 @@ import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
 import { stroopToXlm } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { useScanAsset } from "popup/helpers/blockaid";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -82,6 +82,7 @@ export const TransactionDetail = ({
   const { scannedAsset } = useScanAsset(`${assetCode}-${assetIssuer}`);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const showContent = assetIssuer && !assetDomain && !assetError;
+  const isMalicious = scannedAsset.result_type === "Malicious";
 
   return showContent ? (
     <Loading />
@@ -94,14 +95,17 @@ export const TransactionDetail = ({
       <View.Content>
         <div className="TransactionDetail__content">
           {isPayment ? (
-            <div className="TransactionDetail__header">
+            <div
+              className={`TransactionDetail__header ${
+                isMalicious ? "TransactionDetail__header--isMalicious" : ""
+              }`}
+            >
               {operationText}
               <AssetNetworkInfo
                 assetCode={assetCode || ""}
                 assetType={assetType}
                 assetIssuer={assetIssuer || ""}
                 assetDomain={assetDomain}
-                isMalicious={scannedAsset.result_type === "Malicious"}
               />
             </div>
           ) : null}
