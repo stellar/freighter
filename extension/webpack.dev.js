@@ -5,8 +5,6 @@ const Dotenv = require("dotenv-webpack");
 
 const { BUILD_PATH, commonConfig } = require("./webpack.common.js");
 
-const smp = new SpeedMeasurePlugin();
-
 const devConfig = {
   mode: "development",
   devtool: "cheap-source-map",
