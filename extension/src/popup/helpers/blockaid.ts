@@ -9,6 +9,7 @@ import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { fetchJson } from "./fetch";
 
 interface BlockAidScanSiteResult {
   status: "hit" | "miss";
@@ -22,13 +23,11 @@ interface BlockAidScanSiteResult {
   // ...
 }
 
-interface BlockAidScanTxResult {
+export interface BlockAidScanTxResult {
   simulation: object;
-  validation: object;
-}
-
-interface BlockAidScanAssetResult {
-  result_type: string;
+  validation: {
+    result_type: "Benign" | "Warning" | "Malicious";
+  };
 }
 
 export const useScanSite = () => {
@@ -74,7 +73,7 @@ export const useScanSite = () => {
 };
 
 export const useScanTx = () => {
-  const [data, setData] = useState({} as BlockAidScanTxResult);
+  const [data, setData] = useState(null as BlockAidScanTxResult | null);
   const [error, setError] = useState(null as string | null);
   const [isLoading, setLoading] = useState(true);
 
@@ -88,29 +87,32 @@ export const useScanTx = () => {
       if (isCustomNetwork(networkDetails)) {
         setError("Scanning transactions is not supported on custom networks");
         setLoading(false);
-        return;
+        return null;
       }
-      const res = await fetch(
-        `${INDEXER_URL}/scan-tx?url=${encodeURIComponent(
-          url,
-        )}&tx_xdr=${xdr}&network=${networkDetails.network}`,
-      );
-      const response = (await res.json()) as {
+      const response = await fetchJson<{
         data: BlockAidScanTxResult;
         error: string | null;
-      };
+      }>(
+        `${INDEXER_URL}/scan-tx?url=${encodeURIComponent(
+          url,
+        )}&tx_xdr=${encodeURIComponent(xdr)}&network=${networkDetails.network}`,
+      );
 
-      if (!res.ok) {
-        setError(response.error || "Failed to scan transaction");
-      }
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidTxScan, { response: response.data });
       setLoading(false);
+      return response.data;
     } catch (err) {
       setError("Failed to scan transaction");
-      Sentry.captureException(err);
+      Sentry.captureException({
+        error: err,
+        xdr,
+        url,
+        networkDetails,
+      });
       setLoading(false);
     }
+    return null;
   };
 
   return {
@@ -120,6 +122,20 @@ export const useScanTx = () => {
     scanTx,
   };
 };
+
+interface BlockAidScanAssetResult {
+  result_type: "Benign" | "Warning" | "Malicious" | "Spam";
+}
+
+interface ScanAssetResponseSuccess {
+  data: BlockAidScanAssetResult;
+  error: null;
+}
+interface ScanAssetResponseError {
+  data: null;
+  error: string;
+}
+type ScanAssetResponse = ScanAssetResponseSuccess | ScanAssetResponseError;
 
 export const scanAsset = async (
   address: string,
@@ -131,16 +147,16 @@ export const scanAsset = async (
       return {} as BlockAidScanAssetResult;
     }
     const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`);
-    const response = (await res.json()) as {
-      data: BlockAidScanAssetResult;
-      error: string | null;
-    };
+    const response = (await res.json()) as ScanAssetResponse;
 
-    if (!res.ok) {
+    if (!res.ok || response.error) {
       Sentry.captureException(response.error || "Failed to scan asset");
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan, { response: response.data });
+    if (!response.data) {
+      return {} as BlockAidScanAssetResult;
+    }
     return response.data;
   } catch (err) {
     console.error("Failed to scan asset");
