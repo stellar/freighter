@@ -54,6 +54,7 @@ import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import { BlockAidScanTxResult } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -1100,6 +1101,35 @@ export const BlockAidMissWarning = () => {
             "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time.",
           )}
         </p>
+      </div>
+    </WarningMessage>
+  );
+};
+
+export const BlockaidMaliciousTxWarning = ({
+  type,
+}: {
+  type: BlockAidScanTxResult["validation"]["result_type"];
+}) => {
+  const { t } = useTranslation();
+  const details =
+    type === "Malicious"
+      ? {
+          header: "This contract was flagged as malicious",
+          variant: WarningMessageVariant.highAlert,
+          message:
+            "Proceed with caution. Blockaid has flagged this transaction as malicious.",
+        }
+      : {
+          header: "This contract was flagged as suspicious",
+          variant: WarningMessageVariant.warning,
+          message:
+            "Proceed with caution. Blockaid has flagged this transaction as suspicious.",
+        };
+  return (
+    <WarningMessage header={details.header} variant={details.variant}>
+      <div>
+        <p>{t(details.message)}</p>
       </div>
     </WarningMessage>
   );

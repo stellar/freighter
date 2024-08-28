@@ -21,9 +21,11 @@ interface BlockAidScanSiteResult {
   // ...
 }
 
-interface BlockAidScanTxResult {
+export interface BlockAidScanTxResult {
   simulation: object;
-  validation: object;
+  validation: {
+    result_type: "Benign" | "Warning" | "Malicious";
+  };
 }
 
 export const useScanSite = () => {
@@ -69,7 +71,7 @@ export const useScanSite = () => {
 };
 
 export const useScanTx = () => {
-  const [data, setData] = useState({} as BlockAidScanTxResult);
+  const [data, setData] = useState(null as BlockAidScanTxResult | null);
   const [error, setError] = useState(null as string | null);
   const [isLoading, setLoading] = useState(true);
 
@@ -83,7 +85,7 @@ export const useScanTx = () => {
       if (isCustomNetwork(networkDetails)) {
         setError("Scanning transactions is not supported on custom networks");
         setLoading(false);
-        return;
+        return null;
       }
       const response = await fetchJson<{
         data: BlockAidScanTxResult;
@@ -97,6 +99,7 @@ export const useScanTx = () => {
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidTxScan, { response: response.data });
       setLoading(false);
+      return response.data;
     } catch (err) {
       setError("Failed to scan transaction");
       Sentry.captureException({
@@ -107,6 +110,7 @@ export const useScanTx = () => {
       });
       setLoading(false);
     }
+    return null;
   };
 
   return {
@@ -116,6 +120,18 @@ export const useScanTx = () => {
     scanTx,
   };
 };
+
+interface ScanAssetResponseSuccess {
+  data: {
+    result_type: "Benign" | "Warning" | "Malicious" | "Spam";
+  };
+  error: null;
+}
+interface ScanAssetResponseError {
+  data: null;
+  error: string;
+}
+type ScanAssetResponse = ScanAssetResponseSuccess | ScanAssetResponseError;
 
 export const scanAsset = async (
   address: string,
@@ -127,12 +143,9 @@ export const scanAsset = async (
       return {};
     }
     const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`);
-    const response = (await res.json()) as {
-      data: BlockAidScanTxResult;
-      error: string | null;
-    };
+    const response = (await res.json()) as ScanAssetResponse;
 
-    if (!res.ok) {
+    if (!res.ok || response.error) {
       Sentry.captureException(response.error || "Failed to scan asset");
     }
 

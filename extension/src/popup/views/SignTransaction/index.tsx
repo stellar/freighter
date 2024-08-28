@@ -53,6 +53,7 @@ import {
   FirstTimeWarningMessage,
   FlaggedWarningMessage,
   SSLWarningMessage,
+  BlockaidMaliciousTxWarning,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -82,7 +83,7 @@ export const SignTransaction = () => {
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName, networkPassphrase } = networkDetails;
-  const { scanTx } = useScanTx();
+  const { scanTx, isLoading: isLoadingScan, data: scanResult } = useScanTx();
 
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
@@ -238,7 +239,7 @@ export const SignTransaction = () => {
     accountBalanceStatus !== ActionStatus.PENDING &&
     accountBalanceStatus !== ActionStatus.IDLE;
 
-  if (!hasLoadedBalances) {
+  if (!hasLoadedBalances || isLoadingScan) {
     return <Loading />;
   }
 
@@ -333,6 +334,11 @@ export const SignTransaction = () => {
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
+        {scanResult && scanResult.validation.result_type !== "Benign" && (
+          <BlockaidMaliciousTxWarning
+            type={scanResult.validation.result_type}
+          />
+        )}
         {renderTabBody()}
       </div>
     );
