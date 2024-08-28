@@ -58,7 +58,8 @@ export const GrantAccess = () => {
         ) : (
           <ModalInfo
             domain={domain}
-            variant={data?.is_malicious ? "malicious" : "default"}
+            isMalicious={data?.is_malicious || false}
+            scanStatus={data.status}
             subject={t(
               `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
             )}

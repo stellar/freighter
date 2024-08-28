@@ -1078,32 +1078,60 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
   );
 };
 
-export const MaliciousDomainWarning = ({ message }: { message: string }) => (
-  <div className="MaliciousDomainWarning">
-    <div className="Icon">
-      <Icon.Warning className="WarningMessage__icon" />
-    </div>
-    <p className="Message">{message}</p>
-  </div>
-);
-
-export const BlockAidMissWarning = () => {
+export const BlockAidMaliciousLabel = () => {
   const { t } = useTranslation();
-
   return (
-    <WarningMessage
-      header="Blockaid has not seen this domain"
-      variant={WarningMessageVariant.default}
-    >
-      <div>
-        <p>
-          {t(
-            "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time.",
-          )}
-        </p>
+    <div className="ScanLabel ScanMalicious">
+      <div className="Icon">
+        <Icon.Warning className="WarningMessage__icon" />
       </div>
-    </WarningMessage>
+      <p className="Message">{t("This site was flagged as malicious")}</p>
+    </div>
   );
+};
+
+export const BlockAidBenignLabel = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="ScanLabel ScanBenign">
+      <div className="Icon">
+        <Icon.Warning className="WarningMessage__icon" />
+      </div>
+      <p className="Message">{t("This site has been scanned and verified")}</p>
+    </div>
+  );
+};
+
+export const BlockAidMissLabel = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="ScanLabel ScanMiss">
+      <div className="Icon">
+        <Icon.Warning className="WarningMessage__icon" />
+      </div>
+      <p className="Message">
+        {t("Unable to scan site for malicious behavior")}
+      </p>
+    </div>
+  );
+};
+
+export const BlockAidSiteScanLabel = ({
+  status,
+  isMalicious,
+}: {
+  status: "hit" | "miss";
+  isMalicious: boolean;
+}) => {
+  if (status === "miss") {
+    return <BlockAidMissLabel />;
+  }
+
+  if (isMalicious) {
+    return <BlockAidMaliciousLabel />;
+  }
+
+  return <BlockAidBenignLabel />;
 };
 
 export const BlockaidMaliciousTxWarning = ({
