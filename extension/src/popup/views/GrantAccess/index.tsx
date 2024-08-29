@@ -64,7 +64,10 @@ export const GrantAccess = () => {
               `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
             )}
           >
-            <div className="GrantAccess__SigningWith">
+            <div
+              className="GrantAccess__SigningWith"
+              data-testid="grant-access-view"
+            >
               <h5>Connecting with</h5>
               <div className="GrantAccess__PublicKey">
                 <KeyIdenticon publicKey={publicKey} />

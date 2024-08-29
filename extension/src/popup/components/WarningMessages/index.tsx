@@ -1081,7 +1081,10 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
 export const BlockAidMaliciousLabel = () => {
   const { t } = useTranslation();
   return (
-    <div className="ScanLabel ScanMalicious">
+    <div
+      className="ScanLabel ScanMalicious"
+      data-testid="blockaid-malicious-label"
+    >
       <div className="Icon">
         <Icon.Warning className="WarningMessage__icon" />
       </div>
@@ -1093,7 +1096,7 @@ export const BlockAidMaliciousLabel = () => {
 export const BlockAidBenignLabel = () => {
   const { t } = useTranslation();
   return (
-    <div className="ScanLabel ScanBenign">
+    <div className="ScanLabel ScanBenign" data-testid="blockaid-benign-label">
       <div className="Icon">
         <Icon.Warning className="WarningMessage__icon" />
       </div>
@@ -1105,7 +1108,7 @@ export const BlockAidBenignLabel = () => {
 export const BlockAidMissLabel = () => {
   const { t } = useTranslation();
   return (
-    <div className="ScanLabel ScanMiss">
+    <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
       <div className="Icon">
         <Icon.Warning className="WarningMessage__icon" />
       </div>

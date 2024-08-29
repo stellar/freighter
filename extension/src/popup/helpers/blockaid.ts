@@ -9,7 +9,7 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { fetchJson } from "./fetch";
 
-interface BlockAidScanSiteResult {
+export interface BlockAidScanSiteResult {
   status: "hit" | "miss";
   url: string;
   scan_start_time: Date;
