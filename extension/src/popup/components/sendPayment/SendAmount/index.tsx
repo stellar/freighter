@@ -430,12 +430,13 @@ export const SendAmount = ({
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           isSendWarning
+          pillType="Transaction"
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           onClose={() => setShowBlockedDomainWarning(false)}
           onContinue={() => navigateTo(next)}
-          blockaidWarning=""
+          blockaidWarning="Malicious"
           isNewAsset={false}
         />
       )}

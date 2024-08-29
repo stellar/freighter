@@ -130,6 +130,7 @@ export const ManageAssetRows = ({
       )}
       {showBlockedDomainWarning && (
         <ScamAssetWarning
+          pillType="Trustline"
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}

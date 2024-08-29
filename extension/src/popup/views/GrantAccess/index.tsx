@@ -57,6 +57,7 @@ export const GrantAccess = () => {
           </div>
         ) : (
           <ModalInfo
+            pillType="Connection"
             domain={domain}
             variant={data?.is_malicious ? "malicious" : "default"}
             subject={t(

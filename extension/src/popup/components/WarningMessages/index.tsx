@@ -305,6 +305,7 @@ export const BlockaidAssetWarning = ({
 };
 
 export const ScamAssetWarning = ({
+  pillType,
   isSendWarning = false,
   domain,
   code,
@@ -315,6 +316,7 @@ export const ScamAssetWarning = ({
   blockaidWarning,
   isNewAsset,
 }: {
+  pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
   domain: string;
   code: string;
@@ -420,7 +422,7 @@ export const ScamAssetWarning = ({
           domain={domain}
           variant={blockaidWarning === "Malicious" ? "malicious" : "default"}
           subject=""
-          isTrustline={!isSendWarning}
+          pillType={pillType}
         >
           <div className="ScamAssetWarning__wrapper" ref={warningRef}>
             <div>

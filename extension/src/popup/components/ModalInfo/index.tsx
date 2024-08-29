@@ -1,42 +1,74 @@
 import React from "react";
 import classNames from "classnames";
 import { Card, Icon } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
 
 import "./styles.scss";
 
+export type PillType = "Connection" | "Trustline" | "Transaction";
+
+interface PillyCopyProps {
+  pillType: PillType;
+}
+
+const PillCopy = ({ pillType }: PillyCopyProps) => {
+  const { t } = useTranslation();
+
+  if (pillType === "Transaction") {
+    return (
+      <>
+        <Icon.Link />
+        <div>{t("Transaction Request")}</div>
+      </>
+    );
+  }
+
+  if (pillType === "Trustline") {
+    return (
+      <>
+        <img src={IconShieldPlus} alt="Add trustline icon" />
+        <div>{t("Add Asset trustlinet")}</div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Icon.Link />
+      <div>{t("Connection Request")}</div>
+    </>
+  );
+};
+
 interface ModalInfoProps {
   children: React.ReactNode;
+  pillType: PillType;
   domain: string;
   subject: string;
   variant?: "default" | "malicious";
-  isTrustline?: boolean;
 }
 
 export const ModalInfo = ({
   children,
+  pillType,
   domain,
   subject,
   variant = "default",
-  isTrustline = false,
 }: ModalInfoProps) => {
   const cardClasses = classNames("ModalInfo--card", {
     Malicious: variant === "malicious",
   });
+
   return (
     <div className={cardClasses}>
       <Card variant="secondary">
         <PunycodedDomain domain={domain} />
         <div className="ModalInfo--connection-request">
           <div className="ModalInfo--connection-request-pill">
-            {isTrustline ? (
-              <img src={IconShieldPlus} alt="Add trustline icon" />
-            ) : (
-              <Icon.Link />
-            )}
-            <div>{isTrustline ? "Asset trustline" : "Connection Request"}</div>
+            <PillCopy pillType={pillType} />
           </div>
         </div>
         {subject && <div className="ModalInfo--subject">{subject}</div>}
