@@ -16,7 +16,6 @@
   "Add": "Add",
   "Add address": "Add address",
   "Add an asset": "Add an asset",
-  "Add anyway": "Add anyway",
   "Add asset": "Add asset",
   "Add Asset Trustline": "Add Asset Trustline",
   "Add by address": "Add by address",
@@ -51,8 +50,6 @@
   "Allowed slippage": "Allowed slippage",
   "Always check the domain of websites you’re using Freighter with": "Always check the domain of websites you’re using Freighter with",
   "Amount": "Amount",
-  "An account you’re interacting with is tagged as malicious on": "An account you’re interacting with is tagged as malicious on",
-  "An account you’re interacting with is tagged as unsafe on": "An account you’re interacting with is tagged as unsafe on",
   "An error occurred": "An error occurred",
   "Anonymous data sharing": "Anonymous data sharing",
   "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
@@ -91,7 +88,6 @@
   "Before You Add This Asset": "Before You Add This Asset",
   "Block malicious or unsafe addresses and domains": "Block malicious or unsafe addresses and domains",
   "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
-  "Blocked asset": "Blocked asset",
   "Bump To": "Bump To",
   "Buy Amount": "Buy Amount",
   "Buying": "Buying",
@@ -145,14 +141,11 @@
   "Detecting": "Detecting",
   "Different source and destination assets": "Different source and destination assets",
   "digits after the decimal allowed": "digits after the decimal allowed",
-  "directory": "directory",
-  "disable": "disable",
   "Disabled": "Disabled",
   "Done": "Done",
   "Double check the domain name": {
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
   },
-  "enable": "enable",
   "Enable Blind Signing on Ledger": "Enable Blind Signing on Ledger",
   "Enable this list": "Enable this list",
   "Enabled": "Enabled",
@@ -184,11 +177,7 @@
   },
   "Fetch list information": "Fetch list information",
   "Finish": "Finish",
-  "For your safety, signing this transaction is disabled": "For your safety, signing this transaction is disabled",
   "For your security, we'll check if you got it right in the next step": "For your security, we'll check if you got it right in the next step.",
-  "Freighter automatically blocked this asset": {
-    " Projects related to this asset may be fraudulent even if the creators say otherwise": "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise."
-  },
   "Freighter can’t recover your imported secret key using your recovery phrase": {
     " Storing your secret key is your responsibility": {
       " Freighter will never ask for your secret key outside of the extension": "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension."
@@ -226,6 +215,7 @@
   "I’m going to need a seed phrase": "I’m going to need a seed phrase",
   "I’m new!": "I’m new!",
   "I’ve done this before": "I’ve done this before",
+  "Identified as a scam": "Identified as a scam",
   "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam": "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
   "If you delete this list, you will have to re-add it manually": "If you delete this list, you will have to re-add it manually.",
   "Import": "Import",
@@ -359,10 +349,10 @@
     " This can help you identify fraudulent assets": "Please double-check its information and characteristics. This can help you identify fraudulent assets."
   },
   "Please note the following message": "Please note the following message",
-  "Please proceed with caution": "Please proceed with caution.",
   "Please select a different network before removing it": "Please select a different network before removing it.",
   "Please select each word in the same order you have": "Please select each word in the same order you have",
   "powered by": "powered by",
+  "Powered by ": "Powered by ",
   "Pre Auth Transaction": "Pre Auth Transaction",
   "Predicate": "Predicate",
   "Preferences": "Preferences",
@@ -372,9 +362,6 @@
     " Blockaid is unable to provide a risk assesment for this domain at this time": "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time."
   },
   "Processing": "Processing",
-  "Projects related to this asset may be fraudulent even if the creators say otherwise": {
-    " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
-  },
   "Read before importing your key": "Read before importing your key",
   "Ready to migrate": "Ready to migrate",
   "Received": "Received",
@@ -422,9 +409,9 @@
   "SET MAX": "SET MAX",
   "Set recommended": "Set recommended",
   "Settings": "Settings",
-  "Settings > Preferences": "Settings > Preferences",
   "Show recovery phrase": "Show recovery phrase",
   "Sign": "Sign",
+  "Sign anyway": "Sign anyway",
   "Sign Transaction": "Sign Transaction",
   "Signed Payload": "Signed Payload",
   "Signer": "Signer",
@@ -472,7 +459,6 @@
     }
   },
   "them noted to confirm you got them right": "them noted to confirm you got them right",
-  "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
   "This asset has buying liabilities": "This asset has buying liabilities",
   "This asset is not part of an asset list": {
@@ -483,9 +469,6 @@
     }
   },
   "This asset is part of the asset lists": "This asset is part of the asset lists",
-  "This asset was tagged as fraudulent by stellar": {
-    "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
-  },
   "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction": "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
   "This can be used to sign arbitrary transaction hashes without having to decode them first": {
     " Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust": "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust."
@@ -493,6 +476,9 @@
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
+  "This token was flagged as malicious by Blockaid": {
+    " Interacting with this token may result in loss of funds and is not recommended for the following reasons": "This token was flagged as malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons"
+  },
   "This transaction could not be completed": "This transaction could not be completed.",
   "To": "To",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
@@ -545,7 +531,6 @@
   "You are interacting with data that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."
   },
-  "You can": "You can",
   "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
     " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
   },
