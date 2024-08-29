@@ -458,13 +458,13 @@ export const HistoryItem = ({
     publicKey,
     srcAssetCode,
     startingBalance,
-    t,
     to,
     accountBalances.balances,
   ]);
 
   return (
     <div
+      data-testid="history-item"
       className="HistoryItem"
       onClick={() => {
         emitMetric(METRIC_NAMES.historyOpenItem);
@@ -485,7 +485,12 @@ export const HistoryItem = ({
               <div className="HistoryItem__date">{dateText}</div>
             </div>
 
-            <div className="HistoryItem__payment">{renderBodyComponent()}</div>
+            <div
+              className="HistoryItem__payment"
+              data-testid="history-item-body-component"
+            >
+              {renderBodyComponent()}
+            </div>
           </>
         )}
       </div>
