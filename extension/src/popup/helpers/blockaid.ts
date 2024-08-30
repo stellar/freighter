@@ -11,7 +11,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { fetchJson } from "./fetch";
 
-interface BlockAidScanSiteResult {
+export interface BlockAidScanSiteResult {
   status: "hit" | "miss";
   url: string;
   scan_start_time: Date;

@@ -437,24 +437,52 @@
   overflow-wrap: break-word;
 }
 
-.MaliciousDomainWarning {
+.ScanLabel {
   display: flex;
-  background-color: var(--color-red-20);
-  border: 1px solid #671e22;
   border-radius: 6px;
   margin-bottom: 10px;
   padding: 0.5rem;
   padding-left: 0.25rem;
 
   .Icon {
+    height: 16px;
     margin-right: 5px;
-    .WarningMessage__icon {
-      color: var(--color-red-60);
-    }
   }
 
   .Message {
     font-size: 0.75rem;
     line-height: 1rem;
+  }
+}
+
+.ScanMalicious {
+  background-color: var(--color-red-20);
+  border: 1px solid #671e22;
+
+  .Icon {
+    .WarningMessage__icon {
+      color: var(--color-red-60);
+    }
+  }
+}
+
+.ScanBenign {
+  background-color: var(--color-green-40);
+  border: 1px solid var(--color-green-50);
+
+  .Icon {
+    .WarningMessage__icon {
+      color: var(--color-green-50);
+    }
+  }
+}
+
+.ScanMiss {
+  border: 1px solid var(--color-grey-40);
+
+  .Icon {
+    .WarningMessage__icon {
+      color: var(--color-grey-40);
+    }
   }
 }

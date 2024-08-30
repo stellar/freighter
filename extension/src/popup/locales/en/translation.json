@@ -1,5 +1,4 @@
 {
-  "{{srcAssetCode}} for {{destAssetCode}}": "{{srcAssetCode}} for {{destAssetCode}}",
   "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
@@ -126,7 +125,6 @@
   "Copy address": "Copy address",
   "Create a new Stellar address": "Create a new Stellar address",
   "Create a password": "Create a password",
-  "Create Account": "Create Account",
   "Create Wallet": "Create Wallet",
   "Custom": "Custom",
   "data entries": "data entries",
@@ -299,7 +297,6 @@
   "Min Price": "Min Price",
   "Minimum Received": "Minimum Received",
   "Minimum resource fee": "Minimum resource fee",
-  "Minted": "Minted",
   "Multiple assets": "Multiple assets",
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
   "must be below": "must be below",
@@ -360,13 +357,10 @@
   "Preferences": "Preferences",
   "Price": "Price",
   "Privacy Policy": "Privacy Policy",
-  "Proceed with caution": {
-    " Blockaid is unable to provide a risk assesment for this domain at this time": "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time."
-  },
+  "Proceed with caution": "Proceed with caution",
   "Processing": "Processing",
   "Read before importing your key": "Read before importing your key",
   "Ready to migrate": "Ready to migrate",
-  "Received": "Received",
   "RECEIVED": "RECEIVED",
   "RECENT": "RECENT",
   "Recipient Stellar address": "Recipient Stellar address",
@@ -440,7 +434,6 @@
   "Swap failed": "Swap failed",
   "swapped": "swapped",
   "Swapped": "Swapped",
-  "Swapped {{srcAssetCode}} for {{destAssetCode}}": "Swapped {{srcAssetCode}} for {{destAssetCode}}",
   "Switch to this network": "Switch to this network",
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
@@ -478,6 +471,8 @@
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
+  "This site has been scanned and verified": "This site has been scanned and verified",
+  "This site was flagged as malicious": "This site was flagged as malicious",
   "This token was flagged as malicious by Blockaid": {
     " Interacting with this token may result in loss of funds and is not recommended for the following reasons": "This token was flagged as malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons"
   },
@@ -504,6 +499,7 @@
   "Unable to connect to": "Unable to connect to",
   "Unable to migrate": "Unable to migrate",
   "Unable to parse assets lists": "Unable to parse assets lists",
+  "Unable to scan site for malicious behavior": "Unable to scan site for malicious behavior",
   "Unable to search for assets": "Unable to search for assets",
   "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
