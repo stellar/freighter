@@ -4,7 +4,7 @@ import "./styles.scss";
 
 export const ScamAssetIcon = ({ isScamAsset }: { isScamAsset: boolean }) =>
   isScamAsset ? (
-    <span className="ScamAssetIcon">
+    <span className="ScamAssetIcon" data-testid="ScamAssetIcon">
       {isScamAsset && <img src={IconWarning} alt="warning" />}
     </span>
   ) : null;

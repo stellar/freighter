@@ -92,11 +92,13 @@ export const mockBalances = {
       },
       total: new BigNumber("100"),
       available: new BigNumber("100"),
+      isMalicious: true,
     },
     native: {
       token: { type: "native", code: "XLM" },
       total: new BigNumber("50"),
       available: new BigNumber("50"),
+      isMalicious: false,
     },
   } as any as Balances,
   isFunded: true,
