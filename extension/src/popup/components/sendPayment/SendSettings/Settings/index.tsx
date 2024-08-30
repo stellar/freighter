@@ -190,52 +190,50 @@ export const Settings = ({
           <Form className="View__contentAndFooterWrapper">
             <View.Content>
               <FormRows>
-                {!isToken ? (
-                  <div className="SendSettings__row">
-                    <div className="SendSettings__row__left">
-                      <InfoTooltip
-                        infoText={
-                          <span>
-                            {t("Maximum network transaction fee to be paid")}{" "}
-                            <Link
-                              variant="secondary"
-                              href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
-                              rel="noreferrer"
-                              target="_blank"
-                            >
-                              {t("Learn more")}
-                            </Link>
-                          </span>
-                        }
-                        placement="bottom"
-                      >
-                        <span
-                          className="SendSettings__row__title SendSettings__clickable"
-                          onClick={() => {
-                            submitForm();
-                            handleTxFeeNav();
-                          }}
-                        >
-                          {t("Transaction fee")}
+                <div className="SendSettings__row">
+                  <div className="SendSettings__row__left">
+                    <InfoTooltip
+                      infoText={
+                        <span>
+                          {t("Maximum network transaction fee to be paid")}{" "}
+                          <Link
+                            variant="secondary"
+                            href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {t("Learn more")}
+                          </Link>
                         </span>
-                      </InfoTooltip>
-                    </div>
-                    <div
-                      className="SendSettings__row__right SendSettings__clickable"
-                      onClick={() => {
-                        submitForm();
-                        handleTxFeeNav();
-                      }}
+                      }
+                      placement="bottom"
                     >
-                      <span data-testid="SendSettingsTransactionFee">
-                        {transactionFee} XLM
+                      <span
+                        className="SendSettings__row__title SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleTxFeeNav();
+                        }}
+                      >
+                        {t("Transaction fee")}
                       </span>
-                      <div>
-                        <Icon.ChevronRight />
-                      </div>
+                    </InfoTooltip>
+                  </div>
+                  <div
+                    className="SendSettings__row__right SendSettings__clickable"
+                    onClick={() => {
+                      submitForm();
+                      handleTxFeeNav();
+                    }}
+                  >
+                    <span data-testid="SendSettingsTransactionFee">
+                      {transactionFee} XLM
+                    </span>
+                    <div>
+                      <Icon.ChevronRight />
                     </div>
                   </div>
-                ) : null}
+                </div>
 
                 <div className="SendSettings__row">
                   <div className="SendSettings__row__left">
