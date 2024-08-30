@@ -8,7 +8,7 @@ import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { ButtonsContainer, ModalWrapper } from "popup/basics/Modal";
-import { ModalInfo } from "popup/components/ModalInfo";
+import { DomainScanModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { useScanSite } from "popup/helpers/blockaid";
@@ -56,7 +56,7 @@ export const GrantAccess = () => {
             <Loader size="5rem" />
           </div>
         ) : (
-          <ModalInfo
+          <DomainScanModalInfo
             domain={domain}
             isMalicious={data?.is_malicious || false}
             scanStatus={data.status}
@@ -114,7 +114,7 @@ export const GrantAccess = () => {
                 </Button>
               </ButtonsContainer>
             )}
-          </ModalInfo>
+          </DomainScanModalInfo>
         )}
       </ModalWrapper>
     </>

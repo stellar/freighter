@@ -242,11 +242,13 @@ export interface Balance {
 export interface AssetBalance extends Balance {
   token: AssetToken;
   sponsor?: string;
+  isMalicious: boolean;
 }
 
 export interface NativeBalance extends Balance {
   token: NativeToken;
   minimumBalance: BigNumber;
+  isMalicious: boolean;
 }
 
 export interface TokenBalance extends AssetBalance {

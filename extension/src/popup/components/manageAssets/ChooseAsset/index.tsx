@@ -66,6 +66,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         const {
           token: { code, issuer },
           contractId,
+          isMalicious,
         } = sortedBalances[i];
 
         // If we are in the swap flow and the asset has decimals (is a token), we skip it if Soroswap is not enabled
@@ -99,6 +100,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               ],
             domain,
             contract: contractId,
+            isMalicious,
           });
           // include native asset for asset dropdown selection
         } else if (!isManagingAssets) {
@@ -107,6 +109,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             issuer: "",
             image: "",
             domain: "",
+            isMalicious: false,
           });
         }
       }

@@ -53,6 +53,10 @@
       line-height: 150%;
       margin: 2.5rem 0 0.5rem 0;
       text-align: center;
+
+      &--isMalicious {
+        color: var(--color-red-70);
+      }
     }
   }
 

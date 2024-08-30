@@ -40,6 +40,7 @@ export const AssetIcon = ({
   isLPShare = false,
   isSorobanToken = false,
   icon,
+  isMalicious = false,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -48,6 +49,7 @@ export const AssetIcon = ({
   isLPShare?: boolean;
   isSorobanToken?: boolean;
   icon?: string;
+  isMalicious?: boolean;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -129,11 +131,13 @@ export const AssetIcon = ({
           setIsLoading(false);
         }}
       />
+      <ScamAssetIcon isScamAsset={isMalicious} />
     </div>
   ) : (
     // the image path wasn't found, show a default broken image icon
     <div className="AccountAssets__asset--logo AccountAssets__asset--error">
       <ImageMissingIcon />
+      <ScamAssetIcon isScamAsset={isMalicious} />
     </div>
   );
 };
@@ -152,9 +156,6 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
-  const { assetDomains, blockedDomains } = useSelector(
-    transactionSubmissionSelector,
-  );
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);
@@ -237,8 +238,7 @@ export const AccountAssets = ({
           issuer?.key as string,
         );
 
-        const assetDomain = assetDomains[canonicalAsset];
-        const isScamAsset = !!blockedDomains.domains[assetDomain];
+        const isMalicious = rb.isMalicious || false;
 
         const bigTotal = new BigNumber(rb.total as string);
         const amountVal = rb.contractId
@@ -263,9 +263,9 @@ export const AccountAssets = ({
                 issuerKey={issuer?.key}
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={!!rb.liquidityPoolId}
+                isMalicious={isMalicious}
               />
               <span className="asset-code">{code}</span>
-              <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
               <div className="asset-amount" data-testid="asset-amount">

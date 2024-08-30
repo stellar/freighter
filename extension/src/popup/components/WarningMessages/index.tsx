@@ -16,6 +16,7 @@ import { captureException } from "@sentry/browser";
 import { ActionStatus } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
 
@@ -30,6 +31,7 @@ import {
   settingsSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
+import { ModalInfo } from "popup/components/ModalInfo";
 import {
   ManageAssetRow,
   NewAssetFlags,
@@ -46,6 +48,7 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
+import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
@@ -53,20 +56,13 @@ import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
+import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
+import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { BlockAidScanTxResult } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
-
-const DirectoryLink = () => {
-  const { t } = useTranslation();
-  return (
-    <a href="https://stellar.expert/directory" target="_blank" rel="noreferrer">
-      stellar.expert's {t("directory")}
-    </a>
-  );
-};
 
 export enum WarningMessageVariant {
   default = "",
@@ -146,47 +142,7 @@ export const WarningMessage = ({
   );
 };
 
-const DangerousAccountWarning = ({
-  isUnsafe,
-  isMalicious,
-}: {
-  isUnsafe: boolean;
-  isMalicious: boolean;
-}) => {
-  const { t } = useTranslation();
-
-  if (isMalicious) {
-    return (
-      <WarningMessage
-        header="Malicious account detected"
-        variant={WarningMessageVariant.highAlert}
-      >
-        <p>
-          {t("An account you’re interacting with is tagged as malicious on")}{" "}
-          <DirectoryLink />.
-        </p>
-        <p>{t("For your safety, signing this transaction is disabled")}</p>
-      </WarningMessage>
-    );
-  }
-  if (isUnsafe) {
-    return (
-      <WarningMessage
-        header="Unsafe account"
-        variant={WarningMessageVariant.warning}
-      >
-        <p>
-          {t("An account you’re interacting with is tagged as unsafe on")}{" "}
-          <DirectoryLink />. {t("Please proceed with caution.")}
-        </p>
-      </WarningMessage>
-    );
-  }
-
-  return null;
-};
-
-const MemoWarningMessage = ({
+export const MemoWarningMessage = ({
   isMemoRequired,
 }: {
   isMemoRequired: boolean;
@@ -214,18 +170,20 @@ const MemoWarningMessage = ({
 };
 
 interface FlaggedWarningMessageProps {
-  isUnsafe: boolean;
+  code: string;
+  issuer: string;
   isMemoRequired: boolean;
   isMalicious: boolean;
 }
 
 export const FlaggedWarningMessage = ({
-  isUnsafe,
+  code,
+  issuer,
   isMemoRequired,
   isMalicious,
 }: FlaggedWarningMessageProps) => (
   <>
-    <DangerousAccountWarning isUnsafe={isUnsafe} isMalicious={isMalicious} />
+    {isMalicious ? <BlockaidAssetWarning code={code} issuer={issuer} /> : null}
     <MemoWarningMessage isMemoRequired={isMemoRequired} />
   </>
 );
@@ -273,23 +231,100 @@ export const BackupPhraseWarningMessage = () => {
   );
 };
 
+interface BlockaidAssetWarningProps {
+  code?: string;
+  issuer?: string;
+  isNewAsset?: boolean;
+}
+
+export const BlockaidAssetWarning = ({
+  isNewAsset,
+  code,
+  issuer,
+}: BlockaidAssetWarningProps) => {
+  const { t } = useTranslation();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const [isNewAssetState, setIsNewAssetState] = useState(false);
+
+  useEffect(() => {
+    const fetchSuspiciousAsset = async (
+      assetCode: string,
+      assetIssuer: string,
+    ) => {
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
+      const resp = await checkForSuspiciousAsset({
+        code: assetCode,
+        issuer: assetIssuer,
+        domain: "",
+        server,
+        networkDetails,
+      });
+
+      setIsNewAssetState(resp.isNewAsset);
+    };
+
+    if (isNewAsset === undefined && code && issuer) {
+      fetchSuspiciousAsset(code, issuer);
+    }
+  }, [code, issuer, isNewAsset, networkDetails]);
+
+  return (
+    <div className="ScamAssetWarning__box">
+      <div className="Icon">
+        <img
+          className="ScamAssetWarning__box__icon"
+          src={IconWarningBlockaid}
+          alt="icon warning blockaid"
+        />
+      </div>
+      <div>
+        <div className="ScamAssetWarning__description">
+          {t(
+            "This token was flagged as malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons",
+          )}
+          :
+          <ul className="ScamAssetWarning__list">
+            <li>{t("Identified as a scam")}</li>
+
+            {isNewAssetState ? <li>{t("New asset")}</li> : ""}
+          </ul>
+        </div>
+        <div className="ScamAssetWarning__footer">
+          <img src={IconShieldBlockaid} alt="icon shield blockaid" />
+          {t("Powered by ")}
+          <a rel="noreferrer" href="https://www.blockaid.io/" target="_blank">
+            Blockaid
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ScamAssetWarning = ({
+  pillType,
   isSendWarning = false,
   domain,
   code,
   issuer,
-  image,
   onClose,
   // eslint-disable-next-line
   onContinue = () => {},
+  blockaidWarning,
+  isNewAsset,
 }: {
+  pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
   domain: string;
   code: string;
   issuer: string;
-  image: string;
   onClose: () => void;
   onContinue?: () => void;
+  blockaidWarning: string;
+  isNewAsset: boolean;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -383,22 +418,13 @@ export const ScamAssetWarning = ({
   ) : (
     <div className="ScamAssetWarning">
       <View.Content>
-        <div className="ScamAssetWarning__wrapper" ref={warningRef}>
-          <div className="ScamAssetWarning__header">Warning</div>
-          <div className="ScamAssetWarning__description">
-            {t(
-              "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory.",
-            )}
-          </div>
-          <div className="ScamAssetWarning__row">
-            <ManageAssetRow
-              code={code}
-              issuer={issuer}
-              image={image}
-              domain={domain}
-            />
-          </div>
-          <div className="ScamAssetWarning__bottom-content">
+        <ModalInfo
+          domain={domain}
+          variant={blockaidWarning === "Malicious" ? "malicious" : "default"}
+          subject=""
+          pillType={pillType}
+        >
+          <div className="ScamAssetWarning__wrapper" ref={warningRef}>
             <div>
               {isSendWarning ? (
                 <Notification
@@ -412,32 +438,28 @@ export const ScamAssetWarning = ({
                   </p>
                 </Notification>
               ) : (
-                <Notification variant="error" title={t("Blocked asset")}>
-                  <div>
-                    <p>
-                      {isValidatingSafeAssetsEnabled
-                        ? t(
-                            "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                          )
-                        : t(
-                            "Projects related to this asset may be fraudulent even if the creators say otherwise. ",
-                          )}
-                    </p>
-                    <p>
-                      {t("You can")}{" "}
-                      {`${
-                        isValidatingSafeAssetsEnabled
-                          ? t("disable")
-                          : t("enable")
-                      }`}{" "}
-                      {t("this alert by going to")}{" "}
-                      <strong>{t("Settings > Preferences")}</strong>
-                    </p>
-                  </div>
-                </Notification>
+                <BlockaidAssetWarning
+                  isNewAsset={isNewAsset}
+                  code={code}
+                  issuer={issuer}
+                />
               )}
             </div>
             <div className="ScamAssetWarning__btns">
+              {!isValidatingSafeAssetsEnabled && !isSendWarning && (
+                <Button
+                  size="md"
+                  isFullWidth
+                  onClick={handleSubmit}
+                  type="button"
+                  variant="error"
+                  isLoading={
+                    isSubmitting || submitStatus === ActionStatus.PENDING
+                  }
+                >
+                  {t("Sign anyway")}
+                </Button>
+              )}
               <Button
                 size="md"
                 isFullWidth
@@ -461,23 +483,9 @@ export const ScamAssetWarning = ({
                   {t("Continue")}
                 </Button>
               )}
-              {!isValidatingSafeAssetsEnabled && !isSendWarning && (
-                <Button
-                  size="md"
-                  isFullWidth
-                  onClick={handleSubmit}
-                  type="button"
-                  variant="primary"
-                  isLoading={
-                    isSubmitting || submitStatus === ActionStatus.PENDING
-                  }
-                >
-                  {t("Add anyway")}
-                </Button>
-              )}
             </div>{" "}
           </div>
-        </div>
+        </ModalInfo>
       </View.Content>
     </div>
   );

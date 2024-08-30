@@ -20,7 +20,6 @@ import {
   getAssetFromCanonical,
 } from "helpers/stellar";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { Balance, Balances, SorobanBalance } from "@shared/api/types";
 import { formatAmount } from "popup/helpers/formatters";
 import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
@@ -35,7 +34,6 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
   const {
     accountBalances: { balances = {} },
     assetSelect,
-    blockedDomains,
     soroswapTokens,
     transactionData,
   } = useSelector(transactionSubmissionSelector);
@@ -75,8 +73,15 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     <div className="SelectAssetRows__scrollbar">
       <div className="SelectAssetRows__content">
         {assetRows.map(
-          ({ code = "", domain, image = "", issuer = "", icon }) => {
-            const isScamAsset = !!blockedDomains.domains[domain];
+          ({
+            code = "",
+            domain,
+            image = "",
+            issuer = "",
+            icon,
+            isMalicious,
+          }) => {
+            const isScamAsset = isMalicious || false;
             const isContract = isContractId(issuer);
             const canonical = getCanonicalFromAsset(code, issuer);
             let isSoroswap = false;
@@ -118,11 +123,11 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                   code={code}
                   issuerKey={issuer}
                   icon={icon}
+                  isMalicious={isScamAsset}
                 />
                 <div className="SelectAssetRows__row__info">
                   <div className="SelectAssetRows__row__info__header">
                     {code}
-                    <ScamAssetIcon isScamAsset={isScamAsset} />
                   </div>
                   <div className="SelectAssetRows__domain">
                     {formatDomain(domain)}

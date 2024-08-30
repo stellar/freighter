@@ -30,7 +30,6 @@ import {
   NewAssetWarning,
   TokenWarning,
 } from "popup/components/WarningMessages";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
@@ -40,6 +39,7 @@ export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
   contract?: string;
   icon?: string;
+  isMalicious?: boolean;
 };
 
 export interface NewAssetFlags {
@@ -63,6 +63,8 @@ interface SuspiciousAssetData {
   issuer: string;
   image: string;
   isVerifiedToken?: boolean;
+  blockaidWarning: string;
+  isNewAsset: boolean;
 }
 
 export const ManageAssetRows = ({
@@ -99,6 +101,8 @@ export const ManageAssetRows = ({
     issuer: "",
     image: "",
     isVerifiedToken: false,
+    blockaidWarning: "",
+    isNewAsset: false,
   } as SuspiciousAssetData);
   const [handleAddToken, setHandleAddToken] = useState(
     null as null | (() => () => Promise<void>),
@@ -126,10 +130,12 @@ export const ManageAssetRows = ({
       )}
       {showBlockedDomainWarning && (
         <ScamAssetWarning
+          pillType="Trustline"
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
-          image={suspiciousAssetData.image}
+          blockaidWarning={suspiciousAssetData.blockaidWarning}
+          isNewAsset={suspiciousAssetData.isNewAsset}
           onClose={() => {
             setShowBlockedDomainWarning(false);
           }}
@@ -170,6 +176,7 @@ export const ManageAssetRows = ({
               issuer = "",
               name = "",
               contract = "",
+              isMalicious,
             }) => {
               if (!accountBalances.balances) {
                 return null;
@@ -194,6 +201,7 @@ export const ManageAssetRows = ({
                     image={image}
                     domain={domain}
                     name={name}
+                    isMalicious={isMalicious}
                   />
                   <ManageAssetRowButton
                     code={code}
@@ -238,6 +246,7 @@ interface AssetRowData {
   image?: string;
   domain: string;
   name?: string;
+  isMalicious?: boolean;
 }
 
 export const ManageAssetRow = ({
@@ -246,10 +255,9 @@ export const ManageAssetRow = ({
   image = "",
   domain,
   name,
+  isMalicious = false,
 }: AssetRowData) => {
-  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  const isScamAsset = !!blockedDomains.domains[domain];
   const assetCode = name || code;
   const truncatedAssetCode =
     assetCode.length > 20 ? truncateString(assetCode) : assetCode;
@@ -260,11 +268,11 @@ export const ManageAssetRow = ({
         assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
         code={code}
         issuerKey={issuer}
+        isMalicious={isMalicious}
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
           <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
-          <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div
           className="ManageAssetRows__domain"
