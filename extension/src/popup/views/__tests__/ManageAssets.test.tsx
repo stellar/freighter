@@ -25,6 +25,8 @@ import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as ManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as SearchAsset from "popup/helpers/searchAsset";
 import * as SorobanHelpers from "popup/helpers/soroban";
+import * as BlockaidHelpers from "popup/helpers/blockaid";
+
 import {
   AssetSelectType,
   initialState as transactionSubmissionInitialState,
@@ -147,7 +149,21 @@ jest.spyOn(SearchAsset, "searchAsset").mockImplementation(({ asset }) => {
     });
   }
 
-  // Malicious
+  if (asset === "BMAL") {
+    return Promise.resolve({
+      _embedded: {
+        records: [
+          {
+            asset:
+              "BMAL-GBFJZSHWOMYS6U73NXQRRD4JX6TZNWEAFII6Z5INGWVJ2VCQ2K4NQMHP",
+            domain: "bmal.domain.com",
+          },
+        ],
+      },
+    });
+  }
+
+  // Asset with warnings
   return Promise.resolve({
     _embedded: {
       records: [
@@ -209,6 +225,8 @@ jest.mock("popup/constants/history", () => ({
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
   return {
+    Asset: original.Asset,
+    Operation: original.Operation,
     Networks: original.Networks,
     Horizon: {
       Server: class {
@@ -224,6 +242,20 @@ jest.mock("stellar-sdk", () => {
     SorobanRpc: original.SorobanRpc,
     TransactionBuilder: original.TransactionBuilder,
   };
+});
+
+jest.spyOn(BlockaidHelpers, "scanAsset").mockImplementation((address) => {
+  if (
+    address === "BMAL-GBFJZSHWOMYS6U73NXQRRD4JX6TZNWEAFII6Z5INGWVJ2VCQ2K4NQMHP"
+  ) {
+    return Promise.resolve({
+      result_type: "Malicious",
+    });
+  }
+
+  return Promise.resolve({
+    result_type: "Benign",
+  });
 });
 
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
@@ -599,7 +631,7 @@ describe("Manage assets", () => {
     });
   });
 
-  it("show warning when adding malicious asset", async () => {
+  it("show warning when adding an asset with warnings", async () => {
     await initView();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
@@ -651,7 +683,67 @@ describe("Manage assets", () => {
         "NewAssetWarningAddButton",
       );
       expect(warningAddButton).toBeEnabled();
+
       await fireEvent.click(warningAddButton);
+    });
+
+    const lastRoute = history.entries.pop();
+    expect(lastRoute?.pathname).toBe("/account");
+  });
+  it("show warning when adding an asset with Blockaid warning on Mainnet", async () => {
+    await initView(true);
+
+    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+      "Your assets",
+    );
+
+    const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
+    expect(addButton).toBeEnabled();
+    await fireEvent.click(addButton);
+
+    await waitFor(() => {
+      screen.getByTestId("AppHeaderPageTitle");
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Choose Asset",
+      );
+
+      const searchInput = screen.getByTestId("search-asset-input");
+      fireEvent.change(searchInput, { target: { value: "BMAL" } });
+      expect(searchInput).toHaveValue("BMAL");
+    });
+
+    await waitFor(async () => {
+      const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
+
+      expect(addedTrustlines.length).toBe(1);
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+      ).toHaveTextContent("BMAL");
+      expect(
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+      ).toHaveTextContent("bmal.domain.com");
+
+      const addAssetButton = within(addedTrustlines[0]).getByTestId(
+        "ManageAssetRowButton",
+      );
+
+      expect(addAssetButton).toHaveTextContent("Add");
+      expect(addAssetButton).toBeEnabled();
+      await fireEvent.click(addAssetButton);
+    });
+
+    await waitFor(async () => {
+      const warning = screen.getByTestId("ScamAssetWarning");
+      expect(screen.getByTestId("ScamAssetWarning__box")).toHaveTextContent(
+        "This token was flagged as malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:",
+      );
+
+      const addAssetButton = within(warning).getByTestId(
+        "ScamAsset__add-asset",
+      );
+      expect(addAssetButton).toBeEnabled();
+
+      await fireEvent.click(addAssetButton);
     });
 
     const lastRoute = history.entries.pop();

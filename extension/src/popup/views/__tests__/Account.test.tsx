@@ -6,6 +6,7 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
+  MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import * as ApiInternal from "@shared/api/internal";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
@@ -62,12 +63,19 @@ jest
   );
 
 jest
-  .spyOn(ApiInternal, "getIndexerAccountHistory")
+  .spyOn(ApiInternal, "getAccountHistory")
   .mockImplementation(() => Promise.resolve(mockHistoryOperations.operations));
 
 jest.spyOn(UseAssetDomain, "useAssetDomain").mockImplementation(() => {
   return { assetDomain: "centre.io", error: "" };
 });
+
+jest.spyOn(ApiInternal, "getAssetIcons").mockImplementation(() =>
+  Promise.resolve({
+    "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+      "http://domain.com/icon.png",
+  }),
+);
 
 describe("Account view", () => {
   afterAll(() => {
@@ -125,7 +133,7 @@ describe("Account view", () => {
     expect(accountNodes.length).toEqual(3);
     expect(screen.getAllByText("Account 1")).toBeDefined();
   });
-  it("displays balances", async () => {
+  it("displays balances and scam notifications", async () => {
     render(
       <Wrapper
         state={{
@@ -136,7 +144,7 @@ describe("Account view", () => {
             allAccounts: mockAccounts,
           },
           settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
+            networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
         }}
@@ -144,13 +152,20 @@ describe("Account view", () => {
         <Account />
       </Wrapper>,
     );
+
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-XLM"),
+      ).not.toContainElement(screen.getByTestId("ScamAssetIcon"));
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      ).toContainElement(screen.getByTestId("ScamAssetIcon"));
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
   });
-  it.skip("goes to account details", async () => {
+  it("goes to account details", async () => {
     render(
       <Wrapper
         state={{
@@ -171,13 +186,48 @@ describe("Account view", () => {
     );
 
     await waitFor(async () => {
-      const assetNodes = screen.getAllByTestId("account-assets");
-      await fireEvent.click(assetNodes[1]);
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
     });
     await waitFor(() => {
       expect(
         screen.getByTestId("asset-detail-available-copy"),
       ).toHaveTextContent("100 USDC");
+    });
+  });
+  it("shows Blockaid warnng in account details", async () => {
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("ScamAssetWarning__box")).toBeDefined();
     });
   });
   it("switches accounts", async () => {

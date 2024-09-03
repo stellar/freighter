@@ -47,7 +47,6 @@ import {
 import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
-import { useScanAsset } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 
@@ -82,10 +81,7 @@ export const AssetDetail = ({
   const { accountBalances: balances } = useSelector(
     transactionSubmissionSelector,
   );
-  const { scannedAsset } = useScanAsset(
-    `${canonical.code}-${canonical.issuer}`,
-  );
-  const isMalicious = scannedAsset.result_type === "Malicious";
+  const isMalicious = balances.balances?.[selectedAsset].isMalicious || false;
 
   useEffect(() => {
     const fetchSuspiciousAsset = async () => {

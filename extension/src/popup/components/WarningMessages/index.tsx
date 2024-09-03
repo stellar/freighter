@@ -272,7 +272,7 @@ export const BlockaidAssetWarning = ({
   }, [code, issuer, isNewAsset, networkDetails]);
 
   return (
-    <div className="ScamAssetWarning__box">
+    <div className="ScamAssetWarning__box" data-testid="ScamAssetWarning__box">
       <div className="Icon">
         <img
           className="ScamAssetWarning__box__icon"
@@ -416,7 +416,7 @@ export const ScamAssetWarning = ({
       document.querySelector("#modal-root")!,
     )
   ) : (
-    <div className="ScamAssetWarning">
+    <div className="ScamAssetWarning" data-testid="ScamAssetWarning">
       <View.Content>
         <ModalInfo
           domain={domain}
@@ -448,6 +448,7 @@ export const ScamAssetWarning = ({
             <div className="ScamAssetWarning__btns">
               {!isValidatingSafeAssetsEnabled && !isSendWarning && (
                 <Button
+                  data-testid="ScamAsset__add-asset"
                   size="md"
                   isFullWidth
                   onClick={handleSubmit}
@@ -471,6 +472,7 @@ export const ScamAssetWarning = ({
               </Button>
               {isSendWarning && (
                 <Button
+                  data-testid="ScamAsset__send"
                   size="md"
                   isFullWidth
                   onClick={onContinue}

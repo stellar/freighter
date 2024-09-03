@@ -14,6 +14,7 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 
 jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
@@ -36,7 +37,10 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
   return {
+    Asset: original.Asset,
+    StrKey: original.StrKey,
     Networks: original.Networks,
+    Operation: original.Operation,
     Horizon: {
       Server: class {
         loadAccount() {
@@ -49,8 +53,25 @@ jest.mock("stellar-sdk", () => {
       },
     },
     SorobanRpc: original.SorobanRpc,
+    TransactionBuilder: original.TransactionBuilder,
   };
 });
+
+jest
+  .spyOn(CheckSuspiciousAsset, "checkForSuspiciousAsset")
+  .mockImplementation(({ issuer }: { issuer: string }) => {
+    let isRevocable = false;
+    let isNewAsset = false;
+    let isInvalidDomain = false;
+
+    if (issuer === "GBFJZSHWOMYS6U73NXQRRD4JX6TZNWEAFII6Z5INGWVJ2VCQ2K4NQMHP") {
+      isRevocable = true;
+      isNewAsset = true;
+      isInvalidDomain = true;
+    }
+
+    return Promise.resolve({ isRevocable, isNewAsset, isInvalidDomain });
+  });
 
 jest.mock("react-router-dom", () => {
   const ReactRouter = jest.requireActual("react-router-dom");
@@ -68,7 +89,7 @@ jest.mock("popup/constants/history", () => ({
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
-describe.skip("SendPayment", () => {
+describe("SendPayment", () => {
   afterAll(() => {
     jest.clearAllMocks();
   });
@@ -138,6 +159,10 @@ const testPaymentFlow = async (asset: string) => {
             asset,
           },
           accountBalances: mockBalances,
+          assetDomains: {
+            "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+              "domain.com",
+          },
         },
       }}
     >
@@ -164,17 +189,37 @@ const testPaymentFlow = async (asset: string) => {
   });
 
   await waitFor(async () => {
+    if (
+      asset === "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
+    ) {
+      expect(screen.getByTestId("ScamAssetIcon")).toBeDefined();
+    } else {
+      expect(screen.queryByTestId("ScamAssetIcon")).toBeNull();
+    }
     const continueBtn = screen.getByTestId("send-amount-btn-continue");
     expect(continueBtn).not.toBeDisabled();
     await fireEvent.click(continueBtn);
+
+    if (
+      asset === "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
+    ) {
+      await fireEvent.click(screen.getByTestId("ScamAsset__send"));
+    }
   });
 
   await waitFor(async () => {
+    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+      "Send Settings",
+    );
     const continueBtn = screen.getByTestId("send-settings-btn-continue");
+    expect(continueBtn).toBeEnabled();
     await fireEvent.click(continueBtn);
   });
 
   await waitFor(async () => {
+    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+      "Confirm Send",
+    );
     const sendBtn = screen.getByTestId("transaction-details-btn-send");
     await fireEvent.click(sendBtn);
   });
