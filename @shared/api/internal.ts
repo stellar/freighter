@@ -1460,3 +1460,42 @@ export const modifyAssetsList = async ({
 
   return { assetsLists: response.assetsLists, error: response.error };
 };
+
+export const simulateTokenTransfer = async (args: {
+  address: string;
+  publicKey: string;
+  memo: string;
+  params: {
+    publicKey: string;
+    destination: string;
+    amount: number;
+  };
+  networkDetails: NetworkDetails;
+  transactionFee: string;
+}) => {
+  const { address, publicKey, memo, params, networkDetails } = args;
+  const options = {
+    method: "POST",
+    headers: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      address,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      pub_key: publicKey,
+      memo,
+      params,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_url: networkDetails.sorobanRpcUrl,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_passphrase: networkDetails.networkPassphrase,
+    }),
+  };
+  const res = await fetch(`${INDEXER_URL}/simulate-token-transfer`, options);
+  const response = await res.json();
+  return {
+    ok: res.ok,
+    response,
+  };
+};
