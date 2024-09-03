@@ -62,19 +62,19 @@ export const simulateTokenPayment = createAsyncThunk<
           new XdrLargeInt("i128", params.amount).toI128(), // amount
         ];
         const transaction = transfer(address, transferParams, memo, builder);
-        const simulationResponse = await server.simulateTransaction(
+        const simulationTransaction = await server.simulateTransaction(
           transaction,
         );
 
         const preparedTransaction = SorobanRpc.assembleTransaction(
           transaction,
-          simulationResponse,
+          simulationTransaction,
         )
           .build()
           .toXDR();
 
         return {
-          simulationResponse,
+          simulationTransaction,
           preparedTransaction,
         };
       }
@@ -107,7 +107,10 @@ export const simulateTokenPayment = createAsyncThunk<
           errorMessage: response.message,
         });
       }
-      return response;
+      return {
+        preparedTransaction: response.preparedTransaction,
+        simulationTransaction: response.simulationResponse,
+      };
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({
