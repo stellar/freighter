@@ -1,15 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
-import { Icon, Textarea, Link, Button } from "@stellar/design-system";
+import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Asset } from "stellar-sdk";
+import { Asset, BASE_FEE } from "stellar-sdk";
+import BigNumber from "bignumber.js";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
-import { isMuxedAccount, getAssetFromCanonical } from "helpers/stellar";
+import {
+  isMuxedAccount,
+  getAssetFromCanonical,
+  stroopToXlm,
+} from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
@@ -23,12 +28,21 @@ import {
   transactionSubmissionSelector,
   saveIsToken,
 } from "popup/ducks/transactionSubmission";
-import { simulateTokenPayment, simulateSwap } from "popup/ducks/token-payment";
+import {
+  simulateTokenPayment,
+  simulateSwap,
+  tokenSimulationSelector,
+} from "popup/ducks/token-payment";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { parseTokenAmount, isContractId } from "popup/helpers/soroban";
+import {
+  parseTokenAmount,
+  isContractId,
+  formatTokenAmount,
+  CLASSIC_ASSET_DECIMALS,
+} from "popup/helpers/soroban";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 
@@ -62,15 +76,157 @@ export const Settings = ({
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
   const { accountBalances } = useSelector(transactionSubmissionSelector);
+  const { simulation } = useSelector(tokenSimulationSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const [isLoadingSimulation, setLoadingSimulation] = useState(true);
 
-  // use default transaction fee if unset
-  useEffect(() => {
-    if (!transactionFee) {
-      dispatch(saveTransactionFee(recommendedFee));
+  const isSendSacToContract =
+    isContractId(destination) &&
+    !isContractId(getAssetFromCanonical(asset).issuer);
+  const getSacContractAddress = useCallback(() => {
+    if (asset === "native") {
+      return getNativeContractDetails(networkDetails).contract;
     }
-  }, [dispatch, recommendedFee, transactionFee]);
+
+    const assetFromCanonical = new Asset(
+      getAssetFromCanonical(asset).code,
+      getAssetFromCanonical(asset).issuer,
+    );
+    const contractAddress = assetFromCanonical.contractId(
+      networkDetails.networkPassphrase,
+    );
+
+    return contractAddress;
+  }, [asset, networkDetails]);
+
+  useEffect(() => {
+    async function simulateTx() {
+      // use default transaction fee if unset
+      const baseFee = new BigNumber(
+        transactionFee || recommendedFee || stroopToXlm(BASE_FEE),
+      );
+
+      if (isSoroswap) {
+        const simulatedTx = await dispatch(
+          simulateSwap({
+            networkDetails,
+            publicKey,
+            amountIn: amount,
+            amountInDecimals: decimals || 0,
+            amountOut: destinationAmount,
+            amountOutDecimals: destinationDecimals || 0,
+            memo,
+            transactionFee,
+            path,
+          }),
+        );
+
+        if (simulateSwap.fulfilled.match(simulatedTx)) {
+          dispatch(saveSimulation(simulatedTx.payload));
+          const minResourceFee = formatTokenAmount(
+            new BigNumber(
+              simulatedTx.payload.simulationTransaction.minResourceFee,
+            ),
+            CLASSIC_ASSET_DECIMALS,
+          );
+          dispatch(
+            saveTransactionFee(
+              baseFee.plus(new BigNumber(minResourceFee)).toString(),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (
+        (isToken || isSendSacToContract) &&
+        !simulation.simulationTransaction?.minResourceFee
+      ) {
+        const assetAddress = isSendSacToContract
+          ? getSacContractAddress()
+          : asset.split(":")[1];
+        const balances =
+          accountBalances.balances || ({} as NonNullable<Balances>);
+        const assetBalance = balances[asset] as TokenBalance;
+
+        if (!assetBalance) {
+          throw new Error("Asset Balance not available");
+        }
+
+        const parsedAmount = isSendSacToContract
+          ? parseTokenAmount(amount, CLASSIC_ASSET_DECIMALS)
+          : parseTokenAmount(amount, Number(assetBalance.decimals));
+
+        const params = {
+          publicKey,
+          destination,
+          amount: parsedAmount.toNumber(),
+        };
+
+        const simResponse = await dispatch(
+          simulateTokenPayment({
+            address: assetAddress,
+            publicKey,
+            memo,
+            params,
+            networkDetails,
+            transactionFee,
+          }),
+        );
+
+        if (
+          simulateTokenPayment.fulfilled.match(simResponse) &&
+          recommendedFee
+        ) {
+          const minResourceFee = formatTokenAmount(
+            new BigNumber(
+              simResponse.payload.simulationTransaction.minResourceFee,
+            ),
+            CLASSIC_ASSET_DECIMALS,
+          );
+          dispatch(saveSimulation(simResponse.payload));
+          dispatch(saveIsToken(true));
+          dispatch(
+            saveTransactionFee(
+              baseFee.plus(new BigNumber(minResourceFee)).toString(),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!transactionFee) {
+        dispatch(saveTransactionFee(baseFee.toString()));
+      }
+    }
+    async function setFee() {
+      setLoadingSimulation(true);
+      await simulateTx();
+      setLoadingSimulation(false);
+    }
+    setFee();
+  }, [
+    dispatch,
+    recommendedFee,
+    transactionFee,
+    accountBalances.balances,
+    amount,
+    asset,
+    decimals,
+    destination,
+    destinationAmount,
+    destinationDecimals,
+    getSacContractAddress,
+    isSendSacToContract,
+    isSoroswap,
+    isToken,
+    memo,
+    networkDetails,
+    path,
+    publicKey,
+    simulation.simulationTransaction?.minResourceFee,
+  ]);
 
   const handleTxFeeNav = () =>
     navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
@@ -88,91 +244,6 @@ export const Settings = ({
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
-  const isSendSacToContract =
-    isContractId(destination) &&
-    !isContractId(getAssetFromCanonical(asset).issuer);
-  const getSacContractAddress = () => {
-    if (asset === "native") {
-      return getNativeContractDetails(networkDetails).contract;
-    }
-
-    const assetFromCanonical = new Asset(
-      getAssetFromCanonical(asset).code,
-      getAssetFromCanonical(asset).issuer,
-    );
-    const contractAddress = assetFromCanonical.contractId(
-      networkDetails.networkPassphrase,
-    );
-
-    return contractAddress;
-  };
-
-  async function goToReview() {
-    if (isSoroswap) {
-      const simulatedTx = await dispatch(
-        simulateSwap({
-          networkDetails,
-          publicKey,
-          amountIn: amount,
-          amountInDecimals: decimals || 0,
-          amountOut: destinationAmount,
-          amountOutDecimals: destinationDecimals || 0,
-          memo,
-          transactionFee,
-          path,
-        }),
-      );
-
-      if (simulateSwap.fulfilled.match(simulatedTx)) {
-        dispatch(saveSimulation(simulatedTx.payload));
-        navigateTo(next);
-      }
-      return;
-    }
-
-    if (isToken || isSendSacToContract) {
-      const assetAddress = isSendSacToContract
-        ? getSacContractAddress()
-        : asset.split(":")[1];
-      const balances =
-        accountBalances.balances || ({} as NonNullable<Balances>);
-      const assetBalance = balances[asset] as TokenBalance;
-
-      if (!assetBalance) {
-        throw new Error("Asset Balance not available");
-      }
-
-      const parsedAmount = isSendSacToContract
-        ? parseTokenAmount(amount, 7)
-        : parseTokenAmount(amount, Number(assetBalance.decimals));
-
-      const params = {
-        publicKey,
-        destination,
-        amount: parsedAmount.toNumber(),
-      };
-
-      const simulation = await dispatch(
-        simulateTokenPayment({
-          address: assetAddress,
-          publicKey,
-          memo,
-          params,
-          networkDetails,
-          transactionFee,
-        }),
-      );
-
-      if (simulateTokenPayment.fulfilled.match(simulation)) {
-        dispatch(saveSimulation(simulation.payload));
-        dispatch(saveIsToken(true));
-        navigateTo(next);
-      }
-      return;
-    }
-
-    navigateTo(next);
-  }
 
   return (
     <React.Fragment>
@@ -180,112 +251,30 @@ export const Settings = ({
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
         customBackAction={() => navigateTo(previous)}
       />
-      <Formik
-        initialValues={{ memo }}
-        onSubmit={(values) => {
-          dispatch(saveMemo(values.memo));
-        }}
-      >
-        {({ submitForm }) => (
-          <Form className="View__contentAndFooterWrapper">
-            <View.Content>
-              <FormRows>
-                <div className="SendSettings__row">
-                  <div className="SendSettings__row__left">
-                    <InfoTooltip
-                      infoText={
-                        <span>
-                          {t("Maximum network transaction fee to be paid")}{" "}
-                          <Link
-                            variant="secondary"
-                            href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            {t("Learn more")}
-                          </Link>
-                        </span>
-                      }
-                      placement="bottom"
-                    >
-                      <span
-                        className="SendSettings__row__title SendSettings__clickable"
-                        onClick={() => {
-                          submitForm();
-                          handleTxFeeNav();
-                        }}
-                      >
-                        {t("Transaction fee")}
-                      </span>
-                    </InfoTooltip>
-                  </div>
-                  <div
-                    className="SendSettings__row__right SendSettings__clickable"
-                    onClick={() => {
-                      submitForm();
-                      handleTxFeeNav();
-                    }}
-                  >
-                    <span data-testid="SendSettingsTransactionFee">
-                      {transactionFee} XLM
-                    </span>
-                    <div>
-                      <Icon.ChevronRight />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="SendSettings__row">
-                  <div className="SendSettings__row__left">
-                    <InfoTooltip
-                      infoText={
-                        <span>
-                          {t(
-                            "Number of seconds that can pass before this transaction can no longer be accepted by the network",
-                          )}{" "}
-                        </span>
-                      }
-                      placement="bottom"
-                    >
-                      <span
-                        className="SendSettings__row__title SendSettings__clickable"
-                        onClick={() => {
-                          submitForm();
-                          handleTimeoutNav();
-                        }}
-                      >
-                        {t("Transaction timeout")}
-                      </span>
-                    </InfoTooltip>
-                  </div>
-                  <div
-                    className="SendSettings__row__right SendSettings__clickable"
-                    onClick={() => {
-                      submitForm();
-                      handleTimeoutNav();
-                    }}
-                  >
-                    <span data-testid="SendSettingsTransactionTimeout">
-                      {transactionTimeout}(s)
-                    </span>
-                    <div>
-                      <Icon.ChevronRight />
-                    </div>
-                  </div>
-                </div>
-
-                {showSlippage && (
+      {isLoadingSimulation ? (
+        <div className="SendSettings__loadingWrapper">
+          <Loader size="2rem" />
+        </div>
+      ) : (
+        <Formik
+          initialValues={{ memo }}
+          onSubmit={(values) => {
+            dispatch(saveMemo(values.memo));
+          }}
+        >
+          {({ submitForm }) => (
+            <Form className="View__contentAndFooterWrapper">
+              <View.Content>
+                <FormRows>
                   <div className="SendSettings__row">
                     <div className="SendSettings__row__left">
                       <InfoTooltip
                         infoText={
                           <span>
-                            {t(
-                              "Allowed downward variation in the destination amount",
-                            )}{" "}
+                            {t("Maximum network transaction fee to be paid")}{" "}
                             <Link
                               variant="secondary"
-                              href="https://www.freighter.app/faq"
+                              href="https://developers.stellar.org/docs/glossary/fees/#base-fee"
                               rel="noreferrer"
                               target="_blank"
                             >
@@ -299,10 +288,10 @@ export const Settings = ({
                           className="SendSettings__row__title SendSettings__clickable"
                           onClick={() => {
                             submitForm();
-                            handleSlippageNav();
+                            handleTxFeeNav();
                           }}
                         >
-                          {t("Allowed slippage")}
+                          {t("Transaction fee")}
                         </span>
                       </InfoTooltip>
                     </div>
@@ -310,29 +299,69 @@ export const Settings = ({
                       className="SendSettings__row__right SendSettings__clickable"
                       onClick={() => {
                         submitForm();
-                        handleSlippageNav();
+                        handleTxFeeNav();
                       }}
                     >
-                      <span data-testid="SendSettingsAllowedSlippage">
-                        {allowedSlippage}%
+                      <span data-testid="SendSettingsTransactionFee">
+                        {transactionFee} XLM
                       </span>
                       <div>
                         <Icon.ChevronRight />
                       </div>
                     </div>
                   </div>
-                )}
-                {showMemo && (
-                  <>
+
+                  <div className="SendSettings__row">
+                    <div className="SendSettings__row__left">
+                      <InfoTooltip
+                        infoText={
+                          <span>
+                            {t(
+                              "Number of seconds that can pass before this transaction can no longer be accepted by the network",
+                            )}{" "}
+                          </span>
+                        }
+                        placement="bottom"
+                      >
+                        <span
+                          className="SendSettings__row__title SendSettings__clickable"
+                          onClick={() => {
+                            submitForm();
+                            handleTimeoutNav();
+                          }}
+                        >
+                          {t("Transaction timeout")}
+                        </span>
+                      </InfoTooltip>
+                    </div>
+                    <div
+                      className="SendSettings__row__right SendSettings__clickable"
+                      onClick={() => {
+                        submitForm();
+                        handleTimeoutNav();
+                      }}
+                    >
+                      <span data-testid="SendSettingsTransactionTimeout">
+                        {transactionTimeout}(s)
+                      </span>
+                      <div>
+                        <Icon.ChevronRight />
+                      </div>
+                    </div>
+                  </div>
+
+                  {showSlippage && (
                     <div className="SendSettings__row">
                       <div className="SendSettings__row__left">
                         <InfoTooltip
                           infoText={
                             <span>
-                              {t("Include a custom memo to this transaction")}{" "}
+                              {t(
+                                "Allowed downward variation in the destination amount",
+                              )}{" "}
                               <Link
                                 variant="secondary"
-                                href="https://developers.stellar.org/docs/glossary/transactions/#memo"
+                                href="https://www.freighter.app/faq"
                                 rel="noreferrer"
                                 target="_blank"
                               >
@@ -342,45 +371,93 @@ export const Settings = ({
                           }
                           placement="bottom"
                         >
-                          <span className="SendSettings__row__title">
-                            {t("Memo")}
+                          <span
+                            className="SendSettings__row__title SendSettings__clickable"
+                            onClick={() => {
+                              submitForm();
+                              handleSlippageNav();
+                            }}
+                          >
+                            {t("Allowed slippage")}
                           </span>
                         </InfoTooltip>
                       </div>
-                      <div className="SendSettings__row__right">
-                        <span></span>
+                      <div
+                        className="SendSettings__row__right SendSettings__clickable"
+                        onClick={() => {
+                          submitForm();
+                          handleSlippageNav();
+                        }}
+                      >
+                        <span data-testid="SendSettingsAllowedSlippage">
+                          {allowedSlippage}%
+                        </span>
+                        <div>
+                          <Icon.ChevronRight />
+                        </div>
                       </div>
                     </div>
-                    <Field name="memo">
-                      {({ field }: FieldProps) => (
-                        <Textarea
-                          fieldSize="md"
-                          id="mnemonic-input"
-                          placeholder={t("Memo (optional)")}
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                  </>
-                )}
-              </FormRows>
-            </View.Content>
-            <View.Footer>
-              <Button
-                disabled={!transactionFee}
-                size="md"
-                isFullWidth
-                onClick={goToReview}
-                type="submit"
-                variant="secondary"
-                data-testid="send-settings-btn-continue"
-              >
-                {t("Review")} {isSwap ? t("Swap") : t("Send")}
-              </Button>
-            </View.Footer>
-          </Form>
-        )}
-      </Formik>
+                  )}
+                  {showMemo && (
+                    <>
+                      <div className="SendSettings__row">
+                        <div className="SendSettings__row__left">
+                          <InfoTooltip
+                            infoText={
+                              <span>
+                                {t("Include a custom memo to this transaction")}{" "}
+                                <Link
+                                  variant="secondary"
+                                  href="https://developers.stellar.org/docs/glossary/transactions/#memo"
+                                  rel="noreferrer"
+                                  target="_blank"
+                                >
+                                  {t("Learn more")}
+                                </Link>
+                              </span>
+                            }
+                            placement="bottom"
+                          >
+                            <span className="SendSettings__row__title">
+                              {t("Memo")}
+                            </span>
+                          </InfoTooltip>
+                        </div>
+                        <div className="SendSettings__row__right">
+                          <span></span>
+                        </div>
+                      </div>
+                      <Field name="memo">
+                        {({ field }: FieldProps) => (
+                          <Textarea
+                            fieldSize="md"
+                            id="mnemonic-input"
+                            placeholder={t("Memo (optional)")}
+                            {...field}
+                          />
+                        )}
+                      </Field>
+                    </>
+                  )}
+                </FormRows>
+              </View.Content>
+              <View.Footer>
+                <Button
+                  disabled={!transactionFee}
+                  size="md"
+                  isFullWidth
+                  onClick={() => navigateTo(next)}
+                  type="submit"
+                  variant="secondary"
+                  data-testid="send-settings-btn-continue"
+                >
+                  {t("Review")} {isSwap ? t("Swap") : t("Send")}
+                </Button>
+              </View.Footer>
+            </Form>
+          )}
+        </Formik>
+      )}
     </React.Fragment>
   );
 };
