@@ -244,8 +244,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
     );
 
-  const isAssetMalicious =
-    accountBalances.balances?.[asset].isMalicious || false;
+  let isAssetMalicious = accountBalances.balances?.[asset].isMalicious || false;
+  if (!isAssetMalicious && destinationAsset) {
+    isAssetMalicious =
+      accountBalances.balances?.[destinationAsset].isMalicious || false;
+  }
   const isTxMalicious = (isValidatingSafety && isAssetMalicious) || false;
   const isUnsafe =
     isValidatingSafety &&
