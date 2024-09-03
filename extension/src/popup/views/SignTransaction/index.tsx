@@ -144,6 +144,12 @@ export const SignTransaction = () => {
   const isMemoRequired = flaggedKeyValues.some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
+  const isUnsafe = flaggedKeyValues.some(({ tags }) =>
+    tags.includes(TRANSACTION_WARNING.unsafe),
+  );
+  const isMaliciousAddress = flaggedKeyValues.some(({ tags }) =>
+    tags.includes(TRANSACTION_WARNING.malicious),
+  );
 
   const resolveFederatedAddress = useCallback(async (inputDest: string) => {
     let resolvedPublicKey;
@@ -184,7 +190,13 @@ export const SignTransaction = () => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
-  }, [isMemoRequired]);
+    if (isUnsafe) {
+      emitMetric(METRIC_NAMES.signTransactionUnsafe);
+    }
+    if (isMaliciousAddress) {
+      emitMetric(METRIC_NAMES.signTransactionMalicious);
+    }
+  }, [isMemoRequired, isUnsafe, isMaliciousAddress]);
 
   useEffect(() => {
     if (currentAccount.publicKey) {
@@ -200,7 +212,7 @@ export const SignTransaction = () => {
     };
   }, [currentAccount.publicKey, dispatch, networkDetails]);
 
-  const isSubmitDisabled = isMemoRequired;
+  const isSubmitDisabled = isMemoRequired || isMaliciousAddress;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
