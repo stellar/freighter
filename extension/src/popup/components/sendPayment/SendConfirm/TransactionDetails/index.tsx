@@ -61,14 +61,18 @@ import {
   AssetIcon,
 } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { useScanAsset } from "popup/helpers/blockaid";
-import { FlaggedWarningMessage } from "popup/components/WarningMessages";
+import { useScanAsset, useScanTx } from "popup/helpers/blockaid";
+import {
+  BlockaidMaliciousTxInternalWarning,
+  FlaggedWarningMessage,
+} from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
 
 import "./styles.scss";
+import { resetSimulation } from "popup/ducks/token-payment";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -219,6 +223,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const { isMemoValidationEnabled, isSafetyValidationEnabled } =
     useSelector(settingsSelector);
   const isSwap = useIsSwap();
+  const { scanTx, data: scanResult, isLoading } = useScanTx();
 
   const { t } = useTranslation();
 
@@ -279,6 +284,24 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   useEffect(() => {
     dispatch(getBlockedAccounts());
   }, [dispatch]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (
+        submission.submitStatus === ActionStatus.IDLE &&
+        transactionSimulation.preparedTransaction
+      ) {
+        const url = "internal"; // blockaid prefers a URL for this endpoint, but this does not originate from a URL
+        await scanTx(
+          transactionSimulation.preparedTransaction,
+          url,
+          networkDetails,
+        );
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSorobanTransaction = async () => {
     try {
@@ -445,190 +468,202 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      <React.Fragment>
-        {submission.submitStatus === ActionStatus.PENDING && (
-          <div className="TransactionDetails__processing">
-            <div className="TransactionDetails__processing__header">
-              <Loader />{" "}
-              <span>
-                {t("Processing")} {isSwap ? t("swap") : t("transaction")}
-              </span>
+      {isLoading ? (
+        <div className="TransactionDetails__loader">
+          <Loader size="2rem" />
+        </div>
+      ) : (
+        <React.Fragment>
+          {submission.submitStatus === ActionStatus.PENDING && (
+            <div className="TransactionDetails__processing">
+              <div className="TransactionDetails__processing__header">
+                <Loader />{" "}
+                <span>
+                  {t("Processing")} {isSwap ? t("swap") : t("transaction")}
+                </span>
+              </div>
+              <div className="TransactionDetails__processing__copy">
+                {t("Please don’t close this window")}
+              </div>
             </div>
-            <div className="TransactionDetails__processing__copy">
-              {t("Please don’t close this window")}
-            </div>
-          </div>
-        )}
-        <SubviewHeader
-          title={renderPageTitle(
-            submission.submitStatus === ActionStatus.SUCCESS,
           )}
-          customBackAction={goBack}
-          customBackIcon={
-            submission.submitStatus === ActionStatus.SUCCESS ? (
-              <Icon.Close />
-            ) : null
-          }
-        />
-        <View.Content
-          contentFooter={
-            <div className="TransactionDetails__bottom-wrapper__copy">
-              {(isPathPayment || isSwap) &&
-                submission.submitStatus !== ActionStatus.SUCCESS &&
-                t("The final amount is approximate and may change")}
-            </div>
-          }
-        >
-          {!(isPathPayment || isSwap) && (
-            <div className="TransactionDetails__cards">
-              <Card>
-                <AccountAssets
-                  assetIcons={assetIcons}
-                  sortedBalances={[
-                    {
-                      token: {
-                        issuer: { key: sourceAsset.issuer },
-                        code: sourceAsset.code,
+          <SubviewHeader
+            title={renderPageTitle(
+              submission.submitStatus === ActionStatus.SUCCESS,
+            )}
+            customBackAction={goBack}
+            customBackIcon={
+              submission.submitStatus === ActionStatus.SUCCESS ? (
+                <Icon.Close />
+              ) : null
+            }
+          />
+          <View.Content
+            contentFooter={
+              <div className="TransactionDetails__bottom-wrapper__copy">
+                {(isPathPayment || isSwap) &&
+                  submission.submitStatus !== ActionStatus.SUCCESS &&
+                  t("The final amount is approximate and may change")}
+              </div>
+            }
+          >
+            {!(isPathPayment || isSwap) && (
+              <div className="TransactionDetails__cards">
+                <Card>
+                  <AccountAssets
+                    assetIcons={assetIcons}
+                    sortedBalances={[
+                      {
+                        token: {
+                          issuer: { key: sourceAsset.issuer },
+                          code: sourceAsset.code,
+                        },
+                        total: amount || "0",
+                        isMalicious: isAssetMalicious,
                       },
-                      total: amount || "0",
-                      isMalicious: isAssetMalicious,
-                    },
-                  ]}
-                />
-              </Card>
-            </div>
-          )}
-
-          {(isPathPayment || isSwap) && (
-            <TwoAssetCard
-              sourceAssetIcons={assetIcons}
-              sourceCanon={asset}
-              sourceAmount={amount}
-              destAssetIcons={destAssetIcons}
-              destCanon={destinationAsset || "native"}
-              destAmount={destinationAmount}
-              isSourceAssetMalicious={isAssetMalicious || false}
-              isDestAssetMalicious={isDestAssetMalicious}
-            />
-          )}
-
-          {!isSwap && (
-            <div className="TransactionDetails__row">
-              <div>{t("Sending to")} </div>
-              <div className="TransactionDetails__row__right">
-                <div className="TransactionDetails__identicon">
-                  <FedOrGAddress
-                    fedAddress={truncatedFedAddress(federationAddress)}
-                    gAddress={destination}
+                    ]}
                   />
-                </div>
+                </Card>
               </div>
-            </div>
-          )}
-          {showMemo && (
-            <div className="TransactionDetails__row">
-              <div>{t("Memo")}</div>
-              <div className="TransactionDetails__row__right">
-                {memo || t("None")}
-              </div>
-            </div>
-          )}
+            )}
 
-          {(isPathPayment || isSwap) && (
-            <div className="TransactionDetails__row">
-              <div>{t("Conversion rate")} </div>
-              <div
-                className="TransactionDetails__row__right"
-                data-testid="TransactionDetailsConversionRate"
-              >
-                1 {sourceAsset.code} /{" "}
-                {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
-                {destAsset.code}
-              </div>
-            </div>
-          )}
-          <div className="TransactionDetails__row">
-            <div>{t("Transaction fee")} </div>
-            <div
-              className="TransactionDetails__row__right"
-              data-testid="TransactionDetailsTransactionFee"
-            >
-              {transactionFee} XLM
-            </div>
-          </div>
-          {transactionSimulation.response && (
-            <>
+            {(isPathPayment || isSwap) && (
+              <TwoAssetCard
+                sourceAssetIcons={assetIcons}
+                sourceCanon={asset}
+                sourceAmount={amount}
+                destAssetIcons={destAssetIcons}
+                destCanon={destinationAsset || "native"}
+                destAmount={destinationAmount}
+                isSourceAssetMalicious={isAssetMalicious || false}
+                isDestAssetMalicious={isDestAssetMalicious}
+              />
+            )}
+
+            {!isSwap && (
               <div className="TransactionDetails__row">
-                <div>{t("Resource cost")} </div>
+                <div>{t("Sending to")} </div>
                 <div className="TransactionDetails__row__right">
-                  <div className="TransactionDetails__row__right__item">
-                    {transactionSimulation.response.cost.cpuInsns} CPU
-                  </div>
-                  <div className="TransactionDetails__row__right__item">
-                    {transactionSimulation.response.cost.memBytes} Bytes
+                  <div className="TransactionDetails__identicon">
+                    <FedOrGAddress
+                      fedAddress={truncatedFedAddress(federationAddress)}
+                      gAddress={destination}
+                    />
                   </div>
                 </div>
               </div>
+            )}
+            {showMemo && (
               <div className="TransactionDetails__row">
-                <div>{t("Minimum resource fee")} </div>
+                <div>{t("Memo")}</div>
                 <div className="TransactionDetails__row__right">
-                  {transactionSimulation.response.minResourceFee} XLM
+                  {memo || t("None")}
                 </div>
               </div>
-            </>
-          )}
-          {isSwap && (
+            )}
+
+            {(isPathPayment || isSwap) && (
+              <div className="TransactionDetails__row">
+                <div>{t("Conversion rate")} </div>
+                <div
+                  className="TransactionDetails__row__right"
+                  data-testid="TransactionDetailsConversionRate"
+                >
+                  1 {sourceAsset.code} /{" "}
+                  {getConversionRate(amount, destinationAmount).toFixed(2)}{" "}
+                  {destAsset.code}
+                </div>
+              </div>
+            )}
             <div className="TransactionDetails__row">
-              <div>{t("Minimum Received")} </div>
+              <div>{t("Transaction fee")} </div>
               <div
                 className="TransactionDetails__row__right"
-                data-testid="TransactionDetailsMinimumReceived"
+                data-testid="TransactionDetailsTransactionFee"
               >
-                {computeDestMinWithSlippage(
-                  allowedSlippage,
-                  destinationAmount,
-                ).toFixed()}{" "}
-                {destAsset.code}
+                {transactionFee} XLM
               </div>
             </div>
-          )}
-          {submission.submitStatus === ActionStatus.IDLE && (
-            <FlaggedWarningMessage
-              isMemoRequired={isMemoRequired}
-              code={sourceAsset.code}
-              issuer={sourceAsset.issuer}
-              isMalicious={isAssetMalicious || isDestAssetMalicious}
-            />
-          )}
-        </View.Content>
-        <View.Footer isInline>
-          {submission.submitStatus === ActionStatus.SUCCESS ? (
-            <StellarExpertButton />
-          ) : (
-            <>
-              <Button
-                size="md"
-                variant="secondary"
-                onClick={() => {
-                  navigateTo(ROUTES.account);
-                }}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                size="md"
-                variant="primary"
-                disabled={isSubmitDisabled}
-                onClick={handleSend}
-                isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
-                data-testid="transaction-details-btn-send"
-              >
-                {isSwap ? t("Swap") : t("Send")}
-              </Button>
-            </>
-          )}
-        </View.Footer>
-      </React.Fragment>
+            {transactionSimulation.response && (
+              <>
+                <div className="TransactionDetails__row">
+                  <div>{t("Resource cost")} </div>
+                  <div className="TransactionDetails__row__right">
+                    <div className="TransactionDetails__row__right__item">
+                      {transactionSimulation.response.cost.cpuInsns} CPU
+                    </div>
+                    <div className="TransactionDetails__row__right__item">
+                      {transactionSimulation.response.cost.memBytes} Bytes
+                    </div>
+                  </div>
+                </div>
+                <div className="TransactionDetails__row">
+                  <div>{t("Minimum resource fee")} </div>
+                  <div className="TransactionDetails__row__right">
+                    {transactionSimulation.response.minResourceFee} XLM
+                  </div>
+                </div>
+              </>
+            )}
+            {isSwap && (
+              <div className="TransactionDetails__row">
+                <div>{t("Minimum Received")} </div>
+                <div
+                  className="TransactionDetails__row__right"
+                  data-testid="TransactionDetailsMinimumReceived"
+                >
+                  {computeDestMinWithSlippage(
+                    allowedSlippage,
+                    destinationAmount,
+                  ).toFixed()}{" "}
+                  {destAsset.code}
+                </div>
+              </div>
+            )}
+            {scanResult && scanResult.validation.result_type !== "Benign" && (
+              <BlockaidMaliciousTxInternalWarning
+                description={scanResult.validation.description}
+              />
+            )}
+            {submission.submitStatus === ActionStatus.IDLE && (
+              <FlaggedWarningMessage
+                isMemoRequired={isMemoRequired}
+                code={sourceAsset.code}
+                issuer={sourceAsset.issuer}
+                isMalicious={isAssetMalicious || isDestAssetMalicious}
+              />
+            )}
+          </View.Content>
+          <View.Footer isInline>
+            {submission.submitStatus === ActionStatus.SUCCESS ? (
+              <StellarExpertButton />
+            ) : (
+              <>
+                <Button
+                  size="md"
+                  variant="secondary"
+                  onClick={() => {
+                    dispatch(resetSimulation());
+                    navigateTo(ROUTES.account);
+                  }}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  size="md"
+                  variant="primary"
+                  disabled={isSubmitDisabled}
+                  onClick={handleSend}
+                  isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
+                  data-testid="transaction-details-btn-send"
+                >
+                  {isSwap ? t("Swap") : t("Send")}
+                </Button>
+              </>
+            )}
+          </View.Footer>
+        </React.Fragment>
+      )}
     </>
   );
 };

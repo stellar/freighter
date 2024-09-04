@@ -31,7 +31,7 @@ const PillCopy = ({ pillType }: PillyCopyProps) => {
     return (
       <>
         <img src={IconShieldPlus} alt="Add trustline icon" />
-        <div>{t("Add Asset trustlinet")}</div>
+        <div>{t("Add Asset trustline")}</div>
       </>
     );
   }

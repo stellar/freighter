@@ -4,7 +4,7 @@ export const fetchJson = async <T>(url: string, options?: RequestInit) => {
     throw new Error(res.statusText);
   }
 
-  if (res.headers.get("content-type") !== "application/json") {
+  if (!res.headers.get("content-type")?.includes("application/json")) {
     const content = await res.text();
     throw new Error(content);
   }

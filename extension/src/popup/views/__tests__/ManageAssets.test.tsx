@@ -250,11 +250,13 @@ jest.spyOn(BlockaidHelpers, "scanAsset").mockImplementation((address) => {
   ) {
     return Promise.resolve({
       result_type: "Malicious",
+      description: "bad asset",
     });
   }
 
   return Promise.resolve({
     result_type: "Benign",
+    description: "good asset",
   });
 });
 

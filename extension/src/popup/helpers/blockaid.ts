@@ -27,6 +27,7 @@ export interface BlockAidScanTxResult {
   simulation: object;
   validation: {
     result_type: "Benign" | "Warning" | "Malicious";
+    description: string;
   };
 }
 
@@ -125,6 +126,7 @@ export const useScanTx = () => {
 
 interface BlockAidScanAssetResult {
   result_type: "Benign" | "Warning" | "Malicious" | "Spam";
+  description: string;
 }
 
 interface ScanAssetResponseSuccess {

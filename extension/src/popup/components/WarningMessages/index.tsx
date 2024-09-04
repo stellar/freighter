@@ -1147,7 +1147,7 @@ export const BlockAidSiteScanLabel = ({
   return <BlockAidBenignLabel />;
 };
 
-export const BlockaidMaliciousTxWarning = ({
+export const BlockaidMaliciousTxSignWarning = ({
   type,
 }: {
   type: BlockAidScanTxResult["validation"]["result_type"];
@@ -1173,5 +1173,40 @@ export const BlockaidMaliciousTxWarning = ({
         <p>{t(details.message)}</p>
       </div>
     </WarningMessage>
+  );
+};
+
+export const BlockaidMaliciousTxInternalWarning = ({
+  description,
+}: {
+  description: string;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="ScamAssetWarning__box" data-testid="ScamAssetWarning__box">
+      <div className="Icon">
+        <img
+          className="ScamAssetWarning__box__icon"
+          src={IconWarningBlockaid}
+          alt="icon warning blockaid"
+        />
+      </div>
+      <div>
+        <div className="ScamAssetWarning__description">
+          {t(
+            "This transaction was flagged by Blockaid for the following reasons:",
+          )}
+          <div>{description}</div>
+        </div>
+        <div className="ScamAssetWarning__footer">
+          <img src={IconShieldBlockaid} alt="icon shield blockaid" />
+          {t("Powered by ")}
+          <a rel="noreferrer" href="https://www.blockaid.io/" target="_blank">
+            Blockaid
+          </a>
+        </div>
+      </div>
+    </div>
   );
 };

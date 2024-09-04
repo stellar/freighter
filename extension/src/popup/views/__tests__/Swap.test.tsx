@@ -9,6 +9,7 @@ import {
 
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
+import * as BlockaidHelpers from "popup/helpers/blockaid";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -102,6 +103,15 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
 }));
+
+jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+  return {
+    scanTx: () => Promise.resolve(null),
+    isLoading: false,
+    data: null,
+    error: null,
+  };
+});
 
 const mockHistoryGetter = jest.fn();
 jest.mock("popup/constants/history", () => ({
