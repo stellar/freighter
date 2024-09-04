@@ -53,7 +53,7 @@ import {
   FirstTimeWarningMessage,
   MemoWarningMessage,
   SSLWarningMessage,
-  BlockaidMaliciousTxWarning,
+  BlockaidMaliciousTxSignWarning,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -329,7 +329,7 @@ export const SignTransaction = () => {
           <FirstTimeWarningMessage />
         ) : null}
         {scanResult && scanResult.validation.result_type !== "Benign" && (
-          <BlockaidMaliciousTxWarning
+          <BlockaidMaliciousTxSignWarning
             type={scanResult.validation.result_type}
           />
         )}

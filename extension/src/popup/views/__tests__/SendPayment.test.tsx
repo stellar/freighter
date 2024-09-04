@@ -4,6 +4,7 @@ import { render, waitFor, fireEvent, screen } from "@testing-library/react";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
+import * as BlockaidHelpers from "popup/helpers/blockaid";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -15,6 +16,7 @@ import { ROUTES } from "popup/constants/routes";
 import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
+import * as tokenPaymentActions from "popup/ducks/token-payment";
 
 jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
@@ -31,6 +33,15 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   return {
     recommendedFee: ".00001",
     networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
+  };
+});
+
+jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+  return {
+    scanTx: () => Promise.resolve(null),
+    isLoading: false,
+    data: null,
+    error: null,
   };
 });
 
@@ -112,6 +123,7 @@ describe("SendPayment", () => {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
         <SendPayment />
@@ -164,6 +176,7 @@ const testPaymentFlow = async (asset: string) => {
               "domain.com",
           },
         },
+        tokenPaymentSimulation: tokenPaymentActions.initialState,
       }}
     >
       <SendPayment />
