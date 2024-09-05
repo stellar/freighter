@@ -43,20 +43,6 @@ interface SimulationError {
 }
 type Simulation = SimulationResult | SimulationError;
 
-export const castValidation = (validation: Validation) => {
-  if (validation.status === "Error") {
-    return validation as ValidationResult;
-  }
-  return validation as ValidationError;
-};
-
-export const castSimulation = (simulation: Simulation) => {
-  if (simulation.status === "Error") {
-    return simulation as SimulationResult;
-  }
-  return simulation as SimulationError;
-};
-
 export interface BlockAidScanTxResult {
   simulation: Simulation;
   validation: Validation;
