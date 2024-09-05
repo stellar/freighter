@@ -93,6 +93,7 @@
 
   &__children-wrapper {
     flex-grow: 1;
+    word-break: break-word;
 
     a {
       color: var(--color-white);

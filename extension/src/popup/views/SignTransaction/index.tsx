@@ -53,7 +53,7 @@ import {
   FirstTimeWarningMessage,
   MemoWarningMessage,
   SSLWarningMessage,
-  BlockaidMaliciousTxSignWarning,
+  BlockaidTxScanLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -328,11 +328,7 @@ export const SignTransaction = () => {
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
-        {scanResult && scanResult.validation.result_type !== "Benign" && (
-          <BlockaidMaliciousTxSignWarning
-            type={scanResult.validation.result_type}
-          />
-        )}
+        {scanResult && <BlockaidTxScanLabel scanResult={scanResult} />}
         {renderTabBody()}
       </div>
     );
