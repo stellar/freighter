@@ -286,12 +286,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   }, [dispatch]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const url = "internal"; // blockaid prefers a URL for this endpoint, but this does not originate from a URL
+    const scanSorobanTx = async () => {
       if (
         submission.submitStatus === ActionStatus.IDLE &&
         transactionSimulation.preparedTransaction
       ) {
-        const url = "internal"; // blockaid prefers a URL for this endpoint, but this does not originate from a URL
         await scanTx(
           transactionSimulation.preparedTransaction,
           url,
@@ -299,7 +299,41 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
         );
       }
     };
-    fetchData();
+    const scanClassicTx = async () => {
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
+      const sourceAccount: Account = await server.loadAccount(publicKey);
+      const operation = getOperation(
+        sourceAsset,
+        destAsset,
+        amount,
+        destinationAmount,
+        destination,
+        allowedSlippage,
+        path,
+        isPathPayment,
+        isSwap,
+        destinationBalances.isFunded!,
+        publicKey,
+      );
+      const transactionXDR = new TransactionBuilder(sourceAccount, {
+        fee: xlmToStroop(transactionFee).toFixed(),
+        networkPassphrase: networkDetails.networkPassphrase,
+      })
+        .addOperation(operation)
+        .setTimeout(transactionTimeout)
+        .build()
+        .toXDR();
+
+      await scanTx(transactionXDR, url, networkDetails);
+    };
+    if (isToken || isSoroswap) {
+      scanSorobanTx();
+      return;
+    }
+    scanClassicTx();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
