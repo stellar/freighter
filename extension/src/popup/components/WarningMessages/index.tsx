@@ -329,7 +329,6 @@ export const ScamAssetWarning = ({
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const warningRef = useRef<HTMLDivElement>(null);
-  const { isValidatingSafeAssetsEnabled } = useSelector(settingsSelector);
   const { recommendedFee } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -446,7 +445,7 @@ export const ScamAssetWarning = ({
               )}
             </div>
             <div className="ScamAssetWarning__btns">
-              {!isValidatingSafeAssetsEnabled && !isSendWarning && (
+              {!isSendWarning && (
                 <Button
                   data-testid="ScamAsset__add-asset"
                   size="md"
@@ -468,7 +467,7 @@ export const ScamAssetWarning = ({
                 type="button"
                 onClick={closeOverlay}
               >
-                {isValidatingSafeAssetsEnabled ? t("Got it") : t("Cancel")}
+                {t("Cancel")}
               </Button>
               {isSendWarning && (
                 <Button

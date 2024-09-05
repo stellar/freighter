@@ -16,6 +16,7 @@ import {
   editCustomNetwork as editCustomNetworkService,
   addAssetsList as addAssetsListService,
   modifyAssetsList as modifyAssetsListService,
+  saveIsBlockaidAnnounced as saveIsBlockaidAnnouncedService,
 } from "@shared/api/internal";
 import {
   NETWORKS,
@@ -57,6 +58,7 @@ const settingsInitialState: Settings = {
   isSafetyValidationEnabled: true,
   isValidatingSafeAssetsEnabled: true,
   isNonSSLEnabled: false,
+  isBlockaidAnnounced: false,
   error: "",
 };
 
@@ -284,6 +286,29 @@ export const modifyAssetsList = createAsyncThunk<
   },
 );
 
+export const saveIsBlockaidAnnounced = createAsyncThunk<
+  { isBlockaidAnnounced: boolean },
+  {
+    isBlockaidAnnounced: boolean;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/saveIsBlockaidAnnounced",
+  async ({ isBlockaidAnnounced }, thunkApi) => {
+    const res = await saveIsBlockaidAnnouncedService({
+      isBlockaidAnnounced,
+    });
+
+    if (res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Unable to save isBlockaidAnnounced",
+      });
+    }
+
+    return res;
+  },
+);
+
 const settingsSlice = createSlice({
   name: "settings",
   initialState,
@@ -387,6 +412,7 @@ const settingsSlice = createSlice({
           userNotification,
           assetsLists,
           isNonSSLEnabled,
+          isBlockaidAnnounced,
         } = action?.payload || {
           ...initialState,
         };
@@ -407,6 +433,7 @@ const settingsSlice = createSlice({
           userNotification,
           assetsLists,
           isNonSSLEnabled,
+          isBlockaidAnnounced,
           settingsState: SettingsState.SUCCESS,
         };
       },
@@ -548,6 +575,26 @@ const settingsSlice = createSlice({
         return {
           ...state,
           assetsLists,
+        };
+      },
+    );
+    builder.addCase(
+      saveIsBlockaidAnnounced.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          isBlockaidAnnounced: boolean;
+        }>,
+      ) => {
+        const { isBlockaidAnnounced } = action?.payload || {
+          isBlockaidAnnounced: initialState.isBlockaidAnnounced,
+        };
+
+        console.log(isBlockaidAnnounced);
+
+        return {
+          ...state,
+          isBlockaidAnnounced,
         };
       },
     );
