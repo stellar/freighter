@@ -10,6 +10,7 @@ import {
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
+  IS_BLOCKAID_ANNOUNCED_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -251,6 +252,16 @@ export const addIsNonSSLEnabled = async () => {
   }
 };
 
+export const addIsBlockaidAnnounced = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.3.0")) {
+    await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, false);
+    await migrateDataStorageVersion("4.3.0");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -263,6 +274,7 @@ export const versionedMigration = async () => {
   await addAssetsLists();
   await addIsHashSigningEnabled();
   await addIsNonSSLEnabled();
+  await addIsBlockaidAnnounced();
 };
 
 // Updates storage version

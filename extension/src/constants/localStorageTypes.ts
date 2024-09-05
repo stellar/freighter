@@ -23,3 +23,4 @@ export const HAS_ACCOUNT_SUBSCRIPTION = "hasAccountSubscription";
 export const ASSETS_LISTS_ID = "assetsLists";
 export const IS_HASH_SIGNING_ENABLED_ID = "isHashSigningEnabled";
 export const IS_NON_SSL_ENABLED_ID = "isNonSSLEnabled";
+export const IS_BLOCKAID_ANNOUNCED_ID = "isBlockaidAnnounced";

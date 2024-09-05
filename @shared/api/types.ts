@@ -90,6 +90,7 @@ export interface Response {
   isMergeSelected: boolean;
   recommendedFee: string;
   isNonSSLEnabled: boolean;
+  isBlockaidAnnounced: boolean;
 }
 
 export interface BlockedDomains {
@@ -148,6 +149,7 @@ export interface Preferences {
   isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   isNonSSLEnabled: boolean;
+  isBlockaidAnnounced: boolean;
   error: string;
 }
 

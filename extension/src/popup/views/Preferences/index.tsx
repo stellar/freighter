@@ -74,7 +74,7 @@ export const Preferences = () => {
               <AutoSaveFields />
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  {t("Verification with")} stellar.expert & blockaid.io
+                  {t("Verification with")} stellar.expert
                 </div>
                 <div className="Preferences--toggle">
                   <label
