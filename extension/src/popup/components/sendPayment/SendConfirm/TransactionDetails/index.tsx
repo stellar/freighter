@@ -322,7 +322,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     : "";
 
   const { scannedAsset: scannedDestAsset } = useScanAsset(destAssetToScan);
-  const isDestAssetMalicious = scannedDestAsset.result_type === "Malicious";
+  const isDestAssetMalicious =
+    (scannedDestAsset.result_type &&
+      scannedDestAsset.result_type !== "Benign") ||
+    false;
 
   // load destination asset icons
   useEffect(() => {

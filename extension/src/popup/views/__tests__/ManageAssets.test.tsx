@@ -250,13 +250,17 @@ jest.spyOn(BlockaidHelpers, "scanAsset").mockImplementation((address) => {
   ) {
     return Promise.resolve({
       result_type: "Malicious",
-      description: "bad asset",
+      features: [{ description: "bad asset" }],
     });
   }
 
   return Promise.resolve({
     result_type: "Benign",
-    description: "good asset",
+    features: [
+      {
+        description: "good asset",
+      },
+    ],
   });
 });
 
@@ -737,7 +741,7 @@ describe("Manage assets", () => {
     await waitFor(async () => {
       const warning = screen.getByTestId("ScamAssetWarning");
       expect(screen.getByTestId("ScamAssetWarning__box")).toHaveTextContent(
-        "This token was flagged as malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:",
+        "This token was flagged as Malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:",
       );
 
       const addAssetButton = within(warning).getByTestId(
