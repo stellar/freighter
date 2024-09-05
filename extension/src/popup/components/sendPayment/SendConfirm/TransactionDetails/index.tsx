@@ -73,6 +73,7 @@ import { formatAmount } from "popup/helpers/formatters";
 
 import "./styles.scss";
 import { resetSimulation } from "popup/ducks/token-payment";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -191,6 +192,62 @@ const getOperation = (
   });
 };
 
+const getBuiltTx = async (
+  publicKey: string,
+  opData: {
+    sourceAsset: Asset | { code: string; issuer: string };
+    destAsset: Asset | { code: string; issuer: string };
+    amount: string;
+    destinationAmount: string;
+    destination: string;
+    allowedSlippage: string;
+    path: string[];
+    isPathPayment: boolean;
+    isSwap: boolean;
+    isFunded: boolean;
+  },
+  fee: string,
+  transactionTimeout: number,
+  networkDetails: NetworkDetails,
+) => {
+  const {
+    sourceAsset,
+    destAsset,
+    amount,
+    destinationAmount,
+    destination,
+    allowedSlippage,
+    path,
+    isPathPayment,
+    isSwap,
+    isFunded,
+  } = opData;
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
+  const sourceAccount: Account = await server.loadAccount(publicKey);
+  const operation = getOperation(
+    sourceAsset,
+    destAsset,
+    amount,
+    destinationAmount,
+    destination,
+    allowedSlippage,
+    path,
+    isPathPayment,
+    isSwap,
+    isFunded,
+    publicKey,
+  );
+  return new TransactionBuilder(sourceAccount, {
+    fee: xlmToStroop(fee).toFixed(),
+    networkPassphrase: networkDetails.networkPassphrase,
+  })
+    .addOperation(operation)
+    .setTimeout(transactionTimeout);
+};
+
 export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
@@ -300,34 +357,26 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       }
     };
     const scanClassicTx = async () => {
-      const server = stellarSdkServer(
-        networkDetails.networkUrl,
-        networkDetails.networkPassphrase,
-      );
-      const sourceAccount: Account = await server.loadAccount(publicKey);
-      const operation = getOperation(
-        sourceAsset,
-        destAsset,
-        amount,
-        destinationAmount,
-        destination,
-        allowedSlippage,
-        path,
-        isPathPayment,
-        isSwap,
-        destinationBalances.isFunded!,
+      const transaction = await getBuiltTx(
         publicKey,
+        {
+          sourceAsset,
+          destAsset,
+          amount,
+          destinationAmount,
+          destination,
+          allowedSlippage,
+          path,
+          isPathPayment,
+          isSwap,
+          isFunded: destinationBalances.isFunded!,
+        },
+        transactionFee,
+        transactionTimeout,
+        networkDetails,
       );
-      const transactionXDR = new TransactionBuilder(sourceAccount, {
-        fee: xlmToStroop(transactionFee).toFixed(),
-        networkPassphrase: networkDetails.networkPassphrase,
-      })
-        .addOperation(operation)
-        .setTimeout(transactionTimeout)
-        .build()
-        .toXDR();
 
-      await scanTx(transactionXDR, url, networkDetails);
+      await scanTx(transaction.build().toXDR(), url, networkDetails);
     };
     if (isToken || isSoroswap) {
       scanSorobanTx();
@@ -381,41 +430,33 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const handlePaymentTransaction = async () => {
     try {
-      const server = stellarSdkServer(
-        networkDetails.networkUrl,
-        networkDetails.networkPassphrase,
-      );
-      const sourceAccount: Account = await server.loadAccount(publicKey);
-
-      const operation = getOperation(
-        sourceAsset,
-        destAsset,
-        amount,
-        destinationAmount,
-        destination,
-        allowedSlippage,
-        path,
-        isPathPayment,
-        isSwap,
-        destinationBalances.isFunded!,
+      const transaction = await getBuiltTx(
         publicKey,
+        {
+          sourceAsset,
+          destAsset,
+          amount,
+          destinationAmount,
+          destination,
+          allowedSlippage,
+          path,
+          isPathPayment,
+          isSwap,
+          isFunded: destinationBalances.isFunded!,
+        },
+        transactionFee,
+        transactionTimeout,
+        networkDetails,
       );
-
-      const transactionXDR = new TransactionBuilder(sourceAccount, {
-        fee: xlmToStroop(transactionFee).toFixed(),
-        networkPassphrase: networkDetails.networkPassphrase,
-      })
-        .addOperation(operation)
-        .setTimeout(transactionTimeout);
 
       if (memo) {
-        transactionXDR.addMemo(Memo.text(memo));
+        transaction.addMemo(Memo.text(memo));
       }
 
       if (isHardwareWallet) {
         dispatch(
           startHwSign({
-            transactionXDR: transactionXDR.build().toXDR(),
+            transactionXDR: transaction.build().toXDR(),
             shouldSubmit: true,
           }),
         );
@@ -423,7 +464,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       }
       const res = await dispatch(
         signFreighterTransaction({
-          transactionXDR: transactionXDR.build().toXDR(),
+          transactionXDR: transaction.build().toXDR(),
           network: networkDetails.networkPassphrase,
         }),
       );
