@@ -31,11 +31,7 @@ export const BlockaidAnnouncement = () => {
 
   return isBlockaidAnnounced ? null : (
     <>
-      <LoadingBackground
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        onClick={() => {}}
-        isActive
-      />
+      <LoadingBackground isActive />
       <div className="BlockaidAnnouncement">
         <div className="BlockaidAnnouncement__modal">
           <div className="BlockaidAnnouncement__modal__title">
