@@ -590,8 +590,6 @@ const settingsSlice = createSlice({
           isBlockaidAnnounced: initialState.isBlockaidAnnounced,
         };
 
-        console.log(isBlockaidAnnounced);
-
         return {
           ...state,
           isBlockaidAnnounced,
