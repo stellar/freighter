@@ -1147,33 +1147,65 @@ export const BlockAidSiteScanLabel = ({
   return <BlockAidBenignLabel />;
 };
 
-export const BlockaidMaliciousTxSignWarning = ({
-  type,
+export const BlockaidTxScanLabel = ({
+  scanResult,
 }: {
-  type: BlockAidScanTxResult["validation"]["result_type"];
+  scanResult: BlockAidScanTxResult;
 }) => {
   const { t } = useTranslation();
-  const details =
-    type === "Malicious"
-      ? {
+  const { simulation, validation } = scanResult;
+
+  if ("error" in simulation) {
+    return (
+      <WarningMessage
+        header="This transaction is expected to fail"
+        variant={WarningMessageVariant.warning}
+      >
+        <div>
+          <p>{t(simulation.error)}</p>
+        </div>
+      </WarningMessage>
+    );
+  }
+
+  let message = null;
+  if ("result_type" in validation) {
+    switch (validation.result_type) {
+      case "Malicious": {
+        message = {
           header: "This contract was flagged as malicious",
           variant: WarningMessageVariant.highAlert,
-          message:
-            "Proceed with caution. Blockaid has flagged this transaction as malicious.",
-        }
-      : {
+          message: validation.description,
+        };
+        return (
+          <WarningMessage header={message.header} variant={message.variant}>
+            <div>
+              <p>{t(message.message)}</p>
+            </div>
+          </WarningMessage>
+        );
+      }
+
+      case "Warning": {
+        message = {
           header: "This contract was flagged as suspicious",
           variant: WarningMessageVariant.warning,
-          message:
-            "Proceed with caution. Blockaid has flagged this transaction as suspicious.",
+          message: validation.description,
         };
-  return (
-    <WarningMessage header={details.header} variant={details.variant}>
-      <div>
-        <p>{t(details.message)}</p>
-      </div>
-    </WarningMessage>
-  );
+        return (
+          <WarningMessage header={message.header} variant={message.variant}>
+            <div>
+              <p>{t(message.message)}</p>
+            </div>
+          </WarningMessage>
+        );
+      }
+
+      case "Benign":
+      default:
+    }
+  }
+  return <></>;
 };
 
 export const BlockaidMaliciousTxInternalWarning = ({

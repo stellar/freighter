@@ -6,7 +6,7 @@ export const fetchJson = async <T>(url: string, options?: RequestInit) => {
 
   if (!res.headers.get("content-type")?.includes("application/json")) {
     const content = await res.text();
-    throw new Error(content);
+    throw new Error(`Did not receive json error:${content}`);
   }
 
   const data = (await res.json()) as T;

@@ -63,7 +63,7 @@ import {
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { useScanAsset, useScanTx } from "popup/helpers/blockaid";
 import {
-  BlockaidMaliciousTxInternalWarning,
+  BlockaidTxScanLabel,
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
@@ -620,11 +620,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 </div>
               </div>
             )}
-            {scanResult && scanResult.validation.result_type !== "Benign" && (
-              <BlockaidMaliciousTxInternalWarning
-                description={scanResult.validation.description}
-              />
-            )}
+            {scanResult && <BlockaidTxScanLabel scanResult={scanResult} />}
             {submission.submitStatus === ActionStatus.IDLE && (
               <FlaggedWarningMessage
                 isMemoRequired={isMemoRequired}

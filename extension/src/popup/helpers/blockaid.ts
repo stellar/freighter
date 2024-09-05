@@ -23,12 +23,43 @@ export interface BlockAidScanSiteResult {
   // ...
 }
 
+interface ValidationResult {
+  status: "Success" | "Error";
+  result_type: "Benign" | "Warning" | "Malicious";
+  description: string;
+}
+interface ValidationError {
+  status: "Success" | "Error";
+  error: string;
+}
+type Validation = ValidationResult | ValidationError;
+
+interface SimulationResult {
+  status: "Success" | "Error";
+}
+interface SimulationError {
+  status: "Success" | "Error";
+  error: string;
+}
+type Simulation = SimulationResult | SimulationError;
+
+export const castValidation = (validation: Validation) => {
+  if (validation.status === "Error") {
+    return validation as ValidationResult;
+  }
+  return validation as ValidationError;
+};
+
+export const castSimulation = (simulation: Simulation) => {
+  if (simulation.status === "Error") {
+    return simulation as SimulationResult;
+  }
+  return simulation as SimulationError;
+};
+
 export interface BlockAidScanTxResult {
-  simulation: object;
-  validation: {
-    result_type: "Benign" | "Warning" | "Malicious";
-    description: string;
-  };
+  simulation: Simulation;
+  validation: Validation;
 }
 
 export const useScanSite = () => {
