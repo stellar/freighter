@@ -92,6 +92,7 @@
   "Buy Amount": "Buy Amount",
   "Buying": "Buying",
   "by": "by",
+  "By default it will verify": "By default it will verify",
   "Can’t find the asset you’re looking for? Add it manually": "Can’t find the asset you’re looking for? Add it manually",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
@@ -187,7 +188,9 @@
   "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser": {
     " It’s a safer alternative to copying and pasting private keys for use with web apps": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps."
   },
+  "Freighter is adding a new layer of protection": "Freighter is adding a new layer of protection",
   "Freighter is set to": "Freighter is set to",
+  "Freighter now uses Blockaid to keep your accounts safer": "Freighter now uses Blockaid to keep your accounts safer.",
   "Freighter uses asset lists to check assets you interact with": {
     " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   },
@@ -437,14 +440,18 @@
   "Switch to this network": "Switch to this network",
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
+  "The accounts you interact with": "The accounts you interact with",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
+  "The assets you interact with": "The assets you interact with",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
   "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
   "The destination account doesn’t exist": "The destination account doesn’t exist.",
   "The destination account must opt to accept this asset before receiving it": "The destination account must opt to accept this asset before receiving it.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
+  "The domains you interact with": "The domains you interact with",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
+  "The operations and functions executed in transactions and smart contracts": "The operations and functions executed in transactions and smart contracts",
   "The requester expects you to sign this auth entry on": "The requester expects you to sign this auth entry on",
   "The requester expects you to sign this message on": "The requester expects you to sign this message on",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",

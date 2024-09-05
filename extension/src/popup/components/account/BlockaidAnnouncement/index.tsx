@@ -47,7 +47,7 @@ export const BlockaidAnnouncement = () => {
             <Paragraph size="sm">
               {t("Freighter now uses Blockaid to keep your accounts safer.")}
             </Paragraph>
-            <Paragraph size="sm">{t("By default it will verify:")}</Paragraph>
+            <Paragraph size="sm">{t("By default it will verify")}:</Paragraph>
           </div>
           <div className="BlockaidAnnouncement__modal__list">
             <ul>
