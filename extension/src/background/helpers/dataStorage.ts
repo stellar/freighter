@@ -274,6 +274,7 @@ export const versionedMigration = async () => {
   await addAssetsLists();
   await addIsHashSigningEnabled();
   await addIsNonSSLEnabled();
+  await addIsBlockaidAnnounced();
 };
 
 // Updates storage version
