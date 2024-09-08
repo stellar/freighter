@@ -46,5 +46,5 @@ jobs:
           git add -A
           git commit -m "chore: updating snapshot tests"
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@7380612b49221684fefa025244f2ef4008ae50ad #v3.10.1
+        uses: peter-evans/create-pull-request@8867c4aba1b742c39f8d0ba35429c2dfa4b6cb20 #v7.0.1
       - run: yarn test:e2e

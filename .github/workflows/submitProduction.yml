@@ -59,7 +59,7 @@ jobs:
           git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
           git tag ${{ github.event.inputs.version }}
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c #v6.1.0
+        uses: peter-evans/create-pull-request@8867c4aba1b742c39f8d0ba35429c2dfa4b6cb20 #v7.0.1
         with:
           title: Bump versions to ${{ github.event.inputs.version }}
       - name: Create GitHub Release
@@ -93,7 +93,7 @@ jobs:
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
       - name: Remove scripts tag
-        uses: restackio/update-json-file-action@a3a75ee5960338f5bcc83bfb81947f283fca90eb #v2.1
+        uses: restackio/update-json-file-action@eb9dd6a7ac6ab452dda1cd938c8fabd97898aa25 #v2.1
         with:
           file: ./extension/build/manifest.json
           fields: '{"background": {"service_worker": "background.min.js"}}'
