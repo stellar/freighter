@@ -4,13 +4,15 @@ import { BigNumber } from "bignumber.js";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, BlockAidScanAssetResult } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
+import { formatAmount } from "popup/helpers/formatters";
+
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
@@ -19,7 +21,6 @@ import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 
 import "./styles.scss";
-import { formatAmount } from "popup/helpers/formatters";
 
 const getIsXlm = (code: string) => code === "XLM";
 
@@ -246,7 +247,9 @@ export const AccountAssets = ({
           issuer?.key as string,
         );
 
-        const isSuspicious = isAssetSuspicious(rb.blockaidData);
+        const isSuspicious = isAssetSuspicious(
+          rb.blockaidData as BlockAidScanAssetResult,
+        );
 
         const bigTotal = new BigNumber(rb.total as string);
         const amountVal = rb.contractId

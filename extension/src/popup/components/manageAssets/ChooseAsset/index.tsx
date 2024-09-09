@@ -22,7 +22,7 @@ import { getAssetDomain } from "popup/helpers/getAssetDomain";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 
-import { Balances } from "@shared/api/types";
+import { Balances, BlockAidScanAssetResult } from "@shared/api/types";
 
 import { ManageAssetCurrency, ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -101,7 +101,9 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               ],
             domain,
             contract: contractId,
-            isSuspicious: isAssetSuspicious(blockaidData),
+            isSuspicious: isAssetSuspicious(
+              blockaidData as BlockAidScanAssetResult,
+            ),
           });
           // include native asset for asset dropdown selection
         } else if (!isManagingAssets) {
