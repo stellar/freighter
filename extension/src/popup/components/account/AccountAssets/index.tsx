@@ -10,6 +10,7 @@ import { retryAssetIcon } from "@shared/api/internal";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
@@ -40,7 +41,7 @@ export const AssetIcon = ({
   isLPShare = false,
   isSorobanToken = false,
   icon,
-  isMalicious = false,
+  isSuspicious = false,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -49,7 +50,7 @@ export const AssetIcon = ({
   isLPShare?: boolean;
   isSorobanToken?: boolean;
   icon?: string;
-  isMalicious?: boolean;
+  isSuspicious?: boolean;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -110,7 +111,7 @@ export const AssetIcon = ({
           data-testid="AccountAssets__asset--loading"
           className="AccountAssets__asset--logo AccountAssets__asset--loading"
         />
-        <ScamAssetIcon isScamAsset={isMalicious} />
+        <ScamAssetIcon isScamAsset={isSuspicious} />
       </>
     );
   }
@@ -138,13 +139,13 @@ export const AssetIcon = ({
           setIsLoading(false);
         }}
       />
-      <ScamAssetIcon isScamAsset={isMalicious} />
+      <ScamAssetIcon isScamAsset={isSuspicious} />
     </div>
   ) : (
     // the image path wasn't found, show a default broken image icon
     <div className="AccountAssets__asset--logo AccountAssets__asset--error">
       <ImageMissingIcon />
-      <ScamAssetIcon isScamAsset={isMalicious} />
+      <ScamAssetIcon isScamAsset={isSuspicious} />
     </div>
   );
 };
@@ -245,7 +246,7 @@ export const AccountAssets = ({
           issuer?.key as string,
         );
 
-        const isMalicious = rb.isMalicious || false;
+        const isSuspicious = isAssetSuspicious(rb.blockaidData);
 
         const bigTotal = new BigNumber(rb.total as string);
         const amountVal = rb.contractId
@@ -270,7 +271,7 @@ export const AccountAssets = ({
                 issuerKey={issuer?.key}
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={!!rb.liquidityPoolId}
-                isMalicious={isMalicious}
+                isSuspicious={isSuspicious}
               />
               <span className="asset-code">{code}</span>
             </div>

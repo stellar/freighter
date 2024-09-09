@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { BlockAidScanAssetResult } from "@shared/api/types";
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -141,11 +142,6 @@ export const useScanTx = () => {
   };
 };
 
-export interface BlockAidScanAssetResult {
-  result_type: "Benign" | "Warning" | "Malicious" | "Spam";
-  features: { description: string }[];
-}
-
 interface ScanAssetResponseSuccess {
   data: BlockAidScanAssetResult;
   error: null;
@@ -204,4 +200,17 @@ export const useScanAsset = (address: string) => {
   return {
     scannedAsset: scannedAssetStatus,
   };
+};
+
+export const isAssetSuspicious = (blockaidData?: BlockAidScanAssetResult) => {
+  if (!blockaidData) {
+    return false;
+  }
+  return blockaidData.result_type !== "Benign";
+};
+
+export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  result_type: "Benign",
+  features: [{ description: "" }],
 };

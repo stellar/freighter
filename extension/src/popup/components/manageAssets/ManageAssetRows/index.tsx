@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
-import { ActionStatus } from "@shared/api/types";
+import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -13,6 +13,7 @@ import {
 } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { defaultBlockaidScanAssetResult } from "popup/helpers/blockaid";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
@@ -39,7 +40,7 @@ export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
   contract?: string;
   icon?: string;
-  isMalicious?: boolean;
+  isSuspicious?: boolean;
 };
 
 export interface NewAssetFlags {
@@ -63,7 +64,7 @@ interface SuspiciousAssetData {
   issuer: string;
   image: string;
   isVerifiedToken?: boolean;
-  blockaidWarning: string;
+  blockaidData: BlockAidScanAssetResult;
   isNewAsset: boolean;
 }
 
@@ -101,7 +102,7 @@ export const ManageAssetRows = ({
     issuer: "",
     image: "",
     isVerifiedToken: false,
-    blockaidWarning: "",
+    blockaidData: defaultBlockaidScanAssetResult,
     isNewAsset: false,
   } as SuspiciousAssetData);
   const [handleAddToken, setHandleAddToken] = useState(
@@ -134,7 +135,7 @@ export const ManageAssetRows = ({
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
-          blockaidWarning={suspiciousAssetData.blockaidWarning}
+          blockaidData={suspiciousAssetData.blockaidData}
           isNewAsset={suspiciousAssetData.isNewAsset}
           onClose={() => {
             setShowBlockedDomainWarning(false);
@@ -176,7 +177,7 @@ export const ManageAssetRows = ({
               issuer = "",
               name = "",
               contract = "",
-              isMalicious,
+              isSuspicious,
             }) => {
               if (!accountBalances.balances) {
                 return null;
@@ -201,7 +202,7 @@ export const ManageAssetRows = ({
                     image={image}
                     domain={domain}
                     name={name}
-                    isMalicious={isMalicious}
+                    isSuspicious={isSuspicious}
                   />
                   <ManageAssetRowButton
                     code={code}
@@ -246,7 +247,7 @@ interface AssetRowData {
   image?: string;
   domain: string;
   name?: string;
-  isMalicious?: boolean;
+  isSuspicious?: boolean;
 }
 
 export const ManageAssetRow = ({
@@ -255,7 +256,7 @@ export const ManageAssetRow = ({
   image = "",
   domain,
   name,
-  isMalicious = false,
+  isSuspicious = false,
 }: AssetRowData) => {
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   const assetCode = name || code;
@@ -268,7 +269,7 @@ export const ManageAssetRow = ({
         assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
         code={code}
         issuerKey={issuer}
-        isMalicious={isMalicious}
+        isSuspicious={isSuspicious}
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">

@@ -47,6 +47,10 @@ import {
 import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
+import {
+  isAssetSuspicious,
+  defaultBlockaidScanAssetResult,
+} from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 
@@ -81,7 +85,9 @@ export const AssetDetail = ({
   const { accountBalances: balances } = useSelector(
     transactionSubmissionSelector,
   );
-  const isMalicious = balances.balances?.[selectedAsset].isMalicious || false;
+  const isSuspicious = isAssetSuspicious(
+    balances.balances?.[selectedAsset].blockaidData,
+  );
 
   useEffect(() => {
     const fetchSuspiciousAsset = async () => {
@@ -185,7 +191,7 @@ export const AssetDetail = ({
           <div className="AssetDetail__total">
             <div
               className={`AssetDetail__total__copy ${
-                isMalicious ? "AssetDetail__total__copy--isMalicious" : ""
+                isSuspicious ? "AssetDetail__total__copy--isSuspicious" : ""
               }`}
               data-testid="asset-detail-available-copy"
             >
@@ -246,11 +252,15 @@ export const AssetDetail = ({
             )}
           </div>
           <div className="AssetDetail__scam-warning">
-            {isMalicious && (
+            {isSuspicious && (
               <BlockaidAssetWarning
                 isNewAsset={isNewAsset}
                 code={canonical.code}
                 issuer={canonical.issuer}
+                blockaidData={
+                  balances.balances?.[selectedAsset].blockaidData ||
+                  defaultBlockaidScanAssetResult
+                }
               />
             )}
           </div>

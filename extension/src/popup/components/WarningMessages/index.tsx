@@ -13,7 +13,7 @@ import {
 } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
-import { ActionStatus } from "@shared/api/types";
+import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -60,9 +60,8 @@ import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import {
-  BlockAidScanAssetResult,
   BlockAidScanTxResult,
-  scanAsset,
+  isAssetSuspicious,
 } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
 
@@ -177,17 +176,25 @@ interface FlaggedWarningMessageProps {
   code: string;
   issuer: string;
   isMemoRequired: boolean;
-  isMalicious: boolean;
+  isSuspicious: boolean;
+  blockaidData: BlockAidScanAssetResult;
 }
 
 export const FlaggedWarningMessage = ({
   code,
   issuer,
   isMemoRequired,
-  isMalicious,
+  isSuspicious,
+  blockaidData,
 }: FlaggedWarningMessageProps) => (
   <>
-    {isMalicious ? <BlockaidAssetWarning code={code} issuer={issuer} /> : null}
+    {isSuspicious ? (
+      <BlockaidAssetWarning
+        code={code}
+        issuer={issuer}
+        blockaidData={blockaidData}
+      />
+    ) : null}
     <MemoWarningMessage isMemoRequired={isMemoRequired} />
   </>
 );
@@ -239,29 +246,18 @@ interface BlockaidAssetWarningProps {
   code?: string;
   issuer?: string;
   isNewAsset?: boolean;
+  blockaidData: BlockAidScanAssetResult;
 }
 
 export const BlockaidAssetWarning = ({
   isNewAsset,
   code,
   issuer,
+  blockaidData,
 }: BlockaidAssetWarningProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isNewAssetState, setIsNewAssetState] = useState(false);
-  const [scannedAssetData, setScannedAssetData] = useState(
-    {} as BlockAidScanAssetResult,
-  );
-
-  useEffect(() => {
-    const fetchBlockaidData = async () => {
-      const scannedAsset = await scanAsset(`${code}-${issuer}`, networkDetails);
-
-      setScannedAssetData(scannedAsset);
-    };
-
-    fetchBlockaidData();
-  }, [code, issuer, isNewAsset, networkDetails]);
 
   useEffect(() => {
     const fetchSuspiciousAsset = async (
@@ -300,12 +296,12 @@ export const BlockaidAssetWarning = ({
       <div>
         <div className="ScamAssetWarning__description">
           {t(
-            `This token was flagged as ${scannedAssetData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
+            `This token was flagged as ${blockaidData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
           )}
           :
           <ul className="ScamAssetWarning__list">
-            {scannedAssetData.features &&
-              scannedAssetData.features.map((f) => <li>{f.description}</li>)}
+            {blockaidData.features &&
+              blockaidData.features.map((f) => <li>{f.description}</li>)}
             {isNewAssetState ? <li>{t("New asset")}</li> : ""}
           </ul>
         </div>
@@ -330,7 +326,7 @@ export const ScamAssetWarning = ({
   onClose,
   // eslint-disable-next-line
   onContinue = () => {},
-  blockaidWarning,
+  blockaidData,
   isNewAsset,
 }: {
   pillType: "Connection" | "Trustline" | "Transaction";
@@ -340,7 +336,7 @@ export const ScamAssetWarning = ({
   issuer: string;
   onClose: () => void;
   onContinue?: () => void;
-  blockaidWarning: string;
+  blockaidData: BlockAidScanAssetResult;
   isNewAsset: boolean;
 }) => {
   const { t } = useTranslation();
@@ -436,7 +432,7 @@ export const ScamAssetWarning = ({
       <View.Content>
         <ModalInfo
           domain={domain}
-          variant={blockaidWarning !== "Benign" ? "malicious" : "default"}
+          variant={isAssetSuspicious(blockaidData) ? "malicious" : "default"}
           subject=""
           pillType={pillType}
         >
@@ -446,6 +442,7 @@ export const ScamAssetWarning = ({
                 isNewAsset={isNewAsset}
                 code={code}
                 issuer={issuer}
+                blockaidData={blockaidData}
               />
             </div>
             <div className="ScamAssetWarning__btns">
@@ -1230,9 +1227,9 @@ export const BlockaidMaliciousTxInternalWarning = ({
       <div>
         <div className="ScamAssetWarning__description">
           {t(
-            "This transaction was flagged by Blockaid for the following reasons:",
+            "This transaction was flagged by Blockaid for the following reasons",
           )}
-          <div>{description}</div>
+          :<div>{description}</div>
         </div>
         <div className="ScamAssetWarning__footer">
           <img src={IconShieldBlockaid} alt="icon shield blockaid" />

@@ -35,6 +35,7 @@ import IconFail from "popup/assets/icon-fail.svg";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { formatAmount } from "popup/helpers/formatters";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 
 import "./styles.scss";
 
@@ -42,14 +43,14 @@ const SwapAssetsIcon = ({
   sourceCanon,
   destCanon,
   assetIcons,
-  isSourceMalicious,
-  isDestMalicious,
+  isSourceSuspicious,
+  isDestSuspicious,
 }: {
   sourceCanon: string;
   destCanon: string;
   assetIcons: AssetIcons;
-  isSourceMalicious: boolean;
-  isDestMalicious: boolean;
+  isSourceSuspicious: boolean;
+  isDestSuspicious: boolean;
 }) => {
   const source = getAssetFromCanonical(sourceCanon);
   const dest = getAssetFromCanonical(destCanon);
@@ -60,7 +61,7 @@ const SwapAssetsIcon = ({
         assetIcons={assetIcons}
         code={source.code}
         issuerKey={source.issuer}
-        isMalicious={isSourceMalicious}
+        isSuspicious={isSourceSuspicious}
       />
       <span data-testid="SubmitResultSource">{source.code}</span>
       <Icon.ArrowRight />
@@ -68,7 +69,7 @@ const SwapAssetsIcon = ({
         assetIcons={assetIcons}
         code={dest.code}
         issuerKey={dest.issuer}
-        isMalicious={isDestMalicious}
+        isSuspicious={isDestSuspicious}
       />
       <span data-testid="SubmitResultDestination">{dest.code}</span>
     </div>
@@ -103,11 +104,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     networkDetails.networkPassphrase,
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const isSourceAssetMalicious =
-    accountBalances.balances?.[asset].isMalicious || false;
-  const isDestAssetMalicious = destinationAsset
-    ? accountBalances.balances?.[destinationAsset].isMalicious || false
-    : false;
+  const isSourceAssetSuspicious = isAssetSuspicious(
+    accountBalances.balances?.[asset].blockaidData,
+  );
+  const isDestAssetSuspicious = isAssetSuspicious(
+    accountBalances.balances?.[destinationAsset].blockaidData,
+  );
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
     const changeParams = { limit: "0" };
@@ -225,8 +227,8 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
                 sourceCanon={asset}
                 destCanon={destinationAsset}
                 assetIcons={assetIcons}
-                isSourceMalicious={isSourceAssetMalicious}
-                isDestMalicious={isDestAssetMalicious}
+                isSourceSuspicious={isSourceAssetSuspicious}
+                isDestSuspicious={isDestAssetSuspicious}
               />
             ) : (
               <FedOrGAddress

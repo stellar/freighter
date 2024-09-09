@@ -23,11 +23,11 @@ import "./styles.scss";
 export const AssetSelect = ({
   assetCode,
   issuerKey,
-  isMalicious,
+  isSuspicious,
 }: {
   assetCode: string;
   issuerKey: string;
-  isMalicious: boolean;
+  isSuspicious: boolean;
 }) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
@@ -82,7 +82,7 @@ export const AssetSelect = ({
               assetIcons={assetIcons}
               code={assetCode}
               issuerKey={issuerKey}
-              isMalicious={isMalicious}
+              isSuspicious={isSuspicious}
             />
             <span className="AssetSelect__medium-copy">{assetCode}</span>
           </div>
@@ -101,14 +101,14 @@ export const PathPayAssetSelect = ({
   issuerKey,
   balance,
   icon,
-  isMalicious,
+  isSuspicious,
 }: {
   source: boolean;
   assetCode: string;
   issuerKey: string;
   balance: string;
   icon: string;
-  isMalicious: boolean;
+  isSuspicious: boolean;
 }) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
@@ -150,7 +150,7 @@ export const PathPayAssetSelect = ({
             code={assetCode}
             issuerKey={issuerKey}
             icon={icon}
-            isMalicious={isMalicious}
+            isSuspicious={isSuspicious}
           />
           <span
             className="AssetSelect__medium-copy"

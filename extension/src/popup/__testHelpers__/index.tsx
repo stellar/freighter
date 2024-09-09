@@ -12,6 +12,7 @@ import { Balances } from "@shared/api/types";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
+import { defaultBlockaidScanAssetResult } from "popup/helpers/blockaid";
 import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
@@ -82,6 +83,7 @@ export const mockBalances = {
       decimals: 7,
       total: new BigNumber("1000000000"),
       available: new BigNumber("1000000000"),
+      blockaidData: defaultBlockaidScanAssetResult,
     },
     ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
       token: {
@@ -92,13 +94,16 @@ export const mockBalances = {
       },
       total: new BigNumber("100"),
       available: new BigNumber("100"),
-      isMalicious: true,
+      blockaidData: {
+        result_type: "Spam",
+        features: [{ description: "" }],
+      },
     },
     native: {
       token: { type: "native", code: "XLM" },
       total: new BigNumber("50"),
       available: new BigNumber("50"),
-      isMalicious: false,
+      blockaidData: defaultBlockaidScanAssetResult,
     },
   } as any as Balances,
   isFunded: true,
