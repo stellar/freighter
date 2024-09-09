@@ -300,9 +300,7 @@ export const BlockaidAssetWarning = ({
       <div>
         <div className="ScamAssetWarning__description">
           {t(
-            `This token was flagged as ${
-              scannedAssetData.result_type || "malicious"
-            } by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
+            `This token was flagged as ${scannedAssetData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
           )}
           :
           <ul className="ScamAssetWarning__list">
