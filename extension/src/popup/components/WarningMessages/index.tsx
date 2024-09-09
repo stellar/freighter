@@ -59,7 +59,11 @@ import IconNewAsset from "popup/assets/icon-new-asset.svg";
 import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
-import { BlockAidScanTxResult } from "popup/helpers/blockaid";
+import {
+  BlockAidScanAssetResult,
+  BlockAidScanTxResult,
+  scanAsset,
+} from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -245,6 +249,19 @@ export const BlockaidAssetWarning = ({
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isNewAssetState, setIsNewAssetState] = useState(false);
+  const [scannedAssetData, setScannedAssetData] = useState(
+    {} as BlockAidScanAssetResult,
+  );
+
+  useEffect(() => {
+    const fetchBlockaidData = async () => {
+      const scannedAsset = await scanAsset(`${code}-${issuer}`, networkDetails);
+
+      setScannedAssetData(scannedAsset);
+    };
+
+    fetchBlockaidData();
+  }, [code, issuer, isNewAsset, networkDetails]);
 
   useEffect(() => {
     const fetchSuspiciousAsset = async (
@@ -283,12 +300,12 @@ export const BlockaidAssetWarning = ({
       <div>
         <div className="ScamAssetWarning__description">
           {t(
-            "This token was flagged as malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons",
+            `This token was flagged as ${scannedAssetData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
           )}
           :
           <ul className="ScamAssetWarning__list">
-            <li>{t("Identified as a scam")}</li>
-
+            {scannedAssetData.features &&
+              scannedAssetData.features.map((f) => <li>{f.description}</li>)}
             {isNewAssetState ? <li>{t("New asset")}</li> : ""}
           </ul>
         </div>
@@ -419,30 +436,17 @@ export const ScamAssetWarning = ({
       <View.Content>
         <ModalInfo
           domain={domain}
-          variant={blockaidWarning === "Malicious" ? "malicious" : "default"}
+          variant={blockaidWarning !== "Benign" ? "malicious" : "default"}
           subject=""
           pillType={pillType}
         >
           <div className="ScamAssetWarning__wrapper" ref={warningRef}>
             <div>
-              {isSendWarning ? (
-                <Notification
-                  variant="error"
-                  title={t("Not recommended asset")}
-                >
-                  <p>
-                    {t(
-                      "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise.",
-                    )}
-                  </p>
-                </Notification>
-              ) : (
-                <BlockaidAssetWarning
-                  isNewAsset={isNewAsset}
-                  code={code}
-                  issuer={issuer}
-                />
-              )}
+              <BlockaidAssetWarning
+                isNewAsset={isNewAsset}
+                code={code}
+                issuer={issuer}
+              />
             </div>
             <div className="ScamAssetWarning__btns">
               {!isSendWarning && (

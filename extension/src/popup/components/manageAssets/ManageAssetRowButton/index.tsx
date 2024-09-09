@@ -212,7 +212,7 @@ export const ManageAssetRowButton = ({
       networkDetails,
     );
 
-    if (scannedAsset.result_type === "Malicious" && !isTrustlineActive) {
+    if (scannedAsset.result_type !== "Benign" && !isTrustlineActive) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         ...assetRowData,

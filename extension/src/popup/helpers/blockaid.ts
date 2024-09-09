@@ -141,9 +141,9 @@ export const useScanTx = () => {
   };
 };
 
-interface BlockAidScanAssetResult {
+export interface BlockAidScanAssetResult {
   result_type: "Benign" | "Warning" | "Malicious" | "Spam";
-  description: string;
+  features: { description: string }[];
 }
 
 interface ScanAssetResponseSuccess {
