@@ -66,7 +66,10 @@ const swapMaliciousMockBalances = {
       },
       total: new BigNumber("111"),
       available: new BigNumber("111"),
-      isMalicious: true,
+      blockaidData: {
+        result_type: "Spam",
+        features: [{ description: "" }],
+      },
     },
     native: {
       token: { type: "native", code: "XLM" },

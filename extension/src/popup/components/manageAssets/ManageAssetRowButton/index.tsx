@@ -12,7 +12,7 @@ import { emitMetric } from "helpers/metrics";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
-import { scanAsset } from "popup/helpers/blockaid";
+import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   publicKeySelector,
@@ -212,11 +212,11 @@ export const ManageAssetRowButton = ({
       networkDetails,
     );
 
-    if (scannedAsset.result_type !== "Benign" && !isTrustlineActive) {
+    if (isAssetSuspicious(scannedAsset) && !isTrustlineActive) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         ...assetRowData,
-        blockaidWarning: scannedAsset.result_type,
+        blockaidData: scannedAsset,
         isNewAsset: resp.isNewAsset,
       });
     } else if (

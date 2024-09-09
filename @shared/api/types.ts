@@ -241,21 +241,27 @@ export interface Balance {
   sellingLiabilities: string;
 }
 
+export interface BlockAidScanAssetResult {
+  result_type: "Benign" | "Warning" | "Malicious" | "Spam";
+  features: { description: string }[];
+}
+
 export interface AssetBalance extends Balance {
   token: AssetToken;
   sponsor?: string;
-  isMalicious: boolean;
+  blockaidData: BlockAidScanAssetResult;
 }
 
 export interface NativeBalance extends Balance {
   token: NativeToken;
   minimumBalance: BigNumber;
-  isMalicious: boolean;
+  blockaidData: BlockAidScanAssetResult;
 }
 
 export interface TokenBalance extends AssetBalance {
   decimals: number;
   name: string;
+  blockaidData: BlockAidScanAssetResult;
 }
 
 export interface BalanceMap {

@@ -20,8 +20,9 @@ import { View } from "popup/basics/layout/View";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { getAssetDomain } from "popup/helpers/getAssetDomain";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 
-import { Balances } from "@shared/api/types";
+import { Balances, BlockAidScanAssetResult } from "@shared/api/types";
 
 import { ManageAssetCurrency, ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -66,7 +67,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         const {
           token: { code, issuer },
           contractId,
-          isMalicious,
+          blockaidData,
         } = sortedBalances[i];
 
         // If we are in the swap flow and the asset has decimals (is a token), we skip it if Soroswap is not enabled
@@ -100,7 +101,9 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               ],
             domain,
             contract: contractId,
-            isMalicious,
+            isSuspicious: isAssetSuspicious(
+              blockaidData as BlockAidScanAssetResult,
+            ),
           });
           // include native asset for asset dropdown selection
         } else if (!isManagingAssets) {
@@ -109,7 +112,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
             issuer: "",
             image: "",
             domain: "",
-            isMalicious: false,
+            isSuspicious: false,
           });
         }
       }

@@ -26,6 +26,12 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  defaultBlockaidScanAssetResult,
+  isAssetSuspicious,
+  useScanAsset,
+  useScanTx,
+} from "popup/helpers/blockaid";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -61,7 +67,6 @@ import {
   AssetIcon,
 } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { useScanAsset, useScanTx } from "popup/helpers/blockaid";
 import {
   BlockaidTxScanLabel,
   FlaggedWarningMessage,
@@ -71,9 +76,10 @@ import { View } from "popup/basics/layout/View";
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
 
-import "./styles.scss";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { NetworkDetails } from "@shared/constants/stellar";
+
+import "./styles.scss";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -82,8 +88,8 @@ const TwoAssetCard = ({
   destAssetIcons,
   destCanon,
   destAmount,
-  isSourceAssetMalicious,
-  isDestAssetMalicious,
+  isSourceAssetSuspicious,
+  isDestAssetSuspicious,
 }: {
   sourceAssetIcons: AssetIcons;
   sourceCanon: string;
@@ -91,8 +97,8 @@ const TwoAssetCard = ({
   destAssetIcons: AssetIcons;
   destCanon: string;
   destAmount: string;
-  isSourceAssetMalicious: boolean;
-  isDestAssetMalicious: boolean;
+  isSourceAssetSuspicious: boolean;
+  isDestAssetSuspicious: boolean;
 }) => {
   const sourceAsset = getAssetFromCanonical(sourceCanon);
   const destAsset = getAssetFromCanonical(destCanon);
@@ -105,7 +111,7 @@ const TwoAssetCard = ({
             assetIcons={sourceAssetIcons}
             code={sourceAsset.code}
             issuerKey={sourceAsset.issuer}
-            isMalicious={isSourceAssetMalicious}
+            isSuspicious={isSourceAssetSuspicious}
           />
           {sourceAsset.code}
         </div>
@@ -125,7 +131,7 @@ const TwoAssetCard = ({
             assetIcons={destAssetIcons}
             code={destAsset.code}
             issuerKey={destAsset.issuer}
-            isMalicious={isDestAssetMalicious}
+            isSuspicious={isDestAssetSuspicious}
           />
           {destAsset.code}
         </div>
@@ -306,12 +312,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
     );
 
-  let isAssetMalicious = accountBalances.balances?.[asset].isMalicious || false;
-  if (!isAssetMalicious && destinationAsset) {
-    isAssetMalicious =
-      accountBalances.balances?.[destinationAsset].isMalicious || false;
-  }
-  const isTxMalicious = (isValidatingSafety && isAssetMalicious) || false;
+  const isSourceAssetSuspicious = isAssetSuspicious(
+    accountBalances.balances?.[asset].blockaidData,
+  );
+
+  const isTxMalicious =
+    (isValidatingSafety && isSourceAssetSuspicious) || false;
   const isUnsafe =
     isValidatingSafety &&
     matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.unsafe);
@@ -322,10 +328,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     : "";
 
   const { scannedAsset: scannedDestAsset } = useScanAsset(destAssetToScan);
-  const isDestAssetMalicious =
-    (scannedDestAsset.result_type &&
-      scannedDestAsset.result_type !== "Benign") ||
-    false;
+  const isDestAssetSuspicious = isAssetSuspicious(scannedDestAsset);
 
   // load destination asset icons
   useEffect(() => {
@@ -597,7 +600,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                           code: sourceAsset.code,
                         },
                         total: amount || "0",
-                        isMalicious: isAssetMalicious,
+                        isMalicious: isSourceAssetSuspicious,
                       },
                     ]}
                   />
@@ -613,8 +616,8 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 destAssetIcons={destAssetIcons}
                 destCanon={destinationAsset || "native"}
                 destAmount={destinationAmount}
-                isSourceAssetMalicious={isAssetMalicious || false}
-                isDestAssetMalicious={isDestAssetMalicious}
+                isSourceAssetSuspicious={isSourceAssetSuspicious}
+                isDestAssetSuspicious={isDestAssetSuspicious}
               />
             )}
 
@@ -704,7 +707,13 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 isMemoRequired={isMemoRequired}
                 code={sourceAsset.code}
                 issuer={sourceAsset.issuer}
-                isMalicious={isAssetMalicious || isDestAssetMalicious}
+                blockaidData={
+                  (isSourceAssetSuspicious
+                    ? accountBalances.balances?.[asset].blockaidData
+                    : accountBalances.balances?.[destinationAsset]
+                        ?.blockaidData) || defaultBlockaidScanAssetResult
+                }
+                isSuspicious={isSourceAssetSuspicious || isDestAssetSuspicious}
               />
             )}
           </View.Content>

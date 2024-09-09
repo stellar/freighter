@@ -79,9 +79,9 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
             image = "",
             issuer = "",
             icon,
-            isMalicious,
+            isSuspicious,
           }) => {
-            const isScamAsset = isMalicious || false;
+            const isScamAsset = isSuspicious || false;
             const isContract = isContractId(issuer);
             const canonical = getCanonicalFromAsset(code, issuer);
             let isSoroswap = false;
@@ -123,7 +123,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                   code={code}
                   issuerKey={issuer}
                   icon={icon}
-                  isMalicious={isScamAsset}
+                  isSuspicious={isScamAsset}
                 />
                 <div className="SelectAssetRows__row__info">
                   <div className="SelectAssetRows__row__info__header">
