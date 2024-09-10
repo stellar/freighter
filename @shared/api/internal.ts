@@ -521,10 +521,10 @@ export const getAccountBalancesStandalone = async ({
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<AccountBalancesInterface> => {
+}) => {
   const { network, networkUrl, networkPassphrase } = networkDetails;
 
-  let balances: any = null;
+  let balances = null;
   let isFunded = null;
   let subentryCount = 0;
 
@@ -556,20 +556,20 @@ export const getAccountBalancesStandalone = async ({
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < Object.keys(resp.balances).length; i++) {
       const k = Object.keys(resp.balances)[i];
-      const v: any = resp.balances[k];
-      if (v.liquidity_pool_id) {
+      const v = resp.balances[k];
+      if (v.liquidityPoolId) {
         const server = stellarSdkServer(networkUrl, networkPassphrase);
         // eslint-disable-next-line no-await-in-loop
         const lp = await server
           .liquidityPools()
-          .liquidityPoolId(v.liquidity_pool_id)
+          .liquidityPoolId(v.liquidityPoolId)
           .call();
         balances[k] = {
           ...balances[k],
-          liquidityPoolId: v.liquidity_pool_id,
+          liquidityPoolId: v.liquidityPoolId,
           reserves: lp.reserves,
         };
-        delete balances[k].liquidity_pool_id;
+        delete balances[k].liquidityPoolId;
       }
     }
     isFunded = true;

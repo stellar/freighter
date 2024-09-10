@@ -239,6 +239,10 @@ export interface Balance {
   total: BigNumber;
   buyingLiabilities: string;
   sellingLiabilities: string;
+  liquidityPoolId?: string;
+  reserves?: Horizon.HorizonApi.Reserve[];
+  contractId?: string;
+  blockaidData: BlockAidScanAssetResult;
 }
 
 export interface BlockAidScanAssetResult {
@@ -247,21 +251,19 @@ export interface BlockAidScanAssetResult {
 }
 
 export interface AssetBalance extends Balance {
+  limit: BigNumber;
   token: AssetToken;
   sponsor?: string;
-  blockaidData: BlockAidScanAssetResult;
 }
 
 export interface NativeBalance extends Balance {
   token: NativeToken;
   minimumBalance: BigNumber;
-  blockaidData: BlockAidScanAssetResult;
 }
 
 export interface TokenBalance extends AssetBalance {
   decimals: number;
   name: string;
-  blockaidData: BlockAidScanAssetResult;
 }
 
 export interface BalanceMap {

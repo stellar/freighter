@@ -2,12 +2,13 @@ import BigNumber from "bignumber.js";
 import * as StellarSdk from "stellar-sdk";
 import * as StellarSdkNext from "stellar-sdk-next";
 
-import { BalanceMap } from "@shared/api/types";
+import { BalanceMap, AssetBalance } from "@shared/api/types";
 import {
   BASE_RESERVE,
   BASE_RESERVE_MIN_COUNT,
   NetworkDetails,
 } from "@shared/constants/stellar";
+import { defaultBlockaidScanAssetResult } from "../../extension/src/popup/helpers/blockaid";
 
 export const CUSTOM_NETWORK = "STANDALONE";
 
@@ -44,91 +45,91 @@ export function getBalanceIdentifier(
 
 export function makeDisplayableBalances(
   accountDetails: StellarSdk.Horizon.ServerApi.AccountRecord,
-): BalanceMap {
+) {
   const { balances, subentry_count, num_sponsored, num_sponsoring } =
     accountDetails;
 
-  const displayableBalances = Object.values(balances).reduce(
-    (memo, balance) => {
-      const identifier = getBalanceIdentifier(balance);
-      const total = new BigNumber(balance.balance);
+  const displayableBalances = {} as BalanceMap;
 
-      let sellingLiabilities = new BigNumber(0);
-      let buyingLiabilities = new BigNumber(0);
-      let available;
+  for (let i = 0; i < balances.length; i++) {
+    const balance = balances[i];
+    const identifier = getBalanceIdentifier(balance);
+    const total = new BigNumber(balance.balance);
 
-      if ("selling_liabilities" in balance) {
-        sellingLiabilities = new BigNumber(balance.selling_liabilities);
-        available = total.minus(sellingLiabilities);
-      }
+    let sellingLiabilities = "0";
+    let buyingLiabilities = "0";
+    let available = new BigNumber("0");
 
-      if ("buying_liabilities" in balance) {
-        buyingLiabilities = new BigNumber(balance.buying_liabilities);
-      }
+    if ("selling_liabilities" in balance) {
+      sellingLiabilities = new BigNumber(
+        balance.selling_liabilities,
+      ).toString();
+      available = total.minus(sellingLiabilities);
+    }
 
-      if (identifier === "native") {
-        // define the native balance line later
-        return {
-          ...memo,
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total,
-            available,
-            sellingLiabilities,
-            buyingLiabilities,
-            minimumBalance: new BigNumber(BASE_RESERVE_MIN_COUNT)
-              .plus(subentry_count)
-              .plus(num_sponsoring)
-              .minus(num_sponsored)
-              .times(BASE_RESERVE)
-              .plus(sellingLiabilities),
-          },
-        };
-      }
+    if ("buying_liabilities" in balance) {
+      buyingLiabilities = new BigNumber(balance.buying_liabilities).toString();
+    }
 
-      const liquidityPoolBalance =
-        balance as StellarSdk.Horizon.HorizonApi.BalanceLineLiquidityPool;
-      if (identifier.includes(":lp")) {
-        return {
-          ...memo,
-          [identifier]: {
-            liquidity_pool_id: liquidityPoolBalance.liquidity_pool_id,
-            total,
-            limit: new BigNumber(liquidityPoolBalance.limit),
-          },
-        };
-      }
+    if (identifier === "native") {
+      // define the native balance line later
 
-      const assetBalance =
-        balance as StellarSdk.Horizon.HorizonApi.BalanceLineAsset;
-      const assetSponsor = assetBalance.sponsor
-        ? { sponsor: assetBalance.sponsor }
-        : {};
-
-      return {
-        ...memo,
-        [identifier]: {
-          token: {
-            type: assetBalance.asset_type,
-            code: assetBalance.asset_code,
-            issuer: {
-              key: assetBalance.asset_issuer,
-            },
-          },
-          sellingLiabilities,
-          buyingLiabilities,
-          total,
-          limit: new BigNumber(assetBalance.limit),
-          available: total.minus(sellingLiabilities),
-          ...assetSponsor,
+      displayableBalances.native = {
+        token: {
+          type: "native",
+          code: "XLM",
         },
+        total,
+        available,
+        sellingLiabilities,
+        buyingLiabilities,
+        minimumBalance: new BigNumber(BASE_RESERVE_MIN_COUNT)
+          .plus(subentry_count)
+          .plus(num_sponsoring)
+          .minus(num_sponsored)
+          .times(BASE_RESERVE)
+          .plus(sellingLiabilities),
+        blockaidData: defaultBlockaidScanAssetResult,
       };
-    },
-    {},
-  );
+      continue;
+    }
 
-  return displayableBalances as BalanceMap;
+    const liquidityPoolBalance =
+      balance as StellarSdk.Horizon.HorizonApi.BalanceLineLiquidityPool;
+    if (identifier.includes(":lp")) {
+      displayableBalances[identifier] = {
+        liquidityPoolId: liquidityPoolBalance.liquidity_pool_id,
+        total,
+        limit: new BigNumber(liquidityPoolBalance.limit),
+      } as AssetBalance;
+      continue;
+    }
+
+    const assetBalance =
+      balance as StellarSdk.Horizon.HorizonApi.BalanceLineAsset;
+    const assetSponsor = assetBalance.sponsor
+      ? { sponsor: assetBalance.sponsor }
+      : {};
+
+    displayableBalances[identifier] = {
+      token: {
+        type: assetBalance.asset_type,
+        code: assetBalance.asset_code,
+        issuer: {
+          key: assetBalance.asset_issuer,
+        },
+      },
+      sellingLiabilities,
+      buyingLiabilities,
+      total,
+      limit: new BigNumber(assetBalance.limit),
+      available: total.minus(sellingLiabilities),
+      blockaidData: defaultBlockaidScanAssetResult,
+      ...assetSponsor,
+    };
+
+    continue;
+  }
+
+  return displayableBalances;
 }

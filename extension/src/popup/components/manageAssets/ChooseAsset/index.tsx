@@ -64,11 +64,16 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           continue;
         }
 
-        const {
-          token: { code, issuer },
-          contractId,
-          blockaidData,
-        } = sortedBalances[i];
+        const { token, contractId, blockaidData } = sortedBalances[i];
+
+        const code = token.code || "";
+        let issuer = {
+          key: "",
+        };
+
+        if ("issuer" in token) {
+          issuer = token.issuer;
+        }
 
         // If we are in the swap flow and the asset has decimals (is a token), we skip it if Soroswap is not enabled
         if ("decimals" in sortedBalances[i] && isSwap && !isSoroswapEnabled) {
@@ -79,11 +84,11 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         if (code !== "XLM") {
           let domain = "";
 
-          if (issuer?.key) {
+          if (issuer.key) {
             try {
               // eslint-disable-next-line no-await-in-loop
               domain = await getAssetDomain(
-                issuer.key as string,
+                issuer.key,
                 networkDetails.networkUrl,
                 networkDetails.networkPassphrase,
               );
@@ -94,11 +99,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
           collection.push({
             code,
-            issuer: issuer?.key || "",
-            image:
-              assetIcons[
-                getCanonicalFromAsset(code as string, issuer?.key as string)
-              ],
+            issuer: issuer.key,
+            image: assetIcons[getCanonicalFromAsset(code, issuer.key)],
             domain,
             contract: contractId,
             isSuspicious: isAssetSuspicious(
