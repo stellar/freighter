@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { BigNumber } from "bignumber.js";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 
-import { AssetIcons, BlockAidScanAssetResult } from "@shared/api/types";
+import { AssetIcons, AssetType } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
@@ -153,7 +152,7 @@ export const AssetIcon = ({
 
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
-  sortedBalances: any[];
+  sortedBalances: AssetType[];
   setSelectedAsset?: (selectedAsset: string) => void;
 }
 
@@ -221,40 +220,39 @@ export const AccountAssets = ({
 
   return (
     <>
-      {sortedBalances.map((rb: any) => {
-        let issuer;
+      {sortedBalances.map((rb) => {
+        let isLP = false;
+        let issuer = {
+          key: "",
+        };
         let code = "";
         let amountUnit;
         if (rb.liquidityPoolId) {
-          issuer = "lp";
+          isLP = true;
           code = getLPShareCode(rb.reserves as Horizon.HorizonApi.Reserve[]);
           amountUnit = "shares";
-        } else if (rb.contractId) {
+        } else if (rb.contractId && "symbol" in rb) {
           issuer = {
             key: rb.contractId,
           };
           code = rb.symbol;
           amountUnit = rb.symbol;
         } else {
-          issuer = rb.token.issuer;
+          if ("issuer" in rb.token && rb.token) {
+            issuer = rb.token.issuer;
+          }
           code = rb.token.code;
           amountUnit = rb.token.code;
         }
 
-        const isLP = issuer === "lp";
-        const canonicalAsset = getCanonicalFromAsset(
-          code,
-          issuer?.key as string,
-        );
+        const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
-        const isSuspicious = isAssetSuspicious(
-          rb.blockaidData as BlockAidScanAssetResult,
-        );
+        const isSuspicious = isAssetSuspicious(rb.blockaidData);
 
-        const bigTotal = new BigNumber(rb.total as string);
-        const amountVal = rb.contractId
-          ? formatTokenAmount(bigTotal, rb.decimals as number)
-          : bigTotal.toFixed();
+        const amountVal =
+          rb.contractId && "decimals" in rb
+            ? formatTokenAmount(rb.total, rb.decimals)
+            : rb.total.toFixed();
 
         return (
           <div

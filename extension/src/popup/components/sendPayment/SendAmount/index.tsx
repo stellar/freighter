@@ -22,10 +22,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
-import {
-  isAssetSuspicious,
-  defaultBlockaidScanAssetResult,
-} from "popup/helpers/blockaid";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
@@ -55,6 +52,7 @@ import {
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { BalanceMap, SorobanBalance } from "@shared/api/types";
 import "../styles.scss";

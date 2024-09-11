@@ -1,6 +1,7 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import { Horizon } from "stellar-sdk";
+import BigNumber from "bignumber.js";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import {
@@ -8,7 +9,9 @@ import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
+import { Balances } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
@@ -259,6 +262,61 @@ describe("Account view", () => {
       expect(screen.getByTestId("account-view-account-name")).toHaveTextContent(
         "Account 2",
       );
+    });
+  });
+  it("loads LP shares", async () => {
+    const mockLpBalance = {
+      balances: {
+        ["2f0d463c05c1f99676a90f78f32f4bf6ddf7f5227dce805711c65e257434f9dd:lp"]:
+          {
+            total: new BigNumber("1000000000"),
+            limit: new BigNumber("1000000000"),
+            liquidityPoolId:
+              "2f0d463c05c1f99676a90f78f32f4bf6ddf7f5227dce805711c65e257434f9dd",
+            available: new BigNumber("1000000000"),
+            reserves: [
+              { asset: "A:foo", amount: "0.000" },
+              { asset: "B:bar", amount: "0.000" },
+            ],
+            blockaidData: defaultBlockaidScanAssetResult,
+          },
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("50"),
+          available: new BigNumber("50"),
+          blockaidData: defaultBlockaidScanAssetResult,
+        },
+      } as any as Balances,
+      isFunded: true,
+      subentryCount: 1,
+    };
+    jest
+      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .mockImplementation(() => Promise.resolve(mockLpBalance));
+
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(2);
+      expect(assetNodes[1]).toHaveTextContent("LP");
+      expect(assetNodes[1]).toHaveTextContent("0 shares");
     });
   });
 });

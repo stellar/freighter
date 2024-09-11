@@ -12,7 +12,7 @@ import { Balances } from "@shared/api/types";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
-import { defaultBlockaidScanAssetResult } from "popup/helpers/blockaid";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,

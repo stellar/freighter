@@ -13,7 +13,7 @@ import {
 } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { defaultBlockaidScanAssetResult } from "popup/helpers/blockaid";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";

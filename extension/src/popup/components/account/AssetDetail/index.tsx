@@ -7,6 +7,7 @@ import { IconButton, Icon } from "@stellar/design-system";
 import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
@@ -47,10 +48,7 @@ import {
 import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
-import {
-  isAssetSuspicious,
-  defaultBlockaidScanAssetResult,
-} from "popup/helpers/blockaid";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 

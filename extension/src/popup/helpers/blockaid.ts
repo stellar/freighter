@@ -208,9 +208,3 @@ export const isAssetSuspicious = (blockaidData?: BlockAidScanAssetResult) => {
   }
   return blockaidData.result_type !== "Benign";
 };
-
-export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  result_type: "Benign",
-  features: [{ description: "" }],
-};
