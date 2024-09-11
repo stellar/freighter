@@ -96,7 +96,9 @@ export const sortOperationsByAsset = ({
       assetOperationMap[getCanonicalFromAsset(code, issuer)] = [];
     }
     if ("contractId" in bal && "symbol" in bal) {
-      assetOperationMap[getCanonicalFromAsset(bal.symbol, bal.contractId)] = [];
+      assetOperationMap[
+        getCanonicalFromAsset(bal.symbol, bal.contractId || "")
+      ] = [];
     }
   });
 

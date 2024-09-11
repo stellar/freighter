@@ -262,8 +262,10 @@ export interface NativeBalance extends Balance {
 }
 
 export interface TokenBalance extends AssetBalance {
-  decimals: number;
   name: string;
+  symbol: string;
+  decimals: number;
+  total: BigNumber;
 }
 
 export interface BalanceMap {

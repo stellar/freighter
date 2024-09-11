@@ -569,7 +569,6 @@ export const getAccountBalancesStandalone = async ({
           liquidityPoolId: v.liquidityPoolId,
           reserves: lp.reserves,
         };
-        delete balances[k].liquidityPoolId;
       }
     }
     isFunded = true;

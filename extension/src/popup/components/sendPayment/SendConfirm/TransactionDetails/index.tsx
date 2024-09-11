@@ -23,11 +23,13 @@ import {
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-import { AssetIcons, ActionStatus } from "@shared/api/types";
+import { AssetBalance, AssetIcons, ActionStatus } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-import { isCustomNetwork } from "@shared/helpers/stellar";
 import {
   defaultBlockaidScanAssetResult,
+  isCustomNetwork,
+} from "@shared/helpers/stellar";
+import {
   isAssetSuspicious,
   useScanAsset,
   useScanTx,
@@ -598,10 +600,10 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                         token: {
                           issuer: { key: sourceAsset.issuer },
                           code: sourceAsset.code,
+                          type: "credit_alphanum4",
                         },
-                        total: amount || "0",
-                        isMalicious: isSourceAssetSuspicious,
-                      },
+                        total: new BigNumber(amount),
+                      } as AssetBalance,
                     ]}
                   />
                 </Card>

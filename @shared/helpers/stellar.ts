@@ -2,13 +2,16 @@ import BigNumber from "bignumber.js";
 import * as StellarSdk from "stellar-sdk";
 import * as StellarSdkNext from "stellar-sdk-next";
 
-import { BalanceMap, AssetBalance } from "@shared/api/types";
+import {
+  BalanceMap,
+  AssetBalance,
+  BlockAidScanAssetResult,
+} from "@shared/api/types";
 import {
   BASE_RESERVE,
   BASE_RESERVE_MIN_COUNT,
   NetworkDetails,
 } from "@shared/constants/stellar";
-import { defaultBlockaidScanAssetResult } from "../../extension/src/popup/helpers/blockaid";
 
 export const CUSTOM_NETWORK = "STANDALONE";
 
@@ -42,6 +45,12 @@ export function getBalanceIdentifier(
       return "native";
   }
 }
+
+export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  result_type: "Benign",
+  features: [{ description: "" }],
+};
 
 export function makeDisplayableBalances(
   accountDetails: StellarSdk.Horizon.ServerApi.AccountRecord,
