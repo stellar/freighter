@@ -17,6 +17,7 @@ import {
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types";
 import { createMemoryHistory } from "history";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
@@ -249,16 +250,26 @@ jest.spyOn(BlockaidHelpers, "scanAsset").mockImplementation((address) => {
     address === "BMAL-GBFJZSHWOMYS6U73NXQRRD4JX6TZNWEAFII6Z5INGWVJ2VCQ2K4NQMHP"
   ) {
     return Promise.resolve({
+      ...defaultBlockaidScanAssetResult,
       result_type: "Malicious",
-      features: [{ description: "bad asset" }],
+      features: [
+        {
+          description: "bad asset",
+          feature_id: "KNOWN_MALICIOUS",
+          type: "Malicious",
+        },
+      ],
     });
   }
 
   return Promise.resolve({
+    ...defaultBlockaidScanAssetResult,
     result_type: "Benign",
     features: [
       {
         description: "good asset",
+        feature_id: "METADATA",
+        type: "Benign",
       },
     ],
   });
