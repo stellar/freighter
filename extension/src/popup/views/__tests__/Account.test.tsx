@@ -11,8 +11,12 @@ import {
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
+import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
+import { INDEXER_URL } from "@shared/constants/mercury";
+import { SERVICE_TYPES } from "@shared/constants/services";
+import { Response } from "@shared/api/types";
 
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { Account } from "../Account";
@@ -31,17 +35,101 @@ const mockHistoryOperations = {
   ] as Horizon.ServerApi.PaymentOperationRecord[],
 };
 
-jest.spyOn(global, "fetch").mockImplementation(() =>
-  Promise.resolve({
+jest.spyOn(global, "fetch").mockImplementation((url) => {
+  if (
+    url ===
+    `${INDEXER_URL}/scan-asset-bulk?asset_ids=USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM`
+  ) {
+    return Promise.resolve({
+      json: async () => {
+        return {
+          data: {
+            results: {
+              "USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
+                address: "",
+                chain: "stellar",
+                attack_types: {},
+                fees: {},
+                malicious_score: "1.0",
+                metadata: {},
+                financial_stats: {},
+                trading_limits: {},
+                result_type: "Malicious",
+                features: [
+                  { description: "", feature_id: "METADATA", type: "Benign" },
+                ],
+              },
+            },
+          },
+        };
+      },
+    } as any);
+  }
+
+  return Promise.resolve({
     json: async () => {
       return [];
     },
-  } as any),
-);
+  } as any);
+});
 
 jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest
+  .spyOn(ExtensionMessaging, "sendMessageToBackground")
+  .mockImplementation((msg) => {
+    if (msg.type === SERVICE_TYPES.GET_TOKEN_IDS) {
+      return Promise.resolve({ tokenIdList: [] as string[] } as Response);
+    }
+
+    return Promise.resolve({} as Response);
+  });
+
+jest.mock("stellar-sdk", () => {
+  const original = jest.requireActual("stellar-sdk");
+  return {
+    Asset: original.Asset,
+    StrKey: original.StrKey,
+    Networks: original.Networks,
+    Operation: original.Operation,
+    Horizon: {
+      Server: class {
+        accounts() {
+          return {
+            accountId: () => ({
+              call: () =>
+                Promise.resolve({
+                  balances: [
+                    {
+                      asset_code: "USDC",
+                      asset_issuer:
+                        "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+                      asset_type: "credit_alphanum4",
+                      balance: "100.0000000",
+                      buying_liabilities: "0.0000000",
+                      selling_liabilities: "0.0000000",
+                      limit: "1000.0000000",
+                    },
+                    {
+                      asset_type: "native",
+                      balance: "50.0000000",
+                      buying_liabilities: "0.0000000",
+                      selling_liabilities: "0.0000000",
+                    },
+                  ],
+                }),
+            }),
+          };
+        }
+      },
+      HorizonApi: original.Horizon.HorizonApi,
+    },
+    SorobanRpc: original.SorobanRpc,
+    TransactionBuilder: original.TransactionBuilder,
+  };
+});
 
 // @ts-ignore
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
@@ -136,7 +224,7 @@ describe("Account view", () => {
     expect(accountNodes.length).toEqual(3);
     expect(screen.getAllByText("Account 1")).toBeDefined();
   });
-  it("displays balances and scam notifications", async () => {
+  it("displays balances and scam notifications on Mainnet", async () => {
     render(
       <Wrapper
         state={{
@@ -166,6 +254,85 @@ describe("Account view", () => {
         screen.getByTestId("AccountAssets__asset--loading-USDC"),
       ).toContainElement(screen.getByTestId("ScamAssetIcon"));
       expect(screen.getAllByText("USDC")).toBeDefined();
+    });
+  });
+  it("displays balances and scam notifications on custom Mainnet network", async () => {
+    const customMainnet = {
+      network: "STANDALONE",
+      networkName: "Custom Network",
+      networkPassphrase: MAINNET_NETWORK_DETAILS.networkPassphrase,
+      networkUrl: MAINNET_NETWORK_DETAILS.networkUrl,
+    };
+
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: customMainnet,
+            networksList: [...DEFAULT_NETWORKS, customMainnet],
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(2);
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-XLM"),
+      ).not.toContainElement(screen.getByTestId("ScamAssetIcon"));
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      ).toContainElement(screen.getByTestId("ScamAssetIcon"));
+      expect(screen.getAllByText("USDC")).toBeDefined();
+    });
+  });
+  it("displays balances on custom TESTNET network without scam icons", async () => {
+    const customMainnet = {
+      network: "STANDALONE",
+      networkName: "Custom Network",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+      networkUrl: TESTNET_NETWORK_DETAILS.networkUrl,
+    };
+
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: customMainnet,
+            networksList: [...DEFAULT_NETWORKS, customMainnet],
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(2);
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-XLM"),
+      ).toBeDefined();
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      ).toBeDefined();
+      expect(screen.getAllByText("USDC")).toBeDefined();
+      expect(screen.queryByTestId("ScamAssetIcon")).toBeNull();
     });
   });
   it("goes to account details", async () => {
@@ -199,7 +366,7 @@ describe("Account view", () => {
       ).toHaveTextContent("100 USDC");
     });
   });
-  it("shows Blockaid warnng in account details", async () => {
+  it("shows Blockaid warning in account details", async () => {
     render(
       <Wrapper
         state={{

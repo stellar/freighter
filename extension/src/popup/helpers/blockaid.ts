@@ -5,24 +5,15 @@ import { useSelector } from "react-redux";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
-import { BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  BlockAidScanAssetResult,
+  BlockAidScanSiteResult,
+} from "@shared/api/types";
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { fetchJson } from "./fetch";
-
-export interface BlockAidScanSiteResult {
-  status: "hit" | "miss";
-  url: string;
-  scan_start_time: Date;
-  scan_end_time: Date;
-  malicious_score: number; // 0-1
-  is_reachable: boolean;
-  is_web3_site: true;
-  is_malicious: boolean;
-  // ...
-}
 
 interface ValidationResult {
   status: "Success" | "Error";

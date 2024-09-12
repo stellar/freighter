@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
+import Blockaid from "@blockaid/client";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -245,10 +246,9 @@ export interface Balance {
   blockaidData: BlockAidScanAssetResult;
 }
 
-export interface BlockAidScanAssetResult {
-  result_type: "Benign" | "Warning" | "Malicious" | "Spam";
-  features: { description: string }[];
-}
+export type BlockAidScanAssetResult = Blockaid.TokenScanResponse;
+export type BlockAidScanSiteResult = Blockaid.SiteScanResponse;
+export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse;
 
 export interface AssetBalance extends Balance {
   limit: BigNumber;

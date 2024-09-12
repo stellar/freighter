@@ -48,6 +48,9 @@ export const GrantAccess = () => {
     window.close();
   };
 
+  const isMalicious =
+    data && "is_malicious" in data ? data.is_malicious : false;
+
   return (
     <>
       <ModalWrapper>
@@ -58,7 +61,7 @@ export const GrantAccess = () => {
         ) : (
           <DomainScanModalInfo
             domain={domain}
-            isMalicious={data?.is_malicious || false}
+            isMalicious={isMalicious}
             scanStatus={data.status}
             subject={t(
               `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
@@ -73,7 +76,7 @@ export const GrantAccess = () => {
                 <KeyIdenticon publicKey={publicKey} />
               </div>
             </div>
-            {data?.is_malicious ? (
+            {isMalicious ? (
               <ButtonsContainer>
                 <Button
                   size="md"

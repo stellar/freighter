@@ -518,9 +518,11 @@ export const getSorobanTokenBalance = async (
 export const getAccountBalancesStandalone = async ({
   publicKey,
   networkDetails,
+  isMainnet,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
+  isMainnet: boolean;
 }) => {
   const { network, networkUrl, networkPassphrase } = networkDetails;
 
@@ -532,7 +534,10 @@ export const getAccountBalancesStandalone = async ({
     const server = stellarSdkServer(networkUrl, networkPassphrase);
     const accountSummary = await server.accounts().accountId(publicKey).call();
 
-    const displayableBalances = makeDisplayableBalances(accountSummary);
+    const displayableBalances = await makeDisplayableBalances(
+      accountSummary,
+      isMainnet,
+    );
     const sponsor = accountSummary.sponsor
       ? { sponsor: accountSummary.sponsor }
       : {};

@@ -41,7 +41,10 @@ import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 
-import { getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  isMainnet as isMainnetHelper,
+} from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -359,10 +362,13 @@ export const getAccountBalances = createAsyncThunk<
   try {
     let balances;
 
+    const isMainnet = isMainnetHelper(networkDetails);
+
     if (isCustomNetwork(networkDetails)) {
       balances = await internalGetAccountBalancesStandalone({
         publicKey,
         networkDetails,
+        isMainnet,
       });
     } else {
       balances = await internalgetAccountIndexerBalances(
@@ -391,6 +397,7 @@ export const getDestinationBalances = createAsyncThunk<
       return await internalGetAccountBalancesStandalone({
         publicKey,
         networkDetails,
+        isMainnet: isMainnetHelper(networkDetails),
       });
     }
     return await internalgetAccountIndexerBalances(publicKey, networkDetails);
