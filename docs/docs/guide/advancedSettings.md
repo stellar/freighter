@@ -4,7 +4,7 @@ title: Advanced Settings
 slug: /adavnced-settings
 ---
 
-## Navigating to advanved settings
+## Navigating to advanced settings
 
 In order to enable experiemntal mode, you can do the following:
 
