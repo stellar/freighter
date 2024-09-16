@@ -10,6 +10,7 @@ import {
 } from "@shared/constants/stellar";
 import { GrantAccess } from "../GrantAccess";
 import * as blockAidHelpers from "popup/helpers/blockaid";
+import { BlockAidScanSiteResult } from "@shared/api/types";
 import * as urlHelpers from "../../../helpers/urls";
 
 jest.spyOn(urlHelpers, "parsedSearchParam").mockImplementation(() => {
@@ -57,7 +58,7 @@ describe("Grant Access view", () => {
         isLoading: false,
         data: {
           is_malicious: false,
-        } as blockAidHelpers.BlockAidScanSiteResult,
+        } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
           return Promise.resolve();
         },
@@ -96,7 +97,7 @@ describe("Grant Access view", () => {
         isLoading: false,
         data: {
           status: "miss",
-        } as blockAidHelpers.BlockAidScanSiteResult,
+        } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
           return Promise.resolve();
         },
@@ -135,7 +136,7 @@ describe("Grant Access view", () => {
         isLoading: false,
         data: {
           is_malicious: true,
-        } as blockAidHelpers.BlockAidScanSiteResult,
+        } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
           return Promise.resolve();
         },

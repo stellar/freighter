@@ -12,6 +12,7 @@ import {
   BASE_RESERVE_MIN_COUNT,
   NetworkDetails,
 } from "@shared/constants/stellar";
+import { INDEXER_URL } from "@shared/constants/mercury";
 
 export const CUSTOM_NETWORK = "STANDALONE";
 
@@ -47,18 +48,48 @@ export function getBalanceIdentifier(
 }
 
 export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+  /* eslint-disable @typescript-eslint/naming-convention */
+  address: "",
+  chain: "stellar",
+  attack_types: {},
+  fees: {},
+  malicious_score: "0.0",
+  metadata: {},
+  financial_stats: {},
+  trading_limits: {},
   result_type: "Benign",
-  features: [{ description: "" }],
+  features: [{ description: "", feature_id: "METADATA", type: "Benign" }],
+  /* eslint-enable @typescript-eslint/naming-convention */
 };
 
-export function makeDisplayableBalances(
+export const makeDisplayableBalances = async (
   accountDetails: StellarSdk.Horizon.ServerApi.AccountRecord,
-) {
+  isMainnet: boolean,
+) => {
   const { balances, subentry_count, num_sponsored, num_sponsoring } =
     accountDetails;
 
   const displayableBalances = {} as BalanceMap;
+
+  let blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
+
+  if (isMainnet) {
+    const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+    for (const balance of balances) {
+      const balanceId = getBalanceIdentifier(balance);
+      if (balanceId !== "native" && !balanceId.includes(":lp")) {
+        url.searchParams.append("asset_ids", balanceId.replace(":", "-"));
+      }
+    }
+
+    try {
+      const response = await fetch(url.href);
+      const data = await response.json();
+      blockaidScanResults = data.data.results;
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   for (let i = 0; i < balances.length; i++) {
     const balance = balances[i];
@@ -133,7 +164,9 @@ export function makeDisplayableBalances(
       total,
       limit: new BigNumber(assetBalance.limit),
       available: total.minus(sellingLiabilities),
-      blockaidData: defaultBlockaidScanAssetResult,
+      blockaidData:
+        blockaidScanResults[identifier.replace(":", "-")] ||
+        defaultBlockaidScanAssetResult,
       ...assetSponsor,
     };
 
@@ -141,4 +174,4 @@ export function makeDisplayableBalances(
   }
 
   return displayableBalances;
-}
+};
