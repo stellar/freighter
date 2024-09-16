@@ -17,8 +17,13 @@ const GUIDE_BASE_PATH = "guide";
 const guidePaths = [
   "introduction",
   "gettingStarted",
+  "account",
   "usingFreighterWebApp",
   "usingFreighterBrowser",
+  "advancedSettings",
+  "addAsset",
+  "makePayment",
+  "signXdr",
 ];
 
 const constructPaths = (paths, basePath) =>
