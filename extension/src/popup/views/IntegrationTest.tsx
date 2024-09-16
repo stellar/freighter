@@ -296,8 +296,6 @@ export const IntegrationTest = () => {
       res = await saveSettings({
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
-        isSafetyValidationEnabled: true,
-        isValidatingSafeAssetsEnabled: true,
         isNonSSLEnabled: true,
       });
       runAsserts("saveSettings", () => {
@@ -306,8 +304,6 @@ export const IntegrationTest = () => {
         assertEq(res.error, undefined);
         assertEq(res.isDataSharingAllowed, true);
         assertEq(res.isMemoValidationEnabled, true);
-        assertEq(res.isSafetyValidationEnabled, true);
-        assertEq(res.isValidatingSafeAssetsEnabled, true);
         assertEq(res.isNonSSLEnabled, true);
       });
 

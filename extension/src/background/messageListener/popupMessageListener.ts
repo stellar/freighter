@@ -41,8 +41,6 @@ import {
   CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
   IS_VALIDATING_MEMO_ID,
-  IS_VALIDATING_SAFETY_ID,
-  IS_VALIDATING_SAFE_ASSETS_ID,
   IS_EXPERIMENTAL_MODE_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
@@ -72,8 +70,6 @@ import {
   getAllowList,
   getKeyIdList,
   getIsMemoValidationEnabled,
-  getIsSafetyValidationEnabled,
-  getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
   getIsHashSigningEnabled,
   getIsHardwareWalletActive,
@@ -1216,24 +1212,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const saveSettings = async () => {
-    const {
-      isDataSharingAllowed,
-      isMemoValidationEnabled,
-      isSafetyValidationEnabled,
-      isValidatingSafeAssetsEnabled,
-      isNonSSLEnabled,
-    } = request;
+    const { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled } =
+      request;
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
-    await localStore.setItem(
-      IS_VALIDATING_SAFETY_ID,
-      isSafetyValidationEnabled,
-    );
-    await localStore.setItem(
-      IS_VALIDATING_SAFE_ASSETS_ID,
-      isValidatingSafeAssetsEnabled,
-    );
     await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
     const networkDetails = await getNetworkDetails();
@@ -1244,8 +1227,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       networkDetails,
       networksList: await getNetworksList(),
       isRpcHealthy,
@@ -1311,8 +1292,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       isHashSigningEnabled,
       networkDetails: await getNetworkDetails(),

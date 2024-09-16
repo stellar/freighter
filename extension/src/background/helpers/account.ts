@@ -4,8 +4,6 @@ import {
   KEY_ID_LIST,
   KEY_ID,
   IS_VALIDATING_MEMO_ID,
-  IS_VALIDATING_SAFETY_ID,
-  IS_VALIDATING_SAFE_ASSETS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
@@ -92,12 +90,6 @@ export const getAllowList = async () => {
 
 export const getIsMemoValidationEnabled = async () =>
   (await localStore.getItem(IS_VALIDATING_MEMO_ID)) ?? true;
-
-export const getIsSafetyValidationEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_SAFETY_ID)) ?? true;
-
-export const getIsValidatingSafeAssetsEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_SAFE_ASSETS_ID)) ?? true;
 
 export const getIsExperimentalModeEnabled = async () =>
   (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;

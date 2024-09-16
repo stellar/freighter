@@ -1176,14 +1176,10 @@ export const saveAllowList = async ({
 export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
-  isSafetyValidationEnabled,
-  isValidatingSafeAssetsEnabled,
   isNonSSLEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
-  isSafetyValidationEnabled: boolean;
-  isValidatingSafeAssetsEnabled: boolean;
   isNonSSLEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
@@ -1192,8 +1188,6 @@ export const saveSettings = async ({
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
-    isSafetyValidationEnabled: true,
-    isValidatingSafeAssetsEnabled: true,
     isRpcHealthy: false,
     userNotification: { enabled: false, message: "" },
     settingsState: SettingsState.IDLE,
@@ -1207,8 +1201,6 @@ export const saveSettings = async ({
     response = await sendMessageToBackground({
       isDataSharingAllowed,
       isMemoValidationEnabled,
-      isSafetyValidationEnabled,
-      isValidatingSafeAssetsEnabled,
       isNonSSLEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });

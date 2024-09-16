@@ -146,8 +146,6 @@ export enum AccountType {
 export interface Preferences {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
-  isSafetyValidationEnabled: boolean;
-  isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   isNonSSLEnabled: boolean;
   isBlockaidAnnounced: boolean;
