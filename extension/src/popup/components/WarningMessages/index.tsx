@@ -302,7 +302,9 @@ export const BlockaidAssetWarning = ({
           :
           <ul className="ScamAssetWarning__list">
             {blockaidData.features &&
-              blockaidData.features.map((f) => <li>{f.description}</li>)}
+              blockaidData.features.map((f) => (
+                <li key={f.feature_id}>{f.description}</li>
+              ))}
             {isNewAssetState ? <li>{t("New asset")}</li> : ""}
           </ul>
         </div>
