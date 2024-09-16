@@ -8,37 +8,13 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import {
   BlockAidScanAssetResult,
   BlockAidScanSiteResult,
+  BlockAidScanTxResult,
 } from "@shared/api/types";
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { fetchJson } from "./fetch";
-
-interface ValidationResult {
-  status: "Success" | "Error";
-  result_type: "Benign" | "Warning" | "Malicious";
-  description: string;
-}
-interface ValidationError {
-  status: "Success" | "Error";
-  error: string;
-}
-type Validation = ValidationResult | ValidationError;
-
-interface SimulationResult {
-  status: "Success" | "Error";
-}
-interface SimulationError {
-  status: "Success" | "Error";
-  error: string;
-}
-type Simulation = SimulationResult | SimulationError;
-
-export interface BlockAidScanTxResult {
-  simulation: Simulation;
-  validation: Validation;
-}
 
 export const useScanSite = () => {
   const [data, setData] = useState({} as BlockAidScanSiteResult);

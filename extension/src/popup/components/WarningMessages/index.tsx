@@ -13,7 +13,11 @@ import {
 } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
-import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  ActionStatus,
+  BlockAidScanAssetResult,
+  BlockAidScanTxResult,
+} from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -59,10 +63,7 @@ import IconNewAsset from "popup/assets/icon-new-asset.svg";
 import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
-import {
-  BlockAidScanTxResult,
-  isAssetSuspicious,
-} from "popup/helpers/blockaid";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -1155,7 +1156,7 @@ export const BlockaidTxScanLabel = ({
   const { t } = useTranslation();
   const { simulation, validation } = scanResult;
 
-  if ("error" in simulation) {
+  if (simulation && "error" in simulation) {
     return (
       <WarningMessage
         header="This transaction is expected to fail"
@@ -1169,7 +1170,7 @@ export const BlockaidTxScanLabel = ({
   }
 
   let message = null;
-  if ("result_type" in validation) {
+  if (validation && "result_type" in validation) {
     switch (validation.result_type) {
       case "Malicious": {
         message = {
