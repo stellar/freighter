@@ -194,7 +194,7 @@ export const useScanAsset = (address: string) => {
 };
 
 export const isAssetSuspicious = (blockaidData?: BlockAidScanAssetResult) => {
-  if (!blockaidData) {
+  if (!blockaidData || !blockaidData.result_type) {
     return false;
   }
   return blockaidData.result_type !== "Benign";
