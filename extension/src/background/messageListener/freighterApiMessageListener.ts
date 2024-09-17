@@ -191,11 +191,11 @@ export const freighterApiMessageListener = (
                 "destination" in operation &&
                 address === operation.destination
               ) {
-                const collectedTags = [...tags];
+                let collectedTags = [...tags];
 
                 /* if the user has opted out of validation, remove applicable tags */
                 if (!isValidatingMemo) {
-                  collectedTags.filter(
+                  collectedTags = collectedTags.filter(
                     (tag) => tag !== TRANSACTION_WARNING.memoRequired,
                   );
                 }
