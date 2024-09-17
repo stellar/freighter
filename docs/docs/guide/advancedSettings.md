@@ -9,7 +9,7 @@ slug: /adavnced-settings
 In order to enable experimental mode, you can do the following:
 
 - Open Freighter, and click on "Settings"(the cog) on our bottom navigation bar.
-- Click on "Security" menu item
+- Click on the "Security" menu item
 - Click on "Advanced Settings", and read the disclaimer. If you want to proceed, then click "I understand, continue"
 
 ## Settings
