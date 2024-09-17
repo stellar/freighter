@@ -316,7 +316,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     accountBalances.balances?.[asset].blockaidData,
   );
 
-  const isSubmitDisabled = isMemoRequired || isSourceAssetSuspicious;
+  const isSubmitDisabled = isMemoRequired;
 
   const destAssetToScan = destinationAsset
     ? `${destAsset.code}-${destAsset.issuer}`
