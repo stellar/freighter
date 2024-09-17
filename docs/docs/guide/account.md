@@ -17,4 +17,4 @@ In order to use another account that is derived from your seed phrase to Freight
 Freighter configures it's own RPCs for the base network, but you can configure a "custom network" in order to bring your own [Horizon instance](https://developers.stellar.org/docs/data/horizon) and/or [RPC instance](https://github.com/stellar/soroban-rpc).
 
 You can click on the on current network using the tab in the upper right corner of the screen, and select "Add custom network" from the dropdown.
-At this point you can configure a custom network to be used in Freighter, you should get your network settings(passphrase, friendbot URL, etc) from your Horizon/RPC provider.
+At this point you can configure a custom network to be used in Freighter. You should get your network settings(passphrase, friendbot URL, etc) from your Horizon/RPC provider.
