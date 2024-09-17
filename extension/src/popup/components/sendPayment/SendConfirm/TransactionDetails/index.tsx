@@ -285,8 +285,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
-  const { isMemoValidationEnabled, isSafetyValidationEnabled } =
-    useSelector(settingsSelector);
+  const { isMemoValidationEnabled } = useSelector(settingsSelector);
   const isSwap = useIsSwap();
   const { scanTx, data: scanResult, isLoading } = useScanTx();
 
@@ -303,7 +302,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
   const _isMainnet = isMainnet(networkDetails);
   const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
-  const isValidatingSafety = isSafetyValidationEnabled && _isMainnet;
 
   const matchingBlockedTags = blockedAccounts
     .filter(({ address }) => address === destination)
@@ -318,12 +316,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     accountBalances.balances?.[asset].blockaidData,
   );
 
-  const isTxMalicious =
-    (isValidatingSafety && isSourceAssetSuspicious) || false;
-  const isUnsafe =
-    isValidatingSafety &&
-    matchingBlockedTags.some((tag) => tag === TRANSACTION_WARNING.unsafe);
-  const isSubmitDisabled = isMemoRequired || isTxMalicious || isUnsafe;
+  const isSubmitDisabled = isMemoRequired;
 
   const destAssetToScan = destinationAsset
     ? `${destAsset.code}-${destAsset.issuer}`
@@ -707,8 +700,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             {submission.submitStatus === ActionStatus.IDLE && (
               <FlaggedWarningMessage
                 isMemoRequired={isMemoRequired}
-                code={sourceAsset.code}
-                issuer={sourceAsset.issuer}
                 blockaidData={
                   (isSourceAssetSuspicious
                     ? accountBalances.balances?.[asset].blockaidData

@@ -20,7 +20,6 @@ import {
 } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
 
@@ -52,11 +51,9 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
-import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
-import IconInvalid from "popup/assets/icon-invalid.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
@@ -174,28 +171,18 @@ export const MemoWarningMessage = ({
 };
 
 interface FlaggedWarningMessageProps {
-  code: string;
-  issuer: string;
   isMemoRequired: boolean;
   isSuspicious: boolean;
   blockaidData: BlockAidScanAssetResult;
 }
 
 export const FlaggedWarningMessage = ({
-  code,
-  issuer,
   isMemoRequired,
   isSuspicious,
   blockaidData,
 }: FlaggedWarningMessageProps) => (
   <>
-    {isSuspicious ? (
-      <BlockaidAssetWarning
-        code={code}
-        issuer={issuer}
-        blockaidData={blockaidData}
-      />
-    ) : null}
+    {isSuspicious ? <BlockaidAssetWarning blockaidData={blockaidData} /> : null}
     <MemoWarningMessage isMemoRequired={isMemoRequired} />
   </>
 );
@@ -244,46 +231,13 @@ export const BackupPhraseWarningMessage = () => {
 };
 
 interface BlockaidAssetWarningProps {
-  code?: string;
-  issuer?: string;
-  isNewAsset?: boolean;
   blockaidData: BlockAidScanAssetResult;
 }
 
 export const BlockaidAssetWarning = ({
-  isNewAsset,
-  code,
-  issuer,
   blockaidData,
 }: BlockaidAssetWarningProps) => {
   const { t } = useTranslation();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [isNewAssetState, setIsNewAssetState] = useState(false);
-
-  useEffect(() => {
-    const fetchSuspiciousAsset = async (
-      assetCode: string,
-      assetIssuer: string,
-    ) => {
-      const server = stellarSdkServer(
-        networkDetails.networkUrl,
-        networkDetails.networkPassphrase,
-      );
-      const resp = await checkForSuspiciousAsset({
-        code: assetCode,
-        issuer: assetIssuer,
-        domain: "",
-        server,
-        networkDetails,
-      });
-
-      setIsNewAssetState(resp.isNewAsset);
-    };
-
-    if (isNewAsset === undefined && code && issuer) {
-      fetchSuspiciousAsset(code, issuer);
-    }
-  }, [code, issuer, isNewAsset, networkDetails]);
 
   return (
     <div className="ScamAssetWarning__box" data-testid="ScamAssetWarning__box">
@@ -305,7 +259,6 @@ export const BlockaidAssetWarning = ({
               blockaidData.features.map((f) => (
                 <li key={f.feature_id}>{f.description}</li>
               ))}
-            {isNewAssetState ? <li>{t("New asset")}</li> : ""}
           </ul>
         </div>
         <div className="ScamAssetWarning__footer">
@@ -330,7 +283,6 @@ export const ScamAssetWarning = ({
   // eslint-disable-next-line
   onContinue = () => {},
   blockaidData,
-  isNewAsset,
 }: {
   pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
@@ -340,7 +292,6 @@ export const ScamAssetWarning = ({
   onClose: () => void;
   onContinue?: () => void;
   blockaidData: BlockAidScanAssetResult;
-  isNewAsset: boolean;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -441,12 +392,7 @@ export const ScamAssetWarning = ({
         >
           <div className="ScamAssetWarning__wrapper" ref={warningRef}>
             <div>
-              <BlockaidAssetWarning
-                isNewAsset={isNewAsset}
-                code={code}
-                issuer={issuer}
-                blockaidData={blockaidData}
-              />
+              <BlockaidAssetWarning blockaidData={blockaidData} />
             </div>
             <div className="ScamAssetWarning__btns">
               {!isSendWarning && (
@@ -521,7 +467,7 @@ export const NewAssetWarning = ({
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
-  const { isRevocable, isNewAsset, isInvalidDomain } = newAssetFlags;
+  const { isRevocable, isInvalidDomain } = newAssetFlags;
 
   useEffect(
     () => () => {
@@ -645,23 +591,6 @@ export const NewAssetWarning = ({
                 </div>
               </div>
             )}
-            <div>
-              {isNewAsset && (
-                <div className="NewAssetWarning__flag">
-                  <div className="NewAssetWarning__flag__icon">
-                    <img src={IconInvalid} alt="new asset" />
-                  </div>
-                  <div className="NewAssetWarning__flag__content">
-                    <div className="NewAssetWarning__flag__header">
-                      {t("New Asset")}
-                    </div>
-                    <div className="NewAssetWarning__flag__description">
-                      {t("This is a relatively new asset.")}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
             <div>
               {isInvalidDomain && (
                 <div className="NewAssetWarning__flag">

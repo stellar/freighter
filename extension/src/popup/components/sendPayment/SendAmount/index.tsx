@@ -449,7 +449,6 @@ export const SendAmount = ({
           onClose={() => setShowBlockedDomainWarning(false)}
           onContinue={() => navigateTo(next)}
           blockaidData={suspiciousAssetData.blockaidData}
-          isNewAsset={false}
         />
       )}
       <React.Fragment>

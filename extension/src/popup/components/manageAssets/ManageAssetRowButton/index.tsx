@@ -217,11 +217,10 @@ export const ManageAssetRowButton = ({
       setSuspiciousAssetData({
         ...assetRowData,
         blockaidData: scannedAsset,
-        isNewAsset: resp.isNewAsset,
       });
     } else if (
       !isTrustlineActive &&
-      (resp.isInvalidDomain || resp.isRevocable || resp.isNewAsset)
+      (resp.isInvalidDomain || resp.isRevocable)
     ) {
       setShowNewAssetWarning(true);
       setNewAssetFlags(resp);

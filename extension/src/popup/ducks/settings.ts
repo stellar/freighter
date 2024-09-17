@@ -55,8 +55,6 @@ const settingsInitialState: Settings = {
   } as NetworkDetails,
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
-  isSafetyValidationEnabled: true,
-  isValidatingSafeAssetsEnabled: true,
   isNonSSLEnabled: false,
   isBlockaidAnnounced: false,
   error: "",
@@ -116,21 +114,13 @@ export const saveSettings = createAsyncThunk<
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
-    isSafetyValidationEnabled: boolean;
-    isValidatingSafeAssetsEnabled: boolean;
     isNonSSLEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
   async (
-    {
-      isDataSharingAllowed,
-      isMemoValidationEnabled,
-      isSafetyValidationEnabled,
-      isValidatingSafeAssetsEnabled,
-      isNonSSLEnabled,
-    },
+    { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled },
     thunkApi,
   ) => {
     let res = {
@@ -146,8 +136,6 @@ export const saveSettings = createAsyncThunk<
       res = await saveSettingsService({
         isDataSharingAllowed,
         isMemoValidationEnabled,
-        isSafetyValidationEnabled,
-        isValidatingSafeAssetsEnabled,
         isNonSSLEnabled,
       });
     } catch (e) {
@@ -341,9 +329,7 @@ const settingsSlice = createSlice({
         isDataSharingAllowed,
         networkDetails,
         isMemoValidationEnabled,
-        isSafetyValidationEnabled,
         networksList,
-        isValidatingSafeAssetsEnabled,
         isRpcHealthy,
         isSorobanPublicEnabled,
       } = action?.payload || {
@@ -354,8 +340,6 @@ const settingsSlice = createSlice({
         ...state,
         isDataSharingAllowed,
         isMemoValidationEnabled,
-        isSafetyValidationEnabled,
-        isValidatingSafeAssetsEnabled,
         networkDetails,
         networksList,
         isRpcHealthy,
@@ -403,8 +387,6 @@ const settingsSlice = createSlice({
           networkDetails,
           networksList,
           isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
           isHashSigningEnabled,
           isSorobanPublicEnabled,
@@ -424,8 +406,6 @@ const settingsSlice = createSlice({
           networkDetails,
           networksList,
           isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
           isHashSigningEnabled,
           isSorobanPublicEnabled,
@@ -642,12 +622,10 @@ export const settingsPreferencesSelector = createSelector(
   ({
     isDataSharingAllowed,
     isMemoValidationEnabled,
-    isSafetyValidationEnabled,
     isExperimentalModeEnabled,
   }) => ({
     isDataSharingAllowed,
     isMemoValidationEnabled,
-    isSafetyValidationEnabled,
     isExperimentalModeEnabled,
   }),
 );

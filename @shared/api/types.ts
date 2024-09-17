@@ -76,7 +76,6 @@ export interface Response {
   recentAddresses: string[];
   hardwareWalletType: WalletType;
   bipPath: string;
-  blockedDomains: BlockedDomains;
   blockedAccounts: BlockedAccount[];
   assetDomain: string;
   contractId: string;
@@ -92,10 +91,6 @@ export interface Response {
   recommendedFee: string;
   isNonSSLEnabled: boolean;
   isBlockaidAnnounced: boolean;
-}
-
-export interface BlockedDomains {
-  [key: string]: boolean;
 }
 
 export interface BlockedAccount {
@@ -146,8 +141,6 @@ export enum AccountType {
 export interface Preferences {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
-  isSafetyValidationEnabled: boolean;
-  isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   isNonSSLEnabled: boolean;
   isBlockaidAnnounced: boolean;

@@ -34,7 +34,6 @@ import { TRANSACTION_WARNING } from "constants/transaction";
 import {
   getIsMainnet,
   getIsMemoValidationEnabled,
-  getIsSafetyValidationEnabled,
   getNetworkDetails,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
@@ -183,10 +182,8 @@ export const freighterApiMessageListener = (
 
       const isValidatingMemo =
         (await getIsMemoValidationEnabled()) && isMainnet;
-      const isValidatingSafety =
-        (await getIsSafetyValidationEnabled()) && isMainnet;
 
-      if (isValidatingMemo || isValidatingSafety) {
+      if (isValidatingMemo) {
         _operations.forEach((operation: StellarSdk.Operation) => {
           accountData.forEach(
             ({ address, tags }: { address: string; tags: string[] }) => {
@@ -198,16 +195,8 @@ export const freighterApiMessageListener = (
 
                 /* if the user has opted out of validation, remove applicable tags */
                 if (!isValidatingMemo) {
-                  collectedTags.filter(
+                  collectedTags = collectedTags.filter(
                     (tag) => tag !== TRANSACTION_WARNING.memoRequired,
-                  );
-                }
-                if (!isValidatingSafety) {
-                  collectedTags = collectedTags.filter(
-                    (tag) => tag !== TRANSACTION_WARNING.unsafe,
-                  );
-                  collectedTags = collectedTags.filter(
-                    (tag) => tag !== TRANSACTION_WARNING.malicious,
                   );
                 }
                 flaggedKeys[operation.destination] = {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,6 @@ import { IconButton, Icon } from "@stellar/design-system";
 
 import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   getAvailableBalance,
@@ -21,7 +20,6 @@ import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
-import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { ROUTES } from "popup/constants/routes";
 
 import { PillButton } from "popup/basics/buttons/PillButton";
@@ -74,7 +72,6 @@ export const AssetDetail = ({
   subentryCount,
 }: AssetDetailProps) => {
   const dispatch: AppDispatch = useDispatch();
-  const [isNewAsset, setIsNewAsset] = useState(false);
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
@@ -86,27 +83,6 @@ export const AssetDetail = ({
   const isSuspicious = isAssetSuspicious(
     balances.balances?.[selectedAsset].blockaidData,
   );
-
-  useEffect(() => {
-    const fetchSuspiciousAsset = async () => {
-      const server = stellarSdkServer(
-        networkDetails.networkUrl,
-        networkDetails.networkPassphrase,
-      );
-
-      const resp = await checkForSuspiciousAsset({
-        code: canonical.code,
-        issuer: canonical.issuer,
-        domain: "",
-        server,
-        networkDetails,
-      });
-
-      setIsNewAsset(resp.isNewAsset);
-    };
-
-    fetchSuspiciousAsset();
-  }, [canonical.code, canonical.issuer, networkDetails]);
 
   const balance = getRawBalance(accountBalances, selectedAsset)!;
 
@@ -252,9 +228,6 @@ export const AssetDetail = ({
           <div className="AssetDetail__scam-warning">
             {isSuspicious && (
               <BlockaidAssetWarning
-                isNewAsset={isNewAsset}
-                code={canonical.code}
-                issuer={canonical.issuer}
                 blockaidData={
                   balances.balances?.[selectedAsset].blockaidData ||
                   defaultBlockaidScanAssetResult

@@ -26,7 +26,6 @@ import { calculateSenderMinBalance } from "@shared/helpers/migration";
 import {
   Account,
   Response as Request,
-  BlockedDomains,
   BlockedAccount,
   MigratableAccount,
 } from "@shared/api/types";
@@ -41,14 +40,11 @@ import {
   CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
   IS_VALIDATING_MEMO_ID,
-  IS_VALIDATING_SAFETY_ID,
-  IS_VALIDATING_SAFE_ASSETS_ID,
   IS_EXPERIMENTAL_MODE_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
-  CACHED_BLOCKED_DOMAINS_ID,
   CACHED_BLOCKED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
@@ -72,8 +68,6 @@ import {
   getAllowList,
   getKeyIdList,
   getIsMemoValidationEnabled,
-  getIsSafetyValidationEnabled,
-  getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
   getIsHashSigningEnabled,
   getIsHardwareWalletActive,
@@ -119,10 +113,7 @@ import {
   passwordSelector,
   setMigratedMnemonicPhrase,
 } from "background/ducks/session";
-import {
-  STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
-  STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-} from "background/constants/apiUrls";
+import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
@@ -1216,24 +1207,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const saveSettings = async () => {
-    const {
-      isDataSharingAllowed,
-      isMemoValidationEnabled,
-      isSafetyValidationEnabled,
-      isValidatingSafeAssetsEnabled,
-      isNonSSLEnabled,
-    } = request;
+    const { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled } =
+      request;
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
-    await localStore.setItem(
-      IS_VALIDATING_SAFETY_ID,
-      isSafetyValidationEnabled,
-    );
-    await localStore.setItem(
-      IS_VALIDATING_SAFE_ASSETS_ID,
-      isValidatingSafeAssetsEnabled,
-    );
     await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
     const networkDetails = await getNetworkDetails();
@@ -1244,8 +1222,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       networkDetails,
       networksList: await getNetworksList(),
       isRpcHealthy,
@@ -1311,8 +1287,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       isHashSigningEnabled,
       networkDetails: await getNetworkDetails(),
@@ -1375,27 +1349,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     assetDomainCache[assetCanonical] = assetDomain;
     await localStore.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
-  };
-
-  const getBlockedDomains = async () => {
-    try {
-      const resp = await cachedFetch(
-        STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
-        CACHED_BLOCKED_DOMAINS_ID,
-      );
-      const blockedDomains = (resp?._embedded?.records || []).reduce(
-        (bd: BlockedDomains, obj: { domain: string }) => {
-          const map = bd;
-          map[obj.domain] = true;
-          return map;
-        },
-        {},
-      );
-      return { blockedDomains };
-    } catch (e) {
-      console.error(e);
-      return new Error("Error getting blocked domains");
-    }
   };
 
   const getBlockedAccounts = async () => {
@@ -1827,7 +1780,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
     [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
-    [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
