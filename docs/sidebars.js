@@ -14,9 +14,8 @@ const playgroundPaths = [
 ];
 
 const GUIDE_BASE_PATH = "guide";
+const introPaths = ["introduction", "gettingStarted"];
 const userGuidePaths = [
-  "introduction",
-  "gettingStarted",
   "account",
   "advancedSettings",
   "addAsset",
@@ -30,6 +29,7 @@ const constructPaths = (paths, basePath) =>
 
 module.exports = {
   someSidebar: {
+    Introduction: constructPaths(introPaths, GUIDE_BASE_PATH),
     "User Guide": constructPaths(userGuidePaths, GUIDE_BASE_PATH),
     "Technical Guide": constructPaths(techGuidePaths, GUIDE_BASE_PATH),
     Playground: constructPaths(playgroundPaths, PLAYGROUND_BASE_PATH),
