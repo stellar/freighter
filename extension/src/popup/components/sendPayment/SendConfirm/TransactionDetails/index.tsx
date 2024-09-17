@@ -700,8 +700,6 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
             {submission.submitStatus === ActionStatus.IDLE && (
               <FlaggedWarningMessage
                 isMemoRequired={isMemoRequired}
-                code={sourceAsset.code}
-                issuer={sourceAsset.issuer}
                 blockaidData={
                   (isSourceAssetSuspicious
                     ? accountBalances.balances?.[asset].blockaidData

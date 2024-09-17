@@ -26,7 +26,6 @@ import { calculateSenderMinBalance } from "@shared/helpers/migration";
 import {
   Account,
   Response as Request,
-  BlockedDomains,
   BlockedAccount,
   MigratableAccount,
 } from "@shared/api/types";
@@ -46,7 +45,6 @@ import {
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
-  CACHED_BLOCKED_DOMAINS_ID,
   CACHED_BLOCKED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
@@ -115,10 +113,7 @@ import {
   passwordSelector,
   setMigratedMnemonicPhrase,
 } from "background/ducks/session";
-import {
-  STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
-  STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-} from "background/constants/apiUrls";
+import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
@@ -1356,27 +1351,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
 
-  const getBlockedDomains = async () => {
-    try {
-      const resp = await cachedFetch(
-        STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
-        CACHED_BLOCKED_DOMAINS_ID,
-      );
-      const blockedDomains = (resp?._embedded?.records || []).reduce(
-        (bd: BlockedDomains, obj: { domain: string }) => {
-          const map = bd;
-          map[obj.domain] = true;
-          return map;
-        },
-        {},
-      );
-      return { blockedDomains };
-    } catch (e) {
-      console.error(e);
-      return new Error("Error getting blocked domains");
-    }
-  };
-
   const getBlockedAccounts = async () => {
     try {
       const resp = await cachedFetch(
@@ -1806,7 +1780,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
     [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
-    [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,

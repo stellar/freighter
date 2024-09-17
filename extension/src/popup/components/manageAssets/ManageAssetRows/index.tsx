@@ -46,7 +46,6 @@ export type ManageAssetCurrency = StellarToml.Api.Currency & {
 export interface NewAssetFlags {
   isInvalidDomain: boolean;
   isRevocable: boolean;
-  isNewAsset: boolean;
 }
 
 interface ManageAssetRowsProps {
@@ -65,7 +64,6 @@ interface SuspiciousAssetData {
   image: string;
   isVerifiedToken?: boolean;
   blockaidData: BlockAidScanAssetResult;
-  isNewAsset: boolean;
 }
 
 export const ManageAssetRows = ({
@@ -92,7 +90,6 @@ export const ManageAssetRows = ({
   const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
   const [showUnverifiedWarning, setShowUnverifiedWarning] = useState(false);
   const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
-    isNewAsset: false,
     isInvalidDomain: false,
     isRevocable: false,
   });
@@ -103,7 +100,6 @@ export const ManageAssetRows = ({
     image: "",
     isVerifiedToken: false,
     blockaidData: defaultBlockaidScanAssetResult,
-    isNewAsset: false,
   } as SuspiciousAssetData);
   const [handleAddToken, setHandleAddToken] = useState(
     null as null | (() => () => Promise<void>),
@@ -136,7 +132,6 @@ export const ManageAssetRows = ({
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           blockaidData={suspiciousAssetData.blockaidData}
-          isNewAsset={suspiciousAssetData.isNewAsset}
           onClose={() => {
             setShowBlockedDomainWarning(false);
           }}

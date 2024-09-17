@@ -36,7 +36,6 @@ import {
   resetAccountBalanceStatus,
   saveAssetSelectType,
   AssetSelectType,
-  getBlockedDomains,
   getAccountBalances,
   getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
@@ -100,7 +99,6 @@ export const Account = () => {
         networkDetails,
       }),
     );
-    dispatch(getBlockedDomains());
 
     return () => {
       dispatch(resetAccountBalanceStatus());
