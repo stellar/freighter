@@ -26,7 +26,7 @@ import { calculateSenderMinBalance } from "@shared/helpers/migration";
 import {
   Account,
   Response as Request,
-  BlockedAccount,
+  MemoRequiredAccount,
   MigratableAccount,
 } from "@shared/api/types";
 import { MessageResponder } from "background/types";
@@ -45,7 +45,7 @@ import {
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
-  CACHED_BLOCKED_ACCOUNTS_ID,
+  CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
@@ -113,7 +113,7 @@ import {
   passwordSelector,
   setMigratedMnemonicPhrase,
 } from "background/ducks/session";
-import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
+import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
@@ -1351,14 +1351,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
 
-  const getBlockedAccounts = async () => {
+  const getMemoRequiredAccounts = async () => {
     try {
       const resp = await cachedFetch(
-        STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-        CACHED_BLOCKED_ACCOUNTS_ID,
+        STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL,
+        CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
       );
-      const blockedAccounts: BlockedAccount[] = resp?._embedded?.records || [];
-      return { blockedAccounts };
+      const memoRequiredAccounts: MemoRequiredAccount[] =
+        resp?._embedded?.records || [];
+      return { memoRequiredAccounts };
     } catch (e) {
       console.error(e);
       return new Error("Error getting blocked accounts");
@@ -1784,7 +1785,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
     [SERVICE_TYPES.REMOVE_TOKEN_ID]: removeTokenId,
-    [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
+    [SERVICE_TYPES.GET_MEMO_REQUIRED_ACCOUNTS]: getMemoRequiredAccounts,
     [SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS]: getMigratableAccounts,
     [SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE]: getMigratedMnemonicPhrase,
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,

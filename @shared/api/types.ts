@@ -76,7 +76,7 @@ export interface Response {
   recentAddresses: string[];
   hardwareWalletType: WalletType;
   bipPath: string;
-  blockedAccounts: BlockedAccount[];
+  memoRequiredAccounts: MemoRequiredAccount[];
   assetDomain: string;
   contractId: string;
   tokenId: string;
@@ -93,7 +93,7 @@ export interface Response {
   isBlockaidAnnounced: boolean;
 }
 
-export interface BlockedAccount {
+export interface MemoRequiredAccount {
   address: string;
   name: string;
   domain: string | null;

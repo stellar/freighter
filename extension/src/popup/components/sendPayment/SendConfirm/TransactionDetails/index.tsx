@@ -38,7 +38,7 @@ import {
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
-  getBlockedAccounts,
+  getMemoRequiredAccounts,
   signFreighterTransaction,
   signFreighterSorobanTransaction,
   submitFreighterTransaction,
@@ -279,7 +279,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     },
     assetIcons,
     hardwareWalletData: { status: hwStatus },
-    blockedAccounts,
+    memoRequiredAccounts,
     transactionSimulation,
   } = submission;
 
@@ -303,7 +303,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const _isMainnet = isMainnet(networkDetails);
   const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
 
-  const matchingBlockedTags = blockedAccounts
+  const matchingBlockedTags = memoRequiredAccounts
     .filter(({ address }) => address === destination)
     .flatMap(({ tags }) => tags);
   const isMemoRequired =
@@ -340,7 +340,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   }, [destAsset.code, destAsset.issuer, networkDetails]);
 
   useEffect(() => {
-    dispatch(getBlockedAccounts());
+    dispatch(getMemoRequiredAccounts());
   }, [dispatch]);
 
   useEffect(() => {
