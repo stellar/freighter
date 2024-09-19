@@ -233,7 +233,6 @@ export const ManageAssetRowButton = ({
         Promise.resolve(navigateTo(ROUTES.account)),
       );
     }
-    console.log("finish click");
   };
 
   const handleTokenRowClick = async (
