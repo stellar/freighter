@@ -51,7 +51,8 @@ describe("Grant Access view", () => {
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
   });
 
-  it("shows a benign label when scan site returns non malicious flag", async () => {
+  // not applicable right now, but we may show this warning in the future
+  it.skip("shows a benign label when scan site returns non malicious flag", async () => {
     jest.spyOn(blockAidHelpers, "useScanSite").mockImplementation(() => {
       return {
         error: null,
