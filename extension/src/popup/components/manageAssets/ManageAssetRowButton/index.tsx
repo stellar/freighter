@@ -129,9 +129,6 @@ export const ManageAssetRowButton = ({
         }),
       );
 
-      setAssetSubmitting("");
-      setRowButtonShowing("");
-
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         dispatch(
           getAccountBalances({
@@ -149,6 +146,9 @@ export const ManageAssetRowButton = ({
       if (submitFreighterTransaction.rejected.match(submitResp)) {
         setIsTrustlineErrorShowing(true);
       }
+
+      setAssetSubmitting("");
+      setRowButtonShowing("");
     }
   };
 
@@ -199,6 +199,7 @@ export const ManageAssetRowButton = ({
       image: "",
     },
   ) => {
+    setAssetSubmitting(canonicalAsset);
     const resp = await checkForSuspiciousAsset({
       code: assetRowData.code,
       issuer: assetRowData.issuer,
@@ -218,6 +219,7 @@ export const ManageAssetRowButton = ({
         ...assetRowData,
         blockaidData: scannedAsset,
       });
+      setAssetSubmitting("");
     } else if (
       !isTrustlineActive &&
       (resp.isInvalidDomain || resp.isRevocable)
@@ -225,11 +227,13 @@ export const ManageAssetRowButton = ({
       setShowNewAssetWarning(true);
       setNewAssetFlags(resp);
       setSuspiciousAssetData(assetRowData);
+      setAssetSubmitting("");
     } else {
       changeTrustline(!isTrustlineActive, () =>
         Promise.resolve(navigateTo(ROUTES.account)),
       );
     }
+    console.log("finish click");
   };
 
   const handleTokenRowClick = async (
@@ -301,19 +305,21 @@ export const ManageAssetRowButton = ({
     }
   }, [submitStatus, isSigningWithHardwareWallet]);
 
+  const isLoading =
+    (isActionPending && assetSubmitting === canonicalAsset) ||
+    assetSubmitting === canonicalAsset;
+
   return (
     <div className="ManageAssetRowButton">
       {isTrustlineActive ? (
         <div>
           <div
             className={`ManageAssetRowButton__ellipsis ${
-              isActionPending
-                ? `ManageAssetRowButton__ellipsis--is-pending`
-                : ""
+              isLoading ? `ManageAssetRowButton__ellipsis--is-pending` : ""
             }`}
             data-testid={`ManageAssetRowButton__ellipsis-${code}`}
             onClick={() => {
-              if (!isActionPending) {
+              if (!isLoading) {
                 setRowButtonShowing(
                   rowButtonShowing === canonicalAsset ? "" : canonicalAsset,
                 );
@@ -343,9 +349,7 @@ export const ManageAssetRowButton = ({
                   size="md"
                   variant="secondary"
                   disabled={isActionPending}
-                  isLoading={
-                    isActionPending && assetSubmitting === canonicalAsset
-                  }
+                  isLoading={isLoading}
                   onClick={() => {
                     if (isContract) {
                       handleTokenRowClick({
@@ -365,8 +369,7 @@ export const ManageAssetRowButton = ({
                   <div className="ManageAssetRowButton__label">
                     {t("Remove asset")}
                   </div>
-                  {isActionPending &&
-                  assetSubmitting === canonicalAsset ? null : (
+                  {isLoading ? null : (
                     <img src={IconRemove} alt="icon remove" />
                   )}
                 </Button>
@@ -386,7 +389,7 @@ export const ManageAssetRowButton = ({
           size="md"
           variant="secondary"
           disabled={isActionPending}
-          isLoading={isActionPending && assetSubmitting === canonicalAsset}
+          isLoading={isLoading}
           onClick={() => {
             setAssetSubmitting(canonicalAsset || contract);
             if (isContract) {
