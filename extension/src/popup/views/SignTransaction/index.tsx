@@ -84,6 +84,10 @@ export const SignTransaction = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName, networkPassphrase } = networkDetails;
   const { scanTx, isLoading: isLoadingScan, data: scanResult } = useScanTx();
+  const flaggedMalicious =
+    scanResult?.validation &&
+    "result_type" in scanResult.validation &&
+    scanResult.validation.result_type === "Malicious";
 
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
@@ -366,48 +370,98 @@ export const SignTransaction = () => {
               </button>
             </div>
             <div className="SignTransaction__Actions__BtnRow">
-              <Button
-                isFullWidth
-                size="md"
-                variant="secondary"
-                onClick={() => rejectAndClose()}
-              >
-                {t("Cancel")}
-              </Button>
-              {needsReviewAuth ? (
-                <Button
-                  disabled={isSubmitDisabled}
-                  variant="tertiary"
-                  isFullWidth
-                  size="md"
-                  isLoading={isConfirming}
-                  onClick={() =>
-                    navigateTo(
-                      ROUTES.reviewAuthorization,
-                      `?${encodeObject({
-                        accountToSign,
-                        transactionXdr,
-                        domain,
-                        flaggedKeys,
-                        isMemoRequired,
-                        memo: decodedMemo,
-                      })}`,
-                    )
-                  }
-                >
-                  {t("Review")}
-                </Button>
+              {flaggedMalicious ? (
+                <>
+                  {needsReviewAuth ? (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="error"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() =>
+                        navigateTo(
+                          ROUTES.reviewAuthorization,
+                          `?${encodeObject({
+                            accountToSign,
+                            transactionXdr,
+                            domain,
+                            flaggedKeys,
+                            isMemoRequired,
+                            memo: decodedMemo,
+                          })}`,
+                        )
+                      }
+                    >
+                      {t("Review anyway")}
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="error"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() => handleApprove()}
+                    >
+                      {t("Sign anyway")}
+                    </Button>
+                  )}
+                  <Button
+                    isFullWidth
+                    size="md"
+                    variant="secondary"
+                    onClick={() => rejectAndClose()}
+                  >
+                    {t("Reject")}
+                  </Button>
+                </>
               ) : (
-                <Button
-                  disabled={isSubmitDisabled}
-                  variant="tertiary"
-                  isFullWidth
-                  size="md"
-                  isLoading={isConfirming}
-                  onClick={() => handleApprove()}
-                >
-                  {t("Sign")}
-                </Button>
+                <>
+                  <Button
+                    isFullWidth
+                    size="md"
+                    variant="secondary"
+                    onClick={() => rejectAndClose()}
+                  >
+                    {t("Cancel")}
+                  </Button>
+                  {needsReviewAuth ? (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="tertiary"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() =>
+                        navigateTo(
+                          ROUTES.reviewAuthorization,
+                          `?${encodeObject({
+                            accountToSign,
+                            transactionXdr,
+                            domain,
+                            flaggedKeys,
+                            isMemoRequired,
+                            memo: decodedMemo,
+                          })}`,
+                        )
+                      }
+                    >
+                      {t("Review")}
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="tertiary"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() => handleApprove()}
+                    >
+                      {t("Sign")}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>

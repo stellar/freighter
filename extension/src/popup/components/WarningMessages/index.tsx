@@ -1106,7 +1106,7 @@ export const BlockaidTxScanLabel = ({
     switch (validation.result_type) {
       case "Malicious": {
         message = {
-          header: "This contract was flagged as malicious",
+          header: "This transaction was flagged as malicious",
           variant: WarningMessageVariant.highAlert,
           message: validation.description,
         };
@@ -1121,7 +1121,7 @@ export const BlockaidTxScanLabel = ({
 
       case "Warning": {
         message = {
-          header: "This contract was flagged as suspicious",
+          header: "This transaction was flagged as suspicious",
           variant: WarningMessageVariant.warning,
           message: validation.description,
         };
