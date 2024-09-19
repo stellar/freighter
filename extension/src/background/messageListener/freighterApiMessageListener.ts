@@ -23,11 +23,11 @@ import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
 } from "@shared/constants/stellar";
-import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
+import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import {
   ALLOWLIST_ID,
-  CACHED_BLOCKED_ACCOUNTS_ID,
+  CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
 } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
@@ -163,8 +163,8 @@ export const freighterApiMessageListener = (
       );
 
       const directoryLookupJson = await cachedFetch(
-        STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-        CACHED_BLOCKED_ACCOUNTS_ID,
+        STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL,
+        CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
       );
       const accountData = directoryLookupJson?._embedded?.records || [];
 

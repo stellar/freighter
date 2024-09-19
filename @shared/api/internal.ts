@@ -1348,9 +1348,9 @@ export const loadSettings = (): Promise<
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
 
-export const getBlockedAccounts = async () => {
+export const getMemoRequiredAccounts = async () => {
   const resp = await sendMessageToBackground({
-    type: SERVICE_TYPES.GET_BLOCKED_ACCOUNTS,
+    type: SERVICE_TYPES.GET_MEMO_REQUIRED_ACCOUNTS,
   });
   return resp;
 };

@@ -16,7 +16,7 @@ import {
   getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
-  getBlockedAccounts as internalGetBlockedAccounts,
+  getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
   submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
@@ -30,7 +30,7 @@ import {
   ErrorMessage,
   AccountType,
   ActionStatus,
-  BlockedAccount,
+  MemoRequiredAccount,
   BalanceToMigrate,
   SoroswapToken,
 } from "@shared/api/types";
@@ -519,14 +519,14 @@ export const getBestSoroswapPath = createAsyncThunk<
   },
 );
 
-export const getBlockedAccounts = createAsyncThunk<
-  BlockedAccount[],
+export const getMemoRequiredAccounts = createAsyncThunk<
+  MemoRequiredAccount[],
   undefined,
   { rejectValue: ErrorMessage }
 >("getBlockedAccounts", async (_, thunkApi) => {
   try {
-    const resp = await internalGetBlockedAccounts();
-    return resp.blockedAccounts || [];
+    const resp = await internalGetMemoRequiredAccounts();
+    return resp.memoRequiredAccounts || [];
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
@@ -594,7 +594,7 @@ interface InitialState {
     type: AssetSelectType;
     isSource: boolean;
   };
-  blockedAccounts: BlockedAccount[];
+  memoRequiredAccounts: MemoRequiredAccount[];
 }
 
 export const initialState: InitialState = {
@@ -647,7 +647,7 @@ export const initialState: InitialState = {
     type: AssetSelectType.MANAGE,
     isSource: true,
   },
-  blockedAccounts: [],
+  memoRequiredAccounts: [],
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -862,8 +862,8 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationDecimals =
         action.payload.amountOutDecimals;
     });
-    builder.addCase(getBlockedAccounts.fulfilled, (state, action) => {
-      state.blockedAccounts = action.payload;
+    builder.addCase(getMemoRequiredAccounts.fulfilled, (state, action) => {
+      state.memoRequiredAccounts = action.payload;
     });
   },
 });

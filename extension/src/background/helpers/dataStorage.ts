@@ -10,7 +10,7 @@ import {
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
-  IS_BLOCKAID_ANNOUNCED_ID,
+  // IS_BLOCKAID_ANNOUNCED_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -252,12 +252,17 @@ export const addIsNonSSLEnabled = async () => {
   }
 };
 
-export const addIsBlockaidAnnounced = async () => {
+export const removeStellarExpertData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (!storageVersion || semver.lt(storageVersion, "4.3.0")) {
-    await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, false);
+    await localStore.remove([
+      "cachedBlockedAccountsId",
+      "cachedBlockedAccountsId_date",
+      "cachedBlockedDomainsId",
+      "cachedBlockedDomainsId_date",
+    ]);
     await migrateDataStorageVersion("4.3.0");
   }
 };
@@ -274,7 +279,7 @@ export const versionedMigration = async () => {
   await addAssetsLists();
   await addIsHashSigningEnabled();
   await addIsNonSSLEnabled();
-  await addIsBlockaidAnnounced();
+  await removeStellarExpertData();
 };
 
 // Updates storage version
