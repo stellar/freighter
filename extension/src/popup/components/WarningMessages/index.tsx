@@ -1076,7 +1076,8 @@ export const BlockAidSiteScanLabel = ({
     return <BlockAidMaliciousLabel />;
   }
 
-  return <BlockAidBenignLabel />;
+  // benign case should not show anything for now
+  return <React.Fragment />;
 };
 
 export const BlockaidTxScanLabel = ({
