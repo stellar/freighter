@@ -409,7 +409,7 @@ export const ScamAssetWarning = ({
                   type="button"
                   variant="error"
                   isLoading={
-                    isSubmitting || submitStatus !== ActionStatus.PENDING
+                    isSubmitting || submitStatus === ActionStatus.PENDING
                   }
                 >
                   {t("Add anyway")}
