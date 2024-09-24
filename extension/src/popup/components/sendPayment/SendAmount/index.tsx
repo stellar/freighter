@@ -616,7 +616,7 @@ export const SendAmount = ({
                           isSuspicious={isAssetSuspicious(
                             accountBalances.balances?.[
                               formik.values.destinationAsset
-                            ].blockaidData,
+                            ]?.blockaidData,
                           )}
                         />
                       </>
