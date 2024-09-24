@@ -93,7 +93,7 @@ export const GrantAccess = () => {
                   variant="tertiary"
                   onClick={rejectAndClose}
                 >
-                  {t("Cancel")}
+                  {t("Reject")}
                 </Button>
               </ButtonsContainer>
             ) : (
