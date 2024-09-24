@@ -42,6 +42,7 @@ export const AssetIcon = ({
   isSorobanToken = false,
   icon,
   isSuspicious = false,
+  isModal = false,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -51,6 +52,7 @@ export const AssetIcon = ({
   isSorobanToken?: boolean;
   icon?: string;
   isSuspicious?: boolean;
+  isModal?: boolean;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -121,7 +123,9 @@ export const AssetIcon = ({
       data-testid={`AccountAssets__asset--loading-${code}`}
       className={`AccountAssets__asset--logo ${
         hasError ? "AccountAssets__asset--error" : ""
-      } ${isLoading ? "AccountAssets__asset--loading" : ""}`}
+      } ${isLoading ? "AccountAssets__asset--loading" : ""} ${
+        isModal ? "AccountAssets__asset--modal" : ""
+      }`}
     >
       <img
         alt={`${code} logo`}
@@ -142,7 +146,11 @@ export const AssetIcon = ({
     </div>
   ) : (
     // the image path wasn't found, show a default broken image icon
-    <div className="AccountAssets__asset--logo AccountAssets__asset--error">
+    <div
+      className={`AccountAssets__asset--logo AccountAssets__asset--error ${
+        isModal ? "AccountAssets__asset--modal" : ""
+      }`}
+    >
       <ImageMissingIcon />
       <ScamAssetIcon isScamAsset={isSuspicious} />
     </div>

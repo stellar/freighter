@@ -187,44 +187,47 @@ export const AssetDetail = ({
               />
             </div>
           </div>
-          <div className="AssetDetail__actions">
-            {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
-              <>
-                <PillButton
-                  onClick={() => {
-                    dispatch(saveAsset(selectedAsset));
-                    if (isContract) {
-                      dispatch(saveIsToken(true));
-                    } else {
-                      dispatch(saveIsToken(false));
-                    }
-                    navigateTo(ROUTES.sendPayment);
-                  }}
-                >
-                  {t("SEND")}
-                </PillButton>
-                {!isSorobanAsset && (
+          {isSuspicious ? null : (
+            <div className="AssetDetail__actions">
+              {balance?.total &&
+              new BigNumber(balance?.total).toNumber() > 0 ? (
+                <>
                   <PillButton
                     onClick={() => {
                       dispatch(saveAsset(selectedAsset));
-                      navigateTo(ROUTES.swap);
+                      if (isContract) {
+                        dispatch(saveIsToken(true));
+                      } else {
+                        dispatch(saveIsToken(false));
+                      }
+                      navigateTo(ROUTES.sendPayment);
                     }}
                   >
-                    {t("SWAP")}
+                    {t("SEND")}
                   </PillButton>
-                )}
-              </>
-            ) : (
-              <PillButton
-                onClick={() => {
-                  dispatch(saveDestinationAsset(selectedAsset));
-                  navigateTo(ROUTES.swap);
-                }}
-              >
-                {t("SWAP")}
-              </PillButton>
-            )}
-          </div>
+                  {!isSorobanAsset && (
+                    <PillButton
+                      onClick={() => {
+                        dispatch(saveAsset(selectedAsset));
+                        navigateTo(ROUTES.swap);
+                      }}
+                    >
+                      {t("SWAP")}
+                    </PillButton>
+                  )}
+                </>
+              ) : (
+                <PillButton
+                  onClick={() => {
+                    dispatch(saveDestinationAsset(selectedAsset));
+                    navigateTo(ROUTES.swap);
+                  }}
+                >
+                  {t("SWAP")}
+                </PillButton>
+              )}
+            </div>
+          )}
           <div className="AssetDetail__scam-warning">
             {isSuspicious && (
               <BlockaidAssetWarning

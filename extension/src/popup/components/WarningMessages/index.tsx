@@ -279,6 +279,7 @@ export const ScamAssetWarning = ({
   domain,
   code,
   issuer,
+  image,
   onClose,
   // eslint-disable-next-line
   onContinue = () => {},
@@ -289,6 +290,7 @@ export const ScamAssetWarning = ({
   domain: string;
   code: string;
   issuer: string;
+  image: string;
   onClose: () => void;
   onContinue?: () => void;
   blockaidData: BlockAidScanAssetResult;
@@ -385,9 +387,12 @@ export const ScamAssetWarning = ({
     <div className="ScamAssetWarning" data-testid="ScamAssetWarning">
       <View.Content>
         <ModalInfo
+          code={code}
+          issuer={issuer}
           domain={domain}
+          image={image}
           variant={isAssetSuspicious(blockaidData) ? "malicious" : "default"}
-          subject=""
+          asset={code}
           pillType={pillType}
         >
           <div className="ScamAssetWarning__wrapper" ref={warningRef}>
@@ -407,7 +412,7 @@ export const ScamAssetWarning = ({
                     isSubmitting || submitStatus === ActionStatus.PENDING
                   }
                 >
-                  {t("Sign anyway")}
+                  {t("Add anyway")}
                 </Button>
               )}
               <Button
