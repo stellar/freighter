@@ -106,13 +106,12 @@ export const AssetIcon = ({
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
   if (isFetchingAssetIcons) {
     return (
-      <>
-        <div
-          data-testid="AccountAssets__asset--loading"
-          className="AccountAssets__asset--logo AccountAssets__asset--loading"
-        />
+      <div
+        data-testid="AccountAssets__asset--loading"
+        className="AccountAssets__asset--logo AccountAssets__asset--loading"
+      >
         <ScamAssetIcon isScamAsset={isSuspicious} />
-      </>
+      </div>
     );
   }
 
