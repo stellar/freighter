@@ -446,6 +446,7 @@ export const SendAmount = ({
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
+          image={suspiciousAssetData.image}
           onClose={() => setShowBlockedDomainWarning(false)}
           onContinue={() => navigateTo(next)}
           blockaidData={suspiciousAssetData.blockaidData}

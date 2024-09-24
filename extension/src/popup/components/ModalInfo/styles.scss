@@ -24,15 +24,30 @@
     }
   }
 
-  &--subject {
-    font-size: 0.75rem;
-    color: #a0a0a0;
-    background-color: #1c1c1c;
-    border-radius: 6px;
-    line-height: 1rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    padding: 0.5rem;
+  &__icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  &__asset {
+    align-items: center;
+    color: var(--color-red-70);
+    display: flex;
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-semi-bold);
+    justify-content: center;
+    line-height: 1.25rem;
     text-align: center;
+  }
+
+  &__domain {
+    align-items: center;
+    color: var(--color-gray-70);
+    display: flex;
+    font-size: 0.75rem;
+    justify-content: center;
+    line-height: 1.125rem;
+    margin-bottom: 0.5rem;
   }
 }

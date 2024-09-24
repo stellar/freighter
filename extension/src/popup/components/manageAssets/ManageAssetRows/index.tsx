@@ -131,6 +131,7 @@ export const ManageAssetRows = ({
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
+          image={suspiciousAssetData.image}
           blockaidData={suspiciousAssetData.blockaidData}
           onClose={() => {
             setShowBlockedDomainWarning(false);

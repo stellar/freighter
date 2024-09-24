@@ -727,7 +727,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 </Button>
                 <Button
                   size="md"
-                  variant="primary"
+                  variant={
+                    isSourceAssetSuspicious || isDestAssetSuspicious
+                      ? "error"
+                      : "primary"
+                  }
                   disabled={isSubmitDisabled}
                   onClick={handleSend}
                   isLoading={hwStatus === ShowOverlayStatus.IN_PROGRESS}
