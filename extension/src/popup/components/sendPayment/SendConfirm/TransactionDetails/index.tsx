@@ -31,6 +31,7 @@ import {
 } from "@shared/helpers/stellar";
 import {
   isAssetSuspicious,
+  isTxSuspicious,
   useScanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
@@ -728,7 +729,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 <Button
                   size="md"
                   variant={
-                    isSourceAssetSuspicious || isDestAssetSuspicious
+                    isSourceAssetSuspicious ||
+                    isDestAssetSuspicious ||
+                    (scanResult && isTxSuspicious(scanResult))
                       ? "error"
                       : "primary"
                   }
