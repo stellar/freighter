@@ -431,7 +431,7 @@ export const ScamAssetWarning = ({
                   isFullWidth
                   onClick={onContinue}
                   type="button"
-                  variant="primary"
+                  variant="error"
                   isLoading={
                     isSubmitting || submitStatus === ActionStatus.PENDING
                   }
