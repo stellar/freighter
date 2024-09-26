@@ -189,6 +189,28 @@ export const isAssetSuspicious = (blockaidData?: BlockAidScanAssetResult) => {
   return blockaidData.result_type !== "Benign";
 };
 
+export const isTxSuspicious = (blockaidData: BlockAidScanTxResult) => {
+  const { simulation, validation } = blockaidData;
+
+  if (!blockaidData) {
+    return false;
+  }
+
+  if (simulation && "error" in simulation) {
+    return true;
+  }
+
+  if (
+    validation &&
+    "result_type" in validation &&
+    validation.result_type !== "Benign"
+  ) {
+    return true;
+  }
+
+  return false;
+};
+  
 export const scanAssetBulk = async (
   addressList: string[],
   networkDetails: NetworkDetails,
