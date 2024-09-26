@@ -250,6 +250,7 @@ export interface BlockAidScanAssetResultIndex {
 
 export type BlockAidScanSiteResult = Blockaid.SiteScanResponse;
 export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse;
+export type BlockAidBulkScanAssetResult = Blockaid.TokenBulkScanResponse;
 
 export interface AssetBalance extends Balance {
   limit: BigNumber;
