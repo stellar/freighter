@@ -471,10 +471,12 @@ export const KeyValueInvokeHostFn = ({
 
   function renderDetails() {
     switch (hostfn.switch()) {
+      case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
       case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
         const createContractArgs = hostfn.createContract();
         const preimage = createContractArgs.contractIdPreimage();
         const executable = createContractArgs.executable();
+        const createV2Args = createContractArgs.constructorArgs();
         const executableType = executable.switch().name;
 
         if (preimage.switch().name === "contractIdPreimageFromAddress") {
@@ -510,6 +512,9 @@ export const KeyValueInvokeHostFn = ({
                     operationKey={t("Executable Wasm Hash")}
                     operationValue={executable.wasmHash().toString()}
                   />
+                )}
+                {createV2Args && (
+                  <KeyValueInvokeHostFnArgs args={createV2Args} />
                 )}
               </>
             );
