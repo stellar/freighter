@@ -1315,6 +1315,7 @@ export const BlockaidWarningModal = ({
     <div
       className="WarningMessage__activate-button"
       onClick={() => setIsModalActive(true)}
+      data-testid="BlockaidWarningModal__button"
     >
       <WarningInfoBlock />
     </div>
