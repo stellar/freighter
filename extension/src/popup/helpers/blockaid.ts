@@ -210,7 +210,10 @@ export const isTxSuspicious = (blockaidData: BlockAidScanTxResult) => {
 
   return false;
 };
-  
+
+export const isBlockaidWarning = (resultType: string) =>
+  resultType === "Warning" || resultType === "Spam";
+
 export const scanAssetBulk = async (
   addressList: string[],
   networkDetails: NetworkDetails,

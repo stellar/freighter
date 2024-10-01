@@ -41,6 +41,7 @@
     padding: 0.5rem;
 
     &--high-alert {
+      border-color: #671e22;
       background: rgba(241, 50, 50, 0.32);
 
       .WarningMessage__icon {
@@ -129,6 +130,11 @@
     &__icon {
       margin: 0.125rem 0.375rem 0 0;
     }
+
+    &--isWarning {
+      background-color: var(--color-yellow-20);
+      border: 1px solid #573300;
+    }
   }
 
   &__wrapper {
@@ -159,7 +165,7 @@
 
   &__list {
     font-size: 0.75rem !important;
-    line-height: 1.25rem !important;
+    line-height: 1.125rem !important;
     margin-left: 1.125rem !important;
   }
 
@@ -491,6 +497,59 @@
   .Icon {
     .WarningMessage__icon {
       color: var(--color-grey-40);
+    }
+  }
+}
+
+.BlockaidWarningModal {
+  height: 100vh;
+  width: 100vw;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__modal {
+    background: var(--color-gray-10);
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-gray-40);
+    padding: 1rem;
+    width: 312px;
+    z-index: 2;
+
+    &__icon {
+      background-color: rgba(241, 50, 50, 0.32);
+      border-radius: 100px;
+      display: flex;
+      width: 2rem;
+      height: 2rem;
+      padding: 0.375rem;
+      margin-bottom: 0.5rem;
+
+      &--isWarning {
+        background-color: rgba(94, 58, 4, 0.32);
+      }
+    }
+
+    &__image {
+      height: 1.25rem;
+      width: 1.25rem;
+    }
+
+    &__title {
+      display: flex;
+      line-height: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    &__description {
+      font-size: 0.75rem;
+      line-height: 1.125rem;
+      margin-bottom: 1rem;
+    }
+
+    &__byline {
+      margin-bottom: 1rem;
     }
   }
 }
