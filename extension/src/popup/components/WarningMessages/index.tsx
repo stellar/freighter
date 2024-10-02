@@ -1242,19 +1242,24 @@ export const BlockaidWarningModal = ({
     </WarningMessageHeader>
   );
 
-  const truncatedDescription = description.map((d) => {
-    const arr = d.split(" ");
+  const truncatedDescription = (desc: string) => {
+    const arr = desc.split(" ");
 
-    const truncatedArr = arr.map((word) => {
+    return arr.map((word) => {
       if (word.length > 30) {
-        return `${word.slice(0, 4)}...${word.slice(-4)}`;
+        return (
+          <>
+            <CopyValue
+              value={word}
+              displayValue={`${word.slice(0, 4)}...${word.slice(-4)}`}
+            />{" "}
+          </>
+        );
       }
 
-      return word;
+      return <span>{word} </span>;
     });
-
-    return truncatedArr.join(" ");
-  });
+  };
 
   return isModalActive ? (
     <>
@@ -1286,8 +1291,8 @@ export const BlockaidWarningModal = ({
               )}
               :
               <ul className="ScamAssetWarning__list">
-                {truncatedDescription.map((d) => (
-                  <li key={d.replace(" ", "-")}>{d}</li>
+                {description.map((d) => (
+                  <li key={d.replace(" ", "-")}>{truncatedDescription(d)}</li>
                 ))}
               </ul>
             </div>
@@ -1315,7 +1320,7 @@ export const BlockaidWarningModal = ({
     <div
       className="WarningMessage__activate-button"
       onClick={() => setIsModalActive(true)}
-      data-testid="BlockaidWarningModal__button"
+      data-testid="BlockaidWarningModal__activate-button"
     >
       <WarningInfoBlock />
     </div>

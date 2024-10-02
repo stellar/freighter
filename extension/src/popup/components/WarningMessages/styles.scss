@@ -166,7 +166,18 @@
   &__list {
     font-size: 0.75rem !important;
     line-height: 1.125rem !important;
-    margin-left: 1.125rem !important;
+    margin-left: 0.5rem !important;
+
+    .CopyValue {
+      svg {
+        width: 0.5rem;
+        height: 0.5rem;
+      }
+
+      .Value {
+        margin-left: 0.125rem;
+      }
+    }
   }
 
   &__footer {
