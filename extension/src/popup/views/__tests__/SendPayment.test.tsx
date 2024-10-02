@@ -236,9 +236,9 @@ const testPaymentFlow = async (asset: string) => {
     if (
       asset === "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
     ) {
-      expect(screen.getByTestId("ScamAssetWarning__box")).toBeDefined();
+      expect(screen.getByTestId("BlockaidWarningModal__button")).toBeDefined();
     } else {
-      expect(screen.queryByTestId("ScamAssetWarning__box")).toBeNull();
+      expect(screen.queryByTestId("BlockaidWarningModal__button")).toBeNull();
     }
     const sendBtn = screen.getByTestId("transaction-details-btn-send");
     await fireEvent.click(sendBtn);

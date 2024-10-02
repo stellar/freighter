@@ -59,8 +59,9 @@ import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
 import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
+import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
-import { isAssetSuspicious } from "popup/helpers/blockaid";
+import { isAssetSuspicious, isBlockaidWarning } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
@@ -70,6 +71,31 @@ export enum WarningMessageVariant {
   highAlert = "high-alert",
   warning = "warning",
 }
+
+interface WarningMessageHeaderProps {
+  header: string;
+  icon: React.ReactNode;
+  variant: WarningMessageVariant;
+  children?: React.ReactNode;
+}
+
+const WarningMessageHeader = ({
+  header,
+  icon,
+  variant,
+  children,
+}: WarningMessageHeaderProps) => (
+  <div
+    className={`WarningMessage__infoBlock WarningMessage__infoBlock--${variant}`}
+    data-testid="WarningMessage"
+  >
+    <div className="WarningMessage__header">
+      {icon}
+      <div>{header}</div>
+      {children}
+    </div>
+  </div>
+);
 
 interface WarningMessageProps {
   header: string;
@@ -94,20 +120,19 @@ export const WarningMessage = ({
   }: {
     children?: React.ReactNode;
   }) => (
-    <div
-      className={`WarningMessage__infoBlock WarningMessage__infoBlock--${variant}`}
-      data-testid="WarningMessage"
-    >
-      <div className="WarningMessage__header">
-        {variant ? (
+    <WarningMessageHeader
+      header={header}
+      icon={
+        variant ? (
           <Icon.Warning className="WarningMessage__icon" />
         ) : (
           <Icon.Info className="WarningMessage__default-icon" />
-        )}
-        <div>{header}</div>
-        {headerChildren}
-      </div>
-    </div>
+        )
+      }
+      variant={variant}
+    >
+      {headerChildren}
+    </WarningMessageHeader>
   );
 
   return isWarningActive ? (
@@ -182,7 +207,9 @@ export const FlaggedWarningMessage = ({
   blockaidData,
 }: FlaggedWarningMessageProps) => (
   <>
-    {isSuspicious ? <BlockaidAssetWarning blockaidData={blockaidData} /> : null}
+    {isSuspicious ? (
+      <BlockaidAssetScanLabel blockaidData={blockaidData} />
+    ) : null}
     <MemoWarningMessage isMemoRequired={isMemoRequired} />
   </>
 );
@@ -230,6 +257,19 @@ export const BackupPhraseWarningMessage = () => {
   );
 };
 
+const BlockaidByLine = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="ScamAssetWarning__footer">
+      <img src={IconShieldBlockaid} alt="icon shield blockaid" />
+      {t("Powered by ")}
+      <a rel="noreferrer" href="https://www.blockaid.io/" target="_blank">
+        Blockaid
+      </a>
+    </div>
+  );
+};
+
 interface BlockaidAssetWarningProps {
   blockaidData: BlockAidScanAssetResult;
 }
@@ -238,13 +278,19 @@ export const BlockaidAssetWarning = ({
   blockaidData,
 }: BlockaidAssetWarningProps) => {
   const { t } = useTranslation();
+  const isWarning = isBlockaidWarning(blockaidData.result_type);
 
   return (
-    <div className="ScamAssetWarning__box" data-testid="ScamAssetWarning__box">
+    <div
+      className={`ScamAssetWarning__box ${
+        isWarning ? "ScamAssetWarning__box--isWarning" : ""
+      }`}
+      data-testid="ScamAssetWarning__box"
+    >
       <div className="Icon">
         <img
           className="ScamAssetWarning__box__icon"
-          src={IconWarningBlockaid}
+          src={isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid}
           alt="icon warning blockaid"
         />
       </div>
@@ -260,13 +306,6 @@ export const BlockaidAssetWarning = ({
                 <li key={f.feature_id}>{f.description}</li>
               ))}
           </ul>
-        </div>
-        <div className="ScamAssetWarning__footer">
-          <img src={IconShieldBlockaid} alt="icon shield blockaid" />
-          {t("Powered by ")}
-          <a rel="noreferrer" href="https://www.blockaid.io/" target="_blank">
-            Blockaid
-          </a>
         </div>
       </div>
     </div>
@@ -1144,6 +1183,148 @@ export const BlockaidTxScanLabel = ({
     }
   }
   return <></>;
+};
+
+export const BlockaidAssetScanLabel = ({
+  blockaidData,
+}: {
+  blockaidData: BlockAidScanAssetResult;
+}) => {
+  const isWarning = isBlockaidWarning(blockaidData.result_type);
+
+  return (
+    <BlockaidWarningModal
+      header={`This asset was flagged as ${blockaidData.result_type}`}
+      description={blockaidData.features?.map((f) => f.description) || []}
+      isWarning={isWarning}
+      isAsset
+    />
+  );
+};
+
+interface BlockaidWarningModalProps {
+  header: string;
+  description: string[];
+  handleCloseClick?: () => void;
+  isActive?: boolean;
+  isWarning: boolean;
+  isAsset?: boolean;
+}
+
+export const BlockaidWarningModal = ({
+  handleCloseClick,
+  header,
+  description,
+  isActive = false,
+  isWarning,
+  isAsset = false,
+}: BlockaidWarningModalProps) => {
+  const { t } = useTranslation();
+  const [isModalActive, setIsModalActive] = useState(isActive);
+  const variant = isWarning
+    ? WarningMessageVariant.warning
+    : WarningMessageVariant.highAlert;
+
+  const WarningInfoBlock = () => (
+    <WarningMessageHeader
+      header={header}
+      icon={
+        <img
+          src={isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid}
+          alt="icon warning blockaid"
+        />
+      }
+      variant={variant}
+    >
+      <div className="WarningMessage__link-wrapper">
+        <Icon.ChevronRight className="WarningMessage__link-icon" />
+      </div>
+    </WarningMessageHeader>
+  );
+
+  const truncatedDescription = (desc: string) => {
+    const arr = desc.split(" ");
+
+    return arr.map((word) => {
+      if (word.length > 30) {
+        return (
+          <>
+            <CopyValue
+              value={word}
+              displayValue={`${word.slice(0, 4)}...${word.slice(-4)}`}
+            />{" "}
+          </>
+        );
+      }
+
+      return <span>{word} </span>;
+    });
+  };
+
+  return isModalActive ? (
+    <>
+      <WarningInfoBlock />
+      {createPortal(
+        <div className="BlockaidWarningModal">
+          <LoadingBackground isActive />
+          <div className="BlockaidWarningModal__modal">
+            <div
+              className={`BlockaidWarningModal__modal__icon ${
+                isWarning ? "BlockaidWarningModal__modal__icon--isWarning" : ""
+              }`}
+            >
+              <img
+                className="BlockaidWarningModal__modal__image"
+                src={
+                  isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid
+                }
+                alt="icon warning blockaid"
+              />
+            </div>
+
+            <div className="BlockaidWarningModal__modal__title">{header}</div>
+            <div className="BlockaidWarningModal__modal__description">
+              {t(
+                `${header} by Blockaid. Interacting with this ${
+                  isAsset ? "token" : "transaction"
+                } may result in loss of funds and is not recommended for the following reasons`,
+              )}
+              :
+              <ul className="ScamAssetWarning__list">
+                {description.map((d) => (
+                  <li key={d.replace(" ", "-")}>{truncatedDescription(d)}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="BlockaidWarningModal__modal__byline">
+              <BlockaidByLine />
+            </div>
+
+            <Button
+              size="md"
+              variant="secondary"
+              isFullWidth
+              type="button"
+              onClick={() =>
+                handleCloseClick ? handleCloseClick() : setIsModalActive(false)
+              }
+            >
+              {t("Got it")}
+            </Button>
+          </div>
+        </div>,
+        document.querySelector("#modal-root")!,
+      )}
+    </>
+  ) : (
+    <div
+      className="WarningMessage__activate-button"
+      onClick={() => setIsModalActive(true)}
+      data-testid="BlockaidWarningModal__button"
+    >
+      <WarningInfoBlock />
+    </div>
+  );
 };
 
 export const BlockaidMaliciousTxInternalWarning = ({

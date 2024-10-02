@@ -31,6 +31,7 @@ import {
 } from "@shared/helpers/stellar";
 import {
   isAssetSuspicious,
+  isBlockaidWarning,
   isTxSuspicious,
   useScanAsset,
   useScanTx,
@@ -71,7 +72,7 @@ import {
 } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
-  BlockaidTxScanLabel,
+  BlockaidWarningModal,
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
@@ -697,19 +698,33 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 </div>
               </div>
             )}
-            {scanResult && <BlockaidTxScanLabel scanResult={scanResult} />}
-            {submission.submitStatus === ActionStatus.IDLE && (
-              <FlaggedWarningMessage
-                isMemoRequired={isMemoRequired}
-                blockaidData={
-                  (isSourceAssetSuspicious
-                    ? accountBalances.balances?.[asset].blockaidData
-                    : accountBalances.balances?.[destinationAsset]
-                        ?.blockaidData) || defaultBlockaidScanAssetResult
-                }
-                isSuspicious={isSourceAssetSuspicious || isDestAssetSuspicious}
-              />
-            )}
+            <div className="TransactionDetails__warnings">
+              {scanResult?.validation &&
+                "result_type" in scanResult.validation && (
+                  <BlockaidWarningModal
+                    header={`This transaction was flagged as ${scanResult.validation.result_type}`}
+                    description={[scanResult.validation.description]}
+                    isWarning={isBlockaidWarning(
+                      scanResult.validation.result_type,
+                    )}
+                    isAsset
+                  />
+                )}
+              {submission.submitStatus === ActionStatus.IDLE && (
+                <FlaggedWarningMessage
+                  isMemoRequired={isMemoRequired}
+                  blockaidData={
+                    (isSourceAssetSuspicious
+                      ? accountBalances.balances?.[asset].blockaidData
+                      : accountBalances.balances?.[destinationAsset]
+                          ?.blockaidData) || defaultBlockaidScanAssetResult
+                  }
+                  isSuspicious={
+                    isSourceAssetSuspicious || isDestAssetSuspicious
+                  }
+                />
+              )}
+            </div>
           </View.Content>
           <View.Footer isInline>
             {submission.submitStatus === ActionStatus.SUCCESS ? (
