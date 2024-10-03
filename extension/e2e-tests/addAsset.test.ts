@@ -1,5 +1,6 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
+import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   test.slow();
@@ -15,9 +16,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
-  await page
-    .getByTestId("search-token-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
   await expect(page.getByTestId("asset-notification")).toHaveText(
     "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
