@@ -1,10 +1,10 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginAndFund, loginToTestAccount, PASSWORD } from "./helpers/login";
+import { loginToTestAccount, PASSWORD } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 
 test("Send XLM payment to G address", async ({ page, extensionId }) => {
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await page.getByTitle("Send Payment").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();

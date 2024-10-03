@@ -20,7 +20,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("asset-notification")).toHaveText(
     "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
-  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
+  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 
