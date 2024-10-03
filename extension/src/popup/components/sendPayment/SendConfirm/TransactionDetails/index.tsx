@@ -576,15 +576,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               ) : null
             }
           />
-          <View.Content
-            contentFooter={
-              <div className="TransactionDetails__bottom-wrapper__copy">
-                {(isPathPayment || isSwap) &&
-                  submission.submitStatus !== ActionStatus.SUCCESS &&
-                  t("The final amount is approximate and may change")}
-              </div>
-            }
-          >
+          <View.Content>
             {!(isPathPayment || isSwap) && (
               <div className="TransactionDetails__cards">
                 <Card>
@@ -726,6 +718,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               )}
             </div>
           </View.Content>
+          <div className="TransactionDetails__bottom-wrapper__copy">
+            {(isPathPayment || isSwap) &&
+              submission.submitStatus !== ActionStatus.SUCCESS &&
+              t("The final amount is approximate and may change")}
+          </div>
           <View.Footer isInline>
             {submission.submitStatus === ActionStatus.SUCCESS ? (
               <StellarExpertButton />
