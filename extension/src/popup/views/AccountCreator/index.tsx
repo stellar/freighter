@@ -68,7 +68,7 @@ export const AccountCreator = () => {
   ) : (
     <React.Fragment>
       <View.Header />
-      <View.Content alignment="center">
+      <View.Content alignment="center" data-testid="account-creator-view">
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}
@@ -83,6 +83,7 @@ export const AccountCreator = () => {
                     <Field name="password">
                       {({ field }: FieldProps) => (
                         <Input
+                          data-testid="account-creator-password-input"
                           fieldSize="md"
                           autoComplete="off"
                           id="new-password-input"
@@ -101,6 +102,7 @@ export const AccountCreator = () => {
                     <Field name="confirmPassword">
                       {({ field }: FieldProps) => (
                         <Input
+                          data-testid="account-creator-confirm-password-input"
                           fieldSize="md"
                           autoComplete="off"
                           id="confirm-password-input"
@@ -123,6 +125,7 @@ export const AccountCreator = () => {
                   <Field name="termsOfUse">
                     {({ field, form }: FieldProps) => (
                       <Checkbox
+                        data-testid="account-creator-termsOfUse-input"
                         fieldSize="md"
                         autoComplete="off"
                         error={touched.termsOfUse ? errors.termsOfUse : null}
@@ -151,6 +154,7 @@ export const AccountCreator = () => {
 
                   <OnboardingButtons hasGoBackBtn>
                     <Button
+                      data-testid="account-creator-submit"
                       size="md"
                       variant="tertiary"
                       type="submit"
