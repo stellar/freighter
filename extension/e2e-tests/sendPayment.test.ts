@@ -1,5 +1,6 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginAndFund, loginToTestAccount, PASSWORD } from "./helpers/login";
+import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 
 test("Send XLM payment to G address", async ({ page, extensionId }) => {
   test.slow();
@@ -78,9 +79,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   // send XLM to C address
   await page.getByTitle("Send Payment").click({ force: true });
   await expect(page.getByText("Send To")).toBeVisible();
-  await page
-    .getByTestId("send-to-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByText("Send XLM")).toBeVisible();
@@ -172,9 +171,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
 
   // send SAC to C address
   await page.getByTitle("Send Payment").click({ force: true });
-  await page
-    .getByTestId("send-to-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
   await page.getByTestId("send-amount-asset-select").click({ force: true });
@@ -227,17 +224,13 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
-  await page
-    .getByTestId("search-token-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
   await page.getByTestId("add-asset").dispatchEvent("click");
 
   // send E2E token to C address
   await page.getByTitle("Send Payment").click({ force: true });
-  await page
-    .getByTestId("send-to-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
   await page.getByTestId("send-amount-asset-select").click({ force: true });
