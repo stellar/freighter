@@ -357,31 +357,36 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           url,
           networkDetails,
         );
-        return;
       }
       setLoading(false);
     };
     const scanClassicTx = async () => {
-      const transaction = await getBuiltTx(
-        publicKey,
-        {
-          sourceAsset,
-          destAsset,
-          amount,
-          destinationAmount,
-          destination,
-          allowedSlippage,
-          path,
-          isPathPayment,
-          isSwap,
-          isFunded: destinationBalances.isFunded!,
-        },
-        transactionFee,
-        transactionTimeout,
-        networkDetails,
-      );
+      if (
+        submission.submitStatus === ActionStatus.IDLE &&
+        transactionSimulation.preparedTransaction
+      ) {
+        const transaction = await getBuiltTx(
+          publicKey,
+          {
+            sourceAsset,
+            destAsset,
+            amount,
+            destinationAmount,
+            destination,
+            allowedSlippage,
+            path,
+            isPathPayment,
+            isSwap,
+            isFunded: destinationBalances.isFunded!,
+          },
+          transactionFee,
+          transactionTimeout,
+          networkDetails,
+        );
 
-      await scanTx(transaction.build().toXDR(), url, networkDetails);
+        await scanTx(transaction.build().toXDR(), url, networkDetails);
+      }
+      setLoading(false);
     };
     if (isToken || isSoroswap) {
       scanSorobanTx();
