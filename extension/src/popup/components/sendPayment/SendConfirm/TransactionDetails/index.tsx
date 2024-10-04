@@ -381,11 +381,15 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
       await scanTx(transaction.build().toXDR(), url, networkDetails);
     };
-    if (isToken || isSoroswap) {
-      scanSorobanTx();
-      return;
+    try {
+      if (isToken || isSoroswap) {
+        scanSorobanTx();
+        return;
+      }
+      scanClassicTx();
+    } catch (error) {
+      console.log(error);
     }
-    scanClassicTx();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -541,12 +545,17 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     return isSwap ? t("Confirm Swap") : `${t("Confirm Send")}`;
   };
 
+  const showLoading =
+    isLoading &&
+    submission.submitStatus === ActionStatus.IDLE &&
+    transactionSimulation.preparedTransaction;
+
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      {isLoading ? (
+      {showLoading ? (
         <div className="TransactionDetails__loader">
           <Loader size="2rem" />
         </div>
