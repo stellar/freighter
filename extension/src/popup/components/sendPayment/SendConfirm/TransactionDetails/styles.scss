@@ -127,10 +127,13 @@
   }
 
   &__warnings {
+    display: flex;
+    flex-flow: column;
+    gap: 0.5rem;
     margin-top: 1.5rem;
 
     .WarningMessage__infoBlock {
-      margin-bottom: 0.375rem;
+      margin-bottom: 0;
     }
   }
 }

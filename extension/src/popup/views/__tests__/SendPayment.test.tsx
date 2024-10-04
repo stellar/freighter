@@ -1,13 +1,19 @@
 import React from "react";
 import { render, waitFor, fireEvent, screen } from "@testing-library/react";
 
-import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
+import {
+  Wrapper,
+  mockBalances,
+  mockTestnetBalances,
+  mockAccounts,
+} from "../../__testHelpers__";
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as BlockaidHelpers from "popup/helpers/blockaid";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
+  MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { createMemoryHistory } from "history";
 
@@ -33,16 +39,6 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   return {
     recommendedFee: ".00001",
     networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
-  };
-});
-
-jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
-  return {
-    scanTx: () => Promise.resolve(null),
-    isLoading: false,
-    setLoading: () => {},
-    data: null,
-    error: null,
   };
 });
 
@@ -102,6 +98,17 @@ jest.mock("popup/constants/history", () => ({
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
 describe("SendPayment", () => {
+  beforeEach(() => {
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+      return {
+        scanTx: () => Promise.resolve(null),
+        isLoading: false,
+        data: null,
+        error: null,
+        setLoading: () => {},
+      };
+    });
+  });
   afterAll(() => {
     jest.clearAllMocks();
   });
@@ -121,7 +128,7 @@ describe("SendPayment", () => {
             allAccounts: mockAccounts,
           },
           settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
+            networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
           tokenPaymentSimulation: tokenPaymentActions.initialState,
@@ -135,18 +142,102 @@ describe("SendPayment", () => {
     });
   });
 
-  it("sending native asset works", async () => {
-    await testPaymentFlow("native");
+  it("sending native asset on Mainnet works", async () => {
+    await testPaymentFlow("native", true, false);
   });
 
-  it("sending non-native asset works", async () => {
+  it("sending non-native asset on Mainnet with Blockaid validation and asset warnings", async () => {
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+      const scanTxResult = {
+        simulation: {
+          status: "Success",
+        } as any,
+        validation: {
+          classification: "",
+          features: [
+            {
+              feature_id: "KNOWN_MALICIOUS",
+              type: "Malicious",
+              address: "baz",
+              description: "foo",
+            },
+          ] as any,
+          description: "foo",
+          reason: "",
+          result_type: "Malicious" as any,
+          status: "Success" as any,
+        },
+      };
+      return {
+        scanTx: () => Promise.resolve(null),
+        isLoading: false,
+        data: scanTxResult,
+        error: null,
+        setLoading: () => {},
+      };
+    });
     await testPaymentFlow(
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      true,
+      false,
+    );
+  });
+
+  it("sending non-native asset on Mainnet with Blockaid simulation error", async () => {
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+      const scanTxResult = {
+        simulation: {
+          error: "Sim failed",
+        } as any,
+        validation: {
+          classification: "",
+          features: [
+            {
+              feature_id: "KNOWN_MALICIOUS",
+              type: "Malicious",
+              address: "baz",
+              description: "foo",
+            },
+          ] as any,
+          description: "foo",
+          reason: "",
+          result_type: "Malicious" as any,
+          status: "Success" as any,
+        },
+      };
+      return {
+        scanTx: () => Promise.resolve(null),
+        isLoading: false,
+        data: scanTxResult,
+        error: null,
+        setLoading: () => {},
+      };
+    });
+    await testPaymentFlow(
+      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      true,
+      true,
+    );
+  });
+
+  it("sending native asset on Testnet works", async () => {
+    await testPaymentFlow("native", false, false);
+  });
+
+  it("sending non-native asset on Testnet works", async () => {
+    await testPaymentFlow(
+      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      false,
+      false,
     );
   });
 });
 
-const testPaymentFlow = async (asset: string) => {
+const testPaymentFlow = async (
+  asset: string,
+  isMainnet: boolean,
+  hasSimError: boolean,
+) => {
   const history = createMemoryHistory();
   history.push(ROUTES.sendPaymentTo);
   mockHistoryGetter.mockReturnValue(history);
@@ -162,7 +253,9 @@ const testPaymentFlow = async (asset: string) => {
           allAccounts: mockAccounts,
         },
         settings: {
-          networkDetails: TESTNET_NETWORK_DETAILS,
+          networkDetails: isMainnet
+            ? MAINNET_NETWORK_DETAILS
+            : TESTNET_NETWORK_DETAILS,
           networksList: DEFAULT_NETWORKS,
         },
         transactionSubmission: {
@@ -171,7 +264,7 @@ const testPaymentFlow = async (asset: string) => {
             ...transactionSubmissionInitialState.transactionData,
             asset,
           },
-          accountBalances: mockBalances,
+          accountBalances: isMainnet ? mockBalances : mockTestnetBalances,
           assetDomains: {
             "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
               "domain.com",
@@ -204,18 +297,23 @@ const testPaymentFlow = async (asset: string) => {
 
   await waitFor(async () => {
     if (
-      asset === "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
+      asset ===
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM" &&
+      isMainnet
     ) {
       expect(screen.getByTestId("ScamAssetIcon")).toBeDefined();
     } else {
       expect(screen.queryByTestId("ScamAssetIcon")).toBeNull();
     }
+
     const continueBtn = screen.getByTestId("send-amount-btn-continue");
     expect(continueBtn).not.toBeDisabled();
     await fireEvent.click(continueBtn);
 
     if (
-      asset === "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
+      asset ===
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM" &&
+      isMainnet
     ) {
       await fireEvent.click(screen.getByTestId("ScamAsset__send"));
     }
@@ -235,12 +333,50 @@ const testPaymentFlow = async (asset: string) => {
       "Confirm Send",
     );
     if (
-      asset === "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
+      asset ===
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM" &&
+      isMainnet
     ) {
-      expect(screen.getByTestId("BlockaidWarningModal__button")).toBeDefined();
+      expect(
+        screen.getByTestId("BlockaidWarningModal__button__asset"),
+      ).toBeDefined();
+      expect(
+        screen.getByTestId("BlockaidWarningModal__button__tx"),
+      ).toBeDefined();
+
+      await fireEvent.click(
+        screen.getByTestId("BlockaidWarningModal__button__tx"),
+      );
+      expect(screen.getByTestId("BlockaidWarningModal__tx")).toBeDefined();
+      if (hasSimError) {
+        expect(
+          screen.getByTestId("BlockaidWarningModal__tx"),
+        ).toHaveTextContent("Sim failed");
+      } else {
+        expect(
+          screen.getByTestId("BlockaidWarningModal__tx"),
+        ).toHaveTextContent("foo");
+      }
+
+      await fireEvent.click(screen.getByTestId("BlockaidWarningModal__button"));
+
+      await fireEvent.click(
+        screen.getByTestId("BlockaidWarningModal__button__asset"),
+      );
+      expect(screen.getByTestId("BlockaidWarningModal__asset")).toBeDefined();
+      expect(
+        screen.getByTestId("BlockaidWarningModal__asset"),
+      ).toHaveTextContent("baz");
+      await fireEvent.click(screen.getByTestId("BlockaidWarningModal__button"));
     } else {
-      expect(screen.queryByTestId("BlockaidWarningModal__button")).toBeNull();
+      expect(
+        screen.queryByTestId("BlockaidWarningModal__button__asset"),
+      ).toBeNull();
+      expect(
+        screen.queryByTestId("BlockaidWarningModal__button__tx"),
+      ).toBeNull();
     }
+
     const sendBtn = screen.getByTestId("transaction-details-btn-send");
     await fireEvent.click(sendBtn);
   });

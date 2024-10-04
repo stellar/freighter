@@ -1126,18 +1126,27 @@ export const BlockAidSiteScanLabel = ({
 
 export const BlockaidTxScanLabel = ({
   scanResult,
+  isPopup = false,
 }: {
   scanResult: BlockAidScanTxResult;
+  isPopup?: boolean;
 }) => {
   const { t } = useTranslation();
   const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
+    const header = t("This transaction is expected to fail");
+    if (isPopup) {
+      return (
+        <BlockaidWarningModal
+          header={header}
+          description={[simulation.error]}
+          isWarning
+        />
+      );
+    }
     return (
-      <WarningMessage
-        header="This transaction is expected to fail"
-        variant={WarningMessageVariant.warning}
-      >
+      <WarningMessage header={header} variant={WarningMessageVariant.warning}>
         <div>
           <p>{t(simulation.error)}</p>
         </div>
@@ -1150,10 +1159,21 @@ export const BlockaidTxScanLabel = ({
     switch (validation.result_type) {
       case "Malicious": {
         message = {
-          header: "This transaction was flagged as malicious",
+          header: t("This transaction was flagged as malicious"),
           variant: WarningMessageVariant.highAlert,
           message: validation.description,
         };
+
+        if (isPopup) {
+          return (
+            <BlockaidWarningModal
+              header={message.header}
+              description={[message.message]}
+              isWarning={false}
+            />
+          );
+        }
+
         return (
           <WarningMessage header={message.header} variant={message.variant}>
             <div>
@@ -1169,6 +1189,17 @@ export const BlockaidTxScanLabel = ({
           variant: WarningMessageVariant.warning,
           message: validation.description,
         };
+
+        if (isPopup) {
+          return (
+            <BlockaidWarningModal
+              header={message.header}
+              description={[message.message]}
+              isWarning
+            />
+          );
+        }
+
         return (
           <WarningMessage header={message.header} variant={message.variant}>
             <div>
@@ -1257,7 +1288,7 @@ export const BlockaidWarningModal = ({
         );
       }
 
-      return <span>{word} </span>;
+      return <span key={word}>{word} </span>;
     });
   };
 
@@ -1265,7 +1296,10 @@ export const BlockaidWarningModal = ({
     <>
       <WarningInfoBlock />
       {createPortal(
-        <div className="BlockaidWarningModal">
+        <div
+          className="BlockaidWarningModal"
+          data-testid={`BlockaidWarningModal__${isAsset ? "asset" : "tx"}`}
+        >
           <LoadingBackground isActive />
           <div className="BlockaidWarningModal__modal">
             <div
@@ -1292,7 +1326,7 @@ export const BlockaidWarningModal = ({
               :
               <ul className="ScamAssetWarning__list">
                 {description.map((d) => (
-                  <li key={d.replace(" ", "-")}>{truncatedDescription(d)}</li>
+                  <li key={d}>{truncatedDescription(d)}</li>
                 ))}
               </ul>
             </div>
@@ -1301,6 +1335,7 @@ export const BlockaidWarningModal = ({
             </div>
 
             <Button
+              data-testid="BlockaidWarningModal__button"
               size="md"
               variant="secondary"
               isFullWidth
@@ -1320,7 +1355,7 @@ export const BlockaidWarningModal = ({
     <div
       className="WarningMessage__activate-button"
       onClick={() => setIsModalActive(true)}
-      data-testid="BlockaidWarningModal__button"
+      data-testid={`BlockaidWarningModal__button__${isAsset ? "asset" : "tx"}`}
     >
       <WarningInfoBlock />
     </div>
