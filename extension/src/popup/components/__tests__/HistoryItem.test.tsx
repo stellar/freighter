@@ -4,6 +4,7 @@ import { render, waitFor, screen } from "@testing-library/react";
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as sorobanHelpers from "popup/helpers/soroban";
+import * as internalApi from "@shared/api/internal";
 
 describe("HistoryItem", () => {
   afterAll(() => {
@@ -20,6 +21,13 @@ describe("HistoryItem", () => {
         amount: "100000000",
       };
     });
+  jest.spyOn(internalApi, "getTokenDetails").mockImplementation(() => {
+    return Promise.resolve({
+      decimals: 7,
+      name: "native",
+      symbol: "XLM",
+    });
+  });
   it("renders SAC transfers as payments", async () => {
     const props = {
       accountBalances: {
