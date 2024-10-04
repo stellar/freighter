@@ -258,7 +258,13 @@ const getBuiltTx = async (
     .setTimeout(transactionTimeout);
 };
 
-export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
+export const TransactionDetails = ({
+  goBack,
+  shouldScanTx,
+}: {
+  goBack: () => void;
+  shouldScanTx: boolean;
+}) => {
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -349,6 +355,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     const url = "internal"; // blockaid prefers a URL for this endpoint, but this does not originate from a URL
     const scanSorobanTx = async () => {
       if (
+        shouldScanTx &&
         submission.submitStatus === ActionStatus.IDLE &&
         transactionSimulation.preparedTransaction
       ) {
@@ -361,10 +368,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
       setLoading(false);
     };
     const scanClassicTx = async () => {
-      if (
-        submission.submitStatus === ActionStatus.IDLE &&
-        transactionSimulation.preparedTransaction
-      ) {
+      if (shouldScanTx) {
         const transaction = await getBuiltTx(
           publicKey,
           {
