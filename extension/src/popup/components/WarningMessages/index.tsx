@@ -1326,7 +1326,7 @@ export const BlockaidWarningModal = ({
               :
               <ul className="ScamAssetWarning__list">
                 {description.map((d) => (
-                  <li key={d}>{truncatedDescription(d)}</li>
+                  <li key={d.replace(" ", "-")}>{truncatedDescription(d)}</li>
                 ))}
               </ul>
             </div>
