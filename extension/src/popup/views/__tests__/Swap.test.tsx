@@ -111,6 +111,7 @@ jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
   return {
     scanTx: () => Promise.resolve(null),
     isLoading: false,
+    setLoading: () => {},
     data: null,
     error: null,
   };

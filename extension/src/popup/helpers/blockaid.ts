@@ -106,6 +106,7 @@ export const useScanTx = () => {
     data,
     error,
     isLoading,
+    setLoading,
     scanTx,
   };
 };
