@@ -289,7 +289,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const isPathPayment = useSelector(isPathPaymentSelector);
   const { isMemoValidationEnabled } = useSelector(settingsSelector);
   const isSwap = useIsSwap();
-  const { scanTx, data: scanResult, isLoading } = useScanTx();
+  const { scanTx, data: scanResult, isLoading, setLoading } = useScanTx();
 
   const { t } = useTranslation();
 
@@ -357,7 +357,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           url,
           networkDetails,
         );
+        return;
       }
+      setLoading(false);
     };
     const scanClassicTx = async () => {
       const transaction = await getBuiltTx(
@@ -381,15 +383,11 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
 
       await scanTx(transaction.build().toXDR(), url, networkDetails);
     };
-    try {
-      if (isToken || isSoroswap) {
-        scanSorobanTx();
-        return;
-      }
-      scanClassicTx();
-    } catch (error) {
-      console.log(error);
+    if (isToken || isSoroswap) {
+      scanSorobanTx();
+      return;
     }
+    scanClassicTx();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -545,17 +543,12 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     return isSwap ? t("Confirm Swap") : `${t("Confirm Send")}`;
   };
 
-  const showLoading =
-    isLoading &&
-    submission.submitStatus === ActionStatus.IDLE &&
-    transactionSimulation.preparedTransaction;
-
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
-      {showLoading ? (
+      {isLoading ? (
         <div className="TransactionDetails__loader">
           <Loader size="2rem" />
         </div>
