@@ -3,7 +3,6 @@ import { loginAndFund, loginToTestAccount, PASSWORD } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 
 test("Send XLM payment to G address", async ({ page, extensionId }) => {
-  test.slow();
   await loginAndFund({ page, extensionId });
   await page.getByTitle("Send Payment").click({ force: true });
 
@@ -73,7 +72,6 @@ test("Send XLM payment to G address", async ({ page, extensionId }) => {
 });
 
 test("Send XLM payment to C address", async ({ page, extensionId }) => {
-  test.slow();
   await loginToTestAccount({ page, extensionId });
 
   // send XLM to C address
