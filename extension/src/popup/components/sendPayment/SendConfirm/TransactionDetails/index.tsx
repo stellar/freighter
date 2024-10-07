@@ -31,7 +31,6 @@ import {
 } from "@shared/helpers/stellar";
 import {
   isAssetSuspicious,
-  isBlockaidWarning,
   isTxSuspicious,
   useScanAsset,
   useScanTx,
@@ -72,7 +71,7 @@ import {
 } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
-  BlockaidWarningModal,
+  BlockaidTxScanLabel,
   FlaggedWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
@@ -702,17 +701,9 @@ export const TransactionDetails = ({
               </div>
             )}
             <div className="TransactionDetails__warnings">
-              {scanResult?.validation &&
-                "result_type" in scanResult.validation && (
-                  <BlockaidWarningModal
-                    header={`This transaction was flagged as ${scanResult.validation.result_type}`}
-                    description={[scanResult.validation.description]}
-                    isWarning={isBlockaidWarning(
-                      scanResult.validation.result_type,
-                    )}
-                    isAsset
-                  />
-                )}
+              {scanResult && (
+                <BlockaidTxScanLabel scanResult={scanResult} isPopup />
+              )}
               {submission.submitStatus === ActionStatus.IDLE && (
                 <FlaggedWarningMessage
                   isMemoRequired={isMemoRequired}
