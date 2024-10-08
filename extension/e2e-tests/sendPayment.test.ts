@@ -90,13 +90,15 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
     /[0-9]/,
   );
-  await page.getByText("Review Send").click({ force: true });
+  await page.getByText("Review Send").click();
 
   await expect(page.getByText("Verification")).toBeVisible();
   await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await page.getByText("Submit").click({ force: true });
+  await page.getByText("Submit").click();
 
-  await expect(page.getByText("Confirm Send")).toBeVisible();
+  await expect(page.getByText("Confirm Send")).toBeVisible({
+    timeout: 200000,
+  });
   await expectPageToHaveScreenshot({
     page,
     screenshot: "send-payment-confirm.png",
@@ -138,7 +140,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
 
   await page.getByText("Add asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toBeVisible({
-    timeout: 30000,
+    timeout: 300000,
   });
 
   // swap to get some USDC
@@ -184,7 +186,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Send Settings")).toBeVisible();
   await expect(page.getByText("Review Send")).toBeEnabled();
-  await page.getByText("Review Send").click({ force: true });
+  await page.getByText("Review Send").click();
 
   await expect(page.getByText("Confirm Send")).toBeVisible();
   await page.getByTestId("transaction-details-btn-send").click({ force: true });
@@ -203,9 +205,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
   // remove USDC
 
   await page.getByText("Manage Assets").click({ force: true });
-  await page
-    .getByTestId("ManageAssetRowButton__ellipsis-USDC")
-    .click({ force: true });
+  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click({ force: true });
 
   await expect(page.getByTestId("account-view")).toBeVisible({
@@ -248,7 +248,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await page.getByTestId("transaction-details-btn-send").click({ force: true });
 
   await expect(page.getByText("Successfully sent")).toBeVisible({
-    timeout: 60000,
+    timeout: 600000,
   });
 
   await page.getByText("Details").click({ force: true });

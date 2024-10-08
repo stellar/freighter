@@ -74,11 +74,9 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
     timeout: 30000,
   });
 
-  await page.getByText("Manage Assets").click({ force: true });
-  await page
-    .getByTestId("ManageAssetRowButton__ellipsis-USDC")
-    .click({ force: true });
-  await page.getByText("Remove asset").click({ force: true });
+  await page.getByText("Manage Assets").click();
+  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
+  await page.getByText("Remove asset").click();
 
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
