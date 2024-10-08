@@ -26,6 +26,7 @@ const techGuidePaths = [
   "usingFreighterWebApp",
   "usingFreighterBrowser",
   "developingForSoroban",
+  "thirdPartyIntegration",
 ];
 
 const constructPaths = (paths, basePath) =>
