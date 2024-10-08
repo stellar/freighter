@@ -102,6 +102,9 @@ export const Settings = ({
 
   useEffect(() => {
     async function simulateTx() {
+      if (!recommendedFee) {
+        return;
+      }
       // use default transaction fee if unset
       const baseFee = new BigNumber(
         transactionFee || recommendedFee || stroopToXlm(BASE_FEE),
@@ -136,6 +139,7 @@ export const Settings = ({
             ),
           );
         }
+        setLoadingSimulation(false);
         return;
       }
 
@@ -193,17 +197,18 @@ export const Settings = ({
             ),
           );
         }
+        setLoadingSimulation(false);
         return;
       }
 
       if (!transactionFee) {
         dispatch(saveTransactionFee(baseFee.toString()));
       }
+      setLoadingSimulation(false);
     }
     async function setFee() {
       setLoadingSimulation(true);
       await simulateTx();
-      setLoadingSimulation(false);
     }
     setFee();
   }, [
@@ -251,7 +256,7 @@ export const Settings = ({
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
         customBackAction={() => navigateTo(previous)}
       />
-      {isLoadingSimulation ? (
+      {isLoadingSimulation && !recommendedFee ? (
         <div className="SendSettings__loadingWrapper">
           <Loader size="2rem" />
         </div>
