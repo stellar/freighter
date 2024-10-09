@@ -133,11 +133,13 @@ export const Settings = ({
             ),
             CLASSIC_ASSET_DECIMALS,
           );
-          dispatch(
-            saveTransactionFee(
-              baseFee.plus(new BigNumber(minResourceFee)).toString(),
-            ),
-          );
+          if (!transactionFee) {
+            dispatch(
+              saveTransactionFee(
+                baseFee.plus(new BigNumber(minResourceFee)).toString(),
+              ),
+            );
+          }
         }
         setLoadingSimulation(false);
         return;
