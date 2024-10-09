@@ -30,7 +30,7 @@ export const NotFundedMessage = ({
     <>
       <div className="NotFunded" data-testid="not-funded">
         <div className="NotFunded__header">
-          <Icon.Info />
+          <Icon.InfoCircle />
           {t("Stellar address is not funded")}
         </div>
         <div className="NotFunded__copy">

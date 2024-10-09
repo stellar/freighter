@@ -182,7 +182,7 @@ export const SignMessage = () => {
               <div className="SignMessage__account-not-found">
                 <Notification
                   variant="warning"
-                  icon={<Icon.Warning />}
+                  icon={<Icon.InfoOctagon />}
                   title={t("Account not available")}
                 >
                   {t("The application is requesting a specific account")} (

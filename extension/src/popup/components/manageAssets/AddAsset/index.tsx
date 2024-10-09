@@ -230,18 +230,18 @@ export const AddAsset = () => {
   }, [isAllowListVerificationEnabled]);
 
   return (
-    // eslint-disable-next-line
-    <Formik initialValues={initialValues} onSubmit={() => {}}>
-      {({ dirty }) => (
-        <Form
-          onChange={(e) => {
-            handleSearch(e);
-            setHasNoResults(false);
-          }}
-        >
-          <React.Fragment>
-            <SubviewHeader title={t("Add by address")} />
-            <View.Content>
+    <React.Fragment>
+      <SubviewHeader title={t("Add by address")} />
+      <View.Content>
+        {/* eslint-disable-next-line */}
+        <Formik initialValues={initialValues} onSubmit={() => {}}>
+          {({ dirty }) => (
+            <Form
+              onChange={(e) => {
+                handleSearch(e);
+                setHasNoResults(false);
+              }}
+            >
               <FormRows>
                 <div>
                   <Field name="asset">
@@ -286,11 +286,11 @@ export const AddAsset = () => {
                   ) : null}
                 </SearchResults>
               </FormRows>
-            </View.Content>
-          </React.Fragment>
-        </Form>
-      )}
-    </Formik>
+            </Form>
+          )}
+        </Formik>
+      </View.Content>
+    </React.Fragment>
   );
 };
 /* eslint-enable @typescript-eslint/no-unsafe-argument */

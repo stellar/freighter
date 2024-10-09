@@ -15,7 +15,7 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 You will need
 
-- Node (>=18): https://nodejs.org/en/download/
+- Node (>=21): https://nodejs.org/en/download/
 - Yarn (v1.22.5 or newer): https://classic.yarnpkg.com/en/docs/install
 
 ## Build the extension
@@ -67,6 +67,17 @@ the extension.
 
 `yarn build:\<workspace name\>`, like the equivalent start commands, will build
 an individual workspace.
+
+### Testing for Safari
+
+First you should allow unsigned extension in your safari session. This resets every time Safari shuts down.
+https://developer.apple.com/documentation/safariservices/safari_web_extensions/running_your_safari_web_extension#3744467
+
+Next, run the Safari Extension Converter locally to convert Freighter to an xcode project.
+Example from the project root -
+`xcrun safari-web-extension-converter freighter/extension/build --project-location freighter-safari`
+
+That should launch your project in xcode. You should run the project, with a target of macos. If you have not allowed unsigned extensions, you will see a related warning but otherwise you should see Freighter launched on your Safari instance.
 
 ### Useful URLs:
 

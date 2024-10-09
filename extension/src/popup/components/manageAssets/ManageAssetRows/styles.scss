@@ -1,4 +1,24 @@
 .ManageAssetRows {
+  &__empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+
+    .EmptyMessage {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-09);
+
+      svg {
+        margin-right: 0.25rem;
+        stroke: var(--sds-clr-gray-09);
+      }
+    }
+  }
+  &__scrollbar {
+    height: 100%;
+  }
   &__content {
     display: flex;
     flex-direction: column;
@@ -16,7 +36,7 @@
     justify-content: space-between;
 
     &__info {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       flex-grow: 1;
       line-height: 1.5rem;
       &__header {
@@ -36,8 +56,8 @@
   }
 
   &__domain {
-    color: var(--color-gray-60);
-    font-size: var(--font-size-secondary);
+    color: var(--sds-clr-gray-09);
+    font-size: var(--sds-fs-secondary);
     line-height: 1.375rem;
   }
 }

@@ -14,7 +14,7 @@ export const AssetNotifcation = ({ isVerified }: { isVerified: boolean }) => {
         placement="right"
         triggerEl={
           <button className="AssetNotification__button">
-            <Icon.Info className="AssetNotification__info" />
+            <Icon.InfoCircle className="AssetNotification__info" />
           </button>
         }
       >

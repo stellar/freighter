@@ -5,7 +5,7 @@
 
   &__wrapper {
     height: 3.5rem;
-    border: solid 1px var(--color-gray-10);
+    border: solid 1px var(--sds-clr-gray-01);
     border-radius: 0.5rem;
     width: 100%;
     display: flex;
@@ -32,14 +32,14 @@
     font-size: 1rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-medium);
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
   }
 
   &__light-copy {
     font-size: 0.875rem;
     line-height: 1rem;
     font-weight: var(--font-weight-regular);
-    color: var(--color-gray-60);
+    color: var(--sds-clr-gray-12);
 
     &__label {
       min-width: 2rem;

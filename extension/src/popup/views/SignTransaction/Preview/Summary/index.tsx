@@ -27,7 +27,7 @@ export const Summary = (props: SummaryProps) => (
     <div className="Operations">
       {props.operationNames.map((opName) => (
         <div key={opName} className="OpName">
-          <Icon.DeployedCode />
+          <Icon.CodeCircle01 />
           <p>{opName}</p>
         </div>
       ))}
@@ -36,14 +36,14 @@ export const Summary = (props: SummaryProps) => (
     <div className="TxInfo">
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <Icon.KeyVisualizer />
+          <Icon.ParagraphSpacing />
           <p>Operations</p>
         </div>
         <p className="TxInfoBlock__value">{props.operationNames.length}</p>
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <Icon.Payments />
+          <Icon.Percent03 />
           <p>Fees</p>
         </div>
         <p className="TxInfoBlock__value">
@@ -52,7 +52,7 @@ export const Summary = (props: SummaryProps) => (
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <Icon.Toll />
+          <Icon.ArrowSquareRight />
           <p>Sequence #</p>
         </div>
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
@@ -60,7 +60,7 @@ export const Summary = (props: SummaryProps) => (
       {props.memo && props.memo.value && (
         <div className="TxInfoBlock" data-testid="MemoBlock">
           <div className="TxInfoBlock__title">
-            <Icon.Chat />
+            <Icon.CoinsHand />
             <p>Memo</p>
           </div>
           <p className="TxInfoBlock__value">{`${props.memo.value} (${

@@ -7,7 +7,7 @@
   &__header {
     display: flex;
     align-items: center;
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     font-size: 0.875rem;
     line-height: 1.5rem;
     font-weight: var(--font-weight-medium);
@@ -26,7 +26,7 @@
     padding-top: 0.5rem;
 
     a {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       text-decoration: underline;
     }
   }

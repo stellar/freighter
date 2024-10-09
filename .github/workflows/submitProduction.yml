@@ -44,7 +44,7 @@ jobs:
       - name: Build extension
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "21"
       - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
@@ -93,7 +93,7 @@ jobs:
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
       - name: Remove scripts tag
-        uses: restackio/update-json-file-action@a3a75ee5960338f5bcc83bfb81947f283fca90eb #v2.1
+        uses: restackio/update-json-file-action@36b1f6009a0611cc89b70bb0403dbd6c194dc3d0 #v2.1
         with:
           file: ./extension/build/manifest.json
           fields: '{"background": {"service_worker": "background.min.js"}}'

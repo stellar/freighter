@@ -40,21 +40,21 @@
       height: 2.5rem;
 
       svg {
-        width: 0.75rem;
-        height: 0.75rem;
+        width: 1rem;
+        height: 1rem;
       }
     }
   }
 
   &__account-name {
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     width: 100%;
     font-weight: var(--font-weight-medium);
   }
 
   &__account-num {
     align-items: center;
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
     gap: 0.5rem;
     display: flex;
     width: 100%;
@@ -73,7 +73,6 @@
   &__assets-button {
     display: flex;
     justify-content: center;
-    margin-bottom: 1.5rem;
   }
 
   &__fetch-fail {

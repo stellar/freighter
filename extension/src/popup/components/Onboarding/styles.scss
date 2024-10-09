@@ -6,7 +6,7 @@
   flex-direction: column;
   gap: 1.5rem;
   width: var(--Onboarding-layout-width);
-  color: var(--color-gray-70);
+  color: var(--sds-clr-gray-12);
 
   @media (max-width: 832px) {
     // Center content when going from two cols to one
@@ -14,17 +14,17 @@
   }
 
   .Heading {
-    color: var(--color-gray-80);
+    color: var(--sds-clr-gray-12);
   }
 
   .Checkbox label {
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
   }
 
   .Link--secondary {
-    --Link-color-default: var(--color-gray-80);
-    --Link-color-hover: var(--color-gray-90);
-    --Link-color-disabled: var(--color-gray-70);
+    --Link-color-default: var(--sds-clr-gray-12);
+    --Link-color-hover: var(--sds-clr-gray-12);
+    --Link-color-disabled: var(--sds-clr-gray-12);
   }
 }
 

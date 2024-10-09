@@ -157,28 +157,29 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
     <React.Fragment>
       <SubviewHeader
         title={t("Your assets")}
-        customBackIcon={!isManagingAssets ? <Icon.Close /> : undefined}
+        customBackIcon={!isManagingAssets ? <Icon.XClose /> : undefined}
       />
       <View.Content>
-        {isLoading && (
+        {isLoading ? (
           <div className="ChooseAsset__loader">
             <Loader size="2rem" />
           </div>
-        )}
-        <div className="ChooseAsset__wrapper">
-          <div
-            className={`ChooseAsset__assets${
-              isManagingAssets && isSorobanSuported ? "--short" : ""
-            }`}
-            ref={ManageAssetRowsWrapperRef}
-          >
-            {isManagingAssets ? (
-              <ManageAssetRows assetRows={assetRows} />
-            ) : (
-              <SelectAssetRows assetRows={assetRows} />
-            )}
+        ) : (
+          <div className="ChooseAsset__wrapper">
+            <div
+              className={`ChooseAsset__assets${
+                isManagingAssets && isSorobanSuported ? "--short" : ""
+              }`}
+              ref={ManageAssetRowsWrapperRef}
+            >
+              {isManagingAssets ? (
+                <ManageAssetRows assetRows={assetRows} />
+              ) : (
+                <SelectAssetRows assetRows={assetRows} />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </View.Content>
       {isManagingAssets && (
         <View.Footer isInline allowWrap>
@@ -187,7 +188,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               <Button
                 size="md"
                 isFullWidth
-                variant="secondary"
+                variant="tertiary"
                 data-testid="ChooseAssetAddAssetButton"
               >
                 {t("Add an asset")}
