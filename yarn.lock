@@ -15260,10 +15260,10 @@ sodium-native@^4.1.1:
   dependencies:
     node-gyp-build "^4.8.0"
 
-soroswap-router-sdk@^1.2.8:
-  version "1.2.10"
-  resolved "https://registry.yarnpkg.com/soroswap-router-sdk/-/soroswap-router-sdk-1.2.10.tgz#401aab42b41c974459f9a0874a34868339c5dc6b"
-  integrity sha512-Ucm9G9ZCgEC/P1mgZppGjPOzpotpUHa9vw/4gkfC153qvZGiT6RrLnmu2sxejaWT7e96MHkSV9Cc0qCQIYllvw==
+soroswap-router-sdk@^1.4.6:
+  version "1.4.6"
+  resolved "https://registry.yarnpkg.com/soroswap-router-sdk/-/soroswap-router-sdk-1.4.6.tgz#69cb1efed9265796fd7c2036c87f6dbc9fb0717d"
+  integrity sha512-saEoKBtbGHvi9Tw9hSrEkjXJlzXHBHLPbfAosGbdNcz/du9VMAIGO29V828Tp0nNlTkJrteaNyeXchmNaeeCKQ==
   dependencies:
     "@stellar/stellar-sdk" "^11.3.0"
     axios "^1.6.5"

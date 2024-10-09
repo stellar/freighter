@@ -213,7 +213,7 @@ export const SendAmount = ({
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
       isDestAssetScam = isAssetSuspicious(
-        accountBalances.balances?.[destinationAsset].blockaidData,
+        accountBalances.balances?.[destinationAsset]?.blockaidData,
       );
     }
     // check for scam asset
