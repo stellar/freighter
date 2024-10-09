@@ -470,7 +470,7 @@ function getInvocationArgs(
         _invocation.contractIdPreimage(),
       ];
 
-      const createV2Arguments = _invocation.constructorArgs();
+      const createV2Arguments = [] as any; // _invocation.constructorArgs();
 
       switch (exec.switch().value) {
         // contractExecutableWasm
@@ -508,3 +508,21 @@ function getInvocationArgs(
     }
   }
 }
+
+export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
+  if (
+    hostFn.switch() !== xdr.HostFunctionType.hostFunctionTypeCreateContractV2()
+  ) {
+    const args = hostFn.createContract();
+    return {
+      contractIdPreimage: args.contractIdPreimage(),
+      executable: args.executable(),
+    };
+  }
+  const argsV2 = hostFn.createContract() as xdr.CreateContractArgsV2;
+  return {
+    contractIdPreimage: argsV2.contractIdPreimage(),
+    executable: argsV2.executable(),
+    constructorArgs: argsV2.constructorArgs(),
+  };
+};

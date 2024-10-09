@@ -23,6 +23,7 @@ import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
   buildInvocationTree,
+  getCreateContractArgs,
   InvocationTree,
   scValByType,
 } from "popup/helpers/soroban";
@@ -473,10 +474,10 @@ export const KeyValueInvokeHostFn = ({
     switch (hostfn.switch()) {
       case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
       case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
-        const createContractArgs = hostfn.createContract();
-        const preimage = createContractArgs.contractIdPreimage();
-        const executable = createContractArgs.executable();
-        const createV2Args = createContractArgs.constructorArgs();
+        const createContractArgs = getCreateContractArgs(hostfn);
+        const preimage = createContractArgs.contractIdPreimage;
+        const executable = createContractArgs.executable;
+        const createV2Args = createContractArgs.constructorArgs;
         const executableType = executable.switch().name;
 
         if (preimage.switch().name === "contractIdPreimageFromAddress") {
