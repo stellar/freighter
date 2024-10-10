@@ -244,9 +244,9 @@ export const SignTransaction = () => {
 
   const hasBalance =
     hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
-  const hasEnoughXlm = accountBalances.balances?.native.available.gt(
-    stroopToXlm(_fee as string),
-  );
+  const hasEnoughXlm =
+    accountBalances.balances?.native &&
+    accountBalances.balances?.native.available.gt(stroopToXlm(_fee as string));
   if (
     hasBalance &&
     currentAccount.publicKey &&
