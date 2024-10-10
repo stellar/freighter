@@ -1,0 +1,50 @@
+.BlockaidAnnouncement {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__modal {
+    background: var(--color-gray-10);
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-gray-40);
+    padding: 1rem;
+    width: 312px;
+    z-index: 2;
+
+    &__title {
+      display: flex;
+      line-height: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    &__close {
+      cursor: pointer;
+    }
+
+    &__image {
+      margin-bottom: 0.5rem;
+    }
+
+    &__description {
+      color: var(--color-gray-70);
+    }
+
+    &__list {
+      color: var(--color-gray-70);
+
+      ul {
+        font-size: 0.875rem !important;
+        margin-left: 1rem !important;
+      }
+    }
+
+    &__buttons {
+      display: flex;
+      column-gap: 1rem;
+      margin-top: 1rem;
+    }
+  }
+}

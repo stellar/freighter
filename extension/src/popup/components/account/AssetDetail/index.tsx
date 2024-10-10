@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { IconButton, Icon, Notification } from "@stellar/design-system";
+import { IconButton, Icon } from "@stellar/design-system";
 
 import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
@@ -43,10 +44,11 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
-import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
+import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 
 import "./styles.scss";
 
@@ -74,13 +76,12 @@ export const AssetDetail = ({
 
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
-  const isOwnedScamAsset = useIsOwnedScamAsset(
-    canonical.code,
-    canonical.issuer,
-  );
 
   const { accountBalances: balances } = useSelector(
     transactionSubmissionSelector,
+  );
+  const isSuspicious = isAssetSuspicious(
+    balances.balances?.[selectedAsset].blockaidData,
   );
 
   const balance = getRawBalance(accountBalances, selectedAsset)!;
@@ -163,7 +164,9 @@ export const AssetDetail = ({
           )}
           <div className="AssetDetail__total">
             <div
-              className="AssetDetail__total__copy"
+              className={`AssetDetail__total__copy ${
+                isSuspicious ? "AssetDetail__total__copy--isSuspicious" : ""
+              }`}
               data-testid="asset-detail-available-copy"
             >
               {displayTotal}
@@ -184,59 +187,55 @@ export const AssetDetail = ({
               />
             </div>
           </div>
-          <div className="AssetDetail__actions">
-            {balance?.total && new BigNumber(balance?.total).toNumber() > 0 ? (
-              <>
-                <PillButton
-                  onClick={() => {
-                    dispatch(saveAsset(selectedAsset));
-                    if (isContract) {
-                      dispatch(saveIsToken(true));
-                    } else {
-                      dispatch(saveIsToken(false));
-                    }
-                    navigateTo(ROUTES.sendPayment);
-                  }}
-                >
-                  {t("SEND")}
-                </PillButton>
-                {!isSorobanAsset && (
+          {isSuspicious ? null : (
+            <div className="AssetDetail__actions">
+              {balance?.total &&
+              new BigNumber(balance?.total).toNumber() > 0 ? (
+                <>
                   <PillButton
                     onClick={() => {
                       dispatch(saveAsset(selectedAsset));
-                      navigateTo(ROUTES.swap);
+                      if (isContract) {
+                        dispatch(saveIsToken(true));
+                      } else {
+                        dispatch(saveIsToken(false));
+                      }
+                      navigateTo(ROUTES.sendPayment);
                     }}
                   >
-                    {t("SWAP")}
+                    {t("SEND")}
                   </PillButton>
-                )}
-              </>
-            ) : (
-              <PillButton
-                onClick={() => {
-                  dispatch(saveDestinationAsset(selectedAsset));
-                  navigateTo(ROUTES.swap);
-                }}
-              >
-                {t("SWAP")}
-              </PillButton>
-            )}
-          </div>
+                  {!isSorobanAsset && (
+                    <PillButton
+                      onClick={() => {
+                        dispatch(saveAsset(selectedAsset));
+                        navigateTo(ROUTES.swap);
+                      }}
+                    >
+                      {t("SWAP")}
+                    </PillButton>
+                  )}
+                </>
+              ) : (
+                <PillButton
+                  onClick={() => {
+                    dispatch(saveDestinationAsset(selectedAsset));
+                    navigateTo(ROUTES.swap);
+                  }}
+                >
+                  {t("SWAP")}
+                </PillButton>
+              )}
+            </div>
+          )}
           <div className="AssetDetail__scam-warning">
-            {isOwnedScamAsset && (
-              <Notification variant="error" title={t("Error")}>
-                <div>
-                  <p>
-                    This asset was tagged as fraudulent by stellar.expert, a
-                    reliable community-maintained directory.
-                  </p>
-                  <p>
-                    Trading or sending this asset is not recommended. Projects
-                    related to this asset may be fraudulent even if the creators
-                    say otherwise.
-                  </p>
-                </div>
-              </Notification>
+            {isSuspicious && (
+              <BlockaidAssetWarning
+                blockaidData={
+                  balances.balances?.[selectedAsset].blockaidData ||
+                  defaultBlockaidScanAssetResult
+                }
+              />
             )}
           </div>
 

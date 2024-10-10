@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
-import { ActionStatus } from "@shared/api/types";
+import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -13,6 +13,7 @@ import {
 } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
@@ -30,7 +31,6 @@ import {
   NewAssetWarning,
   TokenWarning,
 } from "popup/components/WarningMessages";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
@@ -40,12 +40,12 @@ export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
   contract?: string;
   icon?: string;
+  isSuspicious?: boolean;
 };
 
 export interface NewAssetFlags {
   isInvalidDomain: boolean;
   isRevocable: boolean;
-  isNewAsset: boolean;
 }
 
 interface ManageAssetRowsProps {
@@ -63,6 +63,7 @@ interface SuspiciousAssetData {
   issuer: string;
   image: string;
   isVerifiedToken?: boolean;
+  blockaidData: BlockAidScanAssetResult;
 }
 
 export const ManageAssetRows = ({
@@ -89,7 +90,6 @@ export const ManageAssetRows = ({
   const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
   const [showUnverifiedWarning, setShowUnverifiedWarning] = useState(false);
   const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
-    isNewAsset: false,
     isInvalidDomain: false,
     isRevocable: false,
   });
@@ -99,6 +99,7 @@ export const ManageAssetRows = ({
     issuer: "",
     image: "",
     isVerifiedToken: false,
+    blockaidData: defaultBlockaidScanAssetResult,
   } as SuspiciousAssetData);
   const [handleAddToken, setHandleAddToken] = useState(
     null as null | (() => () => Promise<void>),
@@ -126,10 +127,12 @@ export const ManageAssetRows = ({
       )}
       {showBlockedDomainWarning && (
         <ScamAssetWarning
+          pillType="Trustline"
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           image={suspiciousAssetData.image}
+          blockaidData={suspiciousAssetData.blockaidData}
           onClose={() => {
             setShowBlockedDomainWarning(false);
           }}
@@ -170,6 +173,7 @@ export const ManageAssetRows = ({
               issuer = "",
               name = "",
               contract = "",
+              isSuspicious,
             }) => {
               if (!accountBalances.balances) {
                 return null;
@@ -194,6 +198,7 @@ export const ManageAssetRows = ({
                     image={image}
                     domain={domain}
                     name={name}
+                    isSuspicious={isSuspicious}
                   />
                   <ManageAssetRowButton
                     code={code}
@@ -238,6 +243,7 @@ interface AssetRowData {
   image?: string;
   domain: string;
   name?: string;
+  isSuspicious?: boolean;
 }
 
 export const ManageAssetRow = ({
@@ -246,10 +252,9 @@ export const ManageAssetRow = ({
   image = "",
   domain,
   name,
+  isSuspicious = false,
 }: AssetRowData) => {
-  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  const isScamAsset = !!blockedDomains.domains[domain];
   const assetCode = name || code;
   const truncatedAssetCode =
     assetCode.length > 20 ? truncateString(assetCode) : assetCode;
@@ -260,11 +265,11 @@ export const ManageAssetRow = ({
         assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
         code={code}
         issuerKey={issuer}
+        isSuspicious={isSuspicious}
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
           <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
-          <ScamAssetIcon isScamAsset={isScamAsset} />
         </div>
         <div
           className="ManageAssetRows__domain"

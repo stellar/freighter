@@ -8,7 +8,7 @@ import { getUrlHostname, parsedSearchParam } from "helpers/urls";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { ButtonsContainer, ModalWrapper } from "popup/basics/Modal";
-import { ModalInfo } from "popup/components/ModalInfo";
+import { DomainScanModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { useScanSite } from "popup/helpers/blockaid";
@@ -48,6 +48,9 @@ export const GrantAccess = () => {
     window.close();
   };
 
+  const isMalicious =
+    data && "is_malicious" in data ? data.is_malicious : false;
+
   return (
     <>
       <ModalWrapper>
@@ -56,20 +59,24 @@ export const GrantAccess = () => {
             <Loader size="5rem" />
           </div>
         ) : (
-          <ModalInfo
+          <DomainScanModalInfo
             domain={domain}
-            variant={data?.is_malicious ? "malicious" : "default"}
+            isMalicious={isMalicious}
+            scanStatus={data.status}
             subject={t(
               `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
             )}
           >
-            <div className="GrantAccess__SigningWith">
+            <div
+              className="GrantAccess__SigningWith"
+              data-testid="grant-access-view"
+            >
               <h5>Connecting with</h5>
               <div className="GrantAccess__PublicKey">
                 <KeyIdenticon publicKey={publicKey} />
               </div>
             </div>
-            {data?.is_malicious ? (
+            {isMalicious ? (
               <ButtonsContainer>
                 <Button
                   size="md"
@@ -83,10 +90,10 @@ export const GrantAccess = () => {
                 <Button
                   size="md"
                   isFullWidth
-                  variant="destructive"
+                  variant="tertiary"
                   onClick={rejectAndClose}
                 >
-                  {t("Cancel")}
+                  {t("Reject")}
                 </Button>
               </ButtonsContainer>
             ) : (
@@ -110,7 +117,7 @@ export const GrantAccess = () => {
                 </Button>
               </ButtonsContainer>
             )}
-          </ModalInfo>
+          </DomainScanModalInfo>
         )}
       </ModalWrapper>
     </>
