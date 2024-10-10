@@ -24,6 +24,7 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
     if (isSendComplete) {
       return (
         <TransactionDetails
+          shouldScanTx={false}
           goBack={() => {
             dispatch(resetSubmission());
             navigateTo(ROUTES.accountHistory);
@@ -33,15 +34,30 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
     }
     switch (submission.submitStatus) {
       case ActionStatus.IDLE:
-        return <TransactionDetails goBack={() => navigateTo(previous)} />;
+        return (
+          <TransactionDetails
+            shouldScanTx={true}
+            goBack={() => navigateTo(previous)}
+          />
+        );
       case ActionStatus.PENDING:
-        return <TransactionDetails goBack={() => navigateTo(previous)} />;
+        return (
+          <TransactionDetails
+            shouldScanTx={false}
+            goBack={() => navigateTo(previous)}
+          />
+        );
       case ActionStatus.SUCCESS:
         return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;
       case ActionStatus.ERROR:
         return <SubmitFail />;
       default:
-        return <TransactionDetails goBack={() => navigateTo(previous)} />;
+        return (
+          <TransactionDetails
+            shouldScanTx={false}
+            goBack={() => navigateTo(previous)}
+          />
+        );
     }
   };
 

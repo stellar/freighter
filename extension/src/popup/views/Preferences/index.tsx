@@ -15,36 +15,25 @@ import "./styles.scss";
 export const Preferences = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const {
-    isDataSharingAllowed,
-    isMemoValidationEnabled,
-    isSafetyValidationEnabled,
-    isValidatingSafeAssetsEnabled,
-    isNonSSLEnabled,
-  } = useSelector(settingsSelector);
+  const { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled } =
+    useSelector(settingsSelector);
 
   interface SettingValues {
     isValidatingMemoValue: boolean;
-    isValidatingSafetyValue: boolean;
     isDataSharingAllowedValue: boolean;
-    isValidatingSafeAssetsValue: boolean;
     isNonSSLEnabledValue: boolean;
   }
 
   const initialValues: SettingValues = {
     isValidatingMemoValue: isMemoValidationEnabled,
-    isValidatingSafetyValue: isSafetyValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
-    isValidatingSafeAssetsValue: isValidatingSafeAssetsEnabled,
     isNonSSLEnabledValue: isNonSSLEnabled,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
     const {
       isValidatingMemoValue,
-      isValidatingSafetyValue,
       isDataSharingAllowedValue,
-      isValidatingSafeAssetsValue,
       isNonSSLEnabledValue,
     } = formValue;
 
@@ -52,9 +41,7 @@ export const Preferences = () => {
     await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
-        isSafetyValidationEnabled: isValidatingSafetyValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
-        isValidatingSafeAssetsEnabled: isValidatingSafeAssetsValue,
         isNonSSLEnabled: isNonSSLEnabledValue,
       }),
     );
@@ -87,33 +74,6 @@ export const Preferences = () => {
                     checked={initialValues.isValidatingMemoValue}
                     customInput={<Field />}
                     id="isValidatingMemoValue"
-                  />
-                </div>
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isValidatingSafetyValue"
-                    className="Preferences--label"
-                  >
-                    {t("Block malicious or unsafe addresses and domains")}
-                  </label>
-                  <Toggle
-                    checked={initialValues.isValidatingSafetyValue}
-                    customInput={<Field />}
-                    id="isValidatingSafetyValue"
-                  />
-                </div>
-
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isValidatingSafeAssetsValue"
-                    className="Preferences--label"
-                  >
-                    {t("Block trustlines to malicious or fraudulent assets")}
-                  </label>
-                  <Toggle
-                    checked={initialValues.isValidatingSafeAssetsValue}
-                    customInput={<Field />}
-                    id="isValidatingSafeAssetsValue"
                   />
                 </div>
               </div>

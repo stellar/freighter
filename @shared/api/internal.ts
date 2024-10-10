@@ -518,13 +518,15 @@ export const getSorobanTokenBalance = async (
 export const getAccountBalancesStandalone = async ({
   publicKey,
   networkDetails,
+  isMainnet,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<AccountBalancesInterface> => {
+  isMainnet: boolean;
+}) => {
   const { network, networkUrl, networkPassphrase } = networkDetails;
 
-  let balances: any = null;
+  let balances = null;
   let isFunded = null;
   let subentryCount = 0;
 
@@ -532,7 +534,10 @@ export const getAccountBalancesStandalone = async ({
     const server = stellarSdkServer(networkUrl, networkPassphrase);
     const accountSummary = await server.accounts().accountId(publicKey).call();
 
-    const displayableBalances = makeDisplayableBalances(accountSummary);
+    const displayableBalances = await makeDisplayableBalances(
+      accountSummary,
+      isMainnet,
+    );
     const sponsor = accountSummary.sponsor
       ? { sponsor: accountSummary.sponsor }
       : {};
@@ -556,20 +561,19 @@ export const getAccountBalancesStandalone = async ({
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < Object.keys(resp.balances).length; i++) {
       const k = Object.keys(resp.balances)[i];
-      const v: any = resp.balances[k];
-      if (v.liquidity_pool_id) {
+      const v = resp.balances[k];
+      if (v.liquidityPoolId) {
         const server = stellarSdkServer(networkUrl, networkPassphrase);
         // eslint-disable-next-line no-await-in-loop
         const lp = await server
           .liquidityPools()
-          .liquidityPoolId(v.liquidity_pool_id)
+          .liquidityPoolId(v.liquidityPoolId)
           .call();
         balances[k] = {
           ...balances[k],
-          liquidityPoolId: v.liquidity_pool_id,
+          liquidityPoolId: v.liquidityPoolId,
           reserves: lp.reserves,
         };
-        delete balances[k].liquidity_pool_id;
       }
     }
     isFunded = true;
@@ -1172,14 +1176,10 @@ export const saveAllowList = async ({
 export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
-  isSafetyValidationEnabled,
-  isValidatingSafeAssetsEnabled,
   isNonSSLEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
-  isSafetyValidationEnabled: boolean;
-  isValidatingSafeAssetsEnabled: boolean;
   isNonSSLEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
@@ -1188,13 +1188,12 @@ export const saveSettings = async ({
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
-    isSafetyValidationEnabled: true,
-    isValidatingSafeAssetsEnabled: true,
     isRpcHealthy: false,
     userNotification: { enabled: false, message: "" },
     settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
+    isBlockaidAnnounced: false,
     error: "",
   };
 
@@ -1202,8 +1201,6 @@ export const saveSettings = async ({
     response = await sendMessageToBackground({
       isDataSharingAllowed,
       isMemoValidationEnabled,
-      isSafetyValidationEnabled,
-      isValidatingSafeAssetsEnabled,
       isNonSSLEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
@@ -1351,16 +1348,9 @@ export const loadSettings = (): Promise<
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
 
-export const getBlockedDomains = async () => {
+export const getMemoRequiredAccounts = async () => {
   const resp = await sendMessageToBackground({
-    type: SERVICE_TYPES.GET_BLOCKED_DOMAINS,
-  });
-  return resp;
-};
-
-export const getBlockedAccounts = async () => {
-  const resp = await sendMessageToBackground({
-    type: SERVICE_TYPES.GET_BLOCKED_ACCOUNTS,
+    type: SERVICE_TYPES.GET_MEMO_REQUIRED_ACCOUNTS,
   });
   return resp;
 };
@@ -1459,4 +1449,64 @@ export const modifyAssetsList = async ({
   });
 
   return { assetsLists: response.assetsLists, error: response.error };
+};
+
+export const simulateTokenTransfer = async (args: {
+  address: string;
+  publicKey: string;
+  memo: string;
+  params: {
+    publicKey: string;
+    destination: string;
+    amount: number;
+  };
+  networkDetails: NetworkDetails;
+  transactionFee: string;
+}) => {
+  const { address, publicKey, memo, params, networkDetails } = args;
+  const options = {
+    method: "POST",
+    headers: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      address,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      pub_key: publicKey,
+      memo,
+      params,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_url: networkDetails.sorobanRpcUrl,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_passphrase: networkDetails.networkPassphrase,
+    }),
+  };
+  const res = await fetch(`${INDEXER_URL}/simulate-token-transfer`, options);
+  const response = await res.json();
+  return {
+    ok: res.ok,
+    response,
+  };
+};
+
+export const saveIsBlockaidAnnounced = async ({
+  isBlockaidAnnounced,
+}: {
+  isBlockaidAnnounced: boolean;
+}) => {
+  let response = {
+    error: "",
+    isBlockaidAnnounced: false,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.SAVE_IS_BLOCKAID_ANNOUNCED,
+    isBlockaidAnnounced,
+  });
+
+  return {
+    isBlockaidAnnounced: response.isBlockaidAnnounced,
+    error: response.error,
+  };
 };

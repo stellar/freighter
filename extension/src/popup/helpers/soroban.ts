@@ -111,6 +111,13 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   return wholeValue.shiftedBy(decimals).plus(fractionValue);
 };
 
+export const addressToString = (address: xdr.ScAddress) => {
+  if (address.switch().name === "scAddressTypeAccount") {
+    return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
+  }
+  return StrKey.encodeContract(address.contractId());
+};
+
 export const getArgsForTokenInvocation = (
   fnName: string,
   args: xdr.ScVal[],
@@ -121,18 +128,12 @@ export const getArgsForTokenInvocation = (
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
-      from = StrKey.encodeEd25519PublicKey(
-        args[0].address().accountId().ed25519(),
-      );
-      to = StrKey.encodeEd25519PublicKey(
-        args[1].address().accountId().ed25519(),
-      );
+      from = addressToString(args[0].address());
+      to = addressToString(args[1].address());
       amount = scValToNative(args[2]);
       break;
     case SorobanTokenInterface.mint:
-      to = StrKey.encodeEd25519PublicKey(
-        args[0].address().accountId().ed25519(),
-      );
+      to = addressToString(args[0].address());
       amount = scValToNative(args[1]);
       break;
     default:

@@ -14,19 +14,24 @@ const playgroundPaths = [
 ];
 
 const GUIDE_BASE_PATH = "guide";
-const guidePaths = [
-  "introduction",
-  "gettingStarted",
-  "usingFreighterWebApp",
-  "usingFreighterBrowser",
+const introPaths = ["introduction", "gettingStarted"];
+const userGuidePaths = [
+  "account",
+  "advancedSettings",
+  "addAsset",
+  "makePayment",
+  "signXdr",
 ];
+const techGuidePaths = ["usingFreighterWebApp", "usingFreighterBrowser"];
 
 const constructPaths = (paths, basePath) =>
   paths.map((path) => `${basePath}/${path}`);
 
 module.exports = {
   someSidebar: {
-    "User Guide": constructPaths(guidePaths, GUIDE_BASE_PATH),
+    Introduction: constructPaths(introPaths, GUIDE_BASE_PATH),
+    "User Guide": constructPaths(userGuidePaths, GUIDE_BASE_PATH),
+    "Technical Guide": constructPaths(techGuidePaths, GUIDE_BASE_PATH),
     Playground: constructPaths(playgroundPaths, PLAYGROUND_BASE_PATH),
   },
 };
