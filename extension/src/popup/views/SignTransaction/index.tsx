@@ -253,7 +253,7 @@ export const SignTransaction = () => {
         variant={WarningMessageVariant.warning}
         header={t("INSUFFICIENT FUNDS FOR FEE")}
       >
-        <p>
+        <p data-testid="InsufficientBalanceWarning">
           <Trans domain={domain}>
             Your available XLM balance is not enough to pay for the transaction
             fee.
