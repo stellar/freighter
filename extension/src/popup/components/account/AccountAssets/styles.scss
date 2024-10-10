@@ -17,6 +17,7 @@ $loader-light-color: #444961;
       margin-right: 1rem;
       max-width: 2rem;
       max-height: 2rem;
+      position: relative;
 
       img {
         width: 100%;
@@ -62,6 +63,11 @@ $loader-light-color: #444961;
         height: 1rem;
         width: 1rem;
       }
+
+      .ScamAssetIcon img {
+        height: 100%;
+        width: 100%;
+      }
     }
 
     &--loading {
@@ -83,7 +89,8 @@ $loader-light-color: #444961;
       }
     }
 
-    &--no-margin {
+    &--no-margin,
+    &--modal {
       margin: 0;
     }
   }

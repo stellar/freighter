@@ -1,12 +1,10 @@
 {
-  "{{srcAssetCode}} for {{destAssetCode}}": "{{srcAssetCode}} for {{destAssetCode}}",
   "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
   "A Stellar wallet for every website": "A Stellar wallet for every website",
   "About": "About",
-  "account": "account",
   "Account": "Account",
   "Account ID": "Account ID",
   "Account Migration": "Account Migration",
@@ -18,6 +16,7 @@
   "Add an asset": "Add an asset",
   "Add anyway": "Add anyway",
   "Add asset": "Add asset",
+  "Add Asset trustline": "Add Asset trustline",
   "Add Asset Trustline": "Add Asset Trustline",
   "Add by address": "Add by address",
   "Add custom network": "Add custom network",
@@ -28,7 +27,7 @@
   "Add New Address": "Add New Address",
   "Add new list": "Add new list",
   "Address": "Address",
-  "Addresses are uppercase and begin with letters “G“ or “M“": "Addresses are uppercase and begin with letters “G“ or “M“.",
+  "Addresses are uppercase and begin with letters “G“, “M“, or “C“": "Addresses are uppercase and begin with letters “G“, “M“, or “C“.",
   "Advanced settings": "Advanced settings",
   "Advanced Settings": "Advanced Settings",
   "Advanced settings are not recommended for new or unexperienced users": {
@@ -51,8 +50,6 @@
   "Allowed slippage": "Allowed slippage",
   "Always check the domain of websites you’re using Freighter with": "Always check the domain of websites you’re using Freighter with",
   "Amount": "Amount",
-  "An account you’re interacting with is tagged as malicious on": "An account you’re interacting with is tagged as malicious on",
-  "An account you’re interacting with is tagged as unsafe on": "An account you’re interacting with is tagged as unsafe on",
   "An error occurred": "An error occurred",
   "Anonymous data sharing": "Anonymous data sharing",
   "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
@@ -89,13 +86,11 @@
   "Balance ID": "Balance ID",
   "Before we start with migration, please read": "Before we start with migration, please read",
   "Before You Add This Asset": "Before You Add This Asset",
-  "Block malicious or unsafe addresses and domains": "Block malicious or unsafe addresses and domains",
-  "Block trustlines to malicious or fraudulent assets": "Block trustlines to malicious or fraudulent assets",
-  "Blocked asset": "Blocked asset",
   "Bump To": "Bump To",
   "Buy Amount": "Buy Amount",
   "Buying": "Buying",
   "by": "by",
+  "By default it will verify": "By default it will verify",
   "Can’t find the asset you’re looking for? Add it manually": "Can’t find the asset you’re looking for? Add it manually",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
@@ -119,6 +114,7 @@
   "Connect device to computer": "Connect device to computer",
   "Connect to domain without SSL certificate": "Connect to domain without SSL certificate",
   "CONNECTION ERROR": "CONNECTION ERROR",
+  "Connection Request": "Connection Request",
   "Continue": "Continue",
   "Contract Address": "Contract Address",
   "Contract ID": "Contract ID",
@@ -128,7 +124,6 @@
   "Copy address": "Copy address",
   "Create a new Stellar address": "Create a new Stellar address",
   "Create a password": "Create a password",
-  "Create Account": "Create Account",
   "Create Wallet": "Create Wallet",
   "Custom": "Custom",
   "data entries": "data entries",
@@ -145,14 +140,11 @@
   "Detecting": "Detecting",
   "Different source and destination assets": "Different source and destination assets",
   "digits after the decimal allowed": "digits after the decimal allowed",
-  "directory": "directory",
-  "disable": "disable",
   "Disabled": "Disabled",
   "Done": "Done",
   "Double check the domain name": {
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
   },
-  "enable": "enable",
   "Enable Blind Signing on Ledger": "Enable Blind Signing on Ledger",
   "Enable this list": "Enable this list",
   "Enabled": "Enabled",
@@ -184,11 +176,7 @@
   },
   "Fetch list information": "Fetch list information",
   "Finish": "Finish",
-  "For your safety, signing this transaction is disabled": "For your safety, signing this transaction is disabled",
   "For your security, we'll check if you got it right in the next step": "For your security, we'll check if you got it right in the next step.",
-  "Freighter automatically blocked this asset": {
-    " Projects related to this asset may be fraudulent even if the creators say otherwise": "Freighter automatically blocked this asset. Projects related to this asset may be fraudulent even if the creators say otherwise."
-  },
   "Freighter can’t recover your imported secret key using your recovery phrase": {
     " Storing your secret key is your responsibility": {
       " Freighter will never ask for your secret key outside of the extension": "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension."
@@ -198,7 +186,9 @@
   "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser": {
     " It’s a safer alternative to copying and pasting private keys for use with web apps": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps."
   },
+  "Freighter is adding a new layer of protection": "Freighter is adding a new layer of protection",
   "Freighter is set to": "Freighter is set to",
+  "Freighter now uses Blockaid to keep your accounts safer": "Freighter now uses Blockaid to keep your accounts safer.",
   "Freighter uses asset lists to check assets you interact with": {
     " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   },
@@ -243,9 +233,9 @@
   "Insufficient Balance": "Insufficient Balance",
   "Insufficient Fee": "Insufficient Fee",
   "INSUFFICIENT FUNDS FOR FEE": "INSUFFICIENT FUNDS FOR FEE",
+  "invalid destination address": "invalid destination address",
   "invalid federation address": "invalid federation address",
   "Invalid Format Asset": "Invalid Format Asset",
-  "invalid public key": "invalid public key",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Invocation Type": "Invocation Type",
   "is requesting approval to sign a message": "is requesting approval to sign a message",
@@ -279,7 +269,6 @@
   "Make sure it is a funded Stellar account and try again": "Make sure it is a funded Stellar account and try again.",
   "Make sure you have your 12 word backup phrase": "Make sure you have your 12 word backup phrase",
   "Make sure you have your current 12 words backup phrase before continuing": "Make sure you have your current 12 words backup phrase before continuing.",
-  "Malicious": "Malicious",
   "Manage Assets": "Manage Assets",
   "Manage connected apps": "Manage connected apps",
   "Manage network settings": "Manage network settings",
@@ -307,7 +296,6 @@
   "Min Price": "Min Price",
   "Minimum Received": "Minimum Received",
   "Minimum resource fee": "Minimum resource fee",
-  "Minted": "Minted",
   "Multiple assets": "Multiple assets",
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
   "must be below": "must be below",
@@ -322,7 +310,6 @@
   "Nevermind, cancel": "Nevermind, cancel",
   "New account": "New account",
   "New asset": "New asset",
-  "New Asset": "New Asset",
   "New password": "New password",
   "Next": "Next",
   "no path found": "no path found",
@@ -332,7 +319,6 @@
   "Not funded": "Not funded",
   "Not migrated": "Not migrated",
   "Not on your lists": "Not on your lists",
-  "Not recommended asset": "Not recommended asset",
   "Now, let’s create a new mnemonic phrase": "Now, let’s create a new mnemonic phrase",
   "Number of seconds that can pass before this transaction can no longer be accepted by the network": "Number of seconds that can pass before this transaction can no longer be accepted by the network",
   "Offer ID": "Offer ID",
@@ -359,25 +345,19 @@
     " This can help you identify fraudulent assets": "Please double-check its information and characteristics. This can help you identify fraudulent assets."
   },
   "Please note the following message": "Please note the following message",
-  "Please proceed with caution": "Please proceed with caution.",
   "Please select a different network before removing it": "Please select a different network before removing it.",
   "Please select each word in the same order you have": "Please select each word in the same order you have",
   "powered by": "powered by",
+  "Powered by ": "Powered by ",
   "Pre Auth Transaction": "Pre Auth Transaction",
   "Predicate": "Predicate",
   "Preferences": "Preferences",
   "Price": "Price",
   "Privacy Policy": "Privacy Policy",
-  "Proceed with caution": {
-    " Blockaid is unable to provide a risk assesment for this domain at this time": "Proceed with caution. Blockaid is unable to provide a risk assesment for this domain at this time."
-  },
+  "Proceed with caution": "Proceed with caution",
   "Processing": "Processing",
-  "Projects related to this asset may be fraudulent even if the creators say otherwise": {
-    " ": "Projects related to this asset may be fraudulent even if the creators say otherwise. "
-  },
   "Read before importing your key": "Read before importing your key",
   "Ready to migrate": "Ready to migrate",
-  "Received": "Received",
   "RECEIVED": "RECEIVED",
   "RECENT": "RECENT",
   "Recipient Stellar address": "Recipient Stellar address",
@@ -395,6 +375,7 @@
   "Resource cost": "Resource cost",
   "Review": "Review",
   "Review accounts to migrate": "Review accounts to migrate",
+  "Review anyway": "Review anyway",
   "Review transaction on device": "Review transaction on device",
   "Revocable Asset": "Revocable Asset",
   "Salt": "Salt",
@@ -422,9 +403,9 @@
   "SET MAX": "SET MAX",
   "Set recommended": "Set recommended",
   "Settings": "Settings",
-  "Settings > Preferences": "Settings > Preferences",
   "Show recovery phrase": "Show recovery phrase",
   "Sign": "Sign",
+  "Sign anyway": "Sign anyway",
   "Sign Transaction": "Sign Transaction",
   "Signed Payload": "Signed Payload",
   "Signer": "Signer",
@@ -451,18 +432,21 @@
   "Swap failed": "Swap failed",
   "swapped": "swapped",
   "Swapped": "Swapped",
-  "Swapped {{srcAssetCode}} for {{destAssetCode}}": "Swapped {{srcAssetCode}} for {{destAssetCode}}",
   "Switch to this network": "Switch to this network",
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
+  "The accounts you interact with": "The accounts you interact with",
   "The application is requesting a specific account": "The application is requesting a specific account",
   "The asset creator can revoke your access to this asset at anytime": "The asset creator can revoke your access to this asset at anytime",
+  "The assets you interact with": "The assets you interact with",
   "The destination account can receive a different asset, the received amount is defined by the available conversion rates": "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
   "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
   "The destination account doesn’t exist": "The destination account doesn’t exist.",
   "The destination account must opt to accept this asset before receiving it": "The destination account must opt to accept this asset before receiving it.",
   "The destination account receives the same asset and amount sent": "The destination account receives the same asset and amount sent",
+  "The domains you interact with": "The domains you interact with",
   "The final amount is approximate and may change": "The final amount is approximate and may change",
+  "The operations and functions executed in transactions and smart contracts": "The operations and functions executed in transactions and smart contracts",
   "The requester expects you to sign this auth entry on": "The requester expects you to sign this auth entry on",
   "The requester expects you to sign this message on": "The requester expects you to sign this message on",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
@@ -472,7 +456,6 @@
     }
   },
   "them noted to confirm you got them right": "them noted to confirm you got them right",
-  "this alert by going to": "this alert by going to",
   "This asset has a balance": "This asset has a balance",
   "This asset has buying liabilities": "This asset has buying liabilities",
   "This asset is not part of an asset list": {
@@ -483,9 +466,6 @@
     }
   },
   "This asset is part of the asset lists": "This asset is part of the asset lists",
-  "This asset was tagged as fraudulent by stellar": {
-    "expert, a reliable community-maintained directory": "This asset was tagged as fraudulent by stellar.expert, a reliable community-maintained directory."
-  },
   "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction": "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
   "This can be used to sign arbitrary transaction hashes without having to decode them first": {
     " Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust": "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust."
@@ -493,20 +473,23 @@
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
   "This new backup phrase will be used for your new accounts": "This new backup phrase will be used for your new accounts.",
+  "This site has been scanned and verified": "This site has been scanned and verified",
+  "This site was flagged as malicious": "This site was flagged as malicious",
   "This transaction could not be completed": "This transaction could not be completed.",
+  "This transaction is expected to fail": "This transaction is expected to fail",
+  "This transaction was flagged as malicious": "This transaction was flagged as malicious",
+  "This transaction was flagged by Blockaid for the following reasons": "This transaction was flagged by Blockaid for the following reasons",
   "To": "To",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
   "Token List URL": "Token List URL",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
-  "Trading or sending this asset is not recommended": {
-    " Projects related to this asset may be fraudulent even if the creators say otherwise": "Trading or sending this asset is not recommended. Projects related to this asset may be fraudulent even if the creators say otherwise."
-  },
   "transaction": "transaction",
   "Transaction": "Transaction",
   "Transaction failed": "Transaction failed",
   "Transaction fee": "Transaction fee",
+  "Transaction Request": "Transaction Request",
   "Transaction timeout": "Transaction timeout",
   "Transactions": "Transactions",
   "trustlines": "trustlines",
@@ -515,8 +498,8 @@
   "Unable to connect to": "Unable to connect to",
   "Unable to migrate": "Unable to migrate",
   "Unable to parse assets lists": "Unable to parse assets lists",
+  "Unable to scan site for malicious behavior": "Unable to scan site for malicious behavior",
   "Unable to search for assets": "Unable to search for assets",
-  "Unsafe": "Unsafe",
   "Unsupported signing method": "Unsupported signing method",
   "Unverified asset": "Unverified asset",
   "Use experimental API’s and connect to the Futurenet, a test network": {
@@ -545,7 +528,6 @@
   "You are interacting with data that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."
   },
-  "You can": "You can",
   "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
     " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
   },

@@ -22,6 +22,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { LP_IDENTIFIER } from "popup/helpers/account";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
@@ -51,6 +52,7 @@ import {
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { BalanceMap, SorobanBalance } from "@shared/api/types";
 import "../styles.scss";
@@ -122,7 +124,6 @@ export const SendAmount = ({
     destinationBalances,
     transactionData,
     assetDomains,
-    blockedDomains,
     assetIcons,
     soroswapTokens,
   } = useSelector(transactionSubmissionSelector);
@@ -147,6 +148,7 @@ export const SendAmount = ({
     code: "",
     issuer: "",
     image: "",
+    blockaidData: defaultBlockaidScanAssetResult,
   });
 
   /* eslint-disable react-hooks/exhaustive-deps */
@@ -205,25 +207,40 @@ export const SendAmount = ({
   }) => {
     dispatch(saveAmount(cleanAmount(values.amount)));
     dispatch(saveAsset(values.asset));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    let isDestAssetScam = false;
+
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
+      isDestAssetScam = isAssetSuspicious(
+        accountBalances.balances?.[destinationAsset]?.blockaidData,
+      );
     }
     // check for scam asset
-    if (blockedDomains.domains[assetDomains[values.asset]]) {
+    const isSourceAssetScam = isAssetSuspicious(
+      accountBalances.balances?.[asset].blockaidData,
+    );
+    if (isSourceAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.asset).code,
         issuer: getAssetFromCanonical(values.asset).issuer,
         domain: assetDomains[values.asset],
         image: assetIcons[values.asset],
+        blockaidData:
+          accountBalances.balances?.[asset].blockaidData ||
+          defaultBlockaidScanAssetResult,
       });
-    } else if (blockedDomains.domains[assetDomains[values.destinationAsset]]) {
+    } else if (isDestAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.destinationAsset).code,
         issuer: getAssetFromCanonical(values.destinationAsset).issuer,
         domain: assetDomains[values.destinationAsset],
         image: assetIcons[values.destinationAsset],
+        blockaidData:
+          accountBalances.balances?.[destinationAsset].blockaidData ||
+          defaultBlockaidScanAssetResult,
       });
     } else {
       navigateTo(next);
@@ -425,12 +442,14 @@ export const SendAmount = ({
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           isSendWarning
+          pillType="Transaction"
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           image={suspiciousAssetData.image}
           onClose={() => setShowBlockedDomainWarning(false)}
           onContinue={() => navigateTo(next)}
+          blockaidData={suspiciousAssetData.blockaidData}
         />
       )}
       <React.Fragment>
@@ -568,6 +587,9 @@ export const SendAmount = ({
                       <AssetSelect
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
+                        isSuspicious={isAssetSuspicious(
+                          accountBalances.balances?.[asset].blockaidData,
+                        )}
                       />
                     )}
                     {showSourceAndDestAsset && (
@@ -578,6 +600,9 @@ export const SendAmount = ({
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
                           icon=""
+                          isSuspicious={isAssetSuspicious(
+                            accountBalances.balances?.[asset].blockaidData,
+                          )}
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -589,6 +614,11 @@ export const SendAmount = ({
                               : "0"
                           }
                           icon={destinationIcon}
+                          isSuspicious={isAssetSuspicious(
+                            accountBalances.balances?.[
+                              formik.values.destinationAsset
+                            ]?.blockaidData,
+                          )}
                         />
                       </>
                     )}

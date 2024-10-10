@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
+import Blockaid from "@blockaid/client";
 
 import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -75,8 +76,7 @@ export interface Response {
   recentAddresses: string[];
   hardwareWalletType: WalletType;
   bipPath: string;
-  blockedDomains: BlockedDomains;
-  blockedAccounts: BlockedAccount[];
+  memoRequiredAccounts: MemoRequiredAccount[];
   assetDomain: string;
   contractId: string;
   tokenId: string;
@@ -90,13 +90,10 @@ export interface Response {
   isMergeSelected: boolean;
   recommendedFee: string;
   isNonSSLEnabled: boolean;
+  isBlockaidAnnounced: boolean;
 }
 
-export interface BlockedDomains {
-  [key: string]: boolean;
-}
-
-export interface BlockedAccount {
+export interface MemoRequiredAccount {
   address: string;
   name: string;
   domain: string | null;
@@ -144,10 +141,9 @@ export enum AccountType {
 export interface Preferences {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
-  isSafetyValidationEnabled: boolean;
-  isValidatingSafeAssetsEnabled: boolean;
   networksList: NetworkDetails[];
   isNonSSLEnabled: boolean;
+  isBlockaidAnnounced: boolean;
   error: string;
 }
 
@@ -237,9 +233,27 @@ export interface Balance {
   total: BigNumber;
   buyingLiabilities: string;
   sellingLiabilities: string;
+  liquidityPoolId?: string;
+  reserves?: Horizon.HorizonApi.Reserve[];
+  contractId?: string;
+  blockaidData: BlockAidScanAssetResult;
 }
 
+export type BlockAidScanAssetResult = Blockaid.TokenScanResponse;
+export interface BlockAidScanAssetResultIndex {
+  [key: string]: Blockaid.TokenScanResponse.AttackTypes &
+    Blockaid.TokenScanResponse.Fees &
+    Blockaid.TokenScanResponse.BasicMetadataToken &
+    Blockaid.TokenScanResponse.FinancialStats &
+    Blockaid.TokenScanResponse.TradingLimits;
+}
+
+export type BlockAidScanSiteResult = Blockaid.SiteScanResponse;
+export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse;
+export type BlockAidBulkScanAssetResult = Blockaid.TokenBulkScanResponse;
+
 export interface AssetBalance extends Balance {
+  limit: BigNumber;
   token: AssetToken;
   sponsor?: string;
 }
@@ -250,8 +264,10 @@ export interface NativeBalance extends Balance {
 }
 
 export interface TokenBalance extends AssetBalance {
-  decimals: number;
   name: string;
+  symbol: string;
+  decimals: number;
+  total: BigNumber;
 }
 
 export interface BalanceMap {

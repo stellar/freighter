@@ -51,8 +51,9 @@ import {
   WarningMessageVariant,
   WarningMessage,
   FirstTimeWarningMessage,
-  FlaggedWarningMessage,
+  MemoWarningMessage,
   SSLWarningMessage,
+  BlockaidTxScanLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -82,7 +83,11 @@ export const SignTransaction = () => {
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName, networkPassphrase } = networkDetails;
-  const { scanTx } = useScanTx();
+  const { scanTx, isLoading: isLoadingScan, data: scanResult } = useScanTx();
+  const flaggedMalicious =
+    scanResult?.validation &&
+    "result_type" in scanResult.validation &&
+    scanResult.validation.result_type === "Malicious";
 
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
@@ -140,12 +145,6 @@ export const SignTransaction = () => {
   );
 
   const flaggedKeyValues = Object.values(flaggedKeys);
-  const isUnsafe = flaggedKeyValues.some(({ tags }) =>
-    tags.includes(TRANSACTION_WARNING.unsafe),
-  );
-  const isMalicious = flaggedKeyValues.some(({ tags }) =>
-    tags.includes(TRANSACTION_WARNING.malicious),
-  );
   const isMemoRequired = flaggedKeyValues.some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
@@ -189,13 +188,7 @@ export const SignTransaction = () => {
     if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
-    if (isUnsafe) {
-      emitMetric(METRIC_NAMES.signTransactionUnsafe);
-    }
-    if (isMalicious) {
-      emitMetric(METRIC_NAMES.signTransactionMalicious);
-    }
-  }, [isMemoRequired, isMalicious, isUnsafe]);
+  }, [isMemoRequired]);
 
   useEffect(() => {
     if (currentAccount.publicKey) {
@@ -211,7 +204,7 @@ export const SignTransaction = () => {
     };
   }, [currentAccount.publicKey, dispatch, networkDetails]);
 
-  const isSubmitDisabled = isMemoRequired || isMalicious;
+  const isSubmitDisabled = isMemoRequired;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -238,7 +231,7 @@ export const SignTransaction = () => {
     accountBalanceStatus !== ActionStatus.PENDING &&
     accountBalanceStatus !== ActionStatus.IDLE;
 
-  if (!hasLoadedBalances) {
+  if (!hasLoadedBalances || isLoadingScan) {
     return <Loading />;
   }
 
@@ -323,16 +316,11 @@ export const SignTransaction = () => {
             </Notification>
           </div>
         ) : null}
-        {flaggedKeyValues.length ? (
-          <FlaggedWarningMessage
-            isUnsafe={isUnsafe}
-            isMalicious={isMalicious}
-            isMemoRequired={isMemoRequired}
-          />
-        ) : null}
+        <MemoWarningMessage isMemoRequired={isMemoRequired} />
         {!isDomainListedAllowed && !isSubmitDisabled ? (
           <FirstTimeWarningMessage />
         ) : null}
+        {scanResult && <BlockaidTxScanLabel scanResult={scanResult} />}
         {renderTabBody()}
       </div>
     );
@@ -382,48 +370,98 @@ export const SignTransaction = () => {
               </button>
             </div>
             <div className="SignTransaction__Actions__BtnRow">
-              <Button
-                isFullWidth
-                size="md"
-                variant="secondary"
-                onClick={() => rejectAndClose()}
-              >
-                {t("Cancel")}
-              </Button>
-              {needsReviewAuth ? (
-                <Button
-                  disabled={isSubmitDisabled}
-                  variant="tertiary"
-                  isFullWidth
-                  size="md"
-                  isLoading={isConfirming}
-                  onClick={() =>
-                    navigateTo(
-                      ROUTES.reviewAuthorization,
-                      `?${encodeObject({
-                        accountToSign,
-                        transactionXdr,
-                        domain,
-                        flaggedKeys,
-                        isMemoRequired,
-                        memo: decodedMemo,
-                      })}`,
-                    )
-                  }
-                >
-                  {t("Review")}
-                </Button>
+              {flaggedMalicious ? (
+                <>
+                  {needsReviewAuth ? (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="error"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() =>
+                        navigateTo(
+                          ROUTES.reviewAuthorization,
+                          `?${encodeObject({
+                            accountToSign,
+                            transactionXdr,
+                            domain,
+                            flaggedKeys,
+                            isMemoRequired,
+                            memo: decodedMemo,
+                          })}`,
+                        )
+                      }
+                    >
+                      {t("Review anyway")}
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="error"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() => handleApprove()}
+                    >
+                      {t("Sign anyway")}
+                    </Button>
+                  )}
+                  <Button
+                    isFullWidth
+                    size="md"
+                    variant="secondary"
+                    onClick={() => rejectAndClose()}
+                  >
+                    {t("Reject")}
+                  </Button>
+                </>
               ) : (
-                <Button
-                  disabled={isSubmitDisabled}
-                  variant="tertiary"
-                  isFullWidth
-                  size="md"
-                  isLoading={isConfirming}
-                  onClick={() => handleApprove()}
-                >
-                  {t("Sign")}
-                </Button>
+                <>
+                  <Button
+                    isFullWidth
+                    size="md"
+                    variant="secondary"
+                    onClick={() => rejectAndClose()}
+                  >
+                    {t("Cancel")}
+                  </Button>
+                  {needsReviewAuth ? (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="tertiary"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() =>
+                        navigateTo(
+                          ROUTES.reviewAuthorization,
+                          `?${encodeObject({
+                            accountToSign,
+                            transactionXdr,
+                            domain,
+                            flaggedKeys,
+                            isMemoRequired,
+                            memo: decodedMemo,
+                          })}`,
+                        )
+                      }
+                    >
+                      {t("Review")}
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant="tertiary"
+                      isFullWidth
+                      size="md"
+                      isLoading={isConfirming}
+                      onClick={() => handleApprove()}
+                    >
+                      {t("Sign")}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
