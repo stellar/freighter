@@ -33,6 +33,18 @@ jest
     });
   });
 
+jest.spyOn(ApiInternal, "simulateTokenTransfer").mockImplementation(() => {
+  return Promise.resolve({
+    ok: true,
+    response: {
+      preparedTransaction: "xdr",
+      simulationResponse: {
+        minResourceFee: "1234",
+      },
+    },
+  });
+});
+
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   return {
     recommendedFee: ".00001",
@@ -122,21 +134,6 @@ jest.mock("popup/constants/history", () => ({
   },
 }));
 
-jest.spyOn(global, "fetch").mockImplementation(() =>
-  Promise.resolve({
-    ok: true,
-    json: async () => ({
-      id: "tx ID",
-      transactionData: {},
-      cost: {
-        cpuInsns: 12389,
-        memBytes: 32478,
-      },
-      minResourceFee: 43289,
-    }),
-  } as any),
-);
-
 jest.mock("popup/helpers/searchAsset", () => {
   return {
     getVerifiedTokens: async () => Promise.resolve([]),
@@ -176,8 +173,7 @@ describe("SendTokenPayment", () => {
             isToken: true,
           },
           transactionSimulation: {
-            raw: null,
-            response: null,
+            ...tokenPaymentActions.initialState.simulation,
           },
           accountBalances: mockBalances,
         },

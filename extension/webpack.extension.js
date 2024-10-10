@@ -5,6 +5,7 @@ const { commonConfig } = require("./webpack.common.js");
 const Dotenv = require("dotenv-webpack");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 const smp = new SpeedMeasurePlugin();
 
@@ -19,6 +20,10 @@ const prodConfig = (
   },
 ) =>
   smp.wrap({
+    optimization: {
+      minimize: true,
+      minimizer: [new TerserPlugin()],
+    },
     mode: "production",
     optimization: {
       minimize: env.PRODUCTION,

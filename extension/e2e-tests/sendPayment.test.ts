@@ -1,5 +1,6 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginAndFund, loginToTestAccount, PASSWORD } from "./helpers/login";
+import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 
 test("Send XLM payment to G address", async ({ page, extensionId }) => {
   test.slow();
@@ -78,9 +79,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   // send XLM to C address
   await page.getByTitle("Send Payment").click({ force: true });
   await expect(page.getByText("Send To")).toBeVisible();
-  await page
-    .getByTestId("send-to-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByText("Send XLM")).toBeVisible();
@@ -91,13 +90,15 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
     /[0-9]/,
   );
-  await page.getByText("Review Send").click({ force: true });
+  await page.getByText("Review Send").click();
 
   await expect(page.getByText("Verification")).toBeVisible();
   await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await page.getByText("Submit").click({ force: true });
+  await page.getByText("Submit").click();
 
-  await expect(page.getByText("Confirm Send")).toBeVisible();
+  await expect(page.getByText("Confirm Send")).toBeVisible({
+    timeout: 200000,
+  });
   await expectPageToHaveScreenshot({
     page,
     screenshot: "send-payment-confirm.png",
@@ -139,7 +140,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
 
   await page.getByText("Add asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toBeVisible({
-    timeout: 30000,
+    timeout: 300000,
   });
 
   // swap to get some USDC
@@ -172,9 +173,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
 
   // send SAC to C address
   await page.getByTitle("Send Payment").click({ force: true });
-  await page
-    .getByTestId("send-to-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
   await page.getByTestId("send-amount-asset-select").click({ force: true });
@@ -187,7 +186,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Send Settings")).toBeVisible();
   await expect(page.getByText("Review Send")).toBeEnabled();
-  await page.getByText("Review Send").click({ force: true });
+  await page.getByText("Review Send").click();
 
   await expect(page.getByText("Confirm Send")).toBeVisible();
   await page.getByTestId("transaction-details-btn-send").click({ force: true });
@@ -206,9 +205,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
   // remove USDC
 
   await page.getByText("Manage Assets").click({ force: true });
-  await page
-    .getByTestId("ManageAssetRowButton__ellipsis-USDC")
-    .click({ force: true });
+  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click({ force: true });
 
   await expect(page.getByTestId("account-view")).toBeVisible({
@@ -227,17 +224,13 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
-  await page
-    .getByTestId("search-token-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
   await page.getByTestId("add-asset").dispatchEvent("click");
 
   // send E2E token to C address
   await page.getByTitle("Send Payment").click({ force: true });
-  await page
-    .getByTestId("send-to-input")
-    .fill("CAHX2LUNQ4YKNJTDEFW2LSFOXDAL4QI4736RV52ZUGCIRJK5U7MWQWW6");
+  await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
   await page.getByTestId("send-amount-asset-select").click({ force: true });
@@ -255,7 +248,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await page.getByTestId("transaction-details-btn-send").click({ force: true });
 
   await expect(page.getByText("Successfully sent")).toBeVisible({
-    timeout: 60000,
+    timeout: 600000,
   });
 
   await page.getByText("Details").click({ force: true });

@@ -4,8 +4,6 @@ import {
   KEY_ID_LIST,
   KEY_ID,
   IS_VALIDATING_MEMO_ID,
-  IS_VALIDATING_SAFETY_ID,
-  IS_VALIDATING_SAFE_ASSETS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   IS_EXPERIMENTAL_MODE_ID,
@@ -13,6 +11,7 @@ import {
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
+  IS_BLOCKAID_ANNOUNCED_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
@@ -92,12 +91,6 @@ export const getAllowList = async () => {
 export const getIsMemoValidationEnabled = async () =>
   (await localStore.getItem(IS_VALIDATING_MEMO_ID)) ?? true;
 
-export const getIsSafetyValidationEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_SAFETY_ID)) ?? true;
-
-export const getIsValidatingSafeAssetsEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_SAFE_ASSETS_ID)) ?? true;
-
 export const getIsExperimentalModeEnabled = async () =>
   (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;
 
@@ -159,6 +152,16 @@ export const getIsNonSSLEnabled = async () => {
     (await localStore.getItem(IS_NON_SSL_ENABLED_ID)) ?? false;
 
   return isNonSSLEnabled;
+};
+
+export const getIsBlockaidAnnounced = async () => {
+  if (!(await localStore.getItem(IS_BLOCKAID_ANNOUNCED_ID))) {
+    await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, false);
+  }
+  const isBlockaidAnnounced =
+    (await localStore.getItem(IS_BLOCKAID_ANNOUNCED_ID)) ?? false;
+
+  return isBlockaidAnnounced;
 };
 
 export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
