@@ -471,8 +471,6 @@ function getInvocationArgs(
         _invocation.contractIdPreimage(),
       ];
 
-      const createV2Arguments = [] as any; // _invocation.constructorArgs();
-
       switch (exec.switch().value) {
         // contractExecutableWasm
         case 0: {
@@ -485,8 +483,10 @@ function getInvocationArgs(
             address: Address.fromScAddress(details.address()).toString(),
           } as FnArgsCreateWasm;
 
-          if (createV2Arguments) {
-            contractDetails.args = createV2Arguments;
+          if (fn.switch().value === 2) {
+            contractDetails.args = (
+              _invocation as xdr.CreateContractArgsV2
+            ).constructorArgs();
           }
 
           return contractDetails;

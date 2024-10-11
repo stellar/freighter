@@ -43,8 +43,10 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
 });
 
 jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+  const setLoading = () => {};
   return {
     scanTx: () => Promise.resolve(null),
+    setLoading,
     isLoading: false,
     data: null,
     error: null,
