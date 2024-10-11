@@ -22,7 +22,7 @@ export const loginAndFund = async ({ page, extensionId }) => {
   });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
-  await page.getByTestId("BlockaidAnnouncement__accept").click();
+  // await page.getByTestId("BlockaidAnnouncement__accept").click();
   await expect(page.getByTestId("network-selector-open")).toBeVisible({
     timeout: 10000,
   });
@@ -76,7 +76,7 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
   });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
-  await page.getByTestId("BlockaidAnnouncement__accept").click();
+  // await page.getByTestId("BlockaidAnnouncement__accept").click();
   await expect(page.getByTestId("network-selector-open")).toBeVisible({
     timeout: 50000,
   });

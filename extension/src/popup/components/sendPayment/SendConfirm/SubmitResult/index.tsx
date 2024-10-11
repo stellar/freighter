@@ -105,10 +105,10 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
   const isSourceAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[asset].blockaidData,
+    accountBalances.balances?.[asset]?.blockaidData,
   );
   const isDestAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[destinationAsset].blockaidData,
+    accountBalances.balances?.[destinationAsset]?.blockaidData,
   );
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {

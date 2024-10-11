@@ -397,17 +397,26 @@ export const HistoryItem = ({
           setIconComponent(
             <Icon.ArrowUp className="HistoryItem__icon--sent" />,
           );
+          setIsLoading(true);
 
-          if (!tokenKey) {
-            // TODO: attempt to fetch token details, not stored
-            setRowText(operationString);
-            setTxDetails((_state) => ({
-              ..._state,
-              headerTitle: translations("Transaction"),
-              operationText: operationString,
-            }));
-          } else {
-            const { token, decimals } = balances[tokenKey] as TokenBalance;
+          try {
+            const tokenDetailsResponse = await getTokenDetails({
+              contractId: attrs.contractId,
+              publicKey,
+              networkDetails,
+            });
+
+            if (!tokenDetailsResponse) {
+              setRowText(operationString);
+              setTxDetails((_state) => ({
+                ..._state,
+                headerTitle: translations("Transaction"),
+                operationText: operationString,
+              }));
+            }
+
+            const { symbol, decimals } = tokenDetailsResponse!;
+            const code = symbol === "native" ? "XLM" : symbol;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
               decimals,
@@ -418,7 +427,7 @@ export const HistoryItem = ({
             setBodyComponent(
               <>
                 {paymentDifference}
-                {formattedTokenAmount} {token.code}
+                {formattedTokenAmount} {code}
               </>,
             );
             setIconComponent(
@@ -428,7 +437,7 @@ export const HistoryItem = ({
                 <Icon.ArrowUp className="HistoryItem__icon--sent" />
               ),
             );
-            setRowText(token.code);
+            setRowText(code);
             setDateText(
               (_dateText) =>
                 `${
@@ -440,9 +449,19 @@ export const HistoryItem = ({
               isRecipient: _isRecipient,
               headerTitle: `${
                 _isRecipient ? translations("Received") : translations("Sent")
-              } ${token.code}`,
-              operationText: `${paymentDifference}${formattedTokenAmount} ${token.code}`,
+              } ${code}`,
+              operationText: `${paymentDifference}${formattedTokenAmount} ${code}`,
             }));
+          } catch (error) {
+            // falls back to only showing contract ID
+            setRowText(operationString);
+            setTxDetails((_state) => ({
+              ..._state,
+              headerTitle: translations("Transaction"),
+              operationText: operationString,
+            }));
+          } finally {
+            setIsLoading(false);
           }
         } else {
           setRowText(operationString);

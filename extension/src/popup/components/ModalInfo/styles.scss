@@ -5,6 +5,17 @@
     margin-bottom: 0.75rem;
   }
 
+  &--subject {
+    font-size: 0.75rem;
+    color: #a0a0a0;
+    background-color: #1c1c1c;
+    border-radius: 6px;
+    line-height: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    padding: 0.5rem;
+  }
+
   &--connection-request-pill {
     display: flex;
     align-items: center;

@@ -31,6 +31,7 @@ import {
 } from "@shared/helpers/stellar";
 import {
   isAssetSuspicious,
+  isTxSuspicious,
   useScanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
@@ -256,7 +257,13 @@ const getBuiltTx = async (
     .setTimeout(transactionTimeout);
 };
 
-export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
+export const TransactionDetails = ({
+  goBack,
+  shouldScanTx,
+}: {
+  goBack: () => void;
+  shouldScanTx: boolean;
+}) => {
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
@@ -287,7 +294,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
   const isPathPayment = useSelector(isPathPaymentSelector);
   const { isMemoValidationEnabled } = useSelector(settingsSelector);
   const isSwap = useIsSwap();
-  const { scanTx, data: scanResult, isLoading } = useScanTx();
+  const { scanTx, data: scanResult, isLoading, setLoading } = useScanTx();
 
   const { t } = useTranslation();
 
@@ -347,6 +354,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
     const url = "internal"; // blockaid prefers a URL for this endpoint, but this does not originate from a URL
     const scanSorobanTx = async () => {
       if (
+        shouldScanTx &&
         submission.submitStatus === ActionStatus.IDLE &&
         transactionSimulation.preparedTransaction
       ) {
@@ -356,28 +364,32 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
           networkDetails,
         );
       }
+      setLoading(false);
     };
     const scanClassicTx = async () => {
-      const transaction = await getBuiltTx(
-        publicKey,
-        {
-          sourceAsset,
-          destAsset,
-          amount,
-          destinationAmount,
-          destination,
-          allowedSlippage,
-          path,
-          isPathPayment,
-          isSwap,
-          isFunded: destinationBalances.isFunded!,
-        },
-        transactionFee,
-        transactionTimeout,
-        networkDetails,
-      );
+      if (shouldScanTx) {
+        const transaction = await getBuiltTx(
+          publicKey,
+          {
+            sourceAsset,
+            destAsset,
+            amount,
+            destinationAmount,
+            destination,
+            allowedSlippage,
+            path,
+            isPathPayment,
+            isSwap,
+            isFunded: destinationBalances.isFunded!,
+          },
+          transactionFee,
+          transactionTimeout,
+          networkDetails,
+        );
 
-      await scanTx(transaction.build().toXDR(), url, networkDetails);
+        await scanTx(transaction.build().toXDR(), url, networkDetails);
+      }
+      setLoading(false);
     };
     if (isToken || isSoroswap) {
       scanSorobanTx();
@@ -574,15 +586,7 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
               ) : null
             }
           />
-          <View.Content
-            contentFooter={
-              <div className="TransactionDetails__bottom-wrapper__copy">
-                {(isPathPayment || isSwap) &&
-                  submission.submitStatus !== ActionStatus.SUCCESS &&
-                  t("The final amount is approximate and may change")}
-              </div>
-            }
-          >
+          <View.Content>
             {!(isPathPayment || isSwap) && (
               <div className="TransactionDetails__cards">
                 <Card>
@@ -696,20 +700,31 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 </div>
               </div>
             )}
-            {scanResult && <BlockaidTxScanLabel scanResult={scanResult} />}
-            {submission.submitStatus === ActionStatus.IDLE && (
-              <FlaggedWarningMessage
-                isMemoRequired={isMemoRequired}
-                blockaidData={
-                  (isSourceAssetSuspicious
-                    ? accountBalances.balances?.[asset].blockaidData
-                    : accountBalances.balances?.[destinationAsset]
-                        ?.blockaidData) || defaultBlockaidScanAssetResult
-                }
-                isSuspicious={isSourceAssetSuspicious || isDestAssetSuspicious}
-              />
-            )}
+            <div className="TransactionDetails__warnings">
+              {scanResult && (
+                <BlockaidTxScanLabel scanResult={scanResult} isPopup />
+              )}
+              {submission.submitStatus === ActionStatus.IDLE && (
+                <FlaggedWarningMessage
+                  isMemoRequired={isMemoRequired}
+                  blockaidData={
+                    (isSourceAssetSuspicious
+                      ? accountBalances.balances?.[asset].blockaidData
+                      : accountBalances.balances?.[destinationAsset]
+                          ?.blockaidData) || defaultBlockaidScanAssetResult
+                  }
+                  isSuspicious={
+                    isSourceAssetSuspicious || isDestAssetSuspicious
+                  }
+                />
+              )}
+            </div>
           </View.Content>
+          <div className="TransactionDetails__bottom-wrapper__copy">
+            {(isPathPayment || isSwap) &&
+              submission.submitStatus !== ActionStatus.SUCCESS &&
+              t("The final amount is approximate and may change")}
+          </div>
           <View.Footer isInline>
             {submission.submitStatus === ActionStatus.SUCCESS ? (
               <StellarExpertButton />
@@ -728,7 +743,9 @@ export const TransactionDetails = ({ goBack }: { goBack: () => void }) => {
                 <Button
                   size="md"
                   variant={
-                    isSourceAssetSuspicious || isDestAssetSuspicious
+                    isSourceAssetSuspicious ||
+                    isDestAssetSuspicious ||
+                    (scanResult && isTxSuspicious(scanResult))
                       ? "error"
                       : "primary"
                   }

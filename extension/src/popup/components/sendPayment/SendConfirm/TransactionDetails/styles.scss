@@ -122,6 +122,18 @@
       align-items: center;
       text-align: center;
       justify-content: center;
+      padding-top: 1rem;
+    }
+  }
+
+  &__warnings {
+    display: flex;
+    flex-flow: column;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+
+    .WarningMessage__infoBlock {
+      margin-bottom: 0;
     }
   }
 }

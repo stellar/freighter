@@ -33,7 +33,7 @@
     "start:unpacked": "yarn workspace extension start:unpacked-extension",
     "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn setup || exit 0",
     "test:ci": "jest --ci",
-    "test:e2e": "yarn workspace extension test:e2e",
+    "test:e2e": "yarn workspace extension test:e2e --workers=1",
     "test": "jest -o --watch",
     "prepare": "husky install"
   },
@@ -108,7 +108,7 @@
     "pretty-quick": "^2.0.1",
     "ts-loader": "9.5.1",
     "typescript": "^5.3.3",
-    "webpack": "5.93.0",
+    "webpack": "5.94.0",
     "webpack-cli": "5.1.4",
     "webpack-dev-server": "5.0.4",
     "webpack-merge": "5.10.0"
@@ -127,5 +127,6 @@
       "webpack-dev-server>chokidar>fsevents": true,
       "webpack>watchpack>watchpack-chokidar2>chokidar>fsevents": true
     }
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha256.c17d3797fb9a9115bf375e31bfd30058cac6bc9c3b8807a3d8cb2094794b51ca"
 }

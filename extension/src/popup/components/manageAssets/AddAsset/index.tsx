@@ -24,6 +24,11 @@ import {
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
+import {
+  isAssetSuspicious,
+  scanAsset,
+  scanAssetBulk,
+} from "popup/helpers/blockaid";
 
 import { AssetNotifcation } from "popup/components/AssetNotification";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -112,15 +117,21 @@ export const AddAsset = () => {
       if (!tokenDetailsResponse) {
         setAssetRows([]);
       } else {
+        const issuer = isSacContract
+          ? tokenDetailsResponse.name.split(":")[1] || ""
+          : contractId; // get the issuer name, if applicable ,
+        const scannedAsset = await scanAsset(
+          `${tokenDetailsResponse.symbol}-${issuer}`,
+          networkDetails,
+        );
         setAssetRows([
           {
             code: tokenDetailsResponse.symbol,
             contract: contractId,
-            issuer: isSacContract
-              ? tokenDetailsResponse.name.split(":")[1] || ""
-              : contractId, // get the issuer name, if applicable ,
+            issuer,
             domain: "",
             name: tokenDetailsResponse.name,
+            isSuspicious: isAssetSuspicious(scannedAsset),
           },
         ]);
       }
@@ -175,6 +186,8 @@ export const AddAsset = () => {
     const acct = await server.loadAccount(issuer);
     const homeDomain = acct.home_domain || "";
 
+    setIsSearching(true);
+
     try {
       assetDomainToml = await StellarToml.Resolver.resolve(homeDomain);
     } catch (e) {
@@ -190,13 +203,26 @@ export const AddAsset = () => {
       const tomlNetworkPassphrase =
         assetDomainToml.NETWORK_PASSPHRASE || Networks.PUBLIC;
 
+      type AssetRecord = StellarToml.Api.Currency & {
+        domain: string;
+      };
+
       if (tomlNetworkPassphrase === networkPassphrase) {
-        setAssetRows(
-          assetDomainToml.CURRENCIES.map((currency) => ({
-            ...currency,
-            domain: homeDomain,
-          })),
-        );
+        const assetsToScan: string[] = [];
+        const assetRecords: AssetRecord[] = [];
+        assetDomainToml.CURRENCIES.forEach((currency) => {
+          assetRecords.push({ ...currency, domain: homeDomain });
+          assetsToScan.push(`${currency.code}-${currency.issuer}`);
+        });
+        const scannedAssets = await scanAssetBulk(assetsToScan, networkDetails);
+        const scannedAssetRows = assetRecords.map((record: AssetRecord) => ({
+          ...record,
+          isSuspicious: isAssetSuspicious(
+            scannedAssets.results[`${record.code}-${record.issuer}`],
+          ),
+        }));
+
+        setAssetRows(scannedAssetRows);
         // no need for verification on classic assets
         setIsVerificationInfoShowing(false);
       } else {
