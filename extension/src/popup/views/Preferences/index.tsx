@@ -15,34 +15,35 @@ import "./styles.scss";
 export const Preferences = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled } =
+  const { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled } =
     useSelector(settingsSelector);
 
   interface SettingValues {
     isValidatingMemoValue: boolean;
     isDataSharingAllowedValue: boolean;
-    isNonSSLEnabledValue: boolean;
+    isHideDustEnabledValue: boolean;
   }
 
   const initialValues: SettingValues = {
     isValidatingMemoValue: isMemoValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
-    isNonSSLEnabledValue: isNonSSLEnabled,
+    isHideDustEnabledValue: isHideDustEnabled,
   };
 
   const handleSubmit = async (formValue: SettingValues) => {
     const {
       isValidatingMemoValue,
       isDataSharingAllowedValue,
-      isNonSSLEnabledValue,
+      isHideDustEnabledValue,
     } = formValue;
+    console.log(formValue);
 
     // eslint-disable-next-line
     await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
-        isNonSSLEnabled: isNonSSLEnabledValue,
+        isHideDustEnabled: isHideDustEnabledValue,
       }),
     );
   };
@@ -102,22 +103,20 @@ export const Preferences = () => {
 
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  {t("Connect to domain without SSL certificate")}{" "}
+                  {t("Hide small payments")}{" "}
                 </div>
 
                 <div className="Preferences--toggle">
                   <label
-                    htmlFor="isNonSSLEnabledValue"
+                    htmlFor="isHideDustEnabledValue"
                     className="Preferences--label"
                   >
-                    {t(
-                      "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet. SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain. Use caution when connecting to domains without an SSL certificate.",
-                    )}
+                    {t("Hide payments smaller than 0.1 XLM")}
                   </label>
                   <Toggle
-                    checked={initialValues.isNonSSLEnabledValue}
+                    checked={initialValues.isHideDustEnabledValue}
                     customInput={<Field />}
-                    id="isNonSSLEnabledValue"
+                    id="isHideDustEnabledValue"
                   />
                 </div>
               </div>

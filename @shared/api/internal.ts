@@ -1176,11 +1176,11 @@ export const saveAllowList = async ({
 export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
-  isNonSSLEnabled,
+  isHideDustEnabled,
 }: {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
-  isNonSSLEnabled: boolean;
+  isHideDustEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: [""],
@@ -1194,6 +1194,7 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isBlockaidAnnounced: false,
+    isHideDustEnabled: true,
     error: "",
   };
 
@@ -1201,7 +1202,7 @@ export const saveSettings = async ({
     response = await sendMessageToBackground({
       isDataSharingAllowed,
       isMemoValidationEnabled,
-      isNonSSLEnabled,
+      isHideDustEnabled,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {

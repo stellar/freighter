@@ -12,6 +12,7 @@ import {
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
   IS_BLOCKAID_ANNOUNCED_ID,
+  IS_HIDE_DUST_ENABLED_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
@@ -162,6 +163,13 @@ export const getIsBlockaidAnnounced = async () => {
     (await localStore.getItem(IS_BLOCKAID_ANNOUNCED_ID)) ?? false;
 
   return isBlockaidAnnounced;
+};
+
+export const getIsHideDustEnabled = async () => {
+  const isHideDustEnabled =
+    (await localStore.getItem(IS_HIDE_DUST_ENABLED_ID)) ?? true;
+
+  return isHideDustEnabled;
 };
 
 export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
