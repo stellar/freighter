@@ -430,6 +430,7 @@ export interface FnArgsCreateWasm {
   salt: string;
   hash: string;
   address: string;
+  args?: xdr.ScVal[];
 }
 
 export interface FnArgsCreateSac {
@@ -460,7 +461,9 @@ function getInvocationArgs(
       return { fnName, contractId, args, type: "invoke" };
     }
 
+    // sorobanAuthorizedFunctionTypeCreateContractV2HostFn
     // sorobanAuthorizedFunctionTypeCreateContractHostFn
+    case 2:
     case 1: {
       const _invocation = fn.createContractHostFn();
       const [exec, preimage] = [
@@ -473,12 +476,20 @@ function getInvocationArgs(
         case 0: {
           const details = preimage.fromAddress();
 
-          return {
+          const contractDetails = {
             type: "wasm",
             salt: details.salt().toString("hex"),
             hash: exec.wasmHash().toString("hex"),
             address: Address.fromScAddress(details.address()).toString(),
-          };
+          } as FnArgsCreateWasm;
+
+          if (fn.switch().value === 2) {
+            contractDetails.args = (
+              _invocation as xdr.CreateContractArgsV2
+            ).constructorArgs();
+          }
+
+          return contractDetails;
         }
 
         // contractExecutableStellarAsset
@@ -498,3 +509,21 @@ function getInvocationArgs(
     }
   }
 }
+
+export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
+  if (
+    hostFn.switch() !== xdr.HostFunctionType.hostFunctionTypeCreateContractV2()
+  ) {
+    const args = hostFn.createContract();
+    return {
+      contractIdPreimage: args.contractIdPreimage(),
+      executable: args.executable(),
+    };
+  }
+  const argsV2 = hostFn.createContractV2();
+  return {
+    contractIdPreimage: argsV2.contractIdPreimage(),
+    executable: argsV2.executable(),
+    constructorArgs: argsV2.constructorArgs(),
+  };
+};
