@@ -569,6 +569,7 @@ export const KeyValueInvokeHostFn = ({
                   }
                 />
               )}
+              {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
             </>
           );
         }
@@ -584,23 +585,22 @@ export const KeyValueInvokeHostFn = ({
               operationValue="Create Contract"
             />
             {preimageFromAsset.switch().name === "assetTypeCreditAlphanum4" ||
-              (preimageFromAsset.switch().name ===
-                "assetTypeCreditAlphanum12" && (
-                <>
-                  <KeyValueList
-                    operationKey={t("Asset Code")}
-                    operationValue={(preimageValue as xdr.AlphaNum12)
-                      .assetCode()
-                      .toString()}
-                  />
-                  <KeyValueList
-                    operationKey={t("Issuer")}
-                    operationValue={StrKey.encodeEd25519PublicKey(
-                      (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
-                    )}
-                  />
-                </>
-              ))}
+            preimageFromAsset.switch().name === "assetTypeCreditAlphanum12" ? (
+              <>
+                <KeyValueList
+                  operationKey={t("Asset Code")}
+                  operationValue={(preimageValue as xdr.AlphaNum12)
+                    .assetCode()
+                    .toString()}
+                />
+                <KeyValueList
+                  operationKey={t("Issuer")}
+                  operationValue={StrKey.encodeEd25519PublicKey(
+                    (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                  )}
+                />
+              </>
+            ) : null}
 
             <KeyValueList
               operationKey={t("Executable Type")}
@@ -617,6 +617,7 @@ export const KeyValueInvokeHostFn = ({
                 }
               />
             )}
+            {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
           </>
         );
       }

@@ -520,7 +520,7 @@ export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
       executable: args.executable(),
     };
   }
-  const argsV2 = hostFn.createContract() as xdr.CreateContractArgsV2;
+  const argsV2 = hostFn.createContractV2() as xdr.CreateContractArgsV2;
   return {
     contractIdPreimage: argsV2.contractIdPreimage(),
     executable: argsV2.executable(),
