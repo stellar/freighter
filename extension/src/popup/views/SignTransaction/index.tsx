@@ -237,9 +237,9 @@ export const SignTransaction = () => {
 
   const hasBalance =
     hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
-  const hasEnoughXlm = accountBalances.balances?.native.available.gt(
-    stroopToXlm(_fee as string),
-  );
+  const hasEnoughXlm =
+    accountBalances.balances?.native &&
+    accountBalances.balances?.native.available.gt(stroopToXlm(_fee as string));
   if (
     hasBalance &&
     currentAccount.publicKey &&
@@ -253,7 +253,7 @@ export const SignTransaction = () => {
         variant={WarningMessageVariant.warning}
         header={t("INSUFFICIENT FUNDS FOR FEE")}
       >
-        <p>
+        <p data-testid="InsufficientBalanceWarning">
           <Trans domain={domain}>
             Your available XLM balance is not enough to pay for the transaction
             fee.
