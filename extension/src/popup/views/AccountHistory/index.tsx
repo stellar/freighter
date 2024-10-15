@@ -3,13 +3,17 @@ import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
+import BigNumber from "bignumber.js";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import {
   getIsPayment,
@@ -57,6 +61,7 @@ export const AccountHistory = () => {
   const { accountBalances, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
+  const { isHideDustEnabled } = useSelector(settingsSelector);
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
@@ -99,12 +104,24 @@ export const AccountHistory = () => {
           operation.type ===
             Horizon.HorizonApi.OperationResponseType.createAccount &&
           operation.account !== publicKey;
+        const isDustPayment =
+          isPayment &&
+          "asset_type" in operation &&
+          operation.asset_type === "native" &&
+          "to" in operation &&
+          operation.to === publicKey &&
+          "amount" in operation &&
+          new BigNumber(operation.amount).lte(new BigNumber(0.1));
         const historyOperation = {
           ...operation,
           isPayment,
           isSwap,
           isCreateExternalAccount,
         };
+
+        if (isDustPayment && isHideDustEnabled) {
+          return;
+        }
 
         if ((isPayment || isSorobanXfer) && !isSwap) {
           if (operation.source_account === publicKey) {
@@ -140,14 +157,14 @@ export const AccountHistory = () => {
     };
 
     getData();
-  }, [publicKey, networkDetails, dispatch]);
+  }, [publicKey, networkDetails, dispatch, isHideDustEnabled]);
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
     <>
       <View.Content>
-        <div className="AccountHistory">
+        <div className="AccountHistory" data-testid="AccountHistory">
           {isLoading ? (
             <div className="AccountHistory__loader">
               <Loader size="2rem" />
