@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "dependencies": {
     "bignumber.js": "^9.1.1",
-    "stellar-sdk": "yarn:stellar-sdk@^12.1.0",
-    "stellar-sdk-next": "yarn:stellar-sdk@^12.1.0",
+    "stellar-sdk": "yarn:@stellar/stellar-sdk@13.0.0-beta.1",
+    "stellar-sdk-next": "yarn:@stellar/stellar-sdk@13.0.0-beta.1",
     "typescript": "~3.7.2"
   },
   "devDependencies": {

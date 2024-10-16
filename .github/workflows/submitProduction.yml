@@ -59,7 +59,7 @@ jobs:
           git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
           git tag ${{ github.event.inputs.version }}
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c #v6.1.0
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f #v7.0.5
         with:
           title: Bump versions to ${{ github.event.inputs.version }}
       - name: Create GitHub Release
@@ -84,7 +84,7 @@ jobs:
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
       - name: Submit extension to Firefox
-        uses: kewisch/action-web-ext@2c96cb8d05464c1dd52b96229a9f33388ba1bfad #v1
+        uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
         with:
           cmd: sign
           source: ./extension/build/build.zip
@@ -93,7 +93,7 @@ jobs:
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
       - name: Remove scripts tag
-        uses: restackio/update-json-file-action@36b1f6009a0611cc89b70bb0403dbd6c194dc3d0 #v2.1
+        uses: restackio/update-json-file-action@1e34d747ca044df80b37bc4ef5a9aa41be9dac8f #v2.1
         with:
           file: ./extension/build/manifest.json
           fields: '{"background": {"service_worker": "background.min.js"}}'

@@ -6,7 +6,6 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { UnverifiedTokenNotification } from "popup/components/WarningMessages";
 import {
   transactionSubmissionSelector,
@@ -16,7 +15,6 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { useIsOwnedScamAsset } from "popup/helpers/useIsOwnedScamAsset";
 import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 
@@ -25,14 +23,15 @@ import "./styles.scss";
 export const AssetSelect = ({
   assetCode,
   issuerKey,
+  isSuspicious,
 }: {
   assetCode: string;
   issuerKey: string;
+  isSuspicious: boolean;
 }) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
-  const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
   useEffect(() => {
@@ -83,9 +82,9 @@ export const AssetSelect = ({
               assetIcons={assetIcons}
               code={assetCode}
               issuerKey={issuerKey}
+              isSuspicious={isSuspicious}
             />
             <span className="AssetSelect__medium-copy">{assetCode}</span>
-            <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
           </div>
           <div className="AssetSelect__content__right">
             <Icon.ChevronDown />
@@ -102,17 +101,18 @@ export const PathPayAssetSelect = ({
   issuerKey,
   balance,
   icon,
+  isSuspicious,
 }: {
   source: boolean;
   assetCode: string;
   issuerKey: string;
   balance: string;
   icon: string;
+  isSuspicious: boolean;
 }) => {
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
-  const isOwnedScamAsset = useIsOwnedScamAsset(assetCode, issuerKey);
 
   const handleSelectAsset = () => {
     dispatch(
@@ -150,6 +150,7 @@ export const PathPayAssetSelect = ({
             code={assetCode}
             issuerKey={issuerKey}
             icon={icon}
+            isSuspicious={isSuspicious}
           />
           <span
             className="AssetSelect__medium-copy"
@@ -157,7 +158,6 @@ export const PathPayAssetSelect = ({
           >
             {truncateLongAssetCode(assetCode)}
           </span>{" "}
-          <ScamAssetIcon isScamAsset={isOwnedScamAsset} />
           <Icon.ChevronDown />
         </div>
         <div className="AssetSelect__content__right">

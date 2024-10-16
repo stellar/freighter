@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 // In order to allow that rule we need to refactor this to use the correct Horizon types and narrow operation types
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
 import { Icon, Loader } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { Asset } from "stellar-sdk";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -16,6 +17,7 @@ import { emitMetric } from "helpers/metrics";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
+  isContractId,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
 
@@ -136,6 +138,8 @@ export const HistoryItem = ({
 
   const renderBodyComponent = () => BodyComponent;
   const renderIcon = () => IconComponent;
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const translations = useCallback(t, []);
 
   useEffect(() => {
     const buildHistoryItem = async () => {
@@ -146,17 +150,20 @@ export const HistoryItem = ({
           </>,
         );
         setRowText(
-          t(`{{srcAssetCode}} for {{destAssetCode}}`, {
+          translations(`{{srcAssetCode}} for {{destAssetCode}}`, {
             srcAssetCode,
             destAssetCode,
           }),
         );
         setTxDetails((_state) => ({
           ..._state,
-          headerTitle: t(`Swapped {{srcAssetCode}} for {{destAssetCode}}`, {
-            srcAssetCode,
-            destAssetCode,
-          }),
+          headerTitle: translations(
+            `Swapped {{srcAssetCode}} for {{destAssetCode}}`,
+            {
+              srcAssetCode,
+              destAssetCode,
+            },
+          ),
           operationText: `+${new BigNumber(amount)} ${destAssetCode}`,
         }));
       } else if (isPayment) {
@@ -166,7 +173,7 @@ export const HistoryItem = ({
         setBodyComponent(
           <>
             {paymentDifference}
-            {formatAmount(new BigNumber(amount).toFixed(2, 1))} {destAssetCode}
+            {formatAmount(new BigNumber(amount).toString())} {destAssetCode}
           </>,
         );
         setIconComponent(
@@ -179,13 +186,15 @@ export const HistoryItem = ({
         setRowText(destAssetCode);
         setDateText(
           (_dateText) =>
-            `${_isRecipient ? t("Received") : t("Sent")} \u2022 ${date}`,
+            `${
+              _isRecipient ? translations("Received") : translations("Sent")
+            } \u2022 ${date}`,
         );
         setTxDetails((_state) => ({
           ..._state,
           isRecipient: _isRecipient,
           headerTitle: `${
-            _isRecipient ? t("Received") : t("Sent")
+            _isRecipient ? translations("Received") : translations("Sent")
           } ${destAssetCode}`,
           operationText: `${paymentDifference}${new BigNumber(
             amount,
@@ -197,10 +206,10 @@ export const HistoryItem = ({
         );
         setIconComponent(<Icon.ArrowUp className="HistoryItem__icon--sent" />);
         setRowText("XLM");
-        setDateText((_dateText) => `${t("Sent")} \u2022 ${date}`);
+        setDateText((_dateText) => `${translations("Sent")} \u2022 ${date}`);
         setTxDetails((_state) => ({
           ..._state,
-          headerTitle: t("Create Account"),
+          headerTitle: translations("Create Account"),
           isPayment: true,
           operation: {
             ...operation,
@@ -214,15 +223,28 @@ export const HistoryItem = ({
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
         const balances =
           accountBalances.balances || ({} as NonNullable<Balances>);
-        const tokenKey = Object.keys(balances).find(
-          (balanceKey) => attrs?.contractId === balanceKey.split(":")[1],
-        );
+
+        const tokenKey = Object.keys(balances).find((balanceKey) => {
+          const [code, issuer] =
+            balanceKey === "native" ? ["XLM"] : balanceKey.split(":");
+          const matchesIssuer = attrs?.contractId === issuer;
+
+          // if issuer if a G address or xlm, check for a SAC match
+          if ((issuer && !isContractId(issuer)) || code === "XLM") {
+            const sacAddress = new Asset(code, issuer).contractId(
+              networkDetails.networkPassphrase,
+            );
+            const matchesSac = attrs?.contractId === sacAddress;
+            return matchesSac;
+          }
+          return matchesIssuer;
+        });
 
         if (!attrs) {
           setRowText(operationString);
           setTxDetails((_state) => ({
             ..._state,
-            headerTitle: t("Transaction"),
+            headerTitle: translations("Transaction"),
             operationText: operationString,
           }));
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
@@ -253,7 +275,7 @@ export const HistoryItem = ({
                 setRowText(operationString);
                 setTxDetails((_state) => ({
                   ..._state,
-                  headerTitle: t("Transaction"),
+                  headerTitle: translations("Transaction"),
                   operationText: operationString,
                 }));
               } else {
@@ -279,10 +301,12 @@ export const HistoryItem = ({
                 setDateText(
                   (_dateText) =>
                     `${
-                      isRecieving ? t("Received") : t("Minted")
+                      isRecieving
+                        ? translations("Received")
+                        : translations("Minted")
                     } \u2022 ${date}`,
                 );
-                setRowText(t(capitalize(attrs.fnName)));
+                setRowText(translations(capitalize(attrs.fnName)));
                 setTxDetails((_state) => ({
                   ..._state,
                   operation: {
@@ -290,7 +314,7 @@ export const HistoryItem = ({
                     from: attrs.from,
                     to: attrs.to,
                   },
-                  headerTitle: `${t(capitalize(attrs.fnName))} ${
+                  headerTitle: `${translations(capitalize(attrs.fnName))} ${
                     _token.symbol
                   }`,
                   isPayment: false,
@@ -302,7 +326,7 @@ export const HistoryItem = ({
             } catch (error) {
               console.error(error);
               captureException(`Error fetching token details: ${error}`);
-              setRowText(t(capitalize(attrs.fnName)));
+              setRowText(translations(capitalize(attrs.fnName)));
               setBodyComponent(
                 <>
                   {isRecieving && "+ "}
@@ -311,7 +335,11 @@ export const HistoryItem = ({
               );
               setDateText(
                 (_dateText) =>
-                  `${isRecieving ? t("Received") : t("Minted")} \u2022 ${date}`,
+                  `${
+                    isRecieving
+                      ? translations("Received")
+                      : translations("Minted")
+                  } \u2022 ${date}`,
               );
               setTxDetails((_state) => ({
                 ..._state,
@@ -320,7 +348,7 @@ export const HistoryItem = ({
                   from: attrs.from,
                   to: attrs.to,
                 },
-                headerTitle: t(capitalize(attrs.fnName)),
+                headerTitle: translations(capitalize(attrs.fnName)),
                 // manually set `isPayment` now that we've passed the above `isPayment` conditional
                 isPayment: false,
                 isRecipient: isRecieving,
@@ -343,9 +371,13 @@ export const HistoryItem = ({
 
             setDateText(
               (_dateText) =>
-                `${isRecieving ? t("Received") : t("Minted")} \u2022 ${date}`,
+                `${
+                  isRecieving
+                    ? translations("Received")
+                    : translations("Minted")
+                } \u2022 ${date}`,
             );
-            setRowText(t(capitalize(attrs.fnName)));
+            setRowText(translations(capitalize(attrs.fnName)));
             setTxDetails((_state) => ({
               ..._state,
               operation: {
@@ -353,7 +385,9 @@ export const HistoryItem = ({
                 from: attrs.from,
                 to: attrs.to,
               },
-              headerTitle: `${t(capitalize(attrs.fnName))} ${token.code}`,
+              headerTitle: `${translations(capitalize(attrs.fnName))} ${
+                token.code
+              }`,
               isPayment: false,
               isRecipient: isRecieving,
               operationText: `${formattedTokenAmount} ${token.code}`,
@@ -363,47 +397,77 @@ export const HistoryItem = ({
           setIconComponent(
             <Icon.ArrowUp className="HistoryItem__icon--sent" />,
           );
+          setIsLoading(true);
 
-          if (!tokenKey) {
-            // TODO: attempt to fetch token details, not stored
-            setRowText(operationString);
-            setTxDetails((_state) => ({
-              ..._state,
-              headerTitle: t("Transaction"),
-              operationText: operationString,
-            }));
-          } else {
-            const { token, decimals } = balances[tokenKey] as TokenBalance;
+          try {
+            const tokenDetailsResponse = await getTokenDetails({
+              contractId: attrs.contractId,
+              publicKey,
+              networkDetails,
+            });
+
+            if (!tokenDetailsResponse) {
+              setRowText(operationString);
+              setTxDetails((_state) => ({
+                ..._state,
+                headerTitle: translations("Transaction"),
+                operationText: operationString,
+              }));
+            }
+
+            const { symbol, decimals } = tokenDetailsResponse!;
+            const code = symbol === "native" ? "XLM" : symbol;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
               decimals,
             );
+            const _isRecipient =
+              attrs.to === publicKey && attrs.from !== publicKey;
+            const paymentDifference = _isRecipient ? "+" : "-";
             setBodyComponent(
               <>
-                - {formattedTokenAmount} {token.code}
+                {paymentDifference}
+                {formattedTokenAmount} {code}
               </>,
             );
-
-            setDateText((_dateText) => `${t("Sent")} \u2022 ${date}`);
-            setRowText(t(capitalize(attrs.fnName)));
+            setIconComponent(
+              _isRecipient ? (
+                <Icon.ArrowDown className="HistoryItem__icon--received" />
+              ) : (
+                <Icon.ArrowUp className="HistoryItem__icon--sent" />
+              ),
+            );
+            setRowText(code);
+            setDateText(
+              (_dateText) =>
+                `${
+                  _isRecipient ? translations("Received") : translations("Sent")
+                } \u2022 ${date}`,
+            );
             setTxDetails((_state) => ({
               ..._state,
-              operation: {
-                ..._state.operation,
-                from: attrs.from,
-                to: attrs.to,
-              },
-              headerTitle: `${t(capitalize(attrs.fnName))} ${token.code}`,
-              isPayment: false,
-              isRecipient: false,
-              operationText: `${formattedTokenAmount} ${token.code}`,
+              isRecipient: _isRecipient,
+              headerTitle: `${
+                _isRecipient ? translations("Received") : translations("Sent")
+              } ${code}`,
+              operationText: `${paymentDifference}${formattedTokenAmount} ${code}`,
             }));
+          } catch (error) {
+            // falls back to only showing contract ID
+            setRowText(operationString);
+            setTxDetails((_state) => ({
+              ..._state,
+              headerTitle: translations("Transaction"),
+              operationText: operationString,
+            }));
+          } finally {
+            setIsLoading(false);
           }
         } else {
           setRowText(operationString);
           setTxDetails((_state) => ({
             ..._state,
-            headerTitle: t("Transaction"),
+            headerTitle: translations("Transaction"),
             operationText: operationString,
           }));
         }
@@ -411,7 +475,7 @@ export const HistoryItem = ({
         setRowText(operationString);
         setTxDetails((_state) => ({
           ..._state,
-          headerTitle: t("Transaction"),
+          headerTitle: translations("Transaction"),
           operationText: operationString,
         }));
       }
@@ -434,13 +498,14 @@ export const HistoryItem = ({
     publicKey,
     srcAssetCode,
     startingBalance,
-    t,
+    translations,
     to,
     accountBalances.balances,
   ]);
 
   return (
     <div
+      data-testid="history-item"
       className="HistoryItem"
       onClick={() => {
         emitMetric(METRIC_NAMES.historyOpenItem);
@@ -461,7 +526,12 @@ export const HistoryItem = ({
               <div className="HistoryItem__date">{dateText}</div>
             </div>
 
-            <div className="HistoryItem__payment">{renderBodyComponent()}</div>
+            <div
+              className="HistoryItem__payment"
+              data-testid="history-item-body-component"
+            >
+              {renderBodyComponent()}
+            </div>
           </>
         )}
       </div>

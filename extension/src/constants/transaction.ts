@@ -36,8 +36,6 @@ export enum OPERATION_TYPES {
 }
 
 export enum TRANSACTION_WARNING {
-  malicious = "malicious",
-  unsafe = "unsafe",
   memoRequired = "memo-required",
 }
 

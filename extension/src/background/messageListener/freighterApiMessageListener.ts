@@ -23,18 +23,17 @@ import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
 } from "@shared/constants/stellar";
-import { STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL } from "background/constants/apiUrls";
+import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import {
   ALLOWLIST_ID,
-  CACHED_BLOCKED_ACCOUNTS_ID,
+  CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
 } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import {
   getIsMainnet,
   getIsMemoValidationEnabled,
-  getIsSafetyValidationEnabled,
   getNetworkDetails,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
@@ -164,8 +163,8 @@ export const freighterApiMessageListener = (
       );
 
       const directoryLookupJson = await cachedFetch(
-        STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-        CACHED_BLOCKED_ACCOUNTS_ID,
+        STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL,
+        CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
       );
       const accountData = directoryLookupJson?._embedded?.records || [];
 
@@ -183,10 +182,8 @@ export const freighterApiMessageListener = (
 
       const isValidatingMemo =
         (await getIsMemoValidationEnabled()) && isMainnet;
-      const isValidatingSafety =
-        (await getIsSafetyValidationEnabled()) && isMainnet;
 
-      if (isValidatingMemo || isValidatingSafety) {
+      if (isValidatingMemo) {
         _operations.forEach((operation: StellarSdk.Operation) => {
           accountData.forEach(
             ({ address, tags }: { address: string; tags: string[] }) => {
@@ -198,16 +195,8 @@ export const freighterApiMessageListener = (
 
                 /* if the user has opted out of validation, remove applicable tags */
                 if (!isValidatingMemo) {
-                  collectedTags.filter(
+                  collectedTags = collectedTags.filter(
                     (tag) => tag !== TRANSACTION_WARNING.memoRequired,
-                  );
-                }
-                if (!isValidatingSafety) {
-                  collectedTags = collectedTags.filter(
-                    (tag) => tag !== TRANSACTION_WARNING.unsafe,
-                  );
-                  collectedTags = collectedTags.filter(
-                    (tag) => tag !== TRANSACTION_WARNING.malicious,
                   );
                 }
                 flaggedKeys[operation.destination] = {

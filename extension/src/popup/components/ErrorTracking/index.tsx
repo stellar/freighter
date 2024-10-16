@@ -1,6 +1,5 @@
 import { useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
-import { Integrations } from "@sentry/tracing";
 
 import { SENTRY_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
@@ -15,7 +14,7 @@ export const ErrorTracking = () => {
     Sentry.init({
       dsn: SENTRY_KEY,
       release: `freighter@${packageJson.version}`,
-      integrations: [new Integrations.BrowserTracing()],
+      integrations: [Sentry.browserTracingIntegration()],
       tracesSampleRate: 1.0,
       denyUrls: [
         // Amplitude 4xx's on too many Posts, which is expected behavior

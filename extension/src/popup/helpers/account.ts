@@ -22,7 +22,7 @@ export const LP_IDENTIFIER = ":lp";
 export const sortBalances = (
   balances: Balances,
   sorobanBalances?: TokenBalances,
-) => {
+): AssetType[] => {
   const collection = [] as any[];
   const lpBalances = [] as any[];
   const _sorobanBalances = sorobanBalances || [];
@@ -95,8 +95,10 @@ export const sortOperationsByAsset = ({
         bal.token !== undefined && "code" in bal.token ? bal.token.code : "";
       assetOperationMap[getCanonicalFromAsset(code, issuer)] = [];
     }
-    if ("contractId" in bal) {
-      assetOperationMap[getCanonicalFromAsset(bal.symbol, bal.contractId)] = [];
+    if ("contractId" in bal && "symbol" in bal) {
+      assetOperationMap[
+        getCanonicalFromAsset(bal.symbol, bal.contractId || "")
+      ] = [];
     }
   });
 

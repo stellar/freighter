@@ -36,7 +36,6 @@ import {
   resetAccountBalanceStatus,
   saveAssetSelectType,
   AssetSelectType,
-  getBlockedDomains,
   getAccountBalances,
   getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
@@ -54,6 +53,7 @@ import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
+// import { BlockaidAnnouncement } from "popup/components/account/BlockaidAnnouncement";
 
 import "popup/metrics/authServices";
 
@@ -99,7 +99,6 @@ export const Account = () => {
         networkDetails,
       }),
     );
-    dispatch(getBlockedDomains());
 
     return () => {
       dispatch(resetAccountBalanceStatus());
@@ -180,6 +179,7 @@ export const Account = () => {
             publicKey={publicKey}
             setLoading={setLoading}
           />
+          {/* <BlockaidAnnouncement /> */}
           <View.Content
             hasNoTopPadding
             contentFooter={

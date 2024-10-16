@@ -12,7 +12,7 @@ import { emitMetric } from "helpers/metrics";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
-import { scanAsset } from "popup/helpers/blockaid";
+import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   publicKeySelector,
@@ -91,9 +91,7 @@ export const ManageAssetRowButton = ({
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
   const [isSigningWithHardwareWallet, setIsSigningWithHardwareWallet] =
     useState(false);
-  const { blockedDomains, submitStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const { submitStatus } = useSelector(transactionSubmissionSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -104,8 +102,6 @@ export const ManageAssetRowButton = ({
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
-
-  const isBlockedDomain = (d: string) => blockedDomains.domains[d];
 
   const handleBackgroundClick = () => {
     setRowButtonShowing("");
@@ -133,9 +129,6 @@ export const ManageAssetRowButton = ({
         }),
       );
 
-      setAssetSubmitting("");
-      setRowButtonShowing("");
-
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         dispatch(
           getAccountBalances({
@@ -153,6 +146,9 @@ export const ManageAssetRowButton = ({
       if (submitFreighterTransaction.rejected.match(submitResp)) {
         setIsTrustlineErrorShowing(true);
       }
+
+      setAssetSubmitting("");
+      setRowButtonShowing("");
     }
   };
 
@@ -203,6 +199,7 @@ export const ManageAssetRowButton = ({
       image: "",
     },
   ) => {
+    setAssetSubmitting(canonicalAsset);
     const resp = await checkForSuspiciousAsset({
       code: assetRowData.code,
       issuer: assetRowData.issuer,
@@ -211,21 +208,26 @@ export const ManageAssetRowButton = ({
       networkDetails,
     });
 
-    await scanAsset(
+    const scannedAsset = await scanAsset(
       `${assetRowData.code}-${assetRowData.issuer}`,
       networkDetails,
     );
 
-    if (isBlockedDomain(assetRowData.domain) && !isTrustlineActive) {
+    if (isAssetSuspicious(scannedAsset) && !isTrustlineActive) {
       setShowBlockedDomainWarning(true);
-      setSuspiciousAssetData(assetRowData);
+      setSuspiciousAssetData({
+        ...assetRowData,
+        blockaidData: scannedAsset,
+      });
+      setAssetSubmitting("");
     } else if (
       !isTrustlineActive &&
-      (resp.isInvalidDomain || resp.isRevocable || resp.isNewAsset)
+      (resp.isInvalidDomain || resp.isRevocable)
     ) {
       setShowNewAssetWarning(true);
       setNewAssetFlags(resp);
       setSuspiciousAssetData(assetRowData);
+      setAssetSubmitting("");
     } else {
       changeTrustline(!isTrustlineActive, () =>
         Promise.resolve(navigateTo(ROUTES.account)),
@@ -302,19 +304,21 @@ export const ManageAssetRowButton = ({
     }
   }, [submitStatus, isSigningWithHardwareWallet]);
 
+  const isLoading =
+    (isActionPending && assetSubmitting === canonicalAsset) ||
+    assetSubmitting === canonicalAsset;
+
   return (
     <div className="ManageAssetRowButton">
       {isTrustlineActive ? (
         <div>
           <div
             className={`ManageAssetRowButton__ellipsis ${
-              isActionPending
-                ? `ManageAssetRowButton__ellipsis--is-pending`
-                : ""
+              isLoading ? `ManageAssetRowButton__ellipsis--is-pending` : ""
             }`}
             data-testid={`ManageAssetRowButton__ellipsis-${code}`}
             onClick={() => {
-              if (!isActionPending) {
+              if (!isLoading) {
                 setRowButtonShowing(
                   rowButtonShowing === canonicalAsset ? "" : canonicalAsset,
                 );
@@ -344,9 +348,7 @@ export const ManageAssetRowButton = ({
                   size="md"
                   variant="secondary"
                   disabled={isActionPending}
-                  isLoading={
-                    isActionPending && assetSubmitting === canonicalAsset
-                  }
+                  isLoading={isLoading}
                   onClick={() => {
                     if (isContract) {
                       handleTokenRowClick({
@@ -366,8 +368,7 @@ export const ManageAssetRowButton = ({
                   <div className="ManageAssetRowButton__label">
                     {t("Remove asset")}
                   </div>
-                  {isActionPending &&
-                  assetSubmitting === canonicalAsset ? null : (
+                  {isLoading ? null : (
                     <img src={IconRemove} alt="icon remove" />
                   )}
                 </Button>
@@ -387,7 +388,7 @@ export const ManageAssetRowButton = ({
           size="md"
           variant="tertiary"
           disabled={isActionPending}
-          isLoading={isActionPending && assetSubmitting === canonicalAsset}
+          isLoading={isLoading}
           onClick={() => {
             setAssetSubmitting(canonicalAsset || contract);
             if (isContract) {

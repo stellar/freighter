@@ -35,7 +35,6 @@ import {
   addCustomNetwork,
   removeCustomNetwork,
   editCustomNetwork,
-  getBlockedDomains,
 } from "@shared/api/internal";
 import {
   requestPublicKey,
@@ -297,8 +296,6 @@ export const IntegrationTest = () => {
       res = await saveSettings({
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
-        isSafetyValidationEnabled: true,
-        isValidatingSafeAssetsEnabled: true,
         isNonSSLEnabled: true,
       });
       runAsserts("saveSettings", () => {
@@ -307,8 +304,6 @@ export const IntegrationTest = () => {
         assertEq(res.error, undefined);
         assertEq(res.isDataSharingAllowed, true);
         assertEq(res.isMemoValidationEnabled, true);
-        assertEq(res.isSafetyValidationEnabled, true);
-        assertEq(res.isValidatingSafeAssetsEnabled, true);
         assertEq(res.isNonSSLEnabled, true);
       });
 
@@ -360,11 +355,6 @@ export const IntegrationTest = () => {
       runAsserts("removeCustomNetwork", () => {
         assertArray(res.networksList);
         assertEq(res.networksList.length, networksListLength - 1);
-      });
-
-      res = await getBlockedDomains();
-      runAsserts("getBlockedDomains", () => {
-        assertEq(Object.keys(res.blockedDomains as object).length > 0, true);
       });
 
       await changeNetwork(NETWORK_NAMES.PUBNET);

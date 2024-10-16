@@ -16,8 +16,7 @@ import {
   getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
-  getBlockedDomains as internalGetBlockedDomains,
-  getBlockedAccounts as internalGetBlockedAccounts,
+  getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
   submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
@@ -29,10 +28,9 @@ import {
   AssetDomains,
   Balances,
   ErrorMessage,
-  BlockedDomains,
   AccountType,
   ActionStatus,
-  BlockedAccount,
+  MemoRequiredAccount,
   BalanceToMigrate,
   SoroswapToken,
 } from "@shared/api/types";
@@ -41,7 +39,10 @@ import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 
-import { getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  isMainnet as isMainnetHelper,
+} from "helpers/stellar";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData, emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -359,10 +360,13 @@ export const getAccountBalances = createAsyncThunk<
   try {
     let balances;
 
+    const isMainnet = isMainnetHelper(networkDetails);
+
     if (isCustomNetwork(networkDetails)) {
       balances = await internalGetAccountBalancesStandalone({
         publicKey,
         networkDetails,
+        isMainnet,
       });
     } else {
       balances = await internalgetAccountIndexerBalances(
@@ -391,6 +395,7 @@ export const getDestinationBalances = createAsyncThunk<
       return await internalGetAccountBalancesStandalone({
         publicKey,
         networkDetails,
+        isMainnet: isMainnetHelper(networkDetails),
       });
     }
     return await internalgetAccountIndexerBalances(publicKey, networkDetails);
@@ -514,27 +519,14 @@ export const getBestSoroswapPath = createAsyncThunk<
   },
 );
 
-export const getBlockedDomains = createAsyncThunk<
-  BlockedDomains,
-  undefined,
-  { rejectValue: ErrorMessage }
->("getBlockedDomains", async (_, thunkApi) => {
-  try {
-    const resp = await internalGetBlockedDomains();
-    return resp.blockedDomains || [];
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
-
-export const getBlockedAccounts = createAsyncThunk<
-  BlockedAccount[],
+export const getMemoRequiredAccounts = createAsyncThunk<
+  MemoRequiredAccount[],
   undefined,
   { rejectValue: ErrorMessage }
 >("getBlockedAccounts", async (_, thunkApi) => {
   try {
-    const resp = await internalGetBlockedAccounts();
-    return resp.blockedAccounts || [];
+    const resp = await internalGetMemoRequiredAccounts();
+    return resp.memoRequiredAccounts || [];
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
@@ -602,10 +594,7 @@ interface InitialState {
     type: AssetSelectType;
     isSource: boolean;
   };
-  blockedDomains: {
-    domains: BlockedDomains;
-  };
-  blockedAccounts: BlockedAccount[];
+  memoRequiredAccounts: MemoRequiredAccount[];
 }
 
 export const initialState: InitialState = {
@@ -658,10 +647,7 @@ export const initialState: InitialState = {
     type: AssetSelectType.MANAGE,
     isSource: true,
   },
-  blockedDomains: {
-    domains: {},
-  },
-  blockedAccounts: [],
+  memoRequiredAccounts: [],
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -876,11 +862,8 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationDecimals =
         action.payload.amountOutDecimals;
     });
-    builder.addCase(getBlockedDomains.fulfilled, (state, action) => {
-      state.blockedDomains.domains = action.payload;
-    });
-    builder.addCase(getBlockedAccounts.fulfilled, (state, action) => {
-      state.blockedAccounts = action.payload;
+    builder.addCase(getMemoRequiredAccounts.fulfilled, (state, action) => {
+      state.memoRequiredAccounts = action.payload;
     });
   },
 });

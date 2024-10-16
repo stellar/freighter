@@ -16,6 +16,7 @@ import {
   editCustomNetwork as editCustomNetworkService,
   addAssetsList as addAssetsListService,
   modifyAssetsList as modifyAssetsListService,
+  saveIsBlockaidAnnounced as saveIsBlockaidAnnouncedService,
 } from "@shared/api/internal";
 import {
   NETWORKS,
@@ -54,9 +55,8 @@ const settingsInitialState: Settings = {
   } as NetworkDetails,
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
-  isSafetyValidationEnabled: true,
-  isValidatingSafeAssetsEnabled: true,
   isNonSSLEnabled: false,
+  isBlockaidAnnounced: false,
   error: "",
 };
 
@@ -114,21 +114,13 @@ export const saveSettings = createAsyncThunk<
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
-    isSafetyValidationEnabled: boolean;
-    isValidatingSafeAssetsEnabled: boolean;
     isNonSSLEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
   async (
-    {
-      isDataSharingAllowed,
-      isMemoValidationEnabled,
-      isSafetyValidationEnabled,
-      isValidatingSafeAssetsEnabled,
-      isNonSSLEnabled,
-    },
+    { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled },
     thunkApi,
   ) => {
     let res = {
@@ -144,8 +136,6 @@ export const saveSettings = createAsyncThunk<
       res = await saveSettingsService({
         isDataSharingAllowed,
         isMemoValidationEnabled,
-        isSafetyValidationEnabled,
-        isValidatingSafeAssetsEnabled,
         isNonSSLEnabled,
       });
     } catch (e) {
@@ -284,6 +274,29 @@ export const modifyAssetsList = createAsyncThunk<
   },
 );
 
+export const saveIsBlockaidAnnounced = createAsyncThunk<
+  { isBlockaidAnnounced: boolean },
+  {
+    isBlockaidAnnounced: boolean;
+  },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/saveIsBlockaidAnnounced",
+  async ({ isBlockaidAnnounced }, thunkApi) => {
+    const res = await saveIsBlockaidAnnouncedService({
+      isBlockaidAnnounced,
+    });
+
+    if (res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Unable to save isBlockaidAnnounced",
+      });
+    }
+
+    return res;
+  },
+);
+
 const settingsSlice = createSlice({
   name: "settings",
   initialState,
@@ -316,9 +329,7 @@ const settingsSlice = createSlice({
         isDataSharingAllowed,
         networkDetails,
         isMemoValidationEnabled,
-        isSafetyValidationEnabled,
         networksList,
-        isValidatingSafeAssetsEnabled,
         isRpcHealthy,
         isSorobanPublicEnabled,
       } = action?.payload || {
@@ -329,8 +340,6 @@ const settingsSlice = createSlice({
         ...state,
         isDataSharingAllowed,
         isMemoValidationEnabled,
-        isSafetyValidationEnabled,
-        isValidatingSafeAssetsEnabled,
         networkDetails,
         networksList,
         isRpcHealthy,
@@ -378,8 +387,6 @@ const settingsSlice = createSlice({
           networkDetails,
           networksList,
           isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
           isHashSigningEnabled,
           isSorobanPublicEnabled,
@@ -387,6 +394,7 @@ const settingsSlice = createSlice({
           userNotification,
           assetsLists,
           isNonSSLEnabled,
+          isBlockaidAnnounced,
         } = action?.payload || {
           ...initialState,
         };
@@ -398,8 +406,6 @@ const settingsSlice = createSlice({
           networkDetails,
           networksList,
           isMemoValidationEnabled,
-          isSafetyValidationEnabled,
-          isValidatingSafeAssetsEnabled,
           isExperimentalModeEnabled,
           isHashSigningEnabled,
           isSorobanPublicEnabled,
@@ -407,6 +413,7 @@ const settingsSlice = createSlice({
           userNotification,
           assetsLists,
           isNonSSLEnabled,
+          isBlockaidAnnounced,
           settingsState: SettingsState.SUCCESS,
         };
       },
@@ -551,6 +558,24 @@ const settingsSlice = createSlice({
         };
       },
     );
+    builder.addCase(
+      saveIsBlockaidAnnounced.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          isBlockaidAnnounced: boolean;
+        }>,
+      ) => {
+        const { isBlockaidAnnounced } = action?.payload || {
+          isBlockaidAnnounced: initialState.isBlockaidAnnounced,
+        };
+
+        return {
+          ...state,
+          isBlockaidAnnounced,
+        };
+      },
+    );
   },
 });
 
@@ -597,12 +622,10 @@ export const settingsPreferencesSelector = createSelector(
   ({
     isDataSharingAllowed,
     isMemoValidationEnabled,
-    isSafetyValidationEnabled,
     isExperimentalModeEnabled,
   }) => ({
     isDataSharingAllowed,
     isMemoValidationEnabled,
-    isSafetyValidationEnabled,
     isExperimentalModeEnabled,
   }),
 );

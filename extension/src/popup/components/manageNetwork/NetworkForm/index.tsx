@@ -334,6 +334,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 ) : null}
 
                 <Input
+                  data-testid="NetworkForm__networkName"
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}
                   id="networkName"
@@ -350,6 +351,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                   placeholder={t("Enter network name")}
                 />
                 <Input
+                  data-testid="NetworkForm__networkUrl"
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}
                   id="networkUrl"
@@ -367,6 +369,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                 {!isEditingDefaultNetworks ||
                 networkDetailsToEdit.network !== NETWORKS.PUBLIC ? (
                   <Input
+                    data-testid="NetworkForm__sorobanRpcUrl"
                     fieldSize="md"
                     disabled={isEditingDefaultNetworks}
                     id="sorobanRpcUrl"
@@ -383,6 +386,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                   />
                 ) : null}
                 <Input
+                  data-testid="NetworkForm__networkPassphrase"
                   fieldSize="md"
                   disabled={isEditingDefaultNetworks}
                   id="networkPassphrase"
@@ -478,6 +482,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
               ) : (
                 <div className="NetworkForm__add-button">
                   <Button
+                    data-testid="NetworkForm__add"
                     size="md"
                     variant="primary"
                     disabled={!(isValid && dirty)}

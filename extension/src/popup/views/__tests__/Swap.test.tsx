@@ -5,16 +5,15 @@ import {
   fireEvent,
   screen,
   within,
-  act,
 } from "@testing-library/react";
 
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
+import * as BlockaidHelpers from "popup/helpers/blockaid";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
 import { createMemoryHistory } from "history";
 import BigNumber from "bignumber.js";
 
@@ -51,7 +50,43 @@ export const swapMockBalances = {
       total: new BigNumber("333"),
       available: new BigNumber("333"),
     },
-  } as any as Balances,
+  } as any,
+  isFunded: true,
+  subentryCount: 1,
+};
+
+const swapMaliciousMockBalances = {
+  balances: {
+    "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
+      token: {
+        code: "USDC",
+        issuer: {
+          key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        },
+      },
+      total: new BigNumber("111"),
+      available: new BigNumber("111"),
+      blockaidData: {
+        result_type: "Spam",
+        features: [{ description: "" }],
+      },
+    },
+    native: {
+      token: { type: "native", code: "XLM" },
+      total: new BigNumber("222"),
+      available: new BigNumber("222"),
+    },
+    "SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B": {
+      token: {
+        code: "SRT",
+        issuer: {
+          key: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
+        },
+      },
+      total: new BigNumber("333"),
+      available: new BigNumber("333"),
+    },
+  } as any,
   isFunded: true,
   subentryCount: 1,
 };
@@ -71,6 +106,16 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
 }));
+
+jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+  return {
+    scanTx: () => Promise.resolve(null),
+    isLoading: false,
+    setLoading: () => {},
+    data: null,
+    error: null,
+  };
+});
 
 const mockHistoryGetter = jest.fn();
 jest.mock("popup/constants/history", () => ({
@@ -129,6 +174,10 @@ jest.mock("stellar-sdk", () => {
 
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 
+const history = createMemoryHistory();
+history.push(ROUTES.swap);
+mockHistoryGetter.mockReturnValue(history);
+
 describe("Swap", () => {
   beforeEach(() => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
@@ -138,44 +187,35 @@ describe("Swap", () => {
       } as any),
     );
   });
-  beforeEach(async () => {
-    const history = createMemoryHistory();
-    history.push(ROUTES.swap);
-    mockHistoryGetter.mockReturnValue(history);
 
-    act(() => {
-      render(
-        <Wrapper
-          history={history}
-          state={{
-            auth: {
-              error: null,
-              applicationState: ApplicationState.PASSWORD_CREATED,
-              publicKey,
-              allAccounts: mockAccounts,
-              hasPrivateKey: true,
-            },
-            settings: {
-              networkDetails: TESTNET_NETWORK_DETAILS,
-              networksList: DEFAULT_NETWORKS,
-            },
-          }}
-        >
-          <Swap />
-        </Wrapper>,
-      );
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
-    });
-  });
+  afterEach(() => {});
 
   afterAll(() => {
     jest.clearAllMocks();
   });
 
   it("renders swap view initial state", async () => {
+    render(
+      <Wrapper
+        history={history}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+            hasPrivateKey: true,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Swap />
+      </Wrapper>,
+    );
+
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
       "Swap XLM",
     );
@@ -211,7 +251,92 @@ describe("Swap", () => {
     expect(screen.getByTestId("send-amount-btn-continue")).toBeDisabled();
   });
 
+  it("renders swap view with malicious asset", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .mockImplementation(() => Promise.resolve(swapMaliciousMockBalances));
+
+    render(
+      <Wrapper
+        history={history}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+            hasPrivateKey: true,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Swap />
+      </Wrapper>,
+    );
+
+    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+      "Swap XLM",
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageSubtitle")).not.toHaveTextContent(
+        "0 XLM available",
+      );
+    });
+
+    expect(screen.getByTestId("AppHeaderPageSubtitle")).toHaveTextContent(
+      "220.49999 XLM available",
+    );
+    expect(screen.getByTestId("send-amount-amount-input")).toHaveValue("0");
+
+    const assetSelects = screen.getAllByTestId("AssetSelect");
+    const sourceAsset = assetSelects[0];
+    const destinationAsset = assetSelects[1];
+
+    expect(
+      within(sourceAsset).getByTestId("AssetSelectSourceLabel"),
+    ).toHaveTextContent("From");
+    expect(
+      within(sourceAsset).getByTestId("AssetSelectSourceCode"),
+    ).toHaveTextContent("XLM");
+
+    expect(
+      within(destinationAsset).getByTestId("AssetSelectSourceLabel"),
+    ).toHaveTextContent("To");
+    expect(
+      within(destinationAsset).getByTestId("AssetSelectSourceCode"),
+    ).toHaveTextContent("USDC");
+    expect(destinationAsset).toContainElement(
+      screen.getByTestId("ScamAssetIcon"),
+    );
+    expect(screen.getByTestId("send-amount-btn-continue")).toBeDisabled();
+  });
+
   it("set max amount", async () => {
+    render(
+      <Wrapper
+        history={history}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+            hasPrivateKey: true,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Swap />
+      </Wrapper>,
+    );
+
     const setMaxButton = screen.getByTestId("SendAmountSetMax");
 
     await waitFor(async () => {
@@ -235,7 +360,36 @@ describe("Swap", () => {
   });
 
   it("swap custom amount", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .mockImplementation(() => Promise.resolve(swapMockBalances));
+
+    render(
+      <Wrapper
+        history={history}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+            hasPrivateKey: true,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Swap />
+      </Wrapper>,
+    );
+
     const amountInput = screen.getByTestId("send-amount-amount-input");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
+    });
 
     await waitFor(async () => {
       fireEvent.change(amountInput, { target: { value: "20" } });
@@ -271,7 +425,6 @@ describe("Swap", () => {
 
     // Swap Settings view
     await waitFor(() => {
-      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Swap Settings",
       );
