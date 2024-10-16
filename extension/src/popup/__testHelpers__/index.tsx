@@ -12,11 +12,15 @@ import { Balances } from "@shared/api/types";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
+import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
+
+export const TEST_PUBLIC_KEY =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
 const rootReducer = combineReducers({
   auth,
@@ -82,6 +86,7 @@ export const mockBalances = {
       decimals: 7,
       total: new BigNumber("1000000000"),
       available: new BigNumber("1000000000"),
+      blockaidData: defaultBlockaidScanAssetResult,
     },
     ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
       token: {
@@ -92,11 +97,53 @@ export const mockBalances = {
       },
       total: new BigNumber("100"),
       available: new BigNumber("100"),
+      blockaidData: {
+        result_type: "Spam",
+        features: [{ feature_id: "METADATA", description: "baz" }],
+      },
     },
     native: {
       token: { type: "native", code: "XLM" },
       total: new BigNumber("50"),
       available: new BigNumber("50"),
+      blockaidData: defaultBlockaidScanAssetResult,
+    },
+  } as any as Balances,
+  isFunded: true,
+  subentryCount: 1,
+};
+
+// balances with no blockaid spam data as we only do the scan on Mainnet
+export const mockTestnetBalances = {
+  balances: {
+    ["DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ"]: {
+      token: {
+        code: "DT",
+        issuer: {
+          key: "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        },
+      },
+      decimals: 7,
+      total: new BigNumber("1000000000"),
+      available: new BigNumber("1000000000"),
+      blockaidData: defaultBlockaidScanAssetResult,
+    },
+    ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+      token: {
+        code: "USDC",
+        issuer: {
+          key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        },
+      },
+      total: new BigNumber("100"),
+      available: new BigNumber("100"),
+      blockaidData: defaultBlockaidScanAssetResult,
+    },
+    native: {
+      token: { type: "native", code: "XLM" },
+      total: new BigNumber("50"),
+      available: new BigNumber("50"),
+      blockaidData: defaultBlockaidScanAssetResult,
     },
   } as any as Balances,
   isFunded: true,

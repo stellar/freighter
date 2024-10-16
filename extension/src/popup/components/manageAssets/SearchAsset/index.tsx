@@ -7,11 +7,15 @@ import { useTranslation } from "react-i18next";
 
 import { Button, Notification } from "@stellar/design-system";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { INDEXER_URL } from "@shared/constants/mercury";
+import { BlockAidScanAssetResult } from "@shared/api/types";
 
 import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { searchAsset } from "popup/helpers/searchAsset";
+import { isMainnet } from "helpers/stellar";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -26,6 +30,8 @@ interface FormValues {
 const initialValues: FormValues = {
   asset: "",
 };
+
+const MAX_ASSETS_TO_SCAN = 10;
 
 const ResultsHeader = () => {
   const { t } = useTranslation();
@@ -85,22 +91,54 @@ export const SearchAsset = () => {
         },
       });
 
+      const assetRecords = resJson._embedded.records;
+
+      let blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
+
+      if (isMainnet(networkDetails)) {
+        // scan the first few assets to see if they are suspicious
+        // due to the length of time it takes to scan, we'll do it in consecutive chunks
+        const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+        const firstSectionAssets = assetRecords.slice(0, MAX_ASSETS_TO_SCAN);
+        firstSectionAssets.forEach((record: AssetRecord) => {
+          const assetSplit = record.asset.split("-");
+          if (assetSplit[0] && assetSplit[1]) {
+            url.searchParams.append(
+              "asset_ids",
+              `${assetSplit[0]}-${assetSplit[1]}`,
+            );
+          }
+        });
+
+        try {
+          const response = await fetch(url.href);
+          const data = await response.json();
+          blockaidScanResults = data.data.results;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       setIsSearching(false);
 
       setAssetRows(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        resJson._embedded.records
+        assetRecords
           // only show records that have a domain and domains that don't have just whitespace
           .filter(
             (record: AssetRecord) => record.domain && /\S/.test(record.domain),
           )
           .map((record: AssetRecord) => {
             const assetSplit = record.asset.split("-");
+            const assetId = `${assetSplit[0]}-${assetSplit[1]}`;
             return {
               code: assetSplit[0],
               issuer: assetSplit[1],
               image: record?.tomlInfo?.image,
               domain: record.domain,
+              isSuspicious: blockaidScanResults[assetId]
+                ? isAssetSuspicious(blockaidScanResults[assetId])
+                : null,
             };
           }),
       );
@@ -111,6 +149,71 @@ export const SearchAsset = () => {
   useEffect(() => {
     setHasNoResults(!assetRows.length);
   }, [assetRows]);
+
+  useEffect(() => {
+    const firstNullSuspiciousIndex = assetRows.findIndex(
+      (r) => r.isSuspicious === null,
+    );
+
+    const fetchBlockaidResults = async (url: URL) => {
+      let blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
+      try {
+        const response = await fetch(url.href);
+        const data = await response.json();
+        blockaidScanResults = data.data.results;
+      } catch (e) {
+        console.error(e);
+      }
+
+      // take our scanned assets and update the assetRows with the new isSuspicious values
+      const assetRowsAddendum = assetRows
+        .slice(
+          firstNullSuspiciousIndex,
+          firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+        )
+        .map((row) => {
+          const assetId = `${row.code}-${row.issuer}`;
+          return {
+            ...row,
+            isSuspicious: blockaidScanResults[assetId]
+              ? isAssetSuspicious(blockaidScanResults[assetId])
+              : row.isSuspicious,
+          };
+        });
+
+      // insert our newly scanned rows into the existing data
+      setAssetRows([
+        ...assetRows.slice(0, firstNullSuspiciousIndex),
+        ...assetRowsAddendum,
+        ...assetRows.slice(firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN),
+      ]);
+
+      return blockaidScanResults;
+    };
+
+    // if there are any assets with "null" (meaning we haven't scanned some assets yet), scan the next batch
+    if (
+      assetRows.length &&
+      isMainnet(networkDetails) &&
+      firstNullSuspiciousIndex !== -1
+    ) {
+      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+
+      // grab the next section of assets to scan
+      assetRows
+        .slice(
+          firstNullSuspiciousIndex,
+          firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+        )
+        .forEach((row) => {
+          if (row.code && row.issuer && row.isSuspicious === null) {
+            url.searchParams.append("asset_ids", `${row.code}-${row.issuer}`);
+          }
+        });
+
+      fetchBlockaidResults(url);
+    }
+  }, [assetRows, networkDetails]);
 
   if (isCustomNetwork(networkDetails)) {
     return <Redirect to={ROUTES.addAsset} />;

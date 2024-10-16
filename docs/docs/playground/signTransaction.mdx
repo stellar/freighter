@@ -3,7 +3,7 @@ id: signTransaction
 title: signTransaction
 ---
 
-#### `signTransaction( transactionXdr: string, network?: "PUBLIC"|"TESTNET"|null, publicKey?: string )`
+#### `signTransaction(xdr: string, opts?: { network?: string, networkPassphrase?: string, address?: string }) -> <Promise<{ signedTxXdr: string; signerAddress: string; } & { error?: string; }>>`
 
 import { SignTransactionDemo } from "./components/SignTransactionDemo";
 

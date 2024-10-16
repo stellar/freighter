@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { BigNumber } from "bignumber.js";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, AssetType } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
+import { formatAmount } from "popup/helpers/formatters";
+
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
@@ -18,7 +20,6 @@ import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 
 import "./styles.scss";
-import { formatAmount } from "popup/helpers/formatters";
 
 const getIsXlm = (code: string) => code === "XLM";
 
@@ -40,6 +41,8 @@ export const AssetIcon = ({
   isLPShare = false,
   isSorobanToken = false,
   icon,
+  isSuspicious = false,
+  isModal = false,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -48,6 +51,8 @@ export const AssetIcon = ({
   isLPShare?: boolean;
   isSorobanToken?: boolean;
   icon?: string;
+  isSuspicious?: boolean;
+  isModal?: boolean;
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -103,16 +108,24 @@ export const AssetIcon = ({
   // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
   if (isFetchingAssetIcons) {
     return (
-      <div className="AccountAssets__asset--logo AccountAssets__asset--loading" />
+      <div
+        data-testid="AccountAssets__asset--loading"
+        className="AccountAssets__asset--logo AccountAssets__asset--loading"
+      >
+        <ScamAssetIcon isScamAsset={isSuspicious} />
+      </div>
     );
   }
 
   // if we have an asset path, start loading the path in an `<img>`
   return canonicalAsset || isXlm || imgSrc ? (
     <div
+      data-testid={`AccountAssets__asset--loading-${code}`}
       className={`AccountAssets__asset--logo ${
         hasError ? "AccountAssets__asset--error" : ""
-      } ${isLoading ? "AccountAssets__asset--loading" : ""}`}
+      } ${isLoading ? "AccountAssets__asset--loading" : ""} ${
+        isModal ? "AccountAssets__asset--modal" : ""
+      }`}
     >
       <img
         alt={`${code} logo`}
@@ -129,18 +142,24 @@ export const AssetIcon = ({
           setIsLoading(false);
         }}
       />
+      <ScamAssetIcon isScamAsset={isSuspicious} />
     </div>
   ) : (
     // the image path wasn't found, show a default broken image icon
-    <div className="AccountAssets__asset--logo AccountAssets__asset--error">
+    <div
+      className={`AccountAssets__asset--logo AccountAssets__asset--error ${
+        isModal ? "AccountAssets__asset--modal" : ""
+      }`}
+    >
       <ImageMissingIcon />
+      <ScamAssetIcon isScamAsset={isSuspicious} />
     </div>
   );
 };
 
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
-  sortedBalances: any[];
+  sortedBalances: AssetType[];
   setSelectedAsset?: (selectedAsset: string) => void;
 }
 
@@ -152,9 +171,6 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
-  const { assetDomains, blockedDomains } = useSelector(
-    transactionSubmissionSelector,
-  );
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);
@@ -211,39 +227,39 @@ export const AccountAssets = ({
 
   return (
     <>
-      {sortedBalances.map((rb: any) => {
-        let issuer;
+      {sortedBalances.map((rb) => {
+        let isLP = false;
+        let issuer = {
+          key: "",
+        };
         let code = "";
         let amountUnit;
         if (rb.liquidityPoolId) {
-          issuer = "lp";
+          isLP = true;
           code = getLPShareCode(rb.reserves as Horizon.HorizonApi.Reserve[]);
           amountUnit = "shares";
-        } else if (rb.contractId) {
+        } else if (rb.contractId && "symbol" in rb) {
           issuer = {
             key: rb.contractId,
           };
           code = rb.symbol;
           amountUnit = rb.symbol;
         } else {
-          issuer = rb.token.issuer;
+          if ("issuer" in rb.token && rb.token) {
+            issuer = rb.token.issuer;
+          }
           code = rb.token.code;
           amountUnit = rb.token.code;
         }
 
-        const isLP = issuer === "lp";
-        const canonicalAsset = getCanonicalFromAsset(
-          code,
-          issuer?.key as string,
-        );
+        const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
-        const assetDomain = assetDomains[canonicalAsset];
-        const isScamAsset = !!blockedDomains.domains[assetDomain];
+        const isSuspicious = isAssetSuspicious(rb.blockaidData);
 
-        const bigTotal = new BigNumber(rb.total as string);
-        const amountVal = rb.contractId
-          ? formatTokenAmount(bigTotal, rb.decimals as number)
-          : bigTotal.toFixed();
+        const amountVal =
+          rb.contractId && "decimals" in rb
+            ? formatTokenAmount(rb.total, rb.decimals)
+            : rb.total.toFixed();
 
         return (
           <div
@@ -263,9 +279,9 @@ export const AccountAssets = ({
                 issuerKey={issuer?.key}
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={!!rb.liquidityPoolId}
+                isSuspicious={isSuspicious}
               />
               <span className="asset-code">{code}</span>
-              <ScamAssetIcon isScamAsset={isScamAsset} />
             </div>
             <div className="AccountAssets__copy-right">
               <div className="asset-amount" data-testid="asset-amount">

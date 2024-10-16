@@ -28,32 +28,6 @@ import {
 } from "./KeyVal";
 import "./styles.scss";
 
-const UnsafeMaliciousWarning = ({
-  isDestUnsafe,
-  isDestMalicious,
-}: {
-  isDestUnsafe: boolean;
-  isDestMalicious: boolean;
-}) => {
-  const { t } = useTranslation();
-
-  return isDestUnsafe || isDestMalicious ? (
-    <KeyValueList
-      operationKey=""
-      operationValue={
-        <IconButton
-          label={`${isDestMalicious ? t("Malicious") : t("Unsafe")} ${t(
-            "account",
-          )}`}
-          altText="Error"
-          icon={<Icon.InfoCircle />}
-          variant="error"
-        />
-      }
-    />
-  ) : null;
-};
-
 const MemoRequiredWarning = ({
   isDestMemoRequired,
 }: {
@@ -86,18 +60,12 @@ const DestinationWarning = ({
   isMemoRequired: boolean;
 }) => {
   const flaggedTags = flaggedKeys[destination]?.tags || [];
-  const isDestMalicious = flaggedTags.includes(TRANSACTION_WARNING.malicious);
-  const isDestUnsafe = flaggedTags.includes(TRANSACTION_WARNING.unsafe);
   const isDestMemoRequired = flaggedTags.includes(
     TRANSACTION_WARNING.memoRequired,
   );
 
   return (
     <>
-      <UnsafeMaliciousWarning
-        isDestMalicious={isDestMalicious}
-        isDestUnsafe={isDestUnsafe}
-      />
       {isMemoRequired ? (
         <MemoRequiredWarning isDestMemoRequired={isDestMemoRequired} />
       ) : null}
