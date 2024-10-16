@@ -41,7 +41,7 @@ const PillCopy = ({ pillType }: PillyCopyProps) => {
 
   return (
     <>
-      <Icon.Link />
+      <Icon.Link01 />
       <div>{t("Connection Request")}</div>
     </>
   );
