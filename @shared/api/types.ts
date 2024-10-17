@@ -240,13 +240,6 @@ export interface Balance {
 }
 
 export type BlockAidScanAssetResult = Blockaid.TokenScanResponse;
-export interface BlockAidScanAssetResultIndex {
-  [key: string]: Blockaid.TokenScanResponse.AttackTypes &
-    Blockaid.TokenScanResponse.Fees &
-    Blockaid.TokenScanResponse.BasicMetadataToken &
-    Blockaid.TokenScanResponse.FinancialStats &
-    Blockaid.TokenScanResponse.TradingLimits;
-}
 
 export type BlockAidScanSiteResult = Blockaid.SiteScanResponse;
 export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse;
