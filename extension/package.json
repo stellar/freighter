@@ -1,6 +1,6 @@
 {
   "name": "extension",
-  "version": "5.23.3",
+  "version": "5.23.4",
   "license": "Apache-2.0",
   "prettier": "@stellar/prettier-config",
   "scripts": {
