@@ -67,7 +67,7 @@ jobs:
           rm -rf ./extension/build/images
           mv ./extension/build/beta_images ./extension/build/images
       - name: Remove scripts tag
-        uses: restackio/update-json-file-action@a3a75ee5960338f5bcc83bfb81947f283fca90eb #v2.1
+        uses: restackio/update-json-file-action@1e34d747ca044df80b37bc4ef5a9aa41be9dac8f #v2.1
         with:
           file: ./extension/build/manifest.json
           fields: '{"background": {"service_worker": "background.min.js"}}'

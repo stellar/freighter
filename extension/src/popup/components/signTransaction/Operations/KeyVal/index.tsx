@@ -23,6 +23,7 @@ import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
   buildInvocationTree,
+  getCreateContractArgs,
   InvocationTree,
   scValByType,
 } from "popup/helpers/soroban";
@@ -471,16 +472,19 @@ export const KeyValueInvokeHostFn = ({
 
   function renderDetails() {
     switch (hostfn.switch()) {
+      case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
       case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
-        const createContractArgs = hostfn.createContract();
-        const preimage = createContractArgs.contractIdPreimage();
-        const executable = createContractArgs.executable();
+        const createContractArgs = getCreateContractArgs(hostfn);
+        const preimage = createContractArgs.contractIdPreimage;
+        const executable = createContractArgs.executable;
+        const createV2Args = createContractArgs.constructorArgs;
         const executableType = executable.switch().name;
+        const wasmHash = executable.wasmHash();
 
         if (preimage.switch().name === "contractIdPreimageFromAddress") {
           const preimageFromAddress = preimage.fromAddress();
           const address = preimageFromAddress.address();
-          const salt = preimageFromAddress.salt().toString();
+          const salt = preimageFromAddress.salt().toString("hex");
 
           const addressType = address.switch();
           if (addressType.name === "scAddressTypeAccount") {
@@ -499,7 +503,12 @@ export const KeyValueInvokeHostFn = ({
                 />
                 <KeyValueList
                   operationKey={t("Salt")}
-                  operationValue={truncateString(salt)}
+                  operationValue={
+                    <CopyValue
+                      value={salt}
+                      displayValue={truncateString(salt, 8)}
+                    />
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Executable Type")}
@@ -508,8 +517,19 @@ export const KeyValueInvokeHostFn = ({
                 {executable.wasmHash() && (
                   <KeyValueList
                     operationKey={t("Executable Wasm Hash")}
-                    operationValue={executable.wasmHash().toString()}
+                    operationValue={
+                      <CopyValue
+                        value={wasmHash.toString("hex")}
+                        displayValue={truncateString(
+                          wasmHash.toString("hex"),
+                          8,
+                        )}
+                      />
+                    }
                   />
+                )}
+                {createV2Args && (
+                  <KeyValueInvokeHostFnArgs args={createV2Args} />
                 )}
               </>
             );
@@ -527,7 +547,12 @@ export const KeyValueInvokeHostFn = ({
               />
               <KeyValueList
                 operationKey={t("Salt")}
-                operationValue={truncateString(salt)}
+                operationValue={
+                  <CopyValue
+                    value={salt}
+                    displayValue={truncateString(salt, 8)}
+                  />
+                }
               />
               <KeyValueList
                 operationKey={t("Executable Type")}
@@ -536,9 +561,15 @@ export const KeyValueInvokeHostFn = ({
               {executable.wasmHash() && (
                 <KeyValueList
                   operationKey={t("Executable Wasm Hash")}
-                  operationValue={executable.wasmHash().toString()}
+                  operationValue={
+                    <CopyValue
+                      value={wasmHash.toString("hex")}
+                      displayValue={truncateString(wasmHash.toString("hex"), 8)}
+                    />
+                  }
                 />
               )}
+              {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
             </>
           );
         }
@@ -554,23 +585,31 @@ export const KeyValueInvokeHostFn = ({
               operationValue="Create Contract"
             />
             {preimageFromAsset.switch().name === "assetTypeCreditAlphanum4" ||
-              (preimageFromAsset.switch().name ===
-                "assetTypeCreditAlphanum12" && (
-                <>
-                  <KeyValueList
-                    operationKey={t("Asset Code")}
-                    operationValue={(preimageValue as xdr.AlphaNum12)
-                      .assetCode()
-                      .toString()}
-                  />
-                  <KeyValueList
-                    operationKey={t("Issuer")}
-                    operationValue={StrKey.encodeEd25519PublicKey(
-                      (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
-                    )}
-                  />
-                </>
-              ))}
+            preimageFromAsset.switch().name === "assetTypeCreditAlphanum12" ? (
+              <>
+                <KeyValueList
+                  operationKey={t("Asset Code")}
+                  operationValue={(preimageValue as xdr.AlphaNum12)
+                    .assetCode()
+                    .toString()}
+                />
+                <KeyValueList
+                  operationKey={t("Issuer")}
+                  operationValue={
+                    <CopyValue
+                      value={StrKey.encodeEd25519PublicKey(
+                        (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                      )}
+                      displayValue={truncateString(
+                        StrKey.encodeEd25519PublicKey(
+                          (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                        ),
+                      )}
+                    />
+                  }
+                />
+              </>
+            ) : null}
 
             <KeyValueList
               operationKey={t("Executable Type")}
@@ -579,9 +618,15 @@ export const KeyValueInvokeHostFn = ({
             {executable.wasmHash() && (
               <KeyValueList
                 operationKey={t("Executable Wasm Hash")}
-                operationValue={executable.wasmHash().toString()}
+                operationValue={
+                  <CopyValue
+                    value={wasmHash.toString("hex")}
+                    displayValue={truncateString(wasmHash.toString("hex"), 8)}
+                  />
+                }
               />
             )}
+            {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
           </>
         );
       }

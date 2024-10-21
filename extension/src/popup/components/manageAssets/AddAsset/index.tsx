@@ -265,7 +265,7 @@ export const AddAsset = () => {
             setHasNoResults(false);
           }}
         >
-          <React.Fragment>
+          <View>
             <SubviewHeader title={t("Add by address")} />
             <View.Content>
               <FormRows>
@@ -313,7 +313,7 @@ export const AddAsset = () => {
                 </SearchResults>
               </FormRows>
             </View.Content>
-          </React.Fragment>
+          </View>
         </Form>
       )}
     </Formik>

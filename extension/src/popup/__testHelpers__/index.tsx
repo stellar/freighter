@@ -19,6 +19,9 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 
+export const TEST_PUBLIC_KEY =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
 const rootReducer = combineReducers({
   auth,
   settings,
