@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  Button,
   CopyText,
   Icon,
   NavButton,
@@ -34,8 +33,6 @@ import {
   transactionSubmissionSelector,
   resetSubmission,
   resetAccountBalanceStatus,
-  saveAssetSelectType,
-  AssetSelectType,
   getAccountBalances,
   getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
@@ -50,6 +47,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
@@ -180,25 +178,7 @@ export const Account = () => {
             setLoading={setLoading}
           />
           {/* <BlockaidAnnouncement /> */}
-          <View.Content
-            hasNoTopPadding
-            contentFooter={
-              isFunded ? (
-                <div className="AccountView__assets-button">
-                  <Button
-                    size="md"
-                    variant="secondary"
-                    onClick={() => {
-                      dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-                      navigateTo(ROUTES.manageAssets);
-                    }}
-                  >
-                    {t("Manage Assets")}
-                  </Button>
-                </div>
-              ) : null
-            }
-          >
+          <View.Content hasNoTopPadding>
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
                 <div className="AccountView__name-key-display">
@@ -219,20 +199,14 @@ export const Account = () => {
                   <div className="AccountView__send-receive-button">
                     <NavButton
                       showBorder
-                      title={t("View public key")}
-                      id="nav-btn-qr"
-                      icon={<Icon.QrCode01 />}
-                      onClick={() => navigateTo(ROUTES.viewPublicKey)}
-                    />
-                  </div>
-                  <div className="AccountView__send-receive-button">
-                    <NavButton
-                      showBorder
                       title={t("Send Payment")}
                       id="nav-btn-send"
                       icon={<Icon.Send01 />}
                       onClick={() => navigateTo(ROUTES.sendPayment)}
                     />
+                  </div>
+                  <div className="AccountView__send-receive-button">
+                    <AccountOptionsDropdown isFunded={!!isFunded} />
                   </div>
                 </div>
               </div>
